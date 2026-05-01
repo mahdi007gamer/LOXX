@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { Gamepad2, User, Bell, Menu, X, LayoutDashboard, Target, Users, MessageSquare, Trophy, Settings } from "lucide-react";
 import { GlowButton } from "../ui/GlowButton";
-import { motion, AnimatePresence, useScroll } from "motion/react";
+import { motion, AnimatePresence, useScroll, useMotionValueEvent } from "motion/react";
 import { cn } from "@/src/lib/utils";
 
 const menuItems = [
@@ -21,27 +21,26 @@ export const Navbar = () => {
   const location = useLocation();
   const isLanding = location.pathname === "/";
 
-  React.useEffect(() => {
-    return scrollY.onChange((latest) => {
-      setIsScrolled(latest > 50);
-    });
-  }, [scrollY]);
+  useMotionValueEvent(scrollY, "change", (latest) => {
+    setIsScrolled(latest > 50);
+  });
 
   return (
     <>
       <nav 
         className={cn(
-          "fixed top-0 left-0 right-0 z-[10000] w-full transition-all duration-300",
+          "fixed left-0 right-0 z-[9999] w-full transition-all duration-500",
           !isLanding 
-            ? "bg-dark-bg/95 border-b border-white/10 backdrop-blur-md"
-            : "bg-transparent",
-          isLanding && isScrolled && "top-4 flex justify-center px-4"
+            ? "top-0 bg-dark-bg/95 border-b border-white/10 backdrop-blur-md"
+            : isScrolled 
+              ? "top-4 px-4 pointer-events-none" 
+              : "top-0 bg-transparent"
         )}
       >
         <div 
           className={cn(
-            "mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8 transition-all duration-300",
-            isLanding && isScrolled && "max-w-4xl rounded-2xl bg-dark-bg/95 px-8 shadow-[0_20px_50px_rgba(0,0,0,0.8),0_0_15px_rgba(0,229,255,0.1)] backdrop-blur-xl border border-white/10"
+            "mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8 transition-all duration-500 pointer-events-auto",
+            isLanding && isScrolled && "max-w-4xl rounded-2xl bg-dark-bg/80 px-8 shadow-[0_20px_50px_rgba(0,0,0,0.5),0_0_15px_rgba(0,229,255,0.1)] backdrop-blur-xl border border-white/10"
           )}
         >
           <div className="flex items-center gap-8">
@@ -97,14 +96,14 @@ export const Navbar = () => {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsMenuOpen(false)}
-              className="fixed inset-0 z-[58] bg-black/60 backdrop-blur-sm md:hidden"
+              className="fixed inset-0 z-[10000] bg-black/60 backdrop-blur-sm md:hidden"
             />
             <motion.div
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="fixed right-0 top-0 z-[59] h-full w-72 bg-dark-bg border-l border-white/10 p-6 pt-24 md:hidden shadow-2xl"
+              className="fixed right-0 top-0 z-[10001] h-full w-72 bg-dark-bg border-l border-white/10 p-6 pt-24 md:hidden shadow-2xl"
             >
               <div className="space-y-2">
                 {menuItems.map((item) => (

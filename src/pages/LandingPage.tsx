@@ -27,7 +27,7 @@ export const LandingPage = () => {
       <ScrollFlameEffect />
       <HeroSection />
 
-      <div className="relative z-10">
+      <div className="relative">
         <SectionReveal>
           <PlatformStats />
         </SectionReveal>
