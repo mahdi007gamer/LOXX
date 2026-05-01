@@ -4,52 +4,32 @@ import { Play, Zap, Gamepad2 } from "lucide-react";
 import { GlowButton } from "../ui/GlowButton";
 import { Link } from "react-router-dom";
 
+import { CyberGrid } from "./CyberGrid";
+
 export const HeroSection = () => {
   return (
-    <section className="relative flex min-h-[90vh] flex-col items-center justify-center overflow-hidden px-4 pt-20 text-center lg:pt-32">
-      {/* Background Animated Elements */}
-      <div className="absolute inset-0 -z-10 bg-dark-bg">
-        {/* Moving Grid Lines */}
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(0,229,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(0,229,255,0.05)_1px,transparent_1px)] bg-[size:50px_50px] [mask-image:radial-gradient(ellipse_at_center,black,transparent_80%)]" />
-        
-        {/* Ambient Glows */}
-        <motion.div 
-          animate={{ 
-            scale: [1, 1.2, 1],
-            opacity: [0.3, 0.5, 0.3] 
-          }}
-          transition={{ duration: 8, repeat: Infinity }}
-          className="absolute left-1/4 top-1/4 h-[500px] w-[500px] rounded-full bg-neon-purple/20 blur-[120px]" 
-        />
-        <motion.div 
-          animate={{ 
-            scale: [1.2, 1, 1.2],
-            opacity: [0.3, 0.5, 0.3] 
-          }}
-          transition={{ duration: 10, repeat: Infinity }}
-          className="absolute bottom-1/4 right-1/4 h-[500px] w-[500px] rounded-full bg-neon-blue/20 blur-[120px]" 
-        />
-      </div>
-
+    <section className="relative flex min-h-[100vh] flex-col items-center justify-center overflow-hidden px-4 py-20 text-center lg:py-32">
+      <CyberGrid />
+      
       <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 1 }}
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 1, ease: "easeOut" }}
         className="container relative z-10 mx-auto max-w-5xl"
       >
         <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.2, duration: 0.5 }}
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.5 }}
           className="mb-8 inline-flex items-center gap-3 rounded-full border border-neon-blue/30 bg-neon-blue/10 px-6 py-2 text-sm font-black text-neon-blue shadow-[0_0_30px_rgba(0,229,255,0.2)] backdrop-blur-md"
         >
           <Zap size={18} className="animate-pulse" />
-          <span className="tracking-widest uppercase">Lobby Entrance Open</span>
+          <span className="tracking-widest uppercase">درگاه ورود به لوکس باز شد</span>
         </motion.div>
         
-        <h1 className="mb-8 text-6xl font-black leading-[1.1] tracking-tighter text-white sm:text-8xl md:text-9xl">
+        <h1 className="mb-8 text-6xl font-black leading-[1.1] tracking-tighter text-white sm:text-8xl md:text-9xl lg:text-[10rem]">
           <span className="block drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)]">لوکس</span>
-          <span className="neon-text-blue block drop-shadow-[0_0_30px_rgba(0,229,255,0.6)]">LOXX</span>
+          <span className="neon-text-blue block drop-shadow-[0_0_50px_rgba(0,229,255,0.8)]">LOXX</span>
         </h1>
 
         <div className="relative mx-auto mb-12 max-w-2xl px-4 py-6">

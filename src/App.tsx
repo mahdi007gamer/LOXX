@@ -31,7 +31,7 @@ function App() {
 
         <Navbar />
         
-        <main className="relative">
+        <main className="relative gpu">
           <Routes>
             <Route path="/" element={<LandingPage />} />
             <Route path="/auth" element={<AuthPage />} />

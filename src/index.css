@@ -17,11 +17,20 @@
 @layer base {
   :root {
     color-scheme: dark;
+    --navbar-height: 64px;
   }
   
   body {
-    @apply bg-dark-bg text-gray-100 font-sans selection:bg-neon-pink selection:text-white;
+    @apply bg-dark-bg text-gray-100 font-sans selection:bg-neon-pink selection:text-white overflow-x-hidden;
     direction: rtl;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Prevent animation artifacts */
+  * {
+    @apply backface-visibility-hidden;
+    transform-style: preserve-3d;
   }
 
   /* Custom scrollbar for cyberpunk feel */
@@ -38,6 +47,9 @@
 
 /* Utilities for glassmorphism and neon glows */
 @layer utilities {
+  .gpu {
+    @apply transform-gpu will-change-transform;
+  }
   .glass {
     @apply bg-dark-card backdrop-blur-xl border border-white/10;
   }
