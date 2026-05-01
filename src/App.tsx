@@ -5,6 +5,7 @@
 
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { Navbar } from "./components/layout/Navbar";
+import { PageTransition } from "./components/layout/PageTransition";
 import { LandingPage } from "./pages/LandingPage";
 import { AuthPage } from "./pages/AuthPage";
 import { DashboardPage } from "./pages/DashboardPage";
@@ -32,17 +33,19 @@ function App() {
         <Navbar />
         
         <main className="relative gpu">
-          <Routes>
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/auth" element={<AuthPage />} />
-            <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/chat" element={<ChatPage />} />
-            <Route path="/lobbies" element={<LobbiesPage />} />
-            <Route path="/profile" element={<ProfilePage />} />
-            <Route path="/rooms" element={<RoomsPage />} />
-            <Route path="/leaderboard" element={<LeaderboardPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
-          </Routes>
+          <PageTransition>
+            <Routes>
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/auth" element={<AuthPage />} />
+              <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/chat" element={<ChatPage />} />
+              <Route path="/lobbies" element={<LobbiesPage />} />
+              <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/rooms" element={<RoomsPage />} />
+              <Route path="/leaderboard" element={<LeaderboardPage />} />
+              <Route path="/settings" element={<SettingsPage />} />
+            </Routes>
+          </PageTransition>
         </main>
       </div>
     </Router>

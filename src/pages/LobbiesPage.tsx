@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Sidebar } from "../components/layout/Sidebar";
 import { NeonCard } from "../components/ui/NeonCard";
 import { GlowButton } from "../components/ui/GlowButton";
+import { CardSkeleton } from "../components/ui/Skeleton";
 import { 
   Gamepad2, 
   Users, 
@@ -25,6 +26,13 @@ const LOBBIES = [
 ];
 
 export const LobbiesPage = () => {
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setLoading(false), 1000);
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <div className="flex min-h-[calc(100vh-64px)]">
       <Sidebar />
@@ -68,66 +76,70 @@ export const LobbiesPage = () => {
 
           {/* Lobbies Grid */}
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {LOBBIES.map((lobby, i) => (
-              <motion.div
-                key={lobby.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.05 }}
-              >
-                <NeonCard 
-                  variant={lobby.variant as any} 
-                  hover={true}
-                  className="group relative flex flex-col justify-between h-[240px] overflow-hidden"
+            {loading ? (
+              [1, 2, 3, 4, 5, 6].map(i => <CardSkeleton key={i} />)
+            ) : (
+              LOBBIES.map((lobby, i) => (
+                <motion.div
+                  key={lobby.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.05 }}
                 >
-                  <div className="relative z-10">
-                    <div className="mb-4 flex items-center justify-between">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/5 text-2xl">
-                        {lobby.icon}
+                  <NeonCard 
+                    variant={lobby.variant as any} 
+                    hover={true}
+                    className="group relative flex flex-col justify-between h-[240px] overflow-hidden"
+                  >
+                    <div className="relative z-10">
+                      <div className="mb-4 flex items-center justify-between">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/5 text-2xl">
+                          {lobby.icon}
+                        </div>
+                        <div className={cn(
+                          "rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider",
+                          lobby.variant === 'blue' ? 'bg-neon-blue/10 text-neon-blue' : 'bg-neon-pink/10 text-neon-pink'
+                        )}>
+                          {lobby.game}
+                        </div>
                       </div>
-                      <div className={cn(
-                        "rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider",
-                        lobby.variant === 'blue' ? 'bg-neon-blue/10 text-neon-blue' : 'bg-neon-pink/10 text-neon-pink'
-                      )}>
-                        {lobby.game}
+                      
+                      <h3 className="mb-2 text-lg font-bold text-white line-clamp-1">{lobby.title}</h3>
+                      <div className="flex items-center gap-2 text-xs text-gray-400">
+                        <ShieldCheck size={14} className="text-green-500" />
+                        <span>سطح مهارت: {lobby.rank}</span>
                       </div>
                     </div>
-                    
-                    <h3 className="mb-2 text-lg font-bold text-white line-clamp-1">{lobby.title}</h3>
-                    <div className="flex items-center gap-2 text-xs text-gray-400">
-                      <ShieldCheck size={14} className="text-green-500" />
-                      <span>سطح مهارت: {lobby.rank}</span>
-                    </div>
-                  </div>
 
-                  <div className="relative z-10 mt-6 flex items-center justify-between border-t border-white/5 pt-4 transition-opacity group-hover:opacity-0">
-                    <div className="flex items-center gap-2">
-                       <div className="flex -space-x-2">
-                          {[1, 2, 3].map(p => (
-                            <div key={p} className="h-7 w-7 rounded-full border-2 border-dark-card bg-white/10" />
-                          ))}
-                       </div>
-                       <span className="text-xs font-medium text-gray-500">+{lobby.players} هوادار</span>
+                    <div className="relative z-10 mt-6 flex items-center justify-between border-t border-white/5 pt-4 transition-opacity group-hover:opacity-0">
+                      <div className="flex items-center gap-2">
+                         <div className="flex -space-x-2">
+                            {[1, 2, 3].map(p => (
+                              <div key={p} className="h-7 w-7 rounded-full border-2 border-dark-card bg-white/10" />
+                            ))}
+                         </div>
+                         <span className="text-xs font-medium text-gray-500">+{lobby.players} هوادار</span>
+                      </div>
+                      <div className="text-left">
+                         <p className="text-[10px] text-gray-500">ظرفیت</p>
+                         <p className={cn(
+                           "font-black",
+                           lobby.players >= lobby.max ? "text-neon-pink" : "text-neon-blue"
+                         )}>
+                           {lobby.players}/{lobby.max}
+                         </p>
+                      </div>
                     </div>
-                    <div className="text-left">
-                       <p className="text-[10px] text-gray-500">ظرفیت</p>
-                       <p className={cn(
-                         "font-black",
-                         lobby.players >= lobby.max ? "text-neon-pink" : "text-neon-blue"
-                       )}>
-                         {lobby.players}/{lobby.max}
-                       </p>
-                    </div>
-                  </div>
 
-                  <div className="absolute inset-x-0 bottom-0 py-6 px-6 translate-y-full group-hover:translate-y-0 transition-transform duration-300 bg-gradient-to-t from-dark-bg via-dark-bg/95 to-transparent backdrop-blur-sm z-20">
-                    <GlowButton variant={lobby.variant as any} className="w-full">
-                      درخواست عضویت
-                    </GlowButton>
-                  </div>
-                </NeonCard>
-              </motion.div>
-            ))}
+                    <div className="absolute inset-x-0 bottom-0 py-6 px-6 translate-y-full group-hover:translate-y-0 transition-transform duration-300 bg-gradient-to-t from-dark-bg via-dark-bg/95 to-transparent backdrop-blur-sm z-20">
+                      <GlowButton variant={lobby.variant as any} className="w-full">
+                        درخواست عضویت
+                      </GlowButton>
+                    </div>
+                  </NeonCard>
+                </motion.div>
+              ))
+            )}
           </div>
         </div>
       </main>

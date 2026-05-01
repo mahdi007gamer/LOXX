@@ -26,9 +26,9 @@ export const NeonCard = ({
   };
 
   const glowColors = {
-    blue: "border-neon-blue/50 shadow-[0_0_30px_rgba(0,229,255,0.2)] bg-white/[0.04]",
-    pink: "border-neon-pink/50 shadow-[0_0_30px_rgba(255,0,153,0.2)] bg-white/[0.04]",
-    purple: "border-neon-purple/50 shadow-[0_0_30px_rgba(160,32,240,0.2)] bg-white/[0.04]",
+    blue: "border-neon-blue/40 shadow-[0_0_20px_rgba(0,229,255,0.15)] bg-white/[0.03]",
+    pink: "border-neon-pink/40 shadow-[0_0_20px_rgba(255,0,153,0.15)] bg-white/[0.03]",
+    purple: "border-neon-purple/40 shadow-[0_0_20px_rgba(160,32,240,0.15)] bg-white/[0.03]",
   };
 
   return (
@@ -36,28 +36,29 @@ export const NeonCard = ({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       className={cn(
-        "glass relative rounded-2xl border p-6 transition-all duration-300 gpu group cursor-default",
+        "glass relative rounded-2xl border p-6 transition-all duration-500 gpu group cursor-default",
         variants[variant],
         hover && isHovered && glowColors[variant],
-        hover && isHovered && "scale-[1.02] z-10",
+        hover && isHovered && "scale-[1.01] z-10",
         className
       )}
       {...props}
     >
-      {/* Content wrapper - ensure pointer-events: auto is only on what needs interaction */}
+      {/* Content wrapper */}
       <div className="relative z-20 h-full">
         {children}
       </div>
 
-      {/* Dynamic Glow Layer - pointer-events-none is CRITICAL */}
+      {/* Dynamic Glow Layer - Subtle & Minimal */}
       <AnimatePresence>
         {hover && isHovered && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            transition={{ duration: 0.4 }}
             className={cn(
-              "absolute inset-0 -z-10 blur-[40px] opacity-10 pointer-events-none",
+              "absolute inset-0 -z-10 blur-[20px] opacity-10 pointer-events-none",
               variant === "blue" && "bg-neon-blue",
               variant === "pink" && "bg-neon-pink",
               variant === "purple" && "bg-neon-purple"
@@ -68,8 +69,8 @@ export const NeonCard = ({
       
       {/* Corner Details (Static) */}
       <div className={cn(
-        "absolute -right-4 -top-4 h-12 w-12 rounded-full blur-[24px] opacity-10 pointer-events-none transition-opacity duration-300",
-        isHovered ? "opacity-30" : "opacity-10",
+        "absolute -right-4 -top-4 h-12 w-12 rounded-full blur-[20px] pointer-events-none transition-opacity duration-700",
+        isHovered ? "opacity-20" : "opacity-0",
         variant === "blue" && "bg-neon-blue",
         variant === "pink" && "bg-neon-pink",
         variant === "purple" && "bg-neon-purple"
