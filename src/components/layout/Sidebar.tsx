@@ -1,0 +1,54 @@
+import React from "react";
+import { NavLink } from "react-router-dom";
+import { 
+  LayoutDashboard, 
+  Users, 
+  MessageSquare, 
+  Settings, 
+  LogOut,
+  Trophy,
+  Target
+} from "lucide-react";
+import { cn } from "@/src/lib/utils";
+
+const menuItems = [
+  { icon: LayoutDashboard, label: "داشبورد", path: "/dashboard" },
+  { icon: Target, label: "اتاق‌های بازی", path: "/rooms" },
+  { icon: Users, label: "لابی‌ها", path: "/lobbies" },
+  { icon: MessageSquare, label: "چت سراسری", path: "/chat" },
+  { icon: Trophy, label: "رتبه‌بندی", path: "/leaderboard" },
+  { icon: Settings, label: "تنظیمات", path: "/settings" },
+];
+
+export const Sidebar = () => {
+  return (
+    <aside className="fixed right-0 top-16 hidden h-[calc(100vh-64px)] w-64 border-l border-white/10 bg-dark-bg/50 backdrop-blur-lg md:block">
+      <div className="flex h-full flex-col justify-between py-6">
+        <div className="space-y-1 px-4">
+          {menuItems.map((item) => (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              className={({ isActive }) => cn(
+                "flex items-center gap-3 rounded-lg px-4 py-3 transition-all duration-300",
+                isActive 
+                  ? "bg-neon-blue/10 text-neon-blue shadow-[inset_0_0_10px_rgba(0,229,255,0.1)] border-r-2 border-neon-blue" 
+                  : "text-gray-400 hover:bg-white/5 hover:text-gray-100"
+              )}
+            >
+              <item.icon size={20} />
+              <span className="font-medium">{item.label}</span>
+            </NavLink>
+          ))}
+        </div>
+
+        <div className="px-4">
+          <button className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-neon-pink/10 hover:text-neon-pink transition-all">
+            <LogOut size={20} />
+            <span className="font-medium">خروج</span>
+          </button>
+        </div>
+      </div>
+    </aside>
+  );
+};
