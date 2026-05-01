@@ -62,7 +62,7 @@ export const LobbiesPage = () => {
 
           {/* Game Filters */}
           <div className="mb-10 flex items-center gap-3 overflow-x-auto pb-4 [&::-webkit-scrollbar]:hidden">
-             <button className="whitespace-nowrap rounded-lg bg-neon-blue px-6 py-2 text-sm font-bold text-dark-bg shadow-[0_0_25px_rgba(0,229,255,0.3)] hover:shadow-[0_0_40px_rgba(0,229,255,0.4)] transition-all">همه</button>
+             <button className="whitespace-nowrap rounded-lg bg-neon-blue px-6 py-2 text-sm font-bold text-dark-bg shadow-[0_8px_30px_rgba(0,229,255,0.25)] hover:shadow-[0_12px_45px_rgba(0,229,255,0.35)] transition-all">همه</button>
              {["CS 2", "Dota 2", "Valorant", "Apex", "LoL", "Rainbow 6"].map((game, i) => (
                 <button key={i} className="whitespace-nowrap rounded-lg border border-white/10 bg-white/5 px-6 py-2 text-sm font-medium text-gray-400 hover:border-neon-blue/50 hover:text-white transition-all">
                   {game}
@@ -131,8 +131,8 @@ export const LobbiesPage = () => {
                       </div>
                     </div>
 
-                    <div className="absolute inset-x-0 bottom-0 py-6 px-6 translate-y-full group-hover:translate-y-0 transition-transform duration-300 bg-gradient-to-t from-dark-bg via-dark-bg/95 to-transparent backdrop-blur-sm z-20">
-                      <GlowButton variant={lobby.variant as any} className="w-full">
+                    <div className="absolute inset-x-0 bottom-0 py-6 px-6 translate-y-full group-hover:translate-y-0 transition-transform duration-300 bg-gradient-to-t from-dark-bg/90 via-dark-bg/80 to-transparent backdrop-blur-md z-20 rounded-b-2xl">
+                      <GlowButton variant={lobby.variant as any} className="w-full shadow-lg">
                         درخواست عضویت
                       </GlowButton>
                     </div>
