@@ -1,5 +1,4 @@
-import React, { useRef, useState } from "react";
-import { motion, useSpring, useMotionValue, useTransform, AnimatePresence } from "motion/react";
+import React, { useState } from "react";
 import { cn } from "@/src/lib/utils";
 
 interface NeonCardProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -26,9 +25,9 @@ export const NeonCard = ({
   };
 
   const glowColors = {
-    blue: "border-neon-blue/40 shadow-[0_8px_20px_-5px_rgba(0,229,255,0.12),0_10px_20px_rgba(0,0,0,0.5)] bg-white/[0.02]",
-    pink: "border-neon-pink/40 shadow-[0_8px_20px_-5px_rgba(255,0,153,0.12),0_10px_20px_rgba(0,0,0,0.5)] bg-white/[0.02]",
-    purple: "border-neon-purple/40 shadow-[0_8px_20px_-5px_rgba(160,32,240,0.12),0_10px_20px_rgba(0,0,0,0.5)] bg-white/[0.02]",
+    blue: "border-neon-blue/40 shadow-[0_0_0_1px_rgba(255,255,255,0.05),0_10px_30px_rgba(0,229,255,0.1)]",
+    pink: "border-neon-pink/40 shadow-[0_0_0_1px_rgba(255,255,255,0.05),0_10px_30px_rgba(255,0,153,0.1)]",
+    purple: "border-neon-purple/40 shadow-[0_0_0_1px_rgba(255,255,255,0.05),0_10px_30px_rgba(160,32,240,0.1)]",
   };
 
   return (
@@ -39,7 +38,7 @@ export const NeonCard = ({
         "glass relative rounded-2xl border p-6 transition-all duration-250 ease-out gpu group cursor-default",
         variants[variant],
         hover && isHovered && glowColors[variant],
-        hover && isHovered && "scale-[1.02] -translate-y-[4px] z-10",
+        hover && isHovered && "scale-[1.02] -translate-y-1 z-10",
         className
       )}
       {...props}

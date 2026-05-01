@@ -15,6 +15,7 @@ const SectionReveal = ({ children }: { children: React.ReactNode }) => (
     whileInView={{ opacity: 1 }}
     viewport={{ once: true, margin: "-100px" }}
     transition={{ duration: 0.8, ease: "easeOut" }}
+    className="relative z-1"
   >
     {children}
   </motion.div>

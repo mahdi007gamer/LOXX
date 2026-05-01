@@ -31,10 +31,10 @@ export const Navbar = () => {
     <>
       <nav 
         className={cn(
-          "z-[9999] w-full transition-all duration-300",
+          "fixed top-0 left-0 right-0 z-[10000] w-full transition-all duration-300",
           !isLanding 
-            ? "sticky top-0 bg-dark-bg/95 border-b border-white/10 backdrop-blur-md"
-            : "fixed top-0 bg-transparent",
+            ? "bg-dark-bg/95 border-b border-white/10 backdrop-blur-md"
+            : "bg-transparent",
           isLanding && isScrolled && "top-4 flex justify-center px-4"
         )}
       >
