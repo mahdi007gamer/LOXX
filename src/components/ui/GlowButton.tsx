@@ -11,9 +11,9 @@ interface GlowButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> 
 export const GlowButton = React.forwardRef<HTMLButtonElement, GlowButtonProps>(
   ({ className, variant = "blue", size = "md", glow = true, ...props }, ref) => {
     const variants = {
-      blue: "bg-neon-blue/10 text-neon-blue border-neon-blue/40 shadow-[0_0_15px_rgba(0,229,255,0.1)] hover:bg-neon-blue hover:text-dark-bg hover:shadow-[0_0_20px_rgba(0,229,255,0.4)]",
-      pink: "bg-neon-pink/10 text-neon-pink border-neon-pink/40 shadow-[0_0_15px_rgba(255,0,153,0.1)] hover:bg-neon-pink hover:text-dark-bg hover:shadow-[0_0_20px_rgba(255,0,153,0.4)]",
-      purple: "bg-neon-purple/10 text-neon-purple border-neon-purple/40 shadow-[0_0_15px_rgba(160,32,240,0.1)] hover:bg-neon-purple hover:text-dark-bg hover:shadow-[0_0_20px_rgba(160,32,240,0.4)]",
+      blue: "bg-neon-blue/10 text-neon-blue border-neon-blue/40 shadow-[0_0_15px_rgba(0,229,255,0.1)] hover:bg-neon-blue hover:text-dark-bg hover:shadow-[0_0_15px_rgba(0,229,255,0.3)]",
+      pink: "bg-neon-pink/10 text-neon-pink border-neon-pink/40 shadow-[0_0_15px_rgba(255,0,153,0.1)] hover:bg-neon-pink hover:text-dark-bg hover:shadow-[0_0_15px_rgba(255,0,153,0.3)]",
+      purple: "bg-neon-purple/10 text-neon-purple border-neon-purple/40 shadow-[0_0_15px_rgba(160,32,240,0.1)] hover:bg-neon-purple hover:text-dark-bg hover:shadow-[0_0_15px_rgba(160,32,240,0.3)]",
     };
 
     const sizes = {
@@ -25,8 +25,8 @@ export const GlowButton = React.forwardRef<HTMLButtonElement, GlowButtonProps>(
     return (
       <motion.button
         ref={ref}
-        whileHover={{ scale: 1.05, y: -2 }}
-        whileTap={{ scale: 0.95 }}
+        whileHover={{ scale: 1.02, y: -1 }}
+        whileTap={{ scale: 0.98 }}
         className={cn(
           "inline-flex items-center justify-center rounded-xl border transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-neon-blue disabled:opacity-50 disabled:cursor-not-allowed uppercase font-black tracking-widest cursor-pointer gpu",
           variants[variant],

@@ -20,15 +20,15 @@ export const NeonCard = ({
   const [isHovered, setIsHovered] = useState(false);
 
   const variants = {
-    blue: "border-neon-blue/20 shadow-[0_0_15px_rgba(0,229,255,0.05)] bg-slate-950/40",
-    pink: "border-neon-pink/20 shadow-[0_0_15px_rgba(255,0,153,0.05)] bg-slate-950/40",
-    purple: "border-neon-purple/20 shadow-[0_0_15px_rgba(160,32,240,0.05)] bg-slate-950/40",
+    blue: "border-neon-blue/20 bg-slate-950/40",
+    pink: "border-neon-pink/20 bg-slate-950/40",
+    purple: "border-neon-purple/20 bg-slate-950/40",
   };
 
   const glowColors = {
-    blue: "border-neon-blue/40 shadow-[0_0_20px_rgba(0,229,255,0.15)] bg-white/[0.03]",
-    pink: "border-neon-pink/40 shadow-[0_0_20px_rgba(255,0,153,0.15)] bg-white/[0.03]",
-    purple: "border-neon-purple/40 shadow-[0_0_20px_rgba(160,32,240,0.15)] bg-white/[0.03]",
+    blue: "border-neon-blue/40 shadow-[0_8px_20px_-5px_rgba(0,229,255,0.12),0_10px_20px_rgba(0,0,0,0.5)] bg-white/[0.02]",
+    pink: "border-neon-pink/40 shadow-[0_8px_20px_-5px_rgba(255,0,153,0.12),0_10px_20px_rgba(0,0,0,0.5)] bg-white/[0.02]",
+    purple: "border-neon-purple/40 shadow-[0_8px_20px_-5px_rgba(160,32,240,0.12),0_10px_20px_rgba(0,0,0,0.5)] bg-white/[0.02]",
   };
 
   return (
@@ -36,10 +36,10 @@ export const NeonCard = ({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       className={cn(
-        "glass relative rounded-2xl border p-6 transition-all duration-500 gpu group cursor-default",
+        "glass relative rounded-2xl border p-6 transition-all duration-250 ease-out gpu group cursor-default",
         variants[variant],
         hover && isHovered && glowColors[variant],
-        hover && isHovered && "scale-[1.01] z-10",
+        hover && isHovered && "scale-[1.02] -translate-y-[4px] z-10",
         className
       )}
       {...props}
@@ -49,35 +49,17 @@ export const NeonCard = ({
         {children}
       </div>
 
-      {/* Dynamic Glow Layer - Subtle & Minimal */}
-      <AnimatePresence>
-        {hover && isHovered && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.4 }}
-            className={cn(
-              "absolute inset-0 -z-10 blur-[20px] opacity-10 pointer-events-none",
-              variant === "blue" && "bg-neon-blue",
-              variant === "pink" && "bg-neon-pink",
-              variant === "purple" && "bg-neon-purple"
-            )}
-          />
-        )}
-      </AnimatePresence>
-      
-      {/* Corner Details (Static) */}
+      {/* Decorative Corner Glow (Subtle) */}
       <div className={cn(
-        "absolute -right-4 -top-4 h-12 w-12 rounded-full blur-[20px] pointer-events-none transition-opacity duration-700",
-        isHovered ? "opacity-20" : "opacity-0",
+        "absolute -right-2 -top-2 h-8 w-8 rounded-full blur-[12px] pointer-events-none transition-opacity duration-500",
+        isHovered ? "opacity-15" : "opacity-0",
         variant === "blue" && "bg-neon-blue",
         variant === "pink" && "bg-neon-pink",
         variant === "purple" && "bg-neon-purple"
       )} />
       
       {/* Top reflection line */}
-      <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+      <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
     </div>
   );
 };

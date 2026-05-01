@@ -31,7 +31,7 @@ export const Navbar = () => {
     <>
       <nav 
         className={cn(
-          "z-[100] w-full transition-all duration-300",
+          "z-[9999] w-full transition-all duration-300",
           !isLanding 
             ? "sticky top-0 bg-dark-bg/95 border-b border-white/10 backdrop-blur-md"
             : "fixed top-0 bg-transparent",
@@ -40,7 +40,7 @@ export const Navbar = () => {
       >
         <div 
           className={cn(
-            "mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8 transition-all duration-300 transform-gpu will-change-transform",
+            "mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8 transition-all duration-300",
             isLanding && isScrolled && "max-w-4xl rounded-2xl bg-dark-bg/95 px-8 shadow-[0_20px_50px_rgba(0,0,0,0.8),0_0_15px_rgba(0,229,255,0.1)] backdrop-blur-xl border border-white/10"
           )}
         >
