@@ -11,9 +11,9 @@ interface GlowButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> 
 export const GlowButton = React.forwardRef<HTMLButtonElement, GlowButtonProps>(
   ({ className, variant = "blue", size = "md", glow = true, ...props }, ref) => {
     const variants = {
-      blue: "bg-neon-blue text-dark-bg border-transparent shadow-[0_5px_30px_-5px_rgba(0,0,0,0.6)] hover:bg-neon-blue/90 hover:shadow-[0_10px_40px_-10px_rgba(0,0,0,0.8)]",
-      pink: "bg-neon-pink text-dark-bg border-transparent shadow-[0_5px_30px_-5px_rgba(0,0,0,0.6)] hover:bg-neon-pink/90 hover:shadow-[0_10px_40px_-10px_rgba(0,0,0,0.8)]",
-      purple: "bg-neon-purple text-dark-bg border-transparent shadow-[0_5px_30px_-5px_rgba(0,0,0,0.6)] hover:bg-neon-purple/90 hover:shadow-[0_10px_40px_-10px_rgba(0,0,0,0.8)]",
+      blue: "bg-neon-blue text-dark-bg border-transparent shadow-[0_10px_25px_-5px_rgba(0,229,255,0.4)] hover:bg-neon-blue/90 hover:shadow-[0_12px_30px_-5px_rgba(0,229,255,0.5)]",
+      pink: "bg-neon-pink text-dark-bg border-transparent shadow-[0_10px_25px_-5px_rgba(255,0,153,0.4)] hover:bg-neon-pink/90 hover:shadow-[0_12px_30px_-5px_rgba(255,0,153,0.5)]",
+      purple: "bg-neon-purple text-dark-bg border-transparent shadow-[0_10px_25px_-5px_rgba(160,32,240,0.4)] hover:bg-neon-purple/90 hover:shadow-[0_12px_30px_-5px_rgba(160,32,240,0.5)]",
     };
 
     const sizes = {
@@ -28,7 +28,7 @@ export const GlowButton = React.forwardRef<HTMLButtonElement, GlowButtonProps>(
         whileHover={{ scale: 1.02, y: -1 }}
         whileTap={{ scale: 0.98 }}
         className={cn(
-          "inline-flex items-center justify-center rounded-xl border transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-neon-blue disabled:opacity-50 disabled:cursor-not-allowed uppercase font-black tracking-widest cursor-pointer gpu",
+          "inline-flex items-center justify-center rounded-xl transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-neon-blue disabled:opacity-50 disabled:cursor-not-allowed uppercase font-black tracking-widest cursor-pointer",
           variants[variant],
           sizes[size],
           className

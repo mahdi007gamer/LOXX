@@ -96,11 +96,8 @@
 
 /* Utilities for glassmorphism and neon glows */
 @layer utilities {
-  .gpu {
-    @apply transform-gpu will-change-transform;
-  }
   .glass {
-    @apply bg-dark-card backdrop-blur-xl border border-white/10;
+    @apply bg-dark-card border border-white/10;
   }
   .neon-border-blue {
     @apply border border-neon-blue/50 shadow-[var(--shadow-neon-blue)];

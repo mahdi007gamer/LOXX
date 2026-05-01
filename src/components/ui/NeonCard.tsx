@@ -19,15 +19,15 @@ export const NeonCard = ({
   const [isHovered, setIsHovered] = useState(false);
 
   const variants = {
-    blue: "border-neon-blue/20 bg-slate-950/40",
-    pink: "border-neon-pink/20 bg-slate-950/40",
-    purple: "border-neon-purple/20 bg-slate-950/40",
+    blue: "border-white/10 bg-[#0a0a0f]",
+    pink: "border-white/10 bg-[#0a0a0f]",
+    purple: "border-white/10 bg-[#0a0a0f]",
   };
 
   const glowColors = {
-    blue: "border-neon-blue/40 shadow-[0_0_0_1px_rgba(255,255,255,0.05),0_10px_30px_rgba(0,229,255,0.1)]",
-    pink: "border-neon-pink/40 shadow-[0_0_0_1px_rgba(255,255,255,0.05),0_10px_30px_rgba(255,0,153,0.1)]",
-    purple: "border-neon-purple/40 shadow-[0_0_0_1px_rgba(255,255,255,0.05),0_10px_30px_rgba(160,32,240,0.1)]",
+    blue: "border-neon-blue/50 shadow-[0_4px_20px_rgba(0,0,0,0.4)]",
+    pink: "border-neon-pink/50 shadow-[0_4px_20px_rgba(0,0,0,0.4)]",
+    purple: "border-neon-purple/50 shadow-[0_4px_20px_rgba(0,0,0,0.4)]",
   };
 
   return (
@@ -35,7 +35,7 @@ export const NeonCard = ({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       className={cn(
-        "glass relative rounded-2xl border p-6 transition-all duration-250 ease-out gpu group cursor-default",
+        "glass relative rounded-2xl border p-6 transition-all duration-250 ease-out group cursor-default",
         variants[variant],
         hover && isHovered && glowColors[variant],
         hover && isHovered && "scale-[1.02] -translate-y-1 z-10",
