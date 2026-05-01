@@ -27,22 +27,12 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
-html, body {
-  overflow-x: hidden;
-  background-color: #050508;
-  color: #ffffff;
-  direction: rtl;
-}
-
-@layer base {
-  /* اصلاح خطای backface-visibility - استفاده از CSS استاندارد */
-  * {
-    backface-visibility: hidden;
-    -webkit-backface-visibility: hidden;
-    transform-style: preserve-3d;
-    outline: none !important;
+  html, body {
+    overflow-x: hidden;
+    background-color: #050508;
+    color: #ffffff;
+    direction: rtl;
   }
-}
 
   /* Custom scrollbar for cyberpunk feel */
   ::-webkit-scrollbar {
