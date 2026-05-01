@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 import { Gamepad2, User, Bell, Menu, X, LayoutDashboard, Target, Users, MessageSquare, Trophy, Settings } from "lucide-react";
 import { GlowButton } from "../ui/GlowButton";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence, useScroll } from "motion/react";
 import { cn } from "@/src/lib/utils";
 
 const menuItems = [
@@ -16,11 +16,31 @@ const menuItems = [
 
 export const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { scrollY } = useScroll();
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  React.useEffect(() => {
+    return scrollY.onChange((latest) => {
+      setIsScrolled(latest > 50);
+    });
+  }, [scrollY]);
 
   return (
     <>
-      <nav className="sticky top-0 z-[60] w-full border-b border-white/10 bg-dark-bg/80 backdrop-blur-lg">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+      <nav 
+        className={cn(
+          "fixed top-0 z-[60] w-full transition-all duration-500",
+          isScrolled 
+            ? "top-4 flex justify-center px-4" 
+            : "bg-transparent border-b border-white/10"
+        )}
+      >
+        <div 
+          className={cn(
+            "mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8 transition-all duration-500",
+            isScrolled && "max-w-4xl rounded-2xl border border-neon-blue/30 bg-dark-bg/80 px-8 shadow-[0_0_30px_rgba(0,229,255,0.2)] backdrop-blur-xl"
+          )}
+        >
           <div className="flex items-center gap-8">
             <button 
               className="p-2 text-gray-400 hover:text-white md:hidden"

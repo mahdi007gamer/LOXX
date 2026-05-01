@@ -1,0 +1,118 @@
+import React from "react";
+import { motion } from "motion/react";
+import { Play, Zap, Gamepad2 } from "lucide-react";
+import { GlowButton } from "../ui/GlowButton";
+import { Link } from "react-router-dom";
+
+export const HeroSection = () => {
+  return (
+    <section className="relative flex min-h-[90vh] flex-col items-center justify-center overflow-hidden px-4 pt-20 text-center lg:pt-32">
+      {/* Background Animated Elements */}
+      <div className="absolute inset-0 -z-10 bg-dark-bg">
+        {/* Moving Grid Lines */}
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(0,229,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(0,229,255,0.05)_1px,transparent_1px)] bg-[size:50px_50px] [mask-image:radial-gradient(ellipse_at_center,black,transparent_80%)]" />
+        
+        {/* Ambient Glows */}
+        <motion.div 
+          animate={{ 
+            scale: [1, 1.2, 1],
+            opacity: [0.3, 0.5, 0.3] 
+          }}
+          transition={{ duration: 8, repeat: Infinity }}
+          className="absolute left-1/4 top-1/4 h-[500px] w-[500px] rounded-full bg-neon-purple/20 blur-[120px]" 
+        />
+        <motion.div 
+          animate={{ 
+            scale: [1.2, 1, 1.2],
+            opacity: [0.3, 0.5, 0.3] 
+          }}
+          transition={{ duration: 10, repeat: Infinity }}
+          className="absolute bottom-1/4 right-1/4 h-[500px] w-[500px] rounded-full bg-neon-blue/20 blur-[120px]" 
+        />
+      </div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 1 }}
+        className="container relative z-10 mx-auto max-w-5xl"
+      >
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.2, duration: 0.5 }}
+          className="mb-8 inline-flex items-center gap-3 rounded-full border border-neon-blue/30 bg-neon-blue/10 px-6 py-2 text-sm font-black text-neon-blue shadow-[0_0_30px_rgba(0,229,255,0.2)] backdrop-blur-md"
+        >
+          <Zap size={18} className="animate-pulse" />
+          <span className="tracking-widest uppercase">Lobby Entrance Open</span>
+        </motion.div>
+        
+        <h1 className="mb-8 text-6xl font-black leading-[1.1] tracking-tighter text-white sm:text-8xl md:text-9xl">
+          <span className="block drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)]">لوکس</span>
+          <span className="neon-text-blue block drop-shadow-[0_0_30px_rgba(0,229,255,0.6)]">LOXX</span>
+        </h1>
+
+        <div className="relative mx-auto mb-12 max-w-2xl px-4 py-6">
+           {/* Cyberpunk brackets */}
+           <div className="absolute left-0 top-0 h-4 w-4 border-l-2 border-t-2 border-neon-pink" />
+           <div className="absolute right-0 top-0 h-4 w-4 border-r-2 border-t-2 border-neon-pink" />
+           <div className="absolute bottom-0 left-0 h-4 w-4 border-b-2 border-l-2 border-neon-pink" />
+           <div className="absolute bottom-0 right-0 h-4 w-4 border-b-2 border-r-2 border-neon-pink" />
+
+           <p className="text-xl font-medium text-gray-300 md:text-2xl">
+             به پیشرفته‌ترین پلتفرم گیمینگ فارسی خوش آمدید.
+             <br />
+             جایی که قهرمان‌ها متولد می‌شوند.
+           </p>
+        </div>
+
+        <div className="flex flex-col items-center justify-center gap-6 sm:flex-row">
+          <Link to="/auth">
+            <GlowButton variant="pink" size="lg" className="group relative min-w-[200px] overflow-hidden !rounded-2xl">
+              <span className="relative z-10 flex items-center gap-3">
+                <Play size={20} fill="currentColor" />
+                <span className="text-lg">همین حالا شروع کنید</span>
+              </span>
+              <motion.div 
+                className="absolute inset-0 bg-white/20"
+                initial={{ x: "-100%" }}
+                whileHover={{ x: "100%" }}
+                transition={{ duration: 0.5 }}
+              />
+            </GlowButton>
+          </Link>
+          <Link to="/rooms">
+            <GlowButton variant="blue" size="lg" className="group min-w-[200px] !rounded-2xl text-lg backdrop-blur-md">
+              <Gamepad2 size={24} className="ml-2 group-hover:rotate-12 transition-transform" />
+              <span>اتاق‌های بازی</span>
+            </GlowButton>
+          </Link>
+        </div>
+      </motion.div>
+
+      {/* Floating Particles or Circuits (Simulated) */}
+      <div className="absolute inset-0 pointer-events-none">
+        {[...Array(20)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute h-1 w-1 rounded-full bg-neon-blue opacity-50"
+            initial={{ 
+              x: Math.random() * 100 + "%", 
+              y: Math.random() * 100 + "%",
+              scale: Math.random() * 2 
+            }}
+            animate={{ 
+              y: [null, Math.random() * -100 + "%"],
+              opacity: [0, 0.5, 0] 
+            }}
+            transition={{ 
+              duration: Math.random() * 10 + 5, 
+              repeat: Infinity,
+              ease: "linear"
+            }}
+          />
+        ))}
+      </div>
+    </section>
+  );
+};
