@@ -65,7 +65,7 @@ export const DashboardPage = () => {
                   { game: "Dota 2", players: "۲/۵", rank: "Immortal", type: "دوستانه" },
                   { game: "League of Legends", players: "۳/۵", rank: "Diamond", type: "تورنمنت" },
                 ].map((item, i) => (
-                  <NeonCard key={i} variant="blue" className="flex items-center justify-between p-4" hover={false}>
+                  <NeonCard key={i} variant="blue" className="flex items-center justify-between p-4" hover={true}>
                     <div className="flex items-center gap-4">
                       <div className="h-12 w-12 rounded bg-neon-blue/10 flex items-center justify-center text-neon-blue font-bold">
                         CS

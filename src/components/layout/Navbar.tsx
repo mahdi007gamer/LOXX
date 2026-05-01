@@ -29,19 +29,36 @@ export const Navbar = () => {
 
   return (
     <>
-      <nav 
+      <motion.nav 
+        initial={false}
+        animate={{
+          y: isLanding && isScrolled ? 16 : 0,
+          paddingLeft: isLanding && isScrolled ? 16 : 0,
+          paddingRight: isLanding && isScrolled ? 16 : 0,
+        }}
         className={cn(
-          "z-[60] w-full transition-all duration-500",
+          "z-[60] w-full transition-all duration-500 will-change-transform",
           isLanding 
-            ? "fixed top-0" 
-            : "sticky top-0 bg-dark-bg/90 border-b border-white/10 backdrop-blur-xl",
-          isLanding && isScrolled && "top-4 flex justify-center px-4"
+            ? "fixed top-0 bg-transparent" 
+            : "sticky top-0 bg-dark-bg/90 border-b border-white/10 backdrop-blur-xl shadow-2xl",
+          isLanding && isScrolled && "flex justify-center"
         )}
       >
-        <div 
+        <motion.div 
+          layout
+          initial={false}
+          animate={{
+            maxWidth: isLanding && isScrolled ? "56rem" : "100%",
+            borderRadius: isLanding && isScrolled ? "1rem" : "0px",
+            height: isLanding && isScrolled ? "4.5rem" : "4rem",
+            backgroundColor: isLanding && isScrolled ? "rgba(10, 10, 15, 0.8)" : "transparent",
+            boxShadow: isLanding && isScrolled ? "0 0 30px rgba(0, 229, 255, 0.2)" : "none",
+            borderColor: isLanding && isScrolled ? "rgba(0, 229, 255, 0.3)" : "rgba(255, 255, 255, 0)",
+            backdropFilter: isLanding && isScrolled ? "blur(20px)" : "blur(0px)",
+          }}
           className={cn(
-            "mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8 transition-all duration-500",
-            isLanding && isScrolled && "max-w-4xl rounded-2xl border border-neon-blue/30 bg-dark-bg/80 px-8 shadow-[0_0_30px_rgba(0,229,255,0.2)] backdrop-blur-xl"
+            "mx-auto flex w-full items-center justify-between px-4 sm:px-6 lg:px-8 border-transparent gpu",
+            isLanding && isScrolled && "px-8 border shadow-neon-blue"
           )}
         >
           <div className="flex items-center gap-8">
@@ -85,8 +102,8 @@ export const Navbar = () => {
               </GlowButton>
             </Link>
           </div>
-        </div>
-      </nav>
+        </motion.div>
+      </motion.nav>
 
       {/* Mobile Menu Overlay */}
       <AnimatePresence>

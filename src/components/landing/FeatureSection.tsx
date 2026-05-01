@@ -64,11 +64,9 @@ export const FeatureSection = () => {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.1 }}
-              whileHover={{ scale: 1.02 }}
             >
               <NeonCard 
                 variant={feature.color} 
-                hover={true}
                 className="group relative flex items-start gap-6 p-8 transition-all hover:bg-white/[0.05]"
               >
                 <div className={cn(

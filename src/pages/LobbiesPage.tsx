@@ -77,9 +77,10 @@ export const LobbiesPage = () => {
               >
                 <NeonCard 
                   variant={lobby.variant as any} 
-                  className="group relative flex flex-col justify-between h-[240px]"
+                  hover={true}
+                  className="group relative flex flex-col justify-between h-[240px] overflow-hidden"
                 >
-                  <div>
+                  <div className="relative z-10">
                     <div className="mb-4 flex items-center justify-between">
                       <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/5 text-2xl">
                         {lobby.icon}
@@ -99,7 +100,7 @@ export const LobbiesPage = () => {
                     </div>
                   </div>
 
-                  <div className="mt-6 flex items-center justify-between border-t border-white/5 pt-4">
+                  <div className="relative z-10 mt-6 flex items-center justify-between border-t border-white/5 pt-4 transition-opacity group-hover:opacity-0">
                     <div className="flex items-center gap-2">
                        <div className="flex -space-x-2">
                           {[1, 2, 3].map(p => (
@@ -119,7 +120,7 @@ export const LobbiesPage = () => {
                     </div>
                   </div>
 
-                  <div className="absolute inset-x-0 bottom-0 py-4 px-6 translate-y-full group-hover:translate-y-0 transition-transform bg-dark-bg/90 backdrop-blur-sm">
+                  <div className="absolute inset-x-0 bottom-0 py-6 px-6 translate-y-full group-hover:translate-y-0 transition-transform duration-300 bg-gradient-to-t from-dark-bg via-dark-bg/95 to-transparent backdrop-blur-sm z-20">
                     <GlowButton variant={lobby.variant as any} className="w-full">
                       درخواست عضویت
                     </GlowButton>

@@ -23,14 +23,14 @@ export const NeonCard = ({
   const x = useMotionValue(0);
   const y = useMotionValue(0);
 
-  const mouseXSpring = useSpring(x);
-  const mouseYSpring = useSpring(y);
+  const mouseXSpring = useSpring(x, { damping: 20, stiffness: 150 });
+  const mouseYSpring = useSpring(y, { damping: 20, stiffness: 150 });
 
-  const rotateX = useTransform(mouseYSpring, [-0.5, 0.5], ["7deg", "-7deg"]);
-  const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], ["-7deg", "7deg"]);
+  const rotateX = useTransform(mouseYSpring, [-0.5, 0.5], ["10deg", "-10deg"]);
+  const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], ["-10deg", "10deg"]);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!ref.current) return;
+    if (!ref.current || !hover) return;
     const rect = ref.current.getBoundingClientRect();
     const width = rect.width;
     const height = rect.height;
@@ -42,6 +42,10 @@ export const NeonCard = ({
 
     x.set(xPct);
     y.set(yPct);
+  };
+
+  const handleMouseEnter = () => {
+    if (hover) setIsHovered(true);
   };
 
   const handleMouseLeave = () => {
@@ -57,16 +61,16 @@ export const NeonCard = ({
   };
 
   const glowColors = {
-    blue: "bg-neon-blue",
-    pink: "bg-neon-pink",
-    purple: "bg-neon-purple",
+    blue: "shadow-[0_0_50px_rgba(0,229,255,0.3)] border-neon-blue/50",
+    pink: "shadow-[0_0_50px_rgba(255,0,153,0.3)] border-neon-pink/50",
+    purple: "shadow-[0_0_50px_rgba(160,32,240,0.3)] border-neon-purple/50",
   };
 
   return (
     <motion.div
       ref={ref}
       onMouseMove={handleMouseMove}
-      onMouseEnter={() => setIsHovered(true)}
+      onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       style={{
         rotateX: hover ? rotateX : 0,
@@ -74,39 +78,50 @@ export const NeonCard = ({
         transformStyle: "preserve-3d",
       }}
       className={cn(
-        "glass relative rounded-2xl border p-6 transition-all duration-300 gpu",
+        "glass relative rounded-2xl border p-6 transition-all duration-300 gpu group",
         variants[variant],
-        isHovered && "border-opacity-50 z-10 scale-[1.01]",
+        isHovered && glowColors[variant],
+        isHovered && "scale-[1.02] bg-white/[0.04] z-10",
         className
       )}
       {...props}
     >
-      <div style={{ transform: "translateZ(30px)" }} className="relative z-10 h-full">
-        {children}
+      <div 
+        style={{ transform: "translateZ(40px)", transformStyle: "preserve-3d" }} 
+        className="relative z-10 h-full pointer-events-none"
+      >
+        <div className="pointer-events-auto h-full">
+          {children}
+        </div>
       </div>
 
-      {/* Dynamic Glow */}
+      {/* Dynamic Glow Background */}
       <AnimatePresence>
         {isHovered && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
             className={cn(
               "absolute inset-0 -z-10 blur-[40px] opacity-20",
-              glowColors[variant]
+              variant === "blue" && "bg-neon-blue",
+              variant === "pink" && "bg-neon-pink",
+              variant === "purple" && "bg-neon-purple"
             )}
           />
         )}
       </AnimatePresence>
       
-      {/* Decorative corner glow (static) */}
+      {/* Decorative corner glow (static) - pointer-events-none to prevent flickering */}
       <div className={cn(
-        "absolute -right-8 -top-8 h-20 w-20 rounded-full blur-[40px] opacity-10",
+        "absolute -right-8 -top-8 h-20 w-20 rounded-full blur-[40px] opacity-10 pointer-events-none",
         variant === "blue" && "bg-neon-blue",
         variant === "pink" && "bg-neon-pink",
         variant === "purple" && "bg-neon-purple"
       )} />
+      
+      {/* Subtle border shine effect */}
+      <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
     </motion.div>
   );
 };
