@@ -3,6 +3,7 @@ import { Sidebar } from "../components/layout/Sidebar";
 import { NeonCard } from "../components/ui/NeonCard";
 import { GlowButton } from "../components/ui/GlowButton";
 import { CardSkeleton } from "../components/ui/Skeleton";
+import { Toast } from "../components/ui/Toast";
 import { 
   Gamepad2, 
   Users, 
@@ -11,10 +12,25 @@ import {
   ShieldCheck, 
   ChevronRight,
   Clock,
-  Filter
+  Filter,
+  X,
+  Lock,
+  Globe,
+  Info
 } from "lucide-react";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/src/lib/utils";
+
+const GAMES = [
+  "Counter Strike 2",
+  "Dota 2",
+  "Valorant",
+  "Apex Legends",
+  "League of Legends",
+  "Rainbow Six Siege"
+];
+
+const SKILL_LEVELS = ["مبتدی", "متوسط", "حرفه‌ای", "نخبه (Elite)"];
 
 const LOBBIES = [
   { id: 1, game: "Counter Strike 2", title: "رقابتی | رنک گلوبال", players: 4, max: 5, rank: "Global", icon: "🔫", variant: "blue" },
@@ -27,11 +43,29 @@ const LOBBIES = [
 
 export const LobbiesPage = () => {
   const [loading, setLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showToast, setShowToast] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 1000);
     return () => clearTimeout(timer);
   }, []);
+
+  const handleRequestAccess = () => {
+    setShowToast(true);
+  };
+
+  const handleCreateLobby = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setTimeout(() => {
+      setIsSubmitting(false);
+      setIsModalOpen(false);
+      // In a real app, logic to redirect to lobby room would go here
+      window.location.href = "/dashboard"; 
+    }, 2000);
+  };
 
   return (
     <div className="flex min-h-[calc(100vh-64px)]">
@@ -53,7 +87,7 @@ export const LobbiesPage = () => {
                   className="w-full rounded-xl border border-white/10 bg-white/5 py-2.5 pr-10 text-sm text-white focus:border-neon-blue/50 focus:outline-none transition-all"
                 />
               </div>
-              <GlowButton variant="blue" className="flex gap-2">
+              <GlowButton variant="blue" className="flex gap-2" onClick={() => setIsModalOpen(true)}>
                 <Plus size={18} />
                 <span className="hidden sm:inline">ایجاد لابی</span>
               </GlowButton>
@@ -131,8 +165,8 @@ export const LobbiesPage = () => {
                       </div>
                     </div>
 
-                    <div className="absolute inset-x-0 bottom-0 py-6 px-6 translate-y-full group-hover:translate-y-0 transition-transform duration-300 bg-gradient-to-t from-dark-bg/90 via-dark-bg/80 to-transparent backdrop-blur-md z-20 rounded-b-2xl">
-                      <GlowButton variant={lobby.variant as any} className="w-full shadow-lg">
+                    <div className="absolute inset-x-0 bottom-0 py-8 px-6 translate-y-full group-hover:translate-y-0 transition-transform duration-500 bg-gradient-to-t from-dark-bg/95 via-dark-bg/80 to-transparent backdrop-blur-lg z-20 rounded-b-2xl flex items-center justify-center">
+                      <GlowButton variant={lobby.variant as any} className="w-full relative z-30" onClick={handleRequestAccess}>
                         درخواست عضویت
                       </GlowButton>
                     </div>
@@ -142,6 +176,136 @@ export const LobbiesPage = () => {
             )}
           </div>
         </div>
+
+        {/* Create Lobby Modal */}
+        <AnimatePresence>
+          {isModalOpen && (
+            <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setIsModalOpen(false)}
+                className="absolute inset-0 bg-black/80 backdrop-blur-md"
+              />
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                className="relative w-full max-w-2xl overflow-hidden rounded-3xl border border-white/10 bg-dark-card p-8 shadow-[0_30px_100px_rgba(0,0,0,0.8)]"
+              >
+                <button 
+                  onClick={() => setIsModalOpen(false)}
+                  className="absolute left-6 top-6 text-gray-500 hover:text-white transition-colors"
+                >
+                  <X size={24} />
+                </button>
+
+                <div className="mb-8">
+                  <h2 className="text-2xl font-black text-white">ایجاد لابی جدید</h2>
+                  <p className="text-sm text-gray-400 mt-1">تنظیمات تیم خود را مشخص کنید</p>
+                </div>
+
+                <form onSubmit={handleCreateLobby} className="space-y-6">
+                  <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">نام لابی</label>
+                      <input 
+                        required
+                        type="text" 
+                        placeholder="مثلاً: تورنمنت دوستانه"
+                        className="w-full rounded-xl border border-white/10 bg-white/5 p-3 text-white focus:border-neon-blue/50 focus:outline-none transition-all"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">انتخاب بازی</label>
+                      <select 
+                        required
+                        className="w-full rounded-xl border border-white/10 bg-white/5 p-3 text-white focus:border-neon-blue/50 focus:outline-none transition-all appearance-none"
+                      >
+                        {GAMES.map(game => (
+                          <option key={game} value={game} className="bg-dark-card">{game}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">ظرفیت کل لابی</label>
+                      <div className="flex items-center gap-3">
+                        <input 
+                          required
+                          type="number" 
+                          min="2"
+                          max="50"
+                          defaultValue="5"
+                          className="flex-1 rounded-xl border border-white/10 bg-white/5 p-3 text-white focus:border-neon-blue/50 focus:outline-none transition-all"
+                        />
+                        <Users className="text-gray-500" size={20} />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">سطح مهارت (Rank)</label>
+                      <select 
+                        className="w-full rounded-xl border border-white/10 bg-white/5 p-3 text-white focus:border-neon-blue/50 focus:outline-none transition-all appearance-none"
+                      >
+                        {SKILL_LEVELS.map(level => (
+                          <option key={level} value={level} className="bg-dark-card">{level}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider text-right block">توضیحات (اختیاری)</label>
+                    <textarea 
+                      placeholder="پیامی برای هم تیمی‌ها بنویسید..."
+                      className="w-full h-24 rounded-xl border border-white/10 bg-white/5 p-3 text-white focus:border-neon-blue/50 focus:outline-none transition-all resize-none"
+                    />
+                  </div>
+
+                  <div className="flex flex-wrap gap-6 pt-4">
+                    <label className="flex items-center gap-3 cursor-pointer group">
+                      <div className="relative">
+                        <input type="checkbox" className="peer hidden" />
+                        <div className="h-5 w-5 rounded border border-white/20 bg-white/5 peer-checked:bg-neon-blue peer-checked:border-neon-blue transition-all" />
+                        <CheckCircle2 className="absolute inset-0 m-auto text-dark-bg scale-0 peer-checked:scale-100 transition-transform" size={14} />
+                      </div>
+                      <span className="text-sm text-gray-400 group-hover:text-white transition-colors">لابی خصوصی (فقط با لینک دعوت)</span>
+                    </label>
+                  </div>
+
+                  <div className="flex items-center justify-between border-t border-white/5 pt-8 mt-4">
+                    <div className="flex items-center gap-2 text-gray-500">
+                      <Info size={16} />
+                      <span className="text-xs">لابی به مدت ۲۴ ساعت فعال می‌ماند.</span>
+                    </div>
+                    <GlowButton 
+                      type="submit" 
+                      variant="blue" 
+                      disabled={isSubmitting}
+                      className="min-w-[160px]"
+                    >
+                      {isSubmitting ? (
+                        <div className="flex items-center gap-2">
+                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-dark-bg border-t-transparent" />
+                          <span>در حال ساخت...</span>
+                        </div>
+                      ) : "تایید و ساخت لابی"}
+                    </GlowButton>
+                  </div>
+                </form>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+
+        <Toast 
+          isVisible={showToast} 
+          message="درخواست شما ارسال شد. منتظر تایید باشید." 
+          onClose={() => setShowToast(false)} 
+        />
       </main>
     </div>
   );
