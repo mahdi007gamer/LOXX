@@ -27,10 +27,20 @@ export const HeroSection = () => {
           <span className="tracking-widest uppercase">درگاه ورود به لوکس باز شد</span>
         </motion.div>
         
-        <h1 className="mb-8 text-6xl font-black leading-[1.1] tracking-tighter text-white sm:text-8xl md:text-9xl lg:text-[10rem]">
+        <motion.h1 
+          animate={{ 
+            y: [0, -10, 0],
+          }}
+          transition={{ 
+            duration: 6, 
+            repeat: Infinity, 
+            ease: "easeInOut" 
+          }}
+          className="mb-8 text-7xl font-black leading-[1.1] tracking-tighter text-white sm:text-8xl md:text-9xl lg:text-[11rem]"
+        >
           <span className="block drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)]">لوکس</span>
-          <span className="neon-text-blue block drop-shadow-[0_0_50px_rgba(0,229,255,0.8)]">LOXX</span>
-        </h1>
+          <span className="neon-text-blue block drop-shadow-[0_0_60px_rgba(0,229,255,0.9)]">LOXX</span>
+        </motion.h1>
 
         <div className="relative mx-auto mb-12 max-w-2xl px-4 py-6">
            {/* Cyberpunk brackets */}

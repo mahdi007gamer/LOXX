@@ -19,15 +19,16 @@ export const CyberGrid = () => {
         }}
       >
         <motion.div 
-          animate={{ backgroundPositionY: [0, 40] }}
-          transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+          animate={{ backgroundPositionY: [0, 80] }}
+          transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
           className="absolute inset-0"
           style={{
             backgroundImage: `
-              linear-gradient(to right, rgba(0, 229, 255, 0.15) 1.5px, transparent 1.5px),
-              linear-gradient(to bottom, rgba(0, 229, 255, 0.15) 1.5px, transparent 1.5px)
+              linear-gradient(to right, rgba(0, 229, 255, 0.2) 2px, transparent 2px),
+              linear-gradient(to bottom, rgba(0, 229, 255, 0.2) 2px, transparent 2px)
             `,
-            backgroundSize: '40px 40px',
+            backgroundSize: '80px 80px',
+            boxShadow: 'inset 0 0 100px rgba(0, 229, 255, 0.1)'
           }}
         />
       </div>

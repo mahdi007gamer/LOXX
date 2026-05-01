@@ -68,6 +68,7 @@ export const FeatureSection = () => {
             >
               <NeonCard 
                 variant={feature.color} 
+                hover={true}
                 className="group relative flex items-start gap-6 p-8 transition-all hover:bg-white/[0.05]"
               >
                 <div className={cn(
