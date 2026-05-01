@@ -29,36 +29,19 @@ export const Navbar = () => {
 
   return (
     <>
-      <motion.nav 
-        initial={false}
-        animate={{
-          y: isLanding && isScrolled ? 16 : 0,
-          paddingLeft: isLanding && isScrolled ? 16 : 0,
-          paddingRight: isLanding && isScrolled ? 16 : 0,
-        }}
+      <nav 
         className={cn(
-          "z-[60] w-full transition-all duration-500 will-change-transform",
-          isLanding 
-            ? "fixed top-0 bg-transparent" 
-            : "sticky top-0 bg-dark-bg/90 border-b border-white/10 backdrop-blur-xl shadow-2xl",
-          isLanding && isScrolled && "flex justify-center"
+          "z-[60] w-full transition-all duration-300",
+          !isLanding 
+            ? "sticky top-0 bg-dark-bg/95 border-b border-white/10 backdrop-blur-md"
+            : "fixed top-0 bg-transparent",
+          isLanding && isScrolled && "top-4 flex justify-center px-4"
         )}
       >
-        <motion.div 
-          layout
-          initial={false}
-          animate={{
-            maxWidth: isLanding && isScrolled ? "56rem" : "100%",
-            borderRadius: isLanding && isScrolled ? "1rem" : "0px",
-            height: isLanding && isScrolled ? "4.5rem" : "4rem",
-            backgroundColor: isLanding && isScrolled ? "rgba(10, 10, 15, 0.8)" : "transparent",
-            boxShadow: isLanding && isScrolled ? "0 0 30px rgba(0, 229, 255, 0.2)" : "none",
-            borderColor: isLanding && isScrolled ? "rgba(0, 229, 255, 0.3)" : "rgba(255, 255, 255, 0)",
-            backdropFilter: isLanding && isScrolled ? "blur(20px)" : "blur(0px)",
-          }}
+        <div 
           className={cn(
-            "mx-auto flex w-full items-center justify-between px-4 sm:px-6 lg:px-8 border-transparent gpu",
-            isLanding && isScrolled && "px-8 border shadow-neon-blue"
+            "mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8 transition-all duration-300 transform-gpu will-change-transform",
+            isLanding && isScrolled && "max-w-4xl rounded-2xl bg-dark-bg/90 px-8 shadow-[0_0_40px_rgba(0,0,0,0.8),0_0_20px_rgba(0,229,255,0.2)] backdrop-blur-xl border border-white/5"
           )}
         >
           <div className="flex items-center gap-8">
@@ -73,7 +56,7 @@ export const Navbar = () => {
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-neon-blue/20 text-neon-blue shadow-[0_0_15px_rgba(0,229,255,0.3)] transition-transform group-hover:scale-110">
                 <Gamepad2 size={24} />
               </div>
-              <span className="text-2xl font-black tracking-tighter text-white drop-shadow-[0_0:10px_rgba(255,255,255,0.5)]">
+              <span className="text-2xl font-black tracking-tighter text-white">
                 LOXX
               </span>
             </Link>
@@ -102,8 +85,8 @@ export const Navbar = () => {
               </GlowButton>
             </Link>
           </div>
-        </motion.div>
-      </motion.nav>
+        </div>
+      </nav>
 
       {/* Mobile Menu Overlay */}
       <AnimatePresence>
