@@ -11,9 +11,9 @@ interface GlowButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> 
 export const GlowButton = React.forwardRef<HTMLButtonElement, GlowButtonProps>(
   ({ className, variant = "blue", size = "md", glow = true, ...props }, ref) => {
     const variants = {
-      blue: "bg-neon-blue text-dark-bg border-transparent shadow-[0_10px_20px_-8px_rgba(0,0,0,0.8)] hover:bg-neon-blue/90 hover:shadow-[0_15px_30px_-10px_rgba(0,0,0,0.9)]",
-      pink: "bg-neon-pink text-dark-bg border-transparent shadow-[0_10px_20px_-8px_rgba(0,0,0,0.8)] hover:bg-neon-pink/90 hover:shadow-[0_15px_30px_-10px_rgba(0,0,0,0.9)]",
-      purple: "bg-neon-purple text-dark-bg border-transparent shadow-[0_10px_20px_-8px_rgba(0,0,0,0.8)] hover:bg-neon-purple/90 hover:shadow-[0_15px_30px_-10px_rgba(0,0,0,0.9)]",
+      blue: "bg-neon-blue text-dark-bg border-transparent shadow-[0_5px_30px_-5px_rgba(0,0,0,0.6)] hover:bg-neon-blue/90 hover:shadow-[0_10px_40px_-10px_rgba(0,0,0,0.8)]",
+      pink: "bg-neon-pink text-dark-bg border-transparent shadow-[0_5px_30px_-5px_rgba(0,0,0,0.6)] hover:bg-neon-pink/90 hover:shadow-[0_10px_40px_-10px_rgba(0,0,0,0.8)]",
+      purple: "bg-neon-purple text-dark-bg border-transparent shadow-[0_5px_30px_-5px_rgba(0,0,0,0.6)] hover:bg-neon-purple/90 hover:shadow-[0_10px_40px_-10px_rgba(0,0,0,0.8)]",
     };
 
     const sizes = {

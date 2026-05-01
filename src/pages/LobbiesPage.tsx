@@ -165,8 +165,8 @@ export const LobbiesPage = () => {
                       </div>
                     </div>
 
-                    <div className="absolute inset-x-0 bottom-0 py-8 px-6 translate-y-full group-hover:translate-y-0 transition-transform duration-500 bg-gradient-to-t from-dark-bg/95 via-dark-bg/80 to-transparent backdrop-blur-lg z-20 rounded-b-2xl flex items-center justify-center">
-                      <GlowButton variant={lobby.variant as any} className="w-full relative z-30" onClick={handleRequestAccess}>
+                    <div className="absolute inset-x-0 bottom-0 py-10 px-6 translate-y-full group-hover:translate-y-0 transition-transform duration-500 bg-gradient-to-t from-black/80 via-black/40 to-transparent backdrop-blur-[2px] z-20 flex items-center justify-center">
+                      <GlowButton variant={lobby.variant as any} className="w-full" onClick={handleRequestAccess}>
                         درخواست عضویت
                       </GlowButton>
                     </div>
