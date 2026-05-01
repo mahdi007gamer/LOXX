@@ -23,7 +23,7 @@ const SectionReveal = ({ children }: { children: React.ReactNode }) => (
 
 export const LandingPage = () => {
   return (
-    <div className="flex flex-col relative min-h-screen bg-dark-bg selection:bg-neon-pink selection:text-white">
+    <div className="flex flex-col relative min-h-screen selection:bg-neon-pink selection:text-white">
       <ScrollFlameEffect />
       <HeroSection />
 

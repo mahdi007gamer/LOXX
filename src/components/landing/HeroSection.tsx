@@ -80,29 +80,7 @@ export const HeroSection = () => {
         </div>
       </motion.div>
 
-      {/* Floating Particles or Circuits (Simulated) */}
-      <div className="absolute inset-0 pointer-events-none">
-        {[...Array(20)].map((_, i) => (
-          <motion.div
-            key={i}
-            className="absolute h-1 w-1 rounded-full bg-neon-blue opacity-50"
-            initial={{ 
-              x: Math.random() * 100 + "%", 
-              y: Math.random() * 100 + "%",
-              scale: Math.random() * 2 
-            }}
-            animate={{ 
-              y: [null, Math.random() * -100 + "%"],
-              opacity: [0, 0.5, 0] 
-            }}
-            transition={{ 
-              duration: Math.random() * 10 + 5, 
-              repeat: Infinity,
-              ease: "linear"
-            }}
-          />
-        ))}
-      </div>
+      {/* Floating Particles or Circuits (Simulated) removed in favor of CyberGrid */}
     </section>
   );
 };
