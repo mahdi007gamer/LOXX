@@ -20,7 +20,8 @@ import {
   Globe,
   Clock,
   Trophy,
-  ChevronLeft
+  ChevronLeft,
+  X
 } from "lucide-react";
 import { GlowButton } from "../components/ui/GlowButton";
 import { cn } from "@/src/lib/utils";
@@ -34,6 +35,9 @@ interface Player {
   isReady: boolean;
   hasMic: boolean;
   isMuted: boolean;
+  ping: number;
+  isSpeaking: boolean;
+  volume: number;
 }
 
 interface Message {
@@ -51,24 +55,70 @@ export const LobbyRoomPage = () => {
   const [isReady, setIsReady] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
   const [countdown, setCountdown] = useState(5);
-  const [isPrivate, setIsPrivate] = useState(true);
+  const [allReadyPulse, setAllReadyPulse] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
   
   // Mock State
   const [players, setPlayers] = useState<Player[]>([
-    { id: "1", name: "Apex_Hunter", avatar: "👨‍🎤", rank: "Global Elite", isHost: true, isReady: true, hasMic: true, isMuted: false },
-    { id: "2", name: "NeonGhost", avatar: "🥷", rank: "Supreme", isReady: false, hasMic: true, isMuted: false },
-    { id: "3", name: "CyberViper", avatar: "🧛", rank: "LEM", isReady: true, hasMic: false, isMuted: true },
-    { id: "4", name: "Empty Slot", avatar: "", rank: "", isReady: false, hasMic: false, isMuted: false },
-    { id: "5", name: "Empty Slot", avatar: "", rank: "", isReady: false, hasMic: false, isMuted: false },
+    { id: "1", name: "Apex_Hunter", avatar: "👨‍🎤", rank: "Global Elite", isHost: true, isReady: true, hasMic: true, isMuted: false, ping: 24, isSpeaking: false, volume: 80 },
+    { id: "2", name: "NeonGhost", avatar: "🥷", rank: "Supreme", isReady: false, hasMic: true, isMuted: false, ping: 45, isSpeaking: true, volume: 100 },
+    { id: "3", name: "CyberViper", avatar: "🧛", rank: "LEM", isReady: true, hasMic: false, isMuted: true, ping: 12, isSpeaking: false, volume: 50 },
+    { id: "slot-4", name: "Empty Slot", avatar: "", rank: "", isReady: false, hasMic: false, isMuted: false, ping: 0, isSpeaking: false, volume: 100 },
+    { id: "slot-5", name: "Empty Slot", avatar: "", rank: "", isReady: false, hasMic: false, isMuted: false, ping: 0, isSpeaking: false, volume: 100 },
   ]);
 
   const [messages, setMessages] = useState<Message[]>([
-    { id: "1", user: "System", text: "Lobby created. Waiting for teammates...", time: "12:00", isSystem: true },
-    { id: "2", user: "NeonGhost", text: "Yo! Let's win this one.", time: "12:01" },
-    { id: "3", user: "System", text: "CyberViper joined the lobby.", time: "12:02", isSystem: true },
+    { id: "1", user: "LOXX BOT", text: "لابی ساخته شد. منتظر هم‌تیمی‌ها هستیم...", time: "10:22 PM", isSystem: true },
+    { id: "2", user: "NeonGhost", text: "بچه‌ها بریم برای برد! 🔥", time: "10:22 PM" },
+    { id: "3", user: "Apex_Hunter", text: "همه آماده باشن.", time: "10:22 PM" },
   ]);
 
   const [inputMessage, setInputMessage] = useState("");
+
+  // Simulate a player joining after 3 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setPlayers(prev => {
+        const newPlayers = [...prev];
+        const emptySlotIndex = newPlayers.findIndex(p => p.name === "Empty Slot");
+        if (emptySlotIndex !== -1) {
+          newPlayers[emptySlotIndex] = {
+            id: "4",
+            name: "MISO",
+            avatar: "👧",
+            rank: "Master Guardian",
+            isReady: false,
+            hasMic: true,
+            isMuted: false,
+            ping: 32,
+            isSpeaking: false,
+            volume: 100
+          };
+        }
+        return newPlayers;
+      });
+      setMessages(prev => [...prev, {
+        id: Date.now().toString(),
+        user: "LOXX BOT",
+        text: "MISO به لابی پیوست.",
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        isSystem: true
+      }]);
+    }, 4000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Check if all slots (at least 3) are ready
+  useEffect(() => {
+    const activePlayers = players.filter(p => p.name !== "Empty Slot");
+    const readyPlayers = activePlayers.filter(p => p.isReady);
+    if (activePlayers.length >= 3 && readyPlayers.length === activePlayers.length) {
+      setAllReadyPulse(true);
+    } else {
+      setAllReadyPulse(false);
+    }
+  }, [players]);
 
   const handleCopyCode = () => {
     navigator.clipboard.writeText("LX-9921-XP");
@@ -89,6 +139,11 @@ export const LobbyRoomPage = () => {
     setInputMessage("");
   };
 
+  const toggleReady = () => {
+    setIsReady(!isReady);
+    setPlayers(prev => prev.map(p => p.id === "1" ? { ...p, isReady: !isReady } : p));
+  };
+
   const handleStartMatch = () => {
     setIsStarting(true);
   };
@@ -96,52 +151,81 @@ export const LobbyRoomPage = () => {
   useEffect(() => {
     let timer: NodeJS.Timeout;
     if (isStarting && countdown > 0) {
-      timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+      timer = setTimeout(() => setCountdown(prev => prev - 1), 1000);
     } else if (countdown === 0) {
       // Logic for match start
     }
     return () => clearTimeout(timer);
   }, [isStarting, countdown]);
 
+  const handlePlayerVolume = (id: string, vol: number) => {
+    setPlayers(prev => prev.map(p => p.id === id ? { ...p, volume: vol } : p));
+  };
+
   return (
-    <div className="min-h-screen bg-[#050508] text-white p-4 md:p-8 flex flex-col gap-6 relative overflow-hidden">
-      {/* Background Cyber Grid */}
-      <div className="absolute inset-0 pointer-events-none opacity-20">
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(0,229,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(0,229,255,0.05)_1px,transparent_1px)] bg-[length:100px_100px]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,#050508_80%)]" />
+    <div className="min-h-screen bg-[#050508] text-white p-4 md:p-8 flex flex-col gap-6 relative overflow-hidden font-sans" dir="rtl">
+      {/* Background Elements */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(0,229,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,229,255,0.03)_1px,transparent_1px)] bg-[length:60px_60px]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(0,229,255,0.1)_0%,transparent_50%)]" />
+        <div className="absolute top-[20%] left-[10%] h-96 w-96 bg-neon-blue/5 rounded-full blur-[120px]" />
+        <div className="absolute bottom-[20%] right-[10%] h-96 w-96 bg-neon-pink/5 rounded-full blur-[120px]" />
       </div>
+
+      {/* Achievement Pulse Overlay */}
+      <AnimatePresence>
+        {allReadyPulse && !isStarting && (
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 1.2 }}
+            className="fixed inset-0 z-[200] flex items-center justify-center pointer-events-none"
+          >
+            <div className="relative">
+               <motion.div 
+                 animate={{ scale: [1, 1.1, 1], opacity: [0.3, 0.6, 0.3] }}
+                 transition={{ duration: 2, repeat: Infinity }}
+                 className="absolute inset-0 bg-neon-blue rounded-full blur-3xl" 
+               />
+               <h2 className="text-5xl md:text-7xl font-black text-white tracking-widest uppercase text-center relative z-10 drop-shadow-[0_0_20px_rgba(0,229,255,0.8)] px-10">
+                 ALL PLAYERS READY
+               </h2>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Header Bar */}
       <motion.header 
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        className="relative z-10 glass rounded-3xl p-4 md:p-6 flex flex-wrap items-center justify-between gap-6 overflow-hidden border-white/5"
+        className="relative z-10 glass rounded-[32px] p-4 md:p-6 flex flex-wrap items-center justify-between gap-6 border-white/5 shadow-2xl"
       >
         <div className="flex items-center gap-5">
            <button 
             onClick={() => navigate("/lobbies")}
-            className="p-3 rounded-2xl bg-white/5 hover:bg-white/10 transition-colors text-gray-400 hover:text-white"
+            className="p-3 rounded-2xl bg-white/5 hover:bg-neon-pink/10 transition-colors text-gray-400 hover:text-neon-pink"
            >
-             <ChevronLeft size={20} />
+             <ChevronLeft size={20} className="rotate-180" />
            </button>
            
            <div>
-             <div className="flex items-center gap-2 mb-1">
-               <h1 className="text-xl md:text-2xl font-black tracking-tight text-white">[CS2] Competitive Grinders</h1>
-               <div className="px-2 py-0.5 rounded-full bg-neon-blue/10 border border-neon-blue/30 text-[10px] font-black text-neon-blue uppercase">
-                 Middle East
+             <div className="flex items-center gap-3 mb-1">
+               <h1 className="text-xl md:text-3xl font-black tracking-tight text-white">[CS2] رقابتی | رنک‌آپ سریع</h1>
+               <div className="px-3 py-1 rounded-full bg-neon-blue/10 border border-neon-blue/20 text-[10px] font-black text-neon-blue uppercase tracking-tighter">
+                 خاورمیانه (Middle East)
                </div>
              </div>
-             <div className="flex items-center gap-4 text-xs text-gray-500 font-bold uppercase tracking-widest">
-               <span className="flex items-center gap-1.5"><Users size={12} className="text-neon-blue" /> 3 / 5 Players</span>
-               <span className="flex items-center gap-1.5"><Clock size={12} className="text-neon-pink" /> 12:00 Activation</span>
+             <div className="flex items-center gap-5 text-[11px] text-gray-500 font-black uppercase tracking-widest">
+               <span className="flex items-center gap-1.5"><Users size={12} className="text-neon-blue" /> {players.filter(p => p.name !== "Empty Slot").length} / 5 بازیکن</span>
+               <span className="flex items-center gap-1.5"><Trophy size={13} className="text-neon-pink" /> سطح حرفه‌ای</span>
              </div>
            </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="hidden lg:flex items-center gap-2 bg-black/40 rounded-2xl p-1 border border-white/5">
-             <div className="px-4 py-2 text-xs font-black text-gray-500 border-r border-white/5 uppercase tracking-widest">Lobby Code</div>
+        <div className="flex items-center gap-4">
+          <div className="hidden lg:flex items-center gap-2 bg-black/60 rounded-2xl p-1 border border-white/10">
+             <div className="px-4 py-2 text-[10px] font-black text-gray-500 border-l border-white/10 uppercase tracking-widest">کد لابی</div>
              <div className="px-4 py-2 font-mono text-sm text-neon-blue flex items-center gap-3">
                LX-9921-XP
                <button onClick={handleCopyCode} className="hover:text-white transition-colors">
@@ -153,228 +237,470 @@ export const LobbyRoomPage = () => {
           <GlowButton 
             variant="blue" 
             onClick={handleStartMatch}
-            disabled={isStarting}
-            className="px-8 h-12 shadow-[0_10px_30px_rgba(0,229,255,0.2)]"
+            disabled={isStarting || !allReadyPulse}
+            className={cn(
+              "px-10 h-14 text-sm shadow-[0_15px_40px_-5px_rgba(0,229,255,0.3)]",
+              !allReadyPulse && "opacity-50 grayscale cursor-not-allowed"
+            )}
           >
-            <Play size={18} className="mr-2" />
-            START MATCH
+            <Play size={20} className="ml-2" />
+            شروع مسابقه
           </GlowButton>
         </div>
       </motion.header>
 
-      <div className="flex-1 flex flex-col lg:flex-row gap-6 relative z-10 overflow-hidden">
-        {/* Main Player Grid */}
-        <div className="flex-1 space-y-6">
-          {/* Status Alert */}
-          <AnimatePresence>
-            {isStarting ? (
-              <motion.div 
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                className="bg-neon-blue/20 border border-neon-blue/40 rounded-2xl p-4 flex items-center justify-center overflow-hidden"
-              >
-                <div className="flex items-center gap-6">
-                  <span className="text-neon-blue font-black tracking-widest uppercase text-sm">Match Starting in</span>
-                  <span className="text-4xl font-black text-white tabular-nums">{countdown}s</span>
-                  <button 
-                    onClick={() => setIsStarting(false)}
-                    className="text-[10px] font-black text-gray-400 hover:text-white underline uppercase tracking-widest"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </motion.div>
-            ) : (
-              <motion.div 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="flex items-center justify-between px-2"
-              >
-                <div className="flex items-center gap-3">
-                   <div className="h-2 w-2 rounded-full bg-neon-blue animate-pulse shadow-[0_0_10px_rgba(0,229,255,0.8)]" />
-                   <span className="text-xs font-black uppercase text-gray-400 tracking-widest">Waiting for 2 more players</span>
-                </div>
-                <div className="flex items-center gap-6">
-                   <button 
-                    onClick={() => setIsPrivate(!isPrivate)}
-                    className="flex items-center gap-2 text-[10px] font-black uppercase text-gray-500 hover:text-white transition-colors"
-                   >
-                     {isPrivate ? <Lock size={14} className="text-neon-pink" /> : <Globe size={14} className="text-neon-blue" />}
-                     {isPrivate ? "Private Lobby" : "Public Lobby"}
-                   </button>
-                   <button className="flex items-center gap-2 text-[10px] font-black uppercase text-gray-500 hover:text-white transition-colors">
-                     <Settings size={14} />
-                     Lobby Settings
-                   </button>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+      <div className="flex-1 flex flex-col lg:flex-row gap-8 relative z-10 overflow-hidden">
+        {/* Main Content Area */}
+        <div className="flex-1 flex flex-col gap-6 overflow-y-auto custom-scrollbar pb-24 md:pb-0">
+          
+          {/* Top Status Panel */}
+          <MatchInfoPanel isStarting={isStarting} countdown={countdown} players={players} />
 
-          {/* Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-            {players.map((player) => (
-              <motion.div
-                key={player.id}
-                layout
-                whileHover={{ scale: 1.02, y: -4 }}
-                className={cn(
-                  "relative p-6 rounded-[28px] border bg-[#0a0a0f] transition-all duration-300",
-                  player.name === "Empty Slot" ? "border-dashed border-white/5 opacity-50" : "border-white/10 group shadow-lg"
-                )}
-              >
-                {player.name !== "Empty Slot" ? (
-                  <>
-                    {player.isHost && (
-                      <div className="absolute top-4 right-4 px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-[8px] font-black text-gray-400 tracking-widest uppercase">
-                        Host
-                      </div>
-                    )}
-                    
-                    <div className="flex flex-col items-center text-center">
-                      <div className="relative mb-4">
-                        <div className="h-24 w-24 rounded-3xl bg-glass border border-white/10 flex items-center justify-center text-4xl shadow-2xl relative overflow-hidden group-hover:border-neon-blue/50 transition-colors">
-                           {player.avatar}
-                           <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-                        </div>
-                        {player.isReady && (
-                          <div className="absolute -bottom-1 -right-1 h-6 w-6 rounded-full bg-neon-blue border-4 border-[#0a0a0f] flex items-center justify-center shadow-[0_0_15px_rgba(0,229,255,0.5)]">
-                             <Check size={10} className="text-dark-bg" />
-                          </div>
-                        )}
-                      </div>
-
-                      <h3 className="text-lg font-black text-white group-hover:text-neon-blue transition-colors">{player.name}</h3>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Trophy size={12} className="text-neon-pink" />
-                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{player.rank}</span>
-                      </div>
-
-                      <div className="flex gap-2 mt-6">
-                        <div className={cn(
-                          "h-10 w-10 rounded-xl flex items-center justify-center border transition-all",
-                          player.hasMic ? (player.isMuted ? "bg-neon-pink/10 border-neon-pink/20 text-neon-pink" : "bg-white/5 border-white/10 text-gray-400") : "bg-black/20 border-white/5 text-gray-700"
-                        )}>
-                          {player.hasMic ? (player.isMuted ? <MicOff size={16} /> : <Mic size={16} />) : <MicOff size={16} />}
-                        </div>
-                        {player.id !== "1" && (
-                          <div className="h-10 w-10 rounded-xl flex items-center justify-center border border-white/10 bg-white/5 text-gray-500 hover:text-neon-pink hover:border-neon-pink/50 cursor-pointer transition-all">
-                            <Ban size={16} />
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <div className="h-full flex flex-col items-center justify-center py-10">
-                    <div className="h-16 w-16 rounded-3xl border-2 border-dashed border-white/5 flex items-center justify-center text-white/10 mb-4 group-hover:border-white/20 transition-colors">
-                      <UserPlus size={24} />
-                    </div>
-                    <button className="text-[10px] font-black uppercase text-gray-600 hover:text-white tracking-widest transition-colors">Invite Player</button>
-                  </div>
-                )}
-              </motion.div>
-            ))}
+          {/* Players Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+            <AnimatePresence mode="popLayout">
+              {players.map((player) => (
+                <PlayerCard 
+                  key={player.id} 
+                  player={player} 
+                  isSelected={selectedPlayer === player.id}
+                  onSelect={() => setSelectedPlayer(selectedPlayer === player.id ? null : player.id)}
+                  onVolumeChange={(val) => handlePlayerVolume(player.id, val)}
+                />
+              ))}
+            </AnimatePresence>
           </div>
         </div>
 
-        {/* Chat / Sidebar */}
-        <motion.aside 
-          initial={{ x: 20, opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
-          className="w-full lg:w-96 flex flex-col glass rounded-3xl border-white/5 overflow-hidden"
-        >
-          <div className="p-6 border-b border-white/5 flex items-center justify-between">
-            <h2 className="text-sm font-black uppercase tracking-widest text-white flex items-center gap-2">
-              <MessageSquare size={16} className="text-neon-blue" />
-              Lobby Comms
-            </h2>
-            <div className="h-2 w-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
-          </div>
-
-          <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
-            {messages.map((msg) => (
-              <div key={msg.id} className={cn("flex flex-col gap-1", msg.isSystem ? "items-center" : "items-start")}>
-                {msg.isSystem ? (
-                  <div className="px-4 py-1.5 rounded-full bg-white/5 text-[9px] font-black text-gray-500 uppercase tracking-widest text-center">
-                    {msg.text}
-                  </div>
-                ) : (
-                  <>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-black uppercase text-neon-blue">{msg.user}</span>
-                      <span className="text-[9px] font-bold text-gray-600">{msg.time}</span>
-                    </div>
-                    <div className="bg-white/5 border border-white/5 rounded-2xl rounded-tl-none px-4 py-2.5 text-sm text-gray-300 max-w-[90%] leading-relaxed">
-                      {msg.text}
-                    </div>
-                  </>
-                )}
-              </div>
-            ))}
-          </div>
-
-          <form onSubmit={handleSendMessage} className="p-4 bg-black/20 border-t border-white/5">
-            <div className="relative">
-              <input
-                type="text"
-                value={inputMessage}
-                onChange={(e) => setInputMessage(e.target.value)}
-                placeholder="Type a message..."
-                className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 pl-4 pr-12 text-sm text-white focus:outline-none focus:border-neon-blue/50 transition-all"
-              />
-              <button 
-                type="submit"
-                className="absolute right-2 top-1.5 h-9 w-9 flex items-center justify-center rounded-xl bg-neon-blue text-dark-bg hover:bg-neon-blue/90 transition-colors"
-              >
-                <Send size={16} />
-              </button>
-            </div>
-          </form>
-        </motion.aside>
+        {/* Desktop Chat Sidebar */}
+        <div className="hidden lg:flex w-[400px] flex-col h-full overflow-hidden">
+           <ChatPanel 
+             messages={messages} 
+             inputMessage={inputMessage} 
+             setInputMessage={setInputMessage} 
+             onSend={handleSendMessage} 
+           />
+        </div>
       </div>
 
-      {/* Footer Controls (Host Only) */}
+      {/* Mobile Chat Trigger & Bottom Actions */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 p-4 bg-dark-bg/80 backdrop-blur-xl border-t border-white/5 flex items-center gap-3">
+        <GlowButton 
+          variant={isReady ? "blue" : "pink"} 
+          onClick={toggleReady}
+          className="flex-1 h-12"
+        >
+          {isReady ? "آماده!" : "بزن روی آماده"}
+        </GlowButton>
+        <button 
+          onClick={() => setIsChatOpen(true)}
+          className="h-12 w-12 rounded-xl bg-white/5 flex items-center justify-center text-neon-blue relative"
+        >
+          <MessageSquare size={20} />
+          <div className="absolute top-2 right-2 h-2 w-2 rounded-full bg-neon-pink" />
+        </button>
+      </div>
+
+      {/* Mobile Chat Drawer */}
+      <AnimatePresence>
+        {isChatOpen && (
+          <>
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsChatOpen(false)}
+              className="fixed inset-0 bg-black/80 z-[100] lg:hidden"
+            />
+            <motion.div 
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="fixed bottom-0 left-0 right-0 h-[80vh] bg-[#0a0a0f] rounded-t-[40px] z-[101] lg:hidden border-t border-white/10 overflow-hidden flex flex-col"
+            >
+              <div className="h-1.5 w-12 bg-white/10 rounded-full mx-auto mt-4 mb-2" />
+              <div className="flex-1 overflow-hidden">
+                <ChatPanel 
+                  messages={messages} 
+                  inputMessage={inputMessage} 
+                  setInputMessage={setInputMessage} 
+                  onSend={handleSendMessage} 
+                  onClose={() => setIsChatOpen(false)}
+                />
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Footer Controls (Fixed Desktop) */}
       <motion.footer 
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        className="relative z-10 flex flex-wrap items-center justify-between gap-6 p-4 glass rounded-[28px] border-white/5 mt-auto"
+        className="hidden lg:flex relative z-10 items-center justify-between gap-6 p-4 glass rounded-[40px] border-white/5 shadow-2xl mt-auto"
       >
         <div className="flex items-center gap-6">
-           <div className="flex items-center gap-4 px-6 border-r border-white/5">
-             <button 
-                onClick={() => setIsReady(!isReady)}
+           <div className="flex items-center gap-4 px-8 border-l border-white/5">
+             <GlowButton 
+                variant={isReady ? "blue" : "pink"}
+                onClick={toggleReady}
                 className={cn(
-                  "flex items-center gap-2 px-6 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest transition-all",
-                  isReady ? "bg-neon-blue text-dark-bg shadow-lg shadow-neon-blue/20" : "bg-white/5 text-gray-500 hover:text-white border border-white/5"
+                  "px-8 h-12 text-xs",
+                  isReady && "shadow-neon-blue/20"
                 )}
              >
-               {isReady ? <Check size={16} /> : null}
-               {isReady ? "Ready to Play" : "Mark Ready"}
-             </button>
+               {isReady ? <Check size={18} className="ml-2" /> : null}
+               {isReady ? "آماده" : "اعلام آمادگی"}
+             </GlowButton>
            </div>
            
            <div className="flex items-center gap-4">
-              <button className="h-11 w-11 rounded-xl bg-white/5 flex items-center justify-center text-gray-500 hover:text-white transition-colors group">
-                 <Mic size={20} className="group-hover:scale-110 transition-transform" />
-              </button>
-              <button className="h-11 w-11 rounded-xl bg-white/5 flex items-center justify-center text-gray-500 hover:text-white transition-colors group">
-                 <UserPlus size={20} className="group-hover:scale-110 transition-transform" />
-              </button>
-              <button className="h-11 w-11 rounded-xl bg-white/5 flex items-center justify-center text-gray-500 hover:text-white transition-colors group">
-                 <RotateCcw size={20} className="group-hover:scale-110 transition-transform" />
-              </button>
+              <ControlButton icon={<Mic size={20} />} active />
+              <ControlButton icon={<UserPlus size={20} />} />
+              <ControlButton icon={<Settings size={20} />} />
+              <ControlButton icon={<RotateCcw size={20} />} />
            </div>
         </div>
 
         <button 
           onClick={() => navigate("/lobbies")}
-          className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-black uppercase text-neon-pink hover:bg-neon-pink/10 transition-all"
+          className="flex items-center gap-2 px-8 py-3 rounded-2xl text-xs font-black uppercase text-neon-pink hover:bg-neon-pink/10 transition-all border border-transparent hover:border-neon-pink/20"
         >
-          <LogOut size={16} />
-          Leave Lobby
+          <LogOut size={18} className="ml-2" />
+          خروج از لابی
         </button>
       </motion.footer>
+    </div>
+  );
+};
+
+const ControlButton = ({ icon, active = false }: { icon: React.ReactNode, active?: boolean }) => (
+  <button className={cn(
+    "h-12 w-12 rounded-2xl flex items-center justify-center transition-all group",
+    active ? "bg-white/10 text-white border border-white/10" : "bg-transparent text-gray-600 hover:text-white"
+  )}>
+    <div className="group-hover:scale-110 transition-transform">{icon}</div>
+  </button>
+);
+
+const MatchInfoPanel = ({ isStarting, countdown, players }: { isStarting: boolean, countdown: number, players: Player[] }) => {
+  const activePlayers = players.filter(p => p.name !== "Empty Slot");
+  const readyCount = activePlayers.filter(p => p.isReady).length;
+
+  return (
+    <div className="relative">
+      <AnimatePresence mode="wait">
+        {isStarting ? (
+          <motion.div 
+            key="starting"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="bg-neon-blue/20 border border-neon-blue/40 rounded-[28px] p-6 flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden shadow-[0_20px_50px_rgba(0,229,255,0.1)]"
+          >
+            <div className="flex items-center gap-4">
+               <div className="h-12 w-12 rounded-full border-4 border-neon-blue border-t-white animate-spin" />
+               <div>
+                  <h3 className="text-xl font-black text-white">در حال شروع بازی...</h3>
+                  <p className="text-xs text-neon-blue font-bold">بچه‌ها آماده باشید، سرور در حال پیکربندی است.</p>
+               </div>
+            </div>
+            <div className="flex items-center gap-8">
+               <span className="text-6xl font-black text-white tabular-nums drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">{countdown}</span>
+               <button className="text-[10px] font-black text-gray-400 hover:text-white underline uppercase tracking-widest">لغو شروع</button>
+            </div>
+          </motion.div>
+        ) : (
+          <motion.div 
+            key="waiting"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 bg-white/5 py-4 rounded-[28px] border border-white/5"
+          >
+            <div className="flex items-center gap-4">
+               <div className="relative">
+                 <div className="h-3 w-3 rounded-full bg-neon-blue animate-pulse" />
+                 <div className="absolute inset-0 h-3 w-3 rounded-full bg-neon-blue/50 animate-ping" />
+               </div>
+               <span className="text-xs font-black uppercase text-gray-400 tracking-widest">
+                 {readyCount === activePlayers.length ? "همه بازیکنان آماده هستند!" : `در انتظار بازیکنان... (${readyCount}/${activePlayers.length})`}
+               </span>
+            </div>
+
+            <div className="flex items-center gap-8">
+               <div className="flex items-center gap-3">
+                 <span className="text-[10px] font-black text-gray-600 uppercase">MAP</span>
+                 <span className="text-xs font-bold text-white">Mirage</span>
+               </div>
+               <div className="flex items-center gap-3">
+                 <span className="text-[10px] font-black text-gray-600 uppercase">MODE</span>
+                 <span className="text-xs font-bold text-neon-blue">Competitive</span>
+               </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+const PlayerCard = ({ player, isSelected, onSelect, onVolumeChange }: { 
+  player: Player, 
+  isSelected: boolean,
+  onSelect: () => void,
+  onVolumeChange: (val: number) => void,
+  key?: React.Key
+}) => {
+  const isSlot = player.name === "Empty Slot";
+
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.9 }}
+      whileHover={!isSlot ? { y: -8, transition: { duration: 0.2 } } : {}}
+      onClick={!isSlot ? onSelect : undefined}
+      className={cn(
+        "relative p-8 rounded-[40px] border transition-all duration-300 backdrop-blur-md cursor-pointer group",
+        isSlot ? "border-dashed border-white/10 bg-transparent opacity-40 hover:opacity-100" : "bg-[#0a0a0f] border-white/10 shadow-2xl overflow-hidden",
+        player.isReady && !isSlot && "scale-[1.03] ring-1 ring-neon-blue/40 border-neon-blue/30 shadow-[0_30px_60px_-10px_rgba(0,229,255,0.2)]",
+        player.isSpeaking && "ring-2 ring-green-500/50 shadow-[0_0_40px_rgba(34,197,94,0.15)]"
+      )}
+    >
+      {!isSlot ? (
+        <>
+          {/* Rank & Ping */}
+          <div className="mb-6 flex items-center justify-between">
+             <div className="flex items-center gap-2">
+               <Trophy size={14} className="text-neon-pink" />
+               <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">{player.rank}</span>
+             </div>
+             <div className="flex items-center gap-1.5">
+                <span className="text-[9px] font-bold text-gray-600 font-mono">{player.ping}ms</span>
+                <PingChart ping={player.ping} />
+             </div>
+          </div>
+
+          <div className="flex flex-col items-center">
+            {/* Avatar */}
+            <div className="relative mb-6">
+              <div className={cn(
+                "h-28 w-28 rounded-[40px] flex items-center justify-center text-5xl relative z-10 transition-all duration-500",
+                player.isReady ? "bg-white/10" : "bg-white/5",
+                player.isSpeaking ? "scale-105" : ""
+              )}>
+                {player.avatar}
+                <div className="absolute inset-0 bg-gradient-to-tr from-black/40 to-transparent rounded-[40px]" />
+                
+                {/* Voice Glow Overlay */}
+                {player.isSpeaking && (
+                   <motion.div 
+                     animate={{ opacity: [0.2, 0.4, 0.2] }} 
+                     transition={{ duration: 1.5, repeat: Infinity }}
+                     className="absolute -inset-2 bg-green-500 rounded-[44px] blur-xl -z-10" 
+                   />
+                )}
+              </div>
+
+              {/* Ready Indicator */}
+              <AnimatePresence>
+                {player.isReady && (
+                  <motion.div 
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="absolute -bottom-2 -left-2 h-8 w-8 rounded-2xl bg-neon-blue border-4 border-[#0a0a0f] flex items-center justify-center shadow-lg z-20"
+                  >
+                    <Check size={14} className="text-dark-bg" />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Speaker Indicator */}
+              {player.isSpeaking && (
+                <div className="absolute -top-1 -right-1 h-8 w-8 rounded-2xl bg-green-500 border-4 border-[#0a0a0f] flex items-center justify-center text-dark-bg z-20">
+                   <Mic size={14} />
+                </div>
+              )}
+            </div>
+
+            <h3 className="text-xl font-black text-white mb-2">{player.name}</h3>
+            
+            {/* Voice Status */}
+            <div className="flex items-center gap-2">
+               {player.isMuted ? (
+                 <span className="text-[9px] text-neon-pink font-black uppercase flex items-center gap-1">
+                   <MicOff size={10} /> Muted
+                 </span>
+               ) : player.isSpeaking ? (
+                 <span className="text-[9px] text-green-500 font-black uppercase flex items-center gap-1 animate-pulse">
+                   <Mic size={10} /> Speaking...
+                 </span>
+               ) : (
+                 <span className="text-[9px] text-gray-500 font-black uppercase flex items-center gap-1">
+                   <Mic size={10} /> IDLE
+                 </span>
+               )}
+            </div>
+          </div>
+
+          {/* Quick Actions Hover Overlay */}
+          <div className="absolute inset-x-0 bottom-0 py-6 flex justify-center translate-y-full group-hover:translate-y-0 transition-transform duration-300 z-30 pointer-events-none group-hover:pointer-events-auto">
+             <div className="bg-black/80 backdrop-blur-md rounded-2xl border border-white/10 p-1 flex items-center gap-1 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+                <QuickAction icon={<Users size={14} />} tooltip="پروفایل" />
+                <QuickAction icon={<MessageSquare size={14} />} tooltip="پیام" />
+                <QuickAction icon={<UserPlus size={14} />} tooltip="افزودن" />
+                <QuickAction icon={<Ban size={14} />} tooltip="کیک" color="pink" />
+             </div>
+          </div>
+
+          {/* Volume Control (Selected State) */}
+          <AnimatePresence>
+            {isSelected && (
+              <motion.div 
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                className="mt-6 pt-6 border-t border-white/5 space-y-3"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-black text-gray-500 uppercase">Volume Control</span>
+                  <span className="text-[10px] font-bold text-white">{player.volume}%</span>
+                </div>
+                <input 
+                  type="range" 
+                  min="0" max="100" 
+                  value={player.volume} 
+                  onChange={(e) => onVolumeChange(parseInt(e.target.value))}
+                  className="w-full h-1 bg-white/5 rounded-lg appearance-none cursor-pointer accent-neon-blue"
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {player.isHost && (
+            <div className="absolute top-8 left-8 h-2 w-2 rounded-full bg-neon-pink ring-4 ring-neon-pink/10" />
+          )}
+        </>
+      ) : (
+        <div className="h-full flex flex-col items-center justify-center py-6 min-h-[220px]">
+          <div className="h-16 w-16 rounded-[24px] border-2 border-dashed border-white/10 flex items-center justify-center text-white/20 mb-4 group-hover:border-white/30 transition-colors">
+            <UserPlus size={32} />
+          </div>
+          <span className="text-[10px] font-black uppercase text-gray-600 tracking-widest">دعوت بازیکن</span>
+        </div>
+      )}
+    </motion.div>
+  );
+};
+
+const QuickAction = ({ icon, tooltip, color = "blue" }: { icon: React.ReactNode, tooltip: string, color?: "blue" | "pink" }) => (
+  <div className="relative group/btn cursor-pointer">
+    <div className={cn(
+      "h-9 w-9 rounded-xl flex items-center justify-center transition-all",
+      color === "blue" ? "bg-white/5 text-gray-400 hover:bg-neon-blue hover:text-dark-bg" : "bg-white/5 text-gray-400 hover:bg-neon-pink hover:text-dark-bg"
+    )}>
+       {icon}
+    </div>
+    <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-black/90 rounded text-[8px] font-black text-white whitespace-nowrap opacity-0 group-hover/btn:opacity-100 transition-opacity pointer-events-none">
+      {tooltip}
+    </div>
+  </div>
+);
+
+const PingChart = ({ ping }: { ping: number }) => {
+  const bars = [1, 2, 3];
+  const color = ping < 30 ? "bg-green-500" : ping < 60 ? "bg-yellow-500" : "bg-red-500";
+  const activeCount = ping < 30 ? 3 : ping < 60 ? 2 : 1;
+
+  return (
+    <div className="flex items-end gap-0.5 h-3">
+      {bars.map((i) => (
+        <div 
+          key={i} 
+          className={cn(
+            "w-0.5 rounded-sm transition-colors",
+            i <= activeCount ? color : "bg-white/10",
+            i === 1 ? "h-1" : i === 2 ? "h-2" : "h-3"
+          )} 
+        />
+      ))}
+    </div>
+  );
+};
+
+const ChatPanel = ({ messages, inputMessage, setInputMessage, onSend, onClose }: { 
+  messages: Message[], 
+  inputMessage: string, 
+  setInputMessage: (v: string) => void,
+  onSend: (e: React.FormEvent) => void,
+  onClose?: () => void
+}) => {
+  return (
+    <div className="flex-1 flex flex-col h-full bg-[#0d0d14]/40 backdrop-blur-xl border-l md:border-r border-white/5">
+      <div className="p-6 border-b border-white/5 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+           <div className="h-2 w-2 rounded-full bg-neon-blue shadow-[0_0_10px_rgba(0,229,255,0.8)]" />
+           <h2 className="text-xs font-black uppercase tracking-widest text-white">Lobby Comms</h2>
+        </div>
+        {onClose && (
+          <button onClick={onClose} className="text-gray-500 hover:text-white">
+            <X size={20} />
+          </button>
+        )}
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
+        {messages.map((msg) => (
+          <div key={msg.id} className={cn("group flex flex-col gap-1.5", msg.isSystem ? "items-center my-4" : "items-start")}>
+            {msg.isSystem ? (
+              <div className="relative w-full flex items-center justify-center p-3 rounded-2xl border border-neon-blue/10 bg-neon-blue/[0.02]">
+                 <span className="text-[10px] font-black text-neon-blue uppercase tracking-widest text-center px-4">
+                  {msg.text}
+                 </span>
+              </div>
+            ) : (
+              <div className="flex items-start gap-3 w-full">
+                <div className="h-8 w-8 rounded-xl bg-white/5 border border-white/10 flex-shrink-0 flex items-center justify-center text-lg mt-1">
+                   {msg.user === "NeonGhost" ? "🥷" : msg.user === "Apex_Hunter" ? "👨‍🎤" : "👧"}
+                </div>
+                <div className="flex-1 space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className={cn(
+                      "text-[10px] font-black uppercase tracking-widest",
+                      msg.user === "You" ? "text-neon-pink" : "text-neon-blue"
+                    )}>{msg.user === "You" ? "شما" : msg.user}</span>
+                    <span className="text-[8px] font-bold text-gray-700 opacity-0 group-hover:opacity-100 transition-opacity">{msg.time}</span>
+                  </div>
+                  <div className="bg-white/5 border border-white/10 rounded-2xl rounded-tr-none px-4 py-2.5 text-xs text-gray-300 leading-relaxed shadow-lg">
+                    {msg.text}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      <form onSubmit={onSend} className="p-6 bg-black/20 border-t border-white/5">
+        <div className="relative">
+          <input
+            type="text"
+            value={inputMessage}
+            onChange={(e) => setInputMessage(e.target.value)}
+            placeholder="چیزی بنویسید..."
+            className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-4 pr-14 text-xs text-white placeholder:text-gray-700 focus:outline-none focus:border-neon-blue/50 transition-all font-medium"
+          />
+          <button 
+            type="submit"
+            className="absolute left-2.5 top-2.5 h-10 w-10 flex items-center justify-center rounded-xl bg-neon-blue text-dark-bg hover:bg-neon-blue/90 transition-colors shadow-lg shadow-neon-blue/20"
+          >
+            <Send size={18} className="rotate-180" />
+          </button>
+        </div>
+      </form>
     </div>
   );
 };
