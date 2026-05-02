@@ -167,10 +167,10 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
         initial={{ scale: 0.95, opacity: 0, y: 20 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.95, opacity: 0, y: 20 }}
-        className="relative w-full max-w-6xl overflow-hidden rounded-[32px] border border-white/10 bg-[#0a0a0f] shadow-[0_30px_100px_rgba(0,0,0,0.8)] flex flex-col md:flex-row h-[90vh] min-h-[720px]"
+        className="relative w-full max-w-5xl overflow-hidden rounded-[32px] border border-white/10 bg-[#0a0a0f] shadow-[0_30px_100px_rgba(0,0,0,0.8)] flex flex-col md:flex-row h-[82vh] min-h-[660px]"
       >
         {/* Left: Form Flow */}
-        <div className="flex-1 p-8 md:p-12 overflow-y-auto custom-scrollbar">
+        <div className="flex-1 p-8 md:p-10 overflow-y-auto custom-scrollbar">
           <div className="mb-10 flex items-center justify-between">
             <div>
               <h2 className="text-3xl font-black text-white">ایجاد لابی حرفه‌ای</h2>
@@ -493,7 +493,7 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
                   onClick={() => setStep(step - 1)}
                   className="flex items-center gap-2 text-gray-500 hover:text-white font-bold transition-colors"
                 >
-                  <ChevronRight size={20} />
+                  <ChevronLeft size={20} />
                   <span>مرحله قبل</span>
                 </button>
               ) : (
@@ -518,7 +518,7 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
                 ) : (
                   <div className="flex items-center gap-2">
                     <span>{step === 3 ? "تایید و ساخت نهایی" : "مرحله بعد"}</span>
-                    {step < 3 && <ChevronLeft size={20} />}
+                    {step < 3 && <ChevronRight size={20} />}
                   </div>
                 )}
               </GlowButton>
@@ -527,7 +527,7 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
         </div>
 
         {/* Right: Live Preview */}
-        <div className="w-full md:w-[460px] bg-white/[0.02] p-8 border-r border-white/10 flex flex-col items-center justify-center relative">
+        <div className="w-full md:w-[400px] bg-white/[0.02] p-8 border-r border-white/10 flex flex-col items-center justify-center relative">
           <div className="absolute top-8 left-8 text-[10px] uppercase font-black text-gray-600 tracking-widest flex items-center gap-2">
             <motion.div 
               animate={{ opacity: [1, 0.4, 1] }} 
@@ -537,7 +537,7 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
             Live Preview
           </div>
 
-          <div className="w-full max-w-[340px] relative">
+          <div className="w-full max-w-[320px] relative">
             {/* The Actual Lobby Card Preview */}
             <motion.div
               layout
