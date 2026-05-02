@@ -328,8 +328,8 @@ export const LobbyRoomPage = () => {
             onReopen={handleReopenLobby}
           />
 
-          {/* Players Grid - Now 4 per row on large screens */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-5">
+          {/* Players Grid - Responsive: 1 on mobile, 2 on md, 4 on lg/xl */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <AnimatePresence mode="popLayout">
               {players.map((player) => (
                 <PlayerCard 
@@ -342,8 +342,8 @@ export const LobbyRoomPage = () => {
                   onInvite={() => setIsInviteModalOpen(true)}
                   onProfile={(id) => setActiveProfileUserId(id)}
                   onDirectMessage={(id) => {
-                    // Open global overlay chat instead of internal tab
-                    openChat(id);
+                    const p = players.find(player => player.id === id);
+                    openChat(id, p?.name);
                   }}
                   onAddFriend={() => {}}
                 />
@@ -353,7 +353,7 @@ export const LobbyRoomPage = () => {
         </div>
 
         {/* Desktop Chat Sidebar (Right) */}
-        <div className="hidden lg:flex w-full lg:w-[360px] flex-col h-full overflow-hidden order-first">
+        <div className="hidden lg:flex w-full lg:w-[320px] flex-col h-full overflow-hidden order-first">
            <ChatPanel 
              messages={messages} 
              players={players}
@@ -687,7 +687,7 @@ const PlayerCard = ({ player, isSelected, onSelect, onVolumeChange, onMute, onIn
       whileHover={!isSlot ? { y: -8, transition: { duration: 0.2 } } : {}}
       onClick={!isSlot ? onSelect : () => onInvite()}
       className={cn(
-        "relative p-5 md:p-6 rounded-[32px] border transition-all duration-300 backdrop-blur-md cursor-pointer group h-full flex flex-col justify-between",
+        "relative p-4 sm:p-5 rounded-[24px] border transition-all duration-300 backdrop-blur-md cursor-pointer group h-full flex flex-col justify-between min-w-0 min-h-[340px]",
         isSlot ? "border-dashed border-white/10 bg-transparent opacity-40 hover:opacity-100" : "bg-[#0a0a0f] border-white/10 shadow-2xl overflow-hidden",
         player.isReady && !isSlot && "scale-[1.02] ring-1 ring-neon-blue/40 border-neon-blue/30 shadow-[0_20px_40px_-5px_rgba(0,229,255,0.15)]",
         player.isSpeaking && "ring-2 ring-green-500/50 shadow-[0_0_30px_rgba(34,197,94,0.1)]"
@@ -733,7 +733,7 @@ const PlayerCard = ({ player, isSelected, onSelect, onVolumeChange, onMute, onIn
                 </svg>
 
                 <div className={cn(
-                  "h-24 w-24 rounded-[32px] flex items-center justify-center text-4xl relative z-10 transition-all duration-500 shadow-2xl",
+                  "h-16 w-16 sm:h-20 sm:w-20 rounded-[20px] flex items-center justify-center text-2xl sm:text-3xl relative z-10 transition-all duration-500 shadow-2xl",
                   player.isReady ? "bg-white/10" : "bg-white/5",
                   player.isSpeaking ? "scale-105" : ""
                 )}>
@@ -844,7 +844,7 @@ const PlayerCard = ({ player, isSelected, onSelect, onVolumeChange, onMute, onIn
 const QuickAction = ({ icon, tooltip, color = "blue", onClick }: { icon: React.ReactNode, tooltip: string, color?: "blue" | "pink", onClick?: () => void }) => (
   <div className="relative group/btn cursor-pointer" onClick={onClick}>
     <div className={cn(
-      "h-9 w-9 rounded-xl flex items-center justify-center transition-all",
+      "h-8 w-8 rounded-lg flex items-center justify-center transition-all",
       color === "blue" ? "bg-white/5 text-gray-400 hover:bg-neon-blue hover:text-dark-bg" : "bg-white/5 text-gray-400 hover:bg-neon-pink hover:text-dark-bg"
     )}>
        {icon}

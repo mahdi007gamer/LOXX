@@ -74,4 +74,5 @@ export interface FriendChat {
   messages: ChatMessage[];
   isTyping: boolean;
   unreadCount: number;
+  tempDisplayName?: string;
 }

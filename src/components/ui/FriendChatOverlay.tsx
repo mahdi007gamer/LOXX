@@ -6,12 +6,19 @@ import { cn } from "../../lib/utils";
 import { FriendStatus } from "../../types";
 
 export const FriendChatOverlay = () => {
-  const { chats, friends, sendMessage, markAsRead, closeChat, activeChatId, setActiveChatId } = useFriends();
+  const { chats, friends, sendMessage, markAsRead, closeChat, activeChatId, setActiveChatId, chatTrigger } = useFriends();
   const [isMinimized, setIsMinimized] = useState(false);
   const [inputMessage, setInputMessage] = useState("");
 
   const activeChat = chats.find(c => c.friendId === activeChatId);
   const activeFriend = friends.find(f => f.id === activeChatId);
+
+  // Un-minimize when a new chat is opened or current one is triggered
+  useEffect(() => {
+    if (activeChatId) {
+      setIsMinimized(false);
+    }
+  }, [activeChatId, chatTrigger]);
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,7 +51,7 @@ export const FriendChatOverlay = () => {
                   {activeFriend?.avatar ? <img src={activeFriend.avatar} alt="" className="h-full w-full rounded-full" /> : "👤"}
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-white">{activeFriend?.displayName || chats.find(c => c.friendId === activeChatId)?.friendId === "1" ? "شما" : "کاربر"}</p>
+                  <p className="text-xs font-bold text-white">{activeFriend?.displayName || activeChat?.tempDisplayName || (activeChatId === "1" ? "شما" : "کاربر")}</p>
                   <p className="text-[10px] text-green-500">آنلاین</p>
                 </div>
               </div>
@@ -116,7 +123,7 @@ export const FriendChatOverlay = () => {
       <div className="flex items-end gap-2 pointer-events-auto px-4 max-w-full pb-0 overflow-x-visible">
         {chats.map(chat => {
           const friend = friends.find(f => f.id === chat.friendId);
-          const displayName = friend?.displayName || "کاربر";
+          const displayName = friend?.displayName || chat.tempDisplayName || "کاربر";
           const avatar = friend?.avatar;
           const status = friend?.status || FriendStatus.OFFLINE;
           

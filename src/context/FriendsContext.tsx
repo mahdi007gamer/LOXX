@@ -13,10 +13,13 @@ interface FriendsContextType {
   sendMessage: (friendId: string, text: string) => void;
   markAsRead: (friendId: string) => void;
   closeChat: (friendId: string) => void;
-  openChat: (friendId: string) => void;
+  openChat: (friendId: string, displayName?: string) => void;
   toggleFavorite: (friendId: string) => void;
   activeChatId: string | null;
   setActiveChatId: (id: string | null) => void;
+  chatTrigger: number;
+  toggleBlock: (friendId: string) => void;
+  toggleMute: (friendId: string) => void;
 }
 
 const FriendsContext = createContext<FriendsContextType | undefined>(undefined);
@@ -101,6 +104,7 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const [chats, setChats] = useState<FriendChat[]>([]);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
+  const [chatTrigger, setChatTrigger] = useState(0);
 
   const addFriend = async (username: string) => {
     // Mock API call
@@ -145,13 +149,14 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setFriends(prev => prev.filter(f => f.id !== friendId));
   };
 
-  const openChat = (friendId: string) => {
+  const openChat = (friendId: string, displayName?: string) => {
     setChats(prev => {
       const existingChat = prev.find(c => c.friendId === friendId);
       if (existingChat) return prev;
-      return [...prev, { friendId, messages: [], isTyping: false, unreadCount: 0 }];
+      return [...prev, { friendId, messages: [], isTyping: false, unreadCount: 0, tempDisplayName: displayName }];
     });
     setActiveChatId(friendId);
+    setChatTrigger(t => t + 1);
   };
 
   const sendMessage = (friendId: string, text: string) => {
@@ -204,6 +209,7 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
       chats,
       activeChatId,
       setActiveChatId,
+      chatTrigger,
       addFriend,
       acceptRequest,
       declineRequest,
