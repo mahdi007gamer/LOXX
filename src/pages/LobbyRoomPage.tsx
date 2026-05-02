@@ -21,7 +21,8 @@ import {
   Clock,
   Trophy,
   ChevronLeft,
-  X
+  X,
+  Crown
 } from "lucide-react";
 import { GlowButton } from "../components/ui/GlowButton";
 import { cn } from "@/src/lib/utils";
@@ -46,6 +47,8 @@ interface Message {
   text: string;
   time: string;
   isSystem?: boolean;
+  toUserId?: string; // null for lobby chat
+  fromUserId?: string;
 }
 
 export const LobbyRoomPage = () => {
@@ -54,13 +57,14 @@ export const LobbyRoomPage = () => {
   const [copied, setCopied] = useState(false);
   const [isReady, setIsReady] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
+  const [isMatchStarted, setIsMatchStarted] = useState(false);
   const [countdown, setCountdown] = useState(5);
   const [allReadyPulse, setAllReadyPulse] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [activeProfileUserId, setActiveProfileUserId] = useState<string | null>(null);
-  const [activeChatUserId, setActiveChatUserId] = useState<string | null>(null);
+  const [activeChatTab, setActiveChatTab] = useState<string>("main"); // "main" or userId
   
   // Mock State
   const [players, setPlayers] = useState<Player[]>([
@@ -167,14 +171,21 @@ export const LobbyRoomPage = () => {
 
   const handleStartMatch = () => {
     setIsStarting(true);
+    setCountdown(5);
+  };
+
+  const handleCancelMatch = () => {
+    setIsStarting(false);
+    setCountdown(5);
   };
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
     if (isStarting && countdown > 0) {
       timer = setTimeout(() => setCountdown(prev => prev - 1), 1000);
-    } else if (countdown === 0) {
-      // Logic for match start
+    } else if (countdown === 0 && isStarting) {
+      setIsStarting(false);
+      setIsMatchStarted(true);
     }
     return () => clearTimeout(timer);
   }, [isStarting, countdown]);
@@ -271,21 +282,17 @@ export const LobbyRoomPage = () => {
       </motion.header>
 
       <div className="flex-1 flex flex-col lg:flex-row gap-8 relative z-10 overflow-hidden">
-        {/* Visual Right Sidebar (Chat) */}
-        <div className="hidden lg:flex w-[400px] flex-col h-full overflow-hidden">
-           <ChatPanel 
-             messages={messages} 
-             inputMessage={inputMessage} 
-             setInputMessage={setInputMessage} 
-             onSend={handleSendMessage} 
-           />
-        </div>
-
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col gap-6 overflow-y-auto custom-scrollbar pb-24 md:pb-0">
           
           {/* Top Status Panel */}
-          <MatchInfoPanel isStarting={isStarting} countdown={countdown} players={players} />
+          <MatchInfoPanel 
+            isStarting={isStarting} 
+            isMatchStarted={isMatchStarted} 
+            countdown={countdown} 
+            players={players} 
+            onCancel={handleCancelMatch}
+          />
 
           {/* Players Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -300,12 +307,28 @@ export const LobbyRoomPage = () => {
                   onMute={(id) => setPlayers(prev => prev.map(p => p.id === id ? { ...p, isMuted: !p.isMuted } : p))}
                   onInvite={() => setIsInviteModalOpen(true)}
                   onProfile={(id) => setActiveProfileUserId(id)}
-                  onDirectMessage={(id) => setActiveChatUserId(id)}
+                  onDirectMessage={(id) => {
+                    setActiveChatTab(id);
+                    setIsChatOpen(true);
+                  }}
                   onAddFriend={() => {}}
                 />
               ))}
             </AnimatePresence>
           </div>
+        </div>
+
+        {/* Desktop Chat Sidebar */}
+        <div className="hidden lg:flex w-[400px] flex-col h-full overflow-hidden">
+           <ChatPanel 
+             messages={messages} 
+             players={players}
+             activeTab={activeChatTab}
+             onTabChange={setActiveChatTab}
+             inputMessage={inputMessage} 
+             setInputMessage={setInputMessage} 
+             onSend={handleSendMessage} 
+           />
         </div>
       </div>
 
@@ -349,6 +372,9 @@ export const LobbyRoomPage = () => {
               <div className="flex-1 overflow-hidden">
                 <ChatPanel 
                   messages={messages} 
+                  players={players}
+                  activeTab={activeChatTab}
+                  onTabChange={setActiveChatTab}
                   inputMessage={inputMessage} 
                   setInputMessage={setInputMessage} 
                   onSend={handleSendMessage} 
@@ -438,26 +464,6 @@ export const LobbyRoomPage = () => {
             </div>
           </Modal>
         )}
-
-        {activeChatUserId && (
-          <Modal title={`پیام خصوصی به ${players.find(p => p.id === activeChatUserId)?.name}`} onClose={() => setActiveChatUserId(null)}>
-            <div className="flex flex-col h-[400px]">
-               <div className="flex-1 space-y-4 overflow-y-auto mb-4 p-2 custom-scrollbar">
-                  <div className="flex justify-end italic text-gray-500 text-[10px]">شروع گفتگو با {players.find(p => p.id === activeChatUserId)?.name}</div>
-               </div>
-               <div className="relative mt-auto">
-                  <input 
-                    type="text" 
-                    placeholder="پیام خود را بنویسید..." 
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pr-4 pl-12 text-sm text-white focus:border-neon-blue focus:outline-none"
-                  />
-                  <button className="absolute left-2 top-2 h-10 w-10 flex items-center justify-center rounded-xl bg-neon-blue text-dark-bg shadow-lg">
-                    <Send size={18} className="rotate-180" />
-                  </button>
-               </div>
-            </div>
-          </Modal>
-        )}
       </AnimatePresence>
     </div>
   );
@@ -511,14 +517,42 @@ const ControlButton = ({ icon, active = false, onClick }: { icon: React.ReactNod
   </button>
 );
 
-const MatchInfoPanel = ({ isStarting, countdown, players }: { isStarting: boolean, countdown: number, players: Player[] }) => {
+const MatchInfoPanel = ({ isStarting, isMatchStarted, countdown, players, onCancel }: { 
+  isStarting: boolean, 
+  isMatchStarted: boolean,
+  countdown: number, 
+  players: Player[],
+  onCancel: () => void 
+}) => {
   const activePlayers = players.filter(p => p.name !== "Empty Slot");
   const readyCount = activePlayers.filter(p => p.isReady).length;
 
   return (
     <div className="relative">
       <AnimatePresence mode="wait">
-        {isStarting ? (
+        {isMatchStarted ? (
+          <motion.div 
+            key="started"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            className="bg-green-500/10 border border-green-500/30 rounded-[28px] p-6 flex items-center justify-between overflow-hidden shadow-[0_20px_50px_rgba(34,197,94,0.1)]"
+          >
+            <div className="flex items-center gap-4">
+               <div className="h-10 w-10 rounded-full bg-green-500/20 flex items-center justify-center text-green-500">
+                  <Play size={20} />
+               </div>
+               <div>
+                  <h3 className="text-xl font-black text-white">در حال بازی کردن...</h3>
+                  <p className="text-xs text-green-500 font-bold flex items-center gap-2">
+                    <Lock size={12} /> لابی قفل شد و امکان ورود نیست.
+                  </p>
+               </div>
+            </div>
+            <div className="px-5 py-2 rounded-xl bg-green-500 text-dark-bg text-[10px] font-black uppercase tracking-widest">
+               LOBBY LOCKED
+            </div>
+          </motion.div>
+        ) : isStarting ? (
           <motion.div 
             key="starting"
             initial={{ height: 0, opacity: 0 }}
@@ -535,7 +569,12 @@ const MatchInfoPanel = ({ isStarting, countdown, players }: { isStarting: boolea
             </div>
             <div className="flex items-center gap-8">
                <span className="text-6xl font-black text-white tabular-nums drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">{countdown}</span>
-               <button className="text-[10px] font-black text-gray-400 hover:text-white underline uppercase tracking-widest">لغو شروع</button>
+               <button 
+                 onClick={onCancel}
+                 className="text-[10px] font-black text-gray-400 hover:text-white underline uppercase tracking-widest transition-colors"
+               >
+                 لغو شروع
+               </button>
             </div>
           </motion.div>
         ) : (
@@ -732,7 +771,9 @@ const PlayerCard = ({ player, isSelected, onSelect, onVolumeChange, onMute, onIn
           </div>
 
           {player.isHost && (
-            <div className="absolute top-8 left-8 h-2 w-2 rounded-full bg-neon-pink ring-4 ring-neon-pink/10" />
+            <div className="absolute top-8 left-8 h-8 w-8 rounded-2xl bg-neon-pink/10 border border-neon-pink/20 flex items-center justify-center text-neon-pink shadow-[0_0_15px_rgba(255,69,143,0.2)]">
+               <Crown size={14} />
+            </div>
           )}
         </>
       ) : (
@@ -782,30 +823,82 @@ const PingChart = ({ ping }: { ping: number }) => {
   );
 };
 
-const ChatPanel = ({ messages, inputMessage, setInputMessage, onSend, onClose }: { 
+const ChatPanel = ({ messages, players, activeTab, onTabChange, inputMessage, setInputMessage, onSend, onClose }: { 
   messages: Message[], 
+  players: Player[],
+  activeTab: string,
+  onTabChange: (id: string) => void,
   inputMessage: string, 
   setInputMessage: (v: string) => void,
   onSend: (e: React.FormEvent) => void,
   onClose?: () => void
 }) => {
+  const filteredMessages = messages.filter(msg => {
+    if (msg.isSystem) return activeTab === "main";
+    if (activeTab === "main") return !msg.toUserId;
+    return (msg.toUserId === activeTab && msg.fromUserId === "1") || (msg.fromUserId === activeTab && msg.toUserId === "1");
+  });
+
+  const chatTabs = [
+    { id: "main", name: "Lobby" },
+    ...Array.from(new Set(messages.filter(m => m.toUserId || (m.fromUserId && m.fromUserId !== "1")).map(m => m.toUserId === "1" ? m.fromUserId : m.toUserId))).map(uid => ({
+      id: uid as string,
+      name: players.find(p => p.id === uid)?.name || "User"
+    }))
+  ];
+
   return (
     <div className="flex-1 flex flex-col h-full bg-[#0d0d14]/40 backdrop-blur-xl border-l md:border-r border-white/5">
-      <div className="p-6 border-b border-white/5 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-           <div className="h-2 w-2 rounded-full bg-neon-blue shadow-[0_0_10px_rgba(0,229,255,0.8)]" />
-           <h2 className="text-xs font-black uppercase tracking-widest text-white">Lobby Comms</h2>
+      <div className="flex flex-col">
+        <div className="p-6 border-b border-white/5 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+             <div className="h-2 w-2 rounded-full bg-neon-blue shadow-[0_0_10px_rgba(0,229,255,0.8)]" />
+             <h2 className="text-xs font-black uppercase tracking-widest text-white">Lobby Comms</h2>
+          </div>
+          {onClose && (
+            <button onClick={onClose} className="text-gray-500 hover:text-white">
+              <X size={20} />
+            </button>
+          )}
         </div>
-        {onClose && (
-          <button onClick={onClose} className="text-gray-500 hover:text-white">
-            <X size={20} />
-          </button>
-        )}
+        
+        {/* Chat Tabs */}
+        <div className="flex items-center gap-1 p-2 bg-black/20 border-b border-white/5 overflow-x-auto no-scrollbar">
+           {chatTabs.map(tab => (
+             <button
+               key={tab.id}
+               onClick={() => onTabChange(tab.id)}
+               className={cn(
+                 "px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all relative flex items-center gap-2",
+                 activeTab === tab.id ? "bg-white/10 text-white" : "text-gray-500 hover:text-gray-300"
+               )}
+             >
+               {tab.name}
+               {tab.id !== "main" && (
+                 <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onTabChange("main");
+                  }}
+                  className="hover:text-neon-pink"
+                 >
+                   <X size={10} />
+                 </button>
+               )}
+               {activeTab === tab.id && (
+                 <motion.div layoutId="activeTabChat" className="absolute bottom-0 left-0 right-0 h-0.5 bg-neon-blue" />
+               )}
+             </button>
+           ))}
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
-        {messages.map((msg) => (
-          <div key={msg.id} className={cn("group flex flex-col gap-1.5", msg.isSystem ? "items-center my-4" : "items-start")}>
+        {filteredMessages.map((msg) => (
+          <div key={msg.id} className={cn(
+            "group flex flex-col gap-1.5", 
+            msg.isSystem ? "items-center my-4" : msg.user === "You" ? "items-end" : "items-start"
+          )}>
             {msg.isSystem ? (
               <div className="relative w-full flex items-center justify-center p-3 rounded-2xl border border-neon-blue/10 bg-neon-blue/[0.02]">
                  <span className="text-[10px] font-black text-neon-blue uppercase tracking-widest text-center px-4">
@@ -813,19 +906,25 @@ const ChatPanel = ({ messages, inputMessage, setInputMessage, onSend, onClose }:
                  </span>
               </div>
             ) : (
-              <div className="flex items-start gap-3 w-full">
+              <div className={cn(
+                "flex items-start gap-3 max-w-[85%]",
+                msg.user === "You" ? "flex-row-reverse" : "flex-row"
+              )}>
                 <div className="h-8 w-8 rounded-xl bg-white/5 border border-white/10 flex-shrink-0 flex items-center justify-center text-lg mt-1">
-                   {msg.user === "NeonGhost" ? "🥷" : msg.user === "Apex_Hunter" ? "👨‍🎤" : "👧"}
+                   {msg.user === "NeonGhost" ? "🥷" : msg.user === "Apex_Hunter" ? "👨‍🎤" : msg.user === "You" ? "👨‍🎤" : "👧"}
                 </div>
-                <div className="flex-1 space-y-1">
-                  <div className="flex items-center justify-between">
+                <div className={cn("flex-1 space-y-1", msg.user === "You" ? "text-left" : "text-right")}>
+                  <div className={cn("flex items-center gap-3", msg.user === "You" ? "flex-row-reverse" : "flex-row")}>
                     <span className={cn(
                       "text-[10px] font-black uppercase tracking-widest",
                       msg.user === "You" ? "text-neon-pink" : "text-neon-blue"
                     )}>{msg.user === "You" ? "شما" : msg.user}</span>
                     <span className="text-[8px] font-bold text-gray-700 opacity-0 group-hover:opacity-100 transition-opacity">{msg.time}</span>
                   </div>
-                  <div className="bg-white/5 border border-white/10 rounded-2xl rounded-tr-none px-4 py-2.5 text-xs text-gray-300 leading-relaxed shadow-lg">
+                  <div className={cn(
+                    "border border-white/10 rounded-2xl px-4 py-2.5 text-xs text-gray-300 leading-relaxed shadow-lg",
+                    msg.user === "You" ? "bg-neon-pink/5 rounded-tr-none border-neon-pink/10" : "bg-white/5 rounded-tl-none"
+                  )}>
                     {msg.text}
                   </div>
                 </div>
@@ -841,7 +940,7 @@ const ChatPanel = ({ messages, inputMessage, setInputMessage, onSend, onClose }:
             type="text"
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
-            placeholder="چیزی بنویسید..."
+            placeholder={activeTab === "main" ? "چیزی بنویسید..." : "پیام خصوصی..."}
             className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-4 pr-14 text-xs text-white placeholder:text-gray-700 focus:outline-none focus:border-neon-blue/50 transition-all font-medium"
           />
           <button 
