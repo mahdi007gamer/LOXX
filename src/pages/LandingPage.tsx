@@ -1,5 +1,5 @@
-import React from "react";
-import { motion } from "motion/react";
+import React, { useState } from "react";
+import { motion, AnimatePresence, useScroll, useMotionValueEvent } from "motion/react";
 import { HeroSection } from "../components/landing/HeroSection";
 import { FeatureSection } from "../components/landing/FeatureSection";
 import { GamerShowcase } from "../components/landing/GamerShowcase";
@@ -8,6 +8,7 @@ import { PlatformStats } from "../components/landing/PlatformStats";
 import { LiveActivity } from "../components/landing/LiveActivity";
 import { Footer } from "../components/landing/Footer";
 import { ScrollFlameEffect } from "../components/landing/ScrollFlameEffect";
+import { ChevronUp } from "lucide-react";
 
 const SectionReveal = ({ children }: { children: React.ReactNode }) => (
   <motion.div
@@ -22,6 +23,17 @@ const SectionReveal = ({ children }: { children: React.ReactNode }) => (
 );
 
 export const LandingPage = () => {
+  const { scrollY } = useScroll();
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  useMotionValueEvent(scrollY, "change", (latest) => {
+    setShowScrollTop(latest > 500);
+  });
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   return (
     <div className="flex flex-col relative min-h-screen selection:bg-neon-pink selection:text-white">
       <ScrollFlameEffect />
@@ -59,6 +71,20 @@ export const LandingPage = () => {
 
         <Footer />
       </div>
+
+      <AnimatePresence>
+        {showScrollTop && (
+          <motion.button
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            onClick={scrollToTop}
+            className="fixed bottom-8 left-8 z-[9999] h-12 w-12 rounded-full glass border border-white/10 text-white flex items-center justify-center hover:bg-neon-blue hover:text-dark-bg transition-all shadow-[0_0_20px_rgba(0,0,0,0.5)] group"
+          >
+            <ChevronUp size={24} className="group-hover:-translate-y-1 transition-transform" />
+          </motion.button>
+        )}
+      </AnimatePresence>
 
       {/* Global Background Glows */}
       <div className="fixed inset-0 pointer-events-none -z-20 overflow-hidden">

@@ -39,23 +39,23 @@ export const Navbar = () => {
       >
         <div 
           className={cn(
-            "mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8 transition-all duration-500",
+            "mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8 transition-all duration-500 relative",
             isLanding && isScrolled && "max-w-4xl rounded-2xl bg-dark-bg/90 px-8 shadow-[0_20px_50px_rgba(0,0,0,0.8),0_0_15px_rgba(0,229,255,0.2)] backdrop-blur-xl border border-white/10"
           )}
         >
-          <div className="flex items-center gap-8">
+          {/* Left: Logo & Mobile Toggle */}
+          <div className="flex items-center gap-4 flex-shrink-0">
             <button 
               className="p-2 text-gray-400 hover:text-white md:hidden"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
             >
               {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
-
             <Link to="/" className="flex items-center gap-4 group">
               <img 
                 src="/logo.png" 
                 alt="LOXX Logo" 
-                className="h-12 w-auto drop-shadow-[0_0_15px_rgba(0,229,255,0.5)] transition-transform group-hover:scale-110"
+                className="h-10 w-auto drop-shadow-[0_0_15px_rgba(0,229,255,0.5)] transition-transform group-hover:scale-110"
                 onError={(e) => {
                   e.currentTarget.style.display = 'none';
                   e.currentTarget.nextElementSibling?.classList.remove('hidden');
@@ -64,36 +64,48 @@ export const Navbar = () => {
               <div className="hidden flex h-10 w-10 items-center justify-center rounded-xl bg-neon-blue/20 text-neon-blue shadow-[0_0_15px_rgba(0,229,255,0.3)]">
                 <Gamepad2 size={24} />
               </div>
-              <div className="flex flex-col -space-y-1">
-                <span className="text-2xl font-black tracking-tighter text-white group-hover:text-neon-blue transition-colors">
-                  لوکس
-                </span>
-                <span className="text-[10px] font-bold text-gray-500 whitespace-nowrap hidden md:block">
-                  اولین و پیشرفته ترین پلتفرم گیمر های ایرانی
-                </span>
-              </div>
+              <AnimatePresence>
+                {!(isLanding && isScrolled) && (
+                  <motion.div 
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -10 }}
+                    className="flex flex-col -space-y-1"
+                  >
+                    <span className="text-xl font-black tracking-tighter text-white group-hover:text-neon-blue transition-colors">
+                      لوکس
+                    </span>
+                    <span className="text-[8px] font-bold text-gray-500 whitespace-nowrap hidden lg:block">
+                      اولین و پیشرفته ترین پلتفرم گیمر های ایرانی
+                    </span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </Link>
-
-            <div className="hidden md:flex items-center gap-6">
-              <NavLink to="/lobbies" className={({ isActive }) => cn("transition-colors font-medium", isActive ? "text-neon-blue" : "text-gray-400 hover:text-neon-blue")}>لابی‌ها</NavLink>
-              <NavLink to="/chat" className={({ isActive }) => cn("transition-colors font-medium", isActive ? "text-neon-blue" : "text-gray-400 hover:text-neon-blue")}>چت سراسری</NavLink>
-            </div>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-4">
+          {/* Middle: Centered Navigation */}
+          <div className="hidden md:flex items-center gap-8 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+            <NavLink to="/lobbies" className={({ isActive }) => cn("transition-all font-bold text-xs uppercase tracking-[0.2em]", isActive ? "text-neon-blue drop-shadow-[0_0_8px_rgba(0,229,255,0.5)]" : "text-gray-400 hover:text-white hover:tracking-[0.3em]")}>لابی‌ها</NavLink>
+            <NavLink to="/chat" className={({ isActive }) => cn("transition-all font-bold text-xs uppercase tracking-[0.2em]", isActive ? "text-neon-blue drop-shadow-[0_0_8px_rgba(0,229,255,0.5)]" : "text-gray-400 hover:text-white hover:tracking-[0.3em]")}>چت سراسری</NavLink>
+            <NavLink to="/rooms" className={({ isActive }) => cn("transition-all font-bold text-xs uppercase tracking-[0.2em]", isActive ? "text-neon-blue drop-shadow-[0_0_8px_rgba(0,229,255,0.5)]" : "text-gray-400 hover:text-white hover:tracking-[0.3em]")}>اتاق‌ها</NavLink>
+          </div>
+
+          {/* Right: Actions */}
+          <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
             <button className="relative p-2 text-gray-400 hover:text-neon-pink transition-colors">
               <Bell size={20} />
               <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-neon-pink shadow-[0_0_10px_rgba(255,0,153,0.8)]" />
             </button>
             
             <Link to="/profile" className="hidden sm:block">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full border border-neon-purple/50 bg-neon-purple/10 text-neon-purple transition-all hover:shadow-[0_0_15px_rgba(160,32,240,0.5)]">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-white/5 text-white transition-all hover:bg-white/10 hover:border-white/40 hover:shadow-[0_0_15px_rgba(255,255,255,0.2)]">
                 <User size={20} />
               </div>
             </Link>
 
             <Link to="/auth">
-              <GlowButton variant="blue" size="sm" className="hidden xs:flex">
+              <GlowButton variant="blue" size="sm" className="hidden xs:flex h-10 px-6 rounded-full font-black text-[10px] tracking-widest">
                 ورود
               </GlowButton>
             </Link>

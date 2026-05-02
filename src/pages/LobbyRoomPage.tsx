@@ -344,7 +344,6 @@ export const LobbyRoomPage = () => {
                     setIsChatOpen(true);
                   }}
                   onAddFriend={() => {}}
-                  disabled={isMatchStarted}
                 />
               ))}
             </AnimatePresence>
@@ -691,14 +690,13 @@ const PlayerCard = ({ player, isSelected, onSelect, onVolumeChange, onMute, onIn
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.9 }}
-      whileHover={!isSlot && !disabled ? { y: -8, transition: { duration: 0.2 } } : {}}
+      whileHover={!isSlot ? { y: -8, transition: { duration: 0.2 } } : {}}
       onClick={!isSlot ? onSelect : () => onInvite()}
       className={cn(
         "relative p-8 rounded-[40px] border transition-all duration-300 backdrop-blur-md cursor-pointer group h-full flex flex-col justify-between",
         isSlot ? "border-dashed border-white/10 bg-transparent opacity-40 hover:opacity-100" : "bg-[#0a0a0f] border-white/10 shadow-2xl overflow-hidden",
-        player.isReady && !isSlot && !disabled && "scale-[1.03] ring-1 ring-neon-blue/40 border-neon-blue/30 shadow-[0_30px_60px_-10px_rgba(0,229,255,0.2)]",
-        player.isSpeaking && "ring-2 ring-green-500/50 shadow-[0_0_40px_rgba(34,197,94,0.15)]",
-        disabled && "grayscale opacity-80"
+        player.isReady && !isSlot && "scale-[1.03] ring-1 ring-neon-blue/40 border-neon-blue/30 shadow-[0_30px_60px_-10px_rgba(0,229,255,0.2)]",
+        player.isSpeaking && "ring-2 ring-green-500/50 shadow-[0_0_40px_rgba(34,197,94,0.15)]"
       )}
     >
       {!isSlot ? (
