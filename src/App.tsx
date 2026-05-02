@@ -10,6 +10,7 @@ import { AuthPage } from "./pages/AuthPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { ChatPage } from "./pages/ChatPage";
 import { LobbiesPage } from "./pages/LobbiesPage";
+import { LobbyRoomPage } from "./pages/LobbyRoomPage";
 import { ProfilePage } from "./pages/ProfilePage";
 import { RoomsPage } from "./pages/RoomsPage";
 import { LeaderboardPage } from "./pages/LeaderboardPage";
@@ -41,6 +42,7 @@ const AppContent = () => {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/chat" element={<ChatPage />} />
           <Route path="/lobbies" element={<LobbiesPage />} />
+          <Route path="/lobby/:id" element={<LobbyRoomPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/rooms" element={<RoomsPage />} />
           <Route path="/leaderboard" element={<LeaderboardPage />} />

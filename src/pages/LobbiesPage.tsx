@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Sidebar } from "../components/layout/Sidebar";
 import { NeonCard } from "../components/ui/NeonCard";
 import { GlowButton } from "../components/ui/GlowButton";
@@ -40,6 +41,7 @@ const LOBBIES = [
 ];
 
 export const LobbiesPage = () => {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showToast, setShowToast] = useState(false);
@@ -57,6 +59,9 @@ export const LobbiesPage = () => {
   const handleLobbyCreated = () => {
     setIsModalOpen(false);
     setShowToast(true);
+    setTimeout(() => {
+      navigate("/lobby/LX-PREMIUM-101");
+    }, 1500);
   };
 
   return (

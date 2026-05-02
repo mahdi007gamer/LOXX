@@ -94,8 +94,7 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
     
     setIsGeneratingAi(true);
     try {
-      const genAI = new GoogleGenAI(process.env.GEMINI_API_KEY);
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
       
       const prompt = `Write a short, professional, and cool gaming lobby description for LOXX gaming platform. 
       Game: ${formData.game}
@@ -105,9 +104,14 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
       Tone: Serious and competitive. 
       Keep it under 30 words. Return ONLY the text of the description in Persian (Farsi).`;
 
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      setFormData(prev => ({ ...prev, description: response.text().trim() }));
+      const response = await ai.models.generateContent({
+        model: "gemini-3-flash-preview",
+        contents: prompt,
+      });
+
+      if (response.text) {
+        setFormData(prev => ({ ...prev, description: response.text.trim() }));
+      }
     } catch (error) {
       console.error("AI Generation failed:", error);
     } finally {
