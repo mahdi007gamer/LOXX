@@ -87,24 +87,54 @@ const FriendItem = ({ friend, toggleFavorite, toggleMute, toggleBlock, removeFri
         <Star size={18} className={friend.isFavorite ? "fill-neon-blue" : ""} />
       </button>
       <div className="relative group/menu">
-        <button className="p-2 text-gray-400 hover:text-white rounded-lg">
+        <button className="p-2 text-gray-400 hover:text-white rounded-lg transition-colors">
           <MoreVertical size={18} />
         </button>
-        <div className="absolute left-0 top-full z-50 mt-1 hidden w-44 rounded-xl bg-[#0a0a0f]/98 border border-white/10 p-1 shadow-[0_10px_30px_rgba(0,0,0,0.5)] backdrop-blur-xl group-hover/menu:block">
-          <button onClick={() => toggleMute(friend.id)} className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-xs text-gray-400 hover:bg-white/5 hover:text-white transition-all text-right" dir="rtl">
-            {friend.isMuted ? <Bell size={14} className="text-neon-blue" /> : <VolumeX size={14} />}
-            {friend.isMuted ? "خروج از بی‌صدا" : "بی‌صدا کردن"}
-          </button>
-          <button onClick={() => toggleBlock(friend.id)} className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-xs text-gray-400 hover:bg-white/5 hover:text-white transition-all text-right" dir="rtl">
-            <Ban size={14} className={friend.isBlocked ? "text-neon-blue" : ""} />
-            {friend.isBlocked ? "آنبلاک" : "بلاک کردن"}
-          </button>
-          <div className="my-1 h-px bg-white/5" />
-          <button onClick={() => removeFriend(friend.id)} className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-xs text-neon-pink hover:bg-neon-pink/10 transition-all text-right" dir="rtl">
-            <Trash2 size={14} />
-            حذف دوست
-          </button>
-        </div>
+        <AnimatePresence>
+          <div className="absolute left-0 top-full z-50 pt-1 pointer-events-none group-hover/menu:pointer-events-auto">
+            <motion.div 
+              initial={{ opacity: 0, y: 10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.95 }}
+              className="hidden w-44 rounded-xl bg-[#0a0a0f]/98 border border-white/10 p-1 shadow-[0_10px_30px_rgba(0,0,0,0.5)] backdrop-blur-xl group-hover/menu:block"
+            >
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleMute(friend.id);
+                }} 
+                className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-xs text-gray-400 hover:bg-white/5 hover:text-white transition-all text-right" 
+                dir="rtl"
+              >
+                {friend.isMuted ? <Bell size={14} className="text-neon-blue" /> : <VolumeX size={14} />}
+                {friend.isMuted ? "خروج از بی‌صدا" : "بی‌صدا کردن"}
+              </button>
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleBlock(friend.id);
+                }} 
+                className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-xs text-gray-400 hover:bg-white/5 hover:text-white transition-all text-right" 
+                dir="rtl"
+              >
+                <Ban size={14} className={friend.isBlocked ? "text-neon-blue" : ""} />
+                {friend.isBlocked ? "آنبلاک" : "بلاک کردن"}
+              </button>
+              <div className="my-1 h-px bg-white/5" />
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  removeFriend(friend.id);
+                }} 
+                className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-xs text-neon-pink hover:bg-neon-pink/10 transition-all text-right" 
+                dir="rtl"
+              >
+                <Trash2 size={14} />
+                حذف دوست
+              </button>
+            </motion.div>
+          </div>
+        </AnimatePresence>
       </div>
     </div>
   </motion.div>

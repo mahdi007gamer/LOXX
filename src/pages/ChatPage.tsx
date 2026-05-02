@@ -455,10 +455,20 @@ export const ChatPage: React.FC = () => {
   const [showGifPicker, setShowGifPicker] = useState(false);
   const [savedGifs, setSavedGifs] = useState<string[]>([]);
   const [showSaveFeedback, setShowSaveFeedback] = useState(false);
+  const [showFriendsSidebar, setShowFriendsSidebar] = useState(false);
   const [userLvl, setUserLvl] = useState(42);
   const scrollRef = useRef<HTMLDivElement>(null);
   
-  // Game channels logic - dynamic based on favorite games
+  const { friends, sendMessage: sendFriendMessage } = useFriends();
+  const [isFriendsLoading, setIsFriendsLoading] = useState(false);
+
+  useEffect(() => {
+    if (showFriendsSidebar) {
+      setIsFriendsLoading(true);
+      const timer = setTimeout(() => setIsFriendsLoading(false), 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [showFriendsSidebar]);
   const myGamesChannels = (games || [])
     .filter(g => myGames?.includes(g.id))
     .map(g => ({
@@ -733,10 +743,140 @@ export const ChatPage: React.FC = () => {
               </GlowButton>
             )}
             <div className="h-8 w-px bg-white/5 mx-2"></div>
-            <button className="p-2 text-gray-500 hover:text-white hover:bg-white/5 rounded-lg transition-all"><Users size={20} /></button>
+            <button 
+              onClick={() => setShowFriendsSidebar(!showFriendsSidebar)}
+              className={cn(
+                "p-2 rounded-lg transition-all",
+                showFriendsSidebar ? "text-neon-blue bg-neon-blue/10" : "text-gray-500 hover:text-white hover:bg-white/5"
+              )}
+            >
+              <Users size={20} />
+            </button>
             <button className="p-2 text-gray-500 hover:text-white hover:bg-white/5 rounded-lg transition-all"><MoreVertical size={20} /></button>
           </div>
         </header>
+
+        {/* Friends Sidebar Drawer */}
+        <AnimatePresence>
+          {showFriendsSidebar && (
+            <>
+              {/* Backdrop */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setShowFriendsSidebar(false)}
+                className="absolute inset-0 bg-black/60 backdrop-blur-sm z-[45]"
+              />
+              
+              {/* Drawer */}
+              <motion.div
+                initial={{ x: "-100%" }}
+                animate={{ x: 0 }}
+                exit={{ x: "-100%" }}
+                transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                className="absolute right-auto left-0 top-0 bottom-0 w-80 bg-[#0d0d12]/95 border-r border-white/10 shadow-[20px_0_40px_rgba(0,0,0,0.5)] z-[50] flex flex-col overflow-hidden backdrop-blur-xl"
+              >
+                <div className="p-6 border-b border-white/5 flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-black text-white tracking-widest uppercase">لیست دوستان</h3>
+                    <p className="text-[10px] text-neon-blue font-bold tracking-widest uppercase">Social Hub</p>
+                  </div>
+                  <button 
+                    onClick={() => setShowFriendsSidebar(false)}
+                    className="h-8 w-8 rounded-full bg-white/5 flex items-center justify-center text-gray-500 hover:text-white hover:bg-white/10 transition-colors"
+                  >
+                    ×
+                  </button>
+                </div>
+
+                <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+                  {isFriendsLoading ? (
+                    // Skeleton Loading
+                    <div className="space-y-4">
+                      {[1, 2, 3, 4, 5, 6].map((i) => (
+                        <div key={i} className="flex items-center gap-3 p-3 rounded-2xl bg-white/5 animate-pulse">
+                          <div className="h-10 w-10 rounded-xl bg-white/10" />
+                          <div className="flex-1 space-y-2">
+                            <div className="h-3 w-20 bg-white/10 rounded" />
+                            <div className="h-2 w-12 bg-white/10 rounded" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {friends.length > 0 ? (
+                        friends.map((friend) => (
+                          <motion.div
+                            key={friend.id}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            className="group relative flex items-center gap-3 p-3 rounded-2xl bg-white/5 hover:bg-white/10 border border-transparent hover:border-white/10 transition-all cursor-pointer"
+                          >
+                            <div className="relative">
+                              <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center shadow-lg overflow-hidden group-hover:scale-105 transition-transform">
+                                {friend.avatar ? (
+                                  <img src={friend.avatar} alt="" className="h-full w-full object-cover" />
+                                ) : (
+                                  <span className="text-xl">👤</span>
+                                )}
+                              </div>
+                              <div className={cn(
+                                "absolute -bottom-1 -right-1 h-3 w-3 rounded-full border-2 border-[#0d0d12]",
+                                friend.status === "online" ? "bg-green-500" :
+                                friend.status === "in_game" ? "bg-neon-purple shadow-[0_0_8px_rgba(160,32,240,0.8)]" :
+                                "bg-gray-600"
+                              )} />
+                            </div>
+                            
+                            <div className="flex-1">
+                              <div className="flex items-center gap-1">
+                                <p className="text-xs font-black text-white">{friend.displayName}</p>
+                                {friend.isFavorite && <Star size={10} className="fill-neon-blue text-neon-blue" />}
+                              </div>
+                              <p className="text-[10px] text-gray-500 font-bold">سطح {friend.level}</p>
+                            </div>
+
+                            {/* Hover Actions */}
+                            <div className="absolute inset-0 bg-dark-bg/80 backdrop-blur-sm opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2 rounded-2xl transition-all duration-300">
+                               <button 
+                                onClick={() => sendFriendMessage(friend.id, "سلام!")}
+                                className="h-9 w-9 rounded-xl bg-neon-blue/20 text-neon-blue hover:bg-neon-blue hover:text-dark-bg transition-all flex items-center justify-center shadow-lg shadow-neon-blue/10"
+                                title="پیام"
+                               >
+                                 <Plus size={16} />
+                               </button>
+                               <button 
+                                className="h-9 w-9 rounded-xl bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-all flex items-center justify-center"
+                                title="پروفایل"
+                               >
+                                 <Users size={16} />
+                               </button>
+                            </div>
+                          </motion.div>
+                        ))
+                      ) : (
+                        <div className="py-20 text-center space-y-4 opacity-50">
+                           <Users size={40} className="mx-auto text-gray-600" />
+                           <p className="text-xs font-bold text-gray-500">لیست دوستان خالی است</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Footer Action */}
+                <div className="p-4 bg-white/5 border-t border-white/5">
+                  <GlowButton variant="blue" className="w-full !rounded-2xl text-xs font-black h-12 shadow-neon-blue/10">
+                    یافتن دوستان جدید
+                  </GlowButton>
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
+
 
         {/* Messages List */}
         <div 
