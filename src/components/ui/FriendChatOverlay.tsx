@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { useFriends } from "../../context/FriendsContext";
 import { MessageSquare, X, Minus, Send, MessageCircle } from "lucide-react";
 import { cn } from "../../lib/utils";
+import { FriendStatus } from "../../types";
 
 export const FriendChatOverlay = () => {
   const { chats, friends, sendMessage, markAsRead, closeChat } = useFriends();

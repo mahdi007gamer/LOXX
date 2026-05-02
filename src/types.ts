@@ -5,6 +5,22 @@ export enum FriendStatus {
   OFFLINE = "offline"
 }
 
+export interface Lobby {
+  id: number;
+  game: string;
+  title: string;
+  players: number;
+  max: number;
+  rank: string;
+  icon: string;
+  variant: "blue" | "pink" | "purple";
+  region: string;
+  mode: string;
+  createdAt: string;
+  status: "hot" | "new" | "normal";
+  gameBanner?: string;
+}
+
 export interface Game {
   id: string;
   title: string;

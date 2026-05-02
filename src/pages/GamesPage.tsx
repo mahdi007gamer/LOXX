@@ -45,7 +45,7 @@ const GameCard = ({ game, index }: { game: Game; index: number }) => {
       whileHover={{ y: -5 }}
       className="group relative"
     >
-      <NeonCard variant={isAdded ? "blue" : "default"} className="overflow-hidden border-white/5 flex flex-col h-full" hover={true}>
+      <NeonCard variant={isAdded ? "blue" : "purple"} className="overflow-hidden border-white/5 flex flex-col h-full" hover={true}>
         {/* Game Image */}
         <div className="relative h-48 overflow-hidden">
           <img 
@@ -103,7 +103,7 @@ const GameCard = ({ game, index }: { game: Game; index: number }) => {
 
           <div className="flex items-center gap-2 mt-auto">
             <GlowButton 
-              variant={isAdded ? "blue" : "default"} 
+              variant={isAdded ? "blue" : "purple"} 
               size="sm" 
               className="flex-1 py-4 text-xs font-bold"
               onClick={() => toggleMyGame(game.id)}

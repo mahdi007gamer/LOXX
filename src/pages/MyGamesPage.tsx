@@ -12,12 +12,15 @@ import {
   ChevronLeft,
   Sparkles,
   Trophy,
-  History
+  History,
+  Trash2
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Link } from "react-router-dom";
 
 const MyGameCard = ({ game }: { game: Game }) => {
+  const { toggleMyGame } = useGames();
+  
   return (
     <motion.div
       layout
@@ -29,13 +32,21 @@ const MyGameCard = ({ game }: { game: Game }) => {
     >
       <NeonCard variant="purple" className="overflow-hidden p-0" hover={true}>
         <div className="flex flex-col sm:flex-row">
-          <div className="h-40 sm:h-auto sm:w-48 overflow-hidden shrink-0">
+          <div className="h-40 sm:h-auto sm:w-48 overflow-hidden shrink-0 relative">
             <img 
               src={game.image} 
               alt={game.title} 
               className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
               referrerPolicy="no-referrer"
             />
+            {/* Quick Remove Button for Mobile */}
+            <button 
+              onClick={() => toggleMyGame(game.id)}
+              className="absolute top-2 right-2 p-2 rounded-xl bg-black/60 backdrop-blur-md text-neon-pink sm:hidden border border-white/10"
+              title="حذف از لیست"
+            >
+              <Trash2 size={16} />
+            </button>
           </div>
           <div className="p-6 flex-1 flex flex-col justify-between">
             <div>
@@ -62,8 +73,12 @@ const MyGameCard = ({ game }: { game: Game }) => {
                   مشاهده لابی‌ها
                 </GlowButton>
               </Link>
-              <button className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-gray-500 hover:text-white transition-all">
-                <History size={18} />
+              <button 
+                onClick={() => toggleMyGame(game.id)}
+                className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-gray-500 hover:text-neon-pink hover:bg-neon-pink/10 transition-all hidden sm:block"
+                title="حذف از لیست"
+              >
+                <Trash2 size={18} />
               </button>
             </div>
           </div>

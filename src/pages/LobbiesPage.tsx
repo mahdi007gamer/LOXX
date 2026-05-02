@@ -14,11 +14,15 @@ import {
   ChevronRight,
   Clock,
   Filter,
-  CheckCircle2
+  CheckCircle2,
+  Globe,
+  Zap,
+  Sparkles
 } from "lucide-react";
 import { motion } from "motion/react";
 import { cn } from "@/src/lib/utils";
 import { CreateLobbyModal } from "../components/modals/CreateLobbyModal";
+import { Lobby } from "../types";
 
 const GAMES = [
   "Counter Strike 2",
@@ -31,13 +35,97 @@ const GAMES = [
 
 const SKILL_LEVELS = ["مبتدی", "متوسط", "حرفه‌ای", "نخبه (Elite)"];
 
-const LOBBIES = [
-  { id: 1, game: "Counter Strike 2", title: "رقابتی | رنک گلوبال", players: 4, max: 5, rank: "Global", icon: "🔫", variant: "blue" },
-  { id: 2, game: "Dota 2", title: "تورنمنت ۵ به ۵", players: 2, max: 10, rank: "Divine", icon: "⚔️", variant: "pink" },
-  { id: 3, game: "Valorant", title: "فقط بازیکن با میکروفون", players: 3, max: 5, rank: "Diamond", icon: "⚡", variant: "purple" },
-  { id: 4, game: "Apex Legends", title: "رنک آپ سریع", players: 1, max: 3, rank: "Predator", icon: "🔥", variant: "blue" },
-  { id: 5, game: "League of Legends", title: "آرام و دوستانه", players: 2, max: 5, rank: "Platinum", icon: "🧙", variant: "pink" },
-  { id: 6, game: "Rainbow Six Siege", title: "هماهنگی تاکتیکی", players: 4, max: 5, rank: "Emerald", icon: "🧱", variant: "blue" },
+const LOBBIES: Lobby[] = [
+  { 
+    id: 1, 
+    game: "Counter Strike 2", 
+    title: "رقابتی | رنک گلوبال", 
+    players: 4, 
+    max: 5, 
+    rank: "Global", 
+    icon: "🔫", 
+    variant: "blue",
+    region: "Middle East",
+    mode: "Competitive",
+    createdAt: "۲ دقیقه پیش",
+    status: "hot",
+    gameBanner: "https://shared.cloudflare.steamstatic.com/store_apps/730/capsule_616x353.jpg"
+  },
+  { 
+    id: 2, 
+    game: "Dota 2", 
+    title: "تورنمنت ۵ به ۵", 
+    players: 2, 
+    max: 10, 
+    rank: "Divine", 
+    icon: "⚔️", 
+    variant: "pink",
+    region: "Europe",
+    mode: "Ranked All Pick",
+    createdAt: "۵ دقیقه پیش",
+    status: "normal",
+    gameBanner: "https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota2_social.jpg"
+  },
+  { 
+    id: 3, 
+    game: "Valorant", 
+    title: "فقط بازیکن با میکروفون", 
+    players: 3, 
+    max: 5, 
+    rank: "Diamond", 
+    icon: "⚡", 
+    variant: "purple",
+    region: "Middle East",
+    mode: "Competitive",
+    createdAt: "۱۰ دقیقه پیش",
+    status: "new",
+    gameBanner: "https://images.contentstack.io/v3/assets/bltb6530b271fddd0b1/blt7ef999db63f68d6f/652f1e967a15993202685718/VAL_Banner_1920x1080.jpg"
+  },
+  { 
+    id: 4, 
+    game: "Apex Legends", 
+    title: "رنک آپ سریع", 
+    players: 1, 
+    max: 3, 
+    rank: "Predator", 
+    icon: "🔥", 
+    variant: "blue",
+    region: "Asia",
+    mode: "Ranked Leagues",
+    createdAt: "۱ دقیقه پیش",
+    status: "hot",
+    gameBanner: "https://media.contentapi.ea.com/content/dam/apex-legends/images/2019/01/apex-featured-image-16x9.jpg.adapt.crop191x100.1200w.jpg"
+  },
+  { 
+    id: 5, 
+    game: "League of Legends", 
+    title: "آرام و دوستانه", 
+    players: 2, 
+    max: 5, 
+    rank: "Platinum", 
+    icon: "🧙", 
+    variant: "pink",
+    region: "Europe",
+    mode: "Normal",
+    createdAt: "۱۵ دقیقه پیش",
+    status: "normal",
+    gameBanner: "https://gaming-cdn.com/images/products/6504/orig/league-of-legends-pc-game-cover.jpg?v=1662447432"
+  },
+  { 
+    id: 6, 
+    game: "Rainbow Six Siege", 
+    title: "هماهنگی تاکتیکی", 
+    players: 4, 
+    max: 5, 
+    rank: "Emerald", 
+    icon: "🧱", 
+    variant: "blue",
+    region: "Middle East",
+    mode: "Tactical",
+    createdAt: "۷ دقیقه پیش",
+    status: "new",
+    gameBanner: "https://shared.cloudflare.steamstatic.com/store_apps/359550/capsule_616x353.jpg"
+  },
 ];
 
 export const LobbiesPage = () => {
@@ -118,52 +206,101 @@ export const LobbiesPage = () => {
                   transition={{ delay: i * 0.05 }}
                 >
                   <NeonCard 
-                    variant={lobby.variant as any} 
+                    variant={lobby.variant} 
                     hover={true}
-                    className="group relative flex flex-col justify-between h-[240px] overflow-hidden"
+                    className="group relative flex flex-col h-full overflow-hidden p-0 border-white/5"
                   >
-                    <div className="relative z-10">
-                      <div className="mb-4 flex items-center justify-between">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/5 text-2xl">
-                          {lobby.icon}
-                        </div>
-                        <div className={cn(
-                          "rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider",
-                          lobby.variant === 'blue' ? 'bg-neon-blue/10 text-neon-blue' : 'bg-neon-pink/10 text-neon-pink'
-                        )}>
-                          {lobby.game}
-                        </div>
-                      </div>
+                    {/* Game Banner */}
+                    <div className="relative h-28 w-full overflow-hidden shrink-0">
+                      <img 
+                        src={lobby.gameBanner} 
+                        alt={lobby.game} 
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                        referrerPolicy="no-referrer"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-dark-bg/90 via-dark-bg/20 to-transparent" />
                       
-                      <h3 className="mb-2 text-lg font-bold text-white line-clamp-1">{lobby.title}</h3>
-                      <div className="flex items-center gap-2 text-xs text-gray-400">
-                        <ShieldCheck size={14} className="text-green-500" />
-                        <span>سطح مهارت: {lobby.rank}</span>
+                      {/* Status Badge */}
+                      {lobby.status !== 'normal' && (
+                        <div className={cn(
+                          "absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] font-black uppercase backdrop-blur-md border",
+                          lobby.status === 'hot' 
+                            ? "bg-neon-pink/20 border-neon-pink/30 text-neon-pink" 
+                            : "bg-neon-blue/20 border-neon-blue/30 text-neon-blue"
+                        )}>
+                          {lobby.status === 'hot' ? <Zap size={10} fill="currentColor" /> : <Sparkles size={10} />}
+                          <span>{lobby.status === 'hot' ? "داغ" : "جدید"}</span>
+                        </div>
+                      )}
+
+                      {/* Time Badge */}
+                      <div className="absolute bottom-3 right-3 flex items-center gap-1.5 text-[9px] font-bold text-gray-300">
+                        <Clock size={10} />
+                        <span>{lobby.createdAt}</span>
+                      </div>
+
+                      {/* Game Icon Overlay */}
+                      <div className="absolute -bottom-4 left-4 h-10 w-10 flex items-center justify-center rounded-xl bg-[#0a0a0f] border border-white/10 text-xl shadow-2xl z-20">
+                        {lobby.icon}
                       </div>
                     </div>
 
-                    <div className="relative z-10 mt-6 flex items-center justify-between border-t border-white/5 pt-4 transition-opacity group-hover:opacity-0">
+                    <div className="p-6 pt-8 flex-1 flex flex-col">
+                      <div className="mb-3 flex items-center justify-between">
+                        <div className={cn(
+                          "rounded-full px-2.5 py-0.5 text-[9px] font-black uppercase tracking-tight border",
+                          lobby.variant === 'blue' ? 'bg-neon-blue/10 text-neon-blue border-neon-blue/20' : 
+                          lobby.variant === 'pink' ? 'bg-neon-pink/10 text-neon-pink border-neon-pink/20' :
+                          'bg-neon-purple/10 text-neon-purple border-neon-purple/20'
+                        )}>
+                          {lobby.game}
+                        </div>
+                        <div className="flex items-center gap-1.5 text-white">
+                          <Users size={12} className="text-gray-500" />
+                          <span className="text-[10px] font-black">{lobby.players} / {lobby.max}</span>
+                        </div>
+                      </div>
+                      
+                      <h3 className="mb-3 text-lg font-black text-white line-clamp-1 group-hover:text-neon-blue transition-colors">
+                        {lobby.title}
+                      </h3>
+
+                      {/* Region & Mode Badges */}
+                      <div className="mb-4 flex flex-wrap gap-2">
+                        <div className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-white/5 border border-white/5 text-[9px] font-bold text-gray-400">
+                          <Globe size={10} />
+                          <span>{lobby.region}</span>
+                        </div>
+                        <div className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-white/5 border border-white/5 text-[9px] font-bold text-neon-blue">
+                          <Gamepad2 size={10} />
+                          <span>{lobby.mode}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 text-xs text-gray-500 mt-auto">
+                        <ShieldCheck size={14} className="text-green-500" />
+                        <span className="font-bold">سطح مهارت: <span className="text-white">{lobby.rank}</span></span>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 flex items-center justify-between border-t border-white/5 p-4 py-3 transition-all group-hover:opacity-0">
                       <div className="flex items-center gap-2">
                          <div className="flex -space-x-2">
                             {[1, 2, 3].map(p => (
-                              <div key={p} className="h-7 w-7 rounded-full border-2 border-dark-card bg-white/10" />
+                              <div key={p} className="h-6 w-6 rounded-full border-2 border-dark-card bg-white/10 flex items-center justify-center text-[8px]">
+                                👤
+                              </div>
                             ))}
                          </div>
-                         <span className="text-xs font-medium text-gray-500">+{lobby.players} هوادار</span>
+                         <span className="text-[10px] font-bold text-gray-500">+{lobby.players} آنلاین</span>
                       </div>
-                      <div className="text-left">
-                         <p className="text-[10px] text-gray-500">ظرفیت</p>
-                         <p className={cn(
-                           "font-black",
-                           lobby.players >= lobby.max ? "text-neon-pink" : "text-neon-blue"
-                         )}>
-                           {lobby.players}/{lobby.max}
-                         </p>
+                      <div className="px-3 py-1 rounded-lg bg-white/5 text-[10px] font-black text-neon-blue uppercase italic">
+                         JOIN NOW
                       </div>
                     </div>
 
                     <div className="absolute inset-x-0 bottom-6 px-6 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 z-30 flex items-center justify-center">
-                      <GlowButton variant={lobby.variant as any} className="w-full" onClick={handleRequestAccess}>
+                      <GlowButton variant={lobby.variant} className="w-full text-xs font-black py-4" onClick={handleRequestAccess}>
                         درخواست عضویت
                       </GlowButton>
                     </div>
