@@ -51,13 +51,12 @@ export const Navbar = () => {
               {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
 
-            <Link to="/" className="flex items-center gap-3 group">
+            <Link to="/" className="flex items-center gap-4 group">
               <img 
                 src="/logo.png" 
                 alt="LOXX Logo" 
                 className="h-12 w-auto drop-shadow-[0_0_15px_rgba(0,229,255,0.5)] transition-transform group-hover:scale-110"
                 onError={(e) => {
-                  // Fallback if logo.png is not found
                   e.currentTarget.style.display = 'none';
                   e.currentTarget.nextElementSibling?.classList.remove('hidden');
                 }}
@@ -65,9 +64,14 @@ export const Navbar = () => {
               <div className="hidden flex h-10 w-10 items-center justify-center rounded-xl bg-neon-blue/20 text-neon-blue shadow-[0_0_15px_rgba(0,229,255,0.3)]">
                 <Gamepad2 size={24} />
               </div>
-              <span className="text-2xl font-black tracking-tighter text-white group-hover:text-neon-blue transition-colors">
-                LOXX
-              </span>
+              <div className="flex flex-col -space-y-1">
+                <span className="text-2xl font-black tracking-tighter text-white group-hover:text-neon-blue transition-colors">
+                  لوکس
+                </span>
+                <span className="text-[10px] font-bold text-gray-500 whitespace-nowrap hidden md:block">
+                  اولین و پیشرفته ترین پلتفرم گیمر های ایرانی
+                </span>
+              </div>
             </Link>
 
             <div className="hidden md:flex items-center gap-6">

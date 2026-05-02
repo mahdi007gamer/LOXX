@@ -232,7 +232,7 @@ export const LobbyRoomPage = () => {
 
       {/* Achievement Pulse Overlay */}
       <AnimatePresence>
-        {allReadyPulse && !isStarting && (
+        {allReadyPulse && !isStarting && !isMatchStarted && (
           <motion.div 
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -260,12 +260,6 @@ export const LobbyRoomPage = () => {
         className="relative z-10 glass rounded-[32px] p-4 md:p-6 flex flex-wrap items-center justify-between gap-6 border-white/5 shadow-2xl"
       >
         <div className="flex items-center gap-5">
-           <Link to="/">
-             <img src="/logo.png" alt="LOXX" className="h-14 w-auto drop-shadow-[0_0_15px_rgba(0,229,255,0.4)] hover:scale-105 transition-transform" />
-           </Link>
-           
-           <div className="h-10 w-[1px] bg-white/10 hidden md:block" />
-
            <button 
             onClick={() => navigate("/lobbies")}
             className="p-3 rounded-2xl bg-white/5 hover:bg-neon-pink/10 transition-colors text-gray-400 hover:text-neon-pink"
@@ -301,10 +295,10 @@ export const LobbyRoomPage = () => {
           <GlowButton 
             variant="blue" 
             onClick={handleStartMatch}
-            disabled={isStarting || !allReadyPulse}
+            disabled={isStarting || !allReadyPulse || isMatchStarted}
             className={cn(
               "px-10 h-14 text-sm shadow-[0_15px_40px_-5px_rgba(0,229,255,0.3)]",
-              !allReadyPulse && "opacity-50 grayscale cursor-not-allowed"
+              (!allReadyPulse || isMatchStarted) && "opacity-50 grayscale cursor-not-allowed"
             )}
           >
             <Play size={20} className="ml-2" />
@@ -335,7 +329,7 @@ export const LobbyRoomPage = () => {
                   key={player.id} 
                   player={player} 
                   isSelected={selectedPlayer === player.id}
-                  onSelect={() => !isMatchStarted && setSelectedPlayer(selectedPlayer === player.id ? null : player.id)}
+                  onSelect={() => setSelectedPlayer(selectedPlayer === player.id ? null : player.id)}
                   onVolumeChange={(val) => handlePlayerVolume(player.id, val)}
                   onMute={(id) => setPlayers(prev => prev.map(p => p.id === id ? { ...p, isMuted: !p.isMuted } : p))}
                   onInvite={() => setIsInviteModalOpen(true)}
@@ -378,7 +372,11 @@ export const LobbyRoomPage = () => {
         <GlowButton 
           variant={isReady ? "blue" : "pink"} 
           onClick={toggleReady}
-          className="flex-1 h-12"
+          disabled={isMatchStarted || isStarting}
+          className={cn(
+            "flex-1 h-12",
+            (isMatchStarted || isStarting) && "opacity-50 grayscale cursor-not-allowed"
+          )}
         >
           {isReady ? "آماده!" : "بزن روی آماده"}
         </GlowButton>
@@ -416,6 +414,8 @@ export const LobbyRoomPage = () => {
                   players={players}
                   activeTab={activeChatTab}
                   onTabChange={setActiveChatTab}
+                  tabs={chatTabs}
+                  setTabs={setChatTabs}
                   inputMessage={inputMessage} 
                   setInputMessage={setInputMessage} 
                   onSend={handleSendMessage} 
@@ -438,9 +438,11 @@ export const LobbyRoomPage = () => {
              <GlowButton 
                 variant={isReady ? "blue" : "pink"}
                 onClick={toggleReady}
+                disabled={isMatchStarted || isStarting}
                 className={cn(
                   "px-8 h-12 text-xs",
-                  isReady && "shadow-neon-blue/20"
+                  isReady && "shadow-neon-blue/20",
+                  (isMatchStarted || isStarting) && "opacity-50 grayscale cursor-not-allowed"
                 )}
              >
                {isReady ? <Check size={18} className="ml-2" /> : null}
@@ -696,7 +698,7 @@ const PlayerCard = ({ player, isSelected, onSelect, onVolumeChange, onMute, onIn
         isSlot ? "border-dashed border-white/10 bg-transparent opacity-40 hover:opacity-100" : "bg-[#0a0a0f] border-white/10 shadow-2xl overflow-hidden",
         player.isReady && !isSlot && !disabled && "scale-[1.03] ring-1 ring-neon-blue/40 border-neon-blue/30 shadow-[0_30px_60px_-10px_rgba(0,229,255,0.2)]",
         player.isSpeaking && "ring-2 ring-green-500/50 shadow-[0_0_40px_rgba(34,197,94,0.15)]",
-        disabled && "grayscale pointer-events-none opacity-50"
+        disabled && "grayscale opacity-80"
       )}
     >
       {!isSlot ? (
@@ -918,31 +920,31 @@ const ChatPanel = ({ messages, players, activeTab, onTabChange, tabs, setTabs, i
         {/* Chat Tabs */}
         <div className="flex items-center gap-1 p-2 bg-black/20 border-b border-white/5 overflow-x-auto no-scrollbar">
            {tabs.map(tab => (
-             <button
+             <div
                key={tab.id}
                onClick={() => onTabChange(tab.id)}
                className={cn(
-                 "px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all relative flex items-center gap-2 group/tab",
+                 "px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all relative flex items-center gap-2 group/tab cursor-pointer select-none",
                  activeTab === tab.id ? "bg-white/10 text-white" : "text-gray-500 hover:text-gray-300"
                )}
              >
                {tab.name}
                {tab.id !== "main" && (
-                 <button 
+                 <span 
                   onClick={(e) => {
                     e.stopPropagation();
                     setTabs(prev => prev.filter(t => t.id !== tab.id));
                     if (activeTab === tab.id) onTabChange("main");
                   }}
-                  className="opacity-0 group-hover/tab:opacity-100 hover:text-neon-pink transition-opacity"
+                  className="opacity-0 group-hover/tab:opacity-100 hover:text-neon-pink transition-opacity p-0.5"
                  >
                    <X size={10} />
-                 </button>
+                 </span>
                )}
                {activeTab === tab.id && (
                  <motion.div layoutId="activeTabChat" className="absolute bottom-0 left-0 right-0 h-0.5 bg-neon-blue" />
                )}
-             </button>
+             </div>
            ))}
         </div>
       </div>
@@ -951,7 +953,7 @@ const ChatPanel = ({ messages, players, activeTab, onTabChange, tabs, setTabs, i
         {filteredMessages.map((msg) => (
           <div key={msg.id} className={cn(
             "group flex flex-col gap-1.5", 
-            msg.isSystem ? "items-center my-4" : msg.user === "You" ? "items-start" : "items-end"
+            msg.isSystem ? "items-center my-4" : msg.user === "You" ? "items-end" : "items-start"
           )}>
             {msg.isSystem ? (
               <div className="relative w-full flex items-center justify-center p-3 rounded-2xl border border-neon-blue/10 bg-neon-blue/[0.02]">
@@ -962,13 +964,13 @@ const ChatPanel = ({ messages, players, activeTab, onTabChange, tabs, setTabs, i
             ) : (
               <div className={cn(
                 "flex items-start gap-3 max-w-[85%]",
-                msg.user === "You" ? "flex-row" : "flex-row-reverse"
+                msg.user === "You" ? "flex-row-reverse" : "flex-row"
               )}>
                 <div className="h-8 w-8 rounded-xl bg-white/5 border border-white/10 flex-shrink-0 flex items-center justify-center text-lg mt-1">
                    {msg.user === "NeonGhost" ? "🥷" : msg.user === "Apex_Hunter" ? "👨‍🎤" : msg.user === "You" ? "👨‍🎤" : "👧"}
                 </div>
-                <div className={cn("flex-1 space-y-1", msg.user === "You" ? "text-right" : "text-left")}>
-                  <div className={cn("flex items-center gap-3", msg.user === "You" ? "flex-row" : "flex-row-reverse")}>
+                <div className={cn("flex-1 space-y-1", msg.user === "You" ? "text-left" : "text-right")}>
+                  <div className={cn("flex items-center gap-3", msg.user === "You" ? "flex-row-reverse" : "flex-row")}>
                     <span className={cn(
                       "text-[10px] font-black uppercase tracking-widest",
                       msg.user === "You" ? "text-neon-pink" : "text-neon-blue"
@@ -977,7 +979,7 @@ const ChatPanel = ({ messages, players, activeTab, onTabChange, tabs, setTabs, i
                   </div>
                   <div className={cn(
                     "border border-white/10 rounded-2xl px-4 py-2.5 text-xs text-gray-300 leading-relaxed shadow-lg",
-                    msg.user === "You" ? "bg-neon-pink/5 rounded-tr-none border-neon-pink/10" : "bg-white/5 rounded-tl-none"
+                    msg.user === "You" ? "bg-neon-pink/5 rounded-tl-none border-neon-pink/10" : "bg-white/5 rounded-tr-none"
                   )}>
                     {msg.text}
                   </div>
@@ -989,19 +991,19 @@ const ChatPanel = ({ messages, players, activeTab, onTabChange, tabs, setTabs, i
       </div>
 
       <form onSubmit={onSend} className="p-6 bg-black/20 border-t border-white/5">
-        <div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-2xl p-1 pr-4 focus-within:border-neon-blue/50 transition-all">
+        <div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-2xl p-1 pr-4 focus-within:border-neon-blue/50 transition-all relative">
           <input
             type="text"
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
             placeholder={activeTab === "main" ? "چیزی بنویسید..." : "پیام خصوصی..."}
-            className="flex-1 bg-transparent py-3 text-xs text-white placeholder:text-gray-700 focus:outline-none font-medium"
+            className="flex-1 bg-transparent py-4 text-xs text-white placeholder:text-gray-700 focus:outline-none font-medium pr-2"
           />
           <button 
             type="submit"
             className="h-10 w-10 flex-shrink-0 flex items-center justify-center rounded-xl bg-neon-blue text-dark-bg hover:bg-neon-blue/90 transition-colors shadow-lg shadow-neon-blue/20"
           >
-            <Send size={18} className="translate-y-[1px] -translate-x-[1px]" />
+            <Send size={18} className="translate-y-[1px] translate-x-[1px]" />
           </button>
         </div>
       </form>
