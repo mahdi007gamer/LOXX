@@ -12,6 +12,7 @@ interface FriendsContextType {
   removeFriend: (friendId: string) => Promise<void>;
   sendMessage: (friendId: string, text: string) => void;
   markAsRead: (friendId: string) => void;
+  closeChat: (friendId: string) => void;
   toggleFavorite: (friendId: string) => void;
   toggleBlock: (friendId: string) => void;
   toggleMute: (friendId: string) => void;
@@ -167,6 +168,10 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setChats(prev => prev.map(c => c.friendId === friendId ? { ...c, unreadCount: 0 } : c));
   };
 
+  const closeChat = (friendId: string) => {
+    setChats(prev => prev.filter(c => c.friendId !== friendId));
+  };
+
   const toggleFavorite = (friendId: string) => {
     setFriends(prev => prev.map(f => f.id === friendId ? { ...f, isFavorite: !f.isFavorite } : f));
   };
@@ -191,6 +196,7 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
       removeFriend,
       sendMessage,
       markAsRead,
+      closeChat,
       toggleFavorite,
       toggleBlock,
       toggleMute

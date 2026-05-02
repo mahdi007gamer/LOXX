@@ -56,12 +56,13 @@ export const DashboardPage = () => {
           </header>
 
           {/* Quick Stats */}
-          <div className="mb-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mb-12 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
             {[
               { label: "روز عضویت", val: "۱۴", icon: Activity, color: "blue" },
               { label: "لابی‌های جوین شده", val: "۲۸", icon: Target, color: "pink" },
               { label: "تعداد دوستان", val: friends.length, icon: Users, color: "purple" },
               { label: "بازی‌های دنبال شده", val: "۶", icon: Star, color: "blue" },
+              { label: "لابی‌های آماده", val: "۱۲", icon: Trophy, color: "pink" },
             ].map((stat, i) => (
               <motion.div
                 key={i}
@@ -69,17 +70,17 @@ export const DashboardPage = () => {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: i * 0.1 }}
               >
-                <NeonCard variant={stat.color as any} className="flex flex-col items-center justify-center p-6 text-center" hover={true}>
+                <NeonCard variant={stat.color as any} className="flex flex-col items-center justify-center p-5 text-center h-full" hover={true}>
                   <div className={cn(
-                    "mb-3 p-3 rounded-2xl",
+                    "mb-3 h-12 w-12 flex items-center justify-center rounded-2xl mx-auto",
                     stat.color === 'blue' ? 'bg-neon-blue/10 text-neon-blue' : 
                     stat.color === 'pink' ? 'bg-neon-pink/10 text-neon-pink' : 
                     'bg-neon-purple/10 text-neon-purple'
                   )}>
-                    <stat.icon size={24} />
+                    <stat.icon size={20} />
                   </div>
-                  <h3 className="text-2xl font-black text-white leading-none mb-1">{stat.val}</h3>
-                  <p className="text-[10px] font-bold text-gray-400">{stat.label}</p>
+                  <h3 className="text-xl font-black text-white leading-none mb-1">{stat.val}</h3>
+                  <p className="text-[9px] font-bold text-gray-500 whitespace-nowrap">{stat.label}</p>
                 </NeonCard>
               </motion.div>
             ))}
@@ -132,12 +133,12 @@ export const DashboardPage = () => {
             </div>
 
             {/* Friends Activity */}
-            <div className="space-y-6">
+            <div className="space-y-6 flex flex-col">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-bold text-white">فعالیت دوستان</h2>
                 <div className="h-1 w-12 rounded-full bg-neon-purple/50" />
               </div>
-              <NeonCard variant="purple" className="flex flex-col h-full space-y-4">
+              <NeonCard variant="purple" className="flex flex-col p-4">
                 {loading ? (
                    <div className="space-y-4">
                      {[1,2,3].map(i => <div key={i} className="flex gap-3 items-center"><div className="h-10 w-10 rounded-full bg-white/5 animate-pulse" /><div className="space-y-1"><div className="h-4 w-24 bg-white/5 rounded animate-pulse" /><div className="h-3 w-16 bg-white/5 rounded animate-pulse" /></div></div>)}
@@ -167,8 +168,8 @@ export const DashboardPage = () => {
                               )} />
                             </div>
                             <div>
-                              <p className="text-sm font-bold text-white">{friend.displayName}</p>
-                              <p className="text-[10px] text-gray-500 line-clamp-1">
+                              <p className="text-sm font-bold text-white leading-tight">{friend.displayName}</p>
+                              <p className="text-[10px] text-gray-500 line-clamp-1 italic">
                                 {friend.status === FriendStatus.IN_GAME ? `🎮 ${friend.currentGame}` : 
                                  friend.status === FriendStatus.ONLINE ? "آنلاین" : 
                                  friend.lastSeen || "آفلاین"}
@@ -184,17 +185,6 @@ export const DashboardPage = () => {
                             >
                               <MessageSquare size={14} />
                             </button>
-                            {friend.status === FriendStatus.ONLINE && (
-                              <button className="p-1.5 text-gray-400 hover:text-neon-purple hover:bg-neon-purple/10 rounded-lg transition-all">
-                                <UserPlus size={14} />
-                              </button>
-                            )}
-                            <button 
-                              onClick={() => removeFriend(friend.id)}
-                              className="p-1.5 text-gray-400 hover:text-neon-pink hover:bg-neon-pink/10 rounded-lg transition-all"
-                            >
-                              <UserMinus size={14} />
-                            </button>
                           </div>
                         </motion.div>
                       ))}
@@ -208,7 +198,7 @@ export const DashboardPage = () => {
                 
                 <GlowButton 
                   variant="purple" 
-                  className="w-full text-xs mt-4" 
+                  className="w-full text-[11px] h-9 mt-4" 
                   size="sm"
                   onClick={() => setIsFriendsExpanded(!isFriendsExpanded)}
                 >

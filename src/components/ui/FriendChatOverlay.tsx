@@ -5,7 +5,7 @@ import { MessageSquare, X, Minus, Send, MessageCircle } from "lucide-react";
 import { cn } from "../../lib/utils";
 
 export const FriendChatOverlay = () => {
-  const { chats, friends, sendMessage, markAsRead } = useFriends();
+  const { chats, friends, sendMessage, markAsRead, closeChat } = useFriends();
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [isMinimized, setIsMinimized] = useState(false);
   const [inputMessage, setInputMessage] = useState("");
@@ -27,9 +27,86 @@ export const FriendChatOverlay = () => {
   if (chats.length === 0) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-[100] flex justify-center pointer-events-none pb-4 sm:pb-0">
+    <div className="fixed bottom-0 left-0 right-0 z-[100] flex flex-col items-center pointer-events-none pb-4 sm:pb-0">
+      {/* Active Chat Window */}
+      <AnimatePresence>
+        {activeChatId && !isMinimized && (
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            className="mb-4 w-72 sm:w-80 overflow-hidden rounded-2xl bg-[#0a0a0f]/98 border border-white/10 shadow-2xl backdrop-blur-xl z-50 pointer-events-auto"
+          >
+            {/* Chat Header */}
+            <div className="flex items-center justify-between border-b border-white/5 bg-white/5 px-4 py-3">
+              <div className="flex items-center gap-3 text-right" dir="rtl">
+                <div className="h-8 w-8 rounded-full bg-white/10 flex items-center justify-center text-sm">
+                  {activeFriend?.avatar ? <img src={activeFriend.avatar} alt="" className="h-full w-full rounded-full" /> : "👤"}
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-white">{activeFriend?.displayName}</p>
+                  <p className="text-[10px] text-green-500">آنلاین</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1">
+                <button onClick={() => setIsMinimized(true)} className="p-1.5 text-gray-400 hover:text-white transition-colors">
+                  <Minus size={16} />
+                </button>
+                <button onClick={() => setActiveChatId(null)} className="p-1.5 text-gray-400 hover:text-neon-pink transition-colors">
+                  <X size={16} />
+                </button>
+              </div>
+            </div>
+
+            {/* Chat Messages */}
+            <div className="h-80 overflow-y-auto p-4 space-y-4 flex flex-col-reverse bg-gradient-to-b from-transparent to-white/[0.02]">
+               <div className="space-y-4">
+                 {activeChat?.messages.map(msg => (
+                   <div key={msg.id} className={cn(
+                     "flex flex-col gap-1 max-w-[85%]",
+                     msg.senderId === "me" ? "mr-auto items-end" : "ml-auto items-start text-right"
+                   )} dir={msg.senderId === "me" ? "ltr" : "rtl"}>
+                     <div className={cn(
+                       "rounded-2xl px-3 py-2 text-[11px] font-medium leading-relaxed shadow-lg",
+                       msg.senderId === "me" 
+                         ? "bg-neon-blue text-dark-bg rounded-tr-none" 
+                         : "bg-white/10 text-gray-200 rounded-tl-none border border-white/10"
+                     )}>
+                       {msg.text}
+                     </div>
+                     <span className="text-[8px] text-gray-600 px-1 font-mono">{msg.timestamp}</span>
+                   </div>
+                 ))}
+                 {activeChat?.messages.length === 0 && (
+                   <div className="flex h-full flex-col items-center justify-center text-center py-20 opacity-20">
+                     <MessageCircle size={40} className="text-gray-400 mb-2" />
+                     <p className="text-[10px] text-gray-400">گفتگو را شروع کنید</p>
+                   </div>
+                 )}
+               </div>
+            </div>
+
+            {/* Chat Input */}
+            <form onSubmit={handleSend} className="border-t border-white/5 bg-white/5 p-3" dir="rtl">
+              <div className="flex items-center gap-2 rounded-xl bg-black/40 border border-white/5 p-1 px-2 focus-within:border-neon-blue/50 transition-all">
+                <input 
+                  type="text" 
+                  placeholder="چیزی بنویسید..."
+                  className="flex-1 bg-transparent py-2 text-[11px] text-white focus:outline-none"
+                  value={inputMessage}
+                  onChange={(e) => setInputMessage(e.target.value)}
+                />
+                <button type="submit" className="p-1.5 text-neon-blue hover:scale-110 transition-transform">
+                  <Send size={14} />
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Active Chats Tabs Container */}
-      <div className="flex items-end gap-3 pointer-events-auto px-4 max-w-full overflow-x-auto no-scrollbar pb-2 sm:pb-0">
+      <div className="flex items-end gap-2 pointer-events-auto px-4 max-w-full pb-2 sm:pb-0 overflow-x-visible">
         {chats.map(chat => {
           const friend = friends.find(f => f.id === chat.friendId);
           if (!friend) return null;
@@ -37,84 +114,7 @@ export const FriendChatOverlay = () => {
           const isActive = activeChatId === friend.id;
 
           return (
-            <div key={chat.friendId} className="relative flex flex-col items-center">
-              <AnimatePresence>
-                {isActive && !isMinimized && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 20, scale: 0.95 }}
-                    className="absolute bottom-full mb-4 w-72 sm:w-80 overflow-hidden rounded-2xl bg-[#0a0a0f]/95 border border-white/10 shadow-2xl backdrop-blur-xl z-50 left-1/2 -translate-x-1/2 sm:left-auto sm:translate-x-0"
-                  >
-                    {/* Chat Header */}
-                    <div className="flex items-center justify-between border-b border-white/5 bg-white/5 px-4 py-3">
-                      <div className="flex items-center gap-3 text-right" dir="rtl">
-                        <div className="h-8 w-8 rounded-full bg-white/10 flex items-center justify-center text-sm">
-                          {friend.avatar ? <img src={friend.avatar} alt="" className="h-full w-full rounded-full" /> : "👤"}
-                        </div>
-                        <div>
-                          <p className="text-xs font-bold text-white">{friend.displayName}</p>
-                          <p className="text-[10px] text-green-500">آنلاین</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <button onClick={() => setIsMinimized(true)} className="p-1.5 text-gray-400 hover:text-white transition-colors">
-                          <Minus size={16} />
-                        </button>
-                        <button onClick={() => setActiveChatId(null)} className="p-1.5 text-gray-400 hover:text-neon-pink transition-colors">
-                          <X size={16} />
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Chat Messages */}
-                    <div className="h-80 overflow-y-auto p-4 space-y-4 no-scrollbar flex flex-col-reverse bg-gradient-to-b from-transparent to-white/[0.02]">
-                       <div className="space-y-4">
-                         {chat.messages.map(msg => (
-                           <div key={msg.id} className={cn(
-                             "flex flex-col gap-1 max-w-[85%]",
-                             msg.senderId === "me" ? "mr-auto items-end" : "ml-auto items-start text-right"
-                           )} dir={msg.senderId === "me" ? "ltr" : "rtl"}>
-                             <div className={cn(
-                               "rounded-2xl px-3 py-2 text-[11px] leading-relaxed shadow-lg",
-                               msg.senderId === "me" 
-                                 ? "bg-neon-blue text-dark-bg rounded-tr-none font-bold" 
-                                 : "bg-white/10 text-gray-200 rounded-tl-none border border-white/10"
-                             )}>
-                               {msg.text}
-                             </div>
-                             <span className="text-[8px] text-gray-600 px-1 font-mono">{msg.timestamp}</span>
-                           </div>
-                         ))}
-                         {chat.messages.length === 0 && (
-                           <div className="flex h-full flex-col items-center justify-center text-center py-20 opacity-20">
-                             <MessageCircle size={40} className="text-gray-400 mb-2" />
-                             <p className="text-[10px] text-gray-400">گفتگو را شروع کنید</p>
-                           </div>
-                         )}
-                       </div>
-                    </div>
-
-                    {/* Chat Input */}
-                    <form onSubmit={handleSend} className="border-t border-white/5 bg-white/5 p-3" dir="rtl">
-                      <div className="flex items-center gap-2 rounded-xl bg-black/40 border border-white/5 p-1 px-2 focus-within:border-neon-blue/50 transition-all">
-                        <input 
-                          type="text" 
-                          placeholder="چیزی بنویسید..."
-                          className="flex-1 bg-transparent py-2 text-[11px] text-white focus:outline-none"
-                          value={inputMessage}
-                          onChange={(e) => setInputMessage(e.target.value)}
-                        />
-                        <button type="submit" className="p-1.5 text-neon-blue hover:scale-110 transition-transform">
-                          <Send size={14} />
-                        </button>
-                      </div>
-                    </form>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {/* Chat Tab Button */}
+            <div key={chat.friendId} className="relative group/tab">
               <button 
                 onClick={() => {
                   if (activeChatId === friend.id) {
@@ -125,10 +125,10 @@ export const FriendChatOverlay = () => {
                   }
                 }}
                 className={cn(
-                  "flex items-center gap-3 rounded-t-2xl px-5 py-3 border-x border-t transition-all duration-300 backdrop-blur-md min-w-[140px] justify-center",
+                  "flex items-center gap-3 rounded-t-2xl pl-10 pr-5 py-3 border-x border-t transition-all duration-300 backdrop-blur-md min-w-[140px] justify-center relative",
                   isActive && !isMinimized
                     ? "bg-neon-blue text-dark-bg border-neon-blue shadow-[0_-4px_15px_rgba(0,229,255,0.3)] -translate-y-1" 
-                    : "bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:text-white"
+                    : "bg-[#0a0a0f]/80 border-white/10 text-gray-400 hover:bg-white/10 hover:text-white"
                 )}
               >
                 <div className="relative">
@@ -142,7 +142,22 @@ export const FriendChatOverlay = () => {
                      </div>
                    )}
                 </div>
-                <span className="text-[11px] font-black tracking-tight rtl">{friend.displayName}</span>
+                <span className="text-[11px] font-black tracking-tight">{friend.displayName}</span>
+              </button>
+              
+              {/* Close Button on Tab */}
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  closeChat(friend.id);
+                  if (activeChatId === friend.id) setActiveChatId(null);
+                }}
+                className={cn(
+                  "absolute left-3 top-1/2 -translate-y-1/2 p-1 rounded-full bg-black/20 opacity-0 group-hover/tab:opacity-100 hover:bg-neon-pink/20 hover:text-neon-pink transition-all",
+                  isActive && !isMinimized ? "text-dark-bg/60 hover:text-neon-pink" : "text-gray-500"
+                )}
+              >
+                <X size={12} />
               </button>
             </div>
           );
