@@ -33,7 +33,7 @@ const GameCardSkeleton = () => (
   </div>
 );
 
-const GameCard = ({ game, index }: { game: Game; index: number }) => {
+const GameCard: React.FC<{ game: Game; index: number }> = ({ game, index }) => {
   const { myGames, toggleMyGame } = useGames();
   const isAdded = myGames.includes(game.id);
 
@@ -196,7 +196,7 @@ export const GamesPage = () => {
               Array.from({ length: 8 }).map((_, i) => <GameCardSkeleton key={i} />)
             ) : (
               <AnimatePresence mode="popLayout">
-                {filteredGames.map((game, index) => (
+                {filteredGames.map((game: Game, index: number) => (
                   <GameCard key={game.id} game={game} index={index} />
                 ))}
               </AnimatePresence>

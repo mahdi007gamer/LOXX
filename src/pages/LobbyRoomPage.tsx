@@ -316,7 +316,7 @@ export const LobbyRoomPage = () => {
 
       <div className="flex-1 flex flex-col lg:flex-row gap-6 relative z-10 overflow-hidden">
         {/* Main Content Area */}
-        <div className="flex-1 flex flex-col gap-6 overflow-y-auto overflow-x-hidden custom-scrollbar pb-24 md:pb-0">
+        <div className="flex-1 flex flex-col gap-6 overflow-y-auto overflow-x-hidden custom-scrollbar pb-24 md:pb-8 px-2 md:px-4">
           
           {/* Top Status Panel */}
           <MatchInfoPanel 
@@ -328,8 +328,8 @@ export const LobbyRoomPage = () => {
             onReopen={handleReopenLobby}
           />
 
-          {/* Players Grid - Responsive: Better wrapping to avoid horizontal scroll */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4 md:gap-6">
+          {/* Players Grid - Improved responsiveness and padding */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-6 px-1">
             <AnimatePresence mode="popLayout">
               {players.map((player) => (
                 <PlayerCard 
@@ -687,7 +687,7 @@ const PlayerCard = ({ player, isSelected, onSelect, onVolumeChange, onMute, onIn
       whileHover={!isSlot ? { y: -8, transition: { duration: 0.2 } } : {}}
       onClick={!isSlot ? onSelect : () => onInvite()}
       className={cn(
-        "relative p-4 rounded-[20px] border transition-all duration-300 backdrop-blur-md cursor-pointer group h-full flex flex-col justify-between min-w-0 min-h-[340px] w-full mx-auto",
+        "relative p-5 sm:p-6 rounded-[32px] border transition-all duration-300 backdrop-blur-md cursor-pointer group h-full flex flex-col justify-between min-w-0 min-h-[360px] w-full",
         isSlot ? "border-dashed border-white/10 bg-transparent opacity-40 hover:opacity-100" : "bg-[#0a0a0f] border-white/10 shadow-2xl overflow-hidden",
         player.isReady && !isSlot && "scale-[1.02] ring-1 ring-neon-blue/40 border-neon-blue/30 shadow-[0_20px_40px_-5px_rgba(0,229,255,0.15)]",
         player.isSpeaking && "ring-2 ring-green-500/50 shadow-[0_0_30px_rgba(34,197,94,0.1)]"
@@ -708,44 +708,44 @@ const PlayerCard = ({ player, isSelected, onSelect, onVolumeChange, onMute, onIn
                </div>
             </div>
 
-            <div className="flex flex-col items-center flex-1 justify-center">
+            <div className="flex flex-col items-center flex-1 justify-center py-4">
               {/* Avatar & Volume Indicator */}
-              <div className="relative mb-6">
+              <div className="relative flex items-center justify-center h-28 w-28 sm:h-32 sm:w-32 mb-6">
                 {/* Volume Level Ring */}
-                <svg className="absolute -inset-4 w-36 h-36 -rotate-90 pointer-events-none opacity-20">
+                <svg className="absolute inset-0 w-full h-full -rotate-90 pointer-events-none opacity-20">
                   <circle 
-                    cx="72" cy="72" r="64" 
+                    cx="50%" cy="50%" r="46%" 
                     fill="none" 
                     stroke="currentColor" 
                     strokeWidth="2" 
                     className="text-gray-800"
                   />
                   <motion.circle 
-                    cx="72" cy="72" r="64" 
+                    cx="50%" cy="50%" r="46%" 
                     fill="none" 
                     stroke="currentColor" 
                     strokeWidth="3" 
-                    strokeDasharray="402"
-                    animate={{ strokeDashoffset: 402 - (402 * player.volume) / 100 }}
-                    transition={{ type: "spring", bounce: 0 }}
                     className="text-neon-blue"
+                    style={{ strokeDasharray: "290" }}
+                    animate={{ strokeDashoffset: 290 - (290 * player.volume) / 100 }}
+                    transition={{ type: "spring", bounce: 0 }}
                   />
                 </svg>
 
                 <div className={cn(
-                  "h-16 w-16 sm:h-20 sm:w-20 rounded-[20px] flex items-center justify-center text-2xl sm:text-3xl relative z-10 transition-all duration-500 shadow-2xl",
+                  "h-16 w-16 sm:h-20 sm:w-20 rounded-[28px] flex items-center justify-center text-2xl sm:text-3xl relative z-10 transition-all duration-500 shadow-2xl",
                   player.isReady ? "bg-white/10" : "bg-white/5",
                   player.isSpeaking ? "scale-105" : ""
                 )}>
-                  {player.avatar}
-                  <div className="absolute inset-0 bg-gradient-to-tr from-black/40 to-transparent rounded-[40px]" />
+                  <span className="relative z-10">{player.avatar}</span>
+                  <div className="absolute inset-0 bg-gradient-to-tr from-black/20 to-transparent rounded-[28px]" />
                   
                   {/* Voice Glow Overlay */}
                   {player.isSpeaking && (
                      <motion.div 
                        animate={{ opacity: [0.2, 0.4, 0.2] }} 
                        transition={{ duration: 1.5, repeat: Infinity }}
-                       className="absolute -inset-2 bg-green-500 rounded-[44px] blur-xl -z-10" 
+                       className="absolute -inset-2 bg-green-500 rounded-[32px] blur-xl -z-10" 
                      />
                   )}
                 </div>

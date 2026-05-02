@@ -18,7 +18,7 @@ import {
 import { motion, AnimatePresence } from "motion/react";
 import { Link } from "react-router-dom";
 
-const MyGameCard = ({ game }: { game: Game }) => {
+const MyGameCard: React.FC<{ game: Game }> = ({ game }) => {
   const { toggleMyGame } = useGames();
   
   return (
@@ -129,7 +129,7 @@ export const MyGamesPage = () => {
               
               <div className="grid grid-cols-1 gap-6">
                 <AnimatePresence mode="popLayout">
-                  {favoriteGames.map(game => (
+                  {favoriteGames.map((game: Game) => (
                     <MyGameCard key={game.id} game={game} />
                   ))}
                   
