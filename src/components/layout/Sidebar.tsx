@@ -15,6 +15,7 @@ const menuItems = [
   { icon: LayoutDashboard, label: "داشبورد", path: "/dashboard" },
   { icon: Target, label: "اتاق‌های بازی", path: "/rooms" },
   { icon: Users, label: "لابی‌ها", path: "/lobbies" },
+  { icon: Users, label: "دوستان", path: "/friends" },
   { icon: MessageSquare, label: "چت سراسری", path: "/chat" },
   { icon: Trophy, label: "رتبه‌بندی", path: "/leaderboard" },
   { icon: Settings, label: "تنظیمات", path: "/settings" },
