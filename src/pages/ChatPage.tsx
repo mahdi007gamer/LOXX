@@ -446,7 +446,7 @@ const GIF_GALLERY = [
 ];
 
 export const ChatPage: React.FC = () => {
-  const { games } = useGames();
+  const { allGames: games, myGames } = useGames();
   const [activeChannelId, setActiveChannelId] = useState("general");
   const [messages, setMessages] = useState<Record<string, ChatMessage[]>>(MOCK_MESSAGES);
   const [input, setInput] = useState("");
@@ -459,8 +459,8 @@ export const ChatPage: React.FC = () => {
   const scrollRef = useRef<HTMLDivElement>(null);
   
   // Game channels logic - dynamic based on favorite games
-  const myGamesChannels = games
-    .filter(g => g.isFavorite)
+  const myGamesChannels = (games || [])
+    .filter(g => myGames?.includes(g.id))
     .map(g => ({
       id: `game-${g.id}`,
       name: `چت ${g.title}`,
