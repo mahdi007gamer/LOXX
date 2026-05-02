@@ -16,7 +16,8 @@ import {
   X,
   Lock,
   Globe,
-  Info
+  Info,
+  CheckCircle2
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/src/lib/utils";
