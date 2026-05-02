@@ -316,7 +316,7 @@ export const LobbyRoomPage = () => {
 
       <div className="flex-1 flex flex-col lg:flex-row gap-6 relative z-10 overflow-hidden">
         {/* Main Content Area */}
-        <div className="flex-1 flex flex-col gap-6 overflow-y-auto custom-scrollbar pb-24 md:pb-0">
+        <div className="flex-1 flex flex-col gap-6 overflow-y-auto overflow-x-hidden custom-scrollbar pb-24 md:pb-0">
           
           {/* Top Status Panel */}
           <MatchInfoPanel 
@@ -328,8 +328,8 @@ export const LobbyRoomPage = () => {
             onReopen={handleReopenLobby}
           />
 
-          {/* Players Grid - Responsive: 1 on mobile, 2 on md, 4 on lg/xl */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Players Grid - Responsive: Better wrapping to avoid horizontal scroll */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4 md:gap-6">
             <AnimatePresence mode="popLayout">
               {players.map((player) => (
                 <PlayerCard 
@@ -353,7 +353,7 @@ export const LobbyRoomPage = () => {
         </div>
 
         {/* Desktop Chat Sidebar (Right) */}
-        <div className="hidden lg:flex w-full lg:w-[320px] flex-col h-full overflow-hidden order-first">
+        <div className="hidden lg:flex w-full lg:w-[280px] xl:w-[320px] flex-col h-full overflow-hidden order-first">
            <ChatPanel 
              messages={messages} 
              players={players}
@@ -687,7 +687,7 @@ const PlayerCard = ({ player, isSelected, onSelect, onVolumeChange, onMute, onIn
       whileHover={!isSlot ? { y: -8, transition: { duration: 0.2 } } : {}}
       onClick={!isSlot ? onSelect : () => onInvite()}
       className={cn(
-        "relative p-4 sm:p-5 rounded-[24px] border transition-all duration-300 backdrop-blur-md cursor-pointer group h-full flex flex-col justify-between min-w-0 min-h-[340px]",
+        "relative p-4 rounded-[20px] border transition-all duration-300 backdrop-blur-md cursor-pointer group h-full flex flex-col justify-between min-w-0 min-h-[340px] w-full mx-auto",
         isSlot ? "border-dashed border-white/10 bg-transparent opacity-40 hover:opacity-100" : "bg-[#0a0a0f] border-white/10 shadow-2xl overflow-hidden",
         player.isReady && !isSlot && "scale-[1.02] ring-1 ring-neon-blue/40 border-neon-blue/30 shadow-[0_20px_40px_-5px_rgba(0,229,255,0.15)]",
         player.isSpeaking && "ring-2 ring-green-500/50 shadow-[0_0_30px_rgba(34,197,94,0.1)]"

@@ -150,9 +150,16 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const openChat = (friendId: string, displayName?: string) => {
+    console.log(`Opening chat for: ${friendId} (${displayName})`);
     setChats(prev => {
       const existingChat = prev.find(c => c.friendId === friendId);
-      if (existingChat) return prev;
+      if (existingChat) {
+        // If it exists, update display name if provided and return
+        if (displayName && !existingChat.tempDisplayName && !friends.find(f => f.id === friendId)) {
+          return prev.map(c => c.friendId === friendId ? { ...c, tempDisplayName: displayName } : c);
+        }
+        return prev;
+      }
       return [...prev, { friendId, messages: [], isTyping: false, unreadCount: 0, tempDisplayName: displayName }];
     });
     setActiveChatId(friendId);

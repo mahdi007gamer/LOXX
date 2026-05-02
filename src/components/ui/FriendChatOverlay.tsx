@@ -34,7 +34,7 @@ export const FriendChatOverlay = () => {
   if (chats.length === 0) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-[100] flex flex-col items-center pointer-events-none px-4">
+    <div className="fixed bottom-0 left-0 right-0 z-[9999] flex flex-col items-center pointer-events-none px-4">
       {/* Active Chat Window */}
       <AnimatePresence>
         {activeChatId && !isMinimized && (
