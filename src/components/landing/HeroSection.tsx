@@ -27,7 +27,7 @@ export const HeroSection = () => {
           <span className="tracking-widest uppercase">درگاه ورود به لوکس باز شد</span>
         </motion.div>
         
-        <motion.h1 
+        <motion.div 
           animate={{ 
             y: [0, -10, 0],
           }}
@@ -36,11 +36,18 @@ export const HeroSection = () => {
             repeat: Infinity, 
             ease: "easeInOut" 
           }}
-          className="mb-8 text-7xl font-black leading-[1.1] tracking-tighter text-white sm:text-8xl md:text-9xl lg:text-[11rem]"
+          className="mb-8 flex flex-col items-center"
         >
-          <span className="block drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)]">لوکس</span>
-          <span className="neon-text-blue block drop-shadow-[0_0_60px_rgba(0,229,255,0.9)]">LOXX</span>
-        </motion.h1>
+          <img 
+            src="/logo.png" 
+            alt="LOXX Logo" 
+            className="w-full max-w-[300px] md:max-w-[500px] drop-shadow-[0_0_50px_rgba(0,229,255,0.4)] mb-4"
+          />
+          <h1 className="text-7xl font-black leading-[1.1] tracking-tighter text-white sm:text-8xl md:text-9xl lg:text-[11rem] hidden">
+            <span className="block drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)]">لوکس</span>
+            <span className="neon-text-blue block drop-shadow-[0_0_60px_rgba(0,229,255,0.9)]">LOXX</span>
+          </h1>
+        </motion.div>
 
         <div className="relative mx-auto mb-12 max-w-2xl px-4 py-6">
            {/* Cyberpunk brackets */}

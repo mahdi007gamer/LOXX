@@ -28,9 +28,9 @@ export const AuthPage = () => {
               <div className="mb-8 text-center">
                 <motion.div 
                   layoutId="auth-icon"
-                  className={`mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border bg-white/5 shadow-lg transition-colors duration-500 ${isLogin ? 'border-neon-blue/50 text-neon-blue' : 'border-neon-pink/50 text-neon-pink'}`}
+                  className={`mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border bg-white/5 shadow-lg transition-colors duration-500 overflow-hidden ${isLogin ? 'border-neon-blue/50 text-neon-blue' : 'border-neon-pink/50 text-neon-pink'}`}
                 >
-                  <Gamepad2 size={32} />
+                  <img src="/logo.png" alt="LOXX" className="h-10 w-auto" />
                 </motion.div>
                 <h2 className="text-2xl font-black text-white">
                   {isLogin ? "ورود به حساب کاربری" : "ثبت‌نام در لوکس"}

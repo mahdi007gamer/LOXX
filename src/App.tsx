@@ -7,6 +7,8 @@ import { BrowserRouter as Router, Routes, Route, useLocation } from "react-route
 import { Navbar } from "./components/layout/Navbar";
 import { LandingPage } from "./pages/LandingPage";
 import { AuthPage } from "./pages/AuthPage";
+import { LobbyProvider } from "./context/LobbyContext";
+import { ActiveLobbyWidget } from "./components/ui/ActiveLobbyWidget";
 import { DashboardPage } from "./pages/DashboardPage";
 import { ChatPage } from "./pages/ChatPage";
 import { LobbiesPage } from "./pages/LobbiesPage";
@@ -55,9 +57,12 @@ const AppContent = () => {
 
 function App() {
   return (
-    <Router>
-      <AppContent />
-    </Router>
+    <LobbyProvider>
+      <Router>
+        <AppContent />
+        <ActiveLobbyWidget />
+      </Router>
+    </LobbyProvider>
   );
 }
 

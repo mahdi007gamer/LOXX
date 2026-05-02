@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
+import { useLobby } from "../context/LobbyContext";
 import { 
   Users, 
   Shield, 
@@ -54,6 +55,8 @@ interface Message {
 export const LobbyRoomPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { lobby, setLobbyId, setLobbyStatus, setLobbyPlayers, setLobbyCountdown, leaveLobby } = useLobby();
+  
   const [copied, setCopied] = useState(false);
   const [isReady, setIsReady] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
@@ -65,6 +68,15 @@ export const LobbyRoomPage = () => {
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [activeProfileUserId, setActiveProfileUserId] = useState<string | null>(null);
   const [activeChatTab, setActiveChatTab] = useState<string>("main"); // "main" or userId
+  const [chatTabs, setChatTabs] = useState<{id: string, name: string}[]>([{ id: "main", name: "لابی" }]);
+
+  // Initialize Lobby in context
+  useEffect(() => {
+    if (id) {
+       setLobbyId(id);
+    }
+    return () => {};
+  }, [id]);
   
   // Mock State
   const [players, setPlayers] = useState<Player[]>([
@@ -134,14 +146,16 @@ export const LobbyRoomPage = () => {
     };
   }, []);
 
-  // Check if all slots (at least 3) are ready
   useEffect(() => {
     const activePlayers = players.filter(p => p.name !== "Empty Slot");
     const readyPlayers = activePlayers.filter(p => p.isReady);
+    setLobbyPlayers(activePlayers.length);
     if (activePlayers.length >= 3 && readyPlayers.length === activePlayers.length) {
       setAllReadyPulse(true);
+      setLobbyStatus("ready");
     } else {
       setAllReadyPulse(false);
+      setLobbyStatus("waiting");
     }
   }, [players]);
 
@@ -172,20 +186,32 @@ export const LobbyRoomPage = () => {
   const handleStartMatch = () => {
     setIsStarting(true);
     setCountdown(5);
+    setLobbyStatus("starting");
   };
 
   const handleCancelMatch = () => {
     setIsStarting(false);
     setCountdown(5);
+    setLobbyStatus("ready");
+  };
+
+  const handleReopenLobby = () => {
+    setIsMatchStarted(false);
+    setIsStarting(false);
+    setLobbyStatus("ready");
   };
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
     if (isStarting && countdown > 0) {
-      timer = setTimeout(() => setCountdown(prev => prev - 1), 1000);
+      timer = setTimeout(() => {
+        setCountdown(prev => prev - 1);
+        setLobbyCountdown(countdown - 1);
+      }, 1000);
     } else if (countdown === 0 && isStarting) {
       setIsStarting(false);
       setIsMatchStarted(true);
+      setLobbyStatus("started");
     }
     return () => clearTimeout(timer);
   }, [isStarting, countdown]);
@@ -234,6 +260,12 @@ export const LobbyRoomPage = () => {
         className="relative z-10 glass rounded-[32px] p-4 md:p-6 flex flex-wrap items-center justify-between gap-6 border-white/5 shadow-2xl"
       >
         <div className="flex items-center gap-5">
+           <Link to="/">
+             <img src="/logo.png" alt="LOXX" className="h-14 w-auto drop-shadow-[0_0_15px_rgba(0,229,255,0.4)] hover:scale-105 transition-transform" />
+           </Link>
+           
+           <div className="h-10 w-[1px] bg-white/10 hidden md:block" />
+
            <button 
             onClick={() => navigate("/lobbies")}
             className="p-3 rounded-2xl bg-white/5 hover:bg-neon-pink/10 transition-colors text-gray-400 hover:text-neon-pink"
@@ -292,6 +324,7 @@ export const LobbyRoomPage = () => {
             countdown={countdown} 
             players={players} 
             onCancel={handleCancelMatch}
+            onReopen={handleReopenLobby}
           />
 
           {/* Players Grid */}
@@ -302,29 +335,37 @@ export const LobbyRoomPage = () => {
                   key={player.id} 
                   player={player} 
                   isSelected={selectedPlayer === player.id}
-                  onSelect={() => setSelectedPlayer(selectedPlayer === player.id ? null : player.id)}
+                  onSelect={() => !isMatchStarted && setSelectedPlayer(selectedPlayer === player.id ? null : player.id)}
                   onVolumeChange={(val) => handlePlayerVolume(player.id, val)}
                   onMute={(id) => setPlayers(prev => prev.map(p => p.id === id ? { ...p, isMuted: !p.isMuted } : p))}
                   onInvite={() => setIsInviteModalOpen(true)}
                   onProfile={(id) => setActiveProfileUserId(id)}
                   onDirectMessage={(id) => {
+                    const existingTab = chatTabs.find(t => t.id === id);
+                    if (!existingTab) {
+                      const p = players.find(player => player.id === id);
+                      setChatTabs(prev => [...prev, { id, name: p?.name || "کاربر" }]);
+                    }
                     setActiveChatTab(id);
                     setIsChatOpen(true);
                   }}
                   onAddFriend={() => {}}
+                  disabled={isMatchStarted}
                 />
               ))}
             </AnimatePresence>
           </div>
         </div>
 
-        {/* Desktop Chat Sidebar */}
-        <div className="hidden lg:flex w-[400px] flex-col h-full overflow-hidden">
+        {/* Desktop Chat Sidebar (Right) */}
+        <div className="hidden lg:flex w-full lg:w-[400px] flex-col h-full overflow-hidden order-first">
            <ChatPanel 
              messages={messages} 
              players={players}
              activeTab={activeChatTab}
              onTabChange={setActiveChatTab}
+             tabs={chatTabs}
+             setTabs={setChatTabs}
              inputMessage={inputMessage} 
              setInputMessage={setInputMessage} 
              onSend={handleSendMessage} 
@@ -460,7 +501,14 @@ export const LobbyRoomPage = () => {
                   <StatCard label="K/D" value="1.42" />
                   <StatCard label="ساعت" value="3.5K" />
                </div>
-               <GlowButton variant="blue" className="w-full h-12">مشاهده پروفایل استیم</GlowButton>
+               <GlowButton 
+                variant="blue" 
+                className="w-full h-12 flex items-center justify-center gap-2"
+                onClick={() => window.open('/profile', '_blank')}
+               >
+                 <img src="/logo.png" className="h-5 w-auto" />
+                 مشاهده پروفایل لوکس
+               </GlowButton>
             </div>
           </Modal>
         )}
@@ -517,12 +565,13 @@ const ControlButton = ({ icon, active = false, onClick }: { icon: React.ReactNod
   </button>
 );
 
-const MatchInfoPanel = ({ isStarting, isMatchStarted, countdown, players, onCancel }: { 
+const MatchInfoPanel = ({ isStarting, isMatchStarted, countdown, players, onCancel, onReopen }: { 
   isStarting: boolean, 
   isMatchStarted: boolean,
   countdown: number, 
   players: Player[],
-  onCancel: () => void 
+  onCancel: () => void,
+  onReopen: () => void
 }) => {
   const activePlayers = players.filter(p => p.name !== "Empty Slot");
   const readyCount = activePlayers.filter(p => p.isReady).length;
@@ -548,8 +597,16 @@ const MatchInfoPanel = ({ isStarting, isMatchStarted, countdown, players, onCanc
                   </p>
                </div>
             </div>
-            <div className="px-5 py-2 rounded-xl bg-green-500 text-dark-bg text-[10px] font-black uppercase tracking-widest">
-               LOBBY LOCKED
+            <div className="flex items-center gap-4">
+                <div className="px-5 py-2 rounded-xl bg-green-500/20 border border-green-500/30 text-green-500 text-[10px] font-black uppercase tracking-widest">
+                   مدرج (LOBBY LOCKED)
+                </div>
+                <button 
+                  onClick={onReopen}
+                  className="px-5 py-2 rounded-xl bg-red-500 text-white text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-transform"
+                >
+                   باز کردن لابی
+                </button>
             </div>
           </motion.div>
         ) : isStarting ? (
@@ -611,7 +668,7 @@ const MatchInfoPanel = ({ isStarting, isMatchStarted, countdown, players, onCanc
   );
 };
 
-const PlayerCard = ({ player, isSelected, onSelect, onVolumeChange, onMute, onInvite, onProfile, onDirectMessage, onAddFriend }: { 
+const PlayerCard = ({ player, isSelected, onSelect, onVolumeChange, onMute, onInvite, onProfile, onDirectMessage, onAddFriend, disabled }: { 
   player: Player, 
   isSelected: boolean,
   onSelect: () => void,
@@ -621,6 +678,7 @@ const PlayerCard = ({ player, isSelected, onSelect, onVolumeChange, onMute, onIn
   onProfile: (id: string) => void,
   onDirectMessage: (id: string) => void,
   onAddFriend: (id: string) => void,
+  disabled?: boolean,
   key?: React.Key
 }) => {
   const isSlot = player.name === "Empty Slot";
@@ -631,13 +689,14 @@ const PlayerCard = ({ player, isSelected, onSelect, onVolumeChange, onMute, onIn
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.9 }}
-      whileHover={!isSlot ? { y: -8, transition: { duration: 0.2 } } : {}}
+      whileHover={!isSlot && !disabled ? { y: -8, transition: { duration: 0.2 } } : {}}
       onClick={!isSlot ? onSelect : () => onInvite()}
       className={cn(
         "relative p-8 rounded-[40px] border transition-all duration-300 backdrop-blur-md cursor-pointer group h-full flex flex-col justify-between",
         isSlot ? "border-dashed border-white/10 bg-transparent opacity-40 hover:opacity-100" : "bg-[#0a0a0f] border-white/10 shadow-2xl overflow-hidden",
-        player.isReady && !isSlot && "scale-[1.03] ring-1 ring-neon-blue/40 border-neon-blue/30 shadow-[0_30px_60px_-10px_rgba(0,229,255,0.2)]",
-        player.isSpeaking && "ring-2 ring-green-500/50 shadow-[0_0_40px_rgba(34,197,94,0.15)]"
+        player.isReady && !isSlot && !disabled && "scale-[1.03] ring-1 ring-neon-blue/40 border-neon-blue/30 shadow-[0_30px_60px_-10px_rgba(0,229,255,0.2)]",
+        player.isSpeaking && "ring-2 ring-green-500/50 shadow-[0_0_40px_rgba(34,197,94,0.15)]",
+        disabled && "grayscale pointer-events-none opacity-50"
       )}
     >
       {!isSlot ? (
@@ -823,11 +882,13 @@ const PingChart = ({ ping }: { ping: number }) => {
   );
 };
 
-const ChatPanel = ({ messages, players, activeTab, onTabChange, inputMessage, setInputMessage, onSend, onClose }: { 
+const ChatPanel = ({ messages, players, activeTab, onTabChange, tabs, setTabs, inputMessage, setInputMessage, onSend, onClose }: { 
   messages: Message[], 
   players: Player[],
   activeTab: string,
   onTabChange: (id: string) => void,
+  tabs: {id: string, name: string}[],
+  setTabs: React.Dispatch<React.SetStateAction<{id: string, name: string}[]>>,
   inputMessage: string, 
   setInputMessage: (v: string) => void,
   onSend: (e: React.FormEvent) => void,
@@ -838,14 +899,6 @@ const ChatPanel = ({ messages, players, activeTab, onTabChange, inputMessage, se
     if (activeTab === "main") return !msg.toUserId;
     return (msg.toUserId === activeTab && msg.fromUserId === "1") || (msg.fromUserId === activeTab && msg.toUserId === "1");
   });
-
-  const chatTabs = [
-    { id: "main", name: "Lobby" },
-    ...Array.from(new Set(messages.filter(m => m.toUserId || (m.fromUserId && m.fromUserId !== "1")).map(m => m.toUserId === "1" ? m.fromUserId : m.toUserId))).map(uid => ({
-      id: uid as string,
-      name: players.find(p => p.id === uid)?.name || "User"
-    }))
-  ];
 
   return (
     <div className="flex-1 flex flex-col h-full bg-[#0d0d14]/40 backdrop-blur-xl border-l md:border-r border-white/5">
@@ -864,12 +917,12 @@ const ChatPanel = ({ messages, players, activeTab, onTabChange, inputMessage, se
         
         {/* Chat Tabs */}
         <div className="flex items-center gap-1 p-2 bg-black/20 border-b border-white/5 overflow-x-auto no-scrollbar">
-           {chatTabs.map(tab => (
+           {tabs.map(tab => (
              <button
                key={tab.id}
                onClick={() => onTabChange(tab.id)}
                className={cn(
-                 "px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all relative flex items-center gap-2",
+                 "px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all relative flex items-center gap-2 group/tab",
                  activeTab === tab.id ? "bg-white/10 text-white" : "text-gray-500 hover:text-gray-300"
                )}
              >
@@ -878,9 +931,10 @@ const ChatPanel = ({ messages, players, activeTab, onTabChange, inputMessage, se
                  <button 
                   onClick={(e) => {
                     e.stopPropagation();
-                    onTabChange("main");
+                    setTabs(prev => prev.filter(t => t.id !== tab.id));
+                    if (activeTab === tab.id) onTabChange("main");
                   }}
-                  className="hover:text-neon-pink"
+                  className="opacity-0 group-hover/tab:opacity-100 hover:text-neon-pink transition-opacity"
                  >
                    <X size={10} />
                  </button>
@@ -897,7 +951,7 @@ const ChatPanel = ({ messages, players, activeTab, onTabChange, inputMessage, se
         {filteredMessages.map((msg) => (
           <div key={msg.id} className={cn(
             "group flex flex-col gap-1.5", 
-            msg.isSystem ? "items-center my-4" : msg.user === "You" ? "items-end" : "items-start"
+            msg.isSystem ? "items-center my-4" : msg.user === "You" ? "items-start" : "items-end"
           )}>
             {msg.isSystem ? (
               <div className="relative w-full flex items-center justify-center p-3 rounded-2xl border border-neon-blue/10 bg-neon-blue/[0.02]">
@@ -908,13 +962,13 @@ const ChatPanel = ({ messages, players, activeTab, onTabChange, inputMessage, se
             ) : (
               <div className={cn(
                 "flex items-start gap-3 max-w-[85%]",
-                msg.user === "You" ? "flex-row-reverse" : "flex-row"
+                msg.user === "You" ? "flex-row" : "flex-row-reverse"
               )}>
                 <div className="h-8 w-8 rounded-xl bg-white/5 border border-white/10 flex-shrink-0 flex items-center justify-center text-lg mt-1">
                    {msg.user === "NeonGhost" ? "🥷" : msg.user === "Apex_Hunter" ? "👨‍🎤" : msg.user === "You" ? "👨‍🎤" : "👧"}
                 </div>
-                <div className={cn("flex-1 space-y-1", msg.user === "You" ? "text-left" : "text-right")}>
-                  <div className={cn("flex items-center gap-3", msg.user === "You" ? "flex-row-reverse" : "flex-row")}>
+                <div className={cn("flex-1 space-y-1", msg.user === "You" ? "text-right" : "text-left")}>
+                  <div className={cn("flex items-center gap-3", msg.user === "You" ? "flex-row" : "flex-row-reverse")}>
                     <span className={cn(
                       "text-[10px] font-black uppercase tracking-widest",
                       msg.user === "You" ? "text-neon-pink" : "text-neon-blue"
@@ -935,19 +989,19 @@ const ChatPanel = ({ messages, players, activeTab, onTabChange, inputMessage, se
       </div>
 
       <form onSubmit={onSend} className="p-6 bg-black/20 border-t border-white/5">
-        <div className="relative">
+        <div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-2xl p-1 pr-4 focus-within:border-neon-blue/50 transition-all">
           <input
             type="text"
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
             placeholder={activeTab === "main" ? "چیزی بنویسید..." : "پیام خصوصی..."}
-            className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-4 pr-14 text-xs text-white placeholder:text-gray-700 focus:outline-none focus:border-neon-blue/50 transition-all font-medium"
+            className="flex-1 bg-transparent py-3 text-xs text-white placeholder:text-gray-700 focus:outline-none font-medium"
           />
           <button 
             type="submit"
-            className="absolute left-2.5 top-2.5 h-10 w-10 flex items-center justify-center rounded-xl bg-neon-blue text-dark-bg hover:bg-neon-blue/90 transition-colors shadow-lg shadow-neon-blue/20"
+            className="h-10 w-10 flex-shrink-0 flex items-center justify-center rounded-xl bg-neon-blue text-dark-bg hover:bg-neon-blue/90 transition-colors shadow-lg shadow-neon-blue/20"
           >
-            <Send size={18} className="rotate-180" />
+            <Send size={18} className="translate-y-[1px] -translate-x-[1px]" />
           </button>
         </div>
       </form>

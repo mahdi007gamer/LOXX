@@ -13,10 +13,8 @@ export const Footer = () => {
         <div className="grid grid-cols-1 gap-12 sm:grid-cols-2 lg:grid-cols-4">
           {/* Brand Col */}
           <div className="space-y-6">
-            <Link to="/" className="flex items-center gap-2 group">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-neon-blue/20 text-neon-blue shadow-[0_0_15px_rgba(0,229,255,0.3)] transition-transform group-hover:scale-110">
-                <Gamepad2 size={24} />
-              </div>
+            <Link to="/" className="flex items-center gap-3 group">
+              <img src="/logo.png" alt="LOXX" className="h-10 w-auto drop-shadow-[0_0_10px_rgba(0,229,255,0.3)] transition-transform group-hover:scale-110" />
               <span className="text-2xl font-black tracking-tighter text-white">LOXX</span>
             </Link>
             <p className="text-sm leading-relaxed text-gray-500">
