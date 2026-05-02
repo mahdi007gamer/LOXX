@@ -17,7 +17,10 @@ import {
   CheckCircle2,
   Globe,
   Zap,
-  Sparkles
+  Sparkles,
+  Mic,
+  MessageSquare,
+  Lock
 } from "lucide-react";
 import { motion } from "motion/react";
 import { cn } from "@/src/lib/utils";
@@ -49,7 +52,9 @@ const LOBBIES: Lobby[] = [
     mode: "Competitive",
     createdAt: "۲ دقیقه پیش",
     status: "hot",
-    gameBanner: "https://shared.cloudflare.steamstatic.com/store_apps/730/capsule_616x353.jpg"
+    gameBanner: "https://shared.cloudflare.steamstatic.com/store_apps/730/capsule_616x353.jpg",
+    micRequired: true,
+    discordRequired: true
   },
   { 
     id: 2, 
@@ -64,7 +69,9 @@ const LOBBIES: Lobby[] = [
     mode: "Ranked All Pick",
     createdAt: "۵ دقیقه پیش",
     status: "normal",
-    gameBanner: "https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota2_social.jpg"
+    gameBanner: "https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota2_social.jpg",
+    isPrivate: true,
+    micRequired: true
   },
   { 
     id: 3, 
@@ -79,7 +86,9 @@ const LOBBIES: Lobby[] = [
     mode: "Competitive",
     createdAt: "۱۰ دقیقه پیش",
     status: "new",
-    gameBanner: "https://images.contentstack.io/v3/assets/bltb6530b271fddd0b1/blt7ef999db63f68d6f/652f1e967a15993202685718/VAL_Banner_1920x1080.jpg"
+    gameBanner: "https://images.contentstack.io/v3/assets/bltb6530b271fddd0b1/blt7ef999db63f68d6f/652f1e967a15993202685718/VAL_Banner_1920x1080.jpg",
+    micRequired: true,
+    isAgeRestricted: true
   },
   { 
     id: 4, 
@@ -94,7 +103,8 @@ const LOBBIES: Lobby[] = [
     mode: "Ranked Leagues",
     createdAt: "۱ دقیقه پیش",
     status: "hot",
-    gameBanner: "https://media.contentapi.ea.com/content/dam/apex-legends/images/2019/01/apex-featured-image-16x9.jpg.adapt.crop191x100.1200w.jpg"
+    gameBanner: "https://media.contentapi.ea.com/content/dam/apex-legends/images/2019/01/apex-featured-image-16x9.jpg.adapt.crop191x100.1200w.jpg",
+    discordRequired: true
   },
   { 
     id: 5, 
@@ -109,7 +119,8 @@ const LOBBIES: Lobby[] = [
     mode: "Normal",
     createdAt: "۱۵ دقیقه پیش",
     status: "normal",
-    gameBanner: "https://gaming-cdn.com/images/products/6504/orig/league-of-legends-pc-game-cover.jpg?v=1662447432"
+    gameBanner: "https://gaming-cdn.com/images/products/6504/orig/league-of-legends-pc-game-cover.jpg?v=1662447432",
+    micRequired: false
   },
   { 
     id: 6, 
@@ -124,7 +135,10 @@ const LOBBIES: Lobby[] = [
     mode: "Tactical",
     createdAt: "۷ دقیقه پیش",
     status: "new",
-    gameBanner: "https://shared.cloudflare.steamstatic.com/store_apps/359550/capsule_616x353.jpg"
+    gameBanner: "https://shared.cloudflare.steamstatic.com/store_apps/359550/capsule_616x353.jpg",
+    micRequired: true,
+    discordRequired: true,
+    isPrivate: true
   },
 ];
 
@@ -223,19 +237,19 @@ export const LobbiesPage = () => {
                       {/* Status Badge */}
                       {lobby.status !== 'normal' && (
                         <div className={cn(
-                          "absolute top-4 right-4 flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-black uppercase backdrop-blur-md border",
+                          "absolute top-4 right-4 flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-black uppercase backdrop-blur-md border",
                           lobby.status === 'hot' 
                             ? "bg-neon-pink/20 border-neon-pink/30 text-neon-pink" 
                             : "bg-neon-blue/20 border-neon-blue/30 text-neon-blue"
                         )}>
-                          {lobby.status === 'hot' ? <Zap size={12} fill="currentColor" /> : <Sparkles size={12} />}
+                          {lobby.status === 'hot' ? <Zap size={14} fill="currentColor" /> : <Sparkles size={14} />}
                           <span>{lobby.status === 'hot' ? "داغ" : "جدید"}</span>
                         </div>
                       )}
 
                       {/* Time Badge */}
-                      <div className="absolute bottom-4 right-4 flex items-center gap-1.5 text-[10px] font-bold text-gray-300">
-                        <Clock size={12} />
+                      <div className="absolute bottom-4 right-4 flex items-center gap-1.5 text-xs font-bold text-gray-300">
+                        <Clock size={14} />
                         <span>{lobby.createdAt}</span>
                       </div>
 
@@ -248,7 +262,7 @@ export const LobbiesPage = () => {
                     <div className="p-8 pt-10 flex-1 flex flex-col">
                       <div className="mb-4 flex items-center justify-between">
                         <div className={cn(
-                          "rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-tight border",
+                          "rounded-full px-3 py-1 text-xs font-black uppercase tracking-tight border",
                           lobby.variant === 'blue' ? 'bg-neon-blue/10 text-neon-blue border-neon-blue/20' : 
                           lobby.variant === 'pink' ? 'bg-neon-pink/10 text-neon-pink border-neon-pink/20' :
                           'bg-neon-purple/10 text-neon-purple border-neon-purple/20'
@@ -256,29 +270,53 @@ export const LobbiesPage = () => {
                           {lobby.game}
                         </div>
                         <div className="flex items-center gap-2 text-white">
-                          <Users size={14} className="text-gray-500" />
-                          <span className="text-[11px] font-black">{lobby.players} / {lobby.max}</span>
+                          <Users size={16} className="text-gray-500" />
+                          <span className="text-sm font-black">{lobby.players} / {lobby.max}</span>
                         </div>
                       </div>
                       
-                      <h3 className="mb-4 text-xl font-black text-white line-clamp-1 group-hover:text-neon-blue transition-colors">
+                      <h3 className="mb-4 text-2xl font-black text-white line-clamp-1 group-hover:text-neon-blue transition-colors">
                         {lobby.title}
                       </h3>
 
                       {/* Region & Mode Badges */}
-                      <div className="mb-5 flex flex-wrap gap-2.5">
-                        <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white/5 border border-white/5 text-[10px] font-bold text-gray-400">
-                          <Globe size={11} />
+                      <div className="mb-5 flex flex-wrap gap-2.5 text-right" dir="rtl">
+                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/5 text-xs font-bold text-gray-400">
+                          <Globe size={13} />
                           <span>{lobby.region}</span>
                         </div>
-                        <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white/5 border border-white/5 text-[10px] font-bold text-neon-blue">
-                          <Gamepad2 size={11} />
+                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/5 text-xs font-bold text-neon-blue">
+                          <Gamepad2 size={13} />
                           <span>{lobby.mode}</span>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2.5 text-sm text-gray-500 mt-auto">
-                        <ShieldCheck size={16} className="text-green-500" />
+                      {/* Feature Icons Row */}
+                      <div className="mb-6 flex flex-wrap gap-3">
+                        {lobby.isPrivate && (
+                          <div className="h-8 w-8 rounded-lg bg-neon-pink/10 border border-neon-pink/20 flex items-center justify-center text-neon-pink" title="لابی خصوصی">
+                            <Lock size={14} />
+                          </div>
+                        )}
+                        {lobby.micRequired && (
+                          <div className="h-8 w-8 rounded-lg bg-neon-blue/10 border border-neon-blue/20 flex items-center justify-center text-neon-blue" title="میکروفون اجباری">
+                            <Mic size={14} />
+                          </div>
+                        )}
+                        {lobby.discordRequired && (
+                          <div className="h-8 w-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400" title="دیسکورد اجباری">
+                            <MessageSquare size={14} />
+                          </div>
+                        )}
+                        {lobby.isAgeRestricted && (
+                          <div className="h-8 w-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-white text-[10px] font-black" title="محدودیت سنی +18">
+                            18+
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2.5 text-base text-gray-500 mt-auto">
+                        <ShieldCheck size={18} className="text-green-500" />
                         <span className="font-bold">سطح مهارت: <span className="text-white">{lobby.rank}</span></span>
                       </div>
                     </div>
@@ -287,14 +325,14 @@ export const LobbiesPage = () => {
                       <div className="flex items-center gap-2.5">
                          <div className="flex -space-x-2.5">
                             {[1, 2, 3].map(p => (
-                              <div key={p} className="h-7 w-7 rounded-full border-2 border-dark-card bg-white/10 flex items-center justify-center text-[9px]">
+                              <div key={p} className="h-8 w-8 rounded-full border-2 border-dark-card bg-white/10 flex items-center justify-center text-xs">
                                 👤
                               </div>
                             ))}
                          </div>
-                         <span className="text-[11px] font-bold text-gray-500">+{lobby.players} آنلاین</span>
+                         <span className="text-sm font-bold text-gray-500">+{lobby.players} آنلاین</span>
                       </div>
-                      <div className="px-4 py-1.5 rounded-lg bg-white/5 text-[11px] font-black text-neon-blue uppercase italic tracking-wider">
+                      <div className="px-4 py-2 rounded-lg bg-white/5 text-sm font-black text-neon-blue uppercase italic tracking-wider">
                          JOIN NOW
                       </div>
                     </div>

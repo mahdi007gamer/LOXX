@@ -19,6 +19,10 @@ export interface Lobby {
   createdAt: string;
   status: "hot" | "new" | "normal";
   gameBanner?: string;
+  isPrivate?: boolean;
+  micRequired?: boolean;
+  discordRequired?: boolean;
+  isAgeRestricted?: boolean;
 }
 
 export interface Game {

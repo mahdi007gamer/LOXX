@@ -167,7 +167,7 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
         initial={{ scale: 0.95, opacity: 0, y: 20 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.95, opacity: 0, y: 20 }}
-        className="relative w-full max-w-6xl overflow-hidden rounded-[32px] border border-white/10 bg-[#0a0a0f] shadow-[0_30px_100px_rgba(0,0,0,0.8)] flex flex-col md:flex-row h-[85vh] md:h-auto max-h-[90vh]"
+        className="relative w-full max-w-6xl overflow-hidden rounded-[32px] border border-white/10 bg-[#0a0a0f] shadow-[0_30px_100px_rgba(0,0,0,0.8)] flex flex-col md:flex-row h-[90vh] min-h-[720px]"
       >
         {/* Left: Form Flow */}
         <div className="flex-1 p-8 md:p-12 overflow-y-auto custom-scrollbar">
@@ -493,7 +493,7 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
                   onClick={() => setStep(step - 1)}
                   className="flex items-center gap-2 text-gray-500 hover:text-white font-bold transition-colors"
                 >
-                  <ChevronLeft size={20} />
+                  <ChevronRight size={20} />
                   <span>مرحله قبل</span>
                 </button>
               ) : (
@@ -518,7 +518,7 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
                 ) : (
                   <div className="flex items-center gap-2">
                     <span>{step === 3 ? "تایید و ساخت نهایی" : "مرحله بعد"}</span>
-                    {step < 3 && <ChevronRight size={20} />}
+                    {step < 3 && <ChevronLeft size={20} />}
                   </div>
                 )}
               </GlowButton>
@@ -544,24 +544,24 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
               className="relative rounded-[24px] border border-white/5 bg-[#0a0a0f] overflow-hidden shadow-[0_40px_100px_rgba(0,0,0,0.6)] flex flex-col"
             >
               {/* Game Banner */}
-              <div className="relative h-32 w-full overflow-hidden shrink-0">
+              <div className="relative h-36 w-full overflow-hidden shrink-0">
                 <img 
-                  src={activeGame.banner} 
+                  src={activeBanner} 
                   alt={formData.game} 
-                  className="h-full w-full object-cover opacity-60"
+                  className="h-full w-full object-cover"
                   referrerPolicy="no-referrer"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0f] via-transparent to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0f] via-transparent to-transparent opacity-90" />
                 
                 {/* Status Badge */}
-                <div className="absolute top-4 right-4 flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-black uppercase bg-neon-blue/20 border border-neon-blue/30 text-neon-blue backdrop-blur-md">
-                  <Sparkles size={12} />
+                <div className="absolute top-4 right-4 flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-black uppercase bg-neon-blue/20 border border-neon-blue/30 text-neon-blue backdrop-blur-md">
+                  <Sparkles size={14} />
                   <span>جدید</span>
                 </div>
 
                 {/* Time Badge */}
-                <div className="absolute bottom-4 right-4 flex items-center gap-1.5 text-[10px] font-bold text-gray-400">
-                  <Clock size={12} />
+                <div className="absolute bottom-4 right-4 flex items-center gap-1.5 text-xs font-bold text-gray-300">
+                  <Clock size={14} />
                   <span>همین حالا</span>
                 </div>
 
@@ -574,7 +574,7 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
               <div className="p-8 pt-10 flex-1 flex flex-col">
                 <div className="mb-4 flex items-center justify-between">
                   <div className={cn(
-                    "rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-tight border",
+                    "rounded-full px-3 py-1 text-xs font-black uppercase tracking-tight border",
                     activeGame.color === 'blue' ? 'bg-neon-blue/10 text-neon-blue border-neon-blue/20' : 
                     activeGame.color === 'pink' ? 'bg-neon-pink/10 text-neon-pink border-neon-pink/20' :
                     'bg-neon-purple/10 text-neon-purple border-neon-purple/20'
@@ -582,29 +582,53 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
                     {formData.game}
                   </div>
                   <div className="flex items-center gap-2 text-white">
-                    <Users size={14} className="text-gray-500" />
-                    <span className="text-[11px] font-black">۱ / {formData.capacity}</span>
+                    <Users size={16} className="text-gray-500" />
+                    <span className="text-sm font-black">۱ / {formData.capacity}</span>
                   </div>
                 </div>
                 
-                <h3 className="mb-4 text-xl font-black text-white line-clamp-1">
+                <h3 className="mb-4 text-2xl font-black text-white line-clamp-1">
                   {formData.title || "عنوان لابی شما"}
                 </h3>
 
                 {/* Region & Mode Badges */}
-                <div className="mb-5 flex flex-wrap gap-2.5">
-                  <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white/5 border border-white/5 text-[10px] font-bold text-gray-400">
-                    <Globe size={11} />
+                <div className="mb-5 flex flex-wrap gap-2.5 text-right" dir="rtl">
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/5 text-xs font-bold text-gray-400">
+                    <Globe size={13} />
                     <span>{formData.region}</span>
                   </div>
-                  <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white/5 border border-white/5 text-[10px] font-bold text-neon-blue">
-                    <Gamepad2 size={11} />
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/5 text-xs font-bold text-neon-blue">
+                    <Gamepad2 size={13} />
                     <span>{formData.mode}</span>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2.5 text-sm text-gray-500 mt-auto">
-                  <Shield size={16} className="text-green-500" />
+                {/* Feature Icons Row */}
+                <div className="mb-6 flex flex-wrap gap-3">
+                  {formData.isPrivate && (
+                    <div className="h-8 w-8 rounded-lg bg-neon-pink/10 border border-neon-pink/20 flex items-center justify-center text-neon-pink" title="لابی خصوصی">
+                      <Lock size={14} />
+                    </div>
+                  )}
+                  {formData.micRequired && (
+                    <div className="h-8 w-8 rounded-lg bg-neon-blue/10 border border-neon-blue/20 flex items-center justify-center text-neon-blue" title="میکروفون اجباری">
+                      <Mic size={14} />
+                    </div>
+                  )}
+                  {formData.discordRequired && (
+                    <div className="h-8 w-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400" title="دیسکورد اجباری">
+                      <MessageSquare size={14} />
+                    </div>
+                  )}
+                  {formData.age18Plus && (
+                    <div className="h-8 w-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-white text-[10px] font-black" title="محدودیت سنی +18">
+                      18+
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2.5 text-base text-gray-500 mt-auto">
+                  <Shield size={18} className="text-green-500" />
                   <span className="font-bold">سطح مهارت: <span className="text-white">{formData.skill}</span></span>
                 </div>
               </div>
@@ -613,11 +637,11 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
               <div className="mt-2 flex items-center justify-between border-t border-white/5 p-5 py-4">
                 <div className="flex items-center gap-2.5">
                   <div className="flex -space-x-2.5">
-                    <div className="h-7 w-7 rounded-full border-2 border-dark-card bg-white/10 flex items-center justify-center text-[9px]">👤</div>
+                    <div className="h-8 w-8 rounded-full border-2 border-dark-card bg-white/10 flex items-center justify-center text-xs">👤</div>
                   </div>
-                  <span className="text-[11px] font-bold text-gray-500">+۱ آنلاین</span>
+                  <span className="text-sm font-bold text-gray-500">+۱ آنلاین</span>
                 </div>
-                <div className="px-4 py-1.5 rounded-lg bg-white/5 text-[11px] font-black text-neon-blue uppercase italic tracking-wider">
+                <div className="px-4 py-2 rounded-lg bg-white/5 text-sm font-black text-neon-blue uppercase italic tracking-wider">
                   JOIN NOW
                 </div>
               </div>
