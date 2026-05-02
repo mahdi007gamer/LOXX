@@ -45,7 +45,7 @@ const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClose, user
       animate={{ opacity: 1, scale: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.9, y: 10 }}
       className={cn(
-        "absolute bottom-full mb-4 w-72 bg-[#000000] rounded-[32px] border border-white/10 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.9)] overflow-hidden z-[100] cursor-default rtl text-right transition-all",
+        "absolute bottom-full mb-2 w-72 bg-[#0a0a0f] rounded-[24px] border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.8)] overflow-hidden z-[100] cursor-default rtl text-right transition-all backdrop-blur-2xl",
         isSelf ? "right-0" : "left-0"
       )}
       onClick={(e) => e.stopPropagation()}
@@ -123,40 +123,43 @@ interface MessageItemProps {
   message: ChatMessage;
   onReaction: (msgId: string, emoji: string) => void;
   onSaveGif: (url: string) => void;
+  isProfileOpen: boolean;
+  onToggleProfile: (open: boolean) => void;
 }
 
-const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGif }) => {
-  const [showQuickProfile, setShowQuickProfile] = useState(false);
-
+const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGif, isProfileOpen, onToggleProfile }) => {
   // Level based colors
   const nameColorClass = message.senderLevel > 40 ? "text-neon-blue shadow-[0_0_8px_rgba(0,229,255,0.3)]" : 
                         message.senderLevel > 20 ? "text-neon-pink" : "text-white/80";
 
   return (
-    <div className={cn(
-      "flex gap-4 group transition-all duration-300",
-      message.self ? "flex-row-reverse" : "flex-row"
-    )}>
+    <div 
+      id={`msg-${message.id}`}
+      className={cn(
+        "flex gap-3 group transition-all duration-300 mb-2 items-end",
+        message.self ? "flex-row-reverse" : "flex-row"
+      )}
+    >
       {/* Avatar */}
       <div 
         className="shrink-0 cursor-pointer relative"
-        onClick={() => setShowQuickProfile(!showQuickProfile)}
+        onClick={() => onToggleProfile(!isProfileOpen)}
       >
         <div className={cn(
-          "h-10 w-10 md:h-12 md:w-12 rounded-2xl flex items-center justify-center text-xl md:text-2xl relative z-10 transition-transform hover:scale-110 shadow-lg",
-          message.self ? "bg-neon-pink/20 border border-neon-pink/30 ring-4 ring-neon-pink/5" : "bg-white/5 border border-white/10 ring-4 ring-white/5",
-          message.senderBadges?.includes(BadgeType.STREAMER) && "ring-neon-blue/30 scale-105"
+          "h-9 w-9 md:h-11 md:w-11 rounded-xl flex items-center justify-center text-lg md:text-xl relative z-[101] transition-transform hover:scale-105 shadow-xl",
+          message.self ? "bg-neon-pink/20 border border-neon-pink/30 shadow-neon-pink/10" : "bg-white/5 border border-white/10 shadow-black/50",
+          message.senderBadges?.includes(BadgeType.STREAMER) && "ring-2 ring-neon-blue/50"
         )}>
           {message.senderAvatar || "👤"}
           {message.senderBadges?.includes(BadgeType.STREAMER) && (
-             <div className="absolute inset-0 rounded-2xl border-2 border-neon-blue shadow-[0_0_15px_rgba(0,229,255,0.5)] animate-pulse"></div>
+             <div className="absolute inset-0 rounded-xl border border-neon-blue shadow-[0_0_10px_rgba(0,229,255,0.4)] animate-pulse"></div>
           )}
         </div>
         
         <AnimatePresence>
-          {showQuickProfile && (
+          {isProfileOpen && (
              <QuickProfilePopover 
-                onClose={() => setShowQuickProfile(false)} 
+                onClose={() => onToggleProfile(false)} 
                 user={message}
                 isSelf={message.self}
              />
@@ -166,148 +169,145 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
 
       {/* Message Content Area */}
       <div className={cn(
-        "flex flex-col gap-1.5 max-w-[85%] md:max-w-[70%]",
-        message.self ? "items-start" : "items-start" 
+        "flex flex-col gap-0.5 max-w-[85%] md:max-w-[65%]",
+        message.self ? "items-end" : "items-start" 
       )}>
-        {/* Header */}
+        {/* Header - Compact */}
         <div className={cn(
-          "flex items-center gap-3 px-1",
+          "flex items-center gap-2 mb-0.5 px-1 opacity-60 hover:opacity-100 transition-opacity",
           message.self ? "flex-row-reverse" : "flex-row"
         )}>
-          <div className="flex items-center gap-1.5">
-            <span 
-              className={cn("text-xs font-black tracking-tight cursor-pointer hover:underline", nameColorClass)}
-              onClick={() => setShowQuickProfile(true)}
+           <span 
+              className={cn("text-[10px] font-black tracking-tight cursor-pointer hover:underline", nameColorClass)}
+              onClick={() => onToggleProfile(true)}
             >
               {message.senderName}
             </span>
-            <span className="px-1.5 py-0.5 rounded bg-white/10 text-[8px] text-gray-400 font-black border border-white/5">سطح {message.senderLevel}</span>
-            <div className="flex gap-1">
-              {message.senderBadges?.map(badge => (
-                <BadgeIcon key={badge} type={badge} />
-              ))}
-            </div>
-          </div>
-          <span className="text-[10px] text-gray-600 font-bold mt-0.5">{message.timestamp}</span>
+          <span className="text-[9px] text-gray-500 font-bold">{message.timestamp}</span>
         </div>
 
-        {/* Reply Preview */}
-        {message.replyTo && (
-           <div className={cn(
-             "flex items-center gap-2 px-3 py-1.5 bg-white/5 border-l-2 border-neon-blue rounded-lg text-xs text-gray-500 mb-[-8px] mr-4 opacity-70",
-             message.self ? "ml-4 mr-0 border-r-2 border-l-0 border-neon-pink" : ""
-           )}>
-             <Reply size={12} className="rtl:rotate-0 rotate-180" />
-             <span className="font-black text-gray-400">{message.replyTo.user}:</span>
-             <span className="truncate max-w-[200px]">{message.replyTo.text}</span>
-           </div>
-        )}
+        {/* Message Container with embedded actions and reply */}
+        <div className="relative group/bubble-container">
+          {/* Action Buttons - Tighter and Cleaner */}
+          <div className={cn(
+            "absolute top-0 bottom-0 flex items-center gap-1.5 opacity-0 group-hover/bubble-container:opacity-100 transition-all duration-200 z-10",
+            message.self ? "right-full mr-2" : "left-full ml-2"
+          )}>
+            <button 
+              className="p-1.5 rounded-lg bg-black/80 text-gray-400 hover:text-neon-pink hover:bg-neon-pink/10 border border-white/5 backdrop-blur-md transition-all active:scale-90"
+              onClick={() => onReaction(message.id, "❤️")}
+            >
+              <Heart size={14} className={cn(message.reactions?.some(r => r.emoji === "❤️" && r.users.includes("me")) && "fill-neon-pink text-neon-pink")} />
+            </button>
+            <button className="p-1.5 rounded-lg bg-black/80 text-gray-400 hover:text-white hover:bg-white/10 border border-white/5 backdrop-blur-md transition-all active:scale-90">
+              <Reply size={14} />
+            </button>
+          </div>
 
-        {/* Message Bubble */}
-        <div className="relative">
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+            initial={{ opacity: 0, scale: 0.98, y: 5 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             className={cn(
-              "relative rounded-[20px] px-5 py-3 text-sm shadow-2xl transition-all group/bubble",
+              "relative rounded-2xl overflow-hidden shadow-2xl transition-all border",
               "rtl text-right",
               message.self 
-                ? "bg-[#1a101d] text-white border border-neon-pink/30 rounded-tl-none hover:border-neon-pink/50 shadow-neon-pink/5" 
-                : "bg-[#10151d] text-white border border-neon-blue/30 rounded-tr-none hover:border-neon-blue/50 shadow-neon-blue/5"
+                ? "bg-[#140e1a] text-white border-neon-pink/20 rounded-tr-none" 
+                : "bg-[#0c0f16] text-white border-neon-blue/20 rounded-tl-none"
             )}
           >
-            {/* Lobby Invite Card */}
-            {message.lobbyInvite ? (
-               <div className="space-y-4 py-2">
-                 <p className="font-black text-neon-blue flex items-center gap-2">
-                   <Zap size={16} fill="currentColor" />
-                   دعوت به لابی اختصاصی
-                 </p>
-                 <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-3 shadow-inner text-right">
-                   <div className="flex items-center justify-between">
-                     <div className="text-right">
-                       <h5 className="text-sm font-black text-white">{message.lobbyInvite.gameTitle}</h5>
-                       <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">{message.lobbyInvite.region}</p>
-                     </div>
-                     <div className="h-10 w-10 flex items-center justify-center rounded-xl bg-neon-blue/10 border border-neon-blue/20 text-neon-blue">
-                       <Play size={18} fill="currentColor" />
-                     </div>
-                   </div>
-                   <div className="grid grid-cols-2 gap-2">
-                     <div className="px-3 py-2 rounded-lg bg-black/40 border border-white/5 flex items-center gap-2">
-                       <Users size={12} className="text-neon-blue" />
-                       <span className="text-[10px] font-black text-gray-400">{message.lobbyInvite.slots}</span>
-                     </div>
-                     <div className="px-3 py-2 rounded-lg bg-black/40 border border-white/5 flex items-center gap-2">
-                       <Award size={12} className="text-neon-pink" />
-                       <span className="text-[10px] font-black text-gray-400">{message.lobbyInvite.rank}</span>
-                     </div>
-                   </div>
-                   <GlowButton variant="blue" className="w-full h-10 !rounded-xl font-black text-xs shadow-lg shadow-neon-blue/20">
-                     Join Lobby
-                   </GlowButton>
-                 </div>
-                 <p className="opacity-80 font-medium">{message.text}</p>
+            {/* Reply Preview - Embedded inside bubble area */}
+            {message.replyTo && (
+               <div 
+                 onClick={(e) => {
+                   e.stopPropagation();
+                   const el = document.getElementById(`msg-${message.replyTo?.id}`);
+                   if (el) {
+                     el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                     el.classList.add('ring-2', 'ring-neon-blue', 'ring-offset-4', 'ring-offset-black', 'rounded-2xl');
+                     setTimeout(() => {
+                       el.classList.remove('ring-2', 'ring-neon-blue', 'ring-offset-4', 'ring-offset-black');
+                     }, 2000);
+                   }
+                 }}
+                 className={cn(
+                   "px-3 py-2 bg-white/5 border-b border-white/5 text-[11px] text-gray-400 flex items-center gap-2 cursor-pointer hover:bg-white/10 transition-colors",
+                   message.self ? "border-neon-pink/10" : "border-neon-blue/10"
+                 )}
+               >
+                 <div className={cn("w-0.5 h-3 rounded-full", message.self ? "bg-neon-pink" : "bg-neon-blue")} />
+                 <span className="font-black text-gray-300">{message.replyTo.user}:</span>
+                 <span className="truncate opacity-60 italic">{message.replyTo.text.substring(0, 40)}{message.replyTo.text.length > 40 && "..."}</span>
                </div>
-            ) : (
-              <p className="leading-relaxed font-medium">
-                {message.text.split(/(@\w+)/g).map((part, i) => (
-                  part.startsWith('@') ? (
-                    <span key={i} className="text-neon-blue font-black hover:underline cursor-pointer">{part}</span>
-                  ) : part
-                ))}
-              </p>
             )}
 
-            {/* GIF */}
-            {message.gif && (
-              <div className="mt-2 rounded-xl overflow-hidden border border-white/10 shadow-lg group/gif relative">
-                <img src={message.gif} alt="GIF" className="w-full h-auto max-w-[300px]" />
-                <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover/gif:opacity-100 transition-opacity">
-                  <button 
-                    className="p-1.5 bg-black/60 hover:bg-neon-blue/40 rounded-lg text-white transition-colors" 
-                    title="Save GIF"
-                    onClick={() => onSaveGif(message.gif!)}
-                  >
-                    <Star size={12} />
-                  </button>
+            <div className="px-4 py-2.5">
+              {/* Lobby Invite Card */}
+              {message.lobbyInvite ? (
+                 <div className="space-y-3 py-1">
+                   <p className="font-black text-neon-blue text-[9px] flex items-center gap-1.5 px-0 uppercase tracking-widest opacity-70">
+                     <Zap size={10} fill="currentColor" />
+                     دعوت به لابی اختصاصی
+                   </p>
+                   
+                   <div className="group/lobby relative overflow-hidden rounded-xl bg-white/[0.03] border border-white/5 p-2.5 pr-4 shadow-xl backdrop-blur-xl flex items-center gap-3 transition-all hover:bg-white/[0.05] min-w-[260px]">
+                     <div className="absolute top-0 right-0 bottom-0 w-[2px] bg-neon-blue opacity-50"></div>
+                     <div className="h-9 w-9 shrink-0 rounded-lg bg-neon-blue/10 border border-neon-blue/20 flex items-center justify-center text-neon-blue group-hover:scale-105 transition-transform">
+                       <Play size={16} fill="currentColor" className="ml-0.5" />
+                     </div>
+                     <div className="flex-1 min-w-0">
+                       <h5 className="text-xs font-black text-white truncate">{message.lobbyInvite.gameTitle}</h5>
+                       <p className="text-[8px] text-gray-500 font-bold uppercase truncate">{message.lobbyInvite.region}</p>
+                     </div>
+                     <div className="shrink-0 flex items-center gap-1.5">
+                       <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-white/5 text-[9px] text-gray-400 font-bold uppercase border border-white/5">
+                         <Users size={10} className="text-neon-blue" />
+                         {message.lobbyInvite.slots}
+                       </div>
+                       <GlowButton variant="blue" className="h-7 px-3 !rounded-lg font-black text-[9px]">JOIN</GlowButton>
+                     </div>
+                   </div>
+                   <p className="text-xs text-white/90 font-medium leading-relaxed">{message.text}</p>
+                 </div>
+              ) : (
+                <p className="leading-relaxed text-[13px] font-medium text-gray-200">
+                  {message.text.split(/(@\w+)/g).map((part, i) => (
+                    part.startsWith('@') ? (
+                      <span key={i} className="text-neon-blue font-black hover:underline cursor-pointer">{part}</span>
+                    ) : part
+                  ))}
+                </p>
+              )}
+
+              {/* GIF */}
+              {message.gif && (
+                <div className="mt-2 rounded-xl overflow-hidden border border-white/10 shadow-lg group/gif relative">
+                  <img src={message.gif} alt="GIF" className="w-full h-auto max-w-[280px]" />
+                  <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover/gif:opacity-100 transition-opacity">
+                    <button 
+                      className="p-1.5 bg-black/70 hover:bg-neon-blue/40 rounded-lg text-white transition-colors" 
+                      title="Save GIF"
+                      onClick={() => onSaveGif(message.gif!)}
+                    >
+                      <Star size={12} />
+                    </button>
+                  </div>
                 </div>
-              </div>
-            )}
-
-            {/* Quick Actions (Floating side menu) */}
-            <div className={cn(
-              "absolute top-0 opacity-0 group-hover/bubble:opacity-100 transition-all z-20 flex gap-1",
-              message.self ? "-right-14" : "-left-14 flex-row-reverse"
-            )}>
-              <div className="flex flex-col gap-1">
-                <button 
-                  className="p-2 rounded-lg bg-black/80 text-gray-400 hover:text-white border border-white/10 backdrop-blur-md shadow-xl transition-all hover:scale-110 active:scale-95"
-                  onClick={() => onReaction(message.id, "❤️")}
-                >
-                  <Heart size={14} className="hover:fill-neon-pink hover:text-neon-pink" />
-                </button>
-                <button 
-                  className="p-2 rounded-lg bg-black/80 text-gray-400 hover:text-white border border-white/10 backdrop-blur-md shadow-xl transition-all hover:scale-110 active:scale-95"
-                >
-                  <Reply size={14} />
-                </button>
-              </div>
+              )}
             </div>
           </motion.div>
 
-          {/* Reactions Row */}
+          {/* Reactions Row - More Offset */}
           {message.reactions && message.reactions.length > 0 && (
-            <div className={cn("flex flex-wrap gap-1 mt-1.5", message.self ? "flex-row-reverse" : "flex-row")}>
+            <div className={cn("flex flex-wrap gap-1 mt-1 px-1", message.self ? "flex-row-reverse" : "flex-row")}>
               {message.reactions.map((r, i) => (
                 <button 
                   key={i} 
                   onClick={() => onReaction(message.id, r.emoji)}
                   className={cn(
-                    "flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[10px] font-black transition-all hover:scale-105",
+                    "flex items-center gap-1 px-2 py-0.5 rounded-full border text-[9px] font-black transition-all hover:scale-110",
                     r.users.includes("me") 
-                      ? "bg-neon-blue/20 border-neon-blue/40 text-neon-blue shadow-[0_0_10px_rgba(0,229,255,0.2)]" 
-                      : "bg-white/5 border-white/10 text-gray-400 hover:bg-white/10"
+                      ? "bg-neon-blue/20 border-neon-blue/40 text-neon-blue shadow-[0_0_8px_rgba(0,229,255,0.2)]" 
+                      : "bg-black/60 border-white/10 text-gray-400"
                   )}
                 >
                   <span>{r.emoji}</span>
@@ -456,11 +456,16 @@ export const ChatPage: React.FC = () => {
   const [savedGifs, setSavedGifs] = useState<string[]>([]);
   const [showSaveFeedback, setShowSaveFeedback] = useState(false);
   const [showFriendsSidebar, setShowFriendsSidebar] = useState(false);
+  const [openProfileId, setOpenProfileId] = useState<string | null>(null);
   const [userLvl, setUserLvl] = useState(42);
   const scrollRef = useRef<HTMLDivElement>(null);
   
   const { friends, sendMessage: sendFriendMessage } = useFriends();
   const [isFriendsLoading, setIsFriendsLoading] = useState(false);
+
+  useEffect(() => {
+    setOpenProfileId(null);
+  }, [activeChannelId]);
 
   useEffect(() => {
     if (showFriendsSidebar) {
@@ -628,11 +633,23 @@ export const ChatPage: React.FC = () => {
   };
 
   return (
-    <div className="flex h-[calc(100vh-64px)] overflow-hidden bg-dark-bg rtl text-right">
+    <div className="flex h-[calc(100vh-64px)] overflow-hidden bg-dark-bg rtl text-right relative">
+      <AnimatePresence>
+        {openProfileId && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setOpenProfileId(null)}
+            className="fixed inset-0 z-[90] bg-black/20 backdrop-blur-[2px] cursor-default"
+          />
+        )}
+      </AnimatePresence>
+
       <Sidebar />
       
       {/* Channels Sidebar */}
-      <div className="hidden w-80 border-r border-white/5 bg-black/40 backdrop-blur-2xl lg:flex flex-col relative z-20 md:mr-64 mr-0">
+      <div className="hidden w-80 border-r border-white/5 bg-black/20 backdrop-blur-3xl lg:flex flex-col relative z-20 md:mr-64 mr-0">
         <div className="p-6 border-b border-white/5">
           <div className="flex items-center justify-between mb-2">
             <h2 className="text-xl font-black text-white tracking-widest uppercase">کانال‌ها</h2>
@@ -897,6 +914,8 @@ export const ChatPage: React.FC = () => {
               message={msg} 
               onReaction={handleReaction}
               onSaveGif={handleSaveGif}
+              isProfileOpen={openProfileId === msg.id}
+              onToggleProfile={(open) => setOpenProfileId(open ? msg.id : null)}
             />
           ))}
           
