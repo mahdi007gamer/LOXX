@@ -9,6 +9,7 @@ import { LandingPage } from "./pages/LandingPage";
 import { AuthPage } from "./pages/AuthPage";
 import { LobbyProvider } from "./context/LobbyContext";
 import { FriendsProvider } from "./context/FriendsContext";
+import { GamesProvider } from "./context/GamesContext";
 import { ActiveLobbyWidget } from "./components/ui/ActiveLobbyWidget";
 import { FriendChatOverlay } from "./components/ui/FriendChatOverlay";
 import { DashboardPage } from "./pages/DashboardPage";
@@ -20,6 +21,8 @@ import { RoomsPage } from "./pages/RoomsPage";
 import { LeaderboardPage } from "./pages/LeaderboardPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { FriendsPage } from "./pages/FriendsPage";
+import { GamesPage } from "./pages/GamesPage";
+import { MyGamesPage } from "./pages/MyGamesPage";
 import { cn } from "./lib/utils";
 
 const AppContent = () => {
@@ -53,6 +56,8 @@ const AppContent = () => {
           <Route path="/leaderboard" element={<LeaderboardPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/friends" element={<FriendsPage />} />
+          <Route path="/games" element={<GamesPage />} />
+          <Route path="/my-games" element={<MyGamesPage />} />
         </Routes>
       </main>
     </div>
@@ -61,15 +66,17 @@ const AppContent = () => {
 
 function App() {
   return (
-    <FriendsProvider>
-      <LobbyProvider>
-        <Router>
-          <AppContent />
-          <ActiveLobbyWidget />
-          <FriendChatOverlay />
-        </Router>
-      </LobbyProvider>
-    </FriendsProvider>
+    <GamesProvider>
+      <FriendsProvider>
+        <LobbyProvider>
+          <Router>
+            <AppContent />
+            <ActiveLobbyWidget />
+            <FriendChatOverlay />
+          </Router>
+        </LobbyProvider>
+      </FriendsProvider>
+    </GamesProvider>
   );
 }
 

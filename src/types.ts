@@ -5,6 +5,17 @@ export enum FriendStatus {
   OFFLINE = "offline"
 }
 
+export interface Game {
+  id: string;
+  title: string;
+  genre: string;
+  image: string;
+  activeLobbies: number;
+  playerCount: string;
+  friendsPlaying: string[]; 
+  isFavorite?: boolean;
+}
+
 export interface Friend {
   id: string;
   username: string;

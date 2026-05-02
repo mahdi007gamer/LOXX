@@ -90,16 +90,17 @@ const FriendItem = ({ friend, toggleFavorite, toggleMute, toggleBlock, removeFri
         <button className="p-2 text-gray-400 hover:text-white rounded-lg">
           <MoreVertical size={18} />
         </button>
-        <div className="absolute left-0 top-full z-20 mt-1 hidden w-40 rounded-xl bg-dark-bg/95 border border-white/10 p-1 shadow-2xl backdrop-blur-xl group-hover/menu:block">
-          <button onClick={() => toggleMute(friend.id)} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs text-gray-400 hover:bg-white/5 hover:text-white">
-            {friend.isMuted ? <Bell size={14} /> : <VolumeX size={14} />}
+        <div className="absolute left-0 top-full z-50 mt-1 hidden w-44 rounded-xl bg-[#0a0a0f]/98 border border-white/10 p-1 shadow-[0_10px_30px_rgba(0,0,0,0.5)] backdrop-blur-xl group-hover/menu:block">
+          <button onClick={() => toggleMute(friend.id)} className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-xs text-gray-400 hover:bg-white/5 hover:text-white transition-all text-right" dir="rtl">
+            {friend.isMuted ? <Bell size={14} className="text-neon-blue" /> : <VolumeX size={14} />}
             {friend.isMuted ? "خروج از بی‌صدا" : "بی‌صدا کردن"}
           </button>
-          <button onClick={() => toggleBlock(friend.id)} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs text-gray-400 hover:bg-white/5 hover:text-white">
-            <Ban size={14} />
+          <button onClick={() => toggleBlock(friend.id)} className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-xs text-gray-400 hover:bg-white/5 hover:text-white transition-all text-right" dir="rtl">
+            <Ban size={14} className={friend.isBlocked ? "text-neon-blue" : ""} />
             {friend.isBlocked ? "آنبلاک" : "بلاک کردن"}
           </button>
-          <button onClick={() => removeFriend(friend.id)} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs text-neon-pink hover:bg-neon-pink/10">
+          <div className="my-1 h-px bg-white/5" />
+          <button onClick={() => removeFriend(friend.id)} className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-xs text-neon-pink hover:bg-neon-pink/10 transition-all text-right" dir="rtl">
             <Trash2 size={14} />
             حذف دوست
           </button>

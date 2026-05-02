@@ -133,12 +133,12 @@ export const DashboardPage = () => {
             </div>
 
             {/* Friends Activity */}
-            <div className="space-y-6 flex flex-col">
-              <div className="flex items-center justify-between">
+            <div className="flex flex-col h-full min-h-[400px]">
+              <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold text-white">فعالیت دوستان</h2>
                 <div className="h-1 w-12 rounded-full bg-neon-purple/50" />
               </div>
-              <NeonCard variant="purple" className="flex flex-col p-4">
+              <NeonCard variant="purple" className="flex flex-col flex-1 p-2">
                 {loading ? (
                    <div className="space-y-4">
                      {[1,2,3].map(i => <div key={i} className="flex gap-3 items-center"><div className="h-10 w-10 rounded-full bg-white/5 animate-pulse" /><div className="space-y-1"><div className="h-4 w-24 bg-white/5 rounded animate-pulse" /><div className="h-3 w-16 bg-white/5 rounded animate-pulse" /></div></div>)}

@@ -7,13 +7,16 @@ import {
   Settings, 
   LogOut,
   Trophy,
-  Target
+  Target,
+  Gamepad2,
+  Heart
 } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "داشبورد", path: "/dashboard" },
-  { icon: Target, label: "اتاق‌های بازی", path: "/rooms" },
+  { icon: Gamepad2, label: "بازی‌ها", path: "/games" },
+  { icon: Heart, label: "بازی‌های من", path: "/my-games" },
   { icon: Users, label: "لابی‌ها", path: "/lobbies" },
   { icon: Users, label: "دوستان", path: "/friends" },
   { icon: MessageSquare, label: "چت سراسری", path: "/chat" },
