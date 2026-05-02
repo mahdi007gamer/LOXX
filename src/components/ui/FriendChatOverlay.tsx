@@ -6,8 +6,7 @@ import { cn } from "../../lib/utils";
 import { FriendStatus } from "../../types";
 
 export const FriendChatOverlay = () => {
-  const { chats, friends, sendMessage, markAsRead, closeChat } = useFriends();
-  const [activeChatId, setActiveChatId] = useState<string | null>(null);
+  const { chats, friends, sendMessage, markAsRead, closeChat, activeChatId, setActiveChatId } = useFriends();
   const [isMinimized, setIsMinimized] = useState(false);
   const [inputMessage, setInputMessage] = useState("");
 
@@ -45,7 +44,7 @@ export const FriendChatOverlay = () => {
                   {activeFriend?.avatar ? <img src={activeFriend.avatar} alt="" className="h-full w-full rounded-full" /> : "👤"}
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-white">{activeFriend?.displayName}</p>
+                  <p className="text-xs font-bold text-white">{activeFriend?.displayName || chats.find(c => c.friendId === activeChatId)?.friendId === "1" ? "شما" : "کاربر"}</p>
                   <p className="text-[10px] text-green-500">آنلاین</p>
                 </div>
               </div>
@@ -117,18 +116,20 @@ export const FriendChatOverlay = () => {
       <div className="flex items-end gap-2 pointer-events-auto px-4 max-w-full pb-0 overflow-x-visible">
         {chats.map(chat => {
           const friend = friends.find(f => f.id === chat.friendId);
-          if (!friend) return null;
+          const displayName = friend?.displayName || "کاربر";
+          const avatar = friend?.avatar;
+          const status = friend?.status || FriendStatus.OFFLINE;
           
-          const isActive = activeChatId === friend.id;
+          const isActive = activeChatId === chat.friendId;
 
           return (
             <div key={chat.friendId} className="relative group/tab flex items-center">
               <button 
                 onClick={() => {
-                  if (activeChatId === friend.id) {
+                  if (activeChatId === chat.friendId) {
                     setIsMinimized(!isMinimized);
                   } else {
-                    setActiveChatId(friend.id);
+                    setActiveChatId(chat.friendId);
                     setIsMinimized(false);
                   }
                 }}
@@ -141,11 +142,11 @@ export const FriendChatOverlay = () => {
               >
                 <div className="relative shrink-0">
                    <div className="h-6 w-6 rounded-full bg-white/10 flex items-center justify-center text-[10px] overflow-hidden">
-                     {friend.avatar ? <img src={friend.avatar} alt="" className="h-full w-full" /> : "👤"}
+                     {avatar ? <img src={avatar} alt="" className="h-full w-full" /> : "👤"}
                    </div>
                    <div className={cn(
                      "absolute -bottom-1 -right-1 h-3 w-3 rounded-full border-2 border-dark-bg",
-                     friend.status === FriendStatus.ONLINE ? "bg-green-500" : "bg-gray-500"
+                     status === FriendStatus.ONLINE ? "bg-green-500" : "bg-gray-500"
                    )} />
                    {chat.unreadCount > 0 && (
                      <div className="absolute -top-2 -right-2 h-4 w-4 rounded-full bg-neon-pink text-[9px] text-white flex items-center justify-center font-bold animate-pulse">
@@ -153,15 +154,14 @@ export const FriendChatOverlay = () => {
                      </div>
                    )}
                 </div>
-                <span className="text-[11px] font-black tracking-tight truncate overflow-hidden whitespace-nowrap">{friend.displayName}</span>
+                <span className="text-[11px] font-black tracking-tight truncate overflow-hidden whitespace-nowrap">{displayName}</span>
               </button>
               
               {/* Close Button on Tab */}
               <button 
                 onClick={(e) => {
                   e.stopPropagation();
-                  closeChat(friend.id);
-                  if (activeChatId === friend.id) setActiveChatId(null);
+                  closeChat(chat.friendId);
                 }}
                 className={cn(
                   "absolute left-2.5 top-1/2 -translate-y-1/2 p-1 rounded-full bg-black/20 opacity-0 group-hover/tab:opacity-100 hover:bg-neon-pink hover:text-neon-pink transition-all z-10",

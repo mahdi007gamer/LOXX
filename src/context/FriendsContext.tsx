@@ -13,9 +13,10 @@ interface FriendsContextType {
   sendMessage: (friendId: string, text: string) => void;
   markAsRead: (friendId: string) => void;
   closeChat: (friendId: string) => void;
+  openChat: (friendId: string) => void;
   toggleFavorite: (friendId: string) => void;
-  toggleBlock: (friendId: string) => void;
-  toggleMute: (friendId: string) => void;
+  activeChatId: string | null;
+  setActiveChatId: (id: string | null) => void;
 }
 
 const FriendsContext = createContext<FriendsContextType | undefined>(undefined);
@@ -99,6 +100,7 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
   ]);
 
   const [chats, setChats] = useState<FriendChat[]>([]);
+  const [activeChatId, setActiveChatId] = useState<string | null>(null);
 
   const addFriend = async (username: string) => {
     // Mock API call
@@ -143,6 +145,15 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setFriends(prev => prev.filter(f => f.id !== friendId));
   };
 
+  const openChat = (friendId: string) => {
+    setChats(prev => {
+      const existingChat = prev.find(c => c.friendId === friendId);
+      if (existingChat) return prev;
+      return [...prev, { friendId, messages: [], isTyping: false, unreadCount: 0 }];
+    });
+    setActiveChatId(friendId);
+  };
+
   const sendMessage = (friendId: string, text: string) => {
     const newMessage: ChatMessage = {
       id: Math.random().toString(),
@@ -162,6 +173,7 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
         return [...prev, { friendId, messages: [newMessage], isTyping: false, unreadCount: 0 }];
       }
     });
+    setActiveChatId(friendId);
   };
 
   const markAsRead = (friendId: string) => {
@@ -170,6 +182,7 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const closeChat = (friendId: string) => {
     setChats(prev => prev.filter(c => c.friendId !== friendId));
+    if (activeChatId === friendId) setActiveChatId(null);
   };
 
   const toggleFavorite = (friendId: string) => {
@@ -189,12 +202,15 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
       friends,
       requests,
       chats,
+      activeChatId,
+      setActiveChatId,
       addFriend,
       acceptRequest,
       declineRequest,
       cancelRequest,
       removeFriend,
       sendMessage,
+      openChat,
       markAsRead,
       closeChat,
       toggleFavorite,

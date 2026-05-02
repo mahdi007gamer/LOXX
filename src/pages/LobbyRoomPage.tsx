@@ -26,6 +26,7 @@ import {
   Crown
 } from "lucide-react";
 import { GlowButton } from "../components/ui/GlowButton";
+import { useFriends } from "../context/FriendsContext";
 import { cn } from "@/src/lib/utils";
 
 interface Player {
@@ -55,7 +56,15 @@ interface Message {
 export const LobbyRoomPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { lobby, setLobbyId, setLobbyStatus, setLobbyPlayers, setLobbyCountdown, leaveLobby } = useLobby();
+  const { 
+    lobby, 
+    setLobbyId, 
+    setLobbyStatus, 
+    setLobbyPlayers, 
+    setLobbyCountdown, 
+    leaveLobby 
+  } = useLobby();
+  const { openChat } = useFriends();
   
   const [copied, setCopied] = useState(false);
   const [isReady, setIsReady] = useState(false);
@@ -67,8 +76,6 @@ export const LobbyRoomPage = () => {
   const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [activeProfileUserId, setActiveProfileUserId] = useState<string | null>(null);
-  const [activeChatTab, setActiveChatTab] = useState<string>("main"); // "main" or userId
-  const [chatTabs, setChatTabs] = useState<{id: string, name: string}[]>([{ id: "main", name: "لابی" }]);
 
   // Initialize Lobby in context
   useEffect(() => {
@@ -221,7 +228,7 @@ export const LobbyRoomPage = () => {
   };
 
   return (
-    <div className="h-screen bg-[#050508] text-white p-4 md:p-8 flex flex-col gap-6 relative overflow-hidden font-sans" dir="rtl">
+    <div className="h-[calc(100vh-64px)] bg-[#050508] text-white p-4 md:p-6 lg:p-8 flex flex-col gap-6 relative overflow-hidden font-sans" dir="rtl">
       {/* Background Elements */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute inset-0 bg-[linear-gradient(rgba(0,229,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,229,255,0.03)_1px,transparent_1px)] bg-[length:60px_60px]" />
@@ -307,7 +314,7 @@ export const LobbyRoomPage = () => {
         </div>
       </motion.header>
 
-      <div className="flex-1 flex flex-col lg:flex-row gap-8 relative z-10 overflow-hidden">
+      <div className="flex-1 flex flex-col lg:flex-row gap-6 relative z-10 overflow-hidden">
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col gap-6 overflow-y-auto custom-scrollbar pb-24 md:pb-0">
           
@@ -321,8 +328,8 @@ export const LobbyRoomPage = () => {
             onReopen={handleReopenLobby}
           />
 
-          {/* Players Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+          {/* Players Grid - Now 4 per row on large screens */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-5">
             <AnimatePresence mode="popLayout">
               {players.map((player) => (
                 <PlayerCard 
@@ -335,13 +342,8 @@ export const LobbyRoomPage = () => {
                   onInvite={() => setIsInviteModalOpen(true)}
                   onProfile={(id) => setActiveProfileUserId(id)}
                   onDirectMessage={(id) => {
-                    const existingTab = chatTabs.find(t => t.id === id);
-                    if (!existingTab) {
-                      const p = players.find(player => player.id === id);
-                      setChatTabs(prev => [...prev, { id, name: p?.name || "کاربر" }]);
-                    }
-                    setActiveChatTab(id);
-                    setIsChatOpen(true);
+                    // Open global overlay chat instead of internal tab
+                    openChat(id);
                   }}
                   onAddFriend={() => {}}
                 />
@@ -351,14 +353,10 @@ export const LobbyRoomPage = () => {
         </div>
 
         {/* Desktop Chat Sidebar (Right) */}
-        <div className="hidden lg:flex w-full lg:w-[400px] flex-col h-full overflow-hidden order-first">
+        <div className="hidden lg:flex w-full lg:w-[360px] flex-col h-full overflow-hidden order-first">
            <ChatPanel 
              messages={messages} 
              players={players}
-             activeTab={activeChatTab}
-             onTabChange={setActiveChatTab}
-             tabs={chatTabs}
-             setTabs={setChatTabs}
              inputMessage={inputMessage} 
              setInputMessage={setInputMessage} 
              onSend={handleSendMessage} 
@@ -411,10 +409,6 @@ export const LobbyRoomPage = () => {
                 <ChatPanel 
                   messages={messages} 
                   players={players}
-                  activeTab={activeChatTab}
-                  onTabChange={setActiveChatTab}
-                  tabs={chatTabs}
-                  setTabs={setChatTabs}
                   inputMessage={inputMessage} 
                   setInputMessage={setInputMessage} 
                   onSend={handleSendMessage} 
@@ -685,7 +679,7 @@ const PlayerCard = ({ player, isSelected, onSelect, onVolumeChange, onMute, onIn
   const isSlot = player.name === "Empty Slot";
 
   return (
-    <motion.div
+      <motion.div
       layout
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -693,10 +687,10 @@ const PlayerCard = ({ player, isSelected, onSelect, onVolumeChange, onMute, onIn
       whileHover={!isSlot ? { y: -8, transition: { duration: 0.2 } } : {}}
       onClick={!isSlot ? onSelect : () => onInvite()}
       className={cn(
-        "relative p-8 rounded-[40px] border transition-all duration-300 backdrop-blur-md cursor-pointer group h-full flex flex-col justify-between",
+        "relative p-5 md:p-6 rounded-[32px] border transition-all duration-300 backdrop-blur-md cursor-pointer group h-full flex flex-col justify-between",
         isSlot ? "border-dashed border-white/10 bg-transparent opacity-40 hover:opacity-100" : "bg-[#0a0a0f] border-white/10 shadow-2xl overflow-hidden",
-        player.isReady && !isSlot && "scale-[1.03] ring-1 ring-neon-blue/40 border-neon-blue/30 shadow-[0_30px_60px_-10px_rgba(0,229,255,0.2)]",
-        player.isSpeaking && "ring-2 ring-green-500/50 shadow-[0_0_40px_rgba(34,197,94,0.15)]"
+        player.isReady && !isSlot && "scale-[1.02] ring-1 ring-neon-blue/40 border-neon-blue/30 shadow-[0_20px_40px_-5px_rgba(0,229,255,0.15)]",
+        player.isSpeaking && "ring-2 ring-green-500/50 shadow-[0_0_30px_rgba(34,197,94,0.1)]"
       )}
     >
       {!isSlot ? (
@@ -739,7 +733,7 @@ const PlayerCard = ({ player, isSelected, onSelect, onVolumeChange, onMute, onIn
                 </svg>
 
                 <div className={cn(
-                  "h-28 w-28 rounded-[40px] flex items-center justify-center text-5xl relative z-10 transition-all duration-500 shadow-2xl",
+                  "h-24 w-24 rounded-[32px] flex items-center justify-center text-4xl relative z-10 transition-all duration-500 shadow-2xl",
                   player.isReady ? "bg-white/10" : "bg-white/5",
                   player.isSpeaking ? "scale-105" : ""
                 )}>
@@ -882,23 +876,15 @@ const PingChart = ({ ping }: { ping: number }) => {
   );
 };
 
-const ChatPanel = ({ messages, players, activeTab, onTabChange, tabs, setTabs, inputMessage, setInputMessage, onSend, onClose }: { 
+const ChatPanel = ({ messages, players, inputMessage, setInputMessage, onSend, onClose }: { 
   messages: Message[], 
   players: Player[],
-  activeTab: string,
-  onTabChange: (id: string) => void,
-  tabs: {id: string, name: string}[],
-  setTabs: React.Dispatch<React.SetStateAction<{id: string, name: string}[]>>,
   inputMessage: string, 
   setInputMessage: (v: string) => void,
   onSend: (e: React.FormEvent) => void,
   onClose?: () => void
 }) => {
-  const filteredMessages = messages.filter(msg => {
-    if (msg.isSystem) return activeTab === "main";
-    if (activeTab === "main") return !msg.toUserId;
-    return (msg.toUserId === activeTab && msg.fromUserId === "1") || (msg.fromUserId === activeTab && msg.toUserId === "1");
-  });
+  const filteredMessages = messages.filter(msg => !msg.toUserId || msg.isSystem);
 
   return (
     <div className="flex-1 flex flex-col h-full bg-[#0d0d14]/40 backdrop-blur-xl border-l md:border-r border-white/5">
@@ -913,37 +899,6 @@ const ChatPanel = ({ messages, players, activeTab, onTabChange, tabs, setTabs, i
               <X size={20} />
             </button>
           )}
-        </div>
-        
-        {/* Chat Tabs */}
-        <div className="flex items-center gap-1 p-2 bg-black/20 border-b border-white/5 overflow-x-auto no-scrollbar">
-           {tabs.map(tab => (
-             <div
-               key={tab.id}
-               onClick={() => onTabChange(tab.id)}
-               className={cn(
-                 "px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all relative flex items-center gap-2 group/tab cursor-pointer select-none",
-                 activeTab === tab.id ? "bg-white/10 text-white" : "text-gray-500 hover:text-gray-300"
-               )}
-             >
-               {tab.name}
-               {tab.id !== "main" && (
-                 <span 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setTabs(prev => prev.filter(t => t.id !== tab.id));
-                    if (activeTab === tab.id) onTabChange("main");
-                  }}
-                  className="opacity-0 group-hover/tab:opacity-100 hover:text-neon-pink transition-opacity p-0.5"
-                 >
-                   <X size={10} />
-                 </span>
-               )}
-               {activeTab === tab.id && (
-                 <motion.div layoutId="activeTabChat" className="absolute bottom-0 left-0 right-0 h-0.5 bg-neon-blue" />
-               )}
-             </div>
-           ))}
         </div>
       </div>
 
@@ -994,7 +949,7 @@ const ChatPanel = ({ messages, players, activeTab, onTabChange, tabs, setTabs, i
             type="text"
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
-            placeholder={activeTab === "main" ? "چیزی بنویسید..." : "پیام خصوصی..."}
+            placeholder="چیزی بنویسید..."
             className="flex-1 bg-transparent py-4 text-xs text-white placeholder:text-gray-700 focus:outline-none font-medium pr-2"
           />
           <button 
