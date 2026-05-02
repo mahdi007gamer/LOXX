@@ -58,10 +58,10 @@ export const DashboardPage = () => {
           {/* Quick Stats */}
           <div className="mb-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {[
-              { label: "رتبه جهانی", val: "#۱۲۴", icon: Trophy, color: "blue" },
-              { label: "بازی‌های برده", val: "۸۴", icon: Star, color: "pink" },
-              { label: "دوستان آنلاین", val: friends.filter(f => f.status !== FriendStatus.OFFLINE).length, icon: Users, color: "purple" },
-              { label: "سطح انرژی", val: "۸۵٪", icon: Activity, color: "blue" },
+              { label: "روز عضویت", val: "۱۴", icon: Activity, color: "blue" },
+              { label: "لابی‌های جوین شده", val: "۲۸", icon: Target, color: "pink" },
+              { label: "تعداد دوستان", val: friends.length, icon: Users, color: "purple" },
+              { label: "بازی‌های دنبال شده", val: "۶", icon: Star, color: "blue" },
             ].map((stat, i) => (
               <motion.div
                 key={i}
@@ -69,16 +69,17 @@ export const DashboardPage = () => {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: i * 0.1 }}
               >
-                <NeonCard variant={stat.color as any} className="flex items-center gap-4 p-4">
-                  <div className={`flex h-12 w-12 items-center justify-center rounded-lg bg-white/5 ${
-                    stat.color === 'blue' ? 'text-neon-blue' : stat.color === 'pink' ? 'text-neon-pink' : 'text-neon-purple'
-                  }`}>
+                <NeonCard variant={stat.color as any} className="flex flex-col items-center justify-center p-6 text-center" hover={true}>
+                  <div className={cn(
+                    "mb-3 p-3 rounded-2xl",
+                    stat.color === 'blue' ? 'bg-neon-blue/10 text-neon-blue' : 
+                    stat.color === 'pink' ? 'bg-neon-pink/10 text-neon-pink' : 
+                    'bg-neon-purple/10 text-neon-purple'
+                  )}>
                     <stat.icon size={24} />
                   </div>
-                  <div>
-                    <p className="text-xs text-gray-400">{stat.label}</p>
-                    <p className="text-xl font-black text-white">{stat.val}</p>
-                  </div>
+                  <h3 className="text-2xl font-black text-white leading-none mb-1">{stat.val}</h3>
+                  <p className="text-[10px] font-bold text-gray-400">{stat.label}</p>
                 </NeonCard>
               </motion.div>
             ))}

@@ -19,7 +19,11 @@ import {
   Trash2,
   Ban,
   VolumeX,
+  Copy,
+  Check,
+  ExternalLink,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
 
@@ -40,6 +44,7 @@ const FriendItem = ({ friend, toggleFavorite, toggleMute, toggleBlock, removeFri
   toggleBlock: (id: string) => void;
   removeFriend: (id: string) => void;
   sendMessage: (id: string, text: string) => void;
+  key?: React.Key;
 }) => (
   <motion.div 
     layout
@@ -59,7 +64,9 @@ const FriendItem = ({ friend, toggleFavorite, toggleMute, toggleBlock, removeFri
       </div>
       <div>
         <div className="flex items-center gap-2">
-          <span className="font-bold text-white">{friend.displayName}</span>
+          <Link to={`/profile/${friend.username}`} className="font-bold text-white hover:text-neon-blue transition-colors">
+            {friend.displayName}
+          </Link>
           {friend.isFavorite && <Star size={12} className="fill-neon-blue text-neon-blue" />}
           <span className="text-[10px] text-gray-500">Lv.{friend.level}</span>
         </div>
@@ -243,6 +250,45 @@ export const FriendsPage = () => {
 
             {/* Right Column: User Search & Requests */}
             <div className="space-y-8">
+               {/* Mini Profile */}
+               <NeonCard variant="purple" className="p-4 relative overflow-hidden group">
+                 <div className="absolute top-0 right-0 h-24 w-24 -mr-12 -mt-12 rounded-full bg-neon-purple/10 blur-2xl group-hover:bg-neon-purple/20 transition-all duration-700" />
+                 <div className="relative flex items-center gap-4">
+                    <div className="h-16 w-16 rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center text-2xl shadow-2xl">
+                      👤
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-black text-white text-lg">سینا سلطان</h3>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-xs text-gray-500 font-mono tracking-tighter">@sina_sultan</span>
+                        <button 
+                          onClick={() => {
+                            navigator.clipboard.writeText("@sina_sultan");
+                          }}
+                          className="p-1 text-gray-600 hover:text-neon-purple transition-colors"
+                          title="کپی کردن نام کاربری"
+                        >
+                          <Copy size={12} />
+                        </button>
+                      </div>
+                      <div className="flex items-center gap-3 mt-2">
+                         <div className="flex flex-col">
+                           <span className="text-[10px] text-gray-600 uppercase font-bold">سطح</span>
+                           <span className="text-sm font-black text-neon-purple">۴۵</span>
+                         </div>
+                         <div className="w-px h-6 bg-white/5" />
+                         <div className="flex flex-col">
+                           <span className="text-[10px] text-gray-600 uppercase font-bold">امتیاز</span>
+                           <span className="text-sm font-black text-neon-blue">۲,۸۴۰</span>
+                         </div>
+                      </div>
+                    </div>
+                    <Link to="/profile/sina_sultan" className="p-2 bg-white/5 rounded-xl text-gray-400 hover:text-white hover:bg-white/10 transition-all">
+                      <ExternalLink size={16} />
+                    </Link>
+                 </div>
+               </NeonCard>
+
                {/* Global User Search */}
                <NeonCard variant="blue" className="p-6">
                  <h3 className="text-lg font-bold text-white mb-4">یافتن همراه جدید</h3>

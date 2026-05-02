@@ -79,7 +79,7 @@ export const LandingPage = () => {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
             onClick={scrollToTop}
-            className="fixed bottom-8 left-8 z-[9999] h-12 w-12 rounded-full glass border border-white/10 text-white flex items-center justify-center hover:bg-neon-blue hover:text-dark-bg transition-all shadow-[0_0_20px_rgba(0,0,0,0.5)] group"
+            className="fixed bottom-24 left-8 z-[9999] h-12 w-12 rounded-full glass border border-white/10 text-white flex items-center justify-center hover:bg-neon-blue hover:text-dark-bg transition-all shadow-[0_0_20px_rgba(0,0,0,0.5)] group sm:bottom-8 sm:left-8"
           >
             <ChevronUp size={24} className="group-hover:-translate-y-1 transition-transform" />
           </motion.button>
