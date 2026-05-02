@@ -211,7 +211,7 @@ export const LobbiesPage = () => {
                     className="group relative flex flex-col h-full overflow-hidden p-0 border-white/5"
                   >
                     {/* Game Banner */}
-                    <div className="relative h-28 w-full overflow-hidden shrink-0">
+                    <div className="relative h-36 w-full overflow-hidden shrink-0">
                       <img 
                         src={lobby.gameBanner} 
                         alt={lobby.game} 
@@ -223,78 +223,78 @@ export const LobbiesPage = () => {
                       {/* Status Badge */}
                       {lobby.status !== 'normal' && (
                         <div className={cn(
-                          "absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] font-black uppercase backdrop-blur-md border",
+                          "absolute top-4 right-4 flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-black uppercase backdrop-blur-md border",
                           lobby.status === 'hot' 
                             ? "bg-neon-pink/20 border-neon-pink/30 text-neon-pink" 
                             : "bg-neon-blue/20 border-neon-blue/30 text-neon-blue"
                         )}>
-                          {lobby.status === 'hot' ? <Zap size={10} fill="currentColor" /> : <Sparkles size={10} />}
+                          {lobby.status === 'hot' ? <Zap size={12} fill="currentColor" /> : <Sparkles size={12} />}
                           <span>{lobby.status === 'hot' ? "داغ" : "جدید"}</span>
                         </div>
                       )}
 
                       {/* Time Badge */}
-                      <div className="absolute bottom-3 right-3 flex items-center gap-1.5 text-[9px] font-bold text-gray-300">
-                        <Clock size={10} />
+                      <div className="absolute bottom-4 right-4 flex items-center gap-1.5 text-[10px] font-bold text-gray-300">
+                        <Clock size={12} />
                         <span>{lobby.createdAt}</span>
                       </div>
 
                       {/* Game Icon Overlay */}
-                      <div className="absolute -bottom-4 left-4 h-10 w-10 flex items-center justify-center rounded-xl bg-[#0a0a0f] border border-white/10 text-xl shadow-2xl z-20">
+                      <div className="absolute -bottom-5 left-5 h-12 w-12 flex items-center justify-center rounded-xl bg-[#0a0a0f] border border-white/10 text-2xl shadow-2xl z-20">
                         {lobby.icon}
                       </div>
                     </div>
 
-                    <div className="p-6 pt-8 flex-1 flex flex-col">
-                      <div className="mb-3 flex items-center justify-between">
+                    <div className="p-8 pt-10 flex-1 flex flex-col">
+                      <div className="mb-4 flex items-center justify-between">
                         <div className={cn(
-                          "rounded-full px-2.5 py-0.5 text-[9px] font-black uppercase tracking-tight border",
+                          "rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-tight border",
                           lobby.variant === 'blue' ? 'bg-neon-blue/10 text-neon-blue border-neon-blue/20' : 
                           lobby.variant === 'pink' ? 'bg-neon-pink/10 text-neon-pink border-neon-pink/20' :
                           'bg-neon-purple/10 text-neon-purple border-neon-purple/20'
                         )}>
                           {lobby.game}
                         </div>
-                        <div className="flex items-center gap-1.5 text-white">
-                          <Users size={12} className="text-gray-500" />
-                          <span className="text-[10px] font-black">{lobby.players} / {lobby.max}</span>
+                        <div className="flex items-center gap-2 text-white">
+                          <Users size={14} className="text-gray-500" />
+                          <span className="text-[11px] font-black">{lobby.players} / {lobby.max}</span>
                         </div>
                       </div>
                       
-                      <h3 className="mb-3 text-lg font-black text-white line-clamp-1 group-hover:text-neon-blue transition-colors">
+                      <h3 className="mb-4 text-xl font-black text-white line-clamp-1 group-hover:text-neon-blue transition-colors">
                         {lobby.title}
                       </h3>
 
                       {/* Region & Mode Badges */}
-                      <div className="mb-4 flex flex-wrap gap-2">
-                        <div className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-white/5 border border-white/5 text-[9px] font-bold text-gray-400">
-                          <Globe size={10} />
+                      <div className="mb-5 flex flex-wrap gap-2.5">
+                        <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white/5 border border-white/5 text-[10px] font-bold text-gray-400">
+                          <Globe size={11} />
                           <span>{lobby.region}</span>
                         </div>
-                        <div className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-white/5 border border-white/5 text-[9px] font-bold text-neon-blue">
-                          <Gamepad2 size={10} />
+                        <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white/5 border border-white/5 text-[10px] font-bold text-neon-blue">
+                          <Gamepad2 size={11} />
                           <span>{lobby.mode}</span>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2 text-xs text-gray-500 mt-auto">
-                        <ShieldCheck size={14} className="text-green-500" />
+                      <div className="flex items-center gap-2.5 text-sm text-gray-500 mt-auto">
+                        <ShieldCheck size={16} className="text-green-500" />
                         <span className="font-bold">سطح مهارت: <span className="text-white">{lobby.rank}</span></span>
                       </div>
                     </div>
 
-                    <div className="mt-4 flex items-center justify-between border-t border-white/5 p-4 py-3 transition-all group-hover:opacity-0">
-                      <div className="flex items-center gap-2">
-                         <div className="flex -space-x-2">
+                    <div className="mt-4 flex items-center justify-between border-t border-white/5 p-5 py-4 transition-all group-hover:opacity-0">
+                      <div className="flex items-center gap-2.5">
+                         <div className="flex -space-x-2.5">
                             {[1, 2, 3].map(p => (
-                              <div key={p} className="h-6 w-6 rounded-full border-2 border-dark-card bg-white/10 flex items-center justify-center text-[8px]">
+                              <div key={p} className="h-7 w-7 rounded-full border-2 border-dark-card bg-white/10 flex items-center justify-center text-[9px]">
                                 👤
                               </div>
                             ))}
                          </div>
-                         <span className="text-[10px] font-bold text-gray-500">+{lobby.players} آنلاین</span>
+                         <span className="text-[11px] font-bold text-gray-500">+{lobby.players} آنلاین</span>
                       </div>
-                      <div className="px-3 py-1 rounded-lg bg-white/5 text-[10px] font-black text-neon-blue uppercase italic">
+                      <div className="px-4 py-1.5 rounded-lg bg-white/5 text-[11px] font-black text-neon-blue uppercase italic tracking-wider">
                          JOIN NOW
                       </div>
                     </div>

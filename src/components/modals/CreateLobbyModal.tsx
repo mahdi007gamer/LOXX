@@ -33,25 +33,29 @@ const GAME_DATA = {
     modes: ["Competitive", "Casual", "Wingman", "Premier", "Custom"],
     maps: ["Mirage", "Inferno", "Dust 2", "Nuke", "Ancient", "Anubis", "Vertigo"],
     icon: "🔫",
-    color: "blue"
+    color: "blue",
+    banner: "https://shared.cloudflare.steamstatic.com/store_apps/730/capsule_616x353.jpg"
   },
   "Dota 2": {
     modes: ["Ranked All Pick", "Captain's Mode", "Turbo", "Ability Draft"],
     maps: ["Standard Map"],
     icon: "⚔️",
-    color: "pink"
+    color: "pink",
+    banner: "https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota2_social.jpg"
   },
   "Valorant": {
     modes: ["Competitive", "Unrated", "Swiftplay", "Spike Rush", "Premier"],
     maps: ["Ascent", "Bind", "Haven", "Icebox", "Breeze", "Fracture", "Lotus", "Sunset"],
     icon: "🎯",
-    color: "purple"
+    color: "purple",
+    banner: "https://images.contentstack.io/v3/assets/bltb6530b271fddd0b1/blt7ef999db63f68d6f/652f1e967a15993202685718/VAL_Banner_1920x1080.jpg"
   },
   "Apex Legends": {
     modes: ["Battle Royale", "Ranked Leagues", "Arenas", "Control"],
     maps: ["Kings Canyon", "World's Edge", "Olympus", "Storm Point", "Broken Moon"],
     icon: "🏃‍♂️",
-    color: "blue"
+    color: "blue",
+    banner: "https://media.contentapi.ea.com/content/dam/apex-legends/images/2019/01/apex-featured-image-16x9.jpg.adapt.crop191x100.1200w.jpg"
   }
 };
 
@@ -79,6 +83,15 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
   });
 
   const activeGame = GAME_DATA[formData.game as keyof typeof GAME_DATA];
+  
+  const GAME_BANNERS = {
+    "Counter Strike 2": "https://shared.cloudflare.steamstatic.com/store_apps/730/capsule_616x353.jpg",
+    "Dota 2": "https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota2_social.jpg",
+    "Valorant": "https://images.contentstack.io/v3/assets/bltb6530b271fddd0b1/blt7ef999db63f68d6f/652f1e967a15993202685718/VAL_Banner_1920x1080.jpg",
+    "Apex Legends": "https://media.contentapi.ea.com/content/dam/apex-legends/images/2019/01/apex-featured-image-16x9.jpg.adapt.crop191x100.1200w.jpg"
+  };
+
+  const activeBanner = GAME_BANNERS[formData.game as keyof typeof GAME_BANNERS] || GAME_BANNERS["Counter Strike 2"];
 
   const handleMapToggle = (mapName: string) => {
     setFormData(prev => ({
@@ -514,7 +527,7 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
         </div>
 
         {/* Right: Live Preview */}
-        <div className="w-full md:w-[420px] bg-white/5 p-8 border-r border-white/10 flex flex-col items-center justify-center relative">
+        <div className="w-full md:w-[460px] bg-white/[0.02] p-8 border-r border-white/10 flex flex-col items-center justify-center relative">
           <div className="absolute top-8 left-8 text-[10px] uppercase font-black text-gray-600 tracking-widest flex items-center gap-2">
             <motion.div 
               animate={{ opacity: [1, 0.4, 1] }} 
@@ -524,86 +537,104 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
             Live Preview
           </div>
 
-          <div className="w-full max-w-[320px] relative perspective-[1000px]">
+          <div className="w-full max-w-[340px] relative">
             {/* The Actual Lobby Card Preview */}
             <motion.div
               layout
-              className="relative rounded-2xl border border-white/20 bg-slate-900 overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)] transform rotate-y-[-5deg]"
+              className="relative rounded-[24px] border border-white/5 bg-[#0a0a0f] overflow-hidden shadow-[0_40px_100px_rgba(0,0,0,0.6)] flex flex-col"
             >
-              {/* Card Header Background */}
-              <div className="h-24 w-full bg-[#0d0d14] relative overflow-hidden flex items-center justify-center">
-                 <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-                 <span className="text-4xl filter blur-[1px] opacity-20 select-none">{activeGame.icon}</span>
-                 <div className="absolute inset-0 bg-gradient-to-t from-[#0d0d14] to-transparent opacity-60" />
+              {/* Game Banner */}
+              <div className="relative h-32 w-full overflow-hidden shrink-0">
+                <img 
+                  src={activeGame.banner} 
+                  alt={formData.game} 
+                  className="h-full w-full object-cover opacity-60"
+                  referrerPolicy="no-referrer"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0f] via-transparent to-transparent" />
+                
+                {/* Status Badge */}
+                <div className="absolute top-4 right-4 flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-black uppercase bg-neon-blue/20 border border-neon-blue/30 text-neon-blue backdrop-blur-md">
+                  <Sparkles size={12} />
+                  <span>جدید</span>
+                </div>
+
+                {/* Time Badge */}
+                <div className="absolute bottom-4 right-4 flex items-center gap-1.5 text-[10px] font-bold text-gray-400">
+                  <Clock size={12} />
+                  <span>همین حالا</span>
+                </div>
+
+                {/* Game Icon Overlay */}
+                <div className="absolute -bottom-5 left-5 h-12 w-12 flex items-center justify-center rounded-xl bg-[#0a0a0f] border border-white/10 text-2xl shadow-2xl z-20">
+                  {activeGame.icon}
+                </div>
               </div>
 
-              <div className="p-6 relative">
-                 <div className="mb-4 flex items-center justify-between">
-                   <div className="rounded-full bg-white/5 border border-white/10 px-3 py-1 text-[9px] font-black uppercase text-gray-400">
-                     {activeGame.color === "blue" ? "Counter-Strike 2" : formData.game}
-                   </div>
-                   <div className="flex items-center gap-1.5 text-neon-blue">
-                     <Users size={12} />
-                     <span className="text-[10px] font-black">1 / {formData.capacity}</span>
-                   </div>
-                 </div>
+              <div className="p-8 pt-10 flex-1 flex flex-col">
+                <div className="mb-4 flex items-center justify-between">
+                  <div className={cn(
+                    "rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-tight border",
+                    activeGame.color === 'blue' ? 'bg-neon-blue/10 text-neon-blue border-neon-blue/20' : 
+                    activeGame.color === 'pink' ? 'bg-neon-pink/10 text-neon-pink border-neon-pink/20' :
+                    'bg-neon-purple/10 text-neon-purple border-neon-purple/20'
+                  )}>
+                    {formData.game}
+                  </div>
+                  <div className="flex items-center gap-2 text-white">
+                    <Users size={14} className="text-gray-500" />
+                    <span className="text-[11px] font-black">۱ / {formData.capacity}</span>
+                  </div>
+                </div>
+                
+                <h3 className="mb-4 text-xl font-black text-white line-clamp-1">
+                  {formData.title || "عنوان لابی شما"}
+                </h3>
 
-                 <h3 className="mb-2 text-lg font-black text-white line-clamp-1">
-                   {formData.title || "عنوان لابی شما"}
-                 </h3>
+                {/* Region & Mode Badges */}
+                <div className="mb-5 flex flex-wrap gap-2.5">
+                  <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white/5 border border-white/5 text-[10px] font-bold text-gray-400">
+                    <Globe size={11} />
+                    <span>{formData.region}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white/5 border border-white/5 text-[10px] font-bold text-neon-blue">
+                    <Gamepad2 size={11} />
+                    <span>{formData.mode}</span>
+                  </div>
+                </div>
 
-                 <div className="mb-6 flex flex-wrap gap-2">
-                    <div className="flex items-center gap-1 text-[10px] font-bold text-gray-400">
-                      <Clock size={10} />
-                      <span>Just now</span>
-                    </div>
-                    <div className="flex items-center gap-1 text-[10px] font-bold text-neon-pink">
-                      <Shield size={10} />
-                      <span>{formData.skill}</span>
-                    </div>
-                 </div>
+                <div className="flex items-center gap-2.5 text-sm text-gray-500 mt-auto">
+                  <Shield size={16} className="text-green-500" />
+                  <span className="font-bold">سطح مهارت: <span className="text-white">{formData.skill}</span></span>
+                </div>
+              </div>
 
-                 <div className="relative py-4 border-y border-white/5 group-hover:border-white/10 transition-colors">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] uppercase font-black text-gray-500 tracking-widest pl-1">Region</span>
-                      <span className="text-xs font-bold text-white">{formData.region}</span>
-                    </div>
-                    <div className="mt-3 flex items-center justify-between">
-                      <span className="text-[10px] uppercase font-black text-gray-500 tracking-widest pl-1">Mode</span>
-                      <span className="text-xs font-bold text-neon-blue">{formData.mode}</span>
-                    </div>
-                 </div>
-
-                 <div className="mt-4 flex items-center gap-2">
-                    {formData.micRequired && <Mic size={14} className="p-0.5 rounded bg-neon-blue/20 text-neon-blue" />}
-                    {formData.discordRequired && <MessageSquare size={14} className="p-0.5 rounded bg-indigo-500/20 text-indigo-400" />}
-                    {formData.isPrivate && <Lock size={14} className="p-0.5 rounded bg-neon-pink/20 text-neon-pink" />}
-                 </div>
+              {/* Bottom Row */}
+              <div className="mt-2 flex items-center justify-between border-t border-white/5 p-5 py-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex -space-x-2.5">
+                    <div className="h-7 w-7 rounded-full border-2 border-dark-card bg-white/10 flex items-center justify-center text-[9px]">👤</div>
+                  </div>
+                  <span className="text-[11px] font-bold text-gray-500">+۱ آنلاین</span>
+                </div>
+                <div className="px-4 py-1.5 rounded-lg bg-white/5 text-[11px] font-black text-neon-blue uppercase italic tracking-wider">
+                  JOIN NOW
+                </div>
               </div>
             </motion.div>
 
-            {/* Decorative background element for card */}
-            <div className="absolute -inset-4 border border-neon-blue/5 rounded-[40px] -z-10 blur-xl opacity-30" />
-            
-            {/* Status indicators */}
-            <div className="mt-12 space-y-4">
-              <div className="flex items-center gap-3 justify-center">
-                 <div className="px-3 py-1.5 rounded-full bg-white/5 border border-white/5 flex items-center gap-2">
-                   <Globe size={11} className="text-gray-500" />
-                   <span className="text-[10px] font-bold text-gray-400">{formData.isPrivate ? "Closed" : "Open to All"}</span>
-                 </div>
-                 <div className="px-3 py-1.5 rounded-full bg-white/5 border border-white/5 flex items-center gap-2">
-                   <Gamepad2 size={11} className="text-gray-500" />
-                   <span className="text-[10px] font-bold text-gray-400">{formData.mode}</span>
-                 </div>
-              </div>
-              
-              <div className="text-center">
-                <p className="text-[10px] text-gray-600 font-medium italic opacity-60">
-                  " {formData.description || "Looking for some serious gameplay. Join up!"} "
+            {/* AI Description Tooltip */}
+            {formData.description && (
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-6 p-4 rounded-xl bg-white/5 border border-white/5 text-center"
+              >
+                <p className="text-[10px] text-gray-500 font-medium italic leading-relaxed">
+                  " {formData.description} "
                 </p>
-              </div>
-            </div>
+              </motion.div>
+            )}
           </div>
         </div>
 
