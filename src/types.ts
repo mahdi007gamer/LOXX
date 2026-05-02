@@ -61,12 +61,48 @@ export interface FriendRequest {
   timestamp: string;
 }
 
+export enum BadgeType {
+  STREAMER = "streamer",
+  PRO = "pro",
+  LOBBY_MASTER = "lobby_master",
+  VIP = "vip"
+}
+
+export interface Reaction {
+  emoji: string;
+  count: number;
+  users: string[]; // userIds
+}
+
+export interface MessageReply {
+  id: string;
+  user: string;
+  text: string;
+}
+
 export interface ChatMessage {
   id: string;
   senderId: string;
+  senderName: string;
+  senderAvatar?: string;
+  senderLevel: number;
+  senderColor?: string; // Color based on level
+  senderBadges?: BadgeType[];
   text: string;
   timestamp: string;
   isRead: boolean;
+  self: boolean;
+  replyTo?: MessageReply;
+  reactions?: Reaction[];
+  mentions?: string[]; // userIds
+  gif?: string; // URL
+  lobbyInvite?: {
+    lobbyId: string;
+    gameTitle: string;
+    region: string;
+    slots: string;
+    rank: string;
+  };
 }
 
 export interface FriendChat {
@@ -75,4 +111,12 @@ export interface FriendChat {
   isTyping: boolean;
   unreadCount: number;
   tempDisplayName?: string;
+}
+
+export interface Channel {
+  id: string;
+  name: string;
+  type: "public" | "game" | "private";
+  users: number;
+  icon?: string;
 }

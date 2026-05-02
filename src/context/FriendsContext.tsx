@@ -170,6 +170,9 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const newMessage: ChatMessage = {
       id: Math.random().toString(),
       senderId: "me",
+      senderName: "من",
+      senderLevel: 10,
+      self: true,
       text,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       isRead: true
