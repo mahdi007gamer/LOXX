@@ -83,10 +83,10 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
          {!isSelf && (
            <button 
             onClick={handleMessage}
-            className="absolute top-4 right-4 h-8 w-8 rounded-full bg-neon-blue/20 text-neon-blue flex items-center justify-center hover:bg-neon-blue/40 transition-colors z-20 backdrop-blur-md border border-neon-blue/20"
+            className="absolute top-24 right-12 h-10 w-10 rounded-xl bg-neon-blue/10 text-neon-blue flex items-center justify-center hover:bg-neon-blue/20 transition-all z-20 backdrop-blur-md border border-neon-blue/20 shadow-[0_0_15px_rgba(0,229,255,0.2)] group"
             title="ارسال پیام"
            >
-             <MessageCircle size={14} />
+             <MessageCircle size={20} className="group-hover:scale-110 transition-transform" />
            </button>
          )}
       </div>

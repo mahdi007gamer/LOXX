@@ -154,19 +154,16 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
             
             {/* Action Buttons - Desktop Hover & Mobile Click */}
             <div className={cn(
-              "absolute flex items-center gap-1 px-1.5 py-1 rounded-xl bg-[#0f0f15]/95 border border-white/10 shadow-2xl z-50 backdrop-blur-2xl whitespace-nowrap transition-all duration-200",
-              "max-w-[85vw] overflow-x-auto no-scrollbar",
-              message.self ? "right-0 translate-x-[-10%] bottom-full mb-2" : "left-0 translate-x-[10%] bottom-full mb-2",
-              "md:translate-x-0 md:bottom-auto",
-              message.self ? "md:right-full md:mr-1 md:pr-4" : "md:left-full md:ml-1 md:pl-4",
-              showActions ? "opacity-100 scale-100 pointer-events-auto translate-y-0" : "opacity-0 scale-95 pointer-events-none translate-y-2 md:translate-y-0 lg:group-hover/bubble-container:opacity-100 lg:group-hover/bubble-container:scale-100 lg:group-hover/bubble-container:pointer-events-auto"
+              "absolute flex items-center gap-1 px-1.5 py-1 rounded-xl bg-[#0f0f15]/95 border border-white/10 shadow-2xl z-[60] backdrop-blur-2xl whitespace-nowrap transition-all duration-200",
+              message.self ? "right-full mr-2 bottom-0" : "left-full ml-2 bottom-0",
+              showActions ? "opacity-100 translate-y-0 visible" : "opacity-0 translate-y-2 invisible lg:group-hover/bubble-container:opacity-100 lg:group-hover/bubble-container:translate-y-0 lg:group-hover/bubble-container:visible"
             )}
             onClick={(e) => e.stopPropagation()}
             >
               {/* Hover bridge to prevent losing hover state */}
               <div className={cn(
-                "hidden lg:block absolute inset-y-0 w-20 bg-transparent",
-                message.self ? "-right-10" : "-left-10"
+                "hidden lg:block absolute inset-y-0 w-8 bg-transparent",
+                message.self ? "-right-8" : "-left-8"
               )} />
   
               <button 
@@ -378,6 +375,25 @@ const ChannelButton: React.FC<ChannelButtonProps> = ({ channel, active, onClick 
 // --- Themes ---
 
 const CHAT_THEMES = {
+  aura: {
+    name: "Animated Neon Aura",
+    bgClass: "bg-[#05070d]",
+    radial: (
+      <>
+        <motion.div 
+          animate={{ x: ["-10%", "10%"], y: ["-10%", "10%"] }}
+          transition={{ duration: 20, repeat: Infinity, repeatType: "mirror" }}
+          className="absolute top-1/2 left-1/4 -translate-y-1/2 w-[80%] h-[80%] bg-[radial-gradient(circle,rgba(0,255,200,0.06),transparent_60%)] pointer-events-none z-0" 
+        />
+        <motion.div 
+          animate={{ x: ["10%", "-10%"], y: ["10%", "-10%"] }}
+          transition={{ duration: 25, repeat: Infinity, repeatType: "mirror" }}
+          className="absolute top-1/2 right-1/4 -translate-y-1/2 w-[80%] h-[80%] bg-[radial-gradient(circle,rgba(255,0,200,0.06),transparent_60%)] pointer-events-none z-0" 
+        />
+      </>
+    ),
+    overlay: null
+  },
   default: {
     name: "Classic Dark",
     bgClass: "bg-[#050507]",
@@ -398,25 +414,6 @@ const CHAT_THEMES = {
       </>
     )
   },
-  aura: {
-    name: "Animated Neon Aura",
-    bgClass: "bg-[#05070d]",
-    radial: (
-      <>
-        <motion.div 
-          animate={{ x: ["-10%", "10%"], y: ["-10%", "10%"] }}
-          transition={{ duration: 20, repeat: Infinity, repeatType: "mirror" }}
-          className="absolute top-1/2 left-1/4 -translate-y-1/2 w-[80%] h-[80%] bg-[radial-gradient(circle,rgba(0,255,200,0.06),transparent_60%)] pointer-events-none z-0" 
-        />
-        <motion.div 
-          animate={{ x: ["10%", "-10%"], y: ["10%", "-10%"] }}
-          transition={{ duration: 25, repeat: Infinity, repeatType: "mirror" }}
-          className="absolute top-1/2 right-1/4 -translate-y-1/2 w-[80%] h-[80%] bg-[radial-gradient(circle,rgba(255,0,200,0.06),transparent_60%)] pointer-events-none z-0" 
-        />
-      </>
-    ),
-    overlay: null
-  },
   noise: {
     name: "Digital Noise",
     bgClass: "bg-[#05070d]",
@@ -425,48 +422,6 @@ const CHAT_THEMES = {
       <div className="absolute inset-0 pointer-events-none opacity-[0.03] z-0" 
            style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }} />
     )
-  },
-  hud: {
-    name: "Game HUD Lines",
-    bgClass: "bg-[#050507]",
-    overlay: (
-      <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
-        <div className="absolute bottom-0 left-0 w-32 h-32 border-b-2 border-l-2 border-neon-blue/10 -m-4 rounded-bl-3xl" />
-        <div className="absolute top-0 right-0 w-32 h-32 border-t-2 border-r-2 border-neon-pink/10 -m-4 rounded-tr-3xl" />
-        <div className="absolute top-1/4 left-0 w-1 h-20 bg-gradient-to-b from-transparent via-neon-blue/5 to-transparent" />
-        <div className="absolute bottom-1/4 right-0 w-1 h-20 bg-gradient-to-b from-transparent via-neon-pink/5 to-transparent" />
-      </div>
-    ),
-    radial: null
-  },
-  particles: {
-    name: "Floating Particles",
-    bgClass: "bg-[#050507]",
-    overlay: (
-      <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
-        {[...Array(15)].map((_, i) => (
-          <motion.div
-            key={i}
-            initial={{ 
-              x: Math.random() * 100 + "%", 
-              y: Math.random() * 100 + "%", 
-              opacity: Math.random() * 0.05 + 0.02 
-            }}
-            animate={{ 
-              y: [null, Math.random() * 100 + "%"],
-              opacity: [null, Math.random() * 0.05 + 0.02, 0]
-            }}
-            transition={{ 
-              duration: Math.random() * 20 + 20, 
-              repeat: Infinity, 
-              ease: "linear" 
-            }}
-            className="absolute w-1 h-1 bg-white rounded-full blur-[1px]"
-          />
-        ))}
-      </div>
-    ),
-    radial: null
   }
 };
 
@@ -571,8 +526,12 @@ export const ChatPage: React.FC = () => {
   const [showFriendsSidebar, setShowFriendsSidebar] = useState(false);
   const [userLvl, setUserLvl] = useState(42);
   const [showChannelMenu, setShowChannelMenu] = useState(false);
-  const [chatTheme, setChatTheme] = useState<keyof typeof CHAT_THEMES>("default");
+  const [chatTheme, setChatTheme] = useState<keyof typeof CHAT_THEMES>((localStorage.getItem("loxx-chat-theme") as any) || "aura");
   const [showThemeMenu, setShowThemeMenu] = useState(false);
+
+  useEffect(() => {
+    localStorage.setItem("loxx-chat-theme", chatTheme);
+  }, [chatTheme]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
