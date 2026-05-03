@@ -5,11 +5,13 @@
 
 import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
 import { Navbar } from "./components/layout/Navbar";
+import { BottomNav } from "./components/layout/BottomNav";
 import { LandingPage } from "./pages/LandingPage";
 import { AuthPage } from "./pages/AuthPage";
 import { LobbyProvider } from "./context/LobbyContext";
 import { FriendsProvider } from "./context/FriendsContext";
 import { GamesProvider } from "./context/GamesContext";
+import { ProfilePopoverProvider } from "./context/ProfilePopoverContext";
 import { ActiveLobbyWidget } from "./components/ui/ActiveLobbyWidget";
 import { FriendChatOverlay } from "./components/ui/FriendChatOverlay";
 import { DashboardPage } from "./pages/DashboardPage";
@@ -30,7 +32,7 @@ const AppContent = () => {
   const isLanding = location.pathname === "/";
 
   return (
-    <div className="min-h-screen bg-dark-bg text-gray-100 selection:bg-neon-pink selection:text-white">
+    <div className="min-h-screen bg-dark-bg text-gray-100 selection:bg-neon-pink selection:text-white pb-16 md:pb-0">
       {/* Abstract background effects */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10">
         <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-neon-blue/5 rounded-full blur-[120px]" />
@@ -60,6 +62,8 @@ const AppContent = () => {
           <Route path="/my-games" element={<MyGamesPage />} />
         </Routes>
       </main>
+
+      {!isLanding && <BottomNav />}
     </div>
   );
 };
@@ -69,11 +73,13 @@ function App() {
     <GamesProvider>
       <FriendsProvider>
         <LobbyProvider>
-          <Router>
-            <AppContent />
-            <ActiveLobbyWidget />
-            <FriendChatOverlay />
-          </Router>
+          <ProfilePopoverProvider>
+            <Router>
+              <AppContent />
+              <ActiveLobbyWidget />
+              <FriendChatOverlay />
+            </Router>
+          </ProfilePopoverProvider>
         </LobbyProvider>
       </FriendsProvider>
     </GamesProvider>

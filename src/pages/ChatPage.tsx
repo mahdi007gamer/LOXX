@@ -8,6 +8,10 @@ import { useGames } from "../context/GamesContext";
 import { useFriends } from "../context/FriendsContext";
 import { BadgeType, ChatMessage, Channel } from "../types";
 
+import { useProfilePopover } from "../context/ProfilePopoverContext";
+
+import { useProfilePopover } from "../context/ProfilePopoverContext";
+
 // --- Sub-components ---
 
 interface BadgeIconProps {
@@ -120,11 +124,10 @@ interface MessageItemProps {
   message: ChatMessage;
   onReaction: (msgId: string, emoji: string) => void;
   onSaveGif: (url: string) => void;
-  isProfileOpen: boolean;
-  onToggleProfile: (open: boolean) => void;
 }
 
-const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGif, isProfileOpen, onToggleProfile }) => {
+const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGif }) => {
+  const { openProfile } = useProfilePopover();
   // Level based colors
   const nameColorClass = message.senderLevel > 40 ? "text-neon-blue shadow-[0_0_8px_rgba(0,229,255,0.3)]" : 
                         message.senderLevel > 20 ? "text-neon-pink" : "text-white/80";
@@ -133,14 +136,20 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
     <div 
       id={`msg-${message.id}`}
       className={cn(
-        "flex gap-3 group transition-all duration-300 mb-2 items-start",
+        "flex gap-3 group transition-all duration-300 mb-2 items-start px-2 md:px-0",
         message.self ? "flex-row" : "flex-row-reverse"
       )}
     >
       {/* Avatar */}
       <div 
         className="shrink-0 cursor-pointer relative"
-        onClick={() => onToggleProfile(!isProfileOpen)}
+        onClick={() => openProfile({
+          senderName: message.senderName,
+          senderAvatar: message.senderAvatar,
+          senderLevel: message.senderLevel,
+          senderBadges: message.senderBadges,
+          id: message.id
+        }, message.self)}
       >
         <div className={cn(
           "h-9 w-9 md:h-11 md:w-11 rounded-xl flex items-center justify-center text-lg md:text-xl relative z-[10] transition-transform hover:scale-105 shadow-xl",
@@ -166,7 +175,13 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
         )}>
            <span 
               className={cn("text-[10px] font-black tracking-tight cursor-pointer hover:underline", nameColorClass)}
-              onClick={() => onToggleProfile(true)}
+              onClick={() => openProfile({
+                senderName: message.senderName,
+                senderAvatar: message.senderAvatar,
+                senderLevel: message.senderLevel,
+                senderBadges: message.senderBadges,
+                id: message.id
+              }, message.self)}
             >
               {message.senderName}
             </span>
@@ -959,15 +974,25 @@ export const ChatPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Friends Sidebar - Now as a flex child when open */}
+      {/* Friends Sidebar - Mobile optimized */}
       <AnimatePresence mode="popLayout">
         {showFriendsSidebar && (
-          <motion.div
-            initial={{ width: 0, opacity: 0 }}
-            animate={{ width: 320, opacity: 1 }}
-            exit={{ width: 0, opacity: 0 }}
-            className="flex flex-col bg-[#0d0d12]/95 border-r border-white/10 shadow-[-20px_0_40px_rgba(0,0,0,0.3)] z-20 overflow-hidden backdrop-blur-xl shrink-0"
-          >
+          <>
+            {/* Backdrop for mobile */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowFriendsSidebar(false)}
+              className="fixed inset-0 z-[40] bg-black/60 backdrop-blur-sm lg:hidden md:hidden"
+            />
+            <motion.div
+              initial={{ x: "100%", opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: "100%", opacity: 0 }}
+              transition={{ type: "spring", damping: 30, stiffness: 300 }}
+              className="fixed inset-y-0 right-0 z-[50] flex flex-col w-[85%] md:w-80 md:relative md:inset-auto md:z-20 md:flex flex-col bg-[#0d0d12]/95 border-r border-white/10 shadow-[-20px_0_40px_rgba(0,0,0,0.3)] overflow-hidden backdrop-blur-xl shrink-0"
+            >
             <div className="p-6 border-b border-white/5 flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-black text-white tracking-widest uppercase">لیست دوستان</h3>
