@@ -63,7 +63,10 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
       <AnimatePresence>
         {showActions && (
           <div 
-            className="fixed inset-0 z-40"
+            className={cn(
+              "fixed inset-0 z-40",
+              showActions ? "pointer-events-auto" : "pointer-events-none"
+            )}
             onClick={(e) => {
               e.stopPropagation();
               setShowActions(false);
@@ -134,162 +137,164 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
           </div>
         </div>
 
-        {/* Message Container */}
-        <div className={cn("relative group/bubble-container flex items-center w-fit", message.self ? "ml-auto" : "mr-auto")}>
-          {/* Action Buttons - Desktop Hover & Mobile Click */}
-          <div className={cn(
-            "absolute flex items-center gap-1 px-2 py-1.5 rounded-2xl bg-[#0f0f15] border border-white/10 shadow-2xl z-50 backdrop-blur-xl whitespace-nowrap transition-all duration-200",
-            message.self ? "left-full ml-1 pl-4" : "right-full mr-1 pr-4",
-            showActions ? "opacity-100 scale-100 pointer-events-auto" : "opacity-0 scale-95 pointer-events-none lg:group-hover/bubble-container:opacity-100 lg:group-hover/bubble-container:scale-100 lg:group-hover/bubble-container:pointer-events-auto"
-          )}
-          onClick={(e) => e.stopPropagation()}
-          >
-            {/* Hover bridge to prevent losing hover state */}
+        {/* Message Container Area */}
+        <div className="flex flex-col w-full">
+          <div className={cn("relative group/bubble-container flex items-center w-fit", message.self ? "ml-auto" : "mr-auto")}>
+            {/* Action Buttons - Desktop Hover & Mobile Click */}
             <div className={cn(
-              "absolute inset-y-0 w-8 bg-transparent",
-              message.self ? "-left-6" : "-right-6"
-            )} />
-
-            <button 
-              className="h-8 w-8 flex items-center justify-center text-gray-400 hover:text-neon-blue transition-colors rounded-lg hover:bg-white/5 relative z-10" 
-              onClick={(e) => { e.stopPropagation(); onReply(message); setShowActions(false); }}
+              "absolute flex items-center gap-1 px-2 py-1.5 rounded-2xl bg-[#0f0f15] border border-white/10 shadow-2xl z-50 backdrop-blur-xl whitespace-nowrap transition-all duration-200",
+              message.self ? "right-full mr-1 pr-4" : "left-full ml-1 pl-4",
+              showActions ? "opacity-100 scale-100 pointer-events-auto" : "opacity-0 scale-95 pointer-events-none"
+            )}
+            onClick={(e) => e.stopPropagation()}
             >
-              <Reply size={18} />
-            </button>
-            <div className="flex items-center gap-1.5 border-r border-white/5 pr-2 relative z-10">
-                {["🔥", "🎯", "👑", "❤️"].map(emoji => (
-                  <button 
-                    key={emoji} 
-                    className="h-8 w-8 flex items-center justify-center hover:bg-white/5 rounded-lg transition-transform hover:scale-110 active:scale-95 text-lg"
-                    onClick={(e) => { e.stopPropagation(); onReaction(message.id, emoji); }}
-                  >
-                    {emoji}
-                  </button>
-                ))}
+              {/* Hover bridge to prevent losing hover state */}
+              <div className={cn(
+                "absolute inset-y-0 w-8 bg-transparent",
+                message.self ? "-right-6" : "-left-6"
+              )} />
+  
+              <button 
+                className="h-8 w-8 flex items-center justify-center text-gray-400 hover:text-neon-blue transition-colors rounded-lg hover:bg-white/5 relative z-10" 
+                onClick={(e) => { e.stopPropagation(); onReply(message); setShowActions(false); }}
+              >
+                <Reply size={18} />
+              </button>
+              <div className="flex items-center gap-1.5 border-r border-white/5 pr-2 relative z-10">
+                  {["🔥", "🎯", "👑", "❤️"].map(emoji => (
+                    <button 
+                      key={emoji} 
+                      className="h-8 w-8 flex items-center justify-center hover:bg-white/5 rounded-lg transition-transform hover:scale-110 active:scale-95 text-lg"
+                      onClick={(e) => { e.stopPropagation(); onReaction(message.id, emoji); }}
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+              </div>
+              <button className="h-8 w-8 flex items-center justify-center text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-white/5 relative z-10"><Smile size={18} /></button>
             </div>
-            <button className="h-8 w-8 flex items-center justify-center text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-white/5 relative z-10"><Smile size={18} /></button>
-          </div>
-
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.98, y: 5 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            className={cn(
-              "relative rounded-2xl overflow-hidden shadow-2xl transition-all border w-fit max-w-full",
-              "rtl text-right break-words",
-              message.self 
-                ? "bg-[#140e1a] text-white border-neon-pink/20 rounded-tr-none" 
-                : "bg-white/5 text-gray-100 border-white/10 rounded-tl-none",
-              isVIP && !message.self && "border-yellow-400/40 bg-gradient-to-br from-yellow-400/[0.12] to-transparent shadow-[0_0_40px_rgba(250,204,21,0.12)]",
-              isPLUS && !message.self && "border-neon-blue/40 bg-gradient-to-br from-neon-blue/[0.12] to-transparent shadow-[0_0_30px_rgba(0,229,255,0.12)]"
-            )}
-          >
-             {/* VIP/PLUS Shimmer Effect */}
-             {(isVIP || isPLUS) && !message.self && (
-              <motion.div 
-                animate={{ x: ["-100%", "200%"] }}
-                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-                className={cn(
-                  "absolute inset-0 skew-x-12 pointer-events-none",
-                  isVIP ? "bg-gradient-to-r from-transparent via-yellow-400/10 to-transparent" : "bg-gradient-to-r from-transparent via-neon-blue/10 to-transparent"
-                )}
-              />
-            )}
-            {/* Reply Preview - Embedded inside bubble area */}
-            {message.replyTo && (
-               <div 
-                 onClick={(e) => {
-                   e.stopPropagation();
-                   const el = document.getElementById(`msg-${message.replyTo?.id}`);
-                   if (el) {
-                     el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                     el.classList.add('ring-2', 'ring-neon-blue', 'ring-offset-4', 'ring-offset-black', 'rounded-2xl');
-                     setTimeout(() => {
-                       el.classList.remove('ring-2', 'ring-neon-blue', 'ring-offset-4', 'ring-offset-black');
-                     }, 2000);
-                   }
-                 }}
-                 className={cn(
-                   "px-3 py-2 bg-white/5 border-b border-white/5 text-[11px] text-gray-400 flex items-center gap-2 cursor-pointer hover:bg-white/10 transition-colors",
-                   message.self ? "border-neon-pink/10" : "border-neon-blue/10"
-                 )}
-               >
-                 <div className={cn("w-0.5 h-3 rounded-full", message.self ? "bg-neon-pink" : "bg-neon-blue")} />
-                 <span className="font-black text-gray-300">{message.replyTo.user}:</span>
-                 <span className="truncate opacity-60 italic">{message.replyTo.text.substring(0, 40)}{message.replyTo.text.length > 40 && "..."}</span>
-               </div>
-            )}
-
-            <div className="px-4 py-2.5">
-              {/* Lobby Invite Card */}
-              {message.lobbyInvite ? (
-                 <div className="space-y-3 py-1">
-                   <p className="font-black text-neon-blue text-[9px] flex items-center gap-1.5 px-0 uppercase tracking-widest opacity-70">
-                     <Zap size={10} fill="currentColor" />
-                     دعوت به لابی اختصاصی
-                   </p>
-                   
-                   <div className="group/lobby relative overflow-hidden rounded-xl bg-white/[0.03] border border-white/5 p-2.5 pr-4 shadow-xl backdrop-blur-xl flex items-center gap-3 transition-all hover:bg-white/[0.05] min-w-[260px]">
-                     <div className="absolute top-0 right-0 bottom-0 w-[2px] bg-neon-blue opacity-50"></div>
-                     <div className="h-9 w-9 shrink-0 rounded-lg bg-neon-blue/10 border border-neon-blue/20 flex items-center justify-center text-neon-blue group-hover:scale-105 transition-transform">
-                       <Play size={16} fill="currentColor" className="ml-0.5" />
-                     </div>
-                     <div className="flex-1 min-w-0">
-                       <h5 className="text-xs font-black text-white truncate">{message.lobbyInvite.gameTitle}</h5>
-                       <p className="text-[8px] text-gray-500 font-bold uppercase truncate">{message.lobbyInvite.region}</p>
-                     </div>
-                     <div className="shrink-0 flex items-center gap-1.5">
-                       <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-white/5 text-[9px] text-gray-400 font-bold uppercase border border-white/5">
-                         <Users size={10} className="text-neon-blue" />
-                         {message.lobbyInvite.slots}
+  
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.98, y: 5 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              className={cn(
+                "relative rounded-2xl overflow-hidden shadow-2xl transition-all border w-fit max-w-full",
+                "rtl text-right break-words",
+                message.self 
+                  ? "bg-[#140e1a] text-white border-neon-pink/20 rounded-tr-none" 
+                  : "bg-white/5 text-gray-100 border-white/10 rounded-tl-none",
+                isVIP && !message.self && "border-yellow-400/40 bg-gradient-to-br from-yellow-400/[0.12] to-transparent shadow-[0_0_40px_rgba(250,204,21,0.12)]",
+                isPLUS && !message.self && "border-neon-blue/40 bg-gradient-to-br from-neon-blue/[0.12] to-transparent shadow-[0_0_30px_rgba(0,229,255,0.12)]"
+              )}
+            >
+               {/* VIP/PLUS Shimmer Effect */}
+               {(isVIP || isPLUS) && !message.self && (
+                <motion.div 
+                  animate={{ x: ["-100%", "200%"] }}
+                  transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                  className={cn(
+                    "absolute inset-0 skew-x-12 pointer-events-none",
+                    isVIP ? "bg-gradient-to-r from-transparent via-yellow-400/10 to-transparent" : "bg-gradient-to-r from-transparent via-neon-blue/10 to-transparent"
+                  )}
+                />
+              )}
+              {/* Reply Preview - Embedded inside bubble area */}
+              {message.replyTo && (
+                 <div 
+                   onClick={(e) => {
+                     e.stopPropagation();
+                     const el = document.getElementById(`msg-${message.replyTo?.id}`);
+                     if (el) {
+                       el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                       el.classList.add('ring-2', 'ring-neon-blue', 'ring-offset-4', 'ring-offset-black', 'rounded-2xl');
+                       setTimeout(() => {
+                         el.classList.remove('ring-2', 'ring-neon-blue', 'ring-offset-4', 'ring-offset-black');
+                       }, 2000);
+                     }
+                   }}
+                   className={cn(
+                     "px-3 py-2 bg-white/5 border-b border-white/5 text-[11px] text-gray-400 flex items-center gap-2 cursor-pointer hover:bg-white/10 transition-colors",
+                     message.self ? "border-neon-pink/10" : "border-neon-blue/10"
+                   )}
+                 >
+                   <div className={cn("w-0.5 h-3 rounded-full", message.self ? "bg-neon-pink" : "bg-neon-blue")} />
+                   <span className="font-black text-gray-300">{message.replyTo.user}:</span>
+                   <span className="truncate opacity-60 italic">{message.replyTo.text.substring(0, 40)}{message.replyTo.text.length > 40 && "..."}</span>
+                 </div>
+              )}
+  
+              <div className="px-4 py-2.5">
+                {/* Lobby Invite Card */}
+                {message.lobbyInvite ? (
+                   <div className="space-y-3 py-1">
+                     <p className="font-black text-neon-blue text-[9px] flex items-center gap-1.5 px-0 uppercase tracking-widest opacity-70">
+                       <Zap size={10} fill="currentColor" />
+                       دعوت به لابی اختصاصی
+                     </p>
+                     
+                     <div className="group/lobby relative overflow-hidden rounded-xl bg-white/[0.03] border border-white/5 p-2.5 pr-4 shadow-xl backdrop-blur-xl flex items-center gap-3 transition-all hover:bg-white/[0.05] min-w-[260px]">
+                       <div className="absolute top-0 right-0 bottom-0 w-[2px] bg-neon-blue opacity-50"></div>
+                       <div className="h-9 w-9 shrink-0 rounded-lg bg-neon-blue/10 border border-neon-blue/20 flex items-center justify-center text-neon-blue group-hover:scale-105 transition-transform">
+                         <Play size={16} fill="currentColor" className="ml-0.5" />
                        </div>
-                       <motion.div
-                         animate={{ 
-                           boxShadow: [
-                             "0 0 10px rgba(0, 229, 255, 0.2)",
-                             "0 0 25px rgba(0, 229, 255, 0.4)",
-                             "0 0 10px rgba(0, 229, 255, 0.2)"
-                           ] 
-                         }}
-                         transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                       >
-                         <GlowButton variant="blue" className="h-7 px-4 !rounded-lg font-black text-[10px]">ورود</GlowButton>
-                       </motion.div>
+                       <div className="flex-1 min-w-0">
+                         <h5 className="text-xs font-black text-white truncate">{message.lobbyInvite.gameTitle}</h5>
+                         <p className="text-[8px] text-gray-500 font-bold uppercase truncate">{message.lobbyInvite.region}</p>
+                       </div>
+                       <div className="shrink-0 flex items-center gap-1.5">
+                         <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-white/5 text-[9px] text-gray-400 font-bold uppercase border border-white/5">
+                           <Users size={10} className="text-neon-blue" />
+                           {message.lobbyInvite.slots}
+                         </div>
+                         <motion.div
+                           animate={{ 
+                             boxShadow: [
+                               "0 0 10px rgba(0, 229, 255, 0.2)",
+                               "0 0 25px rgba(0, 229, 255, 0.4)",
+                               "0 0 10px rgba(0, 229, 255, 0.2)"
+                             ] 
+                           }}
+                           transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                         >
+                           <GlowButton variant="blue" className="h-7 px-4 !rounded-lg font-black text-[10px]">ورود</GlowButton>
+                         </motion.div>
+                       </div>
                      </div>
                    </div>
-                 </div>
-              ) : (
-                <p className="leading-relaxed text-[13px] font-medium text-gray-200">
-                  {message.text.split(/(@\w+)/g).map((part, i) => (
-                    part.startsWith('@') ? (
-                      <span key={i} className="text-neon-blue font-black hover:underline cursor-pointer">{part}</span>
-                    ) : part
-                  ))}
-                </p>
-              )}
-
-              {/* GIF */}
-              {message.gif && (
-                <div className="mt-2 rounded-xl overflow-hidden border border-white/10 shadow-lg group/gif relative">
-                  <img src={message.gif} alt="GIF" className="w-full h-auto max-w-[280px]" />
-                  <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover/gif:opacity-100 transition-opacity">
-                    <button 
-                      className="p-1.5 bg-black/70 hover:bg-neon-blue/40 rounded-lg text-white transition-colors" 
-                      title="Save GIF"
-                      onClick={() => onSaveGif(message.gif!)}
-                    >
-                      <Star size={12} />
-                    </button>
+                ) : (
+                  <p className="leading-relaxed text-[13px] font-medium text-gray-200">
+                    {message.text.split(/(@\w+)/g).map((part, i) => (
+                      part.startsWith('@') ? (
+                        <span key={i} className="text-neon-blue font-black hover:underline cursor-pointer">{part}</span>
+                      ) : part
+                    ))}
+                  </p>
+                )}
+  
+                {/* GIF */}
+                {message.gif && (
+                  <div className="mt-2 rounded-xl overflow-hidden border border-white/10 shadow-lg group/gif relative">
+                    <img src={message.gif} alt="GIF" className="w-full h-auto max-w-[280px]" />
+                    <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover/gif:opacity-100 transition-opacity">
+                      <button 
+                        className="p-1.5 bg-black/70 hover:bg-neon-blue/40 rounded-lg text-white transition-colors" 
+                        title="Save GIF"
+                        onClick={() => onSaveGif(message.gif!)}
+                      >
+                        <Star size={12} />
+                      </button>
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
-          </motion.div>
-
-          {/* Reactions Row - Alignment fixed to match bubble */}
+                )}
+              </div>
+            </motion.div>
+          </div>
+  
+          {/* Reactions Row - Stacked below bubble container */}
           {message.reactions && message.reactions.length > 0 && (
             <div className={cn(
               "flex flex-wrap gap-1 mt-1 w-fit transition-all", 
-              message.self ? "mr-auto flex-row" : "ml-auto flex-row-reverse"
+              message.self ? "mr-0 ml-auto flex-row-reverse" : "ml-0 mr-auto flex-row"
             )}>
               {message.reactions.map((r, i) => (
                 <button 
