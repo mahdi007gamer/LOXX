@@ -133,7 +133,7 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
     <div 
       id={`msg-${message.id}`}
       className={cn(
-        "flex gap-3 group transition-all duration-300 mb-2 items-end",
+        "flex gap-3 group transition-all duration-300 mb-2 items-start",
         message.self ? "flex-row" : "flex-row-reverse"
       )}
     >
@@ -178,7 +178,7 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
           {/* Action Buttons - Tighter and Cleaner */}
           <div className={cn(
             "absolute top-0 bottom-0 flex items-center gap-1.5 opacity-0 group-hover/bubble-container:opacity-100 transition-all duration-200 z-10",
-            message.self ? "left-full ml-2" : "right-full mr-2"
+            message.self ? "right-full mr-2" : "left-full ml-2"
           )}>
             <button 
               className="p-1.5 rounded-lg bg-black/80 text-gray-400 hover:text-neon-pink hover:bg-neon-pink/10 border border-white/5 backdrop-blur-md transition-all active:scale-90"
