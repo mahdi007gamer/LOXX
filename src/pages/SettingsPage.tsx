@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Sidebar } from "../components/layout/Sidebar";
 import { NeonCard } from "../components/ui/NeonCard";
 import { GlowButton } from "../components/ui/GlowButton";
@@ -9,41 +9,307 @@ import {
   Shield, 
   Monitor, 
   Globe, 
-  Eye, 
   Lock,
   Camera,
-  Check
+  MessageSquare,
+  Zap,
+  Volume2,
+  Eye,
+  Smartphone,
+  Languages,
+  MapPin,
+  Clock,
+  Heart
 } from "lucide-react";
-import { motion } from "motion/react";
+import { cn } from "../lib/utils";
+
+type SettingsTab = "profile" | "security" | "notifications" | "ui" | "region";
 
 export const SettingsPage = () => {
+  const [activeTab, setActiveTab] = useState<SettingsTab>("profile");
+
+  const tabs = [
+    { id: "profile", icon: User, label: "پروفایل عمومی" },
+    { id: "security", icon: Shield, label: "امنیت" },
+    { id: "notifications", icon: Bell, label: "اعلان‌ها" },
+    { id: "ui", icon: Monitor, label: "رابط کاربری" },
+    { id: "region", icon: Globe, label: "زبان و منطقه" },
+  ] as const;
+
+  const renderProfile = () => (
+    <div className="space-y-6">
+      <NeonCard variant="blue" className="space-y-8">
+        <div className="flex items-center gap-6">
+          <div className="group relative">
+            <div className="h-24 w-24 rounded-2xl bg-white/5 border border-white/10 overflow-hidden">
+              <div className="flex h-full w-full items-center justify-center text-neon-blue">
+                <User size={40} />
+              </div>
+            </div>
+            <button className="absolute -bottom-2 -left-2 rounded-lg bg-neon-blue p-1.5 text-dark-bg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity">
+              <Camera size={14} />
+            </button>
+          </div>
+          <div>
+            <h3 className="font-black text-white italic">تصویر پروفایل</h3>
+            <p className="text-[10px] text-gray-500 font-bold uppercase mt-1">فرمت‌های JPG، PNG یا GIF. حداکثر ۲ مگابایت.</p>
+            <div className="mt-3 flex gap-3">
+              <GlowButton variant="blue" size="sm" className="text-[10px] font-black uppercase italic h-8">تغییر آواتار</GlowButton>
+              <button className="text-[10px] text-gray-600 font-black uppercase italic hover:text-neon-pink transition-colors">حذف تصویر</button>
+            </div>
+          </div>
+        </div>
+
+        <hr className="border-white/5" />
+
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+          <Input label="نام نمایشی" placeholder="Ali_Gamer_98" />
+          <Input label="آیدی یکتا (Handle)" placeholder="aligamer" />
+          <div className="sm:col-span-2">
+            <label className="block px-1 text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2 italic">درباره شما (Bio)</label>
+            <textarea 
+              className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-gray-700 transition-all focus:border-neon-blue/50 focus:outline-none h-32 resize-none"
+              placeholder="کمی در مورد خودتان، بازی‌هایی که دوست دارید و ... بنویسید"
+            />
+          </div>
+        </div>
+
+        <hr className="border-white/5" />
+
+        <div>
+          <h4 className="text-[10px] font-black text-neon-blue uppercase tracking-widest mb-6 italic">شبکه‌های اجتماعی</h4>
+          <div className="space-y-4">
+            <Input label="دیسکورد" icon={<MessageSquare size={14} className="text-gray-600" />} placeholder="Gamer#1234" />
+            <Input label="توییتر (X)" icon={<Zap size={14} className="text-gray-600" />} placeholder="@gamer_handle" />
+          </div>
+        </div>
+
+        <div className="flex justify-end pt-4 border-t border-white/5">
+          <GlowButton variant="blue" className="px-10 h-10 text-[11px] font-black uppercase italic">
+            ذخیره تغییرات پروفایل
+          </GlowButton>
+        </div>
+      </NeonCard>
+    </div>
+  );
+
+  const renderSecurity = () => (
+    <div className="space-y-6">
+      <NeonCard variant="purple" className="space-y-8">
+        <div>
+          <h3 className="font-black text-white italic mb-1">تغییر رمز عبور</h3>
+          <p className="text-[10px] text-gray-500 font-bold uppercase mb-6 italic">برای امنیت بیشتر از رمزهای طولانی استفاده کنید</p>
+          <div className="space-y-6 max-w-md">
+            <Input label="رمز عبور فعلی" type="password" />
+            <Input label="رمز عبور جدید" type="password" />
+            <Input label="تکرار رمز عبور جدید" type="password" />
+          </div>
+        </div>
+        
+        <hr className="border-white/5" />
+
+        <div>
+          <h3 className="font-black text-white italic mb-1 flex items-center gap-2">
+            تایید دو مرحله‌ای <span className="text-[8px] bg-green-500/10 text-green-500 px-1.5 py-0.5 rounded uppercase not-italic">غیرفعال</span>
+          </h3>
+          <p className="text-[10px] text-gray-500 font-bold uppercase mb-4 italic">یک لایه امنیتی اضافی به حساب خود اضافه کنید</p>
+          <GlowButton variant="blue" size="sm" className="text-[10px] font-black uppercase italic h-9 px-6 border-none">فعال‌سازی 2FA</GlowButton>
+        </div>
+
+        <hr className="border-white/5" />
+
+        <div>
+          <h3 className="font-black text-white italic mb-4">دستگاه‌های متصل</h3>
+          <div className="space-y-3">
+             {[
+               { device: "Windows Desktop", location: "Tehran, Iran", current: true },
+               { device: "iPhone 13", location: "Karaj, Iran", current: false }
+             ].map((session, i) => (
+               <div key={i} className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/5 group hover:border-white/10 transition-all">
+                  <div className="flex items-center gap-4">
+                    <div className="h-10 w-10 rounded-lg bg-white/5 flex items-center justify-center text-gray-400 group-hover:text-neon-blue transition-colors">
+                      <Smartphone size={20} />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-black text-white italic flex items-center gap-2">
+                        {session.device}
+                        {session.current && <span className="text-[8px] text-neon-blue uppercase">فعلی</span>}
+                      </h4>
+                      <p className="text-[10px] text-gray-500 font-bold">{session.location}</p>
+                    </div>
+                  </div>
+                  {!session.current && (
+                    <button className="text-[10px] font-black text-neon-pink uppercase italic opacity-0 group-hover:opacity-100 transition-opacity">خروج</button>
+                  )}
+               </div>
+             ))}
+          </div>
+        </div>
+      </NeonCard>
+    </div>
+  );
+
+  const renderNotifications = () => (
+    <div className="space-y-4">
+      <NeonCard variant="blue" className="p-0 overflow-hidden">
+        <div className="p-6 border-b border-white/5">
+          <h3 className="font-black text-white italic">مدیریت اعلان‌ها</h3>
+          <p className="text-[10px] text-gray-500 font-bold uppercase italic">نحوه اطلاع از رویدادهای Loxx را انتخاب کنید</p>
+        </div>
+        <div className="divide-y divide-white/5">
+          {[
+            { label: "پیام‌های شخصی (DM)", desc: "وقتی کسی برای شما پیام می‌فرستد", icon: MessageSquare },
+            { label: "دعوت به لابی", desc: "وقتی دوستانتان شما را به بازی دعوت می‌کنند", icon: User },
+            { label: "بروزرسانی رتبه‌بندی", desc: "تغییرات رتبه شما در جدول امتیازات", icon: Zap },
+            { label: "اعلان‌های سیستم", desc: "اخبار جدید، بروزرسانی‌ها و جوایز", icon: Bell },
+          ].map((item, i) => (
+            <div key={i} className="flex items-center justify-between p-6 hover:bg-white/5 transition-colors group">
+               <div className="flex gap-4">
+                  <div className="h-10 w-10 rounded-xl bg-white/5 flex items-center justify-center text-gray-500 group-hover:text-neon-blue transition-colors">
+                    <item.icon size={18} />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-black text-white italic">{item.label}</h4>
+                    <p className="text-[10px] text-gray-500 font-bold italic uppercase">{item.desc}</p>
+                  </div>
+               </div>
+               <div className="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" className="sr-only peer" defaultChecked={i < 2} />
+                  <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-gray-500 peer-checked:after:bg-neon-blue after:border-gray-900 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-neon-blue/20"></div>
+               </div>
+            </div>
+          ))}
+        </div>
+      </NeonCard>
+    </div>
+  );
+
+  const renderUI = () => (
+    <div className="space-y-6">
+      <NeonCard variant="blue" className="space-y-8">
+        <div>
+          <h3 className="font-black text-white italic mb-1">تنظیمات چت</h3>
+          <p className="text-[10px] text-gray-500 font-bold uppercase mb-6 italic">نحوه نمایش چت و پیام‌ها</p>
+          <div className="space-y-4">
+            <label className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/5 cursor-pointer hover:border-white/10">
+               <div className="flex items-center gap-3">
+                 <MessageSquare size={16} className="text-gray-500" />
+                 <span className="text-xs font-black text-white italic">پیش‌نمایش پیام در اعلان‌ها</span>
+               </div>
+               <input type="checkbox" defaultChecked className="accent-neon-blue" />
+            </label>
+            <label className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/5 cursor-pointer hover:border-white/10">
+               <div className="flex items-center gap-3">
+                 <Volume2 size={16} className="text-gray-500" />
+                 <span className="text-xs font-black text-white italic">صدای اعلان چت</span>
+               </div>
+               <input type="checkbox" defaultChecked className="accent-neon-blue" />
+            </label>
+          </div>
+        </div>
+
+        <hr className="border-white/5" />
+
+        <div>
+          <h3 className="font-black text-white italic mb-1">جلوه‌های بصری</h3>
+          <p className="text-[10px] text-gray-500 font-bold uppercase mb-6 italic">بهینه‌سازی برای دستگاه‌های ضعیف‌تر</p>
+          <div className="space-y-4">
+            <label className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/5 cursor-pointer hover:border-white/10">
+               <div className="flex items-center gap-3">
+                 <Zap size={16} className="text-gray-500" />
+                 <span className="text-xs font-black text-white italic">انیمیشن‌های رابط کاربری</span>
+               </div>
+               <input type="checkbox" defaultChecked className="accent-neon-blue" />
+            </label>
+            <label className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/5 cursor-pointer hover:border-white/10">
+               <div className="flex items-center gap-3">
+                 <Eye size={16} className="text-gray-500" />
+                 <span className="text-xs font-black text-white italic">حالت استریمر (مخفی‌سازی اطلاعات حساس)</span>
+               </div>
+               <input type="checkbox" className="accent-neon-blue" />
+            </label>
+          </div>
+        </div>
+      </NeonCard>
+    </div>
+  );
+
+  const renderRegion = () => (
+    <div className="space-y-6">
+      <NeonCard variant="blue" className="space-y-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div>
+            <h4 className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-4 italic flex items-center gap-2">
+              <Languages size={14} /> انتخاب زبان
+            </h4>
+            <select className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-neon-blue/50 font-black italic">
+               <option className="bg-dark-bg">Persian / فارسی</option>
+               <option className="bg-dark-bg">English / انگلیسی</option>
+               <option className="bg-dark-bg">Arabic / عربی</option>
+            </select>
+          </div>
+          <div>
+            <h4 className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-4 italic flex items-center gap-2">
+              <MapPin size={14} /> منطقه بازی (Server Region)
+            </h4>
+            <select className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-neon-blue/50 font-black italic">
+               <option className="bg-dark-bg">Middle East (Tehran/Dubai)</option>
+               <option className="bg-dark-bg">Europe West (Frankfurt)</option>
+               <option className="bg-dark-bg">Europe North (Stockholm)</option>
+            </select>
+          </div>
+          <div>
+            <h4 className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-4 italic flex items-center gap-2">
+              <Clock size={14} /> منطقه زمانی
+            </h4>
+            <select className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-neon-blue/50 font-black italic">
+               <option className="bg-dark-bg">(GMT+03:30) Tehran</option>
+               <option className="bg-dark-bg">(GMT+01:00) Central Europe</option>
+               <option className="bg-dark-bg">(GMT+00:00) London</option>
+            </select>
+          </div>
+        </div>
+
+        <hr className="border-white/5" />
+
+        <div className="p-6 rounded-2xl bg-neon-blue/5 border border-neon-blue/20 flex items-center gap-4">
+           <div className="h-12 w-12 rounded-xl bg-neon-blue/10 flex items-center justify-center text-neon-blue shrink-0">
+              <Heart size={24} />
+           </div>
+           <div>
+              <h4 className="text-sm font-black text-white italic">محتوای بومی شده</h4>
+              <p className="text-[10px] text-gray-500 font-bold italic uppercase leading-relaxed">
+                لوکس همزمان با زبان انتخابی شما، محتوای بازی‌ها و رویدادهای محلی منطقه شما را در اولویت قرار می‌دهد.
+              </p>
+           </div>
+        </div>
+      </NeonCard>
+    </div>
+  );
+
   return (
-    <div className="flex min-h-[calc(100vh-64px)]">
+    <div className="flex min-h-[calc(100vh-64px)] pb-20 md:pb-0">
       <Sidebar />
       <main className="flex-1 px-4 py-8 md:mr-64 lg:px-8">
-        <div className="container mx-auto max-w-4xl">
-           <header className="mb-10">
-            <h1 className="text-3xl font-black text-white">تنظیمات</h1>
-            <p className="text-gray-400">حساب کاربری و اولویت‌های خود را مدیریت کنید</p>
+        <div className="container mx-auto max-w-5xl">
+           <header className="mb-10 text-center md:text-right">
+            <h1 className="text-3xl md:text-4xl font-black text-white italic uppercase tracking-tighter shadow-text-glow">تنظیمات</h1>
+            <p className="text-xs md:text-sm text-gray-500 font-bold uppercase tracking-widest mt-1">حساب کاربری و اولویت‌های خود را شخصی‌سازی کنید</p>
           </header>
 
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-4">
-             {/* Tabs Navigation */}
-             <div className="space-y-1 lg:col-span-1">
-                {[
-                  { icon: User, label: "پروفایل عمومی", active: true },
-                  { icon: Shield, label: "امنیت", active: false },
-                  { icon: Bell, label: "اعلان‌ها", active: false },
-                  { icon: Monitor, label: "رابط کاربری", active: false },
-                  { icon: Globe, label: "زبان و منطقه", active: false },
-                ].map((tab, i) => (
+             {/* Sidebar Tabs */}
+             <div className="lg:col-span-1 space-y-2 overflow-x-auto no-scrollbar pb-2 lg:pb-0 flex lg:flex-col gap-2 lg:gap-2">
+                {tabs.map((tab) => (
                   <button 
-                    key={i}
-                    className={`flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all ${
-                      tab.active 
-                        ? 'bg-neon-blue/10 text-neon-blue' 
-                        : 'text-gray-400 hover:bg-white/5 hover:text-white'
-                    }`}
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id as SettingsTab)}
+                    className={cn(
+                      "flex items-center gap-3 rounded-2xl px-5 py-4 text-xs font-black uppercase italic transition-all shrink-0 w-max lg:w-full",
+                      activeTab === tab.id 
+                        ? 'bg-neon-blue/10 text-neon-blue border border-neon-blue/20 shadow-[0_0_20px_rgba(0,229,255,0.1)]' 
+                        : 'text-gray-500 hover:bg-white/5 hover:text-white border border-transparent'
+                    )}
                   >
                     <tab.icon size={18} />
                     <span>{tab.label}</span>
@@ -51,77 +317,13 @@ export const SettingsPage = () => {
                 ))}
              </div>
 
-             {/* Settings Content */}
-             <div className="space-y-8 lg:col-span-3">
-                <NeonCard variant="blue" className="space-y-8">
-                   <div className="flex items-center gap-6">
-                      <div className="group relative">
-                        <div className="h-24 w-24 rounded-2xl bg-white/5 border border-white/10 overflow-hidden">
-                           <div className="flex h-full w-full items-center justify-center text-neon-blue">
-                             <User size={40} />
-                           </div>
-                        </div>
-                        <button className="absolute -bottom-2 -left-2 rounded-lg bg-neon-blue p-1.5 text-dark-bg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Camera size={14} />
-                        </button>
-                      </div>
-                      <div>
-                        <h3 className="font-bold text-white">تصویر پروفایل</h3>
-                        <p className="text-xs text-gray-400 mt-1">فرمت‌های JPG، PNG یا GIF. حداکثر ۲ مگابایت.</p>
-                        <div className="mt-3 flex gap-3">
-                           <GlowButton variant="blue" size="sm">تغییر آواتار</GlowButton>
-                           <button className="text-xs text-gray-500 hover:text-neon-pink">حذف</button>
-                        </div>
-                      </div>
-                   </div>
-
-                   <hr className="border-white/5" />
-
-                   <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                     <Input label="نام نمایشی" placeholder="Ali_Gamer_98" />
-                     <Input label="آیدی یکتا" placeholder="aligamer" />
-                     <div className="sm:col-span-2">
-                       <label className="block px-1 text-sm font-medium text-gray-400 mb-2">درباره شما (Bio)</label>
-                       <textarea 
-                        className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2.5 text-white placeholder:text-gray-600 transition-all focus:border-neon-blue/50 focus:outline-none h-32"
-                        placeholder="کمی در مورد خودتان بنویسید..."
-                       />
-                     </div>
-                   </div>
-
-                   <hr className="border-white/5" />
-
-                   <div>
-                      <h4 className="font-bold text-white mb-4">شبکه‌های اجتماعی</h4>
-                      <div className="space-y-4">
-                        <Input placeholder="Discord Username" label="دیسکورد" />
-                        <Input placeholder="@twitter_handle" label="توییتر" />
-                      </div>
-                   </div>
-
-                   <div className="flex justify-end pt-4">
-                      <GlowButton variant="blue" className="px-12">
-                         ذخیره تغییرات
-                      </GlowButton>
-                   </div>
-                </NeonCard>
-
-                <NeonCard variant="pink" className="border-neon-pink/20">
-                   <div className="flex items-center justify-between">
-                     <div className="flex gap-4">
-                       <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-neon-pink/10 text-neon-pink">
-                          <Eye size={24} />
-                       </div>
-                       <div>
-                          <h3 className="font-bold text-white">حالت ناشناس</h3>
-                          <p className="text-xs text-gray-400 mt-1">فعالیت‌های شما در لابی‌ها برای دیگران نمایش داده نمی‌شود.</p>
-                       </div>
-                     </div>
-                     <div className="h-6 w-12 rounded-full bg-white/10 relative p-1 cursor-pointer">
-                        <div className="h-4 w-4 rounded-full bg-gray-500" />
-                     </div>
-                   </div>
-                </NeonCard>
+             {/* Content Area */}
+             <div className="lg:col-span-3">
+                {activeTab === "profile" && renderProfile()}
+                {activeTab === "security" && renderSecurity()}
+                {activeTab === "notifications" && renderNotifications()}
+                {activeTab === "ui" && renderUI()}
+                {activeTab === "region" && renderRegion()}
              </div>
           </div>
         </div>

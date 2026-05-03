@@ -329,7 +329,8 @@ export const LobbiesPage = () => {
                           className="h-8 md:h-10 px-3 md:px-8 !rounded-lg text-[9px] md:text-[11px] font-black uppercase italic"
                           onClick={handleRequestAccess}
                         >
-                          عضویت
+                          <span className="md:hidden">همین الان وارد شو!!</span>
+                          <span className="hidden md:inline">الان وارد لابی شو!!</span>
                         </GlowButton>
                       </div>
                     </div>

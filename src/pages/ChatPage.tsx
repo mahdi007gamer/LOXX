@@ -158,6 +158,12 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
             )}
             onClick={(e) => e.stopPropagation()}
             >
+              {/* Hover bridge to prevent losing hover state */}
+              <div className={cn(
+                "hidden lg:block absolute inset-y-0 w-20 bg-transparent",
+                message.self ? "-right-10" : "-left-10"
+              )} />
+  
               <button 
                 className="h-7 w-7 md:h-8 md:w-8 flex items-center justify-center text-gray-400 hover:text-neon-blue transition-colors rounded-lg hover:bg-white/5 relative z-10 shrink-0" 
                 onClick={(e) => { e.stopPropagation(); onReply(message); setShowActions(false); }}
