@@ -35,6 +35,8 @@ interface MessageItemProps {
 
 const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGif }) => {
   const { openProfile } = useProfilePopover();
+  const [showActions, setShowActions] = useState(false);
+
   // Level based colors
   const nameColorClass = message.senderLevel > 40 ? "text-neon-blue shadow-[0_0_8px_rgba(0,229,255,0.3)]" : 
                         message.senderLevel > 20 ? "text-neon-pink" : "text-white/80";
@@ -43,31 +45,32 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
     <div 
       id={`msg-${message.id}`}
       className={cn(
-        "flex gap-3 group transition-all duration-300 mb-6 items-start px-2 md:px-0",
+        "flex gap-3 group transition-all duration-300 mb-6 items-start px-2 md:px-0 relative",
         message.self ? "flex-row" : "flex-row-reverse"
       )}
+      onClick={() => setShowActions(!showActions)}
     >
       {/* Avatar - Positioned to start at the same level as the name */}
       <div 
         className="shrink-0 cursor-pointer relative mt-1"
-        onClick={() => openProfile({
-          senderName: message.senderName,
-          senderAvatar: message.senderAvatar,
-          senderLevel: message.senderLevel,
-          senderBadges: message.senderBadges,
-          id: message.id
-        }, message.self)}
+        onClick={(e) => {
+          e.stopPropagation();
+          openProfile({
+            senderName: message.senderName,
+            senderAvatar: message.senderAvatar,
+            senderLevel: message.senderLevel,
+            senderBadges: message.senderBadges,
+            id: message.id
+          }, message.self);
+        }}
       >
         <div className={cn(
           "h-9 w-9 md:h-11 md:w-11 rounded-xl flex items-center justify-center text-lg md:text-xl relative z-[10] transition-transform hover:scale-105 shadow-xl",
-          message.self ? "bg-neon-pink/20 border border-neon-pink/30 shadow-neon-pink/10" : "bg-white/5 border border-white/10 shadow-black/50",
-          message.senderBadges?.includes(BadgeType.STREAMER) && "ring-2 ring-neon-blue/50"
+          message.self ? "bg-neon-pink text-white" : "bg-neon-blue text-white"
         )}>
-          {message.senderAvatar || "👤"}
-          {message.senderBadges?.includes(BadgeType.STREAMER) && (
-             <div className="absolute inset-0 rounded-xl border border-neon-blue shadow-[0_0_10px_rgba(0,229,255,0.4)] animate-pulse"></div>
-          )}
+          {message.senderAvatar || (message.senderName ? message.senderName[0] : "?")}
         </div>
+        <div className="absolute -bottom-1 -right-1 h-3.5 w-3.5 rounded-full bg-green-500 border-2 border-[#050507] z-20" />
       </div>
 
       {/* Message Content Area */}
@@ -82,13 +85,16 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
         )}>
            <span 
               className={cn("text-[11px] font-black tracking-tight cursor-pointer hover:underline", nameColorClass)}
-              onClick={() => openProfile({
-                senderName: message.senderName,
-                senderAvatar: message.senderAvatar,
-                senderLevel: message.senderLevel,
-                senderBadges: message.senderBadges,
-                id: message.id
-              }, message.self)}
+              onClick={(e) => {
+                e.stopPropagation();
+                openProfile({
+                  senderName: message.senderName,
+                  senderAvatar: message.senderAvatar,
+                  senderLevel: message.senderLevel,
+                  senderBadges: message.senderBadges,
+                  id: message.id
+                }, message.self);
+              }}
             >
               {message.senderName}
             </span>
@@ -99,21 +105,28 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
         <div className="relative group/bubble-container flex items-center w-full">
           {/* Action Buttons - Opposite sides as requested */}
           <div className={cn(
-            "absolute flex items-center gap-1.5 opacity-0 group-hover/bubble-container:opacity-100 transition-all duration-200 z-10",
-            message.self ? "left-full ml-3" : "right-full mr-3"
+            "absolute flex items-center gap-1.5 transition-all duration-200 z-10",
+            message.self ? "left-full ml-3" : "right-full mr-3",
+            showActions || "opacity-0 pointer-events-none group-hover/bubble-container:opacity-100 group-hover/bubble-container:pointer-events-auto"
           )}>
             <button 
               className="p-1.5 rounded-lg bg-black/80 text-gray-400 hover:text-neon-pink hover:bg-neon-pink/10 border border-white/5 backdrop-blur-md transition-all active:scale-90"
-              onClick={() => onReaction(message.id, "❤️")}
+              onClick={(e) => {
+                 e.stopPropagation();
+                 onReaction(message.id, "❤️");
+              }}
             >
               <Heart size={14} className={cn(message.reactions?.some(r => r.emoji === "❤️" && r.users.includes("me")) && "fill-neon-pink text-neon-pink")} />
             </button>
-            <button className="p-1.5 rounded-lg bg-black/80 text-gray-400 hover:text-white hover:bg-white/10 border border-white/5 backdrop-blur-md transition-all active:scale-90">
+            <button 
+              className="p-1.5 rounded-lg bg-black/80 text-gray-400 hover:text-white hover:bg-white/10 border border-white/5 backdrop-blur-md transition-all active:scale-90"
+              onClick={(e) => e.stopPropagation()}
+            >
               <Reply size={14} />
             </button>
           </div>
 
-          <motion.div
+          <motion.div 
             initial={{ opacity: 0, scale: 0.98, y: 5 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             className={cn(
@@ -121,7 +134,7 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
               "rtl text-right",
               message.self 
                 ? "bg-[#140e1a] text-white border-neon-pink/20 rounded-tr-none" 
-                : "bg-[#0c0f16] text-white border-neon-blue/20 rounded-tl-none"
+                : "bg-white/5 text-gray-100 border-white/10 rounded-tl-none"
             )}
           >
             {/* Reply Preview - Embedded inside bubble area */}
@@ -378,6 +391,7 @@ export const ChatPage: React.FC = () => {
   const [userLvl, setUserLvl] = useState(42);
   const [showChannelMenu, setShowChannelMenu] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   
   const { friends, sendMessage: sendFriendMessage } = useFriends();
   const [isFriendsLoading, setIsFriendsLoading] = useState(false);
@@ -547,8 +561,11 @@ export const ChatPage: React.FC = () => {
     }
   };
 
+  const [activeFriendId, setActiveFriendId] = useState<string | null>(null);
+  const { openProfile } = useProfilePopover();
+
   return (
-    <div className="flex h-[calc(100vh-128px)] md:h-[calc(100vh-64px)] overflow-hidden bg-dark-bg rtl text-right relative">
+    <div className="flex h-[calc(100vh-128px)] md:h-[calc(100vh-64px)] overflow-hidden bg-dark-bg rtl text-right relative" onClick={() => setActiveFriendId(null)}>
       <Sidebar />
       
       {/* Channels Sidebar */}
@@ -626,59 +643,67 @@ export const ChatPage: React.FC = () => {
       </div>
 
       {/* Main Chat Area */}
-      <div className="relative flex flex-1 flex-col bg-[#050507] min-w-0">
-        {/* Chat Header */}
-        <header className="flex h-16 items-center justify-between border-b border-white/5 bg-black/20 backdrop-blur-md px-4 md:px-8 sticky top-0 z-30">
+      <div className="relative flex flex-1 flex-col bg-[#050507] min-w-0 overflow-hidden">
+        {/* Chat Header - Sticky and centered for mobile */}
+        <header className="flex h-14 md:h-16 items-center justify-between border-b border-white/5 bg-black/40 backdrop-blur-xl px-4 md:px-8 sticky top-0 z-[40] shrink-0 w-full">
           <div className="flex items-center gap-2 md:gap-4 flex-1 min-w-0">
             {/* Mobile Channel Switcher Toggle */}
             <button 
-              onClick={() => setShowChannelMenu(!showChannelMenu)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowChannelMenu(!showChannelMenu);
+              }}
               className="p-2 rounded-lg bg-white/5 text-gray-400 hover:text-white md:hidden"
             >
-              <Menu size={20} />
+              <Menu size={18} />
             </button>
 
-            <div className="h-9 w-9 md:h-10 md:w-10 flex items-center justify-center rounded-xl bg-neon-blue/10 border border-neon-blue/20 text-neon-blue shadow-[0_0_15px_rgba(0,229,255,0.1)] overflow-hidden shrink-0">
+            <div className="h-8 w-8 md:h-10 md:w-10 flex items-center justify-center rounded-xl bg-neon-blue/10 border border-neon-blue/20 text-neon-blue shadow-[0_0_15px_rgba(0,229,255,0.1)] overflow-hidden shrink-0">
               {activeChannel.type === 'game' ? (
                 <img src={activeChannel.icon} alt="" className="h-full w-full object-cover opacity-80" />
               ) : (
-                <Hash size={20} />
+                <Hash size={18} />
               )}
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <h3 className="font-black text-white tracking-widest truncate">{activeChannel.name}</h3>
+                <h3 className="font-black text-white text-[10px] md:text-base tracking-widest truncate">{activeChannel.name}</h3>
                 {activeChannel.type === 'game' && (
                   <span className="hidden xs:inline-block px-1.5 py-0.5 rounded bg-neon-blue/10 text-[8px] text-neon-blue font-black border border-neon-blue/20 uppercase tracking-tighter">Game Room</span>
                 )}
               </div>
-              <div className="flex items-center gap-2 truncate">
-                <div className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse shrink-0"></div>
-                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-tighter truncate">{activeChannel.users} نفر آنلاین</p>
+              <div className="flex items-center gap-1.5 md:gap-2 truncate">
+                <div className="h-1 w-1 md:h-1.5 md:w-1.5 rounded-full bg-green-500 animate-pulse shrink-0"></div>
+                <p className="text-[9px] md:text-[10px] text-gray-500 font-bold uppercase tracking-tighter truncate">{activeChannel.users} آنلاین</p>
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-1 md:gap-3">
+          <div className="flex items-center gap-1.5 md:gap-3">
             {activeChannel.type === 'game' && (
               <GlowButton 
                 variant="pink" 
                 size="sm" 
-                className="hidden sm:flex h-9 text-[11px] gap-2 font-black !rounded-xl"
-                onClick={sendLobbyInvite}
+                className="h-8 md:h-9 px-3 md:px-4 text-[9px] md:text-[10px] font-black uppercase"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  sendLobbyInvite();
+                }}
               >
-                 <Plus size={14} />
-                 دعوت به لابی
+                 دعوت
               </GlowButton>
             )}
-            <div className="hidden md:block h-8 w-px bg-white/5 mx-2"></div>
+            <div className="hidden md:block h-6 w-px bg-white/5 mx-1"></div>
             <button 
-              onClick={() => setShowFriendsSidebar(!showFriendsSidebar)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowFriendsSidebar(!showFriendsSidebar);
+              }}
               className={cn(
                 "p-2 rounded-lg transition-all",
-                showFriendsSidebar ? "text-neon-blue bg-neon-blue/10" : "text-gray-500 hover:text-white hover:bg-white/5"
+                showFriendsSidebar ? "bg-neon-blue text-dark-bg" : "bg-white/5 text-gray-400 hover:text-white"
               )}
             >
-              <Users size={20} />
+              <Users size={18} />
             </button>
             <button className="hidden md:block p-2 text-gray-500 hover:text-white hover:bg-white/5 rounded-lg transition-all"><MoreVertical size={20} /></button>
           </div>
@@ -703,7 +728,7 @@ export const ChatPage: React.FC = () => {
                 className="fixed left-0 top-0 bottom-0 z-[101] w-72 bg-dark-bg/95 border-r border-white/10 p-6 backdrop-blur-xl md:hidden"
               >
                 <div className="flex items-center justify-between mb-8">
-                  <h2 className="text-xl font-black text-white tracking-widest uppercase">کانال‌ها</h2>
+                  <h2 className="text-xl font-black text-white tracking-widest uppercase text-right">کانال‌ها</h2>
                   <button onClick={() => setShowChannelMenu(false)} className="text-gray-500 hover:text-white">
                     <X size={24} />
                   </button>
@@ -712,7 +737,7 @@ export const ChatPage: React.FC = () => {
                 <div className="space-y-6">
                   {/* Public Channels */}
                   <div>
-                    <h3 className="text-[10px] font-black text-gray-600 uppercase tracking-widest mb-3">عمومی</h3>
+                    <h3 className="text-[10px] font-black text-gray-600 uppercase tracking-widest mb-3 text-right">عمومی</h3>
                     <div className="space-y-1">
                       {INITIAL_CHANNELS.map((channel) => (
                         <ChannelButton 
@@ -731,7 +756,7 @@ export const ChatPage: React.FC = () => {
                   {/* Game Specific Channels */}
                   {myGamesChannels.length > 0 && (
                     <div>
-                      <h3 className="text-[10px] font-black text-neon-blue/40 uppercase tracking-widest mb-3">بازی‌های من</h3>
+                      <h3 className="text-[10px] font-black text-neon-blue/40 uppercase tracking-widest mb-3 text-right">بازی‌های من</h3>
                       <div className="space-y-1">
                         {myGamesChannels.map((channel) => (
                           <ChannelButton 
@@ -753,16 +778,16 @@ export const ChatPage: React.FC = () => {
           )}
         </AnimatePresence>
 
-        {/* Messages List */}
+        {/* Messages List Area */}
         <div 
           ref={scrollRef}
           onScroll={handleScroll}
-          className="flex-1 overflow-y-auto p-4 md:p-8 space-y-8 scroll-smooth custom-scrollbar relative"
+          className="flex-1 overflow-y-auto px-2 md:px-8 py-4 space-y-4 scroll-smooth custom-scrollbar relative min-h-0 overflow-x-hidden flex flex-col"
         >
           {/* Date Separator */}
-          <div className="flex items-center gap-4 py-4">
+          <div className="flex items-center gap-4 py-4 shrink-0">
              <div className="h-px flex-1 bg-gradient-to-l from-transparent via-white/5 to-transparent"></div>
-             <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">امروز</span>
+             <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest shrink-0">امروز</span>
              <div className="h-px flex-1 bg-gradient-to-l from-transparent via-white/5 to-transparent"></div>
           </div>
 
@@ -777,7 +802,7 @@ export const ChatPage: React.FC = () => {
           
           {/* Typing Indicator */}
           {isTyping && (
-            <div className="flex items-center gap-3 mr-2 opacity-50 animate-in fade-in slide-in-from-bottom-2">
+            <div className="flex items-center gap-3 mr-2 opacity-50 animate-in fade-in slide-in-from-bottom-2 shrink-0 pb-4">
                <div className="flex gap-1">
                  <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
                  <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
@@ -786,16 +811,18 @@ export const ChatPage: React.FC = () => {
                <span className="text-[10px] text-gray-500 font-bold">مازیار در حال نوشتن...</span>
             </div>
           )}
+          
+          <div ref={messagesEndRef} className="shrink-0 h-4" />
         </div>
 
-        {/* Floating Messages Feedback */}
+        {/* Floating Notifications Feedback */}
         <AnimatePresence>
           {showSaveFeedback && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 20 }}
-              className="absolute bottom-32 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 rounded-xl bg-green-500/20 border border-green-500/30 text-green-400 font-black text-[10px] shadow-2xl z-40 backdrop-blur-md"
+              className="absolute bottom-28 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 rounded-xl bg-green-500 text-white font-black text-[10px] shadow-2xl z-40 backdrop-blur-md"
             >
               <Check size={14} />
               گیف با موفقیت ذخیره شد
@@ -808,7 +835,7 @@ export const ChatPage: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 10 }}
               onClick={scrollToBottom}
-              className="absolute bottom-32 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 rounded-full bg-neon-blue text-dark-bg font-black text-[10px] shadow-[0_10px_30px_rgba(0,229,255,0.3)] z-40 hover:scale-105 transition-transform"
+              className="absolute bottom-28 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 rounded-full bg-neon-blue text-dark-bg font-black text-[10px] shadow-[0_10px_30px_rgba(0,229,255,0.3)] z-40 hover:scale-105 transition-transform"
             >
               <ChevronDown size={14} />
               پیام‌های جدید
@@ -816,9 +843,9 @@ export const ChatPage: React.FC = () => {
           )}
         </AnimatePresence>
 
-        {/* Input Area */}
-        <div className="p-4 md:p-8 bg-gradient-to-t from-dark-bg to-transparent relative z-10 flex justify-center">
-          <div className="w-full max-w-4xl relative">
+        {/* Input Area - Adjusted for mobile */}
+        <div className="p-3 md:p-8 bg-gradient-to-t from-dark-bg to-transparent relative z-30 flex flex-col items-center shrink-0">
+          <div className="w-full max-w-4xl relative flex flex-col items-center">
           {/* GIF Picker Popover */}
           <AnimatePresence>
             {showGifPicker && (
@@ -973,12 +1000,21 @@ export const ChatPage: React.FC = () => {
               ) : (
                 <div className="space-y-2">
                   {friends.length > 0 ? (
-                    friends.map((friend) => (
+                    friends.map((friend, i) => (
                       <motion.div
                         key={friend.id}
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
-                        className="group relative flex items-center gap-3 p-3 rounded-2xl bg-white/5 hover:bg-white/10 border border-transparent hover:border-white/10 transition-all cursor-pointer"
+                        transition={{ delay: i * 0.05 }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveFriendId(activeFriendId === friend.id ? null : friend.id);
+                        }}
+                        className={cn(
+                          "group relative flex items-center gap-3 p-3 rounded-2xl transition-all cursor-pointer",
+                          friend.status === "online" || friend.status === "in_game" ? "bg-white/5 border border-white/5 hover:border-neon-blue/20" : "bg-black/20 border-transparent grayscale opacity-50",
+                          activeFriendId === friend.id && "bg-white/10 border-white/20"
+                        )}
                       >
                         <div className="relative">
                           <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center shadow-lg overflow-hidden group-hover:scale-105 transition-transform">
@@ -996,23 +1032,27 @@ export const ChatPage: React.FC = () => {
                           )} />
                         </div>
                         
-                        <div className="flex-1">
+                        <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1">
-                            <p className="text-xs font-black text-white">{friend.displayName}</p>
-                            {friend.isFavorite && <Star size={10} className="fill-neon-blue text-neon-blue" />}
+                            <p className="text-xs font-black text-white truncate">{friend.displayName}</p>
+                            {friend.isFavorite && <Star size={10} className="fill-neon-blue text-neon-blue shrink-0" />}
                           </div>
                           <p className="text-[10px] text-gray-500 font-bold">سطح {friend.level}</p>
                         </div>
 
-                        {/* Actions Overlay - Fixed for mobile (tap) and desktop (hover) */}
-                        <div className="absolute inset-0 bg-dark-bg/80 backdrop-blur-sm opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-all duration-300 md:group-hover:flex items-center justify-center gap-2 rounded-2xl z-20 flex pointer-events-none group-hover:pointer-events-auto">
-                           <div className="flex items-center justify-center gap-2 pointer-events-auto scale-90 md:scale-100">
+                        {/* Actions Overlay - Sticky for active friend */}
+                        <div className={cn(
+                           "absolute inset-0 bg-dark-bg/95 backdrop-blur-md flex items-center justify-center gap-2 rounded-2xl z-20 transition-all duration-300 px-2",
+                           (activeFriendId === friend.id || "opacity-0 pointer-events-none md:group-hover:opacity-100 md:group-hover:pointer-events-auto")
+                        )}>
+                           <div className="flex items-center justify-center gap-3">
                              <button 
                               onClick={(e) => {
                                 e.stopPropagation();
+                                setActiveFriendId(null);
                                 sendFriendMessage(friend.id, "سلام!");
                               }}
-                              className="h-10 w-10 md:h-9 md:w-9 rounded-xl bg-neon-blue/20 text-neon-blue hover:bg-neon-blue hover:text-dark-bg transition-all flex items-center justify-center shadow-lg shadow-neon-blue/10"
+                              className="h-9 w-9 rounded-xl bg-neon-blue/20 text-neon-blue hover:bg-neon-blue hover:text-dark-bg transition-all flex items-center justify-center shadow-lg shadow-neon-blue/10 border border-neon-blue/20"
                               title="پیام"
                              >
                                <MessageSquare size={16} />
@@ -1020,9 +1060,15 @@ export const ChatPage: React.FC = () => {
                              <button 
                               onClick={(e) => {
                                 e.stopPropagation();
-                                // Toggle some state to show friend details or navigate
+                                setActiveFriendId(null);
+                                openProfile({
+                                  senderName: friend.displayName,
+                                  senderAvatar: friend.avatar || "👤",
+                                  senderLevel: friend.level,
+                                  senderBadges: [] // Placeholder
+                                }, false);
                               }}
-                              className="h-10 w-10 md:h-9 md:w-9 rounded-xl bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-all flex items-center justify-center"
+                              className="h-9 w-9 rounded-xl bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-all flex items-center justify-center border border-white/5"
                               title="پروفایل"
                              >
                                <User size={16} />
