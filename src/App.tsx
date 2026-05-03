@@ -14,6 +14,7 @@ import { GamesProvider } from "./context/GamesContext";
 import { ProfilePopoverProvider } from "./context/ProfilePopoverContext";
 import { ActiveLobbyWidget } from "./components/ui/ActiveLobbyWidget";
 import { FriendChatOverlay } from "./components/ui/FriendChatOverlay";
+import ScrollToTop from "./components/ScrollToTop";
 import { DashboardPage } from "./pages/DashboardPage";
 import { ChatPage } from "./pages/ChatPage";
 import { LobbiesPage } from "./pages/LobbiesPage";
@@ -74,6 +75,7 @@ function App() {
         <LobbyProvider>
           <ProfilePopoverProvider>
             <Router>
+              <ScrollToTop />
               <AppContent />
               <ActiveLobbyWidget />
               <FriendChatOverlay />

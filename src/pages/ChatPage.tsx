@@ -565,7 +565,7 @@ export const ChatPage: React.FC = () => {
   const { openProfile } = useProfilePopover();
 
   return (
-    <div className="flex h-[calc(100vh-128px)] md:h-[calc(100vh-64px)] overflow-hidden bg-dark-bg rtl text-right relative" onClick={() => setActiveFriendId(null)}>
+    <div className="flex h-[calc(100vh-128px)] md:h-[calc(100vh-64px)] overflow-hidden bg-dark-bg rtl text-right relative overscroll-none" style={{ overscrollBehavior: 'none' }} onClick={() => setActiveFriendId(null)}>
       <Sidebar />
       
       {/* Channels Sidebar */}
@@ -782,7 +782,8 @@ export const ChatPage: React.FC = () => {
         <div 
           ref={scrollRef}
           onScroll={handleScroll}
-          className="flex-1 overflow-y-auto px-2 md:px-8 py-2 md:py-4 space-y-2 md:space-y-4 scroll-smooth custom-scrollbar relative min-h-0 overflow-x-hidden flex flex-col no-scrollbar"
+          className="flex-1 overflow-y-auto px-2 md:px-8 py-2 md:py-4 space-y-2 md:space-y-4 scroll-smooth custom-scrollbar relative min-h-0 overflow-x-hidden flex flex-col no-scrollbar overscroll-contain"
+          style={{ overscrollBehavior: 'contain' }}
         >
           {/* Date Separator */}
           <div className="flex items-center gap-4 py-4 shrink-0">
