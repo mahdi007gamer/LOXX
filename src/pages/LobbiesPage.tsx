@@ -310,8 +310,8 @@ export const LobbiesPage = () => {
                       </div>
                     </div>
 
-                    <div className="mt-2 flex items-center justify-between border-t border-white/5 p-3 md:p-5 transition-all">
-                      <div className="flex items-center gap-1.5 md:gap-2.5">
+                    <div className="mt-2 flex items-center justify-between border-t border-white/5 p-3 md:p-5 transition-all relative overflow-hidden h-14 md:h-18">
+                      <div className="flex items-center gap-1.5 md:gap-2.5 transition-transform duration-300 md:group-hover:-translate-y-20">
                          <div className="flex -space-x-2">
                             {[1].map(p => (
                               <div key={p} className="h-6 w-6 md:h-8 md:w-8 rounded-full border border-dark-card bg-white/10 flex items-center justify-center text-[10px]">
@@ -321,13 +321,17 @@ export const LobbiesPage = () => {
                          </div>
                          <span className="text-[10px] md:text-sm font-bold text-gray-500">+{lobby.players} آنلاین</span>
                       </div>
-                      <GlowButton 
-                        variant={lobby.variant} 
-                        className="h-8 md:h-10 px-3 md:px-6 !rounded-lg text-[9px] md:text-[11px] font-black uppercase italic"
-                        onClick={handleRequestAccess}
-                      >
-                        JOIN NOW
-                      </GlowButton>
+                      
+                      {/* Join Button - Slides up on hover for desktop, always visible on mobile */}
+                      <div className="md:absolute md:inset-0 md:flex md:items-center md:justify-center md:translate-y-full md:group-hover:translate-y-0 transition-transform duration-300 md:bg-gradient-to-t md:from-[#0a0a0f] md:to-transparent z-10 px-3 md:px-0">
+                        <GlowButton 
+                          variant={lobby.variant} 
+                          className="h-8 md:h-10 px-3 md:px-8 !rounded-lg text-[9px] md:text-[11px] font-black uppercase italic"
+                          onClick={handleRequestAccess}
+                        >
+                          عضویت
+                        </GlowButton>
+                      </div>
                     </div>
                   </NeonCard>
                 </motion.div>

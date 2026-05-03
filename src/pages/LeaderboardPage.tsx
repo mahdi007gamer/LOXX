@@ -203,11 +203,11 @@ export const LeaderboardPage = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-4">
                <div className="flex items-center justify-between mb-6">
-                 <h2 className="text-xl font-black text-white uppercase italic tracking-tighter">Ranking Pool</h2>
+                 <h2 className="text-xl font-black text-white uppercase italic tracking-tighter">لیست برترین‌ها</h2>
                  <div className="flex gap-2">
-                    <button className="px-4 py-1.5 rounded-lg bg-neon-blue text-dark-bg text-[10px] font-black uppercase">Weekly</button>
-                    <button className="px-4 py-1.5 rounded-lg bg-white/5 text-gray-500 text-[10px] font-black uppercase hover:text-white transition-all">Monthly</button>
-                    <button className="px-4 py-1.5 rounded-lg bg-white/5 text-gray-500 text-[10px] font-black uppercase hover:text-white transition-all">All Time</button>
+                    <button className="px-4 py-1.5 rounded-lg bg-neon-blue text-dark-bg text-[10px] font-black uppercase">هفتگی</button>
+                    <button className="px-4 py-1.5 rounded-lg bg-white/5 text-gray-500 text-[10px] font-black uppercase hover:text-white transition-all">ماهانه</button>
+                    <button className="px-4 py-1.5 rounded-lg bg-white/5 text-gray-500 text-[10px] font-black uppercase hover:text-white transition-all">کل زمان</button>
                  </div>
                </div>
 
@@ -246,14 +246,14 @@ export const LeaderboardPage = () => {
                                 player.trend === 'up' ? "text-green-500" : player.trend === 'down' ? "text-neon-pink" : "text-gray-500"
                               )}>
                                  {player.trend === 'up' && <ArrowUp size={10} />}
-                                 <span>{player.trend === 'up' ? 'Hot' : player.trend === 'down' ? 'Cooling' : 'Stable'}</span>
+                                 <span>{player.trend === 'up' ? 'در حال صعود' : player.trend === 'down' ? 'در حال سقوط' : 'ثابت'}</span>
                               </div>
                            </div>
                          </div>
                       </div>
 
                       <div className="text-left">
-                         <p className="text-[9px] text-gray-500 uppercase font-black italic mb-0.5">Points</p>
+                         <p className="text-[9px] text-gray-500 uppercase font-black italic mb-0.5">امتیازات</p>
                          <p className="font-black text-lg md:text-xl text-white italic tracking-tighter">{player.points.toLocaleString()}</p>
                       </div>
                    </div>
@@ -271,7 +271,7 @@ export const LeaderboardPage = () => {
                    <Target size={120} className="rotate-12" />
                 </div>
                 
-                <h3 className="text-xl font-black text-white uppercase italic mb-6 relative z-10">How to Score?</h3>
+                <h3 className="text-xl font-black text-white uppercase italic mb-6 relative z-10">چطور امتیاز بگیریم؟</h3>
                 <div className="space-y-4 relative z-10">
                   {SCORING_RULES.map((rule, i) => (
                     <div key={i} className="flex items-center gap-4 group">
@@ -303,12 +303,12 @@ export const LeaderboardPage = () => {
               <div className="rounded-3xl bg-gradient-to-br from-neon-blue/20 to-neon-purple/20 border border-white/10 p-6 relative overflow-hidden">
                  <div className="flex items-center justify-between relative z-10">
                     <div>
-                       <p className="text-[10px] text-neon-blue font-black uppercase tracking-widest italic mb-1">Your Stats</p>
-                       <h3 className="text-white font-black italic text-xl">#12 overall</h3>
+                       <p className="text-[10px] text-neon-blue font-black uppercase tracking-widest italic mb-1">وضعیت شما</p>
+                       <h3 className="text-white font-black italic text-xl">رتبه ۱۲# کل</h3>
                     </div>
                     <div className="text-right">
-                       <p className="text-[10px] text-gray-400 font-black uppercase mb-1">Points</p>
-                       <p className="text-white font-black italic text-xl">4,280</p>
+                       <p className="text-[10px] text-gray-400 font-black uppercase mb-1">امتیازات</p>
+                       <p className="text-white font-black italic text-xl">۴,۲۸۰</p>
                     </div>
                  </div>
                  
@@ -320,8 +320,8 @@ export const LeaderboardPage = () => {
                     />
                  </div>
                  <div className="mt-2 flex items-center justify-between relative z-10">
-                   <p className="text-[9px] text-gray-500 font-bold">برای رسیدن به Top 10:</p>
-                   <p className="text-[10px] text-white font-black">120 points needed</p>
+                   <p className="text-[9px] text-gray-500 font-bold">برای رسیدن به ۱۰ نفر برتر:</p>
+                   <p className="text-[10px] text-white font-black">۱۲۰ امتیاز نیاز است</p>
                  </div>
               </div>
             </div>

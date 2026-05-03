@@ -25,10 +25,10 @@ export const BottomNav = () => {
                 ? cn(
                     "w-14 h-14 rounded-full transition-all duration-500 z-20 flex-shrink-0",
                     isActive 
-                      ? "bg-neon-blue -mt-10 shadow-[0_0_30px_rgba(0,229,255,0.6)] border-4 border-dark-bg scale-110 text-dark-bg" 
-                      : "bg-[#0a0a0f] -mt-4 border-2 border-white/5 opacity-50 scale-90 translate-y-2 text-gray-500"
+                      ? "bg-neon-blue -mt-10 shadow-[0_0_30px_rgba(0,229,255,0.6)] scale-110 text-dark-bg" 
+                      : "bg-[#0a0a0f] -mt-4 opacity-50 scale-95 translate-y-1 text-gray-500"
                   ) 
-                : "flex-1 min-w-0",
+                : "flex-1 min-w-0 font-black",
               isActive && !item.isSpecial
                 ? "text-neon-blue drop-shadow-[0_0_8px_rgba(0,229,255,0.5)]" 
                 : !item.isSpecial ? "text-gray-500 hover:text-white" : ""

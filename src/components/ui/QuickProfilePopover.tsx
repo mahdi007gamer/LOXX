@@ -133,14 +133,14 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
             <div className="flex items-center gap-1.5 mt-0.5">
                {isVIP ? (
                  <span className="text-[10px] text-yellow-500 font-black uppercase tracking-widest flex items-center gap-1">
-                   <Crown size={12} /> LOXX VIP MEMBER
+                   <Crown size={12} /> عضو ویژه (VIP)
                  </span>
                ) : isPLUS ? (
                  <span className="text-[10px] text-neon-blue font-black uppercase tracking-widest flex items-center gap-1">
-                   <Zap size={12} /> LOXX PLUS MEMBER
+                   <Zap size={12} /> عضو پلاس (PLUS)
                  </span>
                ) : (
-                 <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest leading-none">Verified Gamer</p>
+                 <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest leading-none">گیمر تایید شده</p>
                )}
             </div>
           </div>
@@ -156,14 +156,14 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
           {/* Stats */}
           <div className="grid grid-cols-2 gap-3">
             <div className="p-3 rounded-2xl bg-white/5 border border-white/5 text-center group hover:border-white/10 transition-colors">
-              <p className="text-[9px] text-gray-600 font-black uppercase mb-1">LOXX RANK</p>
+              <p className="text-[9px] text-gray-600 font-black uppercase mb-1">رتبه لوکس</p>
               <div className="flex items-center justify-center gap-1">
                  <Shield size={12} className="text-neon-pink" />
                  <p className="text-xs font-black text-white italic uppercase tracking-tighter">Supreme</p>
               </div>
             </div>
             <div className="p-3 rounded-2xl bg-white/5 border border-white/5 text-center group hover:border-white/10 transition-colors">
-              <p className="text-[9px] text-gray-600 font-black uppercase mb-1">Global Level</p>
+              <p className="text-[9px] text-gray-600 font-black uppercase mb-1">سطح جهانی</p>
               <div className="flex items-center justify-center gap-1">
                  <Sparkles size={12} className="text-neon-blue" />
                  <p className="text-xs font-black text-white italic tracking-tighter">{user.senderLevel}</p>
@@ -173,7 +173,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
 
           {/* Favorite Games */}
           <div>
-            <p className="text-[9px] text-gray-600 font-black uppercase tracking-widest mb-2 px-1 italic">Favorite Genres</p>
+            <p className="text-[9px] text-gray-600 font-black uppercase tracking-widest mb-2 px-1 italic">ژانرهای مورد علاقه</p>
             <div className="flex gap-2">
               {["FPS", "MOBA", "RPG"].map((genre, i) => (
                 <div key={i} className="px-3 py-1.5 rounded-xl bg-white/5 border border-white/5 flex items-center justify-center text-[10px] font-black text-gray-400 uppercase italic tracking-tighter group hover:text-white hover:border-white/10 transition-all">{genre}</div>
@@ -193,7 +193,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
                 onClick={handleAddFriend}
                 disabled={sentRequest}
               >
-                {sentRequest ? "Request Sent" : "Add Friend"}
+                {sentRequest ? "درخواست ارسال شد" : "افزودن دوست"}
               </GlowButton>
             )}
           </div>
