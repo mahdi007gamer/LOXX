@@ -1,0 +1,247 @@
+LOXX API Specification & Integration Guide
+v1.0 (Compatible with Backend Spec v2.0 Enterprise Edition)
+
+================================================================================
+1. OVERVIEW
+================================================================================
+
+This document serves as the primary integration guide for frontend developers building the LOXX gaming social platform. LOXX is a high-performance, real‑time platform tailored for Persian-speaking gamers. 
+
+While the platform UI and user-generated content (chat, bios, usernames) are in Persian (Farsi) and rendered Right-to-Left (RTL), all API structures, status codes, and documentation are provided in English to maintain global development standards and compatibility.
+
+This guide is designed to work in conjunction with the "LOXX BACKEND TECHNICAL SPECIFICATION v2.0".
+
+================================================================================
+2. AUTHENTICATION & AUTHORIZATION
+================================================================================
+
+LOXX uses a secure JWT-based authentication system with Refresh Token Rotation.
+
+- Access Token: 15-minute expiry. Used in 'Authorization: Bearer <token>' header.
+- Refresh Token: 7-day expiry. Used to obtain new access tokens.
+- Token Rotation: Every time a refresh token is used, the old one is invalidated and a new one is issued.
+- Storage: 
+    * Access Token: Memory (preferred) or short-lived cookie.
+    * Refresh Token: Secure, HttpOnly, SameSite=Strict cookie (handled by backend).
+
+Frontend Flow:
+1. User logs in -> Receive Access Token (JSON) and Refresh Token (Set-Cookie).
+2. Store Access Token in app state (Redux/Zustand).
+3. On 401 Unauthorized -> Attempt call to /api/auth/refresh.
+4. If refresh succeeds -> Retry original request.
+5. If refresh fails (403/401) -> Redirect to /auth (Logout).
+
+Rate Limiting:
+- Login: 5 attempts per 15 minutes per IP.
+- Account Lock: 10 failed attempts resulting in a 30-minute lockout.
+
+================================================================================
+3. API ENDPOINTS
+================================================================================
+
+All endpoints are prefixed with `/api`.
+
+--------------------------------------------------------------------------------
+3.1 AUTHENTICATION
+--------------------------------------------------------------------------------
+
+- POST /auth/register
+  Request: { "username": "...", "email": "...", "password": "..." }
+  Notes: Supports Persian usernames.
+
+- POST /auth/login
+  Request: { "email": "...", "password": "..." }
+  Response: { "status": "success", "token": "...", "user": { ... } }
+
+- POST /auth/logout
+  Request: {} 
+  Notes: Blacklists the current refresh token in Redis.
+
+- POST /auth/refresh
+  Request: {} (Cookies handled automatically)
+  Response: { "token": "..." }
+
+--------------------------------------------------------------------------------
+3.2 USER PROFILE
+--------------------------------------------------------------------------------
+
+- GET /profile/me
+  Response: Returns current user's profile including xp, level, membership_type.
+
+- GET /profile/:username
+  Response: Public profile data. Supports Persian usernames in URL segment.
+
+- PATCH /profile/update
+  Request: { "display_name": "...", "bio": "...", "region": "IR|TR|EU|ME" }
+  Notes: RTL text (Persian) is expected in bio and display_name.
+
+- POST /profile/avatar
+  Request: Multipart/form-data (image). Max 2MB.
+
+--------------------------------------------------------------------------------
+3.3 FRIENDS SYSTEM
+--------------------------------------------------------------------------------
+
+- GET /friends/list
+  Response: [ { "user_id": "...", "username": "...", "status": "online|offline", "last_seen": "..." } ]
+
+- POST /friends/request
+  Request: { "target_id": "..." }
+
+- POST /friends/respond
+  Request: { "request_id": "...", "action": "accept|decline|block" }
+
+--------------------------------------------------------------------------------
+3.4 LOBBY SYSTEM
+--------------------------------------------------------------------------------
+
+- GET /lobbies
+  Parameters: ?game_id=...&region=...&type=public|private
+  Response: List of active lobbies. Includes VIP priority sorting.
+
+- POST /lobbies/create
+  Request: { "game_id": "...", "title": "...", "max_players": 5, "password": "...", "region": "..." }
+
+- POST /lobbies/:lobbyId/join
+  Request: { "password": "..." }
+
+--------------------------------------------------------------------------------
+3.5 CHAT SYSTEM
+--------------------------------------------------------------------------------
+
+- GET /chat/messages/:channelId
+  Parameters: ?cursor=...&limit=50
+  Response: { "messages": [...], "next_cursor": "..." }
+
+- POST /chat/send
+  Request: { "channel_id": "...", "content": "...", "reply_to": "..." }
+  Notes: Max 5 messages / 2 seconds anti-spam.
+
+================================================================================
+4. REALTIME & WEBSOCKET INTEGRATION
+================================================================================
+
+LOXX uses Socket.io with Redis adapter for real-time synchronization.
+
+Connection:
+- URL: wss://api.loxx.ir (or local equivalent)
+- Auth: Pass JWT in 'auth' object during connection.
+
+Frontend Event Handling:
+1. Presence:
+   - 'friend:online': Update friend list status.
+   - 'friend:offline': Update friend list status.
+
+2. Chat:
+   - 'chat:message': New message received.
+   - 'chat:typing': User is typing (show indicator for 3s).
+   - 'chat:delete': Remove message from local state.
+
+3. Lobby:
+   - 'lobby:userJoin': Add user to lobby UI.
+   - 'lobby:userLeave': Remove user from lobby UI.
+   - 'lobby:update': Refresh lobby settings (title, game).
+
+4. Voice (Mediasoup Signaling):
+   - 'voice:getRouterCapabilities'
+   - 'voice:createTransport'
+   - 'voice:connectTransport'
+   - 'voice:produce' / 'voice:consume'
+
+Integration Strategy:
+- Use a central 'SocketContext' or Middleware.
+- Handle 'connect_error' by attempting token refresh.
+- Implement 'exponential backoff' for reconnection.
+
+================================================================================
+5. ERROR HANDLING
+================================================================================
+
+Standard Error Format:
+{
+  "status": "error",
+  "code": "AUTH_EXPIRED",
+  "message": "Session expired, please login again.",
+  "errors": [ { "field": "email", "message": "Invalid format" } ]
+}
+
+Common Codes:
+- RATE_LIMIT_EXCEEDED (429)
+- INSUFFICIENT_PERMISSIONS (403)
+- RESOURCE_NOT_FOUND (404)
+- VALIDATION_FAILED (400)
+- LOBBY_FULL (409)
+
+Frontend Action:
+- 429: Show countdown timer to user.
+- 401: Trigger silent refresh.
+- 403: Redirect with "Access Denied" toast.
+
+================================================================================
+6. ENVIRONMENT VARIABLES (FRONTEND)
+================================================================================
+
+Must be defined in `.env`:
+
+VITE_API_BASE_URL="https://api.loxx.ir/api"
+VITE_SOCKET_URL="wss://api.loxx.ir"
+VITE_VOICE_SERVER_URL="wss://voice.loxx.ir"
+VITE_CDN_URL="https://cdn.loxx.ir"
+VITE_REGION="IR" (Default region hint)
+
+================================================================================
+7. SECURITY AND VALIDATION RULES
+================================================================================
+
+1. Input Sanitization:
+   - Frontend must trim all Persian text inputs.
+   - Strip HTML tags before sending to API.
+
+2. Token Storage:
+   - NEVER store JWT in localStorage for production environments. Use memory or secure cookies.
+
+3. XSS/SSRF Prevention:
+   - External links in chat must use `rel="noopener noreferrer"`.
+   - Validate avatar URLs match the authorized CDN domain.
+
+================================================================================
+8. VERSIONING & ROLLOUT STRATEGY
+================================================================================
+
+- API Versioning: Provided via URL path `/api/v2/...`.
+- Breaking Changes: Published in Developer Discord #changelog 2 weeks prior.
+- Backward Compatibility: The backend maintains N-1 version support.
+
+================================================================================
+9. INTEGRATION TIPS
+================================================================================
+
+- RTL Handling: Use `dir="rtl"` on all chat containers. Use Tailwind's `rtl:` modifiers for spacing.
+- Optimistic UI: Immediately add chat messages to the feed before server confirmation. Rollback on 400/500 errors.
+- Voice Stability: Reconnect Mediasoup transports on network change without resetting the whole socket.
+- Caching: Cache 'Game Metadata' and 'Lobby List' for 30 seconds to reduce server load.
+
+================================================================================
+10. GLOSSARY & SAMPLE FLOWS
+================================================================================
+
+- SFU (Selective Forwarding Unit): Media server handling voice chat bandwidth.
+- Lobby: A temporary room where users meet before starting a game.
+- XP: Experience points earned through social activity (Lobby join, Chat).
+
+Sample Flow: Creating a Lobby
+1. User clicks "Create Lobby" -> POST /api/lobbies/create.
+2. Server returns { "lobbyId": "XYZ" }.
+3. Frontend joins WebSocket room "lobby:XYZ".
+4. Frontend signals 'voice:getRouterCapabilities' to start voice transport.
+5. UI switches to Lobby View.
+
+Sample Flow: Sending Persian Message
+1. User types "سلام" (Hello).
+2. Frontend sends { "content": "سلام", "channel_id": "..." } via POST /chat/send.
+3. Socket emits message to all connected clients.
+4. Clients render with `font-family: 'Vazirmatn'` and `text-align: right`.
+
+================================================================================
+END OF SPECIFICATION
+================================================================================
