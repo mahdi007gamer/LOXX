@@ -56,7 +56,7 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
       id={`msg-${message.id}`}
       className={cn(
         "flex gap-2 md:gap-3 transition-all duration-300 mb-6 items-start px-1 md:px-0 relative w-full",
-        message.self ? "flex-row-reverse" : "flex-row"
+        message.self ? "flex-row" : "flex-row-reverse"
       )}
     >
       {/* Interaction Menu Popover Overlay - Globally available */}
@@ -109,10 +109,9 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
         )}
         onClick={() => setShowActions(!showActions)}
       >
-        {/* Header - Aligned with Avatar */}
+        {/* Header - Name -> Badge -> Time (Aligned with RTL flow) */}
         <div className={cn(
-          "flex items-center gap-1.5 mb-1 px-0.5",
-          message.self ? "flex-row" : "flex-row"
+          "flex items-center gap-1.5 mb-1 px-0.5 flex-row"
         )}>
           <span 
               className={cn("text-[11px] font-black tracking-tight cursor-pointer hover:underline flex items-center gap-1", nameColorClass)}
@@ -131,11 +130,11 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
               {message.senderName}
             </span>
           
-          <div className="flex gap-1 items-center">
+          <div className="flex gap-1 items-center flex-row">
              {message.senderBadges?.map((b, i) => <BadgeIcon key={i} type={b} />)}
           </div>
 
-          <span className="text-[9px] text-gray-500 font-bold opacity-60">{message.timestamp}</span>
+          <span className="text-[9px] text-gray-500 font-bold opacity-60 mr-1">{message.timestamp}</span>
         </div>
 
         {/* Message Container Area */}
@@ -144,15 +143,15 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
             {/* Action Buttons - Desktop Hover & Mobile Click */}
             <div className={cn(
               "absolute flex items-center gap-1 px-2 py-1.5 rounded-2xl bg-[#0f0f15] border border-white/10 shadow-2xl z-50 backdrop-blur-xl whitespace-nowrap transition-all duration-200",
-              message.self ? "right-full mr-1 pr-4" : "left-full ml-1 pl-4",
-              showActions ? "opacity-100 scale-100 pointer-events-auto" : "opacity-0 scale-95 pointer-events-none"
+              message.self ? "left-full ml-1 pl-4" : "right-full mr-1 pr-4",
+              showActions ? "opacity-100 scale-100 pointer-events-auto" : "opacity-0 scale-95 pointer-events-none lg:group-hover/bubble-container:opacity-100 lg:group-hover/bubble-container:scale-100 lg:group-hover/bubble-container:pointer-events-auto"
             )}
             onClick={(e) => e.stopPropagation()}
             >
               {/* Hover bridge to prevent losing hover state */}
               <div className={cn(
                 "absolute inset-y-0 w-8 bg-transparent",
-                message.self ? "-right-6" : "-left-6"
+                message.self ? "-left-6" : "-right-6"
               )} />
   
               <button 
@@ -291,11 +290,11 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
             </motion.div>
           </div>
   
-          {/* Reactions Row - Stacked below bubble container */}
+          {/* Reactions Row - Aligned with bubble container flow */}
           {message.reactions && message.reactions.length > 0 && (
             <div className={cn(
-              "flex flex-wrap gap-1 mt-1 w-fit transition-all", 
-              message.self ? "mr-auto" : "ml-auto"
+              "flex flex-wrap gap-1 mt-1 w-fit transition-all mb-2", 
+              message.self ? "ml-auto mr-0 flex-row" : "mr-auto ml-0 flex-row-reverse"
             )}>
               {message.reactions.map((r, i) => (
                 <button 
