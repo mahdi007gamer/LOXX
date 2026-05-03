@@ -100,10 +100,10 @@ export const LeaderboardPage = () => {
                className="order-2 sm:order-1 relative z-10 w-full max-w-[280px]"
              >
                <NeonCard variant="blue" className="flex flex-col items-center p-6 text-center bg-[#0a0a0f]/80 backdrop-blur-xl border-white/5 hover:border-neon-blue/30 transition-all pt-10">
-                 <div className="absolute top-4 left-4 h-12 w-12 rounded-2xl bg-gray-400/10 flex items-center justify-center text-gray-300 border border-white/5 shadow-inner">
-                    <Medal size={24} />
-                 </div>
                  <div className="h-28 w-28 rounded-full border-4 border-gray-400/20 bg-white/5 mb-4 flex items-center justify-center text-gray-400 relative group p-1">
+                    <div className="absolute top-0 -left-2 h-10 w-10 rounded-2xl bg-gray-400/20 flex items-center justify-center text-gray-300 border border-white/5 shadow-inner z-20">
+                       <Medal size={20} />
+                    </div>
                     <div className="absolute inset-0 rounded-full bg-gray-400/5 blur-[20px] opacity-0 group-hover:opacity-100 transition-all" />
                     <div className="w-full h-full rounded-full bg-dark-bg flex items-center justify-center overflow-hidden border border-white/5">
                       <User size={48} className="relative z-10 text-gray-500" />
@@ -128,7 +128,7 @@ export const LeaderboardPage = () => {
                  <motion.div 
                    animate={{ y: [0, -10, 0], rotate: [-5, 5, -5] }}
                    transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                   className="absolute -top-10 left-1/2 -track-x-1/2 text-7xl drop-shadow-[0_10px_20px_rgba(250,204,21,0.5)] z-30 mr-[-2.5rem]"
+                   className="absolute -top-12 left-1/2 -translate-x-1/2 text-7xl drop-shadow-[0_10px_20px_rgba(250,204,21,0.5)] z-30"
                  >
                    👑
                  </motion.div>
@@ -181,10 +181,10 @@ export const LeaderboardPage = () => {
                className="order-3 relative z-10 w-full max-w-[280px]"
              >
                <NeonCard variant="pink" className="flex flex-col items-center p-6 text-center bg-[#0a0a0f]/80 backdrop-blur-xl border-white/5 hover:border-neon-pink/30 transition-all pt-10">
-                 <div className="absolute top-4 left-4 h-12 w-12 rounded-2xl bg-orange-400/10 flex items-center justify-center text-orange-400 border border-white/5 shadow-inner">
-                    <Medal size={24} />
-                 </div>
                  <div className="h-28 w-28 rounded-full border-4 border-orange-400/20 bg-white/5 mb-4 flex items-center justify-center text-orange-400 relative group p-1">
+                    <div className="absolute top-0 -left-2 h-10 w-10 rounded-2xl bg-orange-400/20 flex items-center justify-center text-orange-400 border border-white/5 shadow-inner z-20">
+                       <Medal size={20} />
+                    </div>
                     <div className="absolute inset-0 rounded-full bg-orange-400/5 blur-[20px] opacity-0 group-hover:opacity-100 transition-all" />
                     <div className="w-full h-full rounded-full bg-dark-bg flex items-center justify-center overflow-hidden border border-white/5">
                       <User size={48} className="relative z-10 text-gray-500" />

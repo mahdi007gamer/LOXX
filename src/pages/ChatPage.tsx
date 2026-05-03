@@ -59,11 +59,11 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
         message.self ? "flex-row" : "flex-row-reverse"
       )}
     >
-      {/* Interaction Menu Popover Overlay - For Mobile */}
+      {/* Interaction Menu Popover Overlay - Globally available */}
       <AnimatePresence>
         {showActions && (
           <div 
-            className="fixed inset-0 z-40 lg:hidden"
+            className="fixed inset-0 z-40"
             onClick={(e) => {
               e.stopPropagation();
               setShowActions(false);
@@ -139,7 +139,7 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
           {/* Action Buttons - Desktop Hover & Mobile Click */}
           <div className={cn(
             "absolute flex items-center gap-1 px-2 py-1.5 rounded-2xl bg-[#0f0f15] border border-white/10 shadow-2xl z-50 backdrop-blur-xl whitespace-nowrap transition-all duration-200",
-            message.self ? "left-full ml-3" : "right-full mr-3",
+            message.self ? "right-full mr-3" : "left-full ml-3",
             showActions ? "opacity-100 scale-100 pointer-events-auto" : "opacity-0 scale-95 pointer-events-none lg:group-hover/bubble-container:opacity-100 lg:group-hover/bubble-container:scale-100 lg:group-hover/bubble-container:pointer-events-auto"
           )}
           onClick={(e) => e.stopPropagation()}
