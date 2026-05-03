@@ -152,38 +152,32 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
               <div className="absolute inset-0 bg-yellow-400/5 blur-3xl rounded-full scale-150 animate-pulse pointer-events-none" />
             )}
             
-            {/* Action Buttons - Desktop Hover & Mobile Click */}
+            {/* Action Buttons - Repositioned to prevent horizontal scroll */}
             <div className={cn(
               "absolute flex items-center gap-1 px-1.5 py-1 rounded-xl bg-[#0f0f15]/95 border border-white/10 shadow-2xl z-[60] backdrop-blur-2xl whitespace-nowrap transition-all duration-200",
-              message.self ? "right-full mr-2 bottom-0" : "left-full ml-2 bottom-0",
+              message.self ? "left-0 -top-8" : "right-0 -top-8",
               showActions ? "opacity-100 translate-y-0 visible" : "opacity-0 translate-y-2 invisible lg:group-hover/bubble-container:opacity-100 lg:group-hover/bubble-container:translate-y-0 lg:group-hover/bubble-container:visible"
             )}
             onClick={(e) => e.stopPropagation()}
             >
-              {/* Hover bridge to prevent losing hover state */}
-              <div className={cn(
-                "hidden lg:block absolute inset-y-0 w-8 bg-transparent",
-                message.self ? "-right-8" : "-left-8"
-              )} />
-  
               <button 
-                className="h-7 w-7 md:h-8 md:w-8 flex items-center justify-center text-gray-400 hover:text-neon-blue transition-colors rounded-lg hover:bg-white/5 relative z-10 shrink-0" 
+                className="h-6 w-6 md:h-7 md:w-7 flex items-center justify-center text-gray-400 hover:text-neon-blue transition-colors rounded-lg hover:bg-white/5 relative z-10 shrink-0" 
                 onClick={(e) => { e.stopPropagation(); onReply(message); setShowActions(false); }}
               >
-                <Reply size={16} />
+                <Reply size={14} />
               </button>
               <div className="flex items-center gap-0.5 md:gap-1.5 border-r border-white/5 pr-1 md:pr-2 relative z-10 shrink-0">
                   {["🔥", "🎯", "👑", "❤️"].map(emoji => (
                     <button 
                       key={emoji} 
-                      className="h-7 w-7 md:h-8 md:w-8 flex items-center justify-center hover:bg-white/5 rounded-lg transition-transform hover:scale-110 active:scale-95 text-base md:text-lg"
+                      className="h-6 w-6 md:h-7 md:w-7 flex items-center justify-center hover:bg-white/5 rounded-lg transition-transform hover:scale-110 active:scale-95 text-sm md:text-base"
                       onClick={(e) => { e.stopPropagation(); onReaction(message.id, emoji); }}
                     >
                       {emoji}
                     </button>
                   ))}
               </div>
-              <button className="h-7 w-7 md:h-8 md:w-8 flex items-center justify-center text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-white/5 relative z-10 shrink-0"><Smile size={16} /></button>
+              <button className="h-6 w-6 md:h-7 md:w-7 flex items-center justify-center text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-white/5 relative z-10 shrink-0"><Smile size={14} /></button>
             </div>
   
             <motion.div 
@@ -506,10 +500,14 @@ const MOCK_MESSAGES: Record<string, ChatMessage[]> = {
 };
 
 const GIF_GALLERY = [
-  "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3VxdXFxdXFxdXFxdXFxdXFxdXFxdXFxdXFxdXFxdXFxdXFxdXF&ep=v1_gifs_search&rid=giphy.gif&ct=g",
-  "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNHJqZ3QxdnZ4Z3R4Z3R4Z3R4Z3R4Z3R4Z3R4Z3R4Z3R4Z3R&ep=v1_gifs_search&rid=giphy.gif&ct=g",
-  "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3VxdXFxdXFxdXFxdXFxdXFxdXFxdXFxdXFxdXFxdXFxdXFxdXF&ep=v1_gifs_search&rid=3.gif&ct=g",
-  "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3VxdXFxdXFxdXFxdXFxdXFxdXFxdXFxdXFxdXFxdXFxdXFxdXF&ep=v1_gifs_search&rid=4.gif&ct=g",
+  { name: "Laughing Cat", url: "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3VxdXFxdXFxdXFxdXFxdXFxdXFxdXFxdXFxdXFxdXFxdXFxdXF&ep=v1_gifs_search&rid=giphy.gif&ct=g" },
+  { name: "Mind Blown", url: "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNHJqZ3QxdnZ4Z3R4Z3R4Z3R4Z3R4Z3R4Z3R4Z3R4Z3R4Z3R&ep=v1_gifs_search&rid=giphy.gif&ct=g" },
+  { name: "Gaming Victory", url: "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3VxdXFxdXFxdXFxdXFxdXFxdXFxdXFxdXFxdXFxdXFxdXFxdXF&ep=v1_gifs_search&rid=3.gif&ct=g" },
+  { name: "Clap", url: "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3VxdXFxdXFxdXFxdXFxdXFxdXFxdXFxdXFxdXFxdXFxdXFxdXF&ep=v1_gifs_search&rid=4.gif&ct=g" },
+  { name: "Dancing", url: "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExMnVxdXFxdXFxdXFxdXFxdXFxdXFxdXFxdXFxdXFxdXFxdXFxdXF&ep=v1_gifs_search&rid=5.gif&ct=g" },
+  { name: "Sad Face", url: "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3VxdXFxdXFxdXFxdXFxdXFxdXFxdXFxdXFxdXFxdXFxdXFxdXF&ep=v1_gifs_search&rid=6.gif&ct=g" },
+  { name: "Victory Royale", url: "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNHVxdXFxdXFxdXFxdXFxdXFxdXFxdXFxdXFxdXFxdXFxdXFxdXF&ep=v1_gifs_search&rid=7.gif&ct=g" },
+  { name: "Headshot", url: "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNXVxdXFxdXFxdXFxdXFxdXFxdXFxdXFxdXFxdXFxdXFxdXFxdXF&ep=v1_gifs_search&rid=8.gif&ct=g" },
 ];
 
 export const ChatPage: React.FC = () => {
@@ -528,6 +526,7 @@ export const ChatPage: React.FC = () => {
   const [showChannelMenu, setShowChannelMenu] = useState(false);
   const [chatTheme, setChatTheme] = useState<keyof typeof CHAT_THEMES>((localStorage.getItem("loxx-chat-theme") as any) || "aura");
   const [showThemeMenu, setShowThemeMenu] = useState(false);
+  const [gifSearch, setGifSearch] = useState("");
 
   useEffect(() => {
     localStorage.setItem("loxx-chat-theme", chatTheme);
@@ -1092,53 +1091,89 @@ export const ChatPage: React.FC = () => {
             </AnimatePresence>
 
             {/* GIF Picker Popover */}
-          <AnimatePresence>
-            {showGifPicker && (
+            <AnimatePresence>
+              {showGifPicker && (
                <motion.div
                 initial={{ opacity: 0, y: 20, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 20, scale: 0.95 }}
-                className="absolute bottom-32 right-4 md:right-8 w-72 md:w-80 h-96 bg-[#000000] border border-white/10 rounded-[32px] shadow-2xl z-50 overflow-hidden flex flex-col"
+                className="absolute bottom-24 right-0 md:right-8 w-full max-w-[350px] h-[450px] bg-[#09090b]/95 border border-white/10 rounded-[32px] shadow-[0_20px_50px_rgba(0,0,0,0.8)] z-50 overflow-hidden flex flex-col backdrop-blur-3xl"
                >
-                 <div className="p-4 border-b border-white/5 flex items-center justify-between rtl">
-                   <h4 className="text-xs font-black text-white uppercase tracking-widest">گالری گیف</h4>
-                   <button onClick={() => setShowGifPicker(false)} className="text-gray-500 hover:text-white">×</button>
+                 <div className="p-5 border-b border-white/5 flex flex-col gap-4">
+                   <div className="flex items-center justify-between rtl">
+                     <div className="flex items-center gap-2">
+                       <div className="h-6 w-6 rounded-lg bg-neon-blue/10 flex items-center justify-center text-neon-blue">
+                         <ImageIcon size={14} />
+                       </div>
+                       <h4 className="text-[10px] font-black text-white uppercase tracking-widest">گالری گیف هوشمند</h4>
+                     </div>
+                     <button onClick={() => setShowGifPicker(false)} className="text-gray-500 hover:text-white transition-colors">
+                       <X size={18} />
+                     </button>
+                   </div>
+
+                   <div className="relative">
+                      <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-gray-500">
+                        <Send size={12} className="rotate-180 opacity-50" />
+                      </div>
+                      <input 
+                        type="text" 
+                        placeholder="جستجوی گیف..." 
+                        value={gifSearch}
+                        onChange={(e) => setGifSearch(e.target.value)}
+                        className="w-full bg-white/5 border border-white/5 rounded-xl py-2.5 pr-10 pl-4 text-[11px] text-white focus:outline-none focus:border-neon-blue/40 transition-all text-right font-black"
+                      />
+                   </div>
                  </div>
-                 <div className="flex-1 overflow-y-auto p-4 grid grid-cols-2 gap-2 custom-scrollbar rtl">
-                   {savedGifs.length > 0 && (
+
+                 <div className="flex-1 overflow-y-auto p-4 custom-scrollbar rtl">
+                   {gifSearch === "" && savedGifs.length > 0 && (
                      <>
-                        <div className="col-span-2 py-2 border-b border-white/5 mb-2">
-                           <p className="text-[10px] text-neon-blue font-bold uppercase tracking-widest flex items-center gap-2">
+                        <div className="py-2 border-b border-white/5 mb-3">
+                           <p className="text-[9px] text-neon-blue font-black uppercase tracking-widest flex items-center gap-2">
                              <Star size={10} fill="currentColor" />
-                             گیف‌های ذخیره شده
+                             ذخیره شده
                            </p>
                         </div>
-                        {savedGifs.map((url, i) => (
-                          <button 
-                            key={`saved-${i}`} 
-                            onClick={() => handleSend("", url)}
-                            className="rounded-xl overflow-hidden border border-neon-blue/20 hover:border-neon-blue transition-all"
-                          >
-                             <img src={url} alt="Saved GIF" className="w-full h-24 object-cover" />
-                          </button>
-                        ))}
-                        <div className="col-span-2 py-2 border-b border-white/5 my-2">
-                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">گالری عمومی</p>
+                        <div className="grid grid-cols-2 gap-2 mb-6">
+                          {savedGifs.map((url, i) => (
+                            <button 
+                              key={`saved-${i}`} 
+                              onClick={() => handleSend("", url)}
+                              className="group/gif-btn relative aspect-video rounded-xl overflow-hidden border border-neon-blue/20 hover:border-neon-blue transition-all"
+                            >
+                               <img src={url} alt="Saved GIF" className="w-full h-full object-cover transition-transform group-hover/gif-btn:scale-110" />
+                            </button>
+                          ))}
                         </div>
                      </>
                    )}
-                   {GIF_GALLERY.map((url, i) => (
-                     <button 
-                      key={i} 
-                      onClick={() => handleSend("", url)}
-                      className="rounded-xl overflow-hidden border border-white/5 hover:border-neon-blue transition-all"
-                     >
-                       <img src={url} alt="GIF" className="w-full h-24 object-cover" />
-                     </button>
-                   ))}
-                   {savedGifs.length === 0 && (
-                      <div className="col-span-2 py-4 text-center">
-                        <p className="text-[10px] text-gray-600 font-bold uppercase">گیف‌های ذخیره شده خالی است</p>
+
+                   <div className="py-2 border-b border-white/5 mb-3">
+                      <p className="text-[9px] text-gray-500 font-bold uppercase tracking-widest">
+                        {gifSearch ? "نتایج جستجو" : "پیشنهادی برای شما"}
+                      </p>
+                   </div>
+
+                   <div className="grid grid-cols-2 gap-2">
+                    {GIF_GALLERY.filter(g => g.name.toLowerCase().includes(gifSearch.toLowerCase())).map((gif, i) => (
+                      <button 
+                       key={i} 
+                       onClick={() => handleSend("", gif.url)}
+                       className="group/gif-btn relative aspect-video rounded-xl overflow-hidden border border-white/5 hover:border-neon-blue transition-all bg-white/5"
+                      >
+                        <img src={gif.url} alt={gif.name} className="w-full h-full object-cover transition-transform group-hover/gif-btn:scale-110" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover/gif-btn:opacity-100 transition-opacity flex items-end p-2">
+                          <span className="text-[8px] text-white font-black truncate">{gif.name}</span>
+                        </div>
+                      </button>
+                    ))}
+                   </div>
+                   
+                   {GIF_GALLERY.filter(g => g.name.toLowerCase().includes(gifSearch.toLowerCase())).length === 0 && (
+                      <div className="py-10 text-center opacity-40">
+                         <MessageSquare size={32} className="mx-auto mb-2 text-gray-600" />
+                         <p className="text-[10px] font-black uppercase">گیفی پیدا نشد</p>
                       </div>
                    )}
                  </div>

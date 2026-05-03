@@ -73,68 +73,71 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
             />
          )}
          
+         {/* Close Button Only in Banner */}
          <button 
           onClick={onClose}
           className="absolute top-4 left-4 h-8 w-8 rounded-full bg-black/40 text-white flex items-center justify-center hover:bg-black/60 transition-colors z-20 backdrop-blur-md border border-white/10"
          >
-           ×
+           <CheckCircle2 size={16} className="rotate-45" />
          </button>
-
-         {!isSelf && (
-           <button 
-            onClick={handleMessage}
-            className="absolute top-24 right-12 h-10 w-10 rounded-xl bg-neon-blue/10 text-neon-blue flex items-center justify-center hover:bg-neon-blue/20 transition-all z-20 backdrop-blur-md border border-neon-blue/20 shadow-[0_0_15px_rgba(0,229,255,0.2)] group"
-            title="ارسال پیام"
-           >
-             <MessageCircle size={20} className="group-hover:scale-110 transition-transform" />
-           </button>
-         )}
       </div>
 
       {/* Profile Content */}
       <div className="px-6 pb-6 pt-0 relative">
-        {/* Avatar with Membership Rings */}
-        <div className="relative -mt-12 mb-3 inline-block">
-           <div className={cn(
-             "h-24 w-24 rounded-[32px] bg-[#0a0a0f] p-1.5 shadow-2xl relative z-10",
-             isVIP ? "p-[2px] bg-gradient-to-tr from-yellow-400 to-yellow-200" :
-             isPLUS ? "p-[2px] bg-neon-blue" : ""
-           )}>
-              <div className="h-full w-full rounded-[28px] bg-[#0d0d12] flex items-center justify-center text-5xl overflow-hidden relative">
-                {user.senderAvatar || "👤"}
-                
-                {/* VIP Animated Aura */}
-                {isVIP && (
-                  <motion.div 
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-                    className="absolute inset-0 bg-[conic-gradient(from_0deg,transparent,rgba(250,204,21,0.2),transparent)]"
-                  />
-                )}
-              </div>
-           </div>
-
-           {/* Online Status */}
-           <div className="absolute top-1 right-1 h-5 w-5 bg-green-500 rounded-full border-4 border-[#0a0a0f] z-20 shadow-lg"></div>
-           
-           {/* Ring Animations */}
-           {isVIP && (
-             <>
-               <motion.div 
-                 animate={{ scale: [1, 1.15, 1], opacity: [0.3, 0.6, 0.3] }}
-                 transition={{ duration: 2, repeat: Infinity }}
-                 className="absolute -inset-2 border-2 border-yellow-400/30 rounded-[36px]"
-               />
-               <div className="absolute -bottom-2 -left-2 h-8 w-8 rounded-full bg-yellow-400 text-dark-bg border-4 border-[#0a0a0f] flex items-center justify-center shadow-xl z-20">
-                  <Crown size={14} fill="currentColor" />
-               </div>
-             </>
-           )}
-           {isPLUS && (
-             <div className="absolute -bottom-2 -left-2 h-8 w-8 rounded-full bg-neon-blue text-dark-bg border-4 border-[#0a0a0f] flex items-center justify-center shadow-xl z-20">
-                <Zap size={14} fill="currentColor" />
+        <div className="flex items-start justify-between">
+          {/* Avatar with Membership Rings */}
+          <div className="relative -mt-12 mb-3 inline-block">
+             <div className={cn(
+               "h-24 w-24 rounded-[32px] bg-[#0a0a0f] p-1.5 shadow-2xl relative z-10",
+               isVIP ? "p-[2px] bg-gradient-to-tr from-yellow-400 to-yellow-200" :
+               isPLUS ? "p-[2px] bg-neon-blue" : ""
+             )}>
+                <div className="h-full w-full rounded-[28px] bg-[#0d0d12] flex items-center justify-center text-5xl overflow-hidden relative">
+                  {user.senderAvatar || "👤"}
+                  
+                  {/* VIP Animated Aura */}
+                  {isVIP && (
+                    <motion.div 
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+                      className="absolute inset-0 bg-[conic-gradient(from_0deg,transparent,rgba(250,204,21,0.2),transparent)]"
+                    />
+                  )}
+                </div>
              </div>
-           )}
+
+             {/* Online Status */}
+             <div className="absolute top-1 right-1 h-5 w-5 bg-green-500 rounded-full border-4 border-[#0a0a0f] z-20 shadow-lg"></div>
+             
+             {/* Ring Animations */}
+             {isVIP && (
+               <>
+                 <motion.div 
+                   animate={{ scale: [1, 1.15, 1], opacity: [0.3, 0.6, 0.3] }}
+                   transition={{ duration: 2, repeat: Infinity }}
+                   className="absolute -inset-2 border-2 border-yellow-400/30 rounded-[36px]"
+                 />
+                 <div className="absolute -bottom-2 -left-2 h-8 w-8 rounded-full bg-yellow-400 text-dark-bg border-4 border-[#0a0a0f] flex items-center justify-center shadow-xl z-20">
+                    <Crown size={14} fill="currentColor" />
+                 </div>
+               </>
+             )}
+             {isPLUS && (
+               <div className="absolute -bottom-2 -left-2 h-8 w-8 rounded-full bg-neon-blue text-dark-bg border-4 border-[#0a0a0f] flex items-center justify-center shadow-xl z-20">
+                  <Zap size={14} fill="currentColor" />
+               </div>
+             )}
+          </div>
+
+          {!isSelf && (
+            <button 
+              onClick={handleMessage}
+              className="mt-4 h-11 w-11 rounded-2xl bg-neon-blue/10 text-neon-blue flex items-center justify-center hover:bg-neon-blue hover:text-dark-bg transition-all border border-neon-blue/20 shadow-lg group shadow-neon-blue/10"
+              title="ارسال پیام"
+            >
+              <MessageCircle size={22} className="group-hover:scale-110 transition-transform" />
+            </button>
+          )}
         </div>
 
         <div className="space-y-4">
