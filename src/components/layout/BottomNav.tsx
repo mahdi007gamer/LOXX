@@ -1,15 +1,16 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, MessageSquare, Gamepad2, Trophy } from 'lucide-react';
+import { LayoutDashboard, Users, MessageSquare, Gamepad2, Trophy, Crown, Heart } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 export const BottomNav = () => {
   const menuItems = [
     { icon: LayoutDashboard, label: "داشبورد", path: "/dashboard" },
     { icon: Gamepad2, label: "بازی‌ها", path: "/games" },
-    { icon: Users, label: "لابی‌ها", path: "/lobbies" },
-    { icon: MessageSquare, label: "چت", path: "/chat" },
+    { icon: Heart, label: "بازی‌های من", path: "/my-games" },
     { icon: Trophy, label: "رتبه‌بندی", path: "/ranking" },
+    { icon: MessageSquare, label: "چت", path: "/chat" },
+    { icon: Crown, label: "اشتراک ویژه", path: "/premium" },
   ];
 
   return (

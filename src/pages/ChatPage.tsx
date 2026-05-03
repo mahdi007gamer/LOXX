@@ -56,7 +56,7 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
       id={`msg-${message.id}`}
       className={cn(
         "flex gap-2 md:gap-3 transition-all duration-300 mb-6 items-start px-1 md:px-0 relative w-full",
-        message.self ? "flex-row" : "flex-row-reverse"
+        message.self ? "flex-row-reverse" : "flex-row"
       )}
     >
       {/* Interaction Menu Popover Overlay - Globally available */}
@@ -111,10 +111,10 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
       >
         {/* Header - Aligned with Avatar */}
         <div className={cn(
-          "flex items-baseline gap-2 mb-1 px-1",
-          message.self ? "flex-row" : "flex-row-reverse"
+          "flex items-center gap-1.5 mb-1 px-0.5",
+          message.self ? "flex-row" : "flex-row"
         )}>
-           <span 
+          <span 
               className={cn("text-[11px] font-black tracking-tight cursor-pointer hover:underline flex items-center gap-1", nameColorClass)}
               onClick={(e) => {
                 e.stopPropagation();
@@ -128,13 +128,14 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
                 }, message.self);
               }}
             >
-              {isVIP && <Crown size={10} className="text-yellow-400" />}
               {message.senderName}
             </span>
-          <span className="text-[9px] text-gray-500 font-bold">{message.timestamp}</span>
-          <div className="flex gap-1">
+          
+          <div className="flex gap-1 items-center">
              {message.senderBadges?.map((b, i) => <BadgeIcon key={i} type={b} />)}
           </div>
+
+          <span className="text-[9px] text-gray-500 font-bold opacity-60">{message.timestamp}</span>
         </div>
 
         {/* Message Container Area */}
@@ -294,7 +295,7 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
           {message.reactions && message.reactions.length > 0 && (
             <div className={cn(
               "flex flex-wrap gap-1 mt-1 w-fit transition-all", 
-              message.self ? "mr-0 ml-auto flex-row-reverse" : "ml-0 mr-auto flex-row"
+              message.self ? "mr-auto" : "ml-auto"
             )}>
               {message.reactions.map((r, i) => (
                 <button 
