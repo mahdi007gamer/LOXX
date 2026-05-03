@@ -9,7 +9,9 @@ export const FriendChatOverlay = () => {
   const { chats, friends, sendMessage, markAsRead, closeChat, activeChatId, setActiveChatId, chatTrigger } = useFriends();
   const [isMinimized, setIsMinimized] = useState(false);
   const [inputMessage, setInputMessage] = useState("");
+  const [chatDirection, setChatDirection] = useState<"up" | "down">("up");
 
+  const containerRef = React.useRef<HTMLDivElement>(null);
   const activeChat = chats.find(c => c.friendId === activeChatId);
   const activeFriend = friends.find(f => f.id === activeChatId);
   const dragControls = useDragControls();
@@ -35,21 +37,25 @@ export const FriendChatOverlay = () => {
   if (chats.length === 0) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-[9999] flex flex-col items-center pointer-events-none px-4">
+    <div ref={containerRef} className="fixed inset-0 z-[9999] pointer-events-none flex flex-col items-center justify-end pb-4">
       {/* Active Chat Window */}
       <AnimatePresence>
         {activeChatId && !isMinimized && (
           <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            initial={{ opacity: 0, y: chatDirection === "up" ? 20 : -20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            exit={{ opacity: 0, y: chatDirection === "up" ? 20 : -20, scale: 0.95 }}
             drag
             dragControls={dragControls}
             dragListener={false}
             dragMomentum={false}
-            dragElastic={0.1}
-            whileDrag={{ scale: 1.02, shadow: "0 30px_60px_rgba(0,0,0,0.6)" }}
-            className="mb-2 w-full max-w-[320px] sm:max-w-[350px] overflow-hidden rounded-2xl bg-[#0a0a0f]/98 border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] backdrop-blur-xl z-50 pointer-events-auto touch-none"
+            dragElastic={0.05}
+            dragConstraints={containerRef}
+            whileDrag={{ scale: 1.02, zIndex: 100 }}
+            className={cn(
+              "absolute w-full max-w-[320px] sm:max-w-[350px] overflow-hidden rounded-2xl bg-[#0a0a0f]/98 border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] backdrop-blur-xl z-[100] pointer-events-auto touch-none transition-shadow duration-300",
+              chatDirection === "up" ? "bottom-20" : "top-20"
+            )}
           >
             {/* Chat Header - Drag Handle */}
             <div 
@@ -145,6 +151,16 @@ export const FriendChatOverlay = () => {
               drag
               dragMomentum={false}
               dragElastic={0.1}
+              dragConstraints={containerRef}
+              onDrag={(e, info) => {
+                // If tab is dragged to the top half of the screen, open chat window downwards
+                const threshold = window.innerHeight / 2;
+                if (info.point.y < threshold) {
+                  setChatDirection("down");
+                } else {
+                  setChatDirection("up");
+                }
+              }}
               whileDrag={{ scale: 1.1, zIndex: 100 }}
               className="relative group/tab flex items-center touch-none"
             >

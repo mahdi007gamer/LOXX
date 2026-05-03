@@ -37,7 +37,14 @@ const StatusBadge = ({ status }: { status: FriendStatus }) => {
   return <div className={cn("h-2.5 w-2.5 rounded-full", colors[status])} />;
 };
 
-const FriendItem = ({ friend, toggleFavorite, toggleMute, toggleBlock, removeFriend, sendMessage }: { 
+const FriendItem = ({ 
+  friend, 
+  toggleFavorite, 
+  toggleMute, 
+  toggleBlock, 
+  removeFriend, 
+  sendMessage 
+}: { 
   friend: Friend;
   toggleFavorite: (id: string) => void;
   toggleMute: (id: string) => void;
@@ -45,100 +52,185 @@ const FriendItem = ({ friend, toggleFavorite, toggleMute, toggleBlock, removeFri
   removeFriend: (id: string) => void;
   sendMessage: (id: string, text: string) => void;
   key?: React.Key;
-}) => (
-  <motion.div 
-    layout
-    initial={{ opacity: 0, x: 20 }}
-    animate={{ opacity: 1, x: 0 }}
-    exit={{ opacity: 0, scale: 0.95 }}
-    className="group relative flex items-center justify-between rounded-xl bg-white/5 p-3 transition-all hover:bg-white/10"
-  >
-    <div className="flex items-center gap-3">
-      <div className="relative">
-        <div className="h-12 w-12 rounded-full bg-white/10 overflow-hidden">
-           {friend.avatar ? <img src={friend.avatar} alt={friend.username} /> : <div className="h-full w-full flex items-center justify-center text-xl">👤</div>}
-        </div>
-        <div className="absolute -bottom-0.5 -right-0.5 border-2 border-dark-bg rounded-full p-0.5 bg-dark-bg">
-          <StatusBadge status={friend.status} />
-        </div>
-      </div>
-      <div>
-        <div className="flex items-center gap-2">
-          <Link to={`/profile/${friend.username}`} className="font-bold text-white hover:text-neon-blue transition-colors">
-            {friend.displayName}
-          </Link>
-          {friend.isFavorite && <Star size={12} className="fill-neon-blue text-neon-blue" />}
-          <span className="text-[10px] text-gray-500">Lv.{friend.level}</span>
-        </div>
-        <p className="text-xs text-gray-400">
-          {friend.status === FriendStatus.IN_GAME ? `در حال بازی ${friend.currentGame}` : 
-           friend.status === FriendStatus.IN_LOBBY ? "داخل لابی" : 
-           friend.status === FriendStatus.ONLINE ? "آنلاین" : 
-           friend.lastSeen ? `آخرین بازدید ${friend.lastSeen}` : "آفلاین"}
-        </p>
-      </div>
-    </div>
+}) => {
+  const [showMobileActions, setShowMobileActions] = useState(false);
 
-    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-      <button onClick={() => sendMessage(friend.id, "سلااام!")} className="p-2 text-gray-400 hover:text-neon-blue hover:bg-neon-blue/10 rounded-lg transition-all" title="ارسال پیام">
-        <MessageSquare size={18} />
-      </button>
-      <button onClick={() => toggleFavorite(friend.id)} className={cn("p-2 rounded-lg transition-all", friend.isFavorite ? "text-neon-blue" : "text-gray-400 hover:text-neon-blue")} title="علاقه‌مندی">
-        <Star size={18} className={friend.isFavorite ? "fill-neon-blue" : ""} />
-      </button>
-      <div className="relative group/menu">
-        <button className="p-2 text-gray-400 hover:text-white rounded-lg transition-colors">
-          <MoreVertical size={18} />
-        </button>
-        <AnimatePresence>
-          <div className="absolute left-0 top-full z-50 group-hover/menu:block hidden pt-1">
-            <motion.div 
-              initial={{ opacity: 0, y: 5, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 5, scale: 0.95 }}
-              className="w-44 rounded-xl bg-[#0a0a0f]/98 border border-white/10 p-1 shadow-[0_10px_30px_rgba(0,0,0,0.5)] backdrop-blur-xl"
-            >
-              <button 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleMute(friend.id);
-                }} 
-                className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-xs text-gray-400 hover:bg-white/5 hover:text-white transition-all text-right" 
-                dir="rtl"
-              >
-                {friend.isMuted ? <Bell size={14} className="text-neon-blue" /> : <VolumeX size={14} />}
-                {friend.isMuted ? "خروج از بی‌صدا" : "بی‌صدا کردن"}
-              </button>
-              <button 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleBlock(friend.id);
-                }} 
-                className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-xs text-gray-400 hover:bg-white/5 hover:text-white transition-all text-right" 
-                dir="rtl"
-              >
-                <Ban size={14} className={friend.isBlocked ? "text-neon-blue" : ""} />
-                {friend.isBlocked ? "آنبلاک" : "بلاک کردن"}
-              </button>
-              <div className="my-1 h-px bg-white/5" />
-              <button 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  removeFriend(friend.id);
-                }} 
-                className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-xs text-neon-pink hover:bg-neon-pink/10 transition-all text-right" 
-                dir="rtl"
-              >
-                <Trash2 size={14} />
-                حذف دوست
-              </button>
-            </motion.div>
+  return (
+    <motion.div 
+      layout
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      className={cn(
+        "group relative flex flex-col rounded-2xl bg-white/5 p-3 transition-all hover:bg-white/10",
+        showMobileActions ? "bg-white/10 scale-[1.02] border-neon-blue/20 border" : "border border-transparent"
+      )}
+      onClick={() => {
+        // Toggle mobile actions on tap for small screens
+        if (window.innerWidth < 1024) {
+          setShowMobileActions(!showMobileActions);
+        }
+      }}
+    >
+      <div className="flex items-center justify-between w-full">
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <div className="h-12 w-12 rounded-full bg-white/10 overflow-hidden">
+               {friend.avatar ? <img src={friend.avatar} alt={friend.username} /> : <div className="h-full w-full flex items-center justify-center text-xl">👤</div>}
+            </div>
+            <div className="absolute -bottom-0.5 -right-0.5 border-2 border-dark-bg rounded-full p-0.5 bg-dark-bg">
+              <StatusBadge status={friend.status} />
+            </div>
           </div>
-        </AnimatePresence>
+          <div>
+            <div className="flex items-center gap-2">
+              <Link 
+                to={`/profile/${friend.username}`} 
+                className="font-bold text-white hover:text-neon-blue transition-colors"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {friend.displayName}
+              </Link>
+              {friend.isFavorite && <Star size={12} className="fill-neon-blue text-neon-blue" />}
+              <span className="text-[10px] text-gray-500">Lv.{friend.level}</span>
+            </div>
+            <p className="text-xs text-gray-400">
+              {friend.status === FriendStatus.IN_GAME ? `در حال بازی ${friend.currentGame}` : 
+               friend.status === FriendStatus.IN_LOBBY ? "داخل لابی" : 
+               friend.status === FriendStatus.ONLINE ? "آنلاین" : 
+               friend.lastSeen ? `آخرین بازدید ${friend.lastSeen}` : "آفلاین"}
+            </p>
+          </div>
+        </div>
+
+        {/* Desktop Actions (Hover) */}
+        <div className="hidden lg:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button 
+            onClick={(e) => { e.stopPropagation(); sendMessage(friend.id, "سلااام!"); }} 
+            className="p-2 text-gray-400 hover:text-neon-blue hover:bg-neon-blue/10 rounded-lg transition-all" 
+            title="ارسال پیام"
+          >
+            <MessageSquare size={18} />
+          </button>
+          <button 
+            onClick={(e) => { e.stopPropagation(); toggleFavorite(friend.id); }} 
+            className={cn("p-2 rounded-lg transition-all", friend.isFavorite ? "text-neon-blue" : "text-gray-400 hover:text-neon-blue")} 
+            title="علاقه‌مندی"
+          >
+            <Star size={18} className={friend.isFavorite ? "fill-neon-blue" : ""} />
+          </button>
+          <div className="relative group/menu">
+            <button className="p-2 text-gray-400 hover:text-white rounded-lg transition-colors">
+              <MoreVertical size={18} />
+            </button>
+            <AnimatePresence>
+              <div className="absolute left-0 top-full z-50 group-hover/menu:block hidden pt-1">
+                <motion.div 
+                  initial={{ opacity: 0, y: 5, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 5, scale: 0.95 }}
+                  className="w-44 rounded-xl bg-[#0a0a0f]/98 border border-white/10 p-1 shadow-[0_10px_30px_rgba(0,0,0,0.5)] backdrop-blur-xl"
+                >
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleMute(friend.id);
+                    }} 
+                    className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-xs text-gray-400 hover:bg-white/5 hover:text-white transition-all text-right" 
+                    dir="rtl"
+                  >
+                    {friend.isMuted ? <Bell size={14} className="text-neon-blue" /> : <VolumeX size={14} />}
+                    {friend.isMuted ? "خروج از بی‌صدا" : "بی‌صدا کردن"}
+                  </button>
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleBlock(friend.id);
+                    }} 
+                    className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-xs text-gray-400 hover:bg-white/5 hover:text-white transition-all text-right" 
+                    dir="rtl"
+                  >
+                    <Ban size={14} className={friend.isBlocked ? "text-neon-blue" : ""} />
+                    {friend.isBlocked ? "آنبلاک" : "بلاک کردن"}
+                  </button>
+                  <div className="my-1 h-px bg-white/5" />
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeFriend(friend.id);
+                    }} 
+                    className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-xs text-neon-pink hover:bg-neon-pink/10 transition-all text-right" 
+                    dir="rtl"
+                  >
+                    <Trash2 size={14} />
+                    حذف دوست
+                  </button>
+                </motion.div>
+              </div>
+            </AnimatePresence>
+          </div>
+        </div>
+        
+        {/* Mobile Indicator */}
+        <div className="lg:hidden text-gray-600">
+           {showMobileActions ? <ChevronUp size={16} /> : <MessageSquare size={16} />}
+        </div>
       </div>
-    </div>
-  </motion.div>
-);
+
+      {/* Mobile Quick Actions (Expanded) */}
+      <AnimatePresence>
+        {showMobileActions && (
+          <motion.div 
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="lg:hidden border-t border-white/5 mt-3 pt-3 flex items-center justify-around overflow-hidden"
+          >
+            <button 
+              onClick={(e) => { e.stopPropagation(); sendMessage(friend.id, "سلااام!"); }}
+              className="flex flex-col items-center gap-1.5 p-2 text-neon-blue"
+            >
+              <div className="h-10 w-10 rounded-full bg-neon-blue/10 flex items-center justify-center">
+                <MessageSquare size={20} />
+              </div>
+              <span className="text-[10px] font-black uppercase">چت</span>
+            </button>
+            
+            <button 
+              onClick={(e) => { e.stopPropagation(); toggleFavorite(friend.id); }}
+              className={cn("flex flex-col items-center gap-1.5 p-2", friend.isFavorite ? "text-yellow-500" : "text-gray-500")}
+            >
+              <div className={cn("h-10 w-10 rounded-full flex items-center justify-center", friend.isFavorite ? "bg-yellow-500/10" : "bg-white/5")}>
+                <Star size={20} className={friend.isFavorite ? "fill-current" : ""} />
+              </div>
+              <span className="text-[10px] font-black uppercase">محبوب</span>
+            </button>
+
+            <button 
+              onClick={(e) => { e.stopPropagation(); toggleMute(friend.id); }}
+              className={cn("flex flex-col items-center gap-1.5 p-2", friend.isMuted ? "text-neon-pink" : "text-gray-500")}
+            >
+              <div className={cn("h-10 w-10 rounded-full flex items-center justify-center", friend.isMuted ? "bg-neon-pink/10" : "bg-white/5")}>
+                {friend.isMuted ? <Bell size={20} /> : <VolumeX size={20} />}
+              </div>
+              <span className="text-[10px] font-black uppercase">{friend.isMuted ? "صدا" : "بی‌صدا"}</span>
+            </button>
+
+            <button 
+              onClick={(e) => { e.stopPropagation(); removeFriend(friend.id); }}
+              className="flex flex-col items-center gap-1.5 p-2 text-gray-500 hover:text-neon-pink"
+            >
+              <div className="h-10 w-10 rounded-full bg-white/5 flex items-center justify-center">
+                <Trash2 size={20} />
+              </div>
+              <span className="text-[10px] font-black uppercase">حذف</span>
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+};
 
 export const FriendsPage = () => {
   const { 
