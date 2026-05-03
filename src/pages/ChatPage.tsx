@@ -56,7 +56,7 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
       id={`msg-${message.id}`}
       className={cn(
         "flex gap-2 md:gap-3 transition-all duration-300 mb-6 items-start px-1 md:px-0 relative w-full",
-        message.self ? "flex-row-reverse" : "flex-row"
+        message.self ? "flex-row" : "flex-row-reverse"
       )}
     >
       {/* Interaction Menu Popover Overlay - Globally available */}
@@ -109,7 +109,7 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
         {/* Header - Aligned with Avatar */}
         <div className={cn(
           "flex items-baseline gap-2 mb-1 px-1",
-          message.self ? "flex-row-reverse" : "flex-row"
+          message.self ? "flex-row" : "flex-row-reverse"
         )}>
            <span 
               className={cn("text-[11px] font-black tracking-tight cursor-pointer hover:underline flex items-center gap-1", nameColorClass)}
@@ -139,15 +139,15 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
           {/* Action Buttons - Desktop Hover & Mobile Click */}
           <div className={cn(
             "absolute flex items-center gap-1 px-2 py-1.5 rounded-2xl bg-[#0f0f15] border border-white/10 shadow-2xl z-50 backdrop-blur-xl whitespace-nowrap transition-all duration-200",
-            message.self ? "right-full mr-1 pr-4" : "left-full ml-1 pl-4",
+            message.self ? "left-full ml-1 pl-4" : "right-full mr-1 pr-4",
             showActions ? "opacity-100 scale-100 pointer-events-auto" : "opacity-0 scale-95 pointer-events-none lg:group-hover/bubble-container:opacity-100 lg:group-hover/bubble-container:scale-100 lg:group-hover/bubble-container:pointer-events-auto"
           )}
           onClick={(e) => e.stopPropagation()}
           >
             {/* Hover bridge to prevent losing hover state */}
             <div className={cn(
-              "absolute inset-y-0 w-6 bg-transparent",
-              message.self ? "-right-4" : "-left-4"
+              "absolute inset-y-0 w-8 bg-transparent",
+              message.self ? "-left-6" : "-right-6"
             )} />
 
             <button 
@@ -288,8 +288,8 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
           {/* Reactions Row - Alignment fixed to match bubble */}
           {message.reactions && message.reactions.length > 0 && (
             <div className={cn(
-              "flex flex-wrap gap-1 mt-1 w-fit", 
-              message.self ? "ml-auto flex-row-reverse" : "mr-auto flex-row"
+              "flex flex-wrap gap-1 mt-1 w-fit transition-all", 
+              message.self ? "mr-auto flex-row" : "ml-auto flex-row-reverse"
             )}>
               {message.reactions.map((r, i) => (
                 <button 

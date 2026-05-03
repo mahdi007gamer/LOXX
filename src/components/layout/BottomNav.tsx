@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, MessageSquare, Gamepad2, User } from 'lucide-react';
+import { LayoutDashboard, Users, MessageSquare, Gamepad2, Trophy } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 export const BottomNav = () => {
@@ -9,7 +9,7 @@ export const BottomNav = () => {
     { icon: Gamepad2, label: "بازی‌ها", path: "/games" },
     { icon: Users, label: "لابی‌ها", path: "/lobbies" },
     { icon: MessageSquare, label: "چت", path: "/chat" },
-    { icon: User, label: "پروفایل", path: "/profile" },
+    { icon: Trophy, label: "رتبه‌بندی", path: "/ranking" },
   ];
 
   return (
