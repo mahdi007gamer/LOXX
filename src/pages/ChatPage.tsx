@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Sidebar } from "../components/layout/Sidebar";
 import { GlowButton } from "../components/ui/GlowButton";
-import { Send, Hash, Users, MoreVertical, Plus, Smile, Image as ImageIcon, Reply, Heart, ChevronDown, Award, Star, Zap, Crown, Play, Check, Menu, X, MessageSquare, User, Trophy } from "lucide-react";
+import { Send, Hash, Users, MoreVertical, Plus, Smile, Image as ImageIcon, Reply, Heart, ChevronDown, Award, Star, Zap, Crown, Play, Check, Menu, X, MessageSquare, User, Trophy, Palette } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import { motion, AnimatePresence } from "motion/react";
 import { useGames } from "../context/GamesContext";
@@ -147,6 +147,11 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
         {/* Message Container Area */}
         <div className="flex flex-col w-full">
           <div className={cn("relative group/bubble-container flex items-center w-fit", message.self ? "ml-auto" : "mr-auto")}>
+            {/* VIP Glow Backing */}
+            {isVIP && !message.self && (
+              <div className="absolute inset-0 bg-yellow-400/5 blur-3xl rounded-full scale-150 animate-pulse pointer-events-none" />
+            )}
+            
             {/* Action Buttons - Desktop Hover & Mobile Click */}
             <div className={cn(
               "absolute flex items-center gap-1 px-1.5 py-1 rounded-xl bg-[#0f0f15]/95 border border-white/10 shadow-2xl z-50 backdrop-blur-2xl whitespace-nowrap transition-all duration-200",
@@ -370,6 +375,101 @@ const ChannelButton: React.FC<ChannelButtonProps> = ({ channel, active, onClick 
   </button>
 );
 
+// --- Themes ---
+
+const CHAT_THEMES = {
+  default: {
+    name: "Classic Dark",
+    bgClass: "bg-[#050507]",
+    radial: null,
+    overlay: null
+  },
+  cyber: {
+    name: "Cyber Grid Neon",
+    bgClass: "bg-[#05070d]",
+    overlay: (
+      <div className="absolute inset-0 pointer-events-none opacity-[0.04] z-0" 
+           style={{ backgroundImage: `linear-gradient(to right, #00ffc8 1px, transparent 1px), linear-gradient(to bottom, #00ffc8 1px, transparent 1px)`, backgroundSize: '40px 40px' }} />
+    ),
+    radial: (
+      <>
+        <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_20%_20%,rgba(0,255,200,0.08),transparent_40%)] pointer-events-none z-0" />
+        <div className="absolute bottom-0 right-0 w-full h-full bg-[radial-gradient(circle_at_80%_80%,rgba(255,0,180,0.08),transparent_40%)] pointer-events-none z-0" />
+      </>
+    )
+  },
+  aura: {
+    name: "Animated Neon Aura",
+    bgClass: "bg-[#05070d]",
+    radial: (
+      <>
+        <motion.div 
+          animate={{ x: ["-10%", "10%"], y: ["-10%", "10%"] }}
+          transition={{ duration: 20, repeat: Infinity, repeatType: "mirror" }}
+          className="absolute top-1/2 left-1/4 -translate-y-1/2 w-[80%] h-[80%] bg-[radial-gradient(circle,rgba(0,255,200,0.06),transparent_60%)] pointer-events-none z-0" 
+        />
+        <motion.div 
+          animate={{ x: ["10%", "-10%"], y: ["10%", "-10%"] }}
+          transition={{ duration: 25, repeat: Infinity, repeatType: "mirror" }}
+          className="absolute top-1/2 right-1/4 -translate-y-1/2 w-[80%] h-[80%] bg-[radial-gradient(circle,rgba(255,0,200,0.06),transparent_60%)] pointer-events-none z-0" 
+        />
+      </>
+    ),
+    overlay: null
+  },
+  noise: {
+    name: "Digital Noise",
+    bgClass: "bg-[#05070d]",
+    radial: null,
+    overlay: (
+      <div className="absolute inset-0 pointer-events-none opacity-[0.03] z-0" 
+           style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }} />
+    )
+  },
+  hud: {
+    name: "Game HUD Lines",
+    bgClass: "bg-[#050507]",
+    overlay: (
+      <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+        <div className="absolute bottom-0 left-0 w-32 h-32 border-b-2 border-l-2 border-neon-blue/10 -m-4 rounded-bl-3xl" />
+        <div className="absolute top-0 right-0 w-32 h-32 border-t-2 border-r-2 border-neon-pink/10 -m-4 rounded-tr-3xl" />
+        <div className="absolute top-1/4 left-0 w-1 h-20 bg-gradient-to-b from-transparent via-neon-blue/5 to-transparent" />
+        <div className="absolute bottom-1/4 right-0 w-1 h-20 bg-gradient-to-b from-transparent via-neon-pink/5 to-transparent" />
+      </div>
+    ),
+    radial: null
+  },
+  particles: {
+    name: "Floating Particles",
+    bgClass: "bg-[#050507]",
+    overlay: (
+      <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+        {[...Array(15)].map((_, i) => (
+          <motion.div
+            key={i}
+            initial={{ 
+              x: Math.random() * 100 + "%", 
+              y: Math.random() * 100 + "%", 
+              opacity: Math.random() * 0.05 + 0.02 
+            }}
+            animate={{ 
+              y: [null, Math.random() * 100 + "%"],
+              opacity: [null, Math.random() * 0.05 + 0.02, 0]
+            }}
+            transition={{ 
+              duration: Math.random() * 20 + 20, 
+              repeat: Infinity, 
+              ease: "linear" 
+            }}
+            className="absolute w-1 h-1 bg-white rounded-full blur-[1px]"
+          />
+        ))}
+      </div>
+    ),
+    radial: null
+  }
+};
+
 // --- Main Page ---
 
 const INITIAL_CHANNELS: Channel[] = [
@@ -471,6 +571,8 @@ export const ChatPage: React.FC = () => {
   const [showFriendsSidebar, setShowFriendsSidebar] = useState(false);
   const [userLvl, setUserLvl] = useState(42);
   const [showChannelMenu, setShowChannelMenu] = useState(false);
+  const [chatTheme, setChatTheme] = useState<keyof typeof CHAT_THEMES>("default");
+  const [showThemeMenu, setShowThemeMenu] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
@@ -484,6 +586,28 @@ export const ChatPage: React.FC = () => {
       return () => clearTimeout(timer);
     }
   }, [showFriendsSidebar]);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const vipMsg: ChatMessage = {
+        id: "vip-sim-" + Date.now(),
+        senderId: "u-vip",
+        senderName: "Amir VIP",
+        senderAvatar: "👑",
+        senderLevel: 99,
+        senderBadges: [BadgeType.VIP, BadgeType.CHAMPION, BadgeType.FOUNDER],
+        text: "سلام به همگی! من یک کاربر VIP هستم و این پیام من با افکت ویژه و Glow اختصاصی نمایش داده می‌شه. ✨",
+        timestamp: new Date().toLocaleTimeString("fa-IR", { hour: "2-digit", minute: "2-digit" }),
+        isRead: true,
+        self: false
+      };
+      setMessages(prev => ({
+        ...prev,
+        general: [...(prev.general || []), vipMsg]
+      }));
+    }, 4000);
+    return () => clearTimeout(timer);
+  }, []);
+
   const myGamesChannels = (games || [])
     .filter(g => myGames?.includes(g.id))
     .map(g => ({
@@ -730,7 +854,11 @@ export const ChatPage: React.FC = () => {
       </div>
 
       {/* Main Chat Area */}
-      <div className="relative flex flex-1 flex-col bg-[#050507] min-w-0 overflow-hidden">
+      <div className={cn("relative flex flex-1 flex-col min-w-0 overflow-hidden transition-colors duration-500", CHAT_THEMES[chatTheme].bgClass)}>
+        {/* Themes Overlays */}
+        {CHAT_THEMES[chatTheme].radial}
+        {CHAT_THEMES[chatTheme].overlay}
+
         {/* Chat Header - Always sticky at the top of this container */}
         <header className="flex h-12 md:h-16 items-center justify-between border-b border-white/5 bg-black/60 backdrop-blur-xl px-3 md:px-8 sticky top-0 z-[40] shrink-0 w-full shadow-2xl">
           <div className="flex items-center gap-2 md:gap-4 flex-1 min-w-0">
@@ -780,6 +908,51 @@ export const ChatPage: React.FC = () => {
               </GlowButton>
             )}
             <div className="hidden md:block h-6 w-px bg-white/5 mx-1"></div>
+            
+            <div className="relative">
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowThemeMenu(!showThemeMenu);
+                }}
+                className={cn(
+                  "p-1.5 md:p-2 rounded-lg transition-all",
+                  showThemeMenu ? "bg-neon-blue text-dark-bg" : "bg-white/5 text-gray-400 hover:text-white"
+                )}
+                title="تغییر تم"
+              >
+                <Palette size={16} />
+              </button>
+              
+              <AnimatePresence>
+                {showThemeMenu && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    className="absolute top-full left-0 mt-2 w-48 bg-[#0a0a0f]/95 border border-white/10 rounded-xl shadow-2xl z-50 p-1 backdrop-blur-xl"
+                  >
+                    <p className="px-3 py-2 text-[10px] font-black text-gray-600 uppercase italic">انتخاب تم پس‌زمینه</p>
+                    {Object.entries(CHAT_THEMES).map(([key, theme]) => (
+                      <button
+                        key={key}
+                        onClick={() => {
+                          setChatTheme(key as any);
+                          setShowThemeMenu(false);
+                        }}
+                        className={cn(
+                          "w-full text-right px-3 py-2 rounded-lg text-xs font-bold transition-colors",
+                          chatTheme === key ? "bg-neon-blue/10 text-neon-blue" : "text-gray-400 hover:bg-white/5 hover:text-white"
+                        )}
+                      >
+                        {theme.name}
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
             <button 
               onClick={(e) => {
                 e.stopPropagation();

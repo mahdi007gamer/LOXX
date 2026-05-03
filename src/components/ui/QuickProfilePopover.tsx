@@ -4,7 +4,7 @@ import { motion } from "motion/react";
 import { useFriends } from "../../context/FriendsContext";
 import { BadgeType, MembershipType } from "../../types";
 import { cn } from "../../lib/utils";
-import { Award, Star, Zap, Crown, User, Shield, Sparkles, CheckCircle2, Trophy } from "lucide-react";
+import { Award, Star, Zap, Crown, User, Shield, Sparkles, CheckCircle2, Trophy, MessageCircle } from "lucide-react";
 
 export interface QuickProfileUser {
   senderName: string;
@@ -22,12 +22,20 @@ interface QuickProfilePopoverProps {
 }
 
 export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClose, user, isSelf }) => {
-  const { addFriend } = useFriends();
+  const { addFriend, setActiveChatId, chatTrigger } = useFriends();
   const [sentRequest, setSentRequest] = useState(false);
 
   const handleAddFriend = () => {
     addFriend(user.senderName);
     setSentRequest(true);
+  };
+
+  const handleMessage = () => {
+    if (user.id) {
+      setActiveChatId(user.id);
+      chatTrigger();
+      onClose();
+    }
   };
 
   const isVIP = user.membership === MembershipType.VIP;
@@ -71,6 +79,16 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
          >
            ×
          </button>
+
+         {!isSelf && (
+           <button 
+            onClick={handleMessage}
+            className="absolute top-4 right-4 h-8 w-8 rounded-full bg-neon-blue/20 text-neon-blue flex items-center justify-center hover:bg-neon-blue/40 transition-colors z-20 backdrop-blur-md border border-neon-blue/20"
+            title="ارسال پیام"
+           >
+             <MessageCircle size={14} />
+           </button>
+         )}
       </div>
 
       {/* Profile Content */}
