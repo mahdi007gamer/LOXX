@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Sidebar } from "../components/layout/Sidebar";
 import { GlowButton } from "../components/ui/GlowButton";
-import { Send, Hash, Users, MoreVertical, Plus, Smile, Image as ImageIcon, Reply, Heart, ChevronDown, Award, Star, Zap, Crown, Play, Check, Menu, X, MessageSquare, User } from "lucide-react";
+import { Send, Hash, Users, MoreVertical, Plus, Smile, Image as ImageIcon, Reply, Heart, ChevronDown, Award, Star, Zap, Crown, Play, Check, Menu, X, MessageSquare, User, Trophy } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import { motion, AnimatePresence } from "motion/react";
 import { useGames } from "../context/GamesContext";
@@ -22,7 +22,9 @@ const BadgeIcon: React.FC<BadgeIconProps> = ({ type }) => {
     case BadgeType.STREAMER: return <div title="Streamer" className="text-neon-blue"><Zap size={12} fill="currentColor" /></div>;
     case BadgeType.PRO: return <div title="Pro Player" className="text-neon-pink"><Award size={12} fill="currentColor" /></div>;
     case BadgeType.LOBBY_MASTER: return <div title="Lobby Master" className="text-yellow-500"><Star size={12} fill="currentColor" /></div>;
-    case BadgeType.VIP: return <div title="VIP" className="text-purple-500"><Crown size={12} fill="currentColor" /></div>;
+    case BadgeType.VIP: return <div title="VIP" className="text-yellow-500 animate-pulse"><Crown size={12} fill="currentColor" /></div>;
+    case BadgeType.CHAMPION: return <div title="Champion" className="text-yellow-400"><Trophy size={12} fill="currentColor" /></div>;
+    case BadgeType.PLUS: return <div title="Plus" className="text-neon-blue"><Zap size={12} fill="currentColor" /></div>;
     default: return null;
   }
 };
@@ -38,7 +40,14 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
   const [showActions, setShowActions] = useState(false);
 
   // Level based colors
-  const nameColorClass = message.senderLevel > 40 ? "text-neon-blue shadow-[0_0_8px_rgba(0,229,255,0.3)]" : 
+  const isVIP = message.senderBadges?.includes(BadgeType.VIP);
+  const isPLUS = message.senderBadges?.includes(BadgeType.PLUS);
+  const isChamp = message.senderBadges?.includes(BadgeType.CHAMPION);
+
+  const nameColorClass = isVIP ? "text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.5)]" :
+                        isChamp ? "text-yellow-500" :
+                        isPLUS ? "text-neon-blue" :
+                        message.senderLevel > 40 ? "text-neon-blue shadow-[0_0_8px_rgba(0,229,255,0.3)]" : 
                         message.senderLevel > 20 ? "text-neon-pink" : "text-white/80";
 
   return (
@@ -66,7 +75,9 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
       >
         <div className={cn(
           "h-9 w-9 md:h-11 md:w-11 rounded-xl flex items-center justify-center text-lg md:text-xl relative z-[10] transition-transform hover:scale-105 shadow-xl",
-          message.self ? "bg-neon-pink text-white" : "bg-neon-blue text-white"
+          message.self ? "bg-neon-pink text-white" : "bg-neon-blue text-white",
+          isVIP && "border-2 border-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.4)]",
+          isPLUS && "border-2 border-neon-blue shadow-[0_0_10px_rgba(0,229,255,0.3)]"
         )}>
           {message.senderAvatar || (message.senderName ? message.senderName[0] : "?")}
         </div>
@@ -84,7 +95,7 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
           message.self ? "flex-row" : "flex-row-reverse"
         )}>
            <span 
-              className={cn("text-[11px] font-black tracking-tight cursor-pointer hover:underline", nameColorClass)}
+              className={cn("text-[11px] font-black tracking-tight cursor-pointer hover:underline flex items-center gap-1", nameColorClass)}
               onClick={(e) => {
                 e.stopPropagation();
                 openProfile({
@@ -96,9 +107,13 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
                 }, message.self);
               }}
             >
+              {isVIP && <Crown size={10} className="text-yellow-400" />}
               {message.senderName}
             </span>
           <span className="text-[9px] text-gray-500 font-bold">{message.timestamp}</span>
+          <div className="flex gap-1">
+             {message.senderBadges?.map((b, i) => <BadgeIcon key={i} type={b} />)}
+          </div>
         </div>
 
         {/* Message Container */}
@@ -134,7 +149,9 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
               "rtl text-right break-words",
               message.self 
                 ? "bg-[#140e1a] text-white border-neon-pink/20 rounded-tr-none" 
-                : "bg-white/5 text-gray-100 border-white/10 rounded-tl-none"
+                : "bg-white/5 text-gray-100 border-white/10 rounded-tl-none",
+              isVIP && !message.self && "border-yellow-400/30 bg-gradient-to-br from-yellow-400/5 to-transparent shadow-[0_0_30px_rgba(250,204,21,0.05)]",
+              isPLUS && !message.self && "border-neon-blue/30 bg-gradient-to-br from-neon-blue/5 to-transparent shadow-[0_0_20px_rgba(0,229,255,0.05)]"
             )}
           >
             {/* Reply Preview - Embedded inside bubble area */}
@@ -307,7 +324,7 @@ const MOCK_MESSAGES: Record<string, ChatMessage[]> = {
       senderId: "u1", 
       senderName: "مازیار", 
       senderLevel: 24, 
-      senderBadges: [BadgeType.PRO],
+      senderBadges: [BadgeType.PRO, BadgeType.CHAMPION],
       text: "سلام بچه‌ها! کسی پایه هست بریم CS2؟", 
       timestamp: "۱۲:۳۰", 
       isRead: true,
@@ -331,7 +348,7 @@ const MOCK_MESSAGES: Record<string, ChatMessage[]> = {
       senderName: "خودم", 
       senderLevel: 42,
       senderColor: "#00e5ff",
-      senderBadges: [BadgeType.STREAMER],
+      senderBadges: [BadgeType.STREAMER, BadgeType.PLUS],
       text: "منم میام، فقط پینگ چطوره؟", 
       timestamp: "۱۲:۳۲", 
       isRead: true,
@@ -342,6 +359,7 @@ const MOCK_MESSAGES: Record<string, ChatMessage[]> = {
       senderId: "u1", 
       senderName: "مازیار", 
       senderLevel: 24,
+      senderBadges: [BadgeType.PRO],
       text: "پینگ عالیه، زیر ۵۰ هست.", 
       timestamp: "۱۲:۳۳", 
       isRead: true,
@@ -353,6 +371,7 @@ const MOCK_MESSAGES: Record<string, ChatMessage[]> = {
       senderId: "u1",
       senderName: "مازیار",
       senderLevel: 24,
+      senderBadges: [BadgeType.PRO],
       text: "دعوتتون می‌کنم به لابی، زود بیاید!",
       timestamp: "۱۲:۳۵",
       isRead: true,

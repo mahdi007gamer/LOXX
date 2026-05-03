@@ -65,6 +65,17 @@ export enum BadgeType {
   STREAMER = "streamer",
   PRO = "pro",
   LOBBY_MASTER = "lobby_master",
+  VIP = "vip",
+  FOUNDER = "founder",
+  CHAMPION = "champion",
+  PLUS = "plus",
+  TOP_PLAYER = "top_player",
+  EARLY_USER = "early_user"
+}
+
+export enum MembershipType {
+  NONE = "none",
+  PLUS = "plus",
   VIP = "vip"
 }
 

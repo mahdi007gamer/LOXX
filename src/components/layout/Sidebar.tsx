@@ -7,9 +7,9 @@ import {
   Settings, 
   LogOut,
   Trophy,
-  Target,
   Gamepad2,
-  Heart
+  Heart,
+  Crown
 } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 
@@ -20,7 +20,8 @@ const menuItems = [
   { icon: Users, label: "لابی‌ها", path: "/lobbies" },
   { icon: Users, label: "دوستان", path: "/friends" },
   { icon: MessageSquare, label: "چت سراسری", path: "/chat" },
-  { icon: Trophy, label: "رتبه‌بندی", path: "/leaderboard" },
+  { icon: Trophy, label: "رتبه‌بندی", path: "/ranking" },
+  { icon: Crown, label: "اشتراک ویژه", path: "/premium" },
   { icon: Settings, label: "تنظیمات", path: "/settings" },
 ];
 

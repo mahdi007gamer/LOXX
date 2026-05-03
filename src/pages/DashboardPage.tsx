@@ -19,6 +19,10 @@ import {
   UserCheck,
   UserPlus,
   UserMinus,
+  Crown,
+  ChevronRight,
+  Zap,
+  Flame,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
@@ -47,8 +51,14 @@ export const DashboardPage = () => {
               animate={{ opacity: 1, x: 0 }}
               className="text-center sm:text-right"
             >
-              <h1 className="text-2xl md:text-3xl font-black text-white">سلام، خوش اومدی! 👋</h1>
-              <p className="text-sm text-gray-400">امروز آماده‌ چالش‌های جدیدی؟</p>
+              <div className="flex items-center justify-center sm:justify-start gap-4 mb-1">
+                 <h1 className="text-2xl md:text-3xl font-black text-white italic uppercase tracking-tighter">سلام، خوش اومدی!</h1>
+                 <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-500 shadow-[0_0_15px_rgba(249,115,22,0.1)]">
+                    <Flame size={14} fill="currentColor" className="animate-bounce" />
+                    <span className="text-[10px] font-black italic tracking-widest uppercase">7 Day Streak</span>
+                 </div>
+              </div>
+              <p className="text-sm text-gray-400 font-bold uppercase tracking-widest text-[10px] md:text-xs">امروز آماده‌ چالش‌های جدیدی؟</p>
             </motion.div>
             <GlowButton variant="purple" className="flex gap-2 w-full sm:w-auto h-11" onClick={() => setIsLobbyModalOpen(true)}>
               <Plus size={18} />
@@ -56,35 +66,97 @@ export const DashboardPage = () => {
             </GlowButton>
           </header>
 
-          {/* Quick Stats */}
-          <div className="mb-12 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
-            {[
-              { label: "روز عضویت", val: "۱۴", icon: Activity, color: "blue" },
-              { label: "لابی‌های جوین شده", val: "۲۸", icon: Target, color: "pink" },
-              { label: "تعداد دوستان", val: friends.length, icon: Users, color: "purple" },
-              { label: "بازی‌های دنبال شده", val: "۶", icon: Star, color: "blue" },
-              { label: "لابی‌های آماده", val: "۱۲", icon: Trophy, color: "pink" },
-            ].map((stat, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: i * 0.1 }}
-              >
-                <NeonCard variant={stat.color as any} className="flex flex-col items-center justify-center p-5 text-center h-full" hover={true}>
-                  <div className={cn(
-                    "mb-3 h-12 w-12 flex items-center justify-center rounded-2xl mx-auto",
-                    stat.color === 'blue' ? 'bg-neon-blue/10 text-neon-blue' : 
-                    stat.color === 'pink' ? 'bg-neon-pink/10 text-neon-pink' : 
-                    'bg-neon-purple/10 text-neon-purple'
-                  )}>
-                    <stat.icon size={20} />
-                  </div>
-                  <h3 className="text-xl font-black text-white leading-none mb-1">{stat.val}</h3>
-                  <p className="text-[9px] font-bold text-gray-500 whitespace-nowrap">{stat.label}</p>
-                </NeonCard>
-              </motion.div>
-            ))}
+          {/* Quick Stats & Ranking Widget */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
+            {/* Main Stats Grid */}
+            <div className="lg:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-4">
+              {[
+                { label: "روز عضویت", val: "۱۴", icon: Activity, color: "blue" },
+                { label: "لابی‌های جوین شده", val: "۲۸", icon: Target, color: "pink" },
+                { label: "تعداد دوستان", val: friends.length, icon: Users, color: "purple" },
+                { label: "لابی‌های آماده", val: "۱۲", icon: Trophy, color: "pink" },
+              ].map((stat, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: i * 0.1 }}
+                >
+                  <NeonCard variant={stat.color as any} className="flex flex-col items-center justify-center p-5 text-center h-full" hover={true}>
+                    <div className={cn(
+                      "mb-3 h-10 w-10 flex items-center justify-center rounded-xl mx-auto",
+                      stat.color === 'blue' ? 'bg-neon-blue/10 text-neon-blue' : 
+                      stat.color === 'pink' ? 'bg-neon-pink/10 text-neon-pink' : 
+                      'bg-neon-purple/10 text-neon-purple'
+                    )}>
+                      <stat.icon size={18} />
+                    </div>
+                    <h3 className="text-xl font-black text-white leading-none mb-1 italic">{stat.val}</h3>
+                    <p className="text-[9px] font-bold text-gray-500 whitespace-nowrap uppercase tracking-tighter">{stat.label}</p>
+                  </NeonCard>
+                </motion.div>
+              ))}
+            </div>
+
+            {/* Your Rank Widget */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.4 }}
+              className="relative"
+            >
+              <div className="h-full rounded-2xl bg-gradient-to-br from-[#1a1129] to-[#0a0f1c] border border-white/10 p-6 flex flex-col justify-between overflow-hidden group">
+                 {/* Background Accent */}
+                 <div className="absolute -top-10 -right-10 h-32 w-32 bg-neon-purple/20 rounded-full blur-[40px] group-hover:bg-neon-blue/20 transition-all" />
+                 
+                 <div className="relative z-10">
+                    <div className="flex items-center justify-between mb-4">
+                       <span className="text-[10px] text-gray-500 font-black uppercase tracking-widest italic">Weekly Champions</span>
+                       <Crown className="text-yellow-400 animate-pulse" size={16} />
+                    </div>
+                    
+                    <div className="flex items-center gap-4">
+                       <div className="h-16 w-16 rounded-full border-2 border-neon-blue p-1 flex items-center justify-center bg-white/5 relative">
+                          <Trophy className="text-neon-blue" size={32} />
+                          <div className="absolute -bottom-1 -right-1 h-6 w-6 rounded-full bg-white text-dark-bg border-2 border-dark-bg flex items-center justify-center text-[10px] font-black italic">
+                             #12
+                          </div>
+                       </div>
+                       <div>
+                          <p className="text-[10px] text-gray-500 font-bold uppercase mb-0.5">Your Rank this week</p>
+                          <h4 className="text-xl font-black text-white uppercase italic">Level 24 Explorer</h4>
+                          <div className="flex items-center gap-1.5 mt-1 font-bold">
+                             <div className="flex items-center gap-1 text-[10px] text-neon-blue">
+                                <Zap size={10} />
+                                <span>+120 XP</span>
+                             </div>
+                             <div className="h-3 w-[1px] bg-white/10" />
+                             <span className="text-[10px] text-gray-500">4,280 Points</span>
+                          </div>
+                       </div>
+                    </div>
+
+                    <div className="mt-6 space-y-2">
+                       <div className="flex items-center justify-between text-[9px] font-black uppercase italic tracking-tighter">
+                          <span className="text-gray-500">Progress to Top 10</span>
+                          <span className="text-white">65%</span>
+                       </div>
+                       <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                          <motion.div 
+                             initial={{ width: 0 }}
+                             animate={{ width: "65%" }}
+                             className="h-full bg-gradient-to-r from-neon-blue to-neon-purple"
+                          />
+                       </div>
+                       <p className="text-[9px] text-gray-600 font-bold uppercase italic">Only 120 points to reach Top 10!</p>
+                    </div>
+                 </div>
+
+                 <button className="mt-4 w-full py-2.5 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center gap-2 group/btn hover:bg-neon-blue/10 hover:border-neon-blue/30 transition-all text-[10px] font-black text-white uppercase italic tracking-widest relative z-10">
+                    See Ranking <ArrowRight size={14} className="group-hover/btn:translate-x-1 transition-transform" />
+                 </button>
+              </div>
+            </motion.div>
           </div>
 
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">

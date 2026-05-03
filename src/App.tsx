@@ -22,6 +22,7 @@ import { LobbyRoomPage } from "./pages/LobbyRoomPage";
 import { ProfilePage } from "./pages/ProfilePage";
 import { RoomsPage } from "./pages/RoomsPage";
 import { LeaderboardPage } from "./pages/LeaderboardPage";
+import { PremiumPage } from "./pages/PremiumPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { FriendsPage } from "./pages/FriendsPage";
 import { GamesPage } from "./pages/GamesPage";
@@ -55,7 +56,8 @@ const AppContent = () => {
           <Route path="/lobbies" element={<LobbiesPage />} />
           <Route path="/lobby/:id" element={<LobbyRoomPage />} />
           <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/leaderboard" element={<LeaderboardPage />} />
+          <Route path="/ranking" element={<LeaderboardPage />} />
+          <Route path="/premium" element={<PremiumPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/friends" element={<FriendsPage />} />
           <Route path="/games" element={<GamesPage />} />
