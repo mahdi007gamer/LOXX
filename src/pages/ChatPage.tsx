@@ -644,8 +644,8 @@ export const ChatPage: React.FC = () => {
 
       {/* Main Chat Area */}
       <div className="relative flex flex-1 flex-col bg-[#050507] min-w-0 overflow-hidden">
-        {/* Chat Header - Sticky and centered for mobile */}
-        <header className="flex h-14 md:h-16 items-center justify-between border-b border-white/5 bg-black/40 backdrop-blur-xl px-4 md:px-8 sticky top-0 z-[40] shrink-0 w-full">
+        {/* Chat Header - Always sticky at the top of this container */}
+        <header className="flex h-12 md:h-16 items-center justify-between border-b border-white/5 bg-black/60 backdrop-blur-xl px-3 md:px-8 sticky top-0 z-[40] shrink-0 w-full shadow-2xl">
           <div className="flex items-center gap-2 md:gap-4 flex-1 min-w-0">
             {/* Mobile Channel Switcher Toggle */}
             <button 
@@ -653,16 +653,16 @@ export const ChatPage: React.FC = () => {
                 e.stopPropagation();
                 setShowChannelMenu(!showChannelMenu);
               }}
-              className="p-2 rounded-lg bg-white/5 text-gray-400 hover:text-white md:hidden"
+              className="p-1.5 rounded-lg bg-white/5 text-gray-400 hover:text-white md:hidden"
             >
-              <Menu size={18} />
+              <Menu size={16} />
             </button>
 
-            <div className="h-8 w-8 md:h-10 md:w-10 flex items-center justify-center rounded-xl bg-neon-blue/10 border border-neon-blue/20 text-neon-blue shadow-[0_0_15px_rgba(0,229,255,0.1)] overflow-hidden shrink-0">
+            <div className="h-7 w-7 md:h-10 md:w-10 flex items-center justify-center rounded-xl bg-neon-blue/10 border border-neon-blue/20 text-neon-blue shadow-[0_0_15px_rgba(0,229,255,0.1)] overflow-hidden shrink-0">
               {activeChannel.type === 'game' ? (
                 <img src={activeChannel.icon} alt="" className="h-full w-full object-cover opacity-80" />
               ) : (
-                <Hash size={18} />
+                <Hash size={16} />
               )}
             </div>
             <div className="min-w-0">
@@ -674,7 +674,7 @@ export const ChatPage: React.FC = () => {
               </div>
               <div className="flex items-center gap-1.5 md:gap-2 truncate">
                 <div className="h-1 w-1 md:h-1.5 md:w-1.5 rounded-full bg-green-500 animate-pulse shrink-0"></div>
-                <p className="text-[9px] md:text-[10px] text-gray-500 font-bold uppercase tracking-tighter truncate">{activeChannel.users} آنلاین</p>
+                <p className="text-[8px] md:text-[10px] text-gray-500 font-bold uppercase tracking-tighter truncate">{activeChannel.users} آنلاین</p>
               </div>
             </div>
           </div>
@@ -683,7 +683,7 @@ export const ChatPage: React.FC = () => {
               <GlowButton 
                 variant="pink" 
                 size="sm" 
-                className="h-8 md:h-9 px-3 md:px-4 text-[9px] md:text-[10px] font-black uppercase"
+                className="h-7 md:h-9 px-2 md:px-4 text-[8px] md:text-[10px] font-black uppercase"
                 onClick={(e) => {
                   e.stopPropagation();
                   sendLobbyInvite();
@@ -699,11 +699,11 @@ export const ChatPage: React.FC = () => {
                 setShowFriendsSidebar(!showFriendsSidebar);
               }}
               className={cn(
-                "p-2 rounded-lg transition-all",
+                "p-1.5 md:p-2 rounded-lg transition-all",
                 showFriendsSidebar ? "bg-neon-blue text-dark-bg" : "bg-white/5 text-gray-400 hover:text-white"
               )}
             >
-              <Users size={18} />
+              <Users size={16} />
             </button>
             <button className="hidden md:block p-2 text-gray-500 hover:text-white hover:bg-white/5 rounded-lg transition-all"><MoreVertical size={20} /></button>
           </div>

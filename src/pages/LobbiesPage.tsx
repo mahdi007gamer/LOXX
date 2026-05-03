@@ -161,9 +161,10 @@ export const LobbiesPage = () => {
   const handleLobbyCreated = () => {
     setIsModalOpen(false);
     setShowToast(true);
+    // Faster redirection for better UX
     setTimeout(() => {
       navigate("/lobby/LX-PREMIUM-101");
-    }, 1500);
+    }, 800);
   };
 
   return (
@@ -222,131 +223,112 @@ export const LobbiesPage = () => {
                   <NeonCard 
                     variant={lobby.variant} 
                     hover={true}
-                    className="group relative flex flex-col h-full overflow-hidden p-0 border-white/5"
+                    className="group relative flex flex-col h-full overflow-hidden p-0 border-white/5 bg-[#0a0a0f]"
                   >
                     {/* Game Banner */}
-                    <div className="relative h-36 w-full overflow-hidden shrink-0">
+                    <div className="relative h-28 md:h-36 w-full overflow-hidden shrink-0">
                       <img 
                         src={lobby.gameBanner} 
                         alt={lobby.game} 
                         className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
                         referrerPolicy="no-referrer"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-dark-bg/90 via-dark-bg/20 to-transparent" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0f] via-transparent to-transparent" />
                       
                       {/* Status Badge */}
                       {lobby.status !== 'normal' && (
                         <div className={cn(
-                          "absolute top-4 right-4 flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-black uppercase backdrop-blur-md border",
+                          "absolute top-2 md:top-4 right-2 md:right-4 flex items-center gap-1.5 px-2 py-1 md:px-3 md:py-1.5 rounded-full text-[9px] md:text-xs font-black uppercase backdrop-blur-md border",
                           lobby.status === 'hot' 
                             ? "bg-neon-pink/20 border-neon-pink/30 text-neon-pink" 
                             : "bg-neon-blue/20 border-neon-blue/30 text-neon-blue"
                         )}>
-                          {lobby.status === 'hot' ? <Zap size={14} fill="currentColor" /> : <Sparkles size={14} />}
+                          {lobby.status === 'hot' ? <Zap size={10} fill="currentColor" /> : <Sparkles size={10} />}
                           <span>{lobby.status === 'hot' ? "داغ" : "جدید"}</span>
                         </div>
                       )}
 
                       {/* Time Badge */}
-                      <div className="absolute bottom-4 right-4 flex items-center gap-1.5 text-xs font-bold text-gray-300">
-                        <Clock size={14} />
+                      <div className="absolute bottom-2 md:bottom-4 right-2 md:right-4 flex items-center gap-1 text-[9px] md:text-xs font-bold text-gray-300">
+                        <Clock size={12} />
                         <span>{lobby.createdAt}</span>
                       </div>
 
                       {/* Game Icon Overlay */}
-                      <div className="absolute -bottom-5 left-5 h-12 w-12 flex items-center justify-center rounded-xl bg-[#0a0a0f] border border-white/10 text-2xl shadow-2xl z-20">
+                      <div className="absolute -bottom-4 md:-bottom-5 left-3 md:left-5 h-10 w-10 md:h-12 md:w-12 flex items-center justify-center rounded-xl bg-[#0a0a0f] border border-white/10 text-xl md:text-2xl shadow-2xl z-20">
                         {lobby.icon}
                       </div>
                     </div>
 
-                    <div className="p-8 pt-10 flex-1 flex flex-col">
-                      <div className="mb-4 flex items-center justify-between">
+                    <div className="p-4 md:p-8 pt-6 md:pt-10 flex-1 flex flex-col">
+                      <div className="mb-2 md:mb-4 flex items-center justify-between">
                         <div className={cn(
-                          "rounded-full px-3 py-1 text-xs font-black uppercase tracking-tight border",
+                          "rounded-full px-2 py-0.5 md:px-3 md:py-1 text-[9px] md:text-xs font-black uppercase tracking-tight border truncate max-w-[120px] md:max-w-none",
                           lobby.variant === 'blue' ? 'bg-neon-blue/10 text-neon-blue border-neon-blue/20' : 
                           lobby.variant === 'pink' ? 'bg-neon-pink/10 text-neon-pink border-neon-pink/20' :
                           'bg-neon-purple/10 text-neon-purple border-neon-purple/20'
                         )}>
                           {lobby.game}
                         </div>
-                        <div className="flex items-center gap-2 text-white">
-                          <Users size={16} className="text-gray-500" />
-                          <span className="text-sm font-black">{lobby.players} / {lobby.max}</span>
+                        <div className="flex items-center gap-1 md:gap-2 text-white shrink-0">
+                          <Users size={14} className="text-gray-500" />
+                          <span className="text-[11px] md:text-sm font-black">{lobby.players} / {lobby.max}</span>
                         </div>
                       </div>
                       
-                      <h3 className="mb-4 text-2xl font-black text-white line-clamp-1 group-hover:text-neon-blue transition-colors">
+                      <h3 className="mb-3 md:mb-4 text-sm md:text-2xl font-black text-white line-clamp-1 group-hover:text-neon-blue transition-colors">
                         {lobby.title}
                       </h3>
 
                       {/* Region & Mode Badges */}
-                      <div className="mb-5 flex flex-wrap gap-2.5 text-right" dir="rtl">
-                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/5 text-xs font-bold text-gray-400">
-                          <Globe size={13} />
+                      <div className="mb-4 md:mb-5 flex flex-wrap gap-1.5 md:gap-2.5 text-right" dir="rtl">
+                        <div className="flex items-center gap-1 px-2 py-1 md:px-3 md:py-1.5 rounded-lg bg-white/5 border border-white/5 text-[9px] md:text-xs font-bold text-gray-400">
+                          <Globe size={11} />
                           <span>{lobby.region}</span>
                         </div>
-                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/5 text-xs font-bold text-neon-blue">
-                          <Gamepad2 size={13} />
+                        <div className="flex items-center gap-1 px-2 py-1 md:px-3 md:py-1.5 rounded-lg bg-white/5 border border-white/5 text-[9px] md:text-xs font-bold text-neon-blue">
+                          <Gamepad2 size={11} />
                           <span>{lobby.mode}</span>
                         </div>
                       </div>
 
-                      {/* Feature Icons Row */}
-                      <div className="mb-6 flex flex-wrap gap-3">
+                      {/* Feature Icons Row - Hidden on small mobile to save space */}
+                      <div className="mb-4 md:mb-6 flex flex-wrap gap-2">
                         {lobby.isPrivate && (
-                          <div className="h-8 w-8 rounded-lg bg-neon-pink/10 border border-neon-pink/20 flex items-center justify-center text-neon-pink" title="لابی خصوصی">
-                            <Lock size={14} />
+                          <div className="h-7 w-7 md:h-8 md:w-8 rounded-lg bg-neon-pink/10 border border-neon-pink/20 flex items-center justify-center text-neon-pink">
+                            <Lock size={12} />
                           </div>
                         )}
                         {lobby.micRequired && (
-                          <div className="h-8 w-8 rounded-lg bg-neon-blue/10 border border-neon-blue/20 flex items-center justify-center text-neon-blue" title="میکروفون اجباری">
-                            <Mic size={14} />
-                          </div>
-                        )}
-                        {lobby.discordRequired && (
-                          <div className="h-8 w-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400" title="دیسکورد اجباری">
-                            <MessageSquare size={14} />
-                          </div>
-                        )}
-                        {lobby.isAgeRestricted && (
-                          <div className="h-8 w-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-white text-[10px] font-black" title="محدودیت سنی +18">
-                            18+
+                          <div className="h-7 w-7 md:h-8 md:w-8 rounded-lg bg-neon-blue/10 border border-neon-blue/20 flex items-center justify-center text-neon-blue">
+                            <Mic size={12} />
                           </div>
                         )}
                       </div>
 
-                      <div className="flex items-center gap-2.5 text-base text-gray-500 mt-auto">
-                        <ShieldCheck size={18} className="text-green-500" />
-                        <span className="font-bold">سطح مهارت: <span className="text-white">{lobby.rank}</span></span>
+                      <div className="flex items-center gap-2 text-[11px] md:text-base text-gray-400 mt-auto">
+                        <ShieldCheck size={14} className="text-green-500 shrink-0" />
+                        <span className="font-bold truncate">سطح مهارت: <span className="text-white">{lobby.rank}</span></span>
                       </div>
                     </div>
 
-                    <div className="mt-4 flex items-center justify-between border-t border-white/5 p-5 py-4 transition-all md:group-hover:opacity-0">
-                      <div className="flex items-center gap-2.5">
-                         <div className="flex -space-x-2.5">
-                            {[1, 2, 3].map(p => (
-                              <div key={p} className="h-8 w-8 rounded-full border-2 border-dark-card bg-white/10 flex items-center justify-center text-xs">
+                    <div className="mt-2 flex items-center justify-between border-t border-white/5 p-3 md:p-5 transition-all">
+                      <div className="flex items-center gap-1.5 md:gap-2.5">
+                         <div className="flex -space-x-2">
+                            {[1].map(p => (
+                              <div key={p} className="h-6 w-6 md:h-8 md:w-8 rounded-full border border-dark-card bg-white/10 flex items-center justify-center text-[10px]">
                                 👤
                               </div>
                             ))}
                          </div>
-                         <span className="text-sm font-bold text-gray-500">+{lobby.players} آنلاین</span>
-                      </div>
-                      <div className="px-4 py-2 rounded-lg bg-white/5 text-sm font-black text-neon-blue uppercase italic tracking-wider md:block hidden">
-                         JOIN NOW
+                         <span className="text-[10px] md:text-sm font-bold text-gray-500">+{lobby.players} آنلاین</span>
                       </div>
                       <GlowButton 
                         variant={lobby.variant} 
-                        className="md:hidden h-9 px-4 !rounded-lg text-[10px] font-black"
+                        className="h-8 md:h-10 px-3 md:px-6 !rounded-lg text-[9px] md:text-[11px] font-black uppercase italic"
                         onClick={handleRequestAccess}
                       >
-                        درخواست عضویت
-                      </GlowButton>
-                    </div>
-
-                    <div className="absolute inset-x-0 bottom-6 px-6 translate-y-4 opacity-0 md:group-hover:translate-y-0 md:group-hover:opacity-100 transition-all duration-300 z-30 hidden md:flex items-center justify-center">
-                      <GlowButton variant={lobby.variant} className="w-full text-xs font-black py-4" onClick={handleRequestAccess}>
-                        درخواست عضویت
+                        JOIN NOW
                       </GlowButton>
                     </div>
                   </NeonCard>
