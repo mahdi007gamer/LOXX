@@ -44,10 +44,7 @@ const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClose, user
       initial={{ opacity: 0, scale: 0.9, y: 10 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.9, y: 10 }}
-      className={cn(
-        "absolute bottom-full mb-2 w-72 bg-[#0a0a0f] rounded-[24px] border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.8)] overflow-hidden z-[100] cursor-default rtl text-right transition-all backdrop-blur-2xl",
-        isSelf ? "right-0" : "left-0"
-      )}
+      className="w-72 bg-[#0a0a0f] rounded-[24px] border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.8)] overflow-hidden cursor-default rtl text-right transition-all backdrop-blur-2xl px-0"
       onClick={(e) => e.stopPropagation()}
     >
       {/* Banner */}
@@ -146,7 +143,7 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
         onClick={() => onToggleProfile(!isProfileOpen)}
       >
         <div className={cn(
-          "h-9 w-9 md:h-11 md:w-11 rounded-xl flex items-center justify-center text-lg md:text-xl relative z-[101] transition-transform hover:scale-105 shadow-xl",
+          "h-9 w-9 md:h-11 md:w-11 rounded-xl flex items-center justify-center text-lg md:text-xl relative z-[10] transition-transform hover:scale-105 shadow-xl",
           message.self ? "bg-neon-pink/20 border border-neon-pink/30 shadow-neon-pink/10" : "bg-white/5 border border-white/10 shadow-black/50",
           message.senderBadges?.includes(BadgeType.STREAMER) && "ring-2 ring-neon-blue/50"
         )}>
@@ -155,16 +152,6 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
              <div className="absolute inset-0 rounded-xl border border-neon-blue shadow-[0_0_10px_rgba(0,229,255,0.4)] animate-pulse"></div>
           )}
         </div>
-        
-        <AnimatePresence>
-          {isProfileOpen && (
-             <QuickProfilePopover 
-                onClose={() => onToggleProfile(false)} 
-                user={message}
-                isSelf={message.self}
-             />
-          )}
-        </AnimatePresence>
       </div>
 
       {/* Message Content Area */}
@@ -642,17 +629,34 @@ export const ChatPage: React.FC = () => {
     }
   };
 
+  const activeProfileMessage = openProfileId 
+    ? (Object.values(messages).flat() as ChatMessage[]).find(m => m.id === openProfileId)
+    : null;
+
   return (
     <div className="flex h-[calc(100vh-64px)] overflow-hidden bg-dark-bg rtl text-right relative">
       <AnimatePresence>
         {openProfileId && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setOpenProfileId(null)}
-            className="fixed inset-0 z-[90] bg-black/20 backdrop-blur-[2px] cursor-default"
-          />
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setOpenProfileId(null)}
+              className="fixed inset-0 z-[1000] bg-black/40 backdrop-blur-sm cursor-default"
+            />
+            {activeProfileMessage && (
+              <div className="fixed inset-0 z-[1001] flex items-center justify-center pointer-events-none p-4">
+                <div className="pointer-events-auto">
+                  <QuickProfilePopover 
+                    onClose={() => setOpenProfileId(null)} 
+                    user={activeProfileMessage}
+                    isSelf={activeProfileMessage.self}
+                  />
+                </div>
+              </div>
+            )}
+          </>
         )}
       </AnimatePresence>
 
