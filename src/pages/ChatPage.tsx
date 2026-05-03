@@ -109,9 +109,10 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
         )}
         onClick={() => setShowActions(!showActions)}
       >
-        {/* Header - Name -> Badge -> Time (Left to Right for Everyone) */}
+        {/* Header - Name -> Badge -> Time (Order follows container flow) */}
         <div className={cn(
-          "flex items-center gap-1.5 mb-1 px-0.5 flex-row-reverse"
+          "flex items-center gap-1.5 mb-1 px-0.5",
+          message.self ? "flex-row" : "flex-row-reverse"
         )}>
           <span 
               className={cn("text-[11px] font-black tracking-tight cursor-pointer hover:underline flex items-center gap-1", nameColorClass)}
@@ -130,11 +131,17 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
               {message.senderName}
             </span>
           
-          <div className="flex gap-1 items-center flex-row-reverse">
+          <div className={cn(
+            "flex gap-1 items-center",
+            message.self ? "flex-row" : "flex-row-reverse"
+          )}>
              {message.senderBadges?.map((b, i) => <BadgeIcon key={i} type={b} />)}
           </div>
 
-          <span className="text-[9px] text-gray-500 font-bold opacity-60 mr-1">{message.timestamp}</span>
+          <span className={cn(
+            "text-[9px] text-gray-500 font-bold opacity-60",
+            message.self ? "mr-1" : "ml-1"
+          )}>{message.timestamp}</span>
         </div>
 
         {/* Message Container Area */}
