@@ -150,7 +150,7 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
             {/* Action Buttons - Desktop Hover & Mobile Click */}
             <div className={cn(
               "absolute flex items-center gap-1 px-2 py-1.5 rounded-2xl bg-[#0f0f15] border border-white/10 shadow-2xl z-50 backdrop-blur-xl whitespace-nowrap transition-all duration-200",
-              message.self ? "left-full ml-1 pl-4" : "right-full mr-1 pr-4",
+              message.self ? "right-full mr-1 pr-4" : "left-full ml-1 pl-4",
               showActions ? "opacity-100 scale-100 pointer-events-auto" : "opacity-0 scale-95 pointer-events-none lg:group-hover/bubble-container:opacity-100 lg:group-hover/bubble-container:scale-100 lg:group-hover/bubble-container:pointer-events-auto"
             )}
             onClick={(e) => e.stopPropagation()}
@@ -158,7 +158,7 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
               {/* Hover bridge to prevent losing hover state */}
               <div className={cn(
                 "absolute inset-y-0 w-8 bg-transparent",
-                message.self ? "-left-6" : "-right-6"
+                message.self ? "-right-6" : "-left-6"
               )} />
   
               <button 
