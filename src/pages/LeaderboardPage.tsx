@@ -99,9 +99,9 @@ export const LeaderboardPage = () => {
                transition={{ delay: 0.1 }}
                className="order-2 sm:order-1 relative z-10 w-full max-w-[280px]"
              >
-               <NeonCard variant="blue" className="flex flex-col items-center p-6 text-center bg-[#0a0a0f]/80 backdrop-blur-xl border-white/5 hover:border-neon-blue/30 transition-all pt-10">
+                <NeonCard variant="blue" className="flex flex-col items-center p-6 text-center bg-[#0a0a0f]/80 backdrop-blur-xl border-white/5 hover:border-neon-blue/30 transition-all pt-10">
                  <div className="h-28 w-28 rounded-full border-4 border-gray-400/20 bg-white/5 mb-4 flex items-center justify-center text-gray-400 relative group p-1">
-                    <div className="absolute top-0 -left-2 h-10 w-10 rounded-2xl bg-gray-400/20 flex items-center justify-center text-gray-300 border border-white/5 shadow-inner z-20">
+                    <div className="absolute -top-1 -right-1 h-10 w-10 rounded-2xl bg-gray-400/20 flex items-center justify-center text-gray-300 border border-white/10 shadow-xl z-20 backdrop-blur-md">
                        <Medal size={20} />
                     </div>
                     <div className="absolute inset-0 rounded-full bg-gray-400/5 blur-[20px] opacity-0 group-hover:opacity-100 transition-all" />
@@ -126,9 +126,9 @@ export const LeaderboardPage = () => {
              >
                <NeonCard variant="purple" className="flex flex-col items-center p-10 text-center relative border-yellow-400/40 bg-[#12051a]/90 shadow-[0_0_60px_rgba(250,204,21,0.2)] rounded-[40px] pt-16">
                  <motion.div 
-                   animate={{ y: [0, -10, 0], rotate: [-5, 5, -5] }}
+                   animate={{ y: [0, -8, 0], rotate: [-2, 2, -2] }}
                    transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                   className="absolute -top-12 left-1/2 -translate-x-1/2 text-7xl drop-shadow-[0_10px_20px_rgba(250,204,21,0.5)] z-30"
+                   className="absolute -top-12 left-1/2 -translate-x-1/2 text-7xl drop-shadow-[0_10px_20px_rgba(250,204,21,0.5)] z-30 pointer-events-none"
                  >
                    👑
                  </motion.div>
@@ -137,13 +137,13 @@ export const LeaderboardPage = () => {
                     {/* Centered Dash Circle */}
                     <motion.div 
                        animate={{ rotate: 360 }}
-                       transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-                       className="absolute -inset-6 border-2 border-dashed border-yellow-400/20 rounded-full"
+                       transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
+                       className="absolute -inset-3 border-2 border-dashed border-yellow-400/30 rounded-full"
                     />
                     <motion.div 
                        animate={{ rotate: -360 }}
-                       transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
-                       className="absolute -inset-3 border border-yellow-400/40 rounded-full opacity-50"
+                       transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                       className="absolute -inset-1 border border-yellow-400/20 rounded-full opacity-30"
                     />
                     
                     <div className="h-36 w-36 rounded-full border-4 border-yellow-400/80 bg-dark-bg flex items-center justify-center text-yellow-400 shadow-[0_0_50px_rgba(250,204,21,0.4)] relative z-10 p-1">
@@ -182,7 +182,7 @@ export const LeaderboardPage = () => {
              >
                <NeonCard variant="pink" className="flex flex-col items-center p-6 text-center bg-[#0a0a0f]/80 backdrop-blur-xl border-white/5 hover:border-neon-pink/30 transition-all pt-10">
                  <div className="h-28 w-28 rounded-full border-4 border-orange-400/20 bg-white/5 mb-4 flex items-center justify-center text-orange-400 relative group p-1">
-                    <div className="absolute top-0 -left-2 h-10 w-10 rounded-2xl bg-orange-400/20 flex items-center justify-center text-orange-400 border border-white/5 shadow-inner z-20">
+                    <div className="absolute -top-1 -right-1 h-10 w-10 rounded-2xl bg-orange-400/20 flex items-center justify-center text-orange-400 border border-white/10 shadow-xl z-20 backdrop-blur-md">
                        <Medal size={20} />
                     </div>
                     <div className="absolute inset-0 rounded-full bg-orange-400/5 blur-[20px] opacity-0 group-hover:opacity-100 transition-all" />
