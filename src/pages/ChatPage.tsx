@@ -104,14 +104,14 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
       <div 
         className={cn(
           "flex flex-col gap-1 max-w-[82%] md:max-w-[70%] min-w-0 transition-all duration-200 group/msg-content",
-          message.self ? "items-end text-right" : "items-start text-left",
+          message.self ? "items-start text-right" : "items-end text-left",
           showActions && "scale-[1.02] z-50 relative"
         )}
         onClick={() => setShowActions(!showActions)}
       >
-        {/* Header - Name -> Badge -> Time (Aligned with RTL flow) */}
+        {/* Header - Name -> Badge -> Time (Left to Right for Everyone) */}
         <div className={cn(
-          "flex items-center gap-1.5 mb-1 px-0.5 flex-row"
+          "flex items-center gap-1.5 mb-1 px-0.5 flex-row-reverse"
         )}>
           <span 
               className={cn("text-[11px] font-black tracking-tight cursor-pointer hover:underline flex items-center gap-1", nameColorClass)}
@@ -130,7 +130,7 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
               {message.senderName}
             </span>
           
-          <div className="flex gap-1 items-center flex-row">
+          <div className="flex gap-1 items-center flex-row-reverse">
              {message.senderBadges?.map((b, i) => <BadgeIcon key={i} type={b} />)}
           </div>
 
