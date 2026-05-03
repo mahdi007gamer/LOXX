@@ -1,0 +1,212 @@
+LOXX BACKEND TECHNICAL SPECIFICATION DOCUMENT
+============================================
+Version: 1.0.0
+Architecture: Scalable Real-time Social Gaming Platform
+
+CORE STACK:
+- Language: Node.js (TypeScript)
+- Framework: Express.js
+- Database: PostgreSQL (Relational Data)
+- Realtime: WebSocket (Socket.io)
+- Caching/Presence: Redis
+- Media/Voice: Mediasoup (SFU)
+- Infrastructure: Coturn (STUN/TURN)
+
+------------------------------------
+1. AUTH SYSTEM
+------------------------------------
+Functionality: Secure user identity management with JWT-based sessions.
+
+Endpoints:
+- POST /api/auth/register (username, email, password)
+- POST /api/auth/login (email, password) -> Returns { accessToken, refreshToken, user }
+- POST /api/auth/refresh (refreshToken) -> Returns { accessToken }
+- POST /api/auth/logout (refreshToken)
+- GET /api/auth/verify-email?token=...
+- POST /api/auth/password-reset-request (email)
+- POST /api/auth/password-reset-confirm (token, newPassword)
+
+Database:
+- Table: users
+  - id: UUID (PK)
+  - username: VARCHAR(20) UNIQUE
+  - email: VARCHAR(255) UNIQUE
+  - password_hash: TEXT
+  - is_verified: BOOLEAN (Default: false)
+  - created_at: TIMESTAMP
+
+Security:
+- Bcrypt for hashing.
+- HttpOnly cookies for Refresh Token.
+- Rate limiting: 5 attempts per 15 mins for login.
+
+------------------------------------
+2. USER PROFILE SYSTEM
+------------------------------------
+Functionality: Manage user metadata, stats, and visual assets.
+
+Endpoints:
+- GET /api/users/:username -> Profile info
+- PATCH /api/users/me -> Update bio, display name
+- POST /api/users/me/avatar -> S3/Cloudinary upload
+- POST /api/users/me/banner -> S3/Cloudinary upload
+
+Database:
+- Table: profiles
+  - user_id: UUID (FK)
+  - bio: TEXT
+  - avatar_url: TEXT
+  - banner_url: TEXT
+  - level: INT (Default: 1)
+  - xp: INT (Default: 0)
+  - membership_type: ENUM ('none', 'plus', 'vip')
+
+Presence (Redis):
+- Key: presence:{userId} -> Value: { status: 'online'|'offline', lastSeen: timestamp }
+
+------------------------------------
+3. FRIENDS SYSTEM
+------------------------------------
+Functionality: Bilateral social links with blocking capabilities.
+
+Endpoints:
+- POST /api/friends/request/:targetId
+- POST /api/friends/accept/:requestId
+- DELETE /api/friends/:friendId
+- POST /api/friends/block/:userId
+
+Database:
+- Table: friendships
+  - user_id_1: UUID
+  - user_id_2: UUID
+  - status: ENUM ('pending', 'accepted', 'blocked')
+  - requester_id: UUID
+
+Redis Logic:
+- When a user goes online, publish "USER_ONLINE" event to Redis Pub/Sub.
+- Internal "Friendship Graph" cached for quick lookups.
+
+------------------------------------
+4. TEXT CHAT SYSTEM
+------------------------------------
+Functionality: Multi-channel real-time communications.
+
+WebSocket Events (Socket.io):
+- LISTEN "join_room": roomId
+- EMIT "message": { id, text, sender, roomId, repliesTo? }
+- LISTEN "typing": roomId
+- EMIT "typing_indicator": { roomId, userId }
+
+Database:
+- Table: messages
+  - id: BIGINT (PK)
+  - channel_id: VARCHAR(50)
+  - sender_id: UUID
+  - content: TEXT
+  - metadata: JSONB (reactions, reply_id)
+  - created_at: TIMESTAMP
+
+Anti-Spam:
+- Redis-based bucket: Max 5 msgs / 2 seconds.
+
+------------------------------------
+5. VOICE CHAT SYSTEM (MEDIASOUP)
+------------------------------------
+Architecture: SFU (Selective Forwarding Unit)
+- One Transport for producing (Mic).
+- Multiple Transports for consuming (Other users).
+
+Signaling Flow (WS):
+- REQUEST "getRouterRtpCapabilities"
+- REQUEST "createWebRtcTransport"
+- REQUEST "connectWebRtcTransport": dtlsParameters
+- REQUEST "produce": kind, rtpParameters
+- EMIT "new_consumer": producerId
+
+Redis:
+- voice_room:{lobbyId}:members -> SET of active producerIds.
+
+Scaling Strategy:
+- Use Mediasoup Workers (1 per CPU core).
+- Pipe producers across workers if room expands beyond one core.
+
+------------------------------------
+6. LOBBY SYSTEM
+------------------------------------
+Functionality: Ephemeral groups for matchmaking.
+
+Endpoints:
+- POST /api/lobbies (gameId, maxPlayers, isPrivate)
+- GET /api/lobbies -> List public lobbies (VIP lobbies sorted to top)
+- POST /api/lobbies/:id/join
+- POST /api/lobbies/:id/kick/:userId (Owner only)
+
+Redis:
+- lobby:{id}:state -> Hashmap of currently connected users.
+- TTL: 24h (Auto-close orphaned lobbies).
+
+------------------------------------
+7. RANKING SYSTEM
+------------------------------------
+Logic: Scheduled aggregation of user XP/Activity.
+
+Cron Job (Redis Schedule):
+- Every Monday 00:00: Calculate "Weekly Leaderboard".
+- Top 3 players awarded "CHAMP" badges + LOXX Coins.
+
+Database:
+- Table: leaderboards
+  - period: ENUM ('weekly', 'monthly')
+  - user_id: UUID
+  - score: INT
+  - rank: INT
+
+------------------------------------
+8. PREMIUM SYSTEM (LOXX PLUS/VIP)
+------------------------------------
+Functionality: Feature gating (Voice quality, custom colors, VIP badge).
+
+Database:
+- Table: subscriptions
+  - user_id: UUID
+  - tier: ENUM ('plus', 'vip')
+  - start_date: TIMESTAMP
+  - end_date: TIMESTAMP
+  - stripe_customer_id: VARCHAR
+
+Permission Rules:
+- VIP Badge: check user.membership == 'vip'.
+- Room Priority: filter /api/lobbies order by membership_type DESC.
+
+------------------------------------
+9. NOTIFICATION SYSTEM
+------------------------------------
+Real-time: Socket.io "notify" event.
+Persistence:
+- Table: notifications
+  - user_id: UUID
+  - type: VARCHAR ('friend_request', 'invite', 'system')
+  - data: JSONB
+  - is_read: BOOLEAN
+
+------------------------------------
+GLOBAL DATABASE OVERVIEW (ERD)
+------------------------------------
+1. Users -> (1:1) -> Profiles
+2. Users -> (1:N) -> Friendships
+3. Users -> (1:N) -> Messages
+4. Lobbies -> (1:N) -> VoiceRooms
+5. Games -> (1:N) -> Lobbies
+
+Normalization: 3NF followed for user data. JSONB used for message reactions to avoid O(N) table joins.
+
+------------------------------------
+SCALABILITY & INFRASTRUCTURE
+------------------------------------
+- Horizontal Scaling: Docker containers managed by Kubernetes.
+- WebSocket Clustering: Redis Adapter (Socket.io-redis) to sync events across instances.
+- DB Replication: 1 Master (Writes), 2 Slaves (Reads).
+- Redis Cluster: For session and presence persistence.
+- CDN: Cloudflare for assets (Avatars/Banners).
+
+DOCUMENT END.
