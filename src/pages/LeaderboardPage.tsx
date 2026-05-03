@@ -88,6 +88,7 @@ export const LeaderboardPage = () => {
             </div>
           </header>
 
+          {/* Top 3 Rankings */}
           <div className="mb-24 flex flex-col sm:flex-row items-center sm:items-end justify-center gap-6 md:gap-10 relative">
              <div className="absolute inset-0 bg-neon-blue/5 blur-[120px] rounded-full pointer-events-none" />
              
@@ -98,19 +99,21 @@ export const LeaderboardPage = () => {
                transition={{ delay: 0.1 }}
                className="order-2 sm:order-1 relative z-10 w-full max-w-[280px]"
              >
-               <NeonCard variant="blue" className="flex flex-col items-center p-6 text-center bg-[#0a0a0f]/80 backdrop-blur-xl border-white/5 hover:border-neon-blue/30 transition-all">
-                 <div className="absolute -top-4 -left-4 h-12 w-12 rounded-full bg-gray-400/20 flex items-center justify-center text-gray-300 border border-white/10 shadow-lg">
+               <NeonCard variant="blue" className="flex flex-col items-center p-6 text-center bg-[#0a0a0f]/80 backdrop-blur-xl border-white/5 hover:border-neon-blue/30 transition-all pt-10">
+                 <div className="absolute top-4 left-4 h-12 w-12 rounded-2xl bg-gray-400/10 flex items-center justify-center text-gray-300 border border-white/5 shadow-inner">
                     <Medal size={24} />
                  </div>
-                 <div className="h-20 w-20 rounded-full border-4 border-gray-400/30 bg-white/5 mb-4 flex items-center justify-center text-gray-300 relative group">
-                    <div className="absolute inset-0 rounded-full bg-gray-400/10 blur-[15px] opacity-0 group-hover:opacity-100 transition-all" />
-                    <User size={40} className="relative z-10" />
+                 <div className="h-28 w-28 rounded-full border-4 border-gray-400/20 bg-white/5 mb-4 flex items-center justify-center text-gray-400 relative group p-1">
+                    <div className="absolute inset-0 rounded-full bg-gray-400/5 blur-[20px] opacity-0 group-hover:opacity-100 transition-all" />
+                    <div className="w-full h-full rounded-full bg-dark-bg flex items-center justify-center overflow-hidden border border-white/5">
+                      <User size={48} className="relative z-10 text-gray-500" />
+                    </div>
                  </div>
-                 <h3 className="text-xl font-black text-white uppercase italic">{TOP_PLAYERS[1].name}</h3>
-                 <p className="text-neon-blue font-black text-lg">{TOP_PLAYERS[1].points.toLocaleString()}</p>
-                 <div className="mt-4 flex flex-col gap-1 italic">
-                    <span className="text-[10px] text-gray-500 font-black uppercase">جایزه:</span>
-                    <span className="text-xs text-white font-bold bg-white/5 px-4 py-1.5 rounded-xl border border-white/5 shadow-xl">۳ روز اشتراک VIP</span>
+                 <h3 className="text-xl font-black text-white uppercase italic tracking-tight">{TOP_PLAYERS[1].name}</h3>
+                 <p className="text-neon-blue font-black text-lg mt-1">{TOP_PLAYERS[1].points.toLocaleString()}</p>
+                 <div className="mt-6 flex flex-col gap-1 italic w-full">
+                    <span className="text-[10px] text-gray-500 font-black uppercase mb-1">جایزه:</span>
+                    <span className="text-xs text-white font-bold bg-white/5 px-4 py-2 rounded-xl border border-white/5 shadow-xl block">۳ روز اشتراک VIP</span>
                  </div>
                </NeonCard>
              </motion.div>
@@ -121,41 +124,50 @@ export const LeaderboardPage = () => {
                animate={{ opacity: 1, scale: 1 }}
                className="order-1 sm:order-2 relative z-20 w-full max-w-[320px]"
              >
-               <NeonCard variant="purple" className="flex flex-col items-center p-10 text-center relative border-yellow-400/40 bg-[#12051a]/80 shadow-[0_0_50px_rgba(250,204,21,0.15)] rounded-[40px]">
+               <NeonCard variant="purple" className="flex flex-col items-center p-10 text-center relative border-yellow-400/40 bg-[#12051a]/90 shadow-[0_0_60px_rgba(250,204,21,0.2)] rounded-[40px] pt-16">
                  <motion.div 
-                   animate={{ y: [0, -10, 0] }}
-                   transition={{ duration: 3, repeat: Infinity }}
-                   className="absolute -top-12 left-1/2 -translate-x-1/2 text-7xl drop-shadow-[0_0_30px_rgba(250,204,21,0.8)] filter brightness-125 z-30"
+                   animate={{ y: [0, -10, 0], rotate: [-5, 5, -5] }}
+                   transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                   className="absolute -top-10 left-1/2 -track-x-1/2 text-7xl drop-shadow-[0_10px_20px_rgba(250,204,21,0.5)] z-30 mr-[-2.5rem]"
                  >
                    👑
                  </motion.div>
                  
-                 <div className="relative mb-6">
-                    <div className="h-32 w-32 rounded-full border-4 border-yellow-400 bg-white/5 flex items-center justify-center text-yellow-400 shadow-[0_0_40px_rgba(250,204,21,0.3)]">
-                       <User size={64} />
-                    </div>
+                 <div className="relative mb-8 flex items-center justify-center">
+                    {/* Centered Dash Circle */}
                     <motion.div 
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
-                      className="absolute -inset-3 border-2 border-dashed border-yellow-400/30 rounded-full"
+                       animate={{ rotate: 360 }}
+                       transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                       className="absolute -inset-6 border-2 border-dashed border-yellow-400/20 rounded-full"
                     />
+                    <motion.div 
+                       animate={{ rotate: -360 }}
+                       transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
+                       className="absolute -inset-3 border border-yellow-400/40 rounded-full opacity-50"
+                    />
+                    
+                    <div className="h-36 w-36 rounded-full border-4 border-yellow-400/80 bg-dark-bg flex items-center justify-center text-yellow-400 shadow-[0_0_50px_rgba(250,204,21,0.4)] relative z-10 p-1">
+                       <div className="w-full h-full rounded-full bg-yellow-400/10 flex items-center justify-center border border-yellow-400/20">
+                          <User size={80} />
+                       </div>
+                    </div>
                  </div>
                  
-                 <h3 className="text-2xl font-black text-white uppercase italic tracking-tighter drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]">
+                 <h3 className="text-2xl font-black text-white uppercase italic tracking-tighter drop-shadow-[0_0_15px_rgba(255,255,255,0.4)]">
                     {TOP_PLAYERS[0].name}
                  </h3>
-                 <p className="text-3xl text-yellow-400 font-black italic mt-1">{TOP_PLAYERS[0].points.toLocaleString()}</p>
+                 <p className="text-4xl text-yellow-400 font-black italic mt-2 tracking-tight">{TOP_PLAYERS[0].points.toLocaleString()}</p>
                  
-                 <div className="mt-8 rounded-xl bg-yellow-400 px-8 py-3 text-sm font-black text-dark-bg shadow-[0_10px_30px_rgba(250,204,21,0.4)] uppercase italic tracking-widest transform -rotate-1">
-                   Weekly Champion
+                 <div className="mt-8 rounded-2xl bg-yellow-400 px-10 py-3.5 text-sm font-black text-dark-bg shadow-[0_15px_30px_rgba(250,204,21,0.4)] uppercase italic tracking-widest">
+                   WEEKLY CHAMPION
                  </div>
                  
-                 <div className="mt-8 flex flex-col items-center border-t border-white/5 pt-4 w-full">
-                    <span className="text-[10px] text-gray-500 font-bold uppercase mb-3">پاداش ویژه قهرمانی</span>
+                 <div className="mt-10 flex flex-col items-center border-t border-white/5 pt-6 w-full">
+                    <span className="text-[10px] text-gray-500 font-black uppercase mb-4 tracking-widest">پاداش ویژه قهرمانی</span>
                     <div className="flex gap-4">
-                       <div className="h-10 w-10 rounded-xl bg-yellow-400/10 border border-yellow-400/20 flex items-center justify-center text-yellow-400 shadow-lg" title="7 Days VIP"><Clock size={20} /></div>
-                       <div className="h-10 w-10 rounded-xl bg-yellow-400/10 border border-yellow-400/20 flex items-center justify-center text-yellow-400 shadow-lg" title="Golden Crown Badge"><Crown size={20} /></div>
-                       <div className="h-10 w-10 rounded-xl bg-yellow-400/10 border border-yellow-400/20 flex items-center justify-center text-yellow-400 shadow-lg" title="Featured"><Star size={20} /></div>
+                       <div className="h-12 w-12 rounded-2xl bg-yellow-400/10 border border-yellow-400/20 flex items-center justify-center text-yellow-400 shadow-xl" title="7 Days VIP"><Clock size={24} /></div>
+                       <div className="h-12 w-12 rounded-2xl bg-yellow-400/10 border border-yellow-400/20 flex items-center justify-center text-yellow-400 shadow-xl" title="Golden Crown Badge"><Crown size={24} /></div>
+                       <div className="h-12 w-12 rounded-2xl bg-yellow-400/10 border border-yellow-400/20 flex items-center justify-center text-yellow-400 shadow-xl" title="Featured"><Star size={24} /></div>
                     </div>
                  </div>
                </NeonCard>
@@ -168,19 +180,21 @@ export const LeaderboardPage = () => {
                transition={{ delay: 0.2 }}
                className="order-3 relative z-10 w-full max-w-[280px]"
              >
-               <NeonCard variant="pink" className="flex flex-col items-center p-6 text-center bg-[#0a0a0f]/80 backdrop-blur-xl border-white/5 hover:border-neon-pink/30 transition-all">
-                 <div className="absolute -top-4 -left-4 h-11 w-11 rounded-full bg-orange-400/20 flex items-center justify-center text-orange-400 border border-white/10 shadow-lg">
-                    <Medal size={22} />
+               <NeonCard variant="pink" className="flex flex-col items-center p-6 text-center bg-[#0a0a0f]/80 backdrop-blur-xl border-white/5 hover:border-neon-pink/30 transition-all pt-10">
+                 <div className="absolute top-4 left-4 h-12 w-12 rounded-2xl bg-orange-400/10 flex items-center justify-center text-orange-400 border border-white/5 shadow-inner">
+                    <Medal size={24} />
                  </div>
-                 <div className="h-20 w-20 rounded-full border-4 border-orange-400/30 bg-white/5 mb-4 flex items-center justify-center text-orange-400 relative group">
-                    <div className="absolute inset-0 rounded-full bg-orange-400/10 blur-[15px] opacity-0 group-hover:opacity-100 transition-all" />
-                    <User size={40} className="relative z-10" />
+                 <div className="h-28 w-28 rounded-full border-4 border-orange-400/20 bg-white/5 mb-4 flex items-center justify-center text-orange-400 relative group p-1">
+                    <div className="absolute inset-0 rounded-full bg-orange-400/5 blur-[20px] opacity-0 group-hover:opacity-100 transition-all" />
+                    <div className="w-full h-full rounded-full bg-dark-bg flex items-center justify-center overflow-hidden border border-white/5">
+                      <User size={48} className="relative z-10 text-gray-500" />
+                    </div>
                  </div>
-                 <h3 className="text-xl font-black text-white uppercase italic">{TOP_PLAYERS[2].name}</h3>
-                 <p className="text-neon-pink font-black text-lg">{TOP_PLAYERS[2].points.toLocaleString()}</p>
-                 <div className="mt-4 flex flex-col gap-1 italic">
-                    <span className="text-[10px] text-gray-500 font-black uppercase">جایزه:</span>
-                    <span className="text-xs text-white font-bold bg-white/5 px-4 py-1.5 rounded-xl border border-white/5 shadow-xl">۱ روز اشتراک VIP</span>
+                 <h3 className="text-xl font-black text-white uppercase italic tracking-tight">{TOP_PLAYERS[2].name}</h3>
+                 <p className="text-neon-pink font-black text-lg mt-1">{TOP_PLAYERS[2].points.toLocaleString()}</p>
+                 <div className="mt-6 flex flex-col gap-1 italic w-full">
+                    <span className="text-[10px] text-gray-500 font-black uppercase mb-1">جایزه:</span>
+                    <span className="text-xs text-white font-bold bg-white/5 px-4 py-2 rounded-xl border border-white/5 shadow-xl block">۱ روز اشتراک VIP</span>
                  </div>
                </NeonCard>
              </motion.div>

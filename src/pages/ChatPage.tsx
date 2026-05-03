@@ -55,8 +55,8 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
     <div 
       id={`msg-${message.id}`}
       className={cn(
-        "flex gap-2 md:gap-3 group transition-all duration-300 mb-6 items-start px-1 md:px-0 relative w-full",
-        message.self ? "flex-row-reverse" : "flex-row"
+        "flex gap-2 md:gap-3 transition-all duration-300 mb-6 items-start px-1 md:px-0 relative w-full",
+        message.self ? "flex-row" : "flex-row-reverse"
       )}
     >
       {/* Interaction Menu Popover Overlay - For Mobile */}
@@ -100,8 +100,8 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
       {/* Message Content Area */}
       <div 
         className={cn(
-          "flex flex-col gap-1 max-w-[82%] md:max-w-[70%] min-w-0 transition-transform duration-200",
-          message.self ? "items-end text-right" : "items-start text-left",
+          "flex flex-col gap-1 max-w-[82%] md:max-w-[70%] min-w-0 transition-all duration-200 group/msg-content",
+          message.self ? "items-start text-right" : "items-end text-left",
           showActions && "scale-[1.02] z-50 relative"
         )}
         onClick={() => setShowActions(!showActions)}
@@ -109,7 +109,7 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
         {/* Header - Aligned with Avatar */}
         <div className={cn(
           "flex items-baseline gap-2 mb-1 px-1",
-          message.self ? "flex-row-reverse" : "flex-row"
+          message.self ? "flex-row" : "flex-row-reverse"
         )}>
            <span 
               className={cn("text-[11px] font-black tracking-tight cursor-pointer hover:underline flex items-center gap-1", nameColorClass)}
@@ -136,40 +136,33 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
 
         {/* Message Container */}
         <div className="relative group/bubble-container flex items-center w-full">
-          {/* Action Buttons - Discord Style Popover */}
-          <AnimatePresence>
-            {showActions && (
-              <motion.div 
-                initial={{ opacity: 0, scale: 0.9, x: message.self ? -20 : 20 }}
-                animate={{ opacity: 1, scale: 1, x: 0 }}
-                exit={{ opacity: 0, scale: 0.9, x: message.self ? -20 : 20 }}
-                className={cn(
-                  "absolute flex items-center gap-1 px-2 py-1.5 rounded-2xl bg-[#0f0f15] border border-white/10 shadow-2xl z-50 backdrop-blur-xl whitespace-nowrap",
-                  message.self ? "right-full mr-3" : "left-full ml-3"
-                )}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <button 
-                  className="h-8 w-8 flex items-center justify-center text-gray-400 hover:text-neon-blue transition-colors rounded-lg hover:bg-white/5" 
-                  onClick={(e) => { e.stopPropagation(); onReply(message); setShowActions(false); }}
-                >
-                  <Reply size={18} />
-                </button>
-                <div className="flex items-center gap-1.5 border-r border-white/5 pr-2">
-                   {["🔥", "🎯", "👑", "❤️"].map(emoji => (
-                     <button 
-                       key={emoji} 
-                       className="h-8 w-8 flex items-center justify-center hover:bg-white/5 rounded-lg transition-transform hover:scale-110 active:scale-95 text-lg"
-                       onClick={(e) => { e.stopPropagation(); onReaction(message.id, emoji); }}
-                     >
-                       {emoji}
-                     </button>
-                   ))}
-                </div>
-                <button className="h-8 w-8 flex items-center justify-center text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-white/5"><Smile size={18} /></button>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {/* Action Buttons - Desktop Hover & Mobile Click */}
+          <div className={cn(
+            "absolute flex items-center gap-1 px-2 py-1.5 rounded-2xl bg-[#0f0f15] border border-white/10 shadow-2xl z-50 backdrop-blur-xl whitespace-nowrap transition-all duration-200",
+            message.self ? "left-full ml-3" : "right-full mr-3",
+            showActions ? "opacity-100 scale-100 pointer-events-auto" : "opacity-0 scale-95 pointer-events-none lg:group-hover/bubble-container:opacity-100 lg:group-hover/bubble-container:scale-100 lg:group-hover/bubble-container:pointer-events-auto"
+          )}
+          onClick={(e) => e.stopPropagation()}
+          >
+            <button 
+              className="h-8 w-8 flex items-center justify-center text-gray-400 hover:text-neon-blue transition-colors rounded-lg hover:bg-white/5" 
+              onClick={(e) => { e.stopPropagation(); onReply(message); setShowActions(false); }}
+            >
+              <Reply size={18} />
+            </button>
+            <div className="flex items-center gap-1.5 border-r border-white/5 pr-2">
+                {["🔥", "🎯", "👑", "❤️"].map(emoji => (
+                  <button 
+                    key={emoji} 
+                    className="h-8 w-8 flex items-center justify-center hover:bg-white/5 rounded-lg transition-transform hover:scale-110 active:scale-95 text-lg"
+                    onClick={(e) => { e.stopPropagation(); onReaction(message.id, emoji); }}
+                  >
+                    {emoji}
+                  </button>
+                ))}
+            </div>
+            <button className="h-8 w-8 flex items-center justify-center text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-white/5"><Smile size={18} /></button>
+          </div>
 
           <motion.div 
             initial={{ opacity: 0, scale: 0.98, y: 5 }}
