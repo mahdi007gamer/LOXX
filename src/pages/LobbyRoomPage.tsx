@@ -364,26 +364,42 @@ export const LobbyRoomPage = () => {
         </div>
       </div>
 
-      {/* Mobile Chat Trigger & Bottom Actions */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 p-4 bg-dark-bg/80 backdrop-blur-xl border-t border-white/5 flex items-center gap-3">
+      {/* Mobile Chat Trigger & Bottom Actions - Fixed and Styled */}
+      <div className="lg:hidden fixed bottom-20 left-4 right-4 z-50 p-2 glass rounded-[24px] border border-white/10 flex items-center justify-between gap-2 shadow-2xl overflow-hidden">
+        <div className="flex items-center gap-1 shrink-0">
+          <button 
+            onClick={() => navigate("/lobbies")}
+            className="h-10 w-10 rounded-xl bg-neon-pink/10 text-neon-pink flex items-center justify-center border border-neon-pink/20"
+            title="خروج"
+          >
+            <LogOut size={18} />
+          </button>
+          <button 
+            onClick={() => setIsChatOpen(true)}
+            className="h-10 w-10 rounded-xl bg-white/5 flex items-center justify-center text-neon-blue relative border border-white/10"
+          >
+            <MessageSquare size={18} />
+            <div className="absolute top-2 right-2 h-1.5 w-1.5 rounded-full bg-neon-pink" />
+          </button>
+        </div>
+
+        <div className="flex items-center gap-1 overflow-x-auto scrollbar-none px-1 py-1">
+           <ControlButton icon={<Mic size={18} />} active className="h-10 w-10 rounded-xl shrink-0" />
+           <ControlButton icon={<UserPlus size={18} />} onClick={() => setIsInviteModalOpen(true)} className="h-10 w-10 rounded-xl shrink-0" />
+           <ControlButton icon={<Settings size={18} />} className="h-10 w-10 rounded-xl shrink-0" />
+        </div>
+
         <GlowButton 
           variant={isReady ? "blue" : "pink"} 
           onClick={toggleReady}
           disabled={isMatchStarted || isStarting}
           className={cn(
-            "flex-1 h-12",
+            "h-10 px-3 min-w-[70px] text-[9px] uppercase font-black italic rounded-xl shrink-0",
             (isMatchStarted || isStarting) && "opacity-50 grayscale cursor-not-allowed"
           )}
         >
-          {isReady ? "آماده!" : "بزن روی آماده"}
+          {isReady ? "آماده" : "GO"}
         </GlowButton>
-        <button 
-          onClick={() => setIsChatOpen(true)}
-          className="h-12 w-12 rounded-xl bg-white/5 flex items-center justify-center text-neon-blue relative"
-        >
-          <MessageSquare size={20} />
-          <div className="absolute top-2 right-2 h-2 w-2 rounded-full bg-neon-pink" />
-        </button>
       </div>
 
       {/* Mobile Chat Drawer */}
@@ -548,12 +564,13 @@ const Modal = ({ title, children, onClose }: { title: string, children: React.Re
   </motion.div>
 );
 
-const ControlButton = ({ icon, active = false, onClick }: { icon: React.ReactNode, active?: boolean, onClick?: () => void }) => (
+const ControlButton = ({ icon, active = false, onClick, className }: { icon: React.ReactNode, active?: boolean, onClick?: () => void, className?: string }) => (
   <button 
     onClick={onClick}
     className={cn(
       "h-12 w-12 rounded-2xl flex items-center justify-center transition-all group",
-      active ? "bg-white/10 text-white border border-white/10" : "bg-transparent text-gray-600 hover:text-white"
+      active ? "bg-white/10 text-white border border-white/10" : "bg-transparent text-gray-600 hover:text-white",
+      className
     )}
   >
     <div className="group-hover:scale-110 transition-transform">{icon}</div>

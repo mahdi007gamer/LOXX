@@ -55,7 +55,7 @@ export const ActiveLobbyWidget = () => {
       initial={{ x: 100, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
       exit={{ x: 100, opacity: 0 }}
-      className="fixed bottom-6 right-6 z-[9999] pointer-events-none"
+      className="fixed bottom-[88px] md:bottom-6 right-4 md:right-6 z-[9999] pointer-events-none"
       dir="rtl"
     >
       <motion.div

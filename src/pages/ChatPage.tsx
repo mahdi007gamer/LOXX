@@ -45,7 +45,7 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
     <div 
       id={`msg-${message.id}`}
       className={cn(
-        "flex gap-3 group transition-all duration-300 mb-6 items-start px-2 md:px-0 relative",
+        "flex gap-2 md:gap-3 group transition-all duration-300 mb-6 items-start px-1 md:px-0 relative w-full",
         message.self ? "flex-row" : "flex-row-reverse"
       )}
       onClick={() => setShowActions(!showActions)}
@@ -75,7 +75,7 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
 
       {/* Message Content Area */}
       <div className={cn(
-        "flex flex-col gap-1 max-w-[85%] md:max-w-[70%]",
+        "flex flex-col gap-1 max-w-[82%] md:max-w-[70%] min-w-0",
         message.self ? "items-start text-right" : "items-end text-left" 
       )}>
         {/* Header - Aligned with Avatar */}
@@ -130,8 +130,8 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
             initial={{ opacity: 0, scale: 0.98, y: 5 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             className={cn(
-              "relative rounded-2xl overflow-hidden shadow-2xl transition-all border w-fit",
-              "rtl text-right",
+              "relative rounded-2xl overflow-hidden shadow-2xl transition-all border w-fit max-w-full",
+              "rtl text-right break-words",
               message.self 
                 ? "bg-[#140e1a] text-white border-neon-pink/20 rounded-tr-none" 
                 : "bg-white/5 text-gray-100 border-white/10 rounded-tl-none"
@@ -782,7 +782,7 @@ export const ChatPage: React.FC = () => {
         <div 
           ref={scrollRef}
           onScroll={handleScroll}
-          className="flex-1 overflow-y-auto px-2 md:px-8 py-4 space-y-4 scroll-smooth custom-scrollbar relative min-h-0 overflow-x-hidden flex flex-col"
+          className="flex-1 overflow-y-auto px-2 md:px-8 py-2 md:py-4 space-y-2 md:space-y-4 scroll-smooth custom-scrollbar relative min-h-0 overflow-x-hidden flex flex-col no-scrollbar"
         >
           {/* Date Separator */}
           <div className="flex items-center gap-4 py-4 shrink-0">
@@ -844,8 +844,8 @@ export const ChatPage: React.FC = () => {
         </AnimatePresence>
 
         {/* Input Area - Adjusted for mobile */}
-        <div className="p-3 md:p-8 bg-gradient-to-t from-dark-bg to-transparent relative z-30 flex flex-col items-center shrink-0">
-          <div className="w-full max-w-4xl relative flex flex-col items-center">
+        <div className="p-2 md:p-8 bg-gradient-to-t from-dark-bg to-transparent relative z-30 flex flex-col items-center shrink-0 w-full overflow-hidden">
+          <div className="w-full max-w-4xl relative flex flex-col items-center px-1 md:px-0">
           {/* GIF Picker Popover */}
           <AnimatePresence>
             {showGifPicker && (

@@ -170,38 +170,38 @@ export const LobbiesPage = () => {
       <Sidebar />
       <main className="flex-1 px-4 py-6 md:py-8 md:mr-64 lg:px-8 pb-28 md:pb-8">
         <div className="container mx-auto max-w-6xl">
-          <header className="mb-6 flex flex-col items-center justify-between gap-4 md:flex-row md:mb-12">
+          <header className="mb-4 flex flex-col items-center justify-between gap-3 md:flex-row md:mb-12">
             <div className="text-right w-full">
-              <h1 className="text-xl md:text-4xl font-black text-white">لابی‌های فعال</h1>
-              <p className="mt-0.5 text-[10px] md:text-base text-gray-500">تیم خود را پیدا کنید و وارد بازی شوید</p>
+              <h1 className="text-lg md:text-4xl font-black text-white">لابی‌های فعال</h1>
+              <p className="mt-0.5 text-[9px] md:text-base text-gray-500 font-bold uppercase tracking-widest">تیم خود را پیدا کنید و بازی کنید</p>
             </div>
             
-            <div className="flex w-full items-center gap-2 md:gap-3 md:w-auto">
+            <div className="flex w-full items-center gap-2 md:gap-3 md:w-auto overflow-hidden">
                <div className="relative flex-1 md:w-64">
-                <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600" size={16} />
+                <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-700" size={14} />
                 <input 
-                  type="text" 
-                  placeholder="جستجوی لابی..."
-                  className="w-full rounded-xl border border-white/5 bg-white/5 py-2 md:py-2.5 pr-9 text-[11px] md:text-sm text-white focus:border-neon-blue/40 focus:outline-none transition-all placeholder:text-gray-700"
-                />
+                   type="text" 
+                   placeholder="جستجوی لابی..."
+                   className="w-full rounded-xl border border-white/5 bg-white/5 py-1.5 md:py-2.5 pr-8 text-[10px] md:text-sm text-white focus:border-neon-blue/40 focus:outline-none transition-all placeholder:text-gray-700 font-bold"
+                 />
               </div>
-              <GlowButton variant="blue" className="flex gap-1.5 h-9 md:h-10 px-3 md:px-6 shrink-0" onClick={() => setIsModalOpen(true)}>
-                <Plus size={16} />
-                <span className="text-[11px] md:text-sm font-black">ساخت لابی</span>
+              <GlowButton variant="blue" className="flex gap-1.5 h-8 md:h-10 px-3 md:px-6 shrink-0" onClick={() => setIsModalOpen(true)}>
+                <Plus size={14} />
+                <span className="text-[10px] md:text-sm font-black">ساخت لابی</span>
               </GlowButton>
             </div>
           </header>
 
           {/* Game Filters */}
-          <div className="mb-8 flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-             <button className="whitespace-nowrap rounded-lg bg-neon-blue px-4 md:px-6 py-1.5 md:py-2 text-[11px] md:text-sm font-black text-dark-bg transition-all">همه</button>
+          <div className="mb-6 flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-none no-scrollbar">
+             <button className="whitespace-nowrap rounded-lg bg-neon-blue px-3 md:px-6 py-1 md:py-2 text-[10px] md:text-sm font-black text-dark-bg transition-all">همه</button>
              {["CS 2", "Dota 2", "Valorant", "Apex"].map((game, i) => (
-                <button key={i} className="whitespace-nowrap rounded-lg border border-white/5 bg-white/5 px-4 md:px-6 py-1.5 md:py-2 text-[11px] md:text-sm font-bold text-gray-500 hover:text-white transition-all">
+                <button key={i} className="whitespace-nowrap rounded-lg border border-white/5 bg-white/5 px-3 md:px-6 py-1 md:py-2 text-[10px] md:text-sm font-bold text-gray-600 hover:text-white transition-all">
                   {game}
                 </button>
              ))}
-             <button className="flex items-center gap-1 rounded-lg border border-white/5 bg-white/5 px-3 py-1.5 text-[11px] text-gray-500 shrink-0">
-               <Filter size={14} />
+             <button className="flex items-center gap-1 rounded-lg border border-white/5 bg-white/5 px-2 md:px-4 py-1 text-[10px] text-gray-600 shrink-0">
+               <Filter size={12} />
                <span>فیلتر</span>
              </button>
           </div>
