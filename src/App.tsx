@@ -54,7 +54,6 @@ const AppContent = () => {
           <Route path="/lobbies" element={<LobbiesPage />} />
           <Route path="/lobby/:id" element={<LobbyRoomPage />} />
           <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/rooms" element={<RoomsPage />} />
           <Route path="/leaderboard" element={<LeaderboardPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/friends" element={<FriendsPage />} />

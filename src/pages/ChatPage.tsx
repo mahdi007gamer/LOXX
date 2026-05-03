@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
+import { Link } from "react-router-dom";
 import { Sidebar } from "../components/layout/Sidebar";
 import { GlowButton } from "../components/ui/GlowButton";
-import { Send, Hash, Users, MoreVertical, Plus, Smile, Image as ImageIcon, Reply, Heart, ChevronDown, Award, Star, Zap, Crown, Play, Check } from "lucide-react";
+import { Send, Hash, Users, MoreVertical, Plus, Smile, Image as ImageIcon, Reply, Heart, ChevronDown, Award, Star, Zap, Crown, Play, Check, Menu, X, MessageSquare, User } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import { motion, AnimatePresence } from "motion/react";
 import { useGames } from "../context/GamesContext";
@@ -42,13 +43,13 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
     <div 
       id={`msg-${message.id}`}
       className={cn(
-        "flex gap-3 group transition-all duration-300 mb-2 items-start px-2 md:px-0",
+        "flex gap-3 group transition-all duration-300 mb-6 items-start px-2 md:px-0",
         message.self ? "flex-row" : "flex-row-reverse"
       )}
     >
-      {/* Avatar */}
+      {/* Avatar - Positioned to start at the same level as the name */}
       <div 
-        className="shrink-0 cursor-pointer relative"
+        className="shrink-0 cursor-pointer relative mt-1"
         onClick={() => openProfile({
           senderName: message.senderName,
           senderAvatar: message.senderAvatar,
@@ -71,16 +72,16 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
 
       {/* Message Content Area */}
       <div className={cn(
-        "flex flex-col gap-0.5 max-w-[85%] md:max-w-[65%]",
-        message.self ? "items-start" : "items-end" 
+        "flex flex-col gap-1 max-w-[85%] md:max-w-[70%]",
+        message.self ? "items-start text-right" : "items-end text-left" 
       )}>
-        {/* Header - Compact */}
+        {/* Header - Aligned with Avatar */}
         <div className={cn(
-          "flex items-center gap-2 mb-0.5 px-1 opacity-60 hover:opacity-100 transition-opacity",
+          "flex items-baseline gap-2 mb-1 px-1",
           message.self ? "flex-row" : "flex-row-reverse"
         )}>
            <span 
-              className={cn("text-[10px] font-black tracking-tight cursor-pointer hover:underline", nameColorClass)}
+              className={cn("text-[11px] font-black tracking-tight cursor-pointer hover:underline", nameColorClass)}
               onClick={() => openProfile({
                 senderName: message.senderName,
                 senderAvatar: message.senderAvatar,
@@ -94,12 +95,12 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
           <span className="text-[9px] text-gray-500 font-bold">{message.timestamp}</span>
         </div>
 
-        {/* Message Container with embedded actions and reply */}
-        <div className="relative group/bubble-container">
-          {/* Action Buttons - Tighter and Cleaner */}
+        {/* Message Container */}
+        <div className="relative group/bubble-container flex items-center w-full">
+          {/* Action Buttons - Opposite sides as requested */}
           <div className={cn(
-            "absolute top-0 bottom-0 flex items-center gap-1.5 opacity-0 group-hover/bubble-container:opacity-100 transition-all duration-200 z-10",
-            message.self ? "right-full mr-2" : "left-full ml-2"
+            "absolute flex items-center gap-1.5 opacity-0 group-hover/bubble-container:opacity-100 transition-all duration-200 z-10",
+            message.self ? "left-full ml-3" : "right-full mr-3"
           )}>
             <button 
               className="p-1.5 rounded-lg bg-black/80 text-gray-400 hover:text-neon-pink hover:bg-neon-pink/10 border border-white/5 backdrop-blur-md transition-all active:scale-90"
@@ -116,7 +117,7 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
             initial={{ opacity: 0, scale: 0.98, y: 5 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             className={cn(
-              "relative rounded-2xl overflow-hidden shadow-2xl transition-all border",
+              "relative rounded-2xl overflow-hidden shadow-2xl transition-all border w-fit",
               "rtl text-right",
               message.self 
                 ? "bg-[#140e1a] text-white border-neon-pink/20 rounded-tr-none" 
@@ -375,6 +376,7 @@ export const ChatPage: React.FC = () => {
   const [showSaveFeedback, setShowSaveFeedback] = useState(false);
   const [showFriendsSidebar, setShowFriendsSidebar] = useState(false);
   const [userLvl, setUserLvl] = useState(42);
+  const [showChannelMenu, setShowChannelMenu] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   
   const { friends, sendMessage: sendFriendMessage } = useFriends();
@@ -626,29 +628,37 @@ export const ChatPage: React.FC = () => {
       {/* Main Chat Area */}
       <div className="relative flex flex-1 flex-col bg-[#050507] min-w-0">
         {/* Chat Header */}
-        <header className="flex h-16 items-center justify-between border-b border-white/5 bg-black/20 backdrop-blur-md px-8 sticky top-0 z-30">
-          <div className="flex items-center gap-4">
-            <div className="h-10 w-10 flex items-center justify-center rounded-xl bg-neon-blue/10 border border-neon-blue/20 text-neon-blue shadow-[0_0_15px_rgba(0,229,255,0.1)] overflow-hidden">
+        <header className="flex h-16 items-center justify-between border-b border-white/5 bg-black/20 backdrop-blur-md px-4 md:px-8 sticky top-0 z-30">
+          <div className="flex items-center gap-2 md:gap-4 flex-1 min-w-0">
+            {/* Mobile Channel Switcher Toggle */}
+            <button 
+              onClick={() => setShowChannelMenu(!showChannelMenu)}
+              className="p-2 rounded-lg bg-white/5 text-gray-400 hover:text-white md:hidden"
+            >
+              <Menu size={20} />
+            </button>
+
+            <div className="h-9 w-9 md:h-10 md:w-10 flex items-center justify-center rounded-xl bg-neon-blue/10 border border-neon-blue/20 text-neon-blue shadow-[0_0_15px_rgba(0,229,255,0.1)] overflow-hidden shrink-0">
               {activeChannel.type === 'game' ? (
                 <img src={activeChannel.icon} alt="" className="h-full w-full object-cover opacity-80" />
               ) : (
                 <Hash size={20} />
               )}
             </div>
-            <div>
+            <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <h3 className="font-black text-white tracking-widest">{activeChannel.name}</h3>
+                <h3 className="font-black text-white tracking-widest truncate">{activeChannel.name}</h3>
                 {activeChannel.type === 'game' && (
-                  <span className="px-1.5 py-0.5 rounded bg-neon-blue/10 text-[8px] text-neon-blue font-bold border border-neon-blue/20 uppercase">Game Room</span>
+                  <span className="hidden xs:inline-block px-1.5 py-0.5 rounded bg-neon-blue/10 text-[8px] text-neon-blue font-black border border-neon-blue/20 uppercase tracking-tighter">Game Room</span>
                 )}
               </div>
-              <div className="flex items-center gap-2">
-                <div className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse"></div>
-                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-tighter">{activeChannel.users} نفر در حال گفتگو</p>
+              <div className="flex items-center gap-2 truncate">
+                <div className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse shrink-0"></div>
+                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-tighter truncate">{activeChannel.users} نفر آنلاین</p>
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1 md:gap-3">
             {activeChannel.type === 'game' && (
               <GlowButton 
                 variant="pink" 
@@ -660,7 +670,7 @@ export const ChatPage: React.FC = () => {
                  دعوت به لابی
               </GlowButton>
             )}
-            <div className="h-8 w-px bg-white/5 mx-2"></div>
+            <div className="hidden md:block h-8 w-px bg-white/5 mx-2"></div>
             <button 
               onClick={() => setShowFriendsSidebar(!showFriendsSidebar)}
               className={cn(
@@ -670,9 +680,78 @@ export const ChatPage: React.FC = () => {
             >
               <Users size={20} />
             </button>
-            <button className="p-2 text-gray-500 hover:text-white hover:bg-white/5 rounded-lg transition-all"><MoreVertical size={20} /></button>
+            <button className="hidden md:block p-2 text-gray-500 hover:text-white hover:bg-white/5 rounded-lg transition-all"><MoreVertical size={20} /></button>
           </div>
         </header>
+
+        {/* Mobile Channel Overlay */}
+        <AnimatePresence>
+          {showChannelMenu && (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setShowChannelMenu(false)}
+                className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm md:hidden"
+              />
+              <motion.div
+                initial={{ x: "-100%" }}
+                animate={{ x: 0 }}
+                exit={{ x: "-100%" }}
+                transition={{ type: "spring", damping: 30, stiffness: 300 }}
+                className="fixed left-0 top-0 bottom-0 z-[101] w-72 bg-dark-bg/95 border-r border-white/10 p-6 backdrop-blur-xl md:hidden"
+              >
+                <div className="flex items-center justify-between mb-8">
+                  <h2 className="text-xl font-black text-white tracking-widest uppercase">کانال‌ها</h2>
+                  <button onClick={() => setShowChannelMenu(false)} className="text-gray-500 hover:text-white">
+                    <X size={24} />
+                  </button>
+                </div>
+                
+                <div className="space-y-6">
+                  {/* Public Channels */}
+                  <div>
+                    <h3 className="text-[10px] font-black text-gray-600 uppercase tracking-widest mb-3">عمومی</h3>
+                    <div className="space-y-1">
+                      {INITIAL_CHANNELS.map((channel) => (
+                        <ChannelButton 
+                          key={channel.id}
+                          channel={channel}
+                          active={activeChannelId === channel.id}
+                          onClick={() => {
+                            setActiveChannelId(channel.id);
+                            setShowChannelMenu(false);
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Game Specific Channels */}
+                  {myGamesChannels.length > 0 && (
+                    <div>
+                      <h3 className="text-[10px] font-black text-neon-blue/40 uppercase tracking-widest mb-3">بازی‌های من</h3>
+                      <div className="space-y-1">
+                        {myGamesChannels.map((channel) => (
+                          <ChannelButton 
+                            key={channel.id}
+                            channel={channel}
+                            active={activeChannelId === channel.id}
+                            onClick={() => {
+                              setActiveChannelId(channel.id);
+                              setShowChannelMenu(false);
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
 
         {/* Messages List */}
         <div 
@@ -738,8 +817,8 @@ export const ChatPage: React.FC = () => {
         </AnimatePresence>
 
         {/* Input Area */}
-        <div className="p-4 md:p-8 bg-gradient-to-t from-dark-bg to-transparent relative">
-          
+        <div className="p-4 md:p-8 bg-gradient-to-t from-dark-bg to-transparent relative z-10 flex justify-center">
+          <div className="w-full max-w-4xl relative">
           {/* GIF Picker Popover */}
           <AnimatePresence>
             {showGifPicker && (
@@ -843,6 +922,7 @@ export const ChatPage: React.FC = () => {
           </div>
         </div>
       </div>
+    </div>
 
       {/* Friends Sidebar - Mobile optimized */}
       <AnimatePresence mode="popLayout">
@@ -924,21 +1004,30 @@ export const ChatPage: React.FC = () => {
                           <p className="text-[10px] text-gray-500 font-bold">سطح {friend.level}</p>
                         </div>
 
-                        {/* Hover Actions */}
-                        <div className="absolute inset-0 bg-dark-bg/80 backdrop-blur-sm opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2 rounded-2xl transition-all duration-300">
-                           <button 
-                            onClick={() => sendFriendMessage(friend.id, "سلام!")}
-                            className="h-9 w-9 rounded-xl bg-neon-blue/20 text-neon-blue hover:bg-neon-blue hover:text-dark-bg transition-all flex items-center justify-center shadow-lg shadow-neon-blue/10"
-                            title="پیام"
-                           >
-                             <Plus size={16} />
-                           </button>
-                           <button 
-                            className="h-9 w-9 rounded-xl bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-all flex items-center justify-center"
-                            title="پروفایل"
-                           >
-                             <Users size={16} />
-                           </button>
+                        {/* Actions Overlay - Fixed for mobile (tap) and desktop (hover) */}
+                        <div className="absolute inset-0 bg-dark-bg/80 backdrop-blur-sm opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-all duration-300 md:group-hover:flex items-center justify-center gap-2 rounded-2xl z-20 flex pointer-events-none group-hover:pointer-events-auto">
+                           <div className="flex items-center justify-center gap-2 pointer-events-auto scale-90 md:scale-100">
+                             <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                sendFriendMessage(friend.id, "سلام!");
+                              }}
+                              className="h-10 w-10 md:h-9 md:w-9 rounded-xl bg-neon-blue/20 text-neon-blue hover:bg-neon-blue hover:text-dark-bg transition-all flex items-center justify-center shadow-lg shadow-neon-blue/10"
+                              title="پیام"
+                             >
+                               <MessageSquare size={16} />
+                             </button>
+                             <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                // Toggle some state to show friend details or navigate
+                              }}
+                              className="h-10 w-10 md:h-9 md:w-9 rounded-xl bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-all flex items-center justify-center"
+                              title="پروفایل"
+                             >
+                               <User size={16} />
+                             </button>
+                           </div>
                         </div>
                       </motion.div>
                     ))
@@ -953,10 +1042,12 @@ export const ChatPage: React.FC = () => {
             </div>
 
             {/* Footer Action */}
-            <div className="p-4 bg-white/5 border-t border-white/5">
-              <GlowButton variant="blue" className="w-full !rounded-2xl text-xs font-black h-12 shadow-neon-blue/10">
-                یافتن دوستان جدید
-              </GlowButton>
+            <div className="p-4 pb-20 md:pb-4 bg-white/5 border-t border-white/5">
+              <Link to="/friends" onClick={() => setShowFriendsSidebar(false)}>
+                <GlowButton variant="blue" className="w-full !rounded-2xl text-xs font-black h-12 shadow-neon-blue/10">
+                  یافتن دوستان جدید
+                </GlowButton>
+              </Link>
             </div>
           </motion.div>
         </>

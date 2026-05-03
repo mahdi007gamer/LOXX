@@ -6,7 +6,7 @@ import { cn } from '../../lib/utils';
 export const BottomNav = () => {
   const menuItems = [
     { icon: LayoutDashboard, label: "داشبورد", path: "/dashboard" },
-    { icon: Gamepad2, label: "بازی‌ها", path: "/rooms" },
+    { icon: Gamepad2, label: "بازی‌ها", path: "/games" },
     { icon: Users, label: "لابی‌ها", path: "/lobbies" },
     { icon: MessageSquare, label: "چت", path: "/chat" },
     { icon: User, label: "پروفایل", path: "/profile" },

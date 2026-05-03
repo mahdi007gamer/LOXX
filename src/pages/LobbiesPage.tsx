@@ -177,18 +177,18 @@ export const LobbiesPage = () => {
               <p className="mt-1 text-xs md:text-base text-gray-400">تیم خود را پیدا کنید و وارد بازی شوید</p>
             </div>
             
-            <div className="flex w-full items-center gap-4 md:w-auto">
+            <div className="flex w-full items-center gap-3 md:w-auto">
                <div className="relative flex-1 md:w-64">
                 <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
                 <input 
                   type="text" 
-                  placeholder="جستجوی لابی یا بازی..."
-                  className="w-full rounded-xl border border-white/10 bg-white/5 py-2.5 pr-10 text-sm text-white focus:border-neon-blue/50 focus:outline-none transition-all"
+                  placeholder="جستجوی لابی..."
+                  className="w-full rounded-xl border border-white/10 bg-white/5 py-2.5 pr-10 text-xs md:text-sm text-white focus:border-neon-blue/50 focus:outline-none transition-all"
                 />
               </div>
-              <GlowButton variant="blue" className="flex gap-2" onClick={() => setIsModalOpen(true)}>
+              <GlowButton variant="blue" className="flex gap-2 h-10 px-4 md:px-6" onClick={() => setIsModalOpen(true)}>
                 <Plus size={18} />
-                <span className="hidden sm:inline">ایجاد لابی</span>
+                <span className="text-xs md:text-sm">ساخت لابی</span>
               </GlowButton>
             </div>
           </header>
@@ -321,7 +321,7 @@ export const LobbiesPage = () => {
                       </div>
                     </div>
 
-                    <div className="mt-4 flex items-center justify-between border-t border-white/5 p-5 py-4 transition-all group-hover:opacity-0">
+                    <div className="mt-4 flex items-center justify-between border-t border-white/5 p-5 py-4 transition-all md:group-hover:opacity-0">
                       <div className="flex items-center gap-2.5">
                          <div className="flex -space-x-2.5">
                             {[1, 2, 3].map(p => (
@@ -332,12 +332,19 @@ export const LobbiesPage = () => {
                          </div>
                          <span className="text-sm font-bold text-gray-500">+{lobby.players} آنلاین</span>
                       </div>
-                      <div className="px-4 py-2 rounded-lg bg-white/5 text-sm font-black text-neon-blue uppercase italic tracking-wider">
+                      <div className="px-4 py-2 rounded-lg bg-white/5 text-sm font-black text-neon-blue uppercase italic tracking-wider md:block hidden">
                          JOIN NOW
                       </div>
+                      <GlowButton 
+                        variant={lobby.variant} 
+                        className="md:hidden h-9 px-4 !rounded-lg text-[10px] font-black"
+                        onClick={handleRequestAccess}
+                      >
+                        درخواست عضویت
+                      </GlowButton>
                     </div>
 
-                    <div className="absolute inset-x-0 bottom-6 px-6 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 z-30 flex items-center justify-center">
+                    <div className="absolute inset-x-0 bottom-6 px-6 translate-y-4 opacity-0 md:group-hover:translate-y-0 md:group-hover:opacity-100 transition-all duration-300 z-30 hidden md:flex items-center justify-center">
                       <GlowButton variant={lobby.variant} className="w-full text-xs font-black py-4" onClick={handleRequestAccess}>
                         درخواست عضویت
                       </GlowButton>

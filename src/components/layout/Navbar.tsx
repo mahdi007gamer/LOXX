@@ -7,7 +7,7 @@ import { cn } from "@/src/lib/utils";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "داشبورد", path: "/dashboard" },
-  { icon: Target, label: "اتاق‌های بازی", path: "/rooms" },
+  { icon: Gamepad2, label: "بازی‌ها", path: "/games" },
   { icon: Users, label: "لابی‌ها", path: "/lobbies" },
   { icon: MessageSquare, label: "چت سراسری", path: "/chat" },
   { icon: Trophy, label: "رتبه‌بندی", path: "/leaderboard" },
@@ -45,6 +45,12 @@ export const Navbar = () => {
         >
           {/* Left: Logo & Mobile Toggle */}
           <div className="flex items-center gap-4 flex-shrink-0">
+            <button 
+              className="p-2 text-gray-400 hover:text-white md:hidden"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+            >
+              {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
             <Link to="/" className="flex items-center gap-4 group">
               <img 
                 src="/logo.png" 
@@ -82,7 +88,7 @@ export const Navbar = () => {
           <div className="hidden md:flex items-center gap-8 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
             <NavLink to="/lobbies" className={({ isActive }) => cn("transition-all font-bold text-xs uppercase tracking-[0.2em]", isActive ? "text-neon-blue drop-shadow-[0_0_8px_rgba(0,229,255,0.5)]" : "text-gray-400 hover:text-white hover:tracking-[0.3em]")}>لابی‌ها</NavLink>
             <NavLink to="/chat" className={({ isActive }) => cn("transition-all font-bold text-xs uppercase tracking-[0.2em]", isActive ? "text-neon-blue drop-shadow-[0_0_8px_rgba(0,229,255,0.5)]" : "text-gray-400 hover:text-white hover:tracking-[0.3em]")}>چت سراسری</NavLink>
-            <NavLink to="/rooms" className={({ isActive }) => cn("transition-all font-bold text-xs uppercase tracking-[0.2em]", isActive ? "text-neon-blue drop-shadow-[0_0_8px_rgba(0,229,255,0.5)]" : "text-gray-400 hover:text-white hover:tracking-[0.3em]")}>اتاق‌ها</NavLink>
+            <NavLink to="/games" className={({ isActive }) => cn("transition-all font-bold text-xs uppercase tracking-[0.2em]", isActive ? "text-neon-blue drop-shadow-[0_0_8px_rgba(0,229,255,0.5)]" : "text-gray-400 hover:text-white hover:tracking-[0.3em]")}>بازی‌ها</NavLink>
           </div>
 
           {/* Right: Actions */}

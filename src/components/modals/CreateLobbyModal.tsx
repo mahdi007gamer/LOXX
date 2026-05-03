@@ -170,11 +170,11 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
         className="relative w-full max-w-5xl overflow-hidden rounded-[32px] border border-white/10 bg-[#0a0a0f] shadow-[0_30px_100px_rgba(0,0,0,0.8)] flex flex-col md:flex-row h-[82vh] min-h-[660px]"
       >
         {/* Left: Form Flow */}
-        <div className="flex-1 p-8 md:p-10 overflow-y-auto custom-scrollbar">
-          <div className="mb-10 flex items-center justify-between">
+        <div className="flex-1 p-6 md:p-10 overflow-y-auto custom-scrollbar">
+          <div className="mb-6 md:mb-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <h2 className="text-3xl font-black text-white">ایجاد لابی حرفه‌ای</h2>
-              <p className="text-gray-400 text-sm mt-1">تیم رویایی خود را پیدا كنيد</p>
+              <h2 className="text-2xl md:text-3xl font-black text-white">ایجاد لابی حرفه‌ای</h2>
+              <p className="text-gray-400 text-xs md:text-sm mt-1">تیم رویایی خود را پیدا كنيد</p>
             </div>
             
             {/* Step Indicators */}
@@ -527,7 +527,7 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
         </div>
 
         {/* Right: Live Preview */}
-        <div className="w-full md:w-[400px] bg-white/[0.02] p-8 border-r border-white/10 flex flex-col items-center justify-center relative">
+        <div className="hidden lg:flex w-full md:w-[400px] bg-white/[0.02] p-8 border-r border-white/10 flex-col items-center justify-center relative">
           <div className="absolute top-8 left-8 text-[10px] uppercase font-black text-gray-600 tracking-widest flex items-center gap-2">
             <motion.div 
               animate={{ opacity: [1, 0.4, 1] }} 

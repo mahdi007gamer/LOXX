@@ -183,25 +183,25 @@ export const FriendsPage = () => {
   };
 
   return (
-    <div className="flex min-h-[calc(100vh-64px)]">
+    <div className="flex min-h-[calc(100vh-64px)] overflow-x-hidden">
       <Sidebar />
-      <main className="flex-1 px-4 py-8 md:mr-64 lg:px-8" dir="rtl">
+      <main className="flex-1 px-4 py-8 md:mr-64 lg:px-8 pb-24 md:pb-8 w-full" dir="rtl">
         <div className="container mx-auto max-w-6xl">
-          <header className="mb-10">
-            <h1 className="text-3xl font-black text-white">دوستان و اجتماعی</h1>
-            <p className="text-gray-400">مدیریت دوستان، جستجوی بازیکنان و درخواست‌ها</p>
+          <header className="mb-8 md:mb-10 text-center md:text-right">
+            <h1 className="text-2xl md:text-3xl font-black text-white">دوستان و اجتماعی</h1>
+            <p className="mt-1 text-xs md:text-base text-gray-400">مدیریت دوستان، جستجوی بازیکنان و درخواست‌ها</p>
           </header>
 
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
             {/* Left Column: Friend List & Search */}
-            <div className="lg:col-span-2 space-y-8">
+            <div className="lg:col-span-2 space-y-6 md:space-y-8 order-2 lg:order-1">
               {/* Search Bar */}
               <div className="relative">
                 <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500" size={20} />
                 <input 
                   type="text" 
                   placeholder="جستجو در لیست دوستان..."
-                  className="w-full rounded-2xl border border-white/10 bg-white/5 py-4 pr-12 text-white focus:border-neon-blue/50 focus:outline-none transition-all placeholder:text-gray-600"
+                  className="w-full rounded-2xl border border-white/10 bg-white/5 py-4 pr-12 text-sm text-white focus:border-neon-blue/50 focus:outline-none transition-all placeholder:text-gray-600"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
@@ -280,23 +280,23 @@ export const FriendsPage = () => {
             </div>
 
             {/* Right Column: User Search & Requests */}
-            <div className="space-y-8">
+            <div className="space-y-6 md:space-y-8 order-1 lg:order-2">
                {/* Mini Profile */}
                <NeonCard variant="purple" className="p-4 relative overflow-hidden group">
                  <div className="absolute top-0 right-0 h-24 w-24 -mr-12 -mt-12 rounded-full bg-neon-purple/10 blur-2xl group-hover:bg-neon-purple/20 transition-all duration-700" />
                  <div className="relative flex items-center gap-4">
-                    <div className="h-16 w-16 rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center text-2xl shadow-2xl">
+                    <div className="h-14 w-14 md:h-16 md:w-16 rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center text-xl md:text-2xl shadow-2xl">
                       👤
                     </div>
-                    <div className="flex-1">
-                      <h3 className="font-black text-white text-lg">سینا سلطان</h3>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-black text-white text-base md:text-lg truncate">سینا سلطان</h3>
                       <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-xs text-gray-500 font-mono tracking-tighter">@sina_sultan</span>
+                        <span className="text-[10px] md:text-xs text-gray-500 font-mono tracking-tighter truncate">@sina_sultan</span>
                         <button 
                           onClick={() => {
                             navigator.clipboard.writeText("@sina_sultan");
                           }}
-                          className="p-1 text-gray-600 hover:text-neon-purple transition-colors"
+                          className="p-1 text-gray-600 hover:text-neon-purple transition-colors shrink-0"
                           title="کپی کردن نام کاربری"
                         >
                           <Copy size={12} />
@@ -304,17 +304,17 @@ export const FriendsPage = () => {
                       </div>
                       <div className="flex items-center gap-3 mt-2">
                          <div className="flex flex-col">
-                           <span className="text-[10px] text-gray-600 uppercase font-bold">سطح</span>
-                           <span className="text-sm font-black text-neon-purple">۴۵</span>
+                           <span className="text-[8px] md:text-[10px] text-gray-600 uppercase font-bold">سطح</span>
+                           <span className="text-xs md:text-sm font-black text-neon-purple">۴۵</span>
                          </div>
                          <div className="w-px h-6 bg-white/5" />
                          <div className="flex flex-col">
-                           <span className="text-[10px] text-gray-600 uppercase font-bold">امتیاز</span>
-                           <span className="text-sm font-black text-neon-blue">۲,۸۴۰</span>
+                           <span className="text-[8px] md:text-[10px] text-gray-600 uppercase font-bold">امتیاز</span>
+                           <span className="text-xs md:text-sm font-black text-neon-blue">۲,۸۴۰</span>
                          </div>
                       </div>
                     </div>
-                    <Link to="/profile/sina_sultan" className="p-2 bg-white/5 rounded-xl text-gray-400 hover:text-white hover:bg-white/10 transition-all">
+                    <Link to="/profile/sina_sultan" className="p-2 bg-white/5 rounded-xl text-gray-400 hover:text-white hover:bg-white/10 transition-all shrink-0">
                       <ExternalLink size={16} />
                     </Link>
                  </div>

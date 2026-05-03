@@ -43,11 +43,11 @@ const GameCard: React.FC<{ game: Game; index: number }> = ({ game, index }) => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05 }}
       whileHover={{ y: -5 }}
-      className="group relative"
+      className="group relative h-[420px] md:h-[400px]"
     >
-      <NeonCard variant={isAdded ? "blue" : "purple"} className="overflow-hidden border-white/5 flex flex-col h-full" hover={true}>
+      <NeonCard variant={isAdded ? "blue" : "purple"} className="overflow-hidden border-white/5 flex flex-col h-full h-full" hover={true}>
         {/* Game Image */}
-        <div className="relative h-48 overflow-hidden">
+        <div className="relative h-40 md:h-48 overflow-hidden shrink-0">
           <img 
             src={game.image} 
             alt={game.title} 
@@ -145,25 +145,25 @@ export const GamesPage = () => {
   }, [allGames, searchTerm]);
 
   return (
-    <div className="flex min-h-[calc(100vh-64px)]">
+    <div className="flex min-h-[calc(100vh-64px)] overflow-x-hidden">
       <Sidebar />
-      <main className="flex-1 px-4 py-8 md:mr-64 lg:px-8" dir="rtl">
+      <main className="flex-1 px-4 py-8 md:mr-64 lg:px-8 pb-32 md:pb-8 w-full" dir="rtl">
         <div className="container mx-auto max-w-7xl">
-          <header className="mb-12">
+          <header className="mb-8 md:mb-12">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-              <div>
+              <div className="text-center md:text-right">
                 <motion.h1 
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
-                  className="text-4xl font-black text-white"
+                  className="text-3xl md:text-4xl font-black text-white"
                 >
-                  اتاق‌های بازی
+                  همه بازی‌ها
                 </motion.h1>
-                <p className="text-gray-400 mt-2">بازی مورد علاقه خود را انتخاب کنید و وارد لابی شوید</p>
+                <p className="text-gray-400 mt-2 text-xs md:text-sm">بازی مورد علاقه خود را انتخاب کنید و وارد لابی شوید</p>
               </div>
               
-              <Link to="/my-games">
-                <GlowButton variant="purple" className="flex items-center gap-2 px-6">
+              <Link to="/my-games" className="w-full md:w-auto">
+                <GlowButton variant="purple" className="flex items-center justify-center gap-2 px-6 w-full md:w-auto">
                   <Heart size={18} />
                   بازی‌های من
                 </GlowButton>
@@ -171,12 +171,12 @@ export const GamesPage = () => {
             </div>
             
             {/* Search Bar */}
-            <div className="mt-10 relative">
-              <Search className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-500" size={24} />
+            <div className="mt-8 md:mt-10 relative">
+              <Search className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
               <input 
                 type="text" 
                 placeholder="جستجوی بازی بر اساس نام یا سبک..."
-                className="w-full rounded-2xl border border-white/10 bg-white/5 py-5 pr-14 pl-6 text-white focus:border-neon-blue/50 focus:outline-none transition-all placeholder:text-gray-600 shadow-2xl"
+                className="w-full rounded-2xl border border-white/10 bg-white/5 py-4 md:py-5 pr-14 pl-6 text-sm text-white focus:border-neon-blue/50 focus:outline-none transition-all placeholder:text-gray-600 shadow-xl"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
