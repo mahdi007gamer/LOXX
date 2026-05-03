@@ -143,7 +143,7 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
     setTimeout(() => {
       setIsSubmitting(false);
       onSuccess();
-    }, 2000);
+    }, 600);
   };
 
   // Reset step on close

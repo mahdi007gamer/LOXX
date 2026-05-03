@@ -228,7 +228,7 @@ export const LobbyRoomPage = () => {
   };
 
   return (
-    <div className="h-[calc(100vh-64px)] bg-[#050508] text-white p-4 md:p-6 lg:p-8 flex flex-col gap-6 relative overflow-hidden font-sans" dir="rtl">
+    <div className="h-[calc(100vh-64px)] bg-[#050508] text-white p-2 md:p-6 lg:p-8 flex flex-col gap-4 md:gap-6 relative overflow-hidden font-sans" dir="rtl">
       {/* Background Elements */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute inset-0 bg-[linear-gradient(rgba(0,229,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,229,255,0.03)_1px,transparent_1px)] bg-[length:60px_60px]" />
@@ -264,32 +264,32 @@ export const LobbyRoomPage = () => {
       <motion.header 
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        className="relative z-10 glass rounded-[32px] p-4 md:p-6 flex flex-wrap items-center justify-between gap-6 border-white/5 shadow-2xl"
+        className="relative z-10 glass rounded-[24px] md:rounded-[32px] p-3 md:p-6 flex flex-wrap items-center justify-between gap-3 md:gap-6 border-white/5 shadow-2xl shrink-0"
       >
-        <div className="flex items-center gap-5">
+        <div className="flex items-center gap-3 md:gap-5 flex-1 min-w-0">
            <button 
             onClick={() => navigate("/lobbies")}
-            className="p-3 rounded-2xl bg-white/5 hover:bg-neon-pink/10 transition-colors text-gray-400 hover:text-neon-pink"
+            className="p-2 md:p-3 rounded-xl md:rounded-2xl bg-white/5 hover:bg-neon-pink/10 transition-colors text-gray-400 hover:text-neon-pink shrink-0"
            >
-             <ChevronLeft size={20} className="rotate-180" />
+             <ChevronLeft size={18} className="md:size-5 rotate-180" />
            </button>
            
-           <div>
-             <div className="flex items-center gap-3 mb-1">
-               <h1 className="text-xl md:text-3xl font-black tracking-tight text-white">[CS2] رقابتی | رنک‌آپ سریع</h1>
-               <div className="px-3 py-1 rounded-full bg-neon-blue/10 border border-neon-blue/20 text-[10px] font-black text-neon-blue uppercase tracking-tighter">
-                 خاورمیانه (Middle East)
+           <div className="min-w-0 flex-1">
+             <div className="flex items-center gap-2 md:gap-3 mb-0.5 md:mb-1">
+               <h1 className="text-sm md:text-3xl font-black tracking-tight text-white truncate max-w-[150px] md:max-w-none">[CS2] رقابتی | رنک‌آپ سریع</h1>
+               <div className="px-1.5 md:px-3 py-0.5 md:py-1 rounded-full bg-neon-blue/10 border border-neon-blue/20 text-[7px] md:text-[10px] font-black text-neon-blue uppercase tracking-tighter shrink-0">
+                 ME
                </div>
              </div>
-             <div className="flex items-center gap-5 text-[11px] text-gray-500 font-black uppercase tracking-widest">
-               <span className="flex items-center gap-1.5"><Users size={12} className="text-neon-blue" /> {players.filter(p => p.name !== "Empty Slot").length} / 5 بازیکن</span>
-               <span className="flex items-center gap-1.5"><Trophy size={13} className="text-neon-pink" /> سطح حرفه‌ای</span>
+             <div className="flex items-center gap-3 md:gap-5 text-[9px] md:text-[11px] text-gray-500 font-black uppercase tracking-widest">
+               <span className="flex items-center gap-1 md:gap-1.5"><Users size={10} md:size={12} className="text-neon-blue shrink-0" /> {players.filter(p => p.name !== "Empty Slot").length} / 5</span>
+               <span className="flex items-center gap-1 md:gap-1.5"><Trophy size={11} md:size={13} className="text-neon-pink shrink-0" /> حرفه‌ای</span>
              </div>
            </div>
         </div>
 
-        <div className="flex items-center gap-4">
-          <div className="hidden lg:flex items-center gap-2 bg-black/60 rounded-2xl p-1 border border-white/10">
+        <div className="flex items-center gap-2 md:gap-4 shrink-0">
+          <div className="hidden sm:flex items-center gap-2 bg-black/60 rounded-2xl p-1 border border-white/10">
              <div className="px-4 py-2 text-[10px] font-black text-gray-500 border-l border-white/10 uppercase tracking-widest">کد لابی</div>
              <div className="px-4 py-2 font-mono text-sm text-neon-blue flex items-center gap-3">
                LX-9921-XP
@@ -304,19 +304,19 @@ export const LobbyRoomPage = () => {
             onClick={handleStartMatch}
             disabled={isStarting || !allReadyPulse || isMatchStarted}
             className={cn(
-              "px-10 h-14 text-sm shadow-[0_15px_40px_-5px_rgba(0,229,255,0.3)]",
+              "px-4 md:px-10 h-10 md:h-14 text-[10px] md:text-sm shadow-xl shrink-0 uppercase italic font-black",
               (!allReadyPulse || isMatchStarted) && "opacity-50 grayscale cursor-not-allowed"
             )}
           >
-            <Play size={20} className="ml-2" />
-            شروع مسابقه
+            <Play size={14} md:size={20} className="ml-1.5 md:ml-2" />
+            شروع
           </GlowButton>
         </div>
       </motion.header>
 
-      <div className="flex-1 flex flex-col lg:flex-row gap-6 relative z-10 overflow-hidden">
+      <div className="flex-1 flex flex-col lg:flex-row gap-4 md:gap-6 relative z-10 overflow-hidden">
         {/* Main Content Area */}
-        <div className="flex-1 flex flex-col gap-6 overflow-y-auto overflow-x-hidden custom-scrollbar pb-24 md:pb-8 px-2 md:px-4">
+        <div className="flex-1 flex flex-col gap-4 md:gap-6 overflow-y-auto overflow-x-hidden custom-scrollbar pb-24 md:pb-8 px-1 md:px-4">
           
           {/* Top Status Panel */}
           <MatchInfoPanel 
@@ -328,8 +328,8 @@ export const LobbyRoomPage = () => {
             onReopen={handleReopenLobby}
           />
 
-          {/* Players Grid - Improved responsiveness and padding */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-6 px-1">
+          {/* Players Grid - Drastically improved for mobile */}
+          <div className="grid grid-cols-2 md:grid-cols-2 xl:grid-cols-4 gap-3 md:gap-6 px-1">
             <AnimatePresence mode="popLayout">
               {players.map((player) => (
                 <PlayerCard 
@@ -687,7 +687,7 @@ const PlayerCard = ({ player, isSelected, onSelect, onVolumeChange, onMute, onIn
       whileHover={!isSlot ? { y: -8, transition: { duration: 0.2 } } : {}}
       onClick={!isSlot ? onSelect : () => onInvite()}
       className={cn(
-        "relative p-5 sm:p-6 rounded-[32px] border transition-all duration-300 backdrop-blur-md cursor-pointer group h-full flex flex-col justify-between min-w-0 min-h-[360px] w-full",
+        "relative p-3 md:p-6 rounded-[24px] md:rounded-[32px] border transition-all duration-300 backdrop-blur-md cursor-pointer group h-full flex flex-col justify-between min-w-0 min-h-[220px] md:min-h-[360px] w-full",
         isSlot ? "border-dashed border-white/10 bg-transparent opacity-40 hover:opacity-100" : "bg-[#0a0a0f] border-white/10 shadow-2xl overflow-hidden",
         player.isReady && !isSlot && "scale-[1.02] ring-1 ring-neon-blue/40 border-neon-blue/30 shadow-[0_20px_40px_-5px_rgba(0,229,255,0.15)]",
         player.isSpeaking && "ring-2 ring-green-500/50 shadow-[0_0_30px_rgba(34,197,94,0.1)]"
@@ -697,20 +697,20 @@ const PlayerCard = ({ player, isSelected, onSelect, onVolumeChange, onMute, onIn
         <>
           <div className="flex-1 flex flex-col">
             {/* Rank & Ping */}
-            <div className="mb-4 flex items-center justify-between">
-               <div className="flex items-center gap-2">
-                 <Trophy size={14} className="text-neon-pink" />
-                 <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">{player.rank}</span>
+            <div className="mb-2 md:mb-4 flex items-center justify-between">
+               <div className="flex items-center gap-1.5 md:gap-2">
+                 <Trophy size={10} className="md:size-[14px] text-neon-pink shrink-0" />
+                 <span className="text-[7px] md:text-[9px] font-black text-gray-500 uppercase tracking-widest truncate max-w-[50px] md:max-w-none">{player.rank}</span>
                </div>
-               <div className="flex items-center gap-1.5">
-                  <span className="text-[9px] font-bold text-gray-600 font-mono">{player.ping}ms</span>
+               <div className="flex items-center gap-1 md:gap-1.5">
+                  <span className="text-[7px] md:text-[9px] font-bold text-gray-600 font-mono shrink-0">{player.ping}ms</span>
                   <PingChart ping={player.ping} />
                </div>
             </div>
 
-            <div className="flex flex-col items-center flex-1 justify-center py-4">
+            <div className="flex flex-col items-center flex-1 justify-center py-2 md:py-4">
               {/* Avatar & Volume Indicator */}
-              <div className="relative flex items-center justify-center h-28 w-28 sm:h-32 sm:w-32 mb-6">
+              <div className="relative flex items-center justify-center h-16 w-16 sm:h-28 sm:w-28 md:h-32 md:w-32 mb-3 md:mb-6">
                 {/* Volume Level Ring */}
                 <svg className="absolute inset-0 w-full h-full -rotate-90 pointer-events-none opacity-20">
                   <circle 
@@ -733,19 +733,19 @@ const PlayerCard = ({ player, isSelected, onSelect, onVolumeChange, onMute, onIn
                 </svg>
 
                 <div className={cn(
-                  "h-16 w-16 sm:h-20 sm:w-20 rounded-[28px] flex items-center justify-center text-2xl sm:text-3xl relative z-10 transition-all duration-500 shadow-2xl",
+                  "h-10 w-10 sm:h-16 sm:w-16 md:h-20 md:w-20 rounded-[18px] md:rounded-[28px] flex items-center justify-center text-xl md:text-3xl relative z-10 transition-all duration-500 shadow-2xl",
                   player.isReady ? "bg-white/10" : "bg-white/5",
                   player.isSpeaking ? "scale-105" : ""
                 )}>
                   <span className="relative z-10">{player.avatar}</span>
-                  <div className="absolute inset-0 bg-gradient-to-tr from-black/20 to-transparent rounded-[28px]" />
+                  <div className="absolute inset-0 bg-gradient-to-tr from-black/20 to-transparent rounded-[18px] md:rounded-[28px]" />
                   
                   {/* Voice Glow Overlay */}
                   {player.isSpeaking && (
                      <motion.div 
                        animate={{ opacity: [0.2, 0.4, 0.2] }} 
                        transition={{ duration: 1.5, repeat: Infinity }}
-                       className="absolute -inset-2 bg-green-500 rounded-[32px] blur-xl -z-10" 
+                       className="absolute -inset-1 md:-inset-2 bg-green-500 rounded-[24px] md:rounded-[32px] blur-lg md:blur-xl -z-10" 
                      />
                   )}
                 </div>
@@ -756,36 +756,36 @@ const PlayerCard = ({ player, isSelected, onSelect, onVolumeChange, onMute, onIn
                     <motion.div 
                       initial={{ scale: 0, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
-                      className="absolute -bottom-2 -left-2 h-8 w-8 rounded-2xl bg-neon-blue border-4 border-[#0a0a0f] flex items-center justify-center shadow-lg z-20"
+                      className="absolute -bottom-1 -left-1 md:-bottom-2 md:-left-2 h-6 w-6 md:h-8 md:w-8 rounded-lg md:rounded-2xl bg-neon-blue border-2 md:border-4 border-[#0a0a0f] flex items-center justify-center shadow-lg z-20"
                     >
-                      <Check size={14} className="text-dark-bg" />
+                      <Check size={10} className="md:size-[14px] text-dark-bg" />
                     </motion.div>
                   )}
                 </AnimatePresence>
 
                 {/* Speaker Indicator */}
                 {player.isSpeaking && (
-                  <div className="absolute -top-1 -right-1 h-8 w-8 rounded-2xl bg-green-500 border-4 border-[#0a0a0f] flex items-center justify-center text-dark-bg z-20">
-                     <Mic size={14} />
+                  <div className="absolute -top-1 -right-1 h-6 w-6 md:h-8 md:w-8 rounded-lg md:rounded-2xl bg-green-500 border-2 md:border-4 border-[#0a0a0f] flex items-center justify-center text-dark-bg z-20">
+                     <Mic size={10} className="md:size-[14px]" />
                   </div>
                 )}
               </div>
 
-              <h3 className="text-xl font-black text-white mb-2">{player.name}</h3>
+              <h3 className="text-xs md:text-xl font-black text-white mb-0.5 md:mb-2 truncate max-w-full">{player.name}</h3>
               
               {/* Voice Status */}
-              <div className="flex items-center gap-2 mb-4">
+              <div className="flex items-center gap-1 md:gap-2 mb-2 md:mb-4">
                  {player.isMuted ? (
-                   <span className="text-[9px] text-neon-pink font-black uppercase flex items-center gap-1">
-                     <MicOff size={10} /> Muted
+                   <span className="text-[6px] md:text-[9px] text-neon-pink font-black uppercase flex items-center gap-0.5 md:gap-1">
+                     <MicOff size={8} className="md:size-[10px]" /> Muted
                    </span>
                  ) : player.isSpeaking ? (
-                   <span className="text-[9px] text-green-500 font-black uppercase flex items-center gap-1 animate-pulse">
-                     <Mic size={10} /> Speaking...
+                   <span className="text-[6px] md:text-[9px] text-green-500 font-black uppercase flex items-center gap-0.5 md:gap-1 animate-pulse">
+                     <Mic size={8} className="md:size-[10px]" /> Speaking
                    </span>
                  ) : (
-                   <span className="text-[9px] text-gray-500 font-black uppercase flex items-center gap-1">
-                     <Mic size={10} /> IDLE
+                   <span className="text-[6px] md:text-[9px] text-gray-600 font-black uppercase flex items-center gap-0.5 md:gap-1 text-[7px]">
+                     <Mic size={8} className="md:size-[10px]" /> IDLE
                    </span>
                  )}
               </div>
@@ -793,11 +793,11 @@ const PlayerCard = ({ player, isSelected, onSelect, onVolumeChange, onMute, onIn
           </div>
 
           {/* Quick Actions & Volume Panel */}
-          <div className="mt-auto pt-6 border-t border-white/5 space-y-6">
+          <div className="mt-auto pt-2 md:pt-6 border-t border-white/5 space-y-2 md:space-y-6">
              {/* Dynamic Volume Bar */}
-             <div className="space-y-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                <div className="flex items-center justify-between px-1">
-                   <span className="text-[8px] font-black text-gray-600 uppercase tracking-tighter">Volume</span>
+             <div className="space-y-1 md:space-y-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300">
+                <div className="flex items-center justify-between px-0.5 md:px-1">
+                   <span className="text-[6px] md:text-[8px] font-black text-gray-700 uppercase tracking-tighter">Volume</span>
                    <span className="text-[9px] font-bold text-white">{player.volume}%</span>
                 </div>
                 <input 
