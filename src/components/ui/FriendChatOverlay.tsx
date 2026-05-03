@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence, useDragControls } from "motion/react";
 import { useFriends } from "../../context/FriendsContext";
 import { MessageSquare, X, Minus, Send, MessageCircle } from "lucide-react";
 import { cn } from "../../lib/utils";
@@ -12,6 +12,7 @@ export const FriendChatOverlay = () => {
 
   const activeChat = chats.find(c => c.friendId === activeChatId);
   const activeFriend = friends.find(f => f.id === activeChatId);
+  const dragControls = useDragControls();
 
   // Un-minimize when a new chat is opened or current one is triggered
   useEffect(() => {
@@ -42,10 +43,19 @@ export const FriendChatOverlay = () => {
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            className="mb-2 w-full max-w-[320px] sm:max-w-[350px] overflow-hidden rounded-2xl bg-[#0a0a0f]/98 border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] backdrop-blur-xl z-50 pointer-events-auto"
+            drag
+            dragControls={dragControls}
+            dragListener={false}
+            dragMomentum={false}
+            dragElastic={0.1}
+            whileDrag={{ scale: 1.02, shadow: "0 30px_60px_rgba(0,0,0,0.6)" }}
+            className="mb-2 w-full max-w-[320px] sm:max-w-[350px] overflow-hidden rounded-2xl bg-[#0a0a0f]/98 border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] backdrop-blur-xl z-50 pointer-events-auto touch-none"
           >
-            {/* Chat Header */}
-            <div className="flex items-center justify-between border-b border-white/5 bg-white/5 px-4 py-3">
+            {/* Chat Header - Drag Handle */}
+            <div 
+              onPointerDown={(e) => dragControls.start(e)}
+              className="flex items-center justify-between border-b border-white/5 bg-white/5 px-4 py-3 cursor-grab active:cursor-grabbing select-none"
+            >
               <div className="flex items-center gap-3 text-right" dir="rtl">
                 <div className="h-8 w-8 rounded-full bg-white/10 flex items-center justify-center text-sm overflow-hidden">
                   {activeFriend?.avatar ? <img src={activeFriend.avatar} alt="" className="h-full w-full rounded-full" /> : "👤"}
