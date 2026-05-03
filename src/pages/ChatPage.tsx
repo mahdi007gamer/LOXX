@@ -1067,7 +1067,7 @@ export const ChatPage: React.FC = () => {
       {/* Friends Sidebar - Mobile optimized */}
       <AnimatePresence mode="popLayout">
         {showFriendsSidebar && (
-          <>
+          <div key="friends-sidebar-overlay">
             {/* Backdrop for mobile */}
             <motion.div
               initial={{ opacity: 0 }}
@@ -1209,7 +1209,7 @@ export const ChatPage: React.FC = () => {
               </Link>
             </div>
           </motion.div>
-        </>
+        </div>
       )}
     </AnimatePresence>
     </div>

@@ -140,7 +140,14 @@ export const FriendChatOverlay = () => {
           const isActive = activeChatId === chat.friendId;
 
           return (
-            <div key={chat.friendId} className="relative group/tab flex items-center">
+            <motion.div 
+              key={chat.friendId} 
+              drag
+              dragMomentum={false}
+              dragElastic={0.1}
+              whileDrag={{ scale: 1.1, zIndex: 100 }}
+              className="relative group/tab flex items-center touch-none"
+            >
               <button 
                 onClick={() => {
                   if (activeChatId === chat.friendId) {
@@ -188,7 +195,7 @@ export const FriendChatOverlay = () => {
               >
                 <X size={10} />
               </button>
-            </div>
+            </motion.div>
           );
         })}
       </div>
