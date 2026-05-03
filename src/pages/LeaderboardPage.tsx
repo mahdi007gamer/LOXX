@@ -59,7 +59,7 @@ export const LeaderboardPage = () => {
                 <div className="h-10 w-10 rounded-xl bg-neon-blue/20 flex items-center justify-center text-neon-blue shadow-[0_0_20px_rgba(0,229,255,0.2)]">
                   <Trophy size={24} />
                 </div>
-                <h1 className="text-3xl md:text-5xl font-black text-white tracking-tighter italic uppercase">LOXX Weekly Champions</h1>
+                <h1 className="text-3xl md:text-5xl font-black text-white tracking-tighter italic uppercase">قهرمانان هفته لوکس</h1>
               </div>
               <p className="text-gray-500 font-bold max-w-md">هر هفته ۳ نفر برتر لابی‌های لوکس جوایز ویژه و اشتراک VIP دریافت می‌کنند.</p>
             </div>
@@ -70,17 +70,17 @@ export const LeaderboardPage = () => {
                  <div className="flex items-center gap-4">
                    <div className="text-center">
                      <span className="block text-2xl font-black text-white">{timeLeft.days}</span>
-                     <span className="text-[10px] text-gray-500 uppercase font-black">روز</span>
+                     <span className="text-[10px] text-gray-400 uppercase font-bold">روز</span>
                    </div>
                    <div className="h-8 w-[1px] bg-white/10" />
                    <div className="text-center">
                      <span className="block text-2xl font-black text-white">{timeLeft.hours}</span>
-                     <span className="text-[10px] text-gray-500 uppercase font-black">ساعت</span>
+                     <span className="text-[10px] text-gray-400 uppercase font-bold">ساعت</span>
                    </div>
                    <div className="h-8 w-[1px] bg-white/10" />
                    <div className="text-center">
                      <span className="block text-2xl font-black text-white">{timeLeft.minutes}</span>
-                     <span className="text-[10px] text-gray-500 uppercase font-black">دقیقه</span>
+                     <span className="text-[10px] text-gray-400 uppercase font-bold">دقیقه</span>
                    </div>
                  </div>
                </div>
@@ -88,96 +88,99 @@ export const LeaderboardPage = () => {
             </div>
           </header>
 
-          <div className="mb-20 grid grid-cols-1 items-end gap-6 sm:grid-cols-3 relative">
+          <div className="mb-24 flex flex-col sm:flex-row items-center sm:items-end justify-center gap-6 md:gap-10 relative">
              <div className="absolute inset-0 bg-neon-blue/5 blur-[120px] rounded-full pointer-events-none" />
              
+             {/* Rank 2 */}
              <motion.div 
                initial={{ opacity: 0, y: 20 }}
                animate={{ opacity: 1, y: 0 }}
                transition={{ delay: 0.1 }}
-               className="order-2 sm:order-1 relative z-10"
+               className="order-2 sm:order-1 relative z-10 w-full max-w-[280px]"
              >
-               <NeonCard variant="blue" className="flex flex-col items-center p-8 text-center sm:h-[300px] bg-[#0a0a0f]/80 backdrop-blur-xl border-white/5 hover:border-neon-blue/30 transition-all">
+               <NeonCard variant="blue" className="flex flex-col items-center p-6 text-center bg-[#0a0a0f]/80 backdrop-blur-xl border-white/5 hover:border-neon-blue/30 transition-all">
                  <div className="absolute -top-4 -left-4 h-12 w-12 rounded-full bg-gray-400/20 flex items-center justify-center text-gray-300 border border-white/10 shadow-lg">
                     <Medal size={24} />
                  </div>
-                 <div className="h-20 w-20 rounded-full border-4 border-neon-blue/20 bg-white/5 mb-4 flex items-center justify-center text-neon-blue relative group">
-                    <div className="absolute inset-0 rounded-full bg-neon-blue/20 blur-[15px] opacity-0 group-hover:opacity-100 transition-all" />
+                 <div className="h-20 w-20 rounded-full border-4 border-gray-400/30 bg-white/5 mb-4 flex items-center justify-center text-gray-300 relative group">
+                    <div className="absolute inset-0 rounded-full bg-gray-400/10 blur-[15px] opacity-0 group-hover:opacity-100 transition-all" />
                     <User size={40} className="relative z-10" />
                  </div>
                  <h3 className="text-xl font-black text-white uppercase italic">{TOP_PLAYERS[1].name}</h3>
                  <p className="text-neon-blue font-black text-lg">{TOP_PLAYERS[1].points.toLocaleString()}</p>
                  <div className="mt-4 flex flex-col gap-1 italic">
                     <span className="text-[10px] text-gray-500 font-black uppercase">جایزه:</span>
-                    <span className="text-xs text-white font-bold bg-white/5 px-4 py-1 rounded-full border border-white/5">۳ روز اشتراک VIP</span>
+                    <span className="text-xs text-white font-bold bg-white/5 px-4 py-1.5 rounded-xl border border-white/5 shadow-xl">۳ روز اشتراک VIP</span>
                  </div>
                </NeonCard>
              </motion.div>
 
+             {/* Rank 1 */}
              <motion.div 
-               initial={{ opacity: 0, y: 20 }}
-               animate={{ opacity: 1, y: 0 }}
-               className="order-1 sm:order-2 relative z-20"
+               initial={{ opacity: 0, scale: 0.9 }}
+               animate={{ opacity: 1, scale: 1 }}
+               className="order-1 sm:order-2 relative z-20 w-full max-w-[320px]"
              >
-               <NeonCard variant="purple" className="flex flex-col items-center p-10 text-center sm:h-[380px] relative border-yellow-400/40 bg-dark-card shadow-[0_0_50px_rgba(250,204,21,0.15)]">
+               <NeonCard variant="purple" className="flex flex-col items-center p-10 text-center relative border-yellow-400/40 bg-[#12051a]/80 shadow-[0_0_50px_rgba(250,204,21,0.15)] rounded-[40px]">
                  <motion.div 
                    animate={{ y: [0, -10, 0] }}
                    transition={{ duration: 3, repeat: Infinity }}
-                   className="absolute -top-10 left-1/2 -translate-x-1/2 text-6xl drop-shadow-[0_0_25px_rgba(250,204,21,0.8)] filter brightness-125"
+                   className="absolute -top-12 left-1/2 -translate-x-1/2 text-7xl drop-shadow-[0_0_30px_rgba(250,204,21,0.8)] filter brightness-125 z-30"
                  >
                    👑
                  </motion.div>
                  
                  <div className="relative mb-6">
-                    <div className="h-28 w-28 rounded-full border-4 border-yellow-400 bg-white/5 flex items-center justify-center text-yellow-400 shadow-[0_0_40px_rgba(250,204,21,0.3)]">
-                       <User size={56} />
+                    <div className="h-32 w-32 rounded-full border-4 border-yellow-400 bg-white/5 flex items-center justify-center text-yellow-400 shadow-[0_0_40px_rgba(250,204,21,0.3)]">
+                       <User size={64} />
                     </div>
                     <motion.div 
                       animate={{ rotate: 360 }}
-                      transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-                      className="absolute -inset-2 border-2 border-dashed border-yellow-400/30 rounded-full"
+                      transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
+                      className="absolute -inset-3 border-2 border-dashed border-yellow-400/30 rounded-full"
                     />
                  </div>
                  
                  <h3 className="text-2xl font-black text-white uppercase italic tracking-tighter drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]">
                     {TOP_PLAYERS[0].name}
                  </h3>
-                 <p className="text-2xl text-yellow-400 font-black italic mt-1">{TOP_PLAYERS[0].points.toLocaleString()}</p>
+                 <p className="text-3xl text-yellow-400 font-black italic mt-1">{TOP_PLAYERS[0].points.toLocaleString()}</p>
                  
                  <div className="mt-8 rounded-xl bg-yellow-400 px-8 py-3 text-sm font-black text-dark-bg shadow-[0_10px_30px_rgba(250,204,21,0.4)] uppercase italic tracking-widest transform -rotate-1">
                    Weekly Champion
                  </div>
                  
-                 <div className="mt-4 flex flex-col items-center">
-                    <span className="text-[10px] text-gray-500 font-bold uppercase mb-1">Rewards</span>
-                    <div className="flex gap-2">
-                       <div className="h-8 w-8 rounded-lg bg-yellow-400/10 border border-yellow-400/20 flex items-center justify-center text-yellow-400" title="7 Days VIP"><Clock size={16} /></div>
-                       <div className="h-8 w-8 rounded-lg bg-yellow-400/10 border border-yellow-400/20 flex items-center justify-center text-yellow-400" title="Golden Crown Badge"><Crown size={16} /></div>
-                       <div className="h-8 w-8 rounded-lg bg-yellow-400/10 border border-yellow-400/20 flex items-center justify-center text-yellow-400" title="Featured Post"><Star size={16} /></div>
+                 <div className="mt-8 flex flex-col items-center border-t border-white/5 pt-4 w-full">
+                    <span className="text-[10px] text-gray-500 font-bold uppercase mb-3">پاداش ویژه قهرمانی</span>
+                    <div className="flex gap-4">
+                       <div className="h-10 w-10 rounded-xl bg-yellow-400/10 border border-yellow-400/20 flex items-center justify-center text-yellow-400 shadow-lg" title="7 Days VIP"><Clock size={20} /></div>
+                       <div className="h-10 w-10 rounded-xl bg-yellow-400/10 border border-yellow-400/20 flex items-center justify-center text-yellow-400 shadow-lg" title="Golden Crown Badge"><Crown size={20} /></div>
+                       <div className="h-10 w-10 rounded-xl bg-yellow-400/10 border border-yellow-400/20 flex items-center justify-center text-yellow-400 shadow-lg" title="Featured"><Star size={20} /></div>
                     </div>
                  </div>
                </NeonCard>
              </motion.div>
 
+             {/* Rank 3 */}
              <motion.div 
                initial={{ opacity: 0, y: 20 }}
                animate={{ opacity: 1, y: 0 }}
                transition={{ delay: 0.2 }}
-               className="order-3 relative z-10"
+               className="order-3 relative z-10 w-full max-w-[280px]"
              >
-               <NeonCard variant="pink" className="flex flex-col items-center p-8 text-center sm:h-[300px] bg-[#0a0a0f]/80 backdrop-blur-xl border-white/5 hover:border-neon-pink/30 transition-all">
-                 <div className="absolute -top-4 -right-4 h-11 w-11 rounded-full bg-orange-400/20 flex items-center justify-center text-orange-400 border border-white/10 shadow-lg">
+               <NeonCard variant="pink" className="flex flex-col items-center p-6 text-center bg-[#0a0a0f]/80 backdrop-blur-xl border-white/5 hover:border-neon-pink/30 transition-all">
+                 <div className="absolute -top-4 -left-4 h-11 w-11 rounded-full bg-orange-400/20 flex items-center justify-center text-orange-400 border border-white/10 shadow-lg">
                     <Medal size={22} />
                  </div>
-                 <div className="h-20 w-20 rounded-full border-4 border-neon-pink/20 bg-white/5 mb-4 flex items-center justify-center text-neon-pink relative group">
-                    <div className="absolute inset-0 rounded-full bg-neon-pink/20 blur-[15px] opacity-0 group-hover:opacity-100 transition-all" />
+                 <div className="h-20 w-20 rounded-full border-4 border-orange-400/30 bg-white/5 mb-4 flex items-center justify-center text-orange-400 relative group">
+                    <div className="absolute inset-0 rounded-full bg-orange-400/10 blur-[15px] opacity-0 group-hover:opacity-100 transition-all" />
                     <User size={40} className="relative z-10" />
                  </div>
                  <h3 className="text-xl font-black text-white uppercase italic">{TOP_PLAYERS[2].name}</h3>
                  <p className="text-neon-pink font-black text-lg">{TOP_PLAYERS[2].points.toLocaleString()}</p>
                  <div className="mt-4 flex flex-col gap-1 italic">
                     <span className="text-[10px] text-gray-500 font-black uppercase">جایزه:</span>
-                    <span className="text-xs text-white font-bold bg-white/5 px-4 py-1 rounded-full border border-white/5">۱ روز اشتراک VIP</span>
+                    <span className="text-xs text-white font-bold bg-white/5 px-4 py-1.5 rounded-xl border border-white/5 shadow-xl">۱ روز اشتراک VIP</span>
                  </div>
                </NeonCard>
              </motion.div>

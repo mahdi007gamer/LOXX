@@ -7,7 +7,7 @@ import { cn } from "@/src/lib/utils";
 import { motion, AnimatePresence } from "motion/react";
 import { useGames } from "../context/GamesContext";
 import { useFriends } from "../context/FriendsContext";
-import { BadgeType, ChatMessage, Channel } from "../types";
+import { BadgeType, ChatMessage, Channel, MembershipType } from "../types";
 
 import { useProfilePopover } from "../context/ProfilePopoverContext";
 
@@ -33,9 +33,10 @@ interface MessageItemProps {
   message: ChatMessage;
   onReaction: (msgId: string, emoji: string) => void;
   onSaveGif: (url: string) => void;
+  onReply: (message: ChatMessage) => void;
 }
 
-const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGif }) => {
+const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGif, onReply }) => {
   const { openProfile } = useProfilePopover();
   const [showActions, setShowActions] = useState(false);
 
@@ -55,11 +56,22 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
       id={`msg-${message.id}`}
       className={cn(
         "flex gap-2 md:gap-3 group transition-all duration-300 mb-6 items-start px-1 md:px-0 relative w-full",
-        message.self ? "flex-row" : "flex-row-reverse"
+        message.self ? "flex-row-reverse" : "flex-row"
       )}
-      onClick={() => setShowActions(!showActions)}
     >
-      {/* Avatar - Positioned to start at the same level as the name */}
+      {/* Interaction Menu Popover Overlay - For Mobile */}
+      <AnimatePresence>
+        {showActions && (
+          <div 
+            className="fixed inset-0 z-40 lg:hidden"
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowActions(false);
+            }}
+          />
+        )}
+      </AnimatePresence>
+
       <div 
         className="shrink-0 cursor-pointer relative mt-1"
         onClick={(e) => {
@@ -69,7 +81,8 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
             senderAvatar: message.senderAvatar,
             senderLevel: message.senderLevel,
             senderBadges: message.senderBadges,
-            id: message.id
+            id: message.id,
+            membership: isVIP ? MembershipType.VIP : isPLUS ? MembershipType.PLUS : MembershipType.NONE
           }, message.self);
         }}
       >
@@ -85,14 +98,18 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
       </div>
 
       {/* Message Content Area */}
-      <div className={cn(
-        "flex flex-col gap-1 max-w-[82%] md:max-w-[70%] min-w-0",
-        message.self ? "items-start text-right" : "items-end text-left" 
-      )}>
+      <div 
+        className={cn(
+          "flex flex-col gap-1 max-w-[82%] md:max-w-[70%] min-w-0 transition-transform duration-200",
+          message.self ? "items-end text-right" : "items-start text-left",
+          showActions && "scale-[1.02] z-50 relative"
+        )}
+        onClick={() => setShowActions(!showActions)}
+      >
         {/* Header - Aligned with Avatar */}
         <div className={cn(
           "flex items-baseline gap-2 mb-1 px-1",
-          message.self ? "flex-row" : "flex-row-reverse"
+          message.self ? "flex-row-reverse" : "flex-row"
         )}>
            <span 
               className={cn("text-[11px] font-black tracking-tight cursor-pointer hover:underline flex items-center gap-1", nameColorClass)}
@@ -103,7 +120,8 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
                   senderAvatar: message.senderAvatar,
                   senderLevel: message.senderLevel,
                   senderBadges: message.senderBadges,
-                  id: message.id
+                  id: message.id,
+                  membership: isVIP ? MembershipType.VIP : isPLUS ? MembershipType.PLUS : MembershipType.NONE
                 }, message.self);
               }}
             >
@@ -118,28 +136,40 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
 
         {/* Message Container */}
         <div className="relative group/bubble-container flex items-center w-full">
-          {/* Action Buttons - Opposite sides as requested */}
-          <div className={cn(
-            "absolute flex items-center gap-1.5 transition-all duration-200 z-10",
-            message.self ? "left-full ml-3" : "right-full mr-3",
-            showActions || "opacity-0 pointer-events-none group-hover/bubble-container:opacity-100 group-hover/bubble-container:pointer-events-auto"
-          )}>
-            <button 
-              className="p-1.5 rounded-lg bg-black/80 text-gray-400 hover:text-neon-pink hover:bg-neon-pink/10 border border-white/5 backdrop-blur-md transition-all active:scale-90"
-              onClick={(e) => {
-                 e.stopPropagation();
-                 onReaction(message.id, "❤️");
-              }}
-            >
-              <Heart size={14} className={cn(message.reactions?.some(r => r.emoji === "❤️" && r.users.includes("me")) && "fill-neon-pink text-neon-pink")} />
-            </button>
-            <button 
-              className="p-1.5 rounded-lg bg-black/80 text-gray-400 hover:text-white hover:bg-white/10 border border-white/5 backdrop-blur-md transition-all active:scale-90"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <Reply size={14} />
-            </button>
-          </div>
+          {/* Action Buttons - Discord Style Popover */}
+          <AnimatePresence>
+            {showActions && (
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.9, x: message.self ? -20 : 20 }}
+                animate={{ opacity: 1, scale: 1, x: 0 }}
+                exit={{ opacity: 0, scale: 0.9, x: message.self ? -20 : 20 }}
+                className={cn(
+                  "absolute flex items-center gap-1 px-2 py-1.5 rounded-2xl bg-[#0f0f15] border border-white/10 shadow-2xl z-50 backdrop-blur-xl whitespace-nowrap",
+                  message.self ? "right-full mr-3" : "left-full ml-3"
+                )}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button 
+                  className="h-8 w-8 flex items-center justify-center text-gray-400 hover:text-neon-blue transition-colors rounded-lg hover:bg-white/5" 
+                  onClick={(e) => { e.stopPropagation(); onReply(message); setShowActions(false); }}
+                >
+                  <Reply size={18} />
+                </button>
+                <div className="flex items-center gap-1.5 border-r border-white/5 pr-2">
+                   {["🔥", "🎯", "👑", "❤️"].map(emoji => (
+                     <button 
+                       key={emoji} 
+                       className="h-8 w-8 flex items-center justify-center hover:bg-white/5 rounded-lg transition-transform hover:scale-110 active:scale-95 text-lg"
+                       onClick={(e) => { e.stopPropagation(); onReaction(message.id, emoji); }}
+                     >
+                       {emoji}
+                     </button>
+                   ))}
+                </div>
+                <button className="h-8 w-8 flex items-center justify-center text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-white/5"><Smile size={18} /></button>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           <motion.div 
             initial={{ opacity: 0, scale: 0.98, y: 5 }}
@@ -150,10 +180,21 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
               message.self 
                 ? "bg-[#140e1a] text-white border-neon-pink/20 rounded-tr-none" 
                 : "bg-white/5 text-gray-100 border-white/10 rounded-tl-none",
-              isVIP && !message.self && "border-yellow-400/30 bg-gradient-to-br from-yellow-400/5 to-transparent shadow-[0_0_30px_rgba(250,204,21,0.05)]",
-              isPLUS && !message.self && "border-neon-blue/30 bg-gradient-to-br from-neon-blue/5 to-transparent shadow-[0_0_20px_rgba(0,229,255,0.05)]"
+              isVIP && !message.self && "border-yellow-400/40 bg-gradient-to-br from-yellow-400/[0.12] to-transparent shadow-[0_0_40px_rgba(250,204,21,0.12)]",
+              isPLUS && !message.self && "border-neon-blue/40 bg-gradient-to-br from-neon-blue/[0.12] to-transparent shadow-[0_0_30px_rgba(0,229,255,0.12)]"
             )}
           >
+             {/* VIP/PLUS Shimmer Effect */}
+             {(isVIP || isPLUS) && !message.self && (
+              <motion.div 
+                animate={{ x: ["-100%", "200%"] }}
+                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                className={cn(
+                  "absolute inset-0 skew-x-12 pointer-events-none",
+                  isVIP ? "bg-gradient-to-r from-transparent via-yellow-400/10 to-transparent" : "bg-gradient-to-r from-transparent via-neon-blue/10 to-transparent"
+                )}
+              />
+            )}
             {/* Reply Preview - Embedded inside bubble area */}
             {message.replyTo && (
                <div 
@@ -335,8 +376,8 @@ const MOCK_MESSAGES: Record<string, ChatMessage[]> = {
       id: "2", 
       senderId: "u2", 
       senderName: "امیر", 
-      senderLevel: 15,
-      senderBadges: [BadgeType.VIP],
+      senderLevel: 35,
+      senderBadges: [BadgeType.VIP, BadgeType.CHAMPION, BadgeType.FOUNDER],
       text: "من هستم، لابی بساز جوین شیم.", 
       timestamp: "۱۲:۳۱", 
       isRead: true,
@@ -348,7 +389,7 @@ const MOCK_MESSAGES: Record<string, ChatMessage[]> = {
       senderName: "خودم", 
       senderLevel: 42,
       senderColor: "#00e5ff",
-      senderBadges: [BadgeType.STREAMER, BadgeType.PLUS],
+      senderBadges: [BadgeType.STREAMER, BadgeType.PLUS, BadgeType.PRO],
       text: "منم میام، فقط پینگ چطوره؟", 
       timestamp: "۱۲:۳۲", 
       isRead: true,
@@ -401,6 +442,7 @@ export const ChatPage: React.FC = () => {
   const [activeChannelId, setActiveChannelId] = useState("general");
   const [messages, setMessages] = useState<Record<string, ChatMessage[]>>(MOCK_MESSAGES);
   const [input, setInput] = useState("");
+  const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null);
   const [isTyping, setIsTyping] = useState(false);
   const [showNewMessageButton, setShowNewMessageButton] = useState(false);
   const [showGifPicker, setShowGifPicker] = useState(false);
@@ -487,13 +529,18 @@ export const ChatPage: React.FC = () => {
       senderName: "خودم",
       senderLevel: Math.floor(userLvl),
       senderColor: "#00e5ff",
-      senderBadges: [BadgeType.STREAMER, BadgeType.VIP],
+      senderBadges: [BadgeType.STREAMER, BadgeType.PLUS, BadgeType.PRO],
       text: messageText,
       timestamp: new Date().toLocaleTimeString("fa-IR", { hour: "2-digit", minute: "2-digit" }),
       isRead: true,
       self: true,
       mentions,
-      gif: gifUrl
+      gif: gifUrl,
+      replyTo: replyingTo ? {
+        id: replyingTo.id,
+        user: replyingTo.senderName,
+        text: replyingTo.text
+      } : undefined
     };
 
     setMessages(prev => ({
@@ -501,6 +548,7 @@ export const ChatPage: React.FC = () => {
       [activeChannelId]: [...(prev[activeChannelId] || []), newMessage]
     }));
     if (!textOverride) setInput("");
+    setReplyingTo(null);
     setShowGifPicker(false);
   };
 
@@ -817,6 +865,7 @@ export const ChatPage: React.FC = () => {
               message={msg} 
               onReaction={handleReaction}
               onSaveGif={handleSaveGif}
+              onReply={(m) => setReplyingTo(m)}
             />
           ))}
           
@@ -865,8 +914,32 @@ export const ChatPage: React.FC = () => {
 
         {/* Input Area - Adjusted for mobile */}
         <div className="p-2 md:p-8 bg-gradient-to-t from-dark-bg to-transparent relative z-30 flex flex-col items-center shrink-0 w-full overflow-hidden">
-          <div className="w-full max-w-4xl relative flex flex-col items-center px-1 md:px-0">
-          {/* GIF Picker Popover */}
+          <div className="w-full max-w-4xl relative flex flex-col px-1 md:px-0">
+            {/* Reply Indicator - Discord Style */}
+            <AnimatePresence>
+              {replyingTo && (
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                  className="flex items-center justify-between px-4 py-2 bg-black/40 border border-white/5 rounded-2xl mb-2 text-xs backdrop-blur-xl"
+                >
+                  <div className="flex items-center gap-3 overflow-hidden">
+                    <Reply size={14} className="text-neon-blue shrink-0" />
+                    <span className="text-gray-500 font-bold whitespace-nowrap">در پاسخ به <span className="text-neon-blue">{replyingTo.senderName}</span>:</span>
+                    <span className="text-gray-300 truncate opacity-60 italic">{replyingTo.text}</span>
+                  </div>
+                  <button 
+                    onClick={() => setReplyingTo(null)}
+                    className="p-1 hover:bg-white/10 rounded-lg text-gray-500 transition-colors"
+                  >
+                    <X size={14} />
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* GIF Picker Popover */}
           <AnimatePresence>
             {showGifPicker && (
                <motion.div

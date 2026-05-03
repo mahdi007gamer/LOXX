@@ -41,13 +41,13 @@ export const PremiumPage = () => {
              <motion.div
                initial={{ opacity: 0, scale: 0.9 }}
                animate={{ opacity: 1, scale: 1 }}
-               className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-neon-purple/20 border border-neon-purple/30 text-neon-purple text-[10px] font-black uppercase tracking-widest mb-6"
+               className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-neon-purple/20 border border-neon-purple/30 text-neon-purple text-[10px] font-black uppercase tracking-widest mb-6 italic"
              >
                <Sparkles size={14} className="animate-pulse" />
-               Experience the Future of Gaming
+               تجربه نسل جدید گیمینگ
              </motion.div>
-             <h1 className="text-4xl md:text-7xl font-black text-white italic uppercase tracking-tighter mb-4">Upgrade Your Status</h1>
-             <p className="text-gray-500 max-w-2xl mx-auto font-bold">برای حمایت از سرورها و باز کردن قابلیت‌های استثنایی، یکی از اشتراک‌های لوکس را انتخاب کنید.</p>
+             <h1 className="text-4xl md:text-7xl font-black text-white italic uppercase tracking-tighter mb-4">ارتقای سطح کاربری</h1>
+             <p className="text-gray-500 max-w-2xl mx-auto font-bold">برای حمایت از لوکس و باز کردن قابلیت‌های استثنایی، یکی از اشتراک‌های ویژه را انتخاب کنید.</p>
           </header>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 items-start mb-20">
@@ -65,11 +65,11 @@ export const PremiumPage = () => {
                  <div className="flex items-center justify-between mb-8 relative z-10">
                     <div>
                        <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter">LOXX PLUS</h2>
-                       <p className="text-neon-blue font-bold uppercase text-xs tracking-widest">Enhanced Experience</p>
+                       <p className="text-neon-blue font-bold uppercase text-xs tracking-widest">تجربه ارتقا یافته</p>
                     </div>
                     <div className="text-right">
-                       <span className="text-3xl font-black text-white italic">$4.99</span>
-                       <span className="text-gray-500 text-xs font-bold block italic uppercase">Monthly</span>
+                       <span className="text-3xl font-black text-white italic">۴.۹۹$</span>
+                       <span className="text-gray-500 text-xs font-bold block italic uppercase">ماهانه</span>
                     </div>
                  </div>
 
@@ -88,7 +88,7 @@ export const PremiumPage = () => {
                  </div>
 
                  <GlowButton variant="blue" className="w-full py-5 text-sm font-black uppercase italic tracking-widest relative z-10">
-                    Get Plus Now <ArrowRight size={18} className="mr-2 inline" />
+                    دریافت پلاس <ArrowRight size={18} className="mr-2 inline" />
                  </GlowButton>
                  
                  <div className="mt-6 flex items-center justify-center gap-6 relative z-10">
@@ -117,11 +117,11 @@ export const PremiumPage = () => {
                  <div className="flex items-center justify-between mb-8 relative z-10">
                     <div>
                        <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter">LOXX VIP</h2>
-                       <p className="text-yellow-400 font-bold uppercase text-xs tracking-widest">The Elite Status</p>
+                       <p className="text-yellow-400 font-bold uppercase text-xs tracking-widest">سطح نخبگان لوکس</p>
                     </div>
                     <div className="text-right">
-                       <span className="text-3xl font-black text-white italic">$9.99</span>
-                       <span className="text-gray-500 text-xs font-bold block italic uppercase">Monthly</span>
+                       <span className="text-3xl font-black text-white italic">۹.۹۹$</span>
+                       <span className="text-gray-500 text-xs font-bold block italic uppercase">ماهانه</span>
                     </div>
                  </div>
 
@@ -140,7 +140,7 @@ export const PremiumPage = () => {
                  </div>
 
                  <GlowButton variant="pink" className="w-full py-5 text-sm font-black uppercase italic tracking-widest relative z-10 bg-gradient-to-r from-neon-purple to-neon-pink">
-                    Become VIP <Crown size={18} className="mr-2 inline" />
+                    دریافت VIP <Crown size={18} className="mr-2 inline" />
                  </GlowButton>
 
                  <div className="mt-6 flex items-center justify-center gap-6 relative z-10">
@@ -165,33 +165,33 @@ export const PremiumPage = () => {
                 <div className="h-12 w-12 rounded-2xl bg-neon-blue/10 flex items-center justify-center text-neon-blue mx-auto mb-4">
                   <Shield size={24} />
                 </div>
-                <h4 className="text-white font-black uppercase italic mb-2">Secure Payments</h4>
+                <h4 className="text-white font-black uppercase italic mb-2">پرداخت امن</h4>
                 <p className="text-[10px] text-gray-500 font-bold uppercase leading-relaxed">تمام تراکنش‌ها رمزنگاری شده و امن هستند.</p>
              </div>
              <div className="p-6 rounded-3xl bg-white/[0.03] border border-white/5 backdrop-blur-xl text-center">
                 <div className="h-12 w-12 rounded-2xl bg-neon-pink/10 flex items-center justify-center text-neon-pink mx-auto mb-4">
                   <Sparkles size={24} />
                 </div>
-                <h4 className="text-white font-black uppercase italic mb-2">Instant Active</h4>
+                <h4 className="text-white font-black uppercase italic mb-2">فعال‌سازی آنی</h4>
                 <p className="text-[10px] text-gray-500 font-bold uppercase leading-relaxed">اشتراک شما بلافاصله پس از خرید فعال خواهد شد.</p>
              </div>
              <div className="p-6 rounded-3xl bg-white/[0.03] border border-white/5 backdrop-blur-xl text-center">
                 <div className="h-12 w-12 rounded-2xl bg-neon-purple/10 flex items-center justify-center text-neon-purple mx-auto mb-4">
                   <Users size={24} />
                 </div>
-                <h4 className="text-white font-black uppercase italic mb-2">Support LOXX</h4>
+                <h4 className="text-white font-black uppercase italic mb-2">حمایت از لوکس</h4>
                 <p className="text-[10px] text-gray-500 font-bold uppercase leading-relaxed">با خرید اشتراک به رشد پلتفرم کمک می‌کنید.</p>
              </div>
           </div>
           
           <div className="text-center p-12 rounded-[40px] bg-gradient-to-b from-white/[0.03] to-transparent border border-white/5 relative overflow-hidden">
              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(0,229,255,0.05),transparent_70%)]" />
-             <h3 className="text-2xl font-black text-white italic uppercase tracking-tighter mb-4 relative z-10">Referral Program</h3>
+             <h3 className="text-2xl font-black text-white italic uppercase tracking-tighter mb-4 relative z-10">برنامه معرفی دوستان</h3>
              <p className="text-gray-500 max-w-sm mx-auto font-bold mb-8 relative z-10">
                 اگر کسی با لینک دعوت شما ثبت نام کند، هر دوی شما ۳ روز اکانت PLUS رایگان دریافت می‌کنید.
              </p>
              <GlowButton variant="blue" className="px-10 py-4 text-xs font-black uppercase italic tracking-widest relative z-10">
-                Generate Invite Link
+                ایجاد لینک دعوت
              </GlowButton>
           </div>
         </div>
