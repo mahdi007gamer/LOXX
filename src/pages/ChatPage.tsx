@@ -149,36 +149,33 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
           <div className={cn("relative group/bubble-container flex items-center w-fit", message.self ? "ml-auto" : "mr-auto")}>
             {/* Action Buttons - Desktop Hover & Mobile Click */}
             <div className={cn(
-              "absolute flex items-center gap-1 px-2 py-1.5 rounded-2xl bg-[#0f0f15] border border-white/10 shadow-2xl z-50 backdrop-blur-xl whitespace-nowrap transition-all duration-200",
-              message.self ? "right-full mr-1 pr-4" : "left-full ml-1 pl-4",
-              showActions ? "opacity-100 scale-100 pointer-events-auto" : "opacity-0 scale-95 pointer-events-none lg:group-hover/bubble-container:opacity-100 lg:group-hover/bubble-container:scale-100 lg:group-hover/bubble-container:pointer-events-auto"
+              "absolute flex items-center gap-1 px-1.5 py-1 rounded-xl bg-[#0f0f15]/95 border border-white/10 shadow-2xl z-50 backdrop-blur-2xl whitespace-nowrap transition-all duration-200",
+              "max-w-[85vw] overflow-x-auto no-scrollbar",
+              message.self ? "right-0 translate-x-[-10%] bottom-full mb-2" : "left-0 translate-x-[10%] bottom-full mb-2",
+              "md:translate-x-0 md:bottom-auto",
+              message.self ? "md:right-full md:mr-1 md:pr-4" : "md:left-full md:ml-1 md:pl-4",
+              showActions ? "opacity-100 scale-100 pointer-events-auto translate-y-0" : "opacity-0 scale-95 pointer-events-none translate-y-2 md:translate-y-0 lg:group-hover/bubble-container:opacity-100 lg:group-hover/bubble-container:scale-100 lg:group-hover/bubble-container:pointer-events-auto"
             )}
             onClick={(e) => e.stopPropagation()}
             >
-              {/* Hover bridge to prevent losing hover state */}
-              <div className={cn(
-                "absolute inset-y-0 w-8 bg-transparent",
-                message.self ? "-right-6" : "-left-6"
-              )} />
-  
               <button 
-                className="h-8 w-8 flex items-center justify-center text-gray-400 hover:text-neon-blue transition-colors rounded-lg hover:bg-white/5 relative z-10" 
+                className="h-7 w-7 md:h-8 md:w-8 flex items-center justify-center text-gray-400 hover:text-neon-blue transition-colors rounded-lg hover:bg-white/5 relative z-10 shrink-0" 
                 onClick={(e) => { e.stopPropagation(); onReply(message); setShowActions(false); }}
               >
-                <Reply size={18} />
+                <Reply size={16} />
               </button>
-              <div className="flex items-center gap-1.5 border-r border-white/5 pr-2 relative z-10">
+              <div className="flex items-center gap-0.5 md:gap-1.5 border-r border-white/5 pr-1 md:pr-2 relative z-10 shrink-0">
                   {["🔥", "🎯", "👑", "❤️"].map(emoji => (
                     <button 
                       key={emoji} 
-                      className="h-8 w-8 flex items-center justify-center hover:bg-white/5 rounded-lg transition-transform hover:scale-110 active:scale-95 text-lg"
+                      className="h-7 w-7 md:h-8 md:w-8 flex items-center justify-center hover:bg-white/5 rounded-lg transition-transform hover:scale-110 active:scale-95 text-base md:text-lg"
                       onClick={(e) => { e.stopPropagation(); onReaction(message.id, emoji); }}
                     >
                       {emoji}
                     </button>
                   ))}
               </div>
-              <button className="h-8 w-8 flex items-center justify-center text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-white/5 relative z-10"><Smile size={18} /></button>
+              <button className="h-7 w-7 md:h-8 md:w-8 flex items-center justify-center text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-white/5 relative z-10 shrink-0"><Smile size={16} /></button>
             </div>
   
             <motion.div 

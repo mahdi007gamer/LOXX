@@ -22,23 +22,28 @@ export const BottomNav = () => {
             className={({ isActive }) => cn(
               "flex flex-col items-center justify-center gap-1 transition-all duration-300 h-full relative",
               item.isSpecial 
-                ? "w-14 h-14 -mt-8 bg-[#0a0a0f] border-2 border-neon-blue rounded-full shadow-[0_0_25px_rgba(0,229,255,0.4)] z-20" 
+                ? cn(
+                    "w-14 h-14 rounded-full transition-all duration-500 z-20 flex-shrink-0",
+                    isActive 
+                      ? "bg-neon-blue -mt-10 shadow-[0_0_30px_rgba(0,229,255,0.6)] border-4 border-dark-bg scale-110 text-dark-bg" 
+                      : "bg-[#0a0a0f] -mt-4 border-2 border-white/5 opacity-50 scale-90 translate-y-2 text-gray-500"
+                  ) 
                 : "flex-1 min-w-0",
-              isActive 
+              isActive && !item.isSpecial
                 ? "text-neon-blue drop-shadow-[0_0_8px_rgba(0,229,255,0.5)]" 
-                : "text-gray-500 hover:text-white"
+                : !item.isSpecial ? "text-gray-500 hover:text-white" : ""
             )}
           >
             {({ isActive }) => (
               <>
                 <div className={cn(
                   "flex flex-col items-center justify-center gap-0.5",
-                  item.isSpecial && "translate-y-[-1px]"
+                  item.isSpecial && (isActive ? "translate-y-[-1px]" : "translate-y-[1px]")
                 )}>
-                  <item.icon size={item.isSpecial ? 22 : 18} className={cn(item.isSpecial ? "text-neon-blue" : "")} />
+                  <item.icon size={item.isSpecial ? (isActive ? 22 : 18) : 18} />
                   <span className={cn(
                     "text-[8px] font-black tracking-tight whitespace-nowrap",
-                    item.isSpecial && "text-neon-blue"
+                    item.isSpecial && "mt-[-2px]"
                   )}>{item.label}</span>
                 </div>
                 {isActive && !item.isSpecial && (
