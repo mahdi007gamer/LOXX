@@ -45,17 +45,11 @@ export const Navbar = () => {
         >
           {/* Left: Logo & Mobile Toggle */}
           <div className="flex items-center gap-4 flex-shrink-0">
-            <button 
-              className="p-2 text-gray-400 hover:text-white md:hidden"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-            >
-              {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
-            </button>
             <Link to="/" className="flex items-center gap-4 group">
               <img 
                 src="/logo.png" 
                 alt="LOXX Logo" 
-                className="h-10 w-auto drop-shadow-[0_0_15px_rgba(0,229,255,0.5)] transition-transform group-hover:scale-110"
+                className="h-8 w-auto md:h-10 drop-shadow-[0_0_15px_rgba(0,229,255,0.5)] transition-transform group-hover:scale-110"
                 onError={(e) => {
                   e.currentTarget.style.display = 'none';
                   e.currentTarget.nextElementSibling?.classList.remove('hidden');

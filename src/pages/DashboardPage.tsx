@@ -39,17 +39,18 @@ export const DashboardPage = () => {
   return (
     <div className="flex min-h-[calc(100vh-64px)]">
       <Sidebar />
-      <main className="flex-1 px-4 py-8 md:mr-64 lg:px-8">
+      <main className="flex-1 px-4 py-8 md:mr-64 lg:px-8 pb-24 md:pb-8">
         <div className="container mx-auto max-w-6xl">
-          <header className="mb-10 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+          <header className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-center md:mb-10">
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
+              className="text-center sm:text-right"
             >
-              <h1 className="text-3xl font-black text-white">سلام، خوش اومدی! 👋</h1>
-              <p className="text-gray-400">امروز آماده‌ چالش‌های جدیدی؟</p>
+              <h1 className="text-2xl md:text-3xl font-black text-white">سلام، خوش اومدی! 👋</h1>
+              <p className="text-sm text-gray-400">امروز آماده‌ چالش‌های جدیدی؟</p>
             </motion.div>
-            <GlowButton variant="purple" className="flex gap-2" onClick={() => setIsLobbyModalOpen(true)}>
+            <GlowButton variant="purple" className="flex gap-2 w-full sm:w-auto h-11" onClick={() => setIsLobbyModalOpen(true)}>
               <Plus size={18} />
               <span>ساخت لابی جدید</span>
             </GlowButton>

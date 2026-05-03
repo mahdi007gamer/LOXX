@@ -23,11 +23,11 @@ export const LeaderboardPage = () => {
   return (
     <div className="flex min-h-[calc(100vh-64px)]">
       <Sidebar />
-      <main className="flex-1 px-4 py-8 md:mr-64 lg:px-8">
+      <main className="flex-1 px-4 py-8 md:mr-64 lg:px-8 pb-24 md:pb-8">
         <div className="container mx-auto max-w-5xl">
-          <header className="mb-12 text-center">
-            <h1 className="text-4xl font-black text-white">برترین گیمرها</h1>
-            <p className="mt-2 text-gray-400">رقابت برای رسیدن به قله لوکس</p>
+          <header className="mb-8 md:mb-12 text-center md:text-right">
+            <h1 className="text-2xl md:text-4xl font-black text-white">برترین گیمرها</h1>
+            <p className="mt-1 md:mt-2 text-xs md:text-base text-gray-400">رقابت برای رسیدن به قله لوکس</p>
           </header>
 
           {/* Top 3 Podium */}
