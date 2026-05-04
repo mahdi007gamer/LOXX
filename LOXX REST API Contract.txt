@@ -1,0 +1,181 @@
+LOXX REST API Contract
+Version: 1.0 (Enterprise Edition)
+Base URL: https://api.loxx.ir/api/v1
+Encording: UTF-8 (Full Persian/RTL support for strings)
+1. Authentication Module
+POST /auth/register
+Creates a new user account.
+Auth: None
+Rate Limit: 5 attempts / 15 minutes / IP
+Request Body:
+code
+TypeScript
+{
+  username: string; // Persian characters supported
+  email: string;
+  password: string;
+}
+Success Response (201):
+code
+JSON
+{
+  "status": "success",
+  "message": "User registered successfully",
+  "user": { "id": "uuid", "username": "مازیار" }
+}
+POST /auth/login
+Authenticates user and returns access token.
+Auth: None
+Rate Limit: 5 attempts / 15 minutes / IP
+Request Body:
+code
+TypeScript
+{
+  email: string;
+  password: string;
+}
+Success Response (200):
+code
+JSON
+{
+  "status": "success",
+  "token": "base64.jwt.access_token",
+  "user": { "id": "uuid", "username": "مازیار", "membership": "VIP" }
+}
+Note: Sets refresh_token in a Secure, HttpOnly cookie.
+POST /auth/refresh
+Rotates the access token using the refresh token cookie.
+Auth: Refresh Token (Cookie)
+Success Response (200):
+code
+JSON
+{ "status": "success", "token": "new.jwt.access_token" }
+2. User & Profile Module
+GET /profile/me
+Returns the authenticated user's private profile.
+Headers: Authorization: Bearer <token>
+Success Response (200):
+code
+JSON
+{
+  "id": "uuid",
+  "username": "maziyar_gamer",
+  "displayName": "مازیار",
+  "bio": "گیمر حرفه‌ای از تهران",
+  "level": 25,
+  "xp": 4500,
+  "membership": "PLUS",
+  "region": "IR"
+}
+PATCH /profile/update
+Updates profile metadata.
+Headers: Authorization: Bearer <token>
+Request Body:
+code
+TypeScript
+{
+  display_name?: string; // Persian support
+  bio?: string; // RTL support
+  region?: "IR" | "TR" | "EU" | "ME";
+}
+Error (400): {"code": "VALIDATION_FAILED", "message": "Bio too long (max 500 chars)"}
+POST /profile/avatar
+Uploads a new profile image.
+Headers: Authorization: Bearer <token>, Content-Type: multipart/form-data
+Body: image file (Max 2MB)
+Success Response (200):
+code
+JSON
+{ "url": "https://cdn.loxx.ir/avatars/user_uuid.png" }
+3. Friends Module
+GET /friends/list
+Fetch friend list with presence and status.
+Headers: Authorization: Bearer <token>
+Success Response (200):
+code
+JSON
+[
+  {
+    "userId": "uuid",
+    "username": "persian_pro",
+    "status": "online",
+    "activity": "In Lobby: CS2",
+    "isFavorite": true,
+    "isMuted": false
+  }
+]
+POST /friends/request
+Sends a friend request.
+Request Body: { "target_id": "uuid" }
+Rate Limit: Max 20 pending requests.
+PATCH /friends/modify
+Updates relationship attributes (Favorite/Mute).
+Request Body:
+code
+TypeScript
+{
+  target_id: string;
+  is_favorite?: boolean;
+  is_muted?: boolean;
+}
+4. Lobbies Module
+POST /lobbies/create
+Creates a new gaming lobby.
+Headers: Authorization: Bearer <token>
+Rate Limit: 3 creations / minute
+Request Body:
+code
+TypeScript
+{
+  game_id: string;
+  title: string; // Persian: "لابی کانتراستوریک"
+  max_players: number;
+  password?: string;
+  region: "IR" | "TR" | "EU" | "ME";
+}
+POST /lobbies/:id/ready
+Toggles user's ready state in a lobby.
+Headers: Authorization: Bearer <token>
+Body: { "ready": boolean }
+Success Response (200): {"status": "updated"}
+PATCH /lobbies/:id/mic
+Toggles internal mic status for voice activity detection.
+Body: { "muted": boolean }
+5. Ranking & XP Module
+GET /ranking
+Fetches current leaderboards.
+Query Params: ?period=weekly|monthly|all-time
+Success Response (200):
+code
+JSON
+{
+  "reset_in": "2d 14h 05m",
+  "top_users": [
+    { "rank": 1, "username": "کینگ_گیمر", "points": 12500, "trend": "up" },
+    { "rank": 2, "username": "مازیار", "points": 11200, "trend": "stable" }
+  ]
+}
+6. Notifications Module
+GET /notifications
+Returns unread notifications.
+Headers: Authorization: Bearer <token>
+Success Response (200):
+code
+JSON
+[
+  {
+    "id": "uuid",
+    "type": "LOBBY_INVITE",
+    "senderName": "مازیار",
+    "data": { "lobbyId": "room_123", "title": "بیا بازی" },
+    "createdAt": "2026-05-04T09:00:00Z"
+  }
+]
+Standard Error Codes
+Code	Status	Description
+VALIDATION_FAILED	400	Data format is incorrect or invalid Persian characters used.
+AUTH_EXPIRED	401	Access token expired. Trigger silent refresh.
+INSUFFICIENT_PERMISSIONS	403	User is not Host or VIP.
+RESOURCE_NOT_FOUND	404	Lobby, User, or Game does not exist.
+LOBBY_FULL	409	Attempted to join a room with max players reached.
+RATE_LIMIT_EXCEEDED	429	Too many attempts or spam detected.

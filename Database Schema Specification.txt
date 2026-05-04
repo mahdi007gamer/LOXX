@@ -1,0 +1,305 @@
+LOXX DATABASE SCHEMA SPECIFICATION
+================================================================================
+v1.0 (Enterprise Edition)
+Compatible with Backend Specification v2.0 & Backend Blueprint v1.0
+
+This document defines the relational data layer for the LOXX platform using 
+Prisma Schema Language (PSL). It accounts for all functional requirements 
+extracted from the frontend code and infrastructure constraints from the backend.
+
+================================================================================
+1. CORE PRISMA SCHEMA
+================================================================================
+
+```prisma
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// --- Enums ---
+
+enum MembershipTier {
+  NONE
+  PLUS
+  VIP
+}
+
+enum Region {
+  IR
+  TR
+  EU
+  ME
+}
+
+enum FriendshipStatus {
+  PENDING
+  ACCEPTED
+  BLOCKED
+}
+
+enum LobbyStatus {
+  WAITING
+  STARTING
+  IN_PROGRESS
+  FINISHED
+}
+
+enum LobbyRole {
+  HOST
+  PLAYER
+  SPECTATOR
+}
+
+enum NotificationType {
+  FRIEND_REQUEST
+  FRIEND_ACCEPTED
+  MENTION
+  LOBBY_INVITE
+  LOBBY_JOIN
+  RANKING_REWARD
+  SYSTEM_ALERT
+  SUBSCRIPTION_UPDATE
+}
+
+enum XPEventSource {
+  LOBBY_JOIN
+  MATCH_START
+  MATCH_WIN
+  CHAT_DAILY
+  LOGIN_DAILY
+  WEEKLY_STREAK
+  INVITE_FRIEND
+}
+
+// --- Models ---
+
+model User {
+  id              String    @id @default(uuid())
+  username        String    @unique // Persian supported
+  email           String    @unique
+  passwordHash    String
+  isVerified      Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  profile         Profile?
+  sentFriendReq   Friendship[] @relation("Requester")
+  recvFriendReq   Friendship[] @relation("Target")
+  messages        Message[]
+  lobbyMembers    LobbyMember[]
+  notifications   Notification[]
+  xpLogs          XPLog[]
+  subscriptions   Subscription[]
+  auditLogs       AuditLog[]
+}
+
+model Profile {
+  userId          String         @id
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  displayName     String         @db.VarChar(255)
+  bio             String?        @db.Text // Persian/RTL
+  avatarUrl       String?
+  bannerUrl       String?
+  level           Int            @default(1)
+  xp              Int            @default(0)
+  membershipType  MembershipTier @default(NONE)
+  region          Region         @default(IR)
+  lastActivity    DateTime       @default(now())
+}
+
+model Friendship {
+  id              String           @id @default(uuid())
+  requesterId     String
+  targetId        String
+  status          FriendshipStatus @default(PENDING)
+  isFavorite      Boolean          @default(false)
+  isMuted         Boolean          @default(false)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  requester       User             @relation("Requester", fields: [requesterId], references: [id])
+  target          User             @relation("Target", fields: [targetId], references: [id])
+
+  @@unique([requesterId, targetId])
+  @@index([requesterId, status])
+}
+
+model Game {
+  id              String   @id @default(uuid())
+  title           String   @unique // Persian
+  bannerUrl       String?
+  metadata        Json?    // Requirements like min_rank, category
+  lobbies         Lobby[]
+  channels        Channel[]
+}
+
+model Channel {
+  id              String   @id @default(uuid())
+  title           String   // Persian: "Global", "News", "LFG"
+  gameId          String?
+  game            Game?    @relation(fields: [gameId], references: [id])
+  messages        Message[]
+}
+
+model Message {
+  id              BigInt   @id @default(autoincrement())
+  channelId       String
+  channel         Channel  @relation(fields: [channelId], references: [id])
+  senderId        String
+  sender          User     @relation(fields: [senderId], references: [id])
+  content         String   @db.Text // Persian/RTL
+  replyToId       BigInt?
+  replyTo         Message? @relation("Thread", fields: [replyToId], references: [id])
+  replies         Message[] @relation("Thread")
+  reactions       Json?    // { "emoji": ["userId1", "userId2"] }
+  metadata        Json?    // { "gifUrl": "...", "inviteId": "..." }
+  isDeleted       Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([channelId, createdAt])
+}
+
+model Lobby {
+  id              String      @id @default(uuid())
+  gameId          String
+  game            Game        @relation(fields: [gameId], references: [id])
+  title           String      // Persian
+  hostId          String
+  maxPlayers      Int         @default(5)
+  password        String?
+  region          Region      @default(IR)
+  status          LobbyStatus @default(WAITING)
+  createdAt       DateTime    @default(now())
+
+  members         LobbyMember[]
+}
+
+model LobbyMember {
+  lobbyId         String
+  lobby           Lobby     @relation(fields: [lobbyId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User      @relation(fields: [userId], references: [id])
+  role            LobbyRole @default(PLAYER)
+  isReady         Boolean   @default(false)
+  micStatus       Boolean   @default(false) // Muted/Unmuted
+  
+  @@id([lobbyId, userId])
+}
+
+model Notification {
+  id              String           @id @default(uuid())
+  userId          String
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type            NotificationType
+  senderId        String?
+  referenceId     String?          // Polymorphic: messageId, lobbyId, requestId
+  data            Json?            // Content preview or context
+  isRead          Boolean          @default(false)
+  createdAt       DateTime         @default(now())
+}
+
+model XPLog {
+  id              BigInt         @id @default(autoincrement())
+  userId          String
+  user            User           @relation(fields: [userId], references: [id])
+  source          XPEventSource
+  amount          Int
+  timestamp       DateTime       @default(now())
+
+  @@index([userId, timestamp])
+}
+
+model Subscription {
+  id              String         @id @default(uuid())
+  userId          String
+  user            User           @relation(fields: [userId], references: [id])
+  tier            MembershipTier
+  startDate       DateTime       @default(now())
+  endDate         DateTime
+  autoRenew       Boolean        @default(true)
+}
+
+model AuditLog {
+  id              BigInt   @id @default(autoincrement())
+  userId          String?
+  user            User?    @relation(fields: [userId], references: [id])
+  action          String   // "LOGIN", "REGISTER", "SUSPICIOUS_IP"
+  ipAddress       String?
+  metadata        Json?
+  createdAt       DateTime @default(now())
+}
+```
+
+================================================================================
+2. ENTITY EXPLANATIONS
+================================================================================
+
+- User & Profile: Split into two tables to separate sensitive authentication 
+  data (argon2 hashes) from frequently updated/queried public information 
+  (level, bio). Profile is updated on every interaction that generates XP.
+- Friendship: Uses a self-referential many-to-many relationship. The `@@unique` 
+  constraint on (requester, target) prevents duplicate requests.
+- Game: Required by the "Browse Games" and "My Games" frontend pages. It acts 
+  as a parent entity for Lobbies and Channels.
+- Channel: Frontend identifies "Global", "News", and "LFG" channels, as well 
+  as game-specific ones. This model allows dynamic creation of chat contexts.
+- Message: Uses `BigInt` for high-volume chat scaling. `metadata` stores 
+  ephemeral data like GIF URLs and Lobby inviting links to avoid rigid schemas.
+- Lobby & LobbyMember: Separation of concerns. Lobby stores configuration; 
+  LobbyMember stores transient state like `isReady` and `micStatus`.
+- XPLog: Provides a queryable audit trail for the ranking system. This is 
+  critical for preventing "Point Injection" hacks.
+- AuditLog: Required by the "Enterprise Grade" backend spec for tracking 
+  suspicious IP changes and sensitive actions.
+
+================================================================================
+3. MISSING ENTITIES & DERIVATIONS
+================================================================================
+
+- Game Model: Implicitly required by `/games` and `/my-games` pages. Added to 
+  the schema to support lobby categorization. [REQUIRES DECISION: Do users 
+  "own" games or just "follow" them? Schema assumes a many-to-many "My Games" 
+  is needed, currently implied by Lobby relationship].
+- LobbyMember Role: Frontend implies "Host-only" actions. Added `LobbyRole` enum.
+- Notification referenceId: Frontend expects navigation on click. Added 
+  `referenceId` to facilitate jumping to messages/lobbies.
+- Channel association: Frontend implies game-specific chat. Added 1:N 
+  relation between Game and Channel.
+
+================================================================================
+4. DATABASE CONSTRAINTS & PERFORMANCE
+================================================================================
+
+- Indexing: 
+    * `Friendship`: Indexed on `(requesterId, status)` for fast "Pending 
+      Requests" rendering.
+    * `Message`: Indexed on `(channelId, createdAt)` for cursor-based chat 
+      pagination.
+    * `XPLog`: Indexed on `timestamp` for weekly ranking aggregation jobs.
+- Cascading: 
+    * Deleting a `User` cascades to `Profile`, `LobbyMember`, and `Notification`.
+    * Deleting a `Lobby` cascades to `LobbyMember` but NOT to `Message` (chat 
+      history preservation depends on product policy).
+
+================================================================================
+5. RTL/PERSIAN SUPPORT
+================================================================================
+
+- All string fields intended for user content (`username`, `displayName`, 
+  `bio`, `content`) are stored as standard UTF-8. 
+- PostgreSQL `TEXT` or `VARCHAR` handles Persian characters natively without 
+  special configuration, as long as the DB encoding is set to `UTF8`.
+
+================================================================================
+END OF SPECIFICATION
+================================================================================
