@@ -1,0 +1,171 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// --- Models ---
+
+model User {
+  id              String    @id @default(uuid())
+  username        String    @unique // Persian supported
+  email           String    @unique
+  passwordHash    String
+  isVerified      Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  profile         Profile?
+  sentFriendReq   Friendship[] @relation("Requester")
+  recvFriendReq   Friendship[] @relation("Target")
+  messages        Message[]
+  lobbyMembers    LobbyMember[]
+  notifications   Notification[]
+  xpLogs          XPLog[]
+  subscriptions   Subscription[]
+  auditLogs       AuditLog[]
+}
+
+model Profile {
+  userId          String         @id
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  displayName     String
+  bio             String?        // Persian/RTL
+  avatarUrl       String?
+  bannerUrl       String?
+  level           Int            @default(1)
+  xp              Int            @default(0)
+  membershipType  String         @default("NONE") // NONE, PLUS, VIP
+  region          String         @default("IR")   // IR, TR, EU, ME
+  lastActivity    DateTime       @default(now())
+}
+
+model Friendship {
+  id              String           @id @default(uuid())
+  requesterId     String
+  targetId        String
+  status          String           @default("PENDING") // PENDING, ACCEPTED, BLOCKED
+  isFavorite      Boolean          @default(false)
+  isMuted         Boolean          @default(false)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  requester       User             @relation("Requester", fields: [requesterId], references: [id])
+  target          User             @relation("Target", fields: [targetId], references: [id])
+
+  @@unique([requesterId, targetId])
+  @@index([requesterId, status])
+}
+
+model Game {
+  id              String   @id @default(uuid())
+  title           String   @unique // Persian
+  bannerUrl       String?
+  metadata        String?  // JSON string
+  lobbies         Lobby[]
+  channels        Channel[]
+}
+
+model Channel {
+  id              String   @id @default(uuid())
+  title           String   // Persian: "Global", "News", "LFG"
+  gameId          String?
+  game            Game?    @relation(fields: [gameId], references: [id])
+  messages        Message[]
+}
+
+model Message {
+  id              Int      @id @default(autoincrement())
+  channelId       String
+  channel         Channel  @relation(fields: [channelId], references: [id])
+  senderId        String
+  sender          User     @relation(fields: [senderId], references: [id])
+  content         String   // Persian/RTL
+  replyToId       Int?
+  replyTo         Message? @relation("Thread", fields: [replyToId], references: [id])
+  replies         Message[] @relation("Thread")
+  reactions       String?  // JSON string
+  metadata        String?  // JSON string
+  isDeleted       Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([channelId, createdAt])
+}
+
+model Lobby {
+  id              String      @id @default(uuid())
+  gameId          String
+  game            Game        @relation(fields: [gameId], references: [id])
+  title           String      // Persian
+  hostId          String
+  maxPlayers      Int         @default(5)
+  password        String?
+  region          String      @default("IR") // IR, TR, EU, ME
+  status          String      @default("WAITING") // WAITING, STARTING, IN_PROGRESS, FINISHED
+  createdAt       DateTime    @default(now())
+
+  members         LobbyMember[]
+}
+
+model LobbyMember {
+  lobbyId         String
+  lobby           Lobby     @relation(fields: [lobbyId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User      @relation(fields: [userId], references: [id])
+  role            String    @default("PLAYER") // HOST, PLAYER, SPECTATOR
+  isReady         Boolean   @default(false)
+  micStatus       Boolean   @default(false) // Muted/Unmuted
+  
+  @@id([lobbyId, userId])
+}
+
+model Notification {
+  id              String           @id @default(uuid())
+  userId          String
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type            String           // FRIEND_REQUEST, FRIEND_ACCEPTED, MENTION, LOBBY_INVITE, etc.
+  senderId        String?
+  referenceId     String?          // Polymorphic: messageId, lobbyId, requestId
+  data            String?          // JSON string
+  isRead          Boolean          @default(false)
+  createdAt       DateTime         @default(now())
+}
+
+model XPLog {
+  id              Int            @id @default(autoincrement())
+  userId          String
+  user            User           @relation(fields: [userId], references: [id])
+  source          String         // LOBBY_JOIN, MATCH_START, etc.
+  amount          Int
+  timestamp       DateTime       @default(now())
+
+  @@index([userId, timestamp])
+}
+
+model Subscription {
+  id              String         @id @default(uuid())
+  userId          String
+  user            User           @relation(fields: [userId], references: [id])
+  tier            String         // NONE, PLUS, VIP
+  startDate       DateTime       @default(now())
+  endDate         DateTime
+  autoRenew       Boolean        @default(true)
+}
+
+model AuditLog {
+  id              Int      @id @default(autoincrement())
+  userId          String?
+  user            User?    @relation(fields: [userId], references: [id])
+  action          String   // "LOGIN", "REGISTER", etc.
+  ipAddress       String?
+  metadata        String?
+  createdAt       DateTime @default(now())
+}
