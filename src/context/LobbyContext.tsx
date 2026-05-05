@@ -82,7 +82,9 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           players: [...prev.players, { ...data.user, userId: data.user.id, isReady: false, micMuted: false }]
         };
       });
-      toast(`${data.user.username} وارد لابی شد`, { icon: '👋' });
+      if (data.user.id !== user?.id) {
+        toast(`${data.user.username} وارد لابی شد`, { icon: '👋' });
+      }
     });
 
     lobbySocket.on("lobby.member_left", (data: { userId: string, membersCount: number }) => {

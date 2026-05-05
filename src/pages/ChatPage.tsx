@@ -55,8 +55,8 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
     <div 
       id={`msg-${message.id}`}
       className={cn(
-        "flex gap-2 md:gap-3 transition-all duration-300 mb-6 items-start px-1 md:px-0 relative w-full",
-        message.self ? "flex-row" : "flex-row-reverse"
+        "flex gap-2 md:gap-3 transition-all duration-300 mb-6 px-1 md:px-0 relative w-full",
+        message.self ? "flex-row-reverse justify-start" : "flex-row justify-start"
       )}
     >
       {/* Interaction Menu Popover Overlay - Globally available */}
@@ -97,14 +97,14 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
         )}>
           {message.senderAvatar || (message.senderName ? message.senderName[0] : "?")}
         </div>
-        <div className="absolute -bottom-1 -right-1 h-3.5 w-3.5 rounded-full bg-green-500 border-2 border-[#050507] z-20" />
+        <div className={cn("absolute -bottom-1 h-3.5 w-3.5 rounded-full bg-green-500 border-2 border-[#050507] z-20", message.self ? "-left-1" : "-right-1")} />
       </div>
 
       {/* Message Content Area */}
       <div 
         className={cn(
           "flex flex-col gap-1 max-w-[82%] md:max-w-[70%] min-w-0 transition-all duration-200 group/msg-content",
-          message.self ? "items-start text-right" : "items-end text-left",
+          message.self ? "items-end text-right" : "items-start text-left",
           showActions && "scale-[1.02] z-50 relative"
         )}
         onClick={() => setShowActions(!showActions)}
@@ -112,7 +112,7 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
         {/* Header - Name -> Badge -> Time (Order follows container flow) */}
         <div className={cn(
           "flex items-center gap-1.5 mb-1 px-0.5",
-          message.self ? "flex-row" : "flex-row-reverse"
+          message.self ? "flex-row-reverse" : "flex-row"
         )}>
           <span 
               className={cn("text-[11px] font-black tracking-tight cursor-pointer hover:underline flex items-center gap-1", nameColorClass)}

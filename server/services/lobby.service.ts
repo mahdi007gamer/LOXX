@@ -2,8 +2,10 @@ import prisma from "../utils/prisma.js";
 
 export class LobbyService {
   static async createLobby(userId: string, data: any) {
+    const id = "LX" + Math.random().toString(36).substring(2, 8).toUpperCase();
     return prisma.lobby.create({
       data: {
+        id,
         gameId: data.gameId || data.game_id,
         title: data.title,
         hostId: userId,

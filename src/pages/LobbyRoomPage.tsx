@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { useLobby } from "../context/LobbyContext";
 import { useAuth } from "../context/AuthContext";
+import { useWebRTC } from "../hooks/useWebRTC";
 import { chatSocket, lobbySocket, voiceSocket } from "../lib/socket";
 import { toast } from "react-hot-toast";
 import { 
@@ -74,6 +75,7 @@ export const LobbyRoomPage = () => {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [activeProfileUserId, setActiveProfileUserId] = useState<string | null>(null);
 
   const [wasInLobby, setWasInLobby] = useState(false);
@@ -142,7 +144,14 @@ export const LobbyRoomPage = () => {
   
   const isStarting = lobby?.status === "STARTING";
   const isMatchStarted = lobby?.status === "IN_PROGRESS";
-  const allReadyPulse = lobby?.status === "READY";
+  
+  // Calculate if all current active players are ready
+  const activePlayersList = lobby?.players || [];
+  const activePlayersCount = activePlayersList.length;
+  const readyCountValue = activePlayersList.filter(p => p.isReady).length;
+  // Use backend status if available, fallback to dynamic check
+  const allReadyPulse = lobby?.status === "READY" || (activePlayersCount > 1 && readyCountValue === activePlayersCount);
+
 
   useEffect(() => {
     let audioContext: AudioContext;
@@ -152,10 +161,12 @@ export const LobbyRoomPage = () => {
     let rafId: number;
     let isTalking = false;
 
-    if (!isMicMuted && lobby && user) {
+    if (lobby && user) {
       navigator.mediaDevices.getUserMedia({ audio: true })
         .then(str => {
           stream = str;
+          setLocalStream(str);
+
           audioContext = new AudioContext();
           analyzer = audioContext.createAnalyser();
           microphone = audioContext.createMediaStreamSource(stream);
@@ -166,20 +177,27 @@ export const LobbyRoomPage = () => {
           const dataArray = new Uint8Array(bufferLength);
 
           const analyzeVoice = () => {
-             analyzer.getByteFrequencyData(dataArray);
-             let sum = 0;
-             for(let i = 0; i < bufferLength; i++) {
-               sum += dataArray[i];
-             }
-             const avg = sum / bufferLength;
-             setLocalVolume(Math.min(100, Math.round(avg * 2)));
+             if (stream.getAudioTracks()[0]?.enabled) {
+               analyzer.getByteFrequencyData(dataArray);
+               let sum = 0;
+               for(let i = 0; i < bufferLength; i++) {
+                 sum += dataArray[i];
+               }
+               const avg = sum / bufferLength;
+               setLocalVolume(Math.min(100, Math.round(avg * 2)));
 
-             const talkingNow = avg > 10;
-             if (talkingNow !== isTalking) {
-               isTalking = talkingNow;
-               voiceSocket.emit("voice.talking", { roomId: lobby.id, isTalking });
+               const talkingNow = avg > 10;
+               if (talkingNow !== isTalking) {
+                 isTalking = talkingNow;
+                 voiceSocket.emit("voice.talking", { roomId: lobby.id, isTalking });
+               }
+             } else {
+               setLocalVolume(0);
+               if (isTalking) {
+                 isTalking = false;
+                 voiceSocket.emit("voice.talking", { roomId: lobby.id, isTalking: false });
+               }
              }
-
              rafId = requestAnimationFrame(analyzeVoice);
           };
           analyzeVoice();
@@ -189,19 +207,26 @@ export const LobbyRoomPage = () => {
           toast.error("دسترسی به میکروفون داده نشد");
           setLobbyMuted(true);
         });
-    } else {
-      if (isTalking && lobby) {
-        voiceSocket.emit("voice.talking", { roomId: lobby.id, isTalking: false });
-      }
     }
 
     return () => {
       if (rafId) cancelAnimationFrame(rafId);
-      if (stream) stream.getTracks().forEach(track => track.stop());
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
       if (audioContext && audioContext.state !== "closed") audioContext.close();
       setLocalVolume(0);
+      setLocalStream(null);
     };
-  }, [isMicMuted, lobby, user, setLobbyMuted]);
+  }, [lobby?.id, user?.id]);
+
+  useEffect(() => {
+    if (localStream && localStream.getAudioTracks().length > 0) {
+      localStream.getAudioTracks()[0].enabled = !isMicMuted;
+    }
+  }, [isMicMuted, localStream]);
+
+  const { remoteStreams } = useWebRTC(lobby?.id || null, localStream, user?.id);
 
   const toggleMic = () => {
     if (lobby) {
@@ -325,7 +350,10 @@ export const LobbyRoomPage = () => {
       >
         <div className="flex items-center gap-3 md:gap-5 flex-1 min-w-0">
            <button 
-            onClick={() => navigate("/lobbies")}
+            onClick={() => {
+              leaveLobby();
+              navigate("/lobbies");
+            }}
             className="p-2 md:p-3 rounded-xl md:rounded-2xl bg-white/5 hover:bg-neon-pink/10 transition-colors text-gray-400 hover:text-neon-pink shrink-0"
            >
              <ChevronLeft size={18} className="md:size-5 rotate-180" />
@@ -377,6 +405,16 @@ export const LobbyRoomPage = () => {
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col gap-4 md:gap-6 overflow-y-auto overflow-x-hidden custom-scrollbar pb-24 md:pb-8 px-1 md:px-4">
           
+          {/* Remote Audio Streams */}
+          {Array.from(remoteStreams.entries()).map(([peerUserId, stream]) => (
+            <RemoteAudioPlayer 
+              key={peerUserId}
+              stream={stream}
+              volumeLevel={peerVolumes[peerUserId] !== undefined ? peerVolumes[peerUserId] : 100}
+              onVolumeChange={(vol) => setPeerActivity(prev => ({ ...prev, [peerUserId]: vol }))}
+            />
+          ))}
+
           {/* Top Status Panel */}
           <MatchInfoPanel 
             isStarting={isStarting} 
@@ -419,7 +457,8 @@ export const LobbyRoomPage = () => {
              players={players}
              inputMessage={inputMessage} 
              setInputMessage={setInputMessage} 
-             onSend={handleSendMessage} 
+             onSend={handleSendMessage}
+             currentUserId={user?.id}
            />
         </div>
       </div>
@@ -428,7 +467,10 @@ export const LobbyRoomPage = () => {
       <div className="lg:hidden fixed bottom-20 left-4 right-4 z-50 p-2 glass rounded-[24px] border border-white/10 flex items-center justify-between gap-2 shadow-2xl overflow-hidden">
         <div className="flex items-center gap-1 shrink-0">
           <button 
-            onClick={() => navigate("/lobbies")}
+            onClick={() => {
+              leaveLobby();
+              navigate("/lobbies");
+            }}
             className="h-10 w-10 rounded-xl bg-neon-pink/10 text-neon-pink flex items-center justify-center border border-neon-pink/20"
             title="خروج"
           >
@@ -489,6 +531,7 @@ export const LobbyRoomPage = () => {
                   setInputMessage={setInputMessage} 
                   onSend={handleSendMessage} 
                   onClose={() => setIsChatOpen(false)}
+                  currentUserId={user?.id}
                 />
               </div>
             </motion.div>
@@ -522,13 +565,15 @@ export const LobbyRoomPage = () => {
            <div className="flex items-center gap-4">
               <ControlButton icon={isMicMuted ? <MicOff size={20} /> : <Mic size={20} />} active={!isMicMuted} onClick={toggleMic} />
               <ControlButton icon={<UserPlus size={20} />} onClick={() => setIsInviteModalOpen(true)} />
-              <ControlButton icon={<Settings size={20} />} />
-              <ControlButton icon={<RotateCcw size={20} />} />
+              <ControlButton icon={<Settings size={20} />} onClick={() => setIsSettingsModalOpen(true)} />
            </div>
         </div>
 
         <button 
-          onClick={() => navigate("/lobbies")}
+          onClick={() => {
+            leaveLobby();
+            navigate("/lobbies");
+          }}
           className="flex items-center gap-2 px-8 py-3 rounded-2xl text-xs font-black uppercase text-neon-pink hover:bg-neon-pink/10 transition-all border border-transparent hover:border-neon-pink/20"
         >
           <LogOut size={18} className="ml-2" />
@@ -595,6 +640,66 @@ export const LobbyRoomPage = () => {
             </div>
           </Modal>
         )}
+
+        {isSettingsModalOpen && (
+          <Modal title="تنظیمات لابی" onClose={() => setIsSettingsModalOpen(false)}>
+            <div className="space-y-6">
+              {/* Host specific settings */}
+              {isHost ? (
+                <div className="space-y-4">
+                  <h4 className="text-sm font-black text-neon-blue uppercase tracking-widest border-b border-white/10 pb-2">تنظیمات اصلی لابی</h4>
+                  
+                  <div className="flex items-center justify-between p-3 rounded-2xl bg-white/5">
+                    <div>
+                      <p className="text-sm font-black text-white">لابی خصوصی</p>
+                      <p className="text-[10px] text-gray-500 font-bold">فقط با کد دعوت یا لینک</p>
+                    </div>
+                    <div className="w-12 h-6 rounded-full bg-neon-blue/20 relative cursor-pointer border border-neon-blue/30 scale-90">
+                      <div className="absolute right-1 top-1 h-4 w-4 rounded-full bg-neon-blue shadow-[0_0_10px_rgba(0,229,255,1)]" />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between p-3 rounded-2xl bg-white/5">
+                    <div>
+                      <p className="text-sm font-black text-white">دسترسی میکروفون</p>
+                      <p className="text-[10px] text-gray-500 font-bold">بازیکنان برای چت صوتی نیاز به میکروفون دارند</p>
+                    </div>
+                    <div className="w-12 h-6 rounded-full bg-neon-blue/20 relative cursor-pointer border border-neon-blue/30 scale-90">
+                      <div className="absolute right-1 top-1 h-4 w-4 rounded-full bg-neon-blue shadow-[0_0_10px_rgba(0,229,255,1)]" />
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+
+              {/* General User settings */}
+              <div className="space-y-4">
+                <h4 className="text-sm font-black text-neon-pink uppercase tracking-widest border-b border-white/10 pb-2">تنظیمات صوتی بازیکن</h4>
+                
+                <div className="space-y-2">
+                  <label className="text-xs font-black text-gray-400">حالت صحبت (Voice Mode)</label>
+                  <div className="flex gap-2">
+                    <button className="flex-1 py-2 rounded-xl bg-neon-pink/10 border border-neon-pink/20 text-neon-pink text-xs font-black">
+                      Voice Activation
+                    </button>
+                    <button className="flex-1 py-2 rounded-xl bg-white/5 border border-white/5 text-gray-400 text-xs font-black hover:bg-white/10 transition">
+                      Push to Talk
+                    </button>
+                  </div>
+                </div>
+                
+                <div className="space-y-2 opacity-50 pointer-events-none">
+                  <label className="text-xs font-black text-gray-400 flex items-center justify-between">
+                    کلید Push to Talk
+                    <span className="text-[9px] bg-white/10 px-2 py-0.5 rounded text-white font-mono">V</span>
+                  </label>
+                  <button className="w-full py-2 rounded-xl bg-white/5 border border-white/10 text-gray-500 text-xs font-black text-left pl-4">
+                     Click to set keybinding...
+                  </button>
+                </div>
+              </div>
+            </div>
+          </Modal>
+        )}
       </AnimatePresence>
     </div>
   );
@@ -606,6 +711,66 @@ const StatCard = ({ label, value }: { label: string, value: string }) => (
     <p className="text-sm font-black text-white">{value}</p>
   </div>
 );
+
+const RemoteAudioPlayer = ({ stream, onVolumeChange, volumeLevel }: { stream: MediaStream, onVolumeChange: (vol: number) => void, volumeLevel: number }) => {
+  const audioRef = useRef<HTMLAudioElement>(null);
+  
+  useEffect(() => {
+    if (audioRef.current && stream) {
+      audioRef.current.srcObject = stream;
+    }
+  }, [stream]);
+
+  // Handle local user volume adjustment for this specific remote peer
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = volumeLevel / 100;
+    }
+  }, [volumeLevel]);
+
+  useEffect(() => {
+    let audioContext: AudioContext;
+    let analyzer: AnalyserNode;
+    let microphone: MediaStreamAudioSourceNode;
+    let rafId: number;
+
+    if (stream && stream.getAudioTracks().length > 0) {
+      audioContext = new AudioContext();
+      analyzer = audioContext.createAnalyser();
+      microphone = audioContext.createMediaStreamSource(stream);
+      microphone.connect(analyzer);
+      
+      analyzer.fftSize = 256;
+      const bufferLength = analyzer.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
+
+      const analyzeVoice = () => {
+         // if track is disabled it's effectively 0, but analyzer might pick up residual. We'll check track state.
+         if (stream.getAudioTracks()[0].enabled) {
+           analyzer.getByteFrequencyData(dataArray);
+           let sum = 0;
+           for(let i = 0; i < bufferLength; i++) {
+             sum += dataArray[i];
+           }
+           const avg = sum / bufferLength;
+           onVolumeChange(Math.min(100, Math.round(avg * 2)));
+         } else {
+           onVolumeChange(0);
+         }
+         rafId = requestAnimationFrame(analyzeVoice);
+      };
+      analyzeVoice();
+    }
+
+    return () => {
+      if (rafId) cancelAnimationFrame(rafId);
+      if (audioContext && audioContext.state !== "closed") audioContext.close();
+      onVolumeChange(0);
+    };
+  }, [stream, onVolumeChange]);
+
+  return <audio ref={audioRef} autoPlay playsInline className="hidden" />;
+};
 
 const Modal = ({ title, children, onClose }: { title: string, children: React.ReactNode, onClose: () => void }) => (
   <motion.div 
