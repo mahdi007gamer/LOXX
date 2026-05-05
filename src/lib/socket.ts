@@ -21,3 +21,4 @@ export const lobbySocket = createNamespaceSocket("lobby");
 export const chatSocket = createNamespaceSocket("chat");
 export const notifySocket = createNamespaceSocket("notify");
 export const rankingSocket = createNamespaceSocket("ranking");
+export const voiceSocket = createNamespaceSocket("voice");

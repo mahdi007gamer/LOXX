@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { lobbySocket } from "../lib/socket";
 import { toast } from "react-hot-toast";
+import { useAuth } from "./AuthContext";
 
 export type LobbyStatus = "WAITING" | "READY" | "STARTING" | "IN_PROGRESS" | "FINISHED";
 
@@ -9,6 +10,18 @@ interface LobbyMember {
   username: string;
   role: "HOST" | "PLAYER";
   isReady: boolean;
+  micMuted?: boolean;
+}
+
+export interface ChatMessage {
+  id: string;
+  from: {
+    userId: string;
+    username: string;
+    membership: string;
+  };
+  content: string;
+  createdAt: number;
 }
 
 interface LobbyState {
@@ -19,6 +32,8 @@ interface LobbyState {
   maxPlayers: number;
   status: LobbyStatus;
   hostId: string | null;
+  messages: ChatMessage[];
+  talkingUsers: string[]; // List of user IDs currently talking
   countdown?: number;
   isMuted?: boolean;
   mode?: string;
@@ -34,12 +49,14 @@ interface LobbyContextType {
   leaveLobby: () => void;
   toggleReady: () => void;
   setLobbyMuted: (muted: boolean) => void;
+  sendMessage: (content: string) => void;
 }
 
 const LobbyContext = createContext<LobbyContextType | undefined>(undefined);
 
 export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [lobby, setLobby] = useState<LobbyState | null>(null);
+  const { user } = useAuth();
 
   useEffect(() => {
     // Listen for member updates using the new dot-protocol
@@ -76,11 +93,43 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               ? { 
                   ...p, 
                   isReady: data.isReady !== undefined ? data.isReady : p.isReady,
-                  micMuted: data.micMuted !== undefined ? data.micMuted : (p as any).micMuted 
+                  micMuted: data.micMuted !== undefined ? data.micMuted : p.micMuted 
                 } 
               : p
           )
         };
+      });
+    });
+
+    // Chat Listeners
+    import("../lib/socket").then(({ chatSocket }) => {
+       chatSocket.on("chat.message", (msg: ChatMessage) => {
+         setLobby(prev => {
+           if (!prev) return null;
+           return {
+             ...prev,
+             messages: [...(prev.messages || []), msg]
+           };
+         });
+       });
+    });
+
+    // Voice Listeners (Talking indicators)
+    import("../lib/socket").then(({ voiceSocket }) => {
+      // Assuming a simple event for "I am talking"
+      voiceSocket.on("voice.talking", (data: { userId: string, isTalking: boolean }) => {
+        setLobby(prev => {
+          if (!prev) return null;
+          const talkingUsers = prev.talkingUsers || [];
+          if (data.isTalking) {
+            if (!talkingUsers.includes(data.userId)) {
+              return { ...prev, talkingUsers: [...talkingUsers, data.userId] };
+            }
+          } else {
+            return { ...prev, talkingUsers: talkingUsers.filter(id => id !== data.userId) };
+          }
+          return prev;
+        });
       });
     });
 
@@ -99,7 +148,17 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const joinLobby = (lobbyId: string) => {
     lobbySocket.emit("lobby.join", { lobbyId }, (ack: any) => {
       if (ack?.status === "ok") {
-        setLobby(ack.data);
+        setLobby({
+          ...ack.data,
+          messages: [],
+          talkingUsers: []
+        });
+        
+        // Join chat room too
+        import("../lib/socket").then(({ chatSocket, voiceSocket }) => {
+          chatSocket.emit("chat.join", { type: "lobby", id: lobbyId });
+          voiceSocket.emit("voice.join", { roomId: lobbyId });
+        });
       } else {
         toast.error(ack?.error?.message || "Join failed");
       }
@@ -115,14 +174,30 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const toggleReady = () => {
     if (lobby) {
-      // Find my current ready state locally for optimistic toggle
-      // The server will ack and broadcast the real state
-      lobbySocket.emit("lobby.ready", { lobbyId: lobby.id, ready: true }); 
+      // Find current ready state
+      const me = lobby.players.find(p => p.userId === (lobbySocket as any).userId); // userId is set on socket
+      const currentReady = me?.isReady || false;
+      lobbySocket.emit("lobby.ready", { lobbyId: lobby.id, ready: !currentReady }); 
     }
   };
 
   const setLobbyMuted = (muted: boolean) => {
-    setLobby(prev => prev ? { ...prev, isMuted: muted } : null);
+    if (user && lobby) {
+       lobbySocket.emit("lobby.mic", { lobbyId: lobby.id, muted });
+       setLobby(prev => prev ? { ...prev, isMuted: muted } : null);
+    }
+  };
+
+  const sendMessage = (content: string) => {
+    if (lobby) {
+       import("../lib/socket").then(({ chatSocket }) => {
+          chatSocket.emit("chat.send", {
+             target: { type: "lobby", id: lobby.id },
+             content,
+             tempId: Date.now().toString()
+          });
+       });
+    }
   };
 
   return (

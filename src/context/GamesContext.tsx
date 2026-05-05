@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { Game } from "../types";
 import api from "../lib/api";
+import { useAuth } from "./AuthContext";
 
 interface GamesContextType {
   allGames: Game[];
@@ -15,6 +16,7 @@ export const GamesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [allGames, setAllGames] = useState<Game[]>([]);
   const [myGames, setMyGames] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
 
   useEffect(() => {
     const fetchGames = async () => {
@@ -24,9 +26,13 @@ export const GamesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           setAllGames(response.data.data);
         }
 
-        const myGamesRes = await api.get("/user/me/games");
-        if (myGamesRes.data.status === "success") {
-          setMyGames(myGamesRes.data.data.map((g: any) => g.id));
+        if (user) {
+          const myGamesRes = await api.get("/user/me/games");
+          if (myGamesRes.data.status === "success") {
+            setMyGames(myGamesRes.data.data.map((g: any) => g.id));
+          }
+        } else {
+          setMyGames([]);
         }
       } catch (error) {
         console.error("Failed to fetch games:", error);
@@ -36,7 +42,7 @@ export const GamesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
 
     fetchGames();
-  }, []);
+  }, [user]);
 
   const toggleMyGame = async (gameId: string) => {
     try {

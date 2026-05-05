@@ -52,6 +52,10 @@ export function setupWebSockets(io: Server) {
       socket.leave(`voice:${data.roomId}`);
       voiceNs.to(`voice:${data.roomId}`).emit("voice.user_left", { userId });
     });
+
+    socket.on("voice.talking", (data: { roomId: string, isTalking: boolean }) => {
+      voiceNs.to(`voice:${data.roomId}`).emit("voice.talking", { userId, isTalking: data.isTalking });
+    });
   });
 
   // Presence Namespace
@@ -221,6 +225,11 @@ export function setupWebSockets(io: Server) {
   // Chat Namespace
   chatNs.on("connection", (socket: AuthenticatedSocket) => {
     const userId = socket.userId!;
+
+    socket.on("chat.join", (data: { type: "channel" | "lobby", id: string }) => {
+      const room = data.type === "lobby" ? `lobby:${data.id}` : `channel:${data.id}`;
+      socket.join(room);
+    });
 
     socket.on("chat.send", async (data: { target: { type: "channel" | "lobby", id: string }, content: string, tempId: string, replyToId?: string }, ack) => {
       const { target, content, tempId, replyToId } = data;

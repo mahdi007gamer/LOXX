@@ -63,7 +63,9 @@ export const LobbyRoomPage = () => {
     lobby, 
     joinLobby,
     leaveLobby,
-    toggleReady
+    toggleReady,
+    setLobbyMuted,
+    sendMessage
   } = useLobby();
   const { user } = useAuth();
   const { openChat } = useFriends();
@@ -92,9 +94,9 @@ export const LobbyRoomPage = () => {
     isHost: p.role === "HOST",
     isReady: p.isReady,
     hasMic: true,
-    isMuted: !!(p as any).micMuted,
+    isMuted: !!p.micMuted,
     ping: 25,
-    isSpeaking: false,
+    isSpeaking: lobby?.talkingUsers?.includes(p.userId) || false,
     volume: 100
   })) || [];
 
@@ -126,34 +128,19 @@ export const LobbyRoomPage = () => {
 
   const toggleMic = () => {
     if (lobby) {
-      lobbySocket.emit("lobby.mic", { lobbyId: lobby.id, muted: !isMicMuted });
+      setLobbyMuted(!isMicMuted);
     }
   };
 
-  const [messages, setMessages] = useState<Message[]>([
-    { id: "1", user: "LOXX BOT", text: "لابی ساخته شد. منتظر هم‌تیمی‌ها هستیم...", time: "10:22 PM", isSystem: true },
-  ]);
-
-  useEffect(() => {
-    if (id) {
-      chatSocket.emit("join_chat", { type: "lobby", id });
-      
-      const handleNewMessage = (msg: any) => {
-        setMessages(prev => [...prev, {
-          id: msg.messageId || Math.random().toString(),
-          user: msg.from.username,
-          text: msg.content,
-          time: new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        }]);
-      };
-
-      chatSocket.on("chat.message", handleNewMessage);
-
-      return () => {
-        chatSocket.off("chat.message", handleNewMessage);
-      };
-    }
-  }, [id]);
+  const messages: Message[] = [
+    { id: "1", user: "LOXX BOT", text: "لابی ساخته شد. منتظر هم‌ teammates هستیم...", time: "System", isSystem: true },
+    ...(lobby?.messages?.map(m => ({
+      id: m.id,
+      user: m.from.userId === user?.id ? "You" : m.from.username,
+      text: m.content,
+      time: new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    })) || [])
+  ];
 
   const [inputMessage, setInputMessage] = useState("");
 
@@ -167,12 +154,7 @@ export const LobbyRoomPage = () => {
     e.preventDefault();
     if (!inputMessage.trim() || !id) return;
     
-    chatSocket.emit("chat.send", {
-      target: { type: "lobby", id },
-      content: inputMessage,
-      tempId: Math.random().toString(36).substr(2, 9)
-    });
-    
+    sendMessage(inputMessage);
     setInputMessage("");
   };
 
