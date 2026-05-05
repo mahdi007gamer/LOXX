@@ -119,16 +119,14 @@ export const useWebRTC = (roomId: string | null, localStream: MediaStream | null
       }
 
       try {
-        if (data.signal.type === 'offer' || data.signal.type === 'answer') {
+        if (data.signal.type === 'offer') {
            await pc.setRemoteDescription(new RTCSessionDescription(data.signal));
-           if (isOffer) {
-             const answer = await pc.createAnswer();
-             await pc.setLocalDescription(answer);
-             voiceSocket.emit('voice.signal', {
-               targetUserId: data.fromUserId,
-               signal: answer
-             });
-           }
+           const answer = await pc.createAnswer();
+           await pc.setLocalDescription(answer);
+           voiceSocket.emit('voice.signal', {
+             targetUserId: data.fromUserId,
+             signal: answer
+           });
            
            // Process queued candidates
            const pending = pendingCandidatesRef.current.get(data.fromUserId) || [];
@@ -140,6 +138,21 @@ export const useWebRTC = (roomId: string | null, localStream: MediaStream | null
              }
            }
            pendingCandidatesRef.current.delete(data.fromUserId);
+        } else if (data.signal.type === 'answer') {
+           if (pc.signalingState === 'have-local-offer') {
+             await pc.setRemoteDescription(new RTCSessionDescription(data.signal));
+             
+             // Process queued candidates
+             const pending = pendingCandidatesRef.current.get(data.fromUserId) || [];
+             for (const candidate of pending) {
+               try {
+                 await pc.addIceCandidate(new RTCIceCandidate(candidate));
+               } catch (e) {
+                 console.error("Error adding queued candidate", e);
+               }
+             }
+             pendingCandidatesRef.current.delete(data.fromUserId);
+           }
         } else if (data.signal.type === 'candidate' && data.signal.candidate) {
            if (pc.remoteDescription) {
              await pc.addIceCandidate(new RTCIceCandidate(data.signal.candidate));

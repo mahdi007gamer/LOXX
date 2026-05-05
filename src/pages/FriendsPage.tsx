@@ -3,6 +3,7 @@ import { Sidebar } from "../components/layout/Sidebar";
 import { NeonCard } from "../components/ui/NeonCard";
 import { GlowButton } from "../components/ui/GlowButton";
 import { useFriends } from "../context/FriendsContext";
+import { useAuth } from "../context/AuthContext";
 import { Friend, FriendStatus, FriendRequest } from "../types";
 import { 
   Search, 
@@ -246,6 +247,7 @@ export const FriendsPage = () => {
     toggleMute,
     openChat
   } = useFriends();
+  const { user } = useAuth();
 
   const [searchTerm, setSearchTerm] = useState("");
   const [userSearchTerm, setUserSearchTerm] = useState("");
@@ -377,16 +379,17 @@ export const FriendsPage = () => {
                <NeonCard variant="purple" className="p-4 relative overflow-hidden group">
                  <div className="absolute top-0 right-0 h-24 w-24 -mr-12 -mt-12 rounded-full bg-neon-purple/10 blur-2xl group-hover:bg-neon-purple/20 transition-all duration-700" />
                  <div className="relative flex items-center gap-4">
-                    <div className="h-14 w-14 md:h-16 md:w-16 rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center text-xl md:text-2xl shadow-2xl">
-                      👤
+                    <div className="h-14 w-14 md:h-16 md:w-16 rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center text-xl md:text-2xl shadow-2xl overflow-hidden">
+                      {user?.profile?.avatar ? <img src={user.profile.avatar} alt="avatar" className="w-full h-full object-cover" /> : "👤"}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-black text-white text-base md:text-lg truncate">سینا سلطان</h3>
+                      <h3 className="font-black text-white text-base md:text-lg truncate">{user?.profile?.displayName || user?.username}</h3>
                       <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-[10px] md:text-xs text-gray-500 font-mono tracking-tighter truncate">@sina_sultan</span>
+                        <span className="text-[10px] md:text-xs text-gray-500 font-mono tracking-tighter truncate">@{user?.username}</span>
                         <button 
                           onClick={() => {
-                            navigator.clipboard.writeText("@sina_sultan");
+                            if(user) navigator.clipboard.writeText(`@${user.username}`);
+                            toast.success("آیدی کپی شد");
                           }}
                           className="p-1 text-gray-600 hover:text-neon-purple transition-colors shrink-0"
                           title="کپی کردن نام کاربری"
@@ -397,16 +400,16 @@ export const FriendsPage = () => {
                       <div className="flex items-center gap-3 mt-2">
                          <div className="flex flex-col">
                            <span className="text-[8px] md:text-[10px] text-gray-600 uppercase font-bold">سطح</span>
-                           <span className="text-xs md:text-sm font-black text-neon-purple">۴۵</span>
+                           <span className="text-xs md:text-sm font-black text-neon-purple">{user?.ranking?.level || 1}</span>
                          </div>
                          <div className="w-px h-6 bg-white/5" />
                          <div className="flex flex-col">
                            <span className="text-[8px] md:text-[10px] text-gray-600 uppercase font-bold">امتیاز</span>
-                           <span className="text-xs md:text-sm font-black text-neon-blue">۲,۸۴۰</span>
+                           <span className="text-xs md:text-sm font-black text-neon-blue">{user?.ranking?.rp || 0}</span>
                          </div>
                       </div>
                     </div>
-                    <Link to="/profile/sina_sultan" className="p-2 bg-white/5 rounded-xl text-gray-400 hover:text-white hover:bg-white/10 transition-all shrink-0">
+                    <Link to={`/profile/${user?.username}`} className="p-2 bg-white/5 rounded-xl text-gray-400 hover:text-white hover:bg-white/10 transition-all shrink-0">
                       <ExternalLink size={16} />
                     </Link>
                  </div>
@@ -424,28 +427,17 @@ export const FriendsPage = () => {
                         className="w-full rounded-xl border border-white/10 bg-white/5 py-2.5 pr-10 text-xs text-white focus:border-neon-blue/50 focus:outline-none transition-all"
                         value={userSearchTerm}
                         onChange={(e) => setUserSearchTerm(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && userSearchTerm.length > 0) {
+                            addFriend(userSearchTerm);
+                            setUserSearchTerm('');
+                          }
+                        }}
                       />
                     </div>
-                    
-                    {userSearchTerm.length >= 3 && (
-                      <div className="space-y-2 pt-2 cursor-pointer">
-                         <div className="flex items-center justify-between rounded-xl bg-white/5 p-3 hover:bg-white/10 transition-all">
-                            <div className="flex items-center gap-3">
-                              <div className="h-10 w-10 rounded-full bg-neon-blue/10 flex items-center justify-center text-neon-blue font-bold">K</div>
-                              <div>
-                                <p className="text-sm font-bold text-white">Kingsley</p>
-                                <p className="text-[10px] text-gray-500">سطح ۴۵</p>
-                              </div>
-                            </div>
-                            <button 
-                              onClick={() => addFriend("kingsley")}
-                              className="rounded-lg bg-neon-blue/10 p-2 text-neon-blue hover:bg-neon-blue hover:text-dark-bg transition-all"
-                             >
-                              <UserPlus size={16} />
-                            </button>
-                         </div>
-                      </div>
-                    )}
+                    <p className="text-[10px] text-gray-500 mt-2 text-center border-t border-white/5 pt-2">
+                      جهت ارسال درخواست دوستی، آیدی دقیق کاربر را وارد کرده و دکمه Enter را بزنید.
+                    </p>
                  </div>
                </NeonCard>
 

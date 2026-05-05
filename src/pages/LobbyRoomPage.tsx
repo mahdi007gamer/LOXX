@@ -191,7 +191,9 @@ export const LobbyRoomPage = () => {
                  sum += dataArray[i];
                }
                const avg = sum / bufferLength;
-               setLocalVolume(Math.min(100, Math.round(avg * 2)));
+               const newVol = Math.min(100, Math.round(avg * 2));
+               
+               setLocalVolume(prev => Math.abs(prev - newVol) > 5 ? newVol : prev);
 
                const talkingNow = avg > 10;
                if (talkingNow !== isTalking) {
@@ -199,7 +201,7 @@ export const LobbyRoomPage = () => {
                  voiceSocket.emit("voice.talking", { roomId: lobby.id, isTalking });
                }
              } else {
-               setLocalVolume(0);
+               setLocalVolume(prev => prev === 0 ? prev : 0);
                if (isTalking) {
                  isTalking = false;
                  voiceSocket.emit("voice.talking", { roomId: lobby.id, isTalking: false });

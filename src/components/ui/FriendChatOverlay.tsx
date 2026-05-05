@@ -94,11 +94,11 @@ export const FriendChatOverlay = () => {
                  {activeChat?.messages.map(msg => (
                    <div key={msg.id} className={cn(
                      "flex flex-col gap-1 max-w-[85%]",
-                     msg.senderId === "me" ? "mr-auto items-end" : "ml-auto items-start text-right"
-                   )} dir={msg.senderId === "me" ? "ltr" : "rtl"}>
+                     msg.self ? "mr-auto items-end" : "ml-auto items-start text-right"
+                   )} dir={msg.self ? "ltr" : "rtl"}>
                      <div className={cn(
                        "rounded-2xl px-3 py-2 text-[11px] font-medium leading-relaxed shadow-lg",
-                       msg.senderId === "me" 
+                       msg.self 
                          ? "bg-neon-blue text-dark-bg rounded-tr-none" 
                          : "bg-white/10 text-gray-200 rounded-tl-none border border-white/10"
                      )}>
