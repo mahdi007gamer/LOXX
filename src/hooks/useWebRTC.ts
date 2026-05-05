@@ -3,6 +3,7 @@ import { voiceSocket } from '../lib/socket';
 
 export const useWebRTC = (roomId: string | null, localStream: MediaStream | null, userId: string | undefined) => {
   const peersRef = useRef<Map<string, RTCPeerConnection>>(new Map());
+  const pendingCandidatesRef = useRef<Map<string, any[]>>(new Map());
   const [remoteStreams, setRemoteStreams] = useState<Map<string, MediaStream>>(new Map());
   const localStreamRef = useRef<MediaStream | null>(null);
 
@@ -65,14 +66,12 @@ export const useWebRTC = (roomId: string | null, localStream: MediaStream | null
       };
 
       pc.onnegotiationneeded = async () => {
-         // Only initiator creates offer again to avoid glare
-         if (initiator) {
-             try {
-                const offer = await pc.createOffer();
-                await pc.setLocalDescription(offer);
-                voiceSocket.emit('voice.signal', { targetUserId, signal: pc.localDescription });
-             } catch(e) {}
-         }
+         try {
+            if (pc.signalingState !== 'stable') return;
+            const offer = await pc.createOffer();
+            await pc.setLocalDescription(offer);
+            voiceSocket.emit('voice.signal', { targetUserId, signal: pc.localDescription });
+         } catch(e) {}
       };
 
       if (initiator) {
@@ -130,8 +129,25 @@ export const useWebRTC = (roomId: string | null, localStream: MediaStream | null
                signal: answer
              });
            }
+           
+           // Process queued candidates
+           const pending = pendingCandidatesRef.current.get(data.fromUserId) || [];
+           for (const candidate of pending) {
+             try {
+               await pc.addIceCandidate(new RTCIceCandidate(candidate));
+             } catch (e) {
+               console.error("Error adding queued candidate", e);
+             }
+           }
+           pendingCandidatesRef.current.delete(data.fromUserId);
         } else if (data.signal.type === 'candidate' && data.signal.candidate) {
-           await pc.addIceCandidate(new RTCIceCandidate(data.signal.candidate));
+           if (pc.remoteDescription) {
+             await pc.addIceCandidate(new RTCIceCandidate(data.signal.candidate));
+           } else {
+             const pending = pendingCandidatesRef.current.get(data.fromUserId) || [];
+             pending.push(data.signal.candidate);
+             pendingCandidatesRef.current.set(data.fromUserId, pending);
+           }
         }
       } catch (err) {
         console.error("WebRTC Error parsing signal from user", data.fromUserId, err);

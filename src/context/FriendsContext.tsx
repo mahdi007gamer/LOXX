@@ -70,14 +70,14 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
       // Listen for incoming chat messages using dot protocol
       chatSocket.on("chat.message", (data: any) => {
-        if (data.targetType === "lobby") return;
+        if (data.targetType === "lobby" || data.targetType === "channel") return;
 
-        const { messageId, from, content, createdAt } = data;
+        const { id, from, content, createdAt, targetId } = data;
         const isSelf = from.userId === user.id;
-        const friendId = isSelf ? "@self-room" : from.userId; // Simplified for now
+        const friendId = isSelf ? targetId : from.userId;
 
         const chatMsg: ChatMessage = {
-          id: messageId,
+          id: id,
           senderId: from.userId,
           senderName: from.username,
           senderLevel: 1, // Defaulting as backend didn't send level
@@ -88,29 +88,29 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
         };
 
         setChats(prev => {
-          const existingChat = prev.find(c => c.friendId === from.userId);
+          const existingChat = prev.find(c => c.friendId === friendId);
           if (existingChat) {
-            return prev.map(c => c.friendId === from.userId 
+            return prev.map(c => c.friendId === friendId 
               ? { 
                   ...c, 
                   messages: [...c.messages, chatMsg],
-                  unreadCount: (activeChatId === from.userId || isSelf) ? 0 : c.unreadCount + 1
+                  unreadCount: (activeChatId === friendId || isSelf) ? 0 : c.unreadCount + 1
                 } 
               : c);
           } else {
             return [...prev, { 
-              friendId: from.userId, 
+              friendId: friendId, 
               messages: [chatMsg], 
               isTyping: false, 
-              unreadCount: (activeChatId === from.userId || isSelf) ? 0 : 1 
+              unreadCount: (activeChatId === friendId || isSelf) ? 0 : 1 
             }];
           }
         });
 
-        if (!isSelf && activeChatId !== from.userId) {
+        if (!isSelf && activeChatId !== friendId) {
           toast(`پیام جدید از ${from.username}`, { icon: '💬' });
           // Force open chat panel
-          setActiveChatId(from.userId);
+          setActiveChatId(friendId);
           setChatTrigger(t => t + 1);
           // Play a simple notification sound (using base64 inline audio to avoid missing assets)
           try {

@@ -117,7 +117,8 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     });
 
     // Chat Listeners
-    const handleChatMessage = (msg: ChatMessage) => {
+    const handleChatMessage = (msg: any) => {
+      console.log("WebRTC received chat msg", msg);
       if (msg.targetType && msg.targetType !== "lobby") return;
       setLobby(prev => {
         if (!prev) return null;
@@ -185,6 +186,28 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
   }, []);
 
+  useEffect(() => {
+    if (lobby) {
+      if (chatSocket.connected) {
+        chatSocket.emit("chat.join", { type: "lobby", id: lobby.id });
+      }
+      if (voiceSocket.connected) {
+        voiceSocket.emit("voice.join", { roomId: lobby.id });
+      }
+
+      const onChatConnect = () => chatSocket.emit("chat.join", { type: "lobby", id: lobby.id });
+      const onVoiceConnect = () => voiceSocket.emit("voice.join", { roomId: lobby.id });
+
+      chatSocket.on("connect", onChatConnect);
+      voiceSocket.on("connect", onVoiceConnect);
+
+      return () => {
+        chatSocket.off("connect", onChatConnect);
+        voiceSocket.off("connect", onVoiceConnect);
+      };
+    }
+  }, [lobby?.id, chatSocket.connected, voiceSocket.connected]);
+
   const [isJoining, setIsJoining] = useState<string | null>(null);
 
   const joinLobby = (lobbyId: string) => {
@@ -234,10 +257,11 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const sendMessage = (content: string) => {
     if (lobby) {
+      console.log("WebRTC sending chat msg", content, chatSocket.connected);
       chatSocket.emit("chat.send", {
          target: { type: "lobby", id: lobby.id },
          content,
-         tempId: Date.now().toString()
+         tempId: crypto.randomUUID()
       });
     }
   };

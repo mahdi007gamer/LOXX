@@ -115,6 +115,7 @@ export function setupWebSockets(io: Server) {
         });
 
         if (!lobby) throw new Error("RESOURCE_NOT_FOUND");
+        if (lobby.status === "STARTING" || lobby.status === "IN_PROGRESS") throw new Error("LOBBY_STARTED");
         if (lobby.password && lobby.password !== password) throw new Error("INVALID_PASSWORD");
         const existingMember = lobby.members.find(m => m.userId === userId);
         if (!existingMember && lobby.members.length >= lobby.maxPlayers) throw new Error("LOBBY_FULL");
@@ -332,15 +333,15 @@ export function setupWebSockets(io: Server) {
   // Chat Namespace
   chatNs.on("connection", (socket: AuthenticatedSocket) => {
     const userId = socket.userId!;
+    socket.join(`user:${userId}`);
 
     socket.on("chat.join", (data: { type: "channel" | "lobby", id: string }) => {
       const room = data.type === "lobby" ? `lobby:${data.id}` : `channel:${data.id}`;
       socket.join(room);
     });
 
-    socket.on("chat.send", async (data: { target: { type: "channel" | "lobby", id: string }, content: string, tempId: string, replyToId?: string }, ack) => {
+    socket.on("chat.send", async (data: { target: { type: "channel" | "lobby" | "user", id: string }, content: string, tempId: string, replyToId?: string }, ack) => {
       const { target, content, tempId, replyToId } = data;
-      const room = target.type === "lobby" ? `lobby:${target.id}` : `channel:${target.id}`;
       
       try {
         const user = await prisma.user.findUnique({ 
@@ -349,7 +350,6 @@ export function setupWebSockets(io: Server) {
         });
 
         if (target.type === "lobby") {
-          // Do not save to DB for lobbies as they are ephemeral
           const msgPayload = {
             id: tempId || Date.now().toString(),
             from: { 
@@ -362,11 +362,32 @@ export function setupWebSockets(io: Server) {
             content,
             createdAt: Date.now()
           };
-          
-          chatNs.to(room).emit("chat.message", msgPayload);
+          chatNs.to(`lobby:${target.id}`).emit("chat.message", msgPayload);
           if (ack) ack({ status: "ok", data: { tempId, messageId: msgPayload.id, createdAt: msgPayload.createdAt } });
           return;
         }
+        
+        if (target.type === "user") {
+          const msgPayload = {
+            id: tempId || Date.now().toString(),
+            from: { 
+              userId, 
+              username: user?.username, 
+              membership: user?.profile?.membershipType || "NONE" 
+            },
+            targetType: "user",
+            targetId: target.id,
+            content,
+            createdAt: Date.now()
+          };
+          // Send to the other user and to self (for multi-device sync, if we had it, but here we just send to both)
+          chatNs.to(`user:${target.id}`).emit("chat.message", msgPayload);
+          chatNs.to(`user:${userId}`).emit("chat.message", msgPayload);
+          if (ack) ack({ status: "ok", data: { tempId, messageId: msgPayload.id, createdAt: msgPayload.createdAt } });
+          return;
+        }
+
+        const room = `channel:${target.id}`;
 
         const msg = await prisma.message.create({
           data: {
