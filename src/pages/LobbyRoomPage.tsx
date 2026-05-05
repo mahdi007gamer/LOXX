@@ -584,7 +584,6 @@ export const LobbyRoomPage = () => {
                   setInputMessage={setInputMessage} 
                   onSend={handleSendMessage} 
                   onClose={() => setIsChatOpen(false)}
-                  currentUserId={user?.id}
                 />
               </div>
             </motion.div>

@@ -228,13 +228,13 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
       );
     }
     
-    // assuming notifySocket is exported from socket.service.ts or we can use the context one
-    import("../lib/socket.service").then(({ notifySocket }) => {
+    // assuming notifySocket is exported from socket.ts
+    import("../lib/socket").then(({ notifySocket }) => {
        notifySocket.on("lobby.invite", handleLobbyInvite);
     });
 
     return () => {
-       import("../lib/socket.service").then(({ notifySocket }) => {
+       import("../lib/socket").then(({ notifySocket }) => {
           notifySocket.off("lobby.invite", handleLobbyInvite);
        });
     }
