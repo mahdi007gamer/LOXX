@@ -19,7 +19,9 @@ export class UserController {
           xp: user.profile?.xp,
           membership: user.profile?.membershipType,
           region: user.profile?.region,
-          avatarUrl: user.profile?.avatarUrl
+          avatarUrl: user.profile?.avatarUrl,
+          email: user.email,
+          role: user.role
         }
       });
     } catch (error: any) {

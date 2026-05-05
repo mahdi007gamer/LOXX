@@ -33,6 +33,8 @@ export class AuthController {
         user: { 
           id: user.id, 
           username: user.username, 
+          email: user.email,
+          role: user.role,
           membership: user.profile?.membershipType 
         }
       });
