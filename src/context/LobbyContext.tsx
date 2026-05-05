@@ -67,7 +67,7 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         if (exists) return prev;
         return {
           ...prev,
-          players: [...prev.players, { ...data.user, userId: data.user.id }]
+          players: [...prev.players, { ...data.user, userId: data.user.id, isReady: false, micMuted: false }]
         };
       });
       toast(`${data.user.username} وارد لابی شد`, { icon: '👋' });
@@ -133,6 +133,16 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       });
     });
 
+    lobbySocket.on("lobby.status_changed", (data: { status: LobbyStatus }) => {
+      setLobby(prev => {
+        if (!prev) return null;
+        return { ...prev, status: data.status };
+      });
+      if (data.status === "STARTING") {
+        toast.success("بازی در حال شروع است!", { icon: '🚀' });
+      }
+    });
+
     lobbySocket.on("error", (err) => {
       toast.error(err.message || "خطایی در لابی رخ داد");
     });
@@ -173,9 +183,9 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const toggleReady = () => {
-    if (lobby) {
+    if (lobby && user) {
       // Find current ready state
-      const me = lobby.players.find(p => p.userId === (lobbySocket as any).userId); // userId is set on socket
+      const me = lobby.players.find(p => p.userId === user.id);
       const currentReady = me?.isReady || false;
       lobbySocket.emit("lobby.ready", { lobbyId: lobby.id, ready: !currentReady }); 
     }
@@ -206,7 +216,8 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       joinLobby,
       leaveLobby,
       toggleReady,
-      setLobbyMuted
+      setLobbyMuted,
+      sendMessage
     }}>
       {children}
     </LobbyContext.Provider>

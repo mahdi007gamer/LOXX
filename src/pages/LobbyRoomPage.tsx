@@ -273,7 +273,7 @@ export const LobbyRoomPage = () => {
           <div className="hidden sm:flex items-center gap-2 bg-black/60 rounded-2xl p-1 border border-white/10">
              <div className="px-4 py-2 text-[10px] font-black text-gray-500 border-l border-white/10 uppercase tracking-widest">کد لابی</div>
              <div className="px-4 py-2 font-mono text-sm text-neon-blue flex items-center gap-3">
-               LX-9921-XP
+               {lobby?.id?.substring(0, 8).toUpperCase() || "LX-LOBBY"}
                <button onClick={handleCopyCode} className="hover:text-white transition-colors">
                  {copied ? <Check size={16} /> : <Copy size={16} />}
                </button>

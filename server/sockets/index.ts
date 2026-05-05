@@ -220,6 +220,66 @@ export function setupWebSockets(io: Server) {
         if (ack) ack({ status: "error", error: { message: "Failed to update mic" } });
       }
     });
+
+    socket.on("lobby.start", async (data: { lobbyId: string }) => {
+      const { lobbyId } = data;
+      try {
+        const lobby = await prisma.lobby.findUnique({ where: { id: lobbyId } });
+        if (lobby?.hostId !== userId) return;
+
+        await prisma.lobby.update({
+          where: { id: lobbyId },
+          data: { status: "STARTING" }
+        });
+
+        lobbyNs.to(`lobby:${lobbyId}`).emit("lobby.status_changed", { status: "STARTING" });
+      } catch (err) {}
+    });
+
+    socket.on("start_match_confirm", async (data: { lobbyId: string }) => {
+      const { lobbyId } = data;
+      try {
+        const lobby = await prisma.lobby.findUnique({ where: { id: lobbyId } });
+        if (lobby?.hostId !== userId) return;
+
+        await prisma.lobby.update({
+          where: { id: lobbyId },
+          data: { status: "IN_PROGRESS" }
+        });
+
+        lobbyNs.to(`lobby:${lobbyId}`).emit("lobby.status_changed", { status: "IN_PROGRESS" });
+      } catch (err) {}
+    });
+
+    socket.on("cancel_match", async (data: { lobbyId: string }) => {
+      const { lobbyId } = data;
+      try {
+        const lobby = await prisma.lobby.findUnique({ where: { id: lobbyId } });
+        if (lobby?.hostId !== userId) return;
+
+        await prisma.lobby.update({
+          where: { id: lobbyId },
+          data: { status: "READY" }
+        });
+
+        lobbyNs.to(`lobby:${lobbyId}`).emit("lobby.status_changed", { status: "READY" });
+      } catch (err) {}
+    });
+
+    socket.on("reopen_lobby", async (data: { lobbyId: string }) => {
+      const { lobbyId } = data;
+      try {
+        const lobby = await prisma.lobby.findUnique({ where: { id: lobbyId } });
+        if (lobby?.hostId !== userId) return;
+
+        await prisma.lobby.update({
+          where: { id: lobbyId },
+          data: { status: "WAITING" }
+        });
+
+        lobbyNs.to(`lobby:${lobbyId}`).emit("lobby.status_changed", { status: "WAITING" });
+      } catch (err) {}
+    });
   });
 
   // Chat Namespace
