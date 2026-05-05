@@ -41,6 +41,7 @@ export function setupWebSockets(io: Server) {
   // Voice Namespace (WebRTC Signaling)
   voiceNs.on("connection", (socket: AuthenticatedSocket) => {
     const userId = socket.userId!;
+    socket.join(`user:${userId}`);
 
     socket.on("voice.join", (data: { roomId: string }) => {
       socket.join(`voice:${data.roomId}`);

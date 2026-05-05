@@ -86,6 +86,10 @@ export const LobbyRoomPage = () => {
   }, [id]);
 
   // Redirect if lobby becomes null (e.g., closed by host)
+  const [countdown, setCountdown] = useState(5);
+  const [localVolume, setLocalVolume] = useState(0);
+  const [localStream, setLocalStream] = useState<MediaStream | null>(null);
+
   useEffect(() => {
     if (lobby) setWasInLobby(true);
     if (wasInLobby && !lobby && id) {
