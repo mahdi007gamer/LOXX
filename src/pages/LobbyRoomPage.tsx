@@ -510,7 +510,6 @@ export const LobbyRoomPage = () => {
              inputMessage={inputMessage} 
              setInputMessage={setInputMessage} 
              onSend={handleSendMessage}
-             currentUserId={user?.id}
            />
         </div>
       </div>
