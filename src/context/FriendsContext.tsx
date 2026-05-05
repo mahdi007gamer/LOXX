@@ -63,6 +63,8 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   }, []);
 
+  const lastKnownPresence = React.useRef<Record<string, string>>({});
+
   useEffect(() => {
     if (user) {
       fetchFriends();
@@ -78,7 +80,9 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
       presenceSocket.on("presence.snapshot", (data: { users: { userId: string, status: string }[] }) => {
         setFriends(prev => prev.map(f => {
           const statusData = data.users.find(u => u.userId === f.id);
-          return statusData ? { ...f, status: statusData.status as FriendStatus } : f;
+          const status = (statusData ? statusData.status : "offline") as FriendStatus;
+          lastKnownPresence.current[f.id] = status;
+          return { ...f, status };
         }));
       });
 
@@ -86,11 +90,17 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
       presenceSocket.on("presence.changed", (data: { userId: string, status: string, activity?: string }) => {
         setFriends(prev => {
           const friend = prev.find(f => f.id === data.userId);
-          // If friend is transitioning to online from something else, toast
-          // We move toast outside of setFriends to avoid double call in dev/strict mode
-          if (friend && friend.status !== "online" && data.status === "online") {
-             setTimeout(() => toast(`${friend.displayName || friend.username} آنلاین شد`, { icon: '🟢' }), 0);
+          const lastStatus = lastKnownPresence.current[data.userId] || (friend?.status);
+          
+          if (friend && lastStatus !== "online" && data.status === "online") {
+             toast(`${friend.displayName || friend.username} آنلاین شد`, { 
+               icon: '🟢', 
+               id: `online-${data.userId}` 
+             });
           }
+          
+          lastKnownPresence.current[data.userId] = data.status;
+
           return prev.map(f => f.id === data.userId ? { 
             ...f, 
             status: data.status as FriendStatus,

@@ -36,6 +36,7 @@ export function setupWebSockets(io: Server) {
 
   // Helper to handle user connection tracking
   const trackUser = (userId: string, socketId: string) => {
+    if (!userId) return false;
     if (!userConnections.has(userId)) {
       userConnections.set(userId, new Set());
     }
@@ -44,6 +45,7 @@ export function setupWebSockets(io: Server) {
   };
 
   const untrackUser = (userId: string, socketId: string) => {
+    if (!userId) return false;
     const connections = userConnections.get(userId);
     if (connections) {
       connections.delete(socketId);
@@ -91,13 +93,18 @@ export function setupWebSockets(io: Server) {
 
   // Presence Namespace
   presenceNs.on("connection", async (socket: AuthenticatedSocket) => {
-    const userId = socket.userId!;
-    socket.join(`user:${userId}`);
+    const userId = socket.userId;
+    if (!userId) return;
     
+    socket.join(`user:${userId}`);
     const isFirst = trackUser(userId, socket.id);
 
     // Initial state: Send online status of current user connections
     try {
+      if (isFirst) {
+        presenceNs.emit("presence.changed", { userId, status: "online" });
+      }
+
       const friendships = await prisma.friendship.findMany({
         where: {
           OR: [
@@ -113,10 +120,6 @@ export function setupWebSockets(io: Server) {
       socket.emit("presence.snapshot", { 
         users: onlineFriends.map(id => ({ userId: id, status: "online" })) 
       });
-
-      if (isFirst) {
-        presenceNs.emit("presence.changed", { userId, status: "online" });
-      }
     } catch (e) {}
 
     socket.on("presence.update", async (data: { status: string, activity?: string }) => {
@@ -155,6 +158,7 @@ export function setupWebSockets(io: Server) {
 
     socket.on("lobby.join", async (data: { lobbyId: string, password?: string }, ack) => {
       const { lobbyId, password } = data;
+      if (!userId) return ack?.({ status: "error", error: { message: "Unauthorized" } });
       
       try {
         const lobby = await prisma.lobby.findUnique({
@@ -237,16 +241,19 @@ export function setupWebSockets(io: Server) {
           where: { lobbyId_userId: { lobbyId, userId } }
         }).catch(() => {});
 
-        // If host leaves, delete lobby or transfer ownership
-        if (lobby?.hostId === userId) {
-          // For now, let's delete the lobby if the host leaves
+        const remainingLobby = await prisma.lobby.findUnique({ 
+          where: { id: lobbyId }, 
+          include: { members: true } 
+        });
+
+        // If host leaves or no members left, delete lobby
+        if (!remainingLobby || remainingLobby.hostId === userId || remainingLobby.members.length === 0) {
           await prisma.lobby.delete({ where: { id: lobbyId } }).catch(() => {});
           lobbyNs.to(`lobby:${lobbyId}`).emit("lobby.closed", { lobbyId });
         } else {
-          const remainingLobby = await prisma.lobby.findUnique({ where: { id: lobbyId }, include: { members: true } });
           lobbyNs.to(`lobby:${lobbyId}`).emit("lobby.member_left", { 
             userId, 
-            membersCount: remainingLobby?.members.length || 0
+            membersCount: remainingLobby.members.length
           });
         }
 
@@ -257,12 +264,13 @@ export function setupWebSockets(io: Server) {
     });
 
     socket.on("disconnect", async () => {
+      if (!userId) return;
       const isLast = untrackUser(userId, socket.id);
       if (isLast) {
         // Find all lobbies the user is in and remove them
         const memberships = await prisma.lobbyMember.findMany({
           where: { userId },
-          include: { lobby: true }
+          include: { lobby: { include: { members: true } } }
         });
 
         for (const m of memberships) {
@@ -273,14 +281,14 @@ export function setupWebSockets(io: Server) {
             where: { lobbyId_userId: { lobbyId, userId } }
           }).catch(() => {});
 
-          if (lobby.hostId === userId) {
+          if (lobby.hostId === userId || lobby.members.length <= 1) {
+            // Delete lobby if host leaves or it was the last member
             await prisma.lobby.delete({ where: { id: lobbyId } }).catch(() => {});
             lobbyNs.to(`lobby:${lobbyId}`).emit("lobby.closed", { lobbyId });
           } else {
-            const remaining = await prisma.lobby.findUnique({ where: { id: lobbyId }, include: { members: true } });
             lobbyNs.to(`lobby:${lobbyId}`).emit("lobby.member_left", { 
               userId, 
-              membersCount: remaining?.members.length || 0
+              membersCount: lobby.members.length - 1
             });
           }
         }
