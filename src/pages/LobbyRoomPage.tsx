@@ -58,116 +58,76 @@ export const LobbyRoomPage = () => {
   const navigate = useNavigate();
   const { 
     lobby, 
-    setLobbyId, 
-    setLobbyStatus, 
-    setLobbyPlayers, 
-    setLobbyCountdown, 
-    leaveLobby 
+    joinLobby,
+    leaveLobby,
+    toggleReady
   } = useLobby();
+  const { user } = useAuth();
   const { openChat } = useFriends();
   
   const [copied, setCopied] = useState(false);
-  const [isReady, setIsReady] = useState(false);
-  const [isStarting, setIsStarting] = useState(false);
-  const [isMatchStarted, setIsMatchStarted] = useState(false);
-  const [countdown, setCountdown] = useState(5);
-  const [allReadyPulse, setAllReadyPulse] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [activeProfileUserId, setActiveProfileUserId] = useState<string | null>(null);
 
-  // Initialize Lobby in context
+  // Join lobby on mount
   useEffect(() => {
     if (id) {
-       setLobbyId(id);
+       joinLobby(id);
     }
-    return () => {};
+    return () => {
+      leaveLobby();
+    };
   }, [id]);
+
+  const players = lobby?.players.map(p => ({
+    id: p.userId,
+    name: p.username,
+    avatar: p.role === "HOST" ? "👑" : "👤",
+    rank: "Global Elite",
+    isHost: p.role === "HOST",
+    isReady: p.isReady,
+    hasMic: true,
+    isMuted: false,
+    ping: 25,
+    isSpeaking: false,
+    volume: 100
+  })) || [];
+
+  // Add empty slots
+  const maxPlayers = lobby?.maxPlayers || 5;
+  while (players.length < maxPlayers) {
+    players.push({
+      id: `slot-${players.length}`,
+      name: "Empty Slot",
+      avatar: "",
+      rank: "",
+      isReady: false,
+      hasMic: false,
+      isMuted: false,
+      ping: 0,
+      isSpeaking: false,
+      volume: 100
+    });
+  }
+
+  const isReady = lobby?.players.find(p => p.userId === user?.id)?.isReady || false;
+  const isHost = lobby?.hostId === user?.id;
   
-  // Mock State
-  const [players, setPlayers] = useState<Player[]>([
-    { id: "1", name: "Apex_Hunter", avatar: "👨‍🎤", rank: "Global Elite", isHost: true, isReady: true, hasMic: true, isMuted: false, ping: 24, isSpeaking: false, volume: 80 },
-    { id: "2", name: "NeonGhost", avatar: "🥷", rank: "Supreme", isReady: false, hasMic: true, isMuted: false, ping: 45, isSpeaking: true, volume: 100 },
-    { id: "3", name: "CyberViper", avatar: "🧛", rank: "LEM", isReady: true, hasMic: false, isMuted: true, ping: 12, isSpeaking: false, volume: 50 },
-    { id: "slot-4", name: "Empty Slot", avatar: "", rank: "", isReady: false, hasMic: false, isMuted: false, ping: 0, isSpeaking: false, volume: 100 },
-    { id: "slot-5", name: "Empty Slot", avatar: "", rank: "", isReady: false, hasMic: false, isMuted: false, ping: 0, isSpeaking: false, volume: 100 },
-  ]);
+  const isStarting = lobby?.status === "STARTING";
+  const isMatchStarted = lobby?.status === "IN_PROGRESS";
+  const [countdown, setCountdown] = useState(5);
+  const allReadyPulse = lobby?.status === "READY";
 
   const [messages, setMessages] = useState<Message[]>([
     { id: "1", user: "LOXX BOT", text: "لابی ساخته شد. منتظر هم‌تیمی‌ها هستیم...", time: "10:22 PM", isSystem: true },
-    { id: "2", user: "NeonGhost", text: "بچه‌ها بریم برای برد! 🔥", time: "10:22 PM" },
-    { id: "3", user: "Apex_Hunter", text: "همه آماده باشن.", time: "10:22 PM" },
   ]);
 
   const [inputMessage, setInputMessage] = useState("");
 
-  // Simulate players joining and becoming ready
-  useEffect(() => {
-    // 1. MISO joins after 2 seconds
-    const joinTimer = setTimeout(() => {
-      setPlayers(prev => {
-        const newPlayers = [...prev];
-        const emptySlotIndex = newPlayers.findIndex(p => p.name === "Empty Slot");
-        if (emptySlotIndex !== -1) {
-          newPlayers[emptySlotIndex] = {
-            id: "4",
-            name: "MISO",
-            avatar: "👧",
-            rank: "Master Guardian",
-            isReady: false,
-            hasMic: true,
-            isMuted: false,
-            ping: 32,
-            isSpeaking: false,
-            volume: 100
-          };
-        }
-        return newPlayers;
-      });
-      setMessages(prev => [...prev, {
-        id: Date.now().toString(),
-        user: "LOXX BOT",
-        text: "MISO به لابی پیوست.",
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        isSystem: true
-      }]);
-    }, 2000);
-
-    // 2. Everyone becomes ready after 6 seconds
-    const readyTimer = setTimeout(() => {
-      setPlayers(prev => prev.map(p => p.name !== "Empty Slot" ? { ...p, isReady: true } : p));
-      setIsReady(true);
-      setMessages(prev => [...prev, {
-        id: Date.now().toString() + "ready",
-        user: "LOXX BOT",
-        text: "همه بازیکنان آماده هستند. مسابقه می‌تواند شروع شود.",
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        isSystem: true
-      }]);
-    }, 6000);
-
-    return () => {
-      clearTimeout(joinTimer);
-      clearTimeout(readyTimer);
-    };
-  }, []);
-
-  useEffect(() => {
-    const activePlayers = players.filter(p => p.name !== "Empty Slot");
-    const readyPlayers = activePlayers.filter(p => p.isReady);
-    setLobbyPlayers(activePlayers.length);
-    if (activePlayers.length >= 3 && readyPlayers.length === activePlayers.length) {
-      setAllReadyPulse(true);
-      setLobbyStatus("ready");
-    } else {
-      setAllReadyPulse(false);
-      setLobbyStatus("waiting");
-    }
-  }, [players]);
-
   const handleCopyCode = () => {
-    navigator.clipboard.writeText("LX-9921-XP");
+    navigator.clipboard.writeText(lobby?.id || "LX-LOBBY");
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -175,57 +135,43 @@ export const LobbyRoomPage = () => {
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputMessage.trim()) return;
-    
+    // Lobby chat via socket? Not implemented yet, so just local for now
     setMessages(prev => [...prev, {
       id: Date.now().toString(),
-      user: "You",
+      user: user?.username || "You",
       text: inputMessage,
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }]);
     setInputMessage("");
   };
 
-  const toggleReady = () => {
-    setIsReady(!isReady);
-    setPlayers(prev => prev.map(p => p.id === "1" ? { ...p, isReady: !isReady } : p));
+  const onToggleReady = () => {
+    toggleReady();
   };
 
   const handleStartMatch = () => {
-    setIsStarting(true);
-    setCountdown(5);
-    setLobbyStatus("starting");
+    if (isHost) {
+      lobbySocket.emit("start_match", { lobbyId: lobby?.id });
+    }
   };
 
   const handleCancelMatch = () => {
-    setIsStarting(false);
-    setCountdown(5);
-    setLobbyStatus("ready");
+    if (isHost) {
+      lobbySocket.emit("cancel_match", { lobbyId: lobby?.id });
+    }
   };
 
   const handleReopenLobby = () => {
-    setIsMatchStarted(false);
-    setIsStarting(false);
-    setLobbyStatus("ready");
-  };
-
-  useEffect(() => {
-    let timer: NodeJS.Timeout;
-    if (isStarting && countdown > 0) {
-      timer = setTimeout(() => {
-        setCountdown(prev => prev - 1);
-        setLobbyCountdown(countdown - 1);
-      }, 1000);
-    } else if (countdown === 0 && isStarting) {
-      setIsStarting(false);
-      setIsMatchStarted(true);
-      setLobbyStatus("started");
+    if (isHost) {
+      lobbySocket.emit("reopen_lobby", { lobbyId: lobby?.id });
     }
-    return () => clearTimeout(timer);
-  }, [isStarting, countdown]);
+  };
 
   const handlePlayerVolume = (id: string, vol: number) => {
-    setPlayers(prev => prev.map(p => p.id === id ? { ...p, volume: vol } : p));
+    // Local volume state if needed
   };
+
+  const { friends } = useFriends();
 
   return (
     <div className="h-[calc(100vh-64px)] bg-[#050508] text-white p-2 md:p-6 lg:p-8 flex flex-col gap-4 md:gap-6 relative overflow-hidden font-sans" dir="rtl">
@@ -391,7 +337,7 @@ export const LobbyRoomPage = () => {
 
         <GlowButton 
           variant={isReady ? "blue" : "pink"} 
-          onClick={toggleReady}
+          onClick={onToggleReady}
           disabled={isMatchStarted || isStarting}
           className={cn(
             "h-10 px-3 min-w-[70px] text-[9px] uppercase font-black italic rounded-xl shrink-0",
@@ -446,7 +392,7 @@ export const LobbyRoomPage = () => {
            <div className="flex items-center gap-4 px-8 border-l border-white/5">
              <GlowButton 
                 variant={isReady ? "blue" : "pink"}
-                onClick={toggleReady}
+                onClick={onToggleReady}
                 disabled={isMatchStarted || isStarting}
                 className={cn(
                   "px-8 h-12 text-xs",
@@ -481,18 +427,30 @@ export const LobbyRoomPage = () => {
         {isInviteModalOpen && (
           <Modal title="دعوت دوستان" onClose={() => setIsInviteModalOpen(false)}>
             <div className="space-y-4">
-               {["CyberWarrior", "Phantom_Sniper", "Saber", "DragonLord"].map((name, i) => (
+               {friends.length > 0 ? friends.map((friend, i) => (
                  <div key={i} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl hover:bg-white/10 transition-colors group">
                     <div className="flex items-center gap-3">
                        <div className="h-10 w-10 rounded-xl bg-neon-blue/20 flex items-center justify-center text-xl">👤</div>
                        <div>
-                          <p className="text-sm font-black text-white">{name}</p>
-                          <p className="text-[10px] text-gray-500 uppercase">آنلاین • در حال بازی</p>
+                          <p className="text-sm font-black text-white">{friend.username}</p>
+                          <p className="text-[10px] text-gray-500 uppercase">{friend.status} • {friend.activity}</p>
                        </div>
                     </div>
-                    <button className="px-4 py-2 rounded-xl bg-neon-blue text-dark-bg text-[10px] font-black uppercase hover:scale-105 transition-transform">Invite</button>
+                    <button 
+                      onClick={() => {
+                        lobbySocket.emit("invite_player", { lobbyId: lobby?.id, targetUserId: friend.userId });
+                        toast.success(`دعوت برای ${friend.username} ارسال شد`);
+                      }}
+                      className="px-4 py-2 rounded-xl bg-neon-blue text-dark-bg text-[10px] font-black uppercase hover:scale-105 transition-transform"
+                    >
+                       Invite
+                    </button>
                  </div>
-               ))}
+               )) : (
+                 <div className="text-center py-10 opacity-50">
+                    <p className="text-sm">لیست دوستان خالی است</p>
+                 </div>
+               )}
             </div>
           </Modal>
         )}

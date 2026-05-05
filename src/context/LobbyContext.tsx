@@ -70,7 +70,7 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const toggleReady = () => {
     if (lobby) {
-      lobbySocket.emit("ready_status", { lobbyId: lobby.id, isReady: !lobby.players.find(p => p.userId === "me" /* placeholder */)?.isReady });
+      lobbySocket.emit("toggle_ready", { lobbyId: lobby.id });
     }
   };
 

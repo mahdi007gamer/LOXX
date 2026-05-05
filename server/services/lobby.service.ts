@@ -33,7 +33,8 @@ export class LobbyService {
         status: "WAITING"
       },
       include: {
-        members: true
+        members: true,
+        game: true
       },
       orderBy: { createdAt: "desc" }
     });

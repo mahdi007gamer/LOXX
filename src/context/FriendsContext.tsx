@@ -38,8 +38,8 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const fetchFriends = useCallback(async () => {
     try {
-      const response = await api.get("/social/friends");
-      setFriends(response.data.data || []);
+      const response = await api.get("/friends/list");
+      setFriends(response.data.data.items || []);
     } catch (error) {
       console.error("Failed to fetch friends:", error);
     }
@@ -47,7 +47,7 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const fetchRequests = useCallback(async () => {
     try {
-      const response = await api.get("/social/requests");
+      const response = await api.get("/friends/requests");
       setRequests(response.data.data || []);
     } catch (error) {
       console.error("Failed to fetch requests:", error);
@@ -114,7 +114,7 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const addFriend = async (username: string) => {
     try {
-      await api.post("/social/request", { targetUsername: username });
+      await api.post("/friends/request", { username });
       toast.success("درخواست دوستی ارسال شد");
       fetchRequests();
     } catch (error: any) {
@@ -124,7 +124,7 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const acceptRequest = async (requestId: string) => {
     try {
-      await api.post(`/social/request/${requestId}/accept`);
+      await api.post("/friends/respond", { request_id: requestId, action: "ACCEPTED" });
       toast.success("درخواست دوستی پذیرفته شد");
       fetchRequests();
       fetchFriends();
@@ -135,7 +135,7 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const declineRequest = async (requestId: string) => {
     try {
-      await api.post(`/social/request/${requestId}/decline`);
+      await api.post("/friends/respond", { request_id: requestId, action: "DECLINED" });
       toast.success("درخواست رد شد");
       fetchRequests();
     } catch (error) {

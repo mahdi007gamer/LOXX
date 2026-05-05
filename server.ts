@@ -13,6 +13,7 @@ import userRoutes from "./server/routes/user.routes.js";
 import friendshipRoutes from "./server/routes/friendship.routes.js";
 import lobbyRoutes from "./server/routes/lobby.routes.js";
 import rankingRoutes from "./server/routes/ranking.routes.js";
+import gameRoutes from "./server/routes/game.routes.js";
 import notificationRoutes from "./server/routes/notification.routes.js";
 import { setupWebSockets } from "./server/sockets/index.js";
 import prisma from "./server/utils/prisma.js";
@@ -50,6 +51,7 @@ async function startServer() {
   app.use("/api/v1/profile", userRoutes);
   app.use("/api/v1/friends", friendshipRoutes);
   app.use("/api/v1/lobbies", lobbyRoutes);
+  app.use("/api/v1/games", gameRoutes);
   app.use("/api/v1/ranking", rankingRoutes);
   app.use("/api/v1/notifications", notificationRoutes);
   

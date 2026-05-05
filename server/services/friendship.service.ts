@@ -53,6 +53,55 @@ export class FriendshipService {
     });
   }
 
+  static async getRequests(userId: string) {
+    const requests = await prisma.friendship.findMany({
+      where: {
+        targetId: userId,
+        status: "PENDING"
+      },
+      include: {
+        requester: { include: { profile: true } }
+      }
+    });
+
+    return requests.map(r => ({
+      id: r.id,
+      senderId: r.requesterId,
+      senderUsername: r.requester.username,
+      senderDisplayName: r.requester.profile?.displayName,
+      createdAt: r.createdAt
+    }));
+  }
+
+  static async sendRequestByUsername(requesterId: string, username: string) {
+    const target = await prisma.user.findUnique({
+      where: { username }
+    });
+
+    if (!target) throw new Error("کاربر یافت نشد");
+    if (target.id === requesterId) throw new Error("نمی‌توانید به خودتان درخواست بدهید");
+
+    // Check if exists
+    const existing = await prisma.friendship.findFirst({
+      where: {
+        OR: [
+          { requesterId, targetId: target.id },
+          { requesterId: target.id, targetId: requesterId }
+        ]
+      }
+    });
+
+    if (existing) throw new Error("رابطه دوستی از قبل وجود دارد");
+
+    return prisma.friendship.create({
+      data: {
+        requesterId,
+        targetId: target.id,
+        status: "PENDING"
+      }
+    });
+  }
+
   static async respondRequest(userId: string, requestId: string, action: "ACCEPTED" | "BLOCKED" | "DECLINED") {
     if (action === "DECLINED") {
       return prisma.friendship.delete({ where: { id: requestId } });

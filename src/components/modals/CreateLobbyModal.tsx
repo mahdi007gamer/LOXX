@@ -21,6 +21,10 @@ import {
 import { GlowButton } from "../ui/GlowButton";
 import { cn } from "@/src/lib/utils";
 import { GoogleGenAI } from "@google/genai";
+import { useGames } from "../../context/GamesContext";
+import api from "../../lib/api";
+import { toast } from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 
 interface CreateLobbyModalProps {
   isOpen: boolean;
@@ -28,70 +32,49 @@ interface CreateLobbyModalProps {
   onSuccess: () => void;
 }
 
-const GAME_DATA = {
-  "Counter Strike 2": {
-    modes: ["Competitive", "Casual", "Wingman", "Premier", "Custom"],
-    maps: ["Mirage", "Inferno", "Dust 2", "Nuke", "Ancient", "Anubis", "Vertigo"],
-    icon: "🔫",
-    color: "blue",
-    banner: "https://shared.cloudflare.steamstatic.com/store_apps/730/capsule_616x353.jpg"
-  },
-  "Dota 2": {
-    modes: ["Ranked All Pick", "Captain's Mode", "Turbo", "Ability Draft"],
-    maps: ["Standard Map"],
-    icon: "⚔️",
-    color: "pink",
-    banner: "https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota2_social.jpg"
-  },
-  "Valorant": {
-    modes: ["Competitive", "Unrated", "Swiftplay", "Spike Rush", "Premier"],
-    maps: ["Ascent", "Bind", "Haven", "Icebox", "Breeze", "Fracture", "Lotus", "Sunset"],
-    icon: "🎯",
-    color: "purple",
-    banner: "https://images.contentstack.io/v3/assets/bltb6530b271fddd0b1/blt7ef999db63f68d6f/652f1e967a15993202685718/VAL_Banner_1920x1080.jpg"
-  },
-  "Apex Legends": {
-    modes: ["Battle Royale", "Ranked Leagues", "Arenas", "Control"],
-    maps: ["Kings Canyon", "World's Edge", "Olympus", "Storm Point", "Broken Moon"],
-    icon: "🏃‍♂️",
-    color: "blue",
-    banner: "https://media.contentapi.ea.com/content/dam/apex-legends/images/2019/01/apex-featured-image-16x9.jpg.adapt.crop191x100.1200w.jpg"
-  }
-};
-
 const REGIONS = ["Middle East", "Europe", "Asia", "North America", "Auto"];
 const SKILL_LEVELS = ["مبتدی", "متوسط", "حرفه‌ای", "نخبه (Elite)"];
 
 export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModalProps) => {
+  const { games } = useGames();
+  const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
   
   const [formData, setFormData] = useState({
     title: "",
-    game: "Counter Strike 2",
+    gameId: "",
     mode: "Competitive",
     capacity: 5,
-    skill: "متوسط",
+    rankRange: "Silver - Global",
     region: "Middle East",
     description: "",
     isPrivate: false,
     micRequired: false,
-    discordRequired: false,
-    age18Plus: false,
     selectedMaps: [] as string[]
   });
 
-  const activeGame = GAME_DATA[formData.game as keyof typeof GAME_DATA];
-  
-  const GAME_BANNERS = {
-    "Counter Strike 2": "https://shared.cloudflare.steamstatic.com/store_apps/730/capsule_616x353.jpg",
-    "Dota 2": "https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota2_social.jpg",
-    "Valorant": "https://images.contentstack.io/v3/assets/bltb6530b271fddd0b1/blt7ef999db63f68d6f/652f1e967a15993202685718/VAL_Banner_1920x1080.jpg",
-    "Apex Legends": "https://media.contentapi.ea.com/content/dam/apex-legends/images/2019/01/apex-featured-image-16x9.jpg.adapt.crop191x100.1200w.jpg"
-  };
+  useEffect(() => {
+    if (games.length > 0 && !formData.gameId) {
+      setFormData(prev => ({ ...prev, gameId: games[0].id }));
+    }
+  }, [games]);
 
-  const activeBanner = GAME_BANNERS[formData.game as keyof typeof GAME_BANNERS] || GAME_BANNERS["Counter Strike 2"];
+  const selectedGame = games.find(g => g.id === formData.gameId);
+  const activeGameInfo = selectedGame ? {
+    modes: selectedGame.variants,
+    maps: ["Mirage", "Inferno", "Dust 2", "Nuke"], // Placeholder maps for now
+    icon: selectedGame.icon || "🎮",
+    color: "blue",
+    banner: selectedGame.banner
+  } : {
+    modes: ["Competitive"],
+    maps: [],
+    icon: "🎮",
+    color: "blue",
+    banner: ""
+  };
 
   const handleMapToggle = (mapName: string) => {
     setFormData(prev => ({
@@ -110,20 +93,18 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
       const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
       
       const prompt = `Write a short, professional, and cool gaming lobby description for LOXX gaming platform. 
-      Game: ${formData.game}
+      Game: ${selectedGame?.title || "Gaming"}
       Mode: ${formData.mode}
-      Skill Level: ${formData.skill}
       Title: ${formData.title || "Looking for Teammates"}
       Tone: Serious and competitive. 
       Keep it under 30 words. Return ONLY the text of the description in Persian (Farsi).`;
 
-      const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: prompt,
-      });
+      const result = await ai.getGenerativeModel({ model: "gemini-1.5-flash" }).generateContent(prompt);
+      const response = await result.response;
+      const text = response.text();
 
-      if (response.text) {
-        setFormData(prev => ({ ...prev, description: response.text.trim() }));
+      if (text) {
+        setFormData(prev => ({ ...prev, description: text.trim() }));
       }
     } catch (error) {
       console.error("AI Generation failed:", error);
@@ -132,7 +113,7 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (step < 3) {
       setStep(step + 1);
@@ -140,10 +121,30 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
     }
     
     setIsSubmitting(true);
-    setTimeout(() => {
+    try {
+      const response = await api.post("/lobbies", {
+        title: formData.title,
+        gameId: formData.gameId,
+        maxPlayers: formData.capacity,
+        region: formData.region,
+        skillLevel: formData.rankRange,
+        micRequired: formData.micRequired,
+        isPrivate: formData.isPrivate,
+        description: formData.description,
+        variant: formData.mode
+      });
+
+      if (response.data.status === "success") {
+        toast.success("لابی با موفقیت ساخته شد");
+        onSuccess();
+        navigate(`/lobby/${response.data.data.id}`);
+      }
+    } catch (error) {
+      console.error("Failed to create lobby", error);
+      toast.error("خطا در ساخت لابی");
+    } finally {
       setIsSubmitting(false);
-      onSuccess();
-    }, 600);
+    }
   };
 
   // Reset step on close
@@ -215,12 +216,12 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
                         />
                       </div>
                       <select
-                        value={formData.game}
-                        onChange={(e) => setFormData(prev => ({ ...prev, game: e.target.value, mode: GAME_DATA[e.target.value as keyof typeof GAME_DATA].modes[0] }))}
+                        value={formData.gameId}
+                        onChange={(e) => setFormData(prev => ({ ...prev, gameId: e.target.value, mode: games.find(g => g.id === e.target.value)?.variants[0] || "Competitive" }))}
                         className="w-full rounded-2xl border border-white/10 bg-white/5 py-4 px-5 text-white focus:border-neon-blue/50 focus:outline-none transition-all appearance-none"
                       >
-                        {Object.keys(GAME_DATA).map(game => (
-                          <option key={game} value={game} className="bg-dark-card">{game}</option>
+                        {games.map(game => (
+                          <option key={game.id} value={game.id} className="bg-dark-card">{game.title}</option>
                         ))}
                       </select>
                     </div>
@@ -229,7 +230,7 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
                   <div className="space-y-4">
                     <label className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">مود بازی</label>
                     <div className="flex flex-wrap gap-3">
-                      {activeGame.modes.map((mode) => (
+                      {activeGameInfo.modes.map((mode) => (
                         <button
                           key={mode}
                           type="button"
@@ -247,11 +248,11 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
                     </div>
                   </div>
 
-                  {activeGame.maps.length > 1 && (
+                  {activeGameInfo.maps.length > 1 && (
                     <div className="space-y-4">
                       <label className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">انتخاب مپ‌ها</label>
                       <div className="flex flex-wrap gap-2">
-                        {activeGame.maps.map((map) => (
+                        {activeGameInfo.maps.map((map) => (
                           <button
                             key={map}
                             type="button"
@@ -305,8 +306,8 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
                     <div className="space-y-4">
                       <label className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">سطح مهارت (Skill)</label>
                       <select
-                        value={formData.skill}
-                        onChange={(e) => setFormData(prev => ({ ...prev, skill: e.target.value }))}
+                        value={formData.rankRange}
+                        onChange={(e) => setFormData(prev => ({ ...prev, rankRange: e.target.value }))}
                         className="w-full rounded-2xl border border-white/10 bg-white/5 py-4 px-5 text-white focus:border-neon-blue/50 focus:outline-none transition-all appearance-none"
                       >
                         {SKILL_LEVELS.map(skill => (
@@ -546,8 +547,8 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
               {/* Game Banner */}
               <div className="relative h-36 w-full overflow-hidden shrink-0">
                 <img 
-                  src={activeBanner} 
-                  alt={formData.game} 
+                  src={activeGameInfo.banner} 
+                  alt={selectedGame?.title} 
                   className="h-full w-full object-cover"
                   referrerPolicy="no-referrer"
                 />
@@ -567,7 +568,7 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
 
                 {/* Game Icon Overlay */}
                 <div className="absolute -bottom-5 left-5 h-12 w-12 flex items-center justify-center rounded-xl bg-[#0a0a0f] border border-white/10 text-2xl shadow-2xl z-20">
-                  {activeGame.icon}
+                  {activeGameInfo.icon}
                 </div>
               </div>
 
@@ -575,11 +576,10 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
                 <div className="mb-4 flex items-center justify-between">
                   <div className={cn(
                     "rounded-full px-3 py-1 text-xs font-black uppercase tracking-tight border",
-                    activeGame.color === 'blue' ? 'bg-neon-blue/10 text-neon-blue border-neon-blue/20' : 
-                    activeGame.color === 'pink' ? 'bg-neon-pink/10 text-neon-pink border-neon-pink/20' :
+                    activeGameInfo.color === 'blue' ? 'bg-neon-blue/10 text-neon-blue border-neon-blue/20' : 
                     'bg-neon-purple/10 text-neon-purple border-neon-purple/20'
                   )}>
-                    {formData.game}
+                    {selectedGame?.title}
                   </div>
                   <div className="flex items-center gap-2 text-white">
                     <Users size={16} className="text-gray-500" />
@@ -629,7 +629,7 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
 
                 <div className="flex items-center gap-2.5 text-base text-gray-500 mt-auto">
                   <Shield size={18} className="text-green-500" />
-                  <span className="font-bold">سطح مهارت: <span className="text-white">{formData.skill}</span></span>
+                  <span className="font-bold">سطح مهارت: <span className="text-white">{formData.rankRange}</span></span>
                 </div>
               </div>
 

@@ -12,10 +12,23 @@ export class FriendshipController {
     }
   }
 
+  static async listRequests(req: AuthenticatedRequest, res: Response) {
+    try {
+      const requests = await FriendshipService.getRequests(req.user!.userId);
+      res.json({ status: "success", data: requests });
+    } catch (error: any) {
+      res.status(500).json({ status: "error", error: { code: "INTERNAL_ERROR", message: error.message } });
+    }
+  }
+
   static async sendRequest(req: AuthenticatedRequest, res: Response) {
     try {
-      await FriendshipService.sendRequest(req.user!.userId, req.body.target_id);
-      res.json({ status: "success", message: "Request sent" });
+      if (req.body.username) {
+        await FriendshipService.sendRequestByUsername(req.user!.userId, req.body.username);
+      } else {
+        await FriendshipService.sendRequest(req.user!.userId, req.body.target_id);
+      }
+      res.json({ status: "success", message: "درخواست ارسال شد" });
     } catch (error: any) {
       res.status(400).json({ status: "error", error: { code: "CONFLICT", message: error.message } });
     }
@@ -24,7 +37,7 @@ export class FriendshipController {
   static async respondRequest(req: AuthenticatedRequest, res: Response) {
     try {
       await FriendshipService.respondRequest(req.user!.userId, req.body.request_id, req.body.action);
-      res.json({ status: "success", message: "Success" });
+      res.json({ status: "success", message: "عملیات با موفقیت انجام شد" });
     } catch (error: any) {
       res.status(400).json({ status: "error", error: { code: "VALIDATION_FAILED", message: error.message } });
     }
