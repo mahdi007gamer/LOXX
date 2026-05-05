@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { lobbySocket } from "../lib/socket";
+import { lobbySocket, chatSocket, voiceSocket } from "../lib/socket";
 import { toast } from "react-hot-toast";
 import { useAuth } from "./AuthContext";
 
@@ -22,6 +22,8 @@ export interface ChatMessage {
   };
   content: string;
   createdAt: number;
+  targetType?: string;
+  targetId?: string;
 }
 
 interface LobbyState {
@@ -112,36 +114,36 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     });
 
     // Chat Listeners
-    import("../lib/socket").then(({ chatSocket }) => {
-       chatSocket.on("chat.message", (msg: ChatMessage) => {
-         setLobby(prev => {
-           if (!prev) return null;
-           return {
-             ...prev,
-             messages: [...(prev.messages || []), msg]
-           };
-         });
-       });
-    });
+    const handleChatMessage = (msg: ChatMessage) => {
+      if (msg.targetType && msg.targetType !== "lobby") return;
+      setLobby(prev => {
+        if (!prev) return null;
+        // prevent duplicate messages by checking id
+        if (prev.messages?.some(m => m.id === msg.id)) return prev;
+        return {
+          ...prev,
+          messages: [...(prev.messages || []), msg]
+        };
+      });
+    };
+    chatSocket.on("chat.message", handleChatMessage);
 
     // Voice Listeners (Talking indicators)
-    import("../lib/socket").then(({ voiceSocket }) => {
-      // Assuming a simple event for "I am talking"
-      voiceSocket.on("voice.talking", (data: { userId: string, isTalking: boolean }) => {
-        setLobby(prev => {
-          if (!prev) return null;
-          const talkingUsers = prev.talkingUsers || [];
-          if (data.isTalking) {
-            if (!talkingUsers.includes(data.userId)) {
-              return { ...prev, talkingUsers: [...talkingUsers, data.userId] };
-            }
-          } else {
-            return { ...prev, talkingUsers: talkingUsers.filter(id => id !== data.userId) };
+    const handleVoiceTalking = (data: { userId: string, isTalking: boolean }) => {
+      setLobby(prev => {
+        if (!prev) return null;
+        const talkingUsers = prev.talkingUsers || [];
+        if (data.isTalking) {
+          if (!talkingUsers.includes(data.userId)) {
+            return { ...prev, talkingUsers: [...talkingUsers, data.userId] };
           }
-          return prev;
-        });
+        } else {
+          return { ...prev, talkingUsers: talkingUsers.filter(id => id !== data.userId) };
+        }
+        return prev;
       });
-    });
+    };
+    voiceSocket.on("voice.talking", handleVoiceTalking);
 
     lobbySocket.on("lobby.status_changed", (data: { status: LobbyStatus }) => {
       setLobby(prev => {
@@ -164,6 +166,8 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       lobbySocket.off("lobby.member_updated");
       lobbySocket.off("lobby.status_changed");
       lobbySocket.off("error");
+      chatSocket.off("chat.message", handleChatMessage);
+      voiceSocket.off("voice.talking", handleVoiceTalking);
     };
   }, []);
 
@@ -183,10 +187,8 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         });
         
         // Join chat room too
-        import("../lib/socket").then(({ chatSocket, voiceSocket }) => {
-          chatSocket.emit("chat.join", { type: "lobby", id: lobbyId });
-          voiceSocket.emit("voice.join", { roomId: lobbyId });
-        });
+        chatSocket.emit("chat.join", { type: "lobby", id: lobbyId });
+        voiceSocket.emit("voice.join", { roomId: lobbyId });
       } else {
         toast.error(ack?.error?.message || "Join failed");
       }
@@ -218,13 +220,11 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const sendMessage = (content: string) => {
     if (lobby) {
-       import("../lib/socket").then(({ chatSocket }) => {
-          chatSocket.emit("chat.send", {
-             target: { type: "lobby", id: lobby.id },
-             content,
-             tempId: Date.now().toString()
-          });
-       });
+      chatSocket.emit("chat.send", {
+         target: { type: "lobby", id: lobby.id },
+         content,
+         tempId: Date.now().toString()
+      });
     }
   };
 

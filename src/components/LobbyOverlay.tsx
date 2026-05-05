@@ -24,42 +24,45 @@ export const LobbyOverlay = () => {
           {/* Pulsing Light Effect */}
           <div className="absolute inset-0 bg-neon-blue/20 rounded-[24px] blur-xl animate-pulse" />
           
-          <div className="relative glass border border-white/10 p-4 rounded-[24px] shadow-2xl flex items-center gap-4 min-w-[280px]">
-            <Link to={`/lobby/${lobby.id}`} className="flex items-center gap-4 flex-1">
-              <div className="h-12 w-12 rounded-2xl bg-neon-blue/10 flex items-center justify-center text-neon-blue relative overflow-hidden">
-                <Activity size={24} className="animate-pulse" />
-                <div className="absolute inset-0 bg-gradient-to-tr from-neon-blue/20 to-transparent" />
-              </div>
-
-              <div>
-                <h4 className="text-white font-black text-sm uppercase tracking-tight truncate max-w-[140px]">
-                  {lobby.title || "Active Lobby"}
-                </h4>
-                <div className="flex items-center gap-2 text-[10px] font-black text-gray-500 uppercase tracking-widest mt-0.5">
-                  <span className="flex items-center gap-1">
-                    <Users size={10} className="text-neon-blue" />
-                    {lobby.players.length}/{lobby.maxPlayers}
-                  </span>
-                  <span className="h-1 w-1 rounded-full bg-white/20" />
-                  <span className={cn(
-                    "px-1.5 py-0.5 rounded-full bg-white/5",
-                    lobby.status === "STARTING" && "text-neon-pink animate-pulse"
-                  )}>
-                    {lobby.status}
-                  </span>
+            <div className="relative bg-[#10141a] border border-white/5 p-2 rounded-[24px] shadow-2xl flex items-center justify-between gap-4 min-w-[280px]">
+              
+              <Link to={`/lobby/${lobby.id}`} className="flex items-center gap-4 flex-1">
+                {/* Right side in RTL (Icon) */}
+                <div className="h-[52px] w-[52px] rounded-2xl bg-teal-600 border border-teal-500/30 shadow-[0_0_20px_rgba(13,148,136,0.3)] flex items-center justify-center text-teal-300 relative overflow-hidden shrink-0">
+                  <Activity size={26} strokeWidth={2.5} className="animate-pulse" />
                 </div>
-              </div>
-            </Link>
+                
+                {/* Title and stats */}
+                <div className="flex flex-col flex-1 pl-2 text-right">
+                  <h4 className="text-white font-black text-xl tracking-tight truncate max-w-[140px] leading-tight">
+                    {lobby.title || "تستس"}
+                  </h4>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="px-2 py-0.5 rounded-[10px] bg-white/5 text-[9px] font-black text-gray-500 uppercase tracking-widest border border-white/5">
+                      {lobby.status === "STARTING" ? "STARTING" : "WAITING"}
+                    </span>
+                    <span className="h-1 w-1 rounded-full bg-white/10" />
+                    <span className="flex items-center gap-1 text-[11px] font-black text-gray-400">
+                      {lobby.players.length}/{lobby.maxPlayers}
+                      <Users size={12} className="text-teal-500" />
+                    </span>
+                  </div>
+                </div>
+              </Link>
+              
+              {/* Separator */}
+              <div className="h-10 w-px bg-white/5 mx-1" />
 
-            <div className="flex items-center gap-2 border-r border-white/10 pr-4">
-              <button
-                onClick={() => leaveLobby()}
-                className="h-10 w-10 rounded-xl bg-white/5 hover:bg-neon-pink/10 text-gray-500 hover:text-neon-pink transition-all flex items-center justify-center group/btn"
-              >
-                <X size={18} className="group-hover/btn:rotate-90 transition-transform" />
-              </button>
+              {/* Close Button */}
+              <div className="ml-1">
+                <button
+                  onClick={() => leaveLobby()}
+                  className="h-[46px] w-[46px] rounded-[18px] bg-[#1a1f26] border border-white/5 text-gray-500 hover:text-white hover:bg-red-500/20 transition-all flex items-center justify-center group/btn shrink-0"
+                >
+                  <X size={20} className="group-hover/btn:scale-110 transition-transform" />
+                </button>
+              </div>
             </div>
-          </div>
         </div>
       </motion.div>
     </AnimatePresence>

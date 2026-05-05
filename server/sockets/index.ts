@@ -333,6 +333,8 @@ export function setupWebSockets(io: Server) {
               username: user?.username, 
               membership: user?.profile?.membershipType || "NONE" 
             },
+            targetType: "lobby",
+            targetId: target.id,
             content,
             createdAt: Date.now()
           };
@@ -358,6 +360,8 @@ export function setupWebSockets(io: Server) {
             username: user?.username, 
             membership: user?.profile?.membershipType || "NONE" 
           },
+          targetType: "channel",
+          targetId: target.id,
           content,
           createdAt: Date.now()
         });

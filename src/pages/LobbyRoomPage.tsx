@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { useLobby } from "../context/LobbyContext";
 import { useAuth } from "../context/AuthContext";
-import { chatSocket, lobbySocket } from "../lib/socket";
+import { chatSocket, lobbySocket, voiceSocket } from "../lib/socket";
 import { toast } from "react-hot-toast";
 import { 
   Users, 
@@ -104,7 +104,7 @@ export const LobbyRoomPage = () => {
     isMuted: !!p.micMuted,
     ping: 25,
     isSpeaking: lobby?.talkingUsers?.includes(p.userId) || false,
-    volume: 100
+    volume: p.userId === user?.id ? localVolume : 0 // For visual only, 0 for others to keep silent if not needed
   })) || [];
 
   // Add empty slots
@@ -132,6 +132,66 @@ export const LobbyRoomPage = () => {
   const isMatchStarted = lobby?.status === "IN_PROGRESS";
   const [countdown, setCountdown] = useState(5);
   const allReadyPulse = lobby?.status === "READY";
+  const [localVolume, setLocalVolume] = useState(0);
+
+  useEffect(() => {
+    let audioContext: AudioContext;
+    let analyzer: AnalyserNode;
+    let microphone: MediaStreamAudioSourceNode;
+    let stream: MediaStream;
+    let rafId: number;
+    let isTalking = false;
+
+    if (!isMicMuted && lobby && user) {
+      navigator.mediaDevices.getUserMedia({ audio: true })
+        .then(str => {
+          stream = str;
+          audioContext = new AudioContext();
+          analyzer = audioContext.createAnalyser();
+          microphone = audioContext.createMediaStreamSource(stream);
+          microphone.connect(analyzer);
+          
+          analyzer.fftSize = 256;
+          const bufferLength = analyzer.frequencyBinCount;
+          const dataArray = new Uint8Array(bufferLength);
+
+          const analyzeVoice = () => {
+             analyzer.getByteFrequencyData(dataArray);
+             let sum = 0;
+             for(let i = 0; i < bufferLength; i++) {
+               sum += dataArray[i];
+             }
+             const avg = sum / bufferLength;
+             setLocalVolume(Math.min(100, Math.round(avg * 2)));
+
+             const talkingNow = avg > 10;
+             if (talkingNow !== isTalking) {
+               isTalking = talkingNow;
+               voiceSocket.emit("voice.talking", { roomId: lobby.id, isTalking });
+             }
+
+             rafId = requestAnimationFrame(analyzeVoice);
+          };
+          analyzeVoice();
+        })
+        .catch(err => {
+          console.error("Mic access denied", err);
+          toast.error("دسترسی به میکروفون داده نشد");
+          setLobbyMuted(true);
+        });
+    } else {
+      if (isTalking && lobby) {
+        voiceSocket.emit("voice.talking", { roomId: lobby.id, isTalking: false });
+      }
+    }
+
+    return () => {
+      if (rafId) cancelAnimationFrame(rafId);
+      if (stream) stream.getTracks().forEach(track => track.stop());
+      if (audioContext && audioContext.state !== "closed") audioContext.close();
+      setLocalVolume(0);
+    };
+  }, [isMicMuted, lobby, user, setLobbyMuted]);
 
   const toggleMic = () => {
     if (lobby) {
@@ -140,10 +200,11 @@ export const LobbyRoomPage = () => {
   };
 
   const messages: Message[] = [
-    { id: "1", user: "LOXX BOT", text: "لابی ساخته شد. منتظر هم‌ teammates هستیم...", time: "System", isSystem: true },
+    { id: "1", user: "LOXX BOT", text: "لابی ساخته شد. منتظر همرزمان هستیم...", time: "System", isSystem: true, fromUserId: "system" },
     ...(lobby?.messages?.map(m => ({
       id: m.id,
-      user: m.from.userId === user?.id ? "You" : m.from.username,
+      fromUserId: m.from.userId,
+      user: m.from.username || "بازیکن",
       text: m.content,
       time: new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     })) || [])
@@ -746,7 +807,8 @@ const PlayerCard = ({ player, isSelected, onSelect, onVolumeChange, onMute, onIn
                     strokeWidth="3" 
                     className="text-neon-blue"
                     style={{ strokeDasharray: "290" }}
-                    animate={{ strokeDashoffset: 290 - (290 * player.volume) / 100 }}
+                    initial={{ strokeDashoffset: 290 }}
+                    animate={{ strokeDashoffset: 290 - (290 * (player.volume || 100)) / 100 }}
                     transition={{ type: "spring", bounce: 0 }}
                   />
                 </svg>
@@ -895,15 +957,23 @@ const PingChart = ({ ping }: { ping: number }) => {
   );
 };
 
-const ChatPanel = ({ messages, players, inputMessage, setInputMessage, onSend, onClose }: { 
+const ChatPanel = ({ messages, players, inputMessage, setInputMessage, onSend, onClose, currentUserId }: { 
   messages: Message[], 
   players: Player[],
   inputMessage: string, 
   setInputMessage: (v: string) => void,
   onSend: (e: React.FormEvent) => void,
-  onClose?: () => void
+  onClose?: () => void,
+  currentUserId?: string
 }) => {
   const filteredMessages = messages.filter(msg => !msg.toUserId || msg.isSystem);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
+    }
+  }, [filteredMessages.length]);
 
   return (
     <div className="flex-1 flex flex-col h-full bg-[#0d0d14]/40 backdrop-blur-xl border-l md:border-r border-white/5">
@@ -921,11 +991,13 @@ const ChatPanel = ({ messages, players, inputMessage, setInputMessage, onSend, o
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
-        {filteredMessages.map((msg) => (
-          <div key={msg.id} className={cn(
+      <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
+        {filteredMessages.map((msg, index) => {
+          const isYou = msg.fromUserId === currentUserId && currentUserId !== undefined;
+          return (
+          <div key={`${msg.id}-${index}`} className={cn(
             "group flex flex-col gap-1.5", 
-            msg.isSystem ? "items-center my-4" : msg.user === "You" ? "items-end" : "items-start"
+            msg.isSystem ? "items-center my-4" : isYou ? "items-end" : "items-start"
           )}>
             {msg.isSystem ? (
               <div className="relative w-full flex items-center justify-center p-3 rounded-2xl border border-neon-blue/10 bg-neon-blue/[0.02]">
@@ -936,22 +1008,22 @@ const ChatPanel = ({ messages, players, inputMessage, setInputMessage, onSend, o
             ) : (
               <div className={cn(
                 "flex items-start gap-3 max-w-[85%]",
-                msg.user === "You" ? "flex-row-reverse" : "flex-row"
+                isYou ? "flex-row-reverse" : "flex-row"
               )}>
-                <div className="h-8 w-8 rounded-xl bg-white/5 border border-white/10 flex-shrink-0 flex items-center justify-center text-lg mt-1">
-                   {msg.user === "NeonGhost" ? "🥷" : msg.user === "Apex_Hunter" ? "👨‍🎤" : msg.user === "You" ? "👨‍🎤" : "👧"}
+                <div className="h-8 w-8 rounded-xl bg-white/5 border border-white/10 flex-shrink-0 flex items-center justify-center text-lg mt-1 font-black uppercase">
+                   {isYou ? "ME" : msg.user.charAt(0)}
                 </div>
-                <div className={cn("flex-1 space-y-1", msg.user === "You" ? "text-left" : "text-right")}>
-                  <div className={cn("flex items-center gap-3", msg.user === "You" ? "flex-row-reverse" : "flex-row")}>
+                <div className={cn("flex-1 space-y-1", isYou ? "text-left" : "text-right")}>
+                  <div className={cn("flex items-center gap-3", isYou ? "flex-row-reverse" : "flex-row")}>
                     <span className={cn(
-                      "text-[10px] font-black uppercase tracking-widest",
-                      msg.user === "You" ? "text-neon-pink" : "text-neon-blue"
-                    )}>{msg.user === "You" ? "شما" : msg.user}</span>
+                      "text-[10px] font-black uppercase tracking-widest truncate max-w-[120px]",
+                      isYou ? "text-neon-pink" : "text-neon-blue"
+                    )}>{msg.user}</span>
                     <span className="text-[8px] font-bold text-gray-700 opacity-0 group-hover:opacity-100 transition-opacity">{msg.time}</span>
                   </div>
                   <div className={cn(
                     "border border-white/10 rounded-2xl px-4 py-2.5 text-xs text-gray-300 leading-relaxed shadow-lg",
-                    msg.user === "You" ? "bg-neon-pink/5 rounded-tl-none border-neon-pink/10" : "bg-white/5 rounded-tr-none"
+                    isYou ? "bg-neon-pink/5 rounded-tl-none border-neon-pink/10" : "bg-white/5 rounded-tr-none"
                   )}>
                     {msg.text}
                   </div>
@@ -959,7 +1031,7 @@ const ChatPanel = ({ messages, players, inputMessage, setInputMessage, onSend, o
               </div>
             )}
           </div>
-        ))}
+        )})}
       </div>
 
       <form onSubmit={onSend} className="p-6 bg-black/20 border-t border-white/5">

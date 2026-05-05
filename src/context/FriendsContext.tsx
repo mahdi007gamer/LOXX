@@ -70,6 +70,8 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
       // Listen for incoming chat messages using dot protocol
       chatSocket.on("chat.message", (data: any) => {
+        if (data.targetType === "lobby") return;
+
         const { messageId, from, content, createdAt } = data;
         const isSelf = from.userId === user.id;
         const friendId = isSelf ? "@self-room" : from.userId; // Simplified for now
