@@ -22,9 +22,8 @@ export class AuthController {
       // Set refresh token in HttpOnly cookie
       res.cookie("refresh_token", refreshToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        path: "/api/auth/refresh",
+        secure: true,
+        sameSite: "none",
         maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
       });
 
@@ -56,7 +55,7 @@ export class AuthController {
   }
 
   static async logout(req: Request, res: Response) {
-    res.clearCookie("refresh_token", { path: "/api/auth/refresh" });
+    res.clearCookie("refresh_token");
     res.json({ status: "success", message: "Logged out" });
   }
 }

@@ -1,9 +1,24 @@
 import { PrismaClient } from "@prisma/client";
+import argon2 from "argon2";
 
 const prisma = new PrismaClient();
 
 async function main() {
   console.log("Seeding LOXX database...");
+
+  // Create Admin User
+  const adminPassword = await argon2.hash("123456");
+  await prisma.user.upsert({
+    where: { email: "admin@test.com" },
+    update: {},
+    create: {
+      email: "admin@test.com",
+      username: "admin",
+      passwordHash: adminPassword,
+      role: "ADMIN"
+    }
+  });
+  console.log("Admin user created.");
 
   // Games
   const games = [

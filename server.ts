@@ -15,6 +15,7 @@ import lobbyRoutes from "./server/routes/lobby.routes.js";
 import rankingRoutes from "./server/routes/ranking.routes.js";
 import gameRoutes from "./server/routes/game.routes.js";
 import notificationRoutes from "./server/routes/notification.routes.js";
+import adminRoutes from "./server/routes/admin.routes.js";
 import { setupWebSockets } from "./server/sockets/index.js";
 import prisma from "./server/utils/prisma.js";
 import { errorHandler } from "./server/middleware/error.middleware.js";
@@ -40,7 +41,10 @@ async function startServer() {
   // Basic Middleware
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
-  app.use(cors());
+  app.use(cors({
+    origin: true, // Reflect request origin
+    credentials: true
+  }));
   app.use(cookieParser());
   app.use(helmet({
     contentSecurityPolicy: false, // For development with Vite
@@ -54,6 +58,7 @@ async function startServer() {
   app.use("/api/v1/games", gameRoutes);
   app.use("/api/v1/ranking", rankingRoutes);
   app.use("/api/v1/notifications", notificationRoutes);
+  app.use("/api/v1/admin", adminRoutes);
   
   app.get("/api/health", (req, res) => {
     res.json({ status: "ok", message: "LOXX Backend is running in Persian mode (UTF-8)" });
