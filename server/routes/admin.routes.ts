@@ -1,24 +1,13 @@
 import { Router } from "express";
 import { authenticate, authorizeAdmin } from "../middleware/auth.middleware.js";
-import prisma from "../utils/prisma.js";
+import * as adminController from "../controllers/admin.controller.js";
 
 const router = Router();
 
-router.get("/users", authenticate, authorizeAdmin, async (req, res) => {
-  try {
-    const users = await prisma.user.findMany({
-      select: {
-        id: true,
-        username: true,
-        email: true,
-        role: true,
-        createdAt: true
-      }
-    });
-    res.json({ status: "success", data: users });
-  } catch (error: any) {
-    res.status(500).json({ status: "error", message: error.message });
-  }
-});
+router.use(authenticate, authorizeAdmin);
+
+router.get("/users", adminController.getAllUsers);
+router.patch("/users/:id/role", adminController.updateUserRole);
+router.delete("/users/:id", adminController.deleteUser);
 
 export default router;

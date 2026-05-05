@@ -59,55 +59,60 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
       fetchFriends();
       fetchRequests();
 
-      // Listen for online status changes
-      presenceSocket.on("friend_status", ({ userId, status, currentGame }) => {
-        setFriends(prev => prev.map(f => f.id === userId ? { ...f, status, currentGame } : f));
+      // Listen for presence changes using dot protocol
+      presenceSocket.on("presence.changed", (data: { userId: string, status: string, activity?: string }) => {
+        setFriends(prev => prev.map(f => f.id === data.userId ? { 
+          ...f, 
+          status: data.status as FriendStatus,
+          currentGame: data.activity 
+        } : f));
       });
 
-      // Listen for incoming chat messages
-      chatSocket.on("private_message", (msg: any) => {
-        const isSelf = msg.senderId === user.id;
-        const friendId = isSelf ? msg.receiverId : msg.senderId;
+      // Listen for incoming chat messages using dot protocol
+      chatSocket.on("chat.message", (data: any) => {
+        const { messageId, from, content, createdAt } = data;
+        const isSelf = from.userId === user.id;
+        const friendId = isSelf ? "@self-room" : from.userId; // Simplified for now
 
         const chatMsg: ChatMessage = {
-          id: msg.id.toString(),
-          senderId: msg.senderId,
-          senderName: msg.sender?.username || "Unknown",
-          senderLevel: msg.sender?.level || 1,
+          id: messageId,
+          senderId: from.userId,
+          senderName: from.username,
+          senderLevel: 1, // Defaulting as backend didn't send level
           self: isSelf,
-          text: msg.content,
-          timestamp: new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          text: content,
+          timestamp: new Date(createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           isRead: false
         };
 
         setChats(prev => {
-          const existingChat = prev.find(c => c.friendId === friendId);
+          const existingChat = prev.find(c => c.friendId === from.userId);
           if (existingChat) {
-            return prev.map(c => c.friendId === friendId 
+            return prev.map(c => c.friendId === from.userId 
               ? { 
                   ...c, 
                   messages: [...c.messages, chatMsg],
-                  unreadCount: (activeChatId === friendId || isSelf) ? 0 : c.unreadCount + 1
+                  unreadCount: (activeChatId === from.userId || isSelf) ? 0 : c.unreadCount + 1
                 } 
               : c);
           } else {
             return [...prev, { 
-              friendId, 
+              friendId: from.userId, 
               messages: [chatMsg], 
               isTyping: false, 
-              unreadCount: (activeChatId === friendId || isSelf) ? 0 : 1 
+              unreadCount: (activeChatId === from.userId || isSelf) ? 0 : 1 
             }];
           }
         });
 
-        if (!isSelf && activeChatId !== friendId) {
-          toast(`پیام جدید از ${msg.sender?.username}`, { icon: '💬' });
+        if (!isSelf && activeChatId !== from.userId) {
+          toast(`پیام جدید از ${from.username}`, { icon: '💬' });
         }
       });
 
       return () => {
-        presenceSocket.off("friend_status");
-        chatSocket.off("private_message");
+        presenceSocket.off("presence.changed");
+        chatSocket.off("chat.message");
       };
     }
   }, [user, activeChatId, fetchFriends, fetchRequests]);
@@ -174,7 +179,11 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const sendMessage = (friendId: string, text: string) => {
-    chatSocket.emit("private_message", { receiverId: friendId, content: text });
+    chatSocket.emit("chat.send", { 
+      target: { type: "user", id: friendId }, 
+      content: text,
+      tempId: Math.random().toString(36).substr(2, 9)
+    });
   };
 
   const markAsRead = (friendId: string) => {

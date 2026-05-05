@@ -20,3 +20,4 @@ export const presenceSocket = createNamespaceSocket("presence");
 export const lobbySocket = createNamespaceSocket("lobby");
 export const chatSocket = createNamespaceSocket("chat");
 export const notifySocket = createNamespaceSocket("notify");
+export const rankingSocket = createNamespaceSocket("ranking");

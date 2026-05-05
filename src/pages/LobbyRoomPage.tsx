@@ -88,11 +88,11 @@ export const LobbyRoomPage = () => {
     id: p.userId,
     name: p.username,
     avatar: p.role === "HOST" ? "👑" : "👤",
-    rank: "Global Elite",
+    rank: "Verified Gamer",
     isHost: p.role === "HOST",
     isReady: p.isReady,
     hasMic: true,
-    isMuted: false,
+    isMuted: !!(p as any).micMuted,
     ping: 25,
     isSpeaking: false,
     volume: 100
@@ -116,12 +116,19 @@ export const LobbyRoomPage = () => {
   }
 
   const isReady = lobby?.players?.find(p => p.userId === user?.id)?.isReady || false;
+  const isMicMuted = !!(lobby?.players?.find(p => p.userId === user?.id) as any)?.micMuted;
   const isHost = lobby?.hostId === user?.id;
   
   const isStarting = lobby?.status === "STARTING";
   const isMatchStarted = lobby?.status === "IN_PROGRESS";
   const [countdown, setCountdown] = useState(5);
   const allReadyPulse = lobby?.status === "READY";
+
+  const toggleMic = () => {
+    if (lobby) {
+      lobbySocket.emit("lobby.mic", { lobbyId: lobby.id, muted: !isMicMuted });
+    }
+  };
 
   const [messages, setMessages] = useState<Message[]>([
     { id: "1", user: "LOXX BOT", text: "لابی ساخته شد. منتظر هم‌تیمی‌ها هستیم...", time: "10:22 PM", isSystem: true },
@@ -133,17 +140,17 @@ export const LobbyRoomPage = () => {
       
       const handleNewMessage = (msg: any) => {
         setMessages(prev => [...prev, {
-          id: msg.id,
-          user: msg.senderName,
+          id: msg.messageId || Math.random().toString(),
+          user: msg.from.username,
           text: msg.content,
           time: new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         }]);
       };
 
-      chatSocket.on("new_message", handleNewMessage);
+      chatSocket.on("chat.message", handleNewMessage);
 
       return () => {
-        chatSocket.off("new_message", handleNewMessage);
+        chatSocket.off("chat.message", handleNewMessage);
       };
     }
   }, [id]);
@@ -160,21 +167,22 @@ export const LobbyRoomPage = () => {
     e.preventDefault();
     if (!inputMessage.trim() || !id) return;
     
-    chatSocket.emit("send_message", {
+    chatSocket.emit("chat.send", {
       target: { type: "lobby", id },
-      content: inputMessage
+      content: inputMessage,
+      tempId: Math.random().toString(36).substr(2, 9)
     });
     
     setInputMessage("");
   };
 
   const onToggleReady = () => {
-    toggleReady();
+    toggleReady(); // This already emits "lobby.ready" in LobbyContext
   };
 
   const handleStartMatch = () => {
     if (isHost) {
-      lobbySocket.emit("start_match", { lobbyId: lobby?.id });
+      lobbySocket.emit("lobby.start", { lobbyId: lobby?.id });
     }
   };
 
@@ -373,7 +381,7 @@ export const LobbyRoomPage = () => {
         </div>
 
         <div className="flex items-center gap-1 overflow-x-auto scrollbar-none px-1 py-1">
-           <ControlButton icon={<Mic size={18} />} active className="h-10 w-10 rounded-xl shrink-0" />
+           <ControlButton icon={isMicMuted ? <MicOff size={18} /> : <Mic size={18} />} active={!isMicMuted} onClick={toggleMic} className="h-10 w-10 rounded-xl shrink-0" />
            <ControlButton icon={<UserPlus size={18} />} onClick={() => setIsInviteModalOpen(true)} className="h-10 w-10 rounded-xl shrink-0" />
            <ControlButton icon={<Settings size={18} />} className="h-10 w-10 rounded-xl shrink-0" />
         </div>
@@ -449,7 +457,7 @@ export const LobbyRoomPage = () => {
            </div>
            
            <div className="flex items-center gap-4">
-              <ControlButton icon={<Mic size={20} />} active />
+              <ControlButton icon={isMicMuted ? <MicOff size={20} /> : <Mic size={20} />} active={!isMicMuted} onClick={toggleMic} />
               <ControlButton icon={<UserPlus size={20} />} onClick={() => setIsInviteModalOpen(true)} />
               <ControlButton icon={<Settings size={20} />} />
               <ControlButton icon={<RotateCcw size={20} />} />

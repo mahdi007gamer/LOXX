@@ -1,5 +1,6 @@
 import { Server, Socket } from "socket.io";
 import { AuthService } from "../services/auth.service.js";
+import { RankingService } from "../services/ranking.service.js";
 import prisma from "../utils/prisma.js";
 
 interface AuthenticatedSocket extends Socket {
@@ -27,15 +28,52 @@ export function setupWebSockets(io: Server) {
   const lobbyNs = io.of("/lobby");
   const chatNs = io.of("/chat");
   const notifyNs = io.of("/notify");
+  const voiceNs = io.of("/voice");
+
+  // Voice Namespace (WebRTC Signaling)
+  voiceNs.on("connection", (socket: AuthenticatedSocket) => {
+    const userId = socket.userId!;
+
+    socket.on("voice.join", (data: { roomId: string }) => {
+      socket.join(`voice:${data.roomId}`);
+      // Notify others in the room
+      socket.to(`voice:${data.roomId}`).emit("voice.user_joined", { userId });
+    });
+
+    socket.on("voice.signal", (data: { targetUserId: string, signal: any }) => {
+      // Direct signal to specific peer
+      voiceNs.to(`user:${data.targetUserId}`).emit("voice.signal", { 
+        fromUserId: userId, 
+        signal: data.signal 
+      });
+    });
+
+    socket.on("voice.leave", (data: { roomId: string }) => {
+      socket.leave(`voice:${data.roomId}`);
+      voiceNs.to(`voice:${data.roomId}`).emit("voice.user_left", { userId });
+    });
+  });
 
   // Presence Namespace
-  presenceNs.on("connection", (socket: AuthenticatedSocket) => {
+  presenceNs.on("connection", async (socket: AuthenticatedSocket) => {
     const userId = socket.userId!;
     socket.join(`user:${userId}`);
 
-    socket.on("presence.update", (data) => {
-      // Broadcast to friends
-      socket.broadcast.emit("presence.changed", { userId, ...data });
+    // Initial state: Send online friends to the user
+    // In a real app, we would query the user's friends and their online status
+    socket.emit("presence.snapshot", { users: [] });
+
+    socket.on("presence.update", async (data: { status: string, activity?: string }) => {
+      // Update profile last activity
+      await prisma.profile.update({
+        where: { userId },
+        data: { lastActivity: new Date() }
+      }).catch(() => {});
+
+      // Broadcast to all "ACCEPTED" friends
+      // For simplicity, we broadcast to everyone for now, but in production, 
+      // you would filter by a friendship room or individual user rooms.
+      presenceNs.emit("presence.changed", { userId, ...data });
     });
   });
 
@@ -43,7 +81,7 @@ export function setupWebSockets(io: Server) {
   lobbyNs.on("connection", (socket: AuthenticatedSocket) => {
     const userId = socket.userId!;
 
-    const broadcastLobbyUpdate = async (lobbyId: string) => {
+    const getLobbyFullData = async (lobbyId: string) => {
       const lobby = await prisma.lobby.findUnique({
         where: { id: lobbyId },
         include: { 
@@ -51,159 +89,121 @@ export function setupWebSockets(io: Server) {
           members: { include: { user: { include: { profile: true } } } } 
         }
       });
-
-      if (lobby) {
-        let status = lobby.status;
-        if (status === "WAITING" && lobby.members.length >= 2 && lobby.members.every(m => m.isReady || m.userId === lobby.hostId)) {
-          status = "READY";
-        }
-
-        lobbyNs.to(`lobby:${lobbyId}`).emit("lobby_update", {
-          id: lobby.id,
-          gameId: lobby.gameId,
-          gameTitle: lobby.game.title,
-          title: lobby.title,
-          status: status,
-          maxPlayers: lobby.maxPlayers,
-          hostId: lobby.hostId,
-          region: lobby.region,
-          createdAt: lobby.createdAt,
-          players: lobby.members.map(m => ({
-            userId: m.userId,
-            username: m.user.username,
-            role: m.role,
-            isReady: m.isReady
-          }))
-        });
-      }
+      return lobby;
     };
 
-    socket.on("join_lobby", async (data: { lobbyId: string }) => {
-      const { lobbyId } = data;
-      socket.join(`lobby:${lobbyId}`);
+    socket.on("lobby.join", async (data: { lobbyId: string, password?: string }, ack) => {
+      const { lobbyId, password } = data;
       
       try {
-        const user = await prisma.user.findUnique({ where: { id: userId } });
-        lobbyNs.to(`lobby:${lobbyId}`).emit("player_joined", { 
-          userId, 
-          username: user?.username || "Unknown" 
+        const lobby = await prisma.lobby.findUnique({
+          where: { id: lobbyId },
+          include: { members: true }
         });
-        await broadcastLobbyUpdate(lobbyId);
-      } catch (err) {
-        socket.emit("error", { message: "Could not join lobby" });
+
+        if (!lobby) throw new Error("RESOURCE_NOT_FOUND");
+        if (lobby.password && lobby.password !== password) throw new Error("INVALID_PASSWORD");
+        if (lobby.members.length >= lobby.maxPlayers) throw new Error("LOBBY_FULL");
+
+        // Join DB
+        const member = await prisma.lobbyMember.upsert({
+          where: { lobbyId_userId: { lobbyId, userId } },
+          update: {},
+          create: { lobbyId, userId, role: "PLAYER", isReady: false }
+        });
+
+        socket.join(`lobby:${lobbyId}`);
+        
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+        
+        // Broadcast joined event
+        lobbyNs.to(`lobby:${lobbyId}`).emit("lobby.member_joined", {
+          user: { id: userId, username: user?.username, role: member.role },
+          membersCount: lobby.members.length + 1
+        });
+
+        // Award XP for joining
+        await RankingService.addXP(userId, 10, "LOBBY_JOIN");
+
+        if (ack) {
+          const updatedLobby = await getLobbyFullData(lobbyId);
+          ack({ 
+            status: "ok", 
+            data: { 
+              lobbyId, 
+              members: updatedLobby?.members.map(m => ({
+                userId: m.userId,
+                username: m.user.username,
+                role: m.role,
+                isReady: m.isReady,
+                micMuted: !m.micStatus
+              })),
+              you: { role: member.role, isReady: member.isReady, micMuted: !member.micStatus }
+            } 
+          });
+        }
+      } catch (err: any) {
+        if (ack) ack({ status: "error", error: { code: err.message, message: "Could not join lobby" } });
       }
     });
 
-    socket.on("leave_lobby", async (data: { lobbyId: string }) => {
+    socket.on("lobby.leave", async (data: { lobbyId: string }, ack) => {
       const { lobbyId } = data;
       socket.leave(`lobby:${lobbyId}`);
       
       try {
-        const user = await prisma.user.findUnique({ where: { id: userId } });
-        lobbyNs.to(`lobby:${lobbyId}`).emit("player_left", { 
-          userId, 
-          username: user?.username || "Unknown" 
-        });
-        // Remove from DB if necessary, but here we just leave the socket room
-        // Real logic should probably remove LobbyMember record too
         await prisma.lobbyMember.delete({
           where: { lobbyId_userId: { lobbyId, userId } }
         }).catch(() => {});
 
-        await broadcastLobbyUpdate(lobbyId);
-      } catch (err) {
-        socket.emit("error", { message: "Could not leave lobby" });
-      }
-    });
-
-    socket.on("toggle_ready", async (data: { lobbyId: string }) => {
-      const { lobbyId } = data;
-      try {
-        const member = await prisma.lobbyMember.findUnique({
-          where: { lobbyId_userId: { lobbyId, userId } }
+        const lobby = await prisma.lobby.findUnique({ where: { id: lobbyId }, include: { members: true } });
+        
+        lobbyNs.to(`lobby:${lobbyId}`).emit("lobby.member_left", { 
+          userId, 
+          membersCount: lobby?.members.length || 0
         });
-        if (member) {
-          await prisma.lobbyMember.update({
-            where: { lobbyId_userId: { lobbyId, userId } },
-            data: { isReady: !member.isReady }
-          });
-          await broadcastLobbyUpdate(lobbyId);
-        }
+
+        if (ack) ack({ status: "ok" });
       } catch (err) {
-        socket.emit("error", { message: "Failed to toggle ready status" });
+        if (ack) ack({ status: "error", error: { message: "Could not leave lobby" } });
       }
     });
 
-    socket.on("invite_player", async (data: { lobbyId: string, targetUserId: string }) => {
-      const { lobbyId, targetUserId } = data;
-      // Emit to the target user in the notification namespace
-      notifyNs.to(`user:${targetUserId}`).emit("notification", {
-        type: "LOBBY_INVITE",
-        data: { lobbyId, fromUserId: userId }
-      });
-    });
-
-    socket.on("start_match", async (data: { lobbyId: string }) => {
-      const { lobbyId } = data;
+    socket.on("lobby.ready", async (data: { lobbyId: string, ready: boolean }, ack) => {
+      const { lobbyId, ready } = data;
       try {
-        const lobby = await prisma.lobby.findUnique({ where: { id: lobbyId } });
-        if (lobby && lobby.hostId === userId) {
-          await prisma.lobby.update({
-            where: { id: lobbyId },
-            data: { status: "STARTING" }
-          });
-          await broadcastLobbyUpdate(lobbyId);
-        }
+        await prisma.lobbyMember.update({
+          where: { lobbyId_userId: { lobbyId, userId } },
+          data: { isReady: ready }
+        });
+
+        lobbyNs.to(`lobby:${lobbyId}`).emit("lobby.member_updated", { 
+          userId, 
+          isReady: ready 
+        });
+
+        if (ack) ack({ status: "ok" });
       } catch (err) {
-        socket.emit("error", { message: "Failed to start match" });
+        if (ack) ack({ status: "error", error: { message: "Failed to ready up" } });
       }
     });
 
-    socket.on("cancel_match", async (data: { lobbyId: string }) => {
-      const { lobbyId } = data;
+    socket.on("lobby.mic", async (data: { lobbyId: string, muted: boolean }, ack) => {
+      const { lobbyId, muted } = data;
       try {
-        const lobby = await prisma.lobby.findUnique({ where: { id: lobbyId } });
-        if (lobby && lobby.hostId === userId) {
-          await prisma.lobby.update({
-            where: { id: lobbyId },
-            data: { status: "WAITING" }
-          });
-          await broadcastLobbyUpdate(lobbyId);
-        }
-      } catch (err) {
-        socket.emit("error", { message: "Failed to cancel match" });
-      }
-    });
+        await prisma.lobbyMember.update({
+          where: { lobbyId_userId: { lobbyId, userId } },
+          data: { micStatus: !muted }
+        });
 
-    socket.on("reopen_lobby", async (data: { lobbyId: string }) => {
-      const { lobbyId } = data;
-      try {
-        const lobby = await prisma.lobby.findUnique({ where: { id: lobbyId } });
-        if (lobby && lobby.hostId === userId) {
-          await prisma.lobby.update({
-            where: { id: lobbyId },
-            data: { status: "WAITING" }
-          });
-          await broadcastLobbyUpdate(lobbyId);
-        }
-      } catch (err) {
-        socket.emit("error", { message: "Failed to reopen lobby" });
-      }
-    });
+        lobbyNs.to(`lobby:${lobbyId}`).emit("lobby.member_updated", { 
+          userId, 
+          micMuted: muted 
+        });
 
-    socket.on("start_match_confirm", async (data: { lobbyId: string }) => {
-      const { lobbyId } = data;
-      try {
-        const lobby = await prisma.lobby.findUnique({ where: { id: lobbyId } });
-        if (lobby && lobby.hostId === userId) {
-          await prisma.lobby.update({
-            where: { id: lobbyId },
-            data: { status: "IN_PROGRESS" }
-          });
-          await broadcastLobbyUpdate(lobbyId);
-        }
+        if (ack) ack({ status: "ok" });
       } catch (err) {
-        socket.emit("error", { message: "Failed to confirm match start" });
+        if (ack) ack({ status: "error", error: { message: "Failed to update mic" } });
       }
     });
   });
@@ -212,90 +212,48 @@ export function setupWebSockets(io: Server) {
   chatNs.on("connection", (socket: AuthenticatedSocket) => {
     const userId = socket.userId!;
 
-    socket.on("join_chat", (data: { type: "lobby" | "channel" | "user", id: string }) => {
-      if (data.type === "lobby") socket.join(`lobby:${data.id}`);
-      if (data.type === "channel") socket.join(`channel:${data.id}`);
-      if (data.type === "user") socket.join(`user:${userId}`); // Private chat room
-    });
-
-    socket.on("send_message", async (data: { target: { type: "lobby" | "channel" | "user", id: string }, content: string }) => {
-      const { target, content } = data;
+    socket.on("chat.send", async (data: { target: { type: "channel" | "lobby", id: string }, content: string, tempId: string, replyToId?: string }, ack) => {
+      const { target, content, tempId, replyToId } = data;
+      const room = target.type === "lobby" ? `lobby:${target.id}` : `channel:${target.id}`;
       
       try {
         const user = await prisma.user.findUnique({ 
           where: { id: userId },
-          include: { profile: true } 
+          include: { profile: true }
         });
 
-        const messageData = {
-          id: Math.random().toString(36).substr(2, 9),
-          content,
-          senderId: userId,
-          senderName: user?.username || "Unknown",
-          senderAvatar: user?.profile?.avatarUrl,
-          createdAt: new Date(),
-          targetType: target.type,
-          targetId: target.id
-        };
+        const msg = await prisma.message.create({
+          data: {
+            content,
+            senderId: userId,
+            channelId: target.type === "channel" ? target.id : "lobby-channel-" + target.id, // In real app, lobbies have their own channel
+            replyToId: replyToId ? parseInt(replyToId) : undefined
+          }
+        });
 
-        if (target.type === "lobby") {
-          chatNs.to(`lobby:${target.id}`).emit("new_message", messageData);
-        } else if (target.type === "channel") {
-          chatNs.to(`channel:${target.id}`).emit("new_message", messageData);
-          // Also save to DB for channels
-          await prisma.message.create({
-            data: {
-              content,
-              senderId: userId,
-              channelId: target.id
-            }
-          });
-        } else if (target.type === "user") {
-          // Private message
-          chatNs.to(`user:${target.id}`).emit("new_message", messageData);
-          socket.emit("new_message", messageData); // Echo to sender
-        }
+        chatNs.to(room).emit("chat.message", {
+          messageId: msg.id.toString(),
+          from: { 
+            userId, 
+            username: user?.username, 
+            membership: user?.profile?.membershipType || "NONE" 
+          },
+          content,
+          createdAt: Date.now()
+        });
+
+        if (ack) ack({ status: "ok", data: { tempId, messageId: msg.id.toString(), createdAt: Date.now() } });
       } catch (err) {
-        socket.emit("error", { message: "Failed to send message" });
+        if (ack) ack({ status: "error", error: { code: "INTERNAL_ERROR", message: "Failed to send message" } });
       }
     });
-
-    socket.on("chat.send", async (data, callback) => {
-      // Maintaining legacy for now if needed
-      const { target, content, tempId } = data;
-      const room = target.type === "lobby" ? `lobby:${target.id}` : `channel:${target.id}`;
-      
-      const msg = await prisma.message.create({
-        data: {
-          content,
-          senderId: userId,
-          channelId: target.id 
-        },
-        include: { sender: true }
-      });
-
-      chatNs.to(room).emit("chat.message", {
-        messageId: msg.id.toString(),
-        from: { userId, username: msg.sender.username },
-        content,
-        createdAt: Date.now()
-      });
-
-      if (callback) callback({ status: "ok", data: { tempId, messageId: msg.id.toString() } });
-    });
   });
 
-  // Voice (Mediasoup Signaling)
-  io.of("/voice").on("connection", (socket: AuthenticatedSocket) => {
-    socket.on("voice.join", (data, callback) => {
-      // Signaling logic would go here
-      if (callback) callback({ status: "ok", rtpCapabilities: {} });
-    });
-
-    socket.on("voice.produce", (data, callback) => {
-      if (callback) callback({ status: "ok", id: "producer-id" });
-    });
-  });
+  // Ranking Tick (Broadcasting every 15s as per contract)
+  setInterval(async () => {
+    const ranking = await RankingService.getLeaderboard("weekly");
+    io.of("/ranking").emit("ranking.tick", ranking);
+  }, 15000);
 
   // Notify Namespace
   notifyNs.on("connection", (socket: AuthenticatedSocket) => {

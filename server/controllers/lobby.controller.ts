@@ -15,7 +15,10 @@ export class LobbyController {
   static async list(req: AuthenticatedRequest, res: Response) {
     try {
       const { game_id, region } = req.query;
-      const lobbies = await LobbyService.getLobbies(game_id as string, region as string);
+      const lobbies = await LobbyService.getLobbies({ 
+        gameId: game_id as string, 
+        region: region as string 
+      });
       res.json({ status: "success", data: { items: lobbies } });
     } catch (error: any) {
       res.status(500).json({ status: "error", error: { code: "INTERNAL_ERROR", message: error.message } });

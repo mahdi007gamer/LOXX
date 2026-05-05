@@ -34,6 +34,17 @@ export const AdminPage = () => {
     }
   };
 
+  const deleteUser = async (id: string) => {
+    if (!window.confirm("آیا از حذف این کاربر اطمینان دارید؟")) return;
+    try {
+      await api.delete(`/admin/users/${id}`);
+      toast.success("کاربر با موفقیت حذف شد");
+      setUsers(prev => prev.filter(u => u.id !== id));
+    } catch (err) {
+      toast.error("خطا در حذف کاربر");
+    }
+  };
+
   return (
     <div className="flex min-h-screen bg-dark-bg">
       <Sidebar />
@@ -114,7 +125,12 @@ export const AdminPage = () => {
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-2">
                               <button className="p-2 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors"><Edit2 size={16} /></button>
-                              <button className="p-2 hover:bg-red-500/10 rounded-lg text-gray-400 hover:text-red-500 transition-colors"><Trash2 size={16} /></button>
+                              <button 
+                                onClick={() => deleteUser(user.id)}
+                                className="p-2 hover:bg-red-500/10 rounded-lg text-gray-400 hover:text-red-500 transition-colors"
+                              >
+                                <Trash2 size={16} />
+                              </button>
                             </div>
                           </td>
                         </tr>

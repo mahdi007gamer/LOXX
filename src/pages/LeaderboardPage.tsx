@@ -9,44 +9,67 @@ import {
 } from "lucide-react";
 import { motion } from "motion/react";
 import { cn } from "@/src/lib/utils";
-
-const TOP_PLAYERS = [
-  { id: 1, name: "Sina_King", rank: 1, points: 12450, winRate: "84%", avatar: "👑", status: "VIP", color: "text-yellow-400" },
-  { id: 2, name: "Ali_Gamer", rank: 2, points: 11900, winRate: "76%", avatar: "🥈", status: "PLUS", color: "text-gray-300" },
-  { id: 3, name: "Sara_Player", rank: 3, points: 10200, winRate: "72%", avatar: "🥉", status: "PLUS", color: "text-orange-400" },
-];
-
-const RANKINGS = [
-  { id: 4, name: "Mohammad_Pro", rank: 4, points: 9800, status: "NONE", trend: "up" },
-  { id: 5, name: "Arash_Zero", rank: 5, points: 9450, status: "NONE", trend: "down" },
-  { id: 6, name: "Reza_Gamer", rank: 6, points: 9100, status: "PLUS", trend: "up" },
-  { id: 7, name: "Tina_X", rank: 7, points: 8900, status: "NONE", trend: "stable" },
-  { id: 8, name: "Gamer_Boy", rank: 8, points: 8500, status: "NONE", trend: "up" },
-];
+import axios from "axios";
+import { rankingSocket } from "../lib/socket";
 
 const SCORING_RULES = [
-  { icon: <Crown size={16} />, label: "ساخت لابی موفق", points: "+30", detail: "پر شدن کامل اعضا" },
-  { icon: <Target size={16} />, label: "تکمیل بازی", points: "+25", detail: "انجام کامل دست بازی" },
-  { icon: <UserPlus size={16} />, label: "دعوت دوستان", points: "+20", detail: "دعوت موفق به لابی" },
-  { icon: <Zap size={16} />, label: "ساخت لابی", points: "+15", detail: "شروع لابی جدید" },
-  { icon: <Flame size={16} />, label: "پیوستن به لابی", points: "+10", detail: "عضویت در تیم دیگران" },
-  { icon: <MessageCircle size={16} />, label: "فعالیت در چت", points: "+2", detail: "ارسال پیام و تعامل" },
+  { icon: <Gamepad2 size={20} />, label: "Match Play", points: "+20 XP", detail: "Per match started" },
+  { icon: <Trophy size={20} />, label: "Victory", points: "+50 XP", detail: "Per match won" },
+  { icon: <Flame size={20} />, label: "Win Streak", points: "+10 XP", detail: "Bonus after 3 wins" },
 ];
 
+import { Gamepad2 } from "lucide-react";
+
 export const LeaderboardPage = () => {
-  const [timeLeft, setTimeLeft] = useState({ days: 3, hours: 12, minutes: 45 });
+  const [timeLeftStr, setTimeLeftStr] = useState("2d 14h 05m");
+  const [topUsers, setTopUsers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft(prev => {
-        if (prev.minutes > 0) return { ...prev, minutes: prev.minutes - 1 };
-        if (prev.hours > 0) return { ...prev, hours: prev.hours - 1, minutes: 59 };
-        if (prev.days > 0) return { ...prev, days: prev.days - 1, hours: 23, minutes: 59 };
-        return prev;
-      });
-    }, 60000);
-    return () => clearInterval(timer);
+    const fetchData = async () => {
+      try {
+        const token = localStorage.getItem("loxx_token");
+        const res = await axios.get("/api/v1/ranking", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setTopUsers(res.data.top_users || []);
+        setTimeLeftStr(res.data.reset_in);
+      } catch (err) {
+        console.error("Failed to fetch leaderboard", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+
+    // Listen for real-time ticks
+    rankingSocket.on("ranking.tick", (data: any) => {
+      setTopUsers(data.top_users);
+      setTimeLeftStr(data.reset_in);
+    });
+
+    return () => {
+      rankingSocket.off("ranking.tick");
+    };
   }, []);
+
+  if (loading) {
+      return (
+          <div className="flex min-h-screen items-center justify-center bg-dark-bg text-neon-blue">
+              <div className="flex flex-col items-center gap-4">
+                  <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}>
+                      <Zap size={48} />
+                  </motion.div>
+                  <p className="font-black italic uppercase tracking-widest">Loading Leaderboard...</p>
+              </div>
+          </div>
+      );
+  }
+
+  // Split top users for podium
+  const podium = topUsers.slice(0, 3);
+  const remaining = topUsers.slice(3, 10); // Show top 10
 
   return (
     <div className="flex min-h-[calc(100vh-64px)] bg-[#050507]">
@@ -68,190 +91,85 @@ export const LeaderboardPage = () => {
                <div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-2xl p-4 px-6 shadow-2xl backdrop-blur-md">
                  <Clock className="text-neon-pink animate-pulse" size={20} />
                  <div className="flex items-center gap-4">
-                   <div className="text-center">
-                     <span className="block text-2xl font-black text-white">{timeLeft.days}</span>
-                     <span className="text-[10px] text-gray-400 uppercase font-bold">روز</span>
-                   </div>
-                   <div className="h-8 w-[1px] bg-white/10" />
-                   <div className="text-center">
-                     <span className="block text-2xl font-black text-white">{timeLeft.hours}</span>
-                     <span className="text-[10px] text-gray-400 uppercase font-bold">ساعت</span>
-                   </div>
-                   <div className="h-8 w-[1px] bg-white/10" />
-                   <div className="text-center">
-                     <span className="block text-2xl font-black text-white">{timeLeft.minutes}</span>
-                     <span className="text-[10px] text-gray-400 uppercase font-bold">دقیقه</span>
-                   </div>
+                    <span className="text-xl font-black text-white italic">{timeLeftStr}</span>
                  </div>
                </div>
                <p className="text-[10px] text-neon-pink font-black uppercase tracking-widest italic">تا ریست امتیازات هفتگی</p>
             </div>
           </header>
 
-          {/* Top 3 Rankings */}
+          {/* Top 3 Rankings (Podium) */}
           <div className="mb-24 flex flex-col sm:flex-row items-center sm:items-end justify-center gap-6 md:gap-10 relative">
              <div className="absolute inset-0 bg-neon-blue/5 blur-[120px] rounded-full pointer-events-none" />
              
              {/* Rank 2 */}
-             <motion.div 
-               initial={{ opacity: 0, y: 20 }}
-               animate={{ opacity: 1, y: 0 }}
-               transition={{ delay: 0.1 }}
-               className="order-2 sm:order-1 relative z-10 w-full max-w-[280px]"
-             >
-                <NeonCard variant="blue" className="flex flex-col items-center p-6 text-center bg-[#0a0a0f]/80 backdrop-blur-xl border-white/5 hover:border-neon-blue/30 transition-all pt-12">
-                 <div className="h-28 w-28 rounded-full border-4 border-gray-400/20 bg-white/5 mb-4 flex items-center justify-center text-gray-400 relative group p-1 shrink-0">
-                    <div className="absolute -top-2 -right-2 h-10 w-10 rounded-2xl bg-gray-400/30 flex items-center justify-center text-gray-200 border border-white/20 shadow-[0_0_15px_rgba(255,255,255,0.1)] z-30 backdrop-blur-xl">
-                       <Medal size={20} />
-                    </div>
-                    <div className="absolute inset-0 rounded-full bg-gray-400/5 blur-[20px] opacity-0 group-hover:opacity-100 transition-all" />
-                    <div className="w-full h-full rounded-full bg-dark-bg flex items-center justify-center overflow-hidden border border-white/5">
-                      <User size={48} className="relative z-10 text-gray-500" />
-                    </div>
-                 </div>
-                 <h3 className="text-xl font-black text-white uppercase italic tracking-tight">{TOP_PLAYERS[1].name}</h3>
-                 <p className="text-neon-blue font-black text-lg mt-1">{TOP_PLAYERS[1].points.toLocaleString()}</p>
-                 <div className="mt-6 flex flex-col gap-1 italic w-full">
-                    <span className="text-[10px] text-gray-500 font-black uppercase mb-1">جایزه:</span>
-                    <span className="text-xs text-white font-bold bg-white/5 px-4 py-2 rounded-xl border border-white/5 shadow-xl block">۳ روز اشتراک VIP</span>
-                 </div>
-               </NeonCard>
-             </motion.div>
+             {podium[1] && (
+               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="order-2 sm:order-1 relative z-10 w-full max-w-[280px]">
+                  <NeonCard variant="blue" className="flex flex-col items-center p-6 text-center bg-[#0a0a0f]/80 backdrop-blur-xl border-white/5 hover:border-neon-blue/30 transition-all pt-12">
+                   <div className="h-28 w-28 rounded-full border-4 border-gray-400/20 bg-white/5 mb-4 flex items-center justify-center text-gray-400 relative group p-1 shrink-0">
+                      <div className="absolute -top-2 -right-2 h-10 w-10 rounded-2xl bg-gray-400/30 flex items-center justify-center text-gray-200 border border-white/20 shadow-[0_0_15px_rgba(255,255,255,0.1)] z-30 backdrop-blur-xl">
+                         <Medal size={20} />
+                      </div>
+                      <div className="w-full h-full rounded-full bg-dark-bg flex items-center justify-center overflow-hidden border border-white/5">
+                        <User size={48} className="relative z-10 text-gray-500" />
+                      </div>
+                   </div>
+                   <h3 className="text-xl font-black text-white uppercase italic tracking-tight">{podium[1].username}</h3>
+                   <p className="text-neon-blue font-black text-lg mt-1">{podium[1].points.toLocaleString()}</p>
+                 </NeonCard>
+               </motion.div>
+             )}
 
              {/* Rank 1 */}
-             <motion.div 
-               initial={{ opacity: 0, scale: 0.9 }}
-               animate={{ opacity: 1, scale: 1 }}
-               className="order-1 sm:order-2 relative z-20 w-full max-w-[320px]"
-             >
-               <NeonCard variant="purple" className="flex flex-col items-center p-10 text-center relative border-yellow-400/40 bg-[#12051a]/90 shadow-[0_0_60px_rgba(250,204,21,0.2)] rounded-[40px] pt-16">
-                 <motion.div 
-                   animate={{ y: [0, -10, 0], rotate: [0, 5, -5, 0] }}
-                   transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                   className="absolute -top-14 inset-x-0 mx-auto w-fit text-7xl drop-shadow-[0_15px_25px_rgba(250,204,21,0.5)] z-40 pointer-events-none"
-                 >
-                   👑
-                 </motion.div>
-                 
-                 <div className="relative mb-8 flex items-center justify-center">
-                    {/* Centered Dash Circle */}
-                    <motion.div 
-                       animate={{ rotate: 360 }}
-                       transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
-                       className="absolute -inset-3 border-2 border-dashed border-yellow-400/30 rounded-full"
-                    />
-                    <motion.div 
-                       animate={{ rotate: -360 }}
-                       transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-                       className="absolute -inset-1 border border-yellow-400/20 rounded-full opacity-30"
-                    />
-                    
-                    <div className="h-36 w-36 rounded-full border-4 border-yellow-400/80 bg-dark-bg flex items-center justify-center text-yellow-400 shadow-[0_0_50px_rgba(250,204,21,0.4)] relative z-10 p-1">
-                       <div className="w-full h-full rounded-full bg-yellow-400/10 flex items-center justify-center border border-yellow-400/20">
-                          <User size={80} />
-                       </div>
-                    </div>
-                 </div>
-                 
-                 <h3 className="text-2xl font-black text-white uppercase italic tracking-tighter drop-shadow-[0_0_15px_rgba(255,255,255,0.4)]">
-                    {TOP_PLAYERS[0].name}
-                 </h3>
-                 <p className="text-4xl text-yellow-400 font-black italic mt-2 tracking-tight">{TOP_PLAYERS[0].points.toLocaleString()}</p>
-                 
-                 <div className="mt-8 rounded-2xl bg-yellow-400 px-10 py-3.5 text-sm font-black text-dark-bg shadow-[0_15px_30px_rgba(250,204,21,0.4)] uppercase italic tracking-widest">
-                   WEEKLY CHAMPION
-                 </div>
-                 
-                 <div className="mt-10 flex flex-col items-center border-t border-white/5 pt-6 w-full">
-                    <span className="text-[10px] text-gray-500 font-black uppercase mb-4 tracking-widest">پاداش ویژه قهرمانی</span>
-                    <div className="flex gap-4">
-                       <div className="h-12 w-12 rounded-2xl bg-yellow-400/10 border border-yellow-400/20 flex items-center justify-center text-yellow-400 shadow-xl" title="7 Days VIP"><Clock size={24} /></div>
-                       <div className="h-12 w-12 rounded-2xl bg-yellow-400/10 border border-yellow-400/20 flex items-center justify-center text-yellow-400 shadow-xl" title="Golden Crown Badge"><Crown size={24} /></div>
-                       <div className="h-12 w-12 rounded-2xl bg-yellow-400/10 border border-yellow-400/20 flex items-center justify-center text-yellow-400 shadow-xl" title="Featured"><Star size={24} /></div>
-                    </div>
-                 </div>
-               </NeonCard>
-             </motion.div>
+             {podium[0] && (
+               <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="order-1 sm:order-2 relative z-20 w-full max-w-[320px]">
+                 <NeonCard variant="purple" className="flex flex-col items-center p-10 text-center relative border-yellow-400/40 bg-[#12051a]/90 shadow-[0_0_60px_rgba(250,204,21,0.2)] rounded-[40px] pt-16">
+                   <div className="absolute -top-14 inset-x-0 mx-auto w-fit text-7xl drop-shadow-[0_15px_25px_rgba(250,204,21,0.5)] z-40">👑</div>
+                   <div className="relative mb-8 flex items-center justify-center">
+                      <div className="h-36 w-36 rounded-full border-4 border-yellow-400/80 bg-dark-bg flex items-center justify-center text-yellow-400 shadow-[0_0_50px_rgba(250,204,21,0.4)] relative z-10 p-1">
+                         <div className="w-full h-full rounded-full bg-yellow-400/10 flex items-center justify-center border border-yellow-400/20">
+                            <User size={80} />
+                         </div>
+                      </div>
+                   </div>
+                   <h3 className="text-2xl font-black text-white uppercase italic tracking-tighter">{podium[0].username}</h3>
+                   <p className="text-4xl text-yellow-400 font-black italic mt-2 tracking-tight">{podium[0].points.toLocaleString()}</p>
+                 </NeonCard>
+               </motion.div>
+             )}
 
              {/* Rank 3 */}
-             <motion.div 
-               initial={{ opacity: 0, y: 20 }}
-               animate={{ opacity: 1, y: 0 }}
-               transition={{ delay: 0.2 }}
-               className="order-3 relative z-10 w-full max-w-[280px]"
-             >
-               <NeonCard variant="pink" className="flex flex-col items-center p-6 text-center bg-[#0a0a0f]/80 backdrop-blur-xl border-white/5 hover:border-neon-pink/30 transition-all pt-12">
-                 <div className="h-28 w-28 rounded-full border-4 border-orange-400/20 bg-white/5 mb-4 flex items-center justify-center text-orange-400 relative group p-1 shrink-0">
-                    <div className="absolute -top-2 -right-2 h-10 w-10 rounded-2xl bg-orange-400/30 flex items-center justify-center text-orange-200 border border-white/20 shadow-[0_0_15px_rgba(251,146,60,0.1)] z-30 backdrop-blur-xl">
-                       <Medal size={20} />
-                    </div>
-                    <div className="absolute inset-0 rounded-full bg-orange-400/5 blur-[20px] opacity-0 group-hover:opacity-100 transition-all" />
-                    <div className="w-full h-full rounded-full bg-dark-bg flex items-center justify-center overflow-hidden border border-white/5">
-                      <User size={48} className="relative z-10 text-gray-500" />
-                    </div>
-                 </div>
-                 <h3 className="text-xl font-black text-white uppercase italic tracking-tight">{TOP_PLAYERS[2].name}</h3>
-                 <p className="text-neon-pink font-black text-lg mt-1">{TOP_PLAYERS[2].points.toLocaleString()}</p>
-                 <div className="mt-6 flex flex-col gap-1 italic w-full">
-                    <span className="text-[10px] text-gray-500 font-black uppercase mb-1">جایزه:</span>
-                    <span className="text-xs text-white font-bold bg-white/5 px-4 py-2 rounded-xl border border-white/5 shadow-xl block">۱ روز اشتراک VIP</span>
-                 </div>
-               </NeonCard>
-             </motion.div>
+             {podium[2] && (
+               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="order-3 relative z-10 w-full max-w-[280px]">
+                 <NeonCard variant="pink" className="flex flex-col items-center p-6 text-center bg-[#0a0a0f]/80 backdrop-blur-xl border-white/5 hover:border-neon-pink/30 transition-all pt-12">
+                   <div className="h-28 w-28 rounded-full border-4 border-orange-400/20 bg-white/5 mb-4 flex items-center justify-center text-orange-400 relative group p-1 shrink-0">
+                      <div className="absolute -top-2 -right-2 h-10 w-10 rounded-2xl bg-orange-400/30 flex items-center justify-center text-orange-200 border border-white/20 shadow-[0_0_15px_rgba(251,146,60,0.1)] z-30 backdrop-blur-xl">
+                         <Medal size={20} />
+                      </div>
+                      <div className="w-full h-full rounded-full bg-dark-bg flex items-center justify-center overflow-hidden border border-white/5">
+                        <User size={48} className="relative z-10 text-gray-500" />
+                      </div>
+                   </div>
+                   <h3 className="text-xl font-black text-white uppercase italic tracking-tight">{podium[2].username}</h3>
+                   <p className="text-neon-pink font-black text-lg mt-1">{podium[2].points.toLocaleString()}</p>
+                 </NeonCard>
+               </motion.div>
+             )}
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-4">
-               <div className="flex items-center justify-between mb-6">
-                 <h2 className="text-xl font-black text-white uppercase italic tracking-tighter">لیست برترین‌ها</h2>
-                 <div className="flex gap-2">
-                    <button className="px-4 py-1.5 rounded-lg bg-neon-blue text-dark-bg text-[10px] font-black uppercase">هفتگی</button>
-                    <button className="px-4 py-1.5 rounded-lg bg-white/5 text-gray-500 text-[10px] font-black uppercase hover:text-white transition-all">ماهانه</button>
-                    <button className="px-4 py-1.5 rounded-lg bg-white/5 text-gray-500 text-[10px] font-black uppercase hover:text-white transition-all">کل زمان</button>
-                 </div>
-               </div>
-
-               {RANKINGS.map((player, i) => (
-                 <motion.div
-                   key={player.id}
-                   initial={{ opacity: 0, x: 20 }}
-                   whileInView={{ opacity: 1, x: 0 }}
-                   viewport={{ once: true }}
-                   transition={{ delay: i * 0.05 }}
-                 >
+               <h2 className="text-xl font-black text-white uppercase italic tracking-tighter mb-6">لیست برترین‌ها</h2>
+               {remaining.map((player, i) => (
+                 <motion.div key={i} initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.05 }}>
                    <div className="group flex items-center justify-between rounded-2xl border border-white/5 bg-white/[0.02] p-4 transition-all hover:bg-white/[0.05] hover:border-neon-blue/20">
                       <div className="flex items-center gap-4 md:gap-6 min-w-0">
                          <span className="w-6 text-center font-mono text-lg font-bold text-gray-700">#{player.rank}</span>
-                         <div className="relative shrink-0">
-                           <div className="h-10 w-10 md:h-12 md:w-12 rounded-xl bg-white/5 flex items-center justify-center text-gray-400 group-hover:scale-105 transition-all">
-                             <User size={24} />
-                           </div>
-                           {player.status !== "NONE" && (
-                             <div className={cn(
-                               "absolute -top-1.5 -right-1.5 h-4 w-4 rounded-full flex items-center justify-center text-[8px] border-2 border-dark-bg shadow-lg font-black",
-                               player.status === "VIP" ? "bg-yellow-400 text-dark-bg" : "bg-neon-blue text-dark-bg"
-                             )}>
-                               {player.status === "VIP" ? <Crown size={10} /> : <Zap size={10} />}
-                             </div>
-                           )}
+                         <div className="h-10 w-10 md:h-12 md:w-12 rounded-xl bg-white/5 flex items-center justify-center text-gray-400">
+                           <User size={24} />
                          </div>
-                         <div className="min-w-0">
-                           <div className="flex items-center gap-2">
-                             <h4 className="font-black text-white group-hover:text-neon-blue transition-colors truncate uppercase text-sm md:text-base italic">{player.name}</h4>
-                             {player.status === "VIP" && <span className="h-4 w-8 bg-yellow-400/10 text-yellow-500 text-[8px] flex items-center justify-center rounded font-black border border-yellow-400/20">VIP</span>}
-                           </div>
-                           <div className="flex items-center gap-2 mt-0.5">
-                              <div className={cn(
-                                "flex items-center gap-1 text-[9px] font-bold uppercase",
-                                player.trend === 'up' ? "text-green-500" : player.trend === 'down' ? "text-neon-pink" : "text-gray-500"
-                              )}>
-                                 {player.trend === 'up' && <ArrowUp size={10} />}
-                                 <span>{player.trend === 'up' ? 'در حال صعود' : player.trend === 'down' ? 'در حال سقوط' : 'ثابت'}</span>
-                              </div>
-                           </div>
-                         </div>
+                         <h4 className="font-black text-white group-hover:text-neon-blue transition-colors truncate uppercase text-sm md:text-base italic">{player.username}</h4>
                       </div>
-
                       <div className="text-left">
                          <p className="text-[9px] text-gray-500 uppercase font-black italic mb-0.5">امتیازات</p>
                          <p className="font-black text-lg md:text-xl text-white italic tracking-tighter">{player.points.toLocaleString()}</p>
@@ -259,9 +177,10 @@ export const LeaderboardPage = () => {
                    </div>
                  </motion.div>
                ))}
+               {!topUsers.length && <p className="text-gray-500 font-bold italic text-center p-8 bg-white/5 rounded-3xl border border-dashed border-white/10">قهرمانی هنوز ثبت نشده است...</p>}
 
                <GlowButton variant="blue" className="w-full py-4 text-xs font-black uppercase italic tracking-widest mt-8">
-                  نمایش ۵۰ نفر برتر
+                 نمایش ۵۰ نفر برتر
                </GlowButton>
             </div>
 

@@ -36,16 +36,46 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [lobby, setLobby] = useState<LobbyState | null>(null);
 
   useEffect(() => {
-    lobbySocket.on("lobby_update", (data) => {
-      setLobby(prev => ({ ...prev, ...data }));
+    // Listen for member updates using the new dot-protocol
+    lobbySocket.on("lobby.member_joined", (data: { user: any, membersCount: number }) => {
+      setLobby(prev => {
+        if (!prev) return null;
+        const exists = prev.players.some(p => p.userId === data.user.id);
+        if (exists) return prev;
+        return {
+          ...prev,
+          players: [...prev.players, { ...data.user, userId: data.user.id }]
+        };
+      });
+      toast(`${data.user.username} وارد لابی شد`, { icon: '👋' });
     });
 
-    lobbySocket.on("player_joined", (data) => {
-       toast(`${data.username} وارد لابی شد`, { icon: '👋' });
+    lobbySocket.on("lobby.member_left", (data: { userId: string, membersCount: number }) => {
+      setLobby(prev => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          players: prev.players.filter(p => p.userId !== data.userId)
+        };
+      });
     });
 
-    lobbySocket.on("player_left", (data) => {
-      toast(`${data.username} از لابی خارج شد`, { icon: '🚪' });
+    lobbySocket.on("lobby.member_updated", (data: { userId: string, isReady?: boolean, micMuted?: boolean }) => {
+      setLobby(prev => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          players: prev.players.map(p => 
+            p.userId === data.userId 
+              ? { 
+                  ...p, 
+                  isReady: data.isReady !== undefined ? data.isReady : p.isReady,
+                  micMuted: data.micMuted !== undefined ? data.micMuted : (p as any).micMuted 
+                } 
+              : p
+          )
+        };
+      });
     });
 
     lobbySocket.on("error", (err) => {
@@ -53,27 +83,35 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     });
 
     return () => {
-      lobbySocket.off("lobby_update");
-      lobbySocket.off("player_joined");
-      lobbySocket.off("player_left");
+      lobbySocket.off("lobby.member_joined");
+      lobbySocket.off("lobby.member_left");
+      lobbySocket.off("lobby.member_updated");
       lobbySocket.off("error");
     };
   }, []);
 
   const joinLobby = (lobbyId: string) => {
-    lobbySocket.emit("join_lobby", { lobbyId });
+    lobbySocket.emit("lobby.join", { lobbyId }, (ack: any) => {
+      if (ack?.status === "ok") {
+        setLobby(ack.data);
+      } else {
+        toast.error(ack?.error?.message || "Join failed");
+      }
+    });
   };
 
   const leaveLobby = () => {
     if (lobby) {
-      lobbySocket.emit("leave_lobby", { lobbyId: lobby.id });
+      lobbySocket.emit("lobby.leave", { lobbyId: lobby.id });
       setLobby(null);
     }
   };
 
   const toggleReady = () => {
     if (lobby) {
-      lobbySocket.emit("toggle_ready", { lobbyId: lobby.id });
+      // Find my current ready state locally for optimistic toggle
+      // The server will ack and broadcast the real state
+      lobbySocket.emit("lobby.ready", { lobbyId: lobby.id, ready: true }); 
     }
   };
 
