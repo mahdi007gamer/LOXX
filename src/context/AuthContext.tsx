@@ -21,9 +21,29 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+import { presenceSocket, lobbySocket, chatSocket, notifySocket, rankingSocket, voiceSocket } from "../lib/socket";
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const connectSockets = () => {
+    presenceSocket.connect();
+    lobbySocket.connect();
+    chatSocket.connect();
+    notifySocket.connect();
+    rankingSocket.connect();
+    voiceSocket.connect();
+  };
+
+  const disconnectSockets = () => {
+    presenceSocket.disconnect();
+    lobbySocket.disconnect();
+    chatSocket.disconnect();
+    notifySocket.disconnect();
+    rankingSocket.disconnect();
+    voiceSocket.disconnect();
+  };
 
   useEffect(() => {
     const initAuth = async () => {
@@ -33,6 +53,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const response = await api.get("/auth/me");
           if (response.data.status === "success") {
             setUser(response.data.data || response.data.user);
+            connectSockets();
           }
         } catch (error) {
           console.error("Auth init failed:", error);
@@ -43,11 +64,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     initAuth();
+    
+    return () => disconnectSockets();
   }, []);
 
   const login = (token: string, userData: any) => {
     localStorage.setItem("loxx_token", token);
     setUser(userData);
+    connectSockets();
   };
 
   const logout = async () => {
@@ -58,6 +82,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } finally {
       localStorage.removeItem("loxx_token");
       setUser(null);
+      disconnectSockets();
       window.location.href = "/auth";
     }
   };

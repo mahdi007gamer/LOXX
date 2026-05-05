@@ -83,9 +83,6 @@ export const LobbyRoomPage = () => {
     if (id) {
        joinLobby(id);
     }
-    return () => {
-      leaveLobby();
-    };
   }, [id]);
 
   // Redirect if lobby becomes null (e.g., closed by host)

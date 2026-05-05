@@ -8,8 +8,7 @@ interface AuthenticatedSocket extends Socket {
 }
 
 export function setupWebSockets(io: Server) {
-  // Middleware for Auth
-  io.use((socket: AuthenticatedSocket, next) => {
+  const authMiddleware = (socket: AuthenticatedSocket, next: any) => {
     const token = socket.handshake.query.token as string || socket.handshake.auth.token as string;
     if (!token) return next(new Error("AUTH_EXPIRED"));
 
@@ -21,7 +20,10 @@ export function setupWebSockets(io: Server) {
     } catch (err) {
       next(new Error("AUTH_EXPIRED"));
     }
-  });
+  };
+
+  // Middleware for Auth
+  io.use(authMiddleware);
 
   // Namespaces
   const presenceNs = io.of("/presence");
@@ -29,6 +31,12 @@ export function setupWebSockets(io: Server) {
   const chatNs = io.of("/chat");
   const notifyNs = io.of("/notify");
   const voiceNs = io.of("/voice");
+
+  presenceNs.use(authMiddleware);
+  lobbyNs.use(authMiddleware);
+  chatNs.use(authMiddleware);
+  notifyNs.use(authMiddleware);
+  voiceNs.use(authMiddleware);
 
   // Voice Namespace (WebRTC Signaling)
   voiceNs.on("connection", (socket: AuthenticatedSocket) => {

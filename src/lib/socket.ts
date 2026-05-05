@@ -3,14 +3,11 @@ import { io } from "socket.io-client";
 const SOCKET_URL = window.location.origin;
 
 export const createNamespaceSocket = (namespace: string) => {
-  const token = localStorage.getItem("loxx_token");
-  
   return io(`${SOCKET_URL}/${namespace}`, {
-    auth: {
-      token: `Bearer ${token}`
-    },
-    query: {
-      token: `Bearer ${token}`
+    autoConnect: false, // Better to let AuthContext connect them when token exists
+    auth: (cb) => {
+      const token = localStorage.getItem("loxx_token");
+      cb({ token: `Bearer ${token}` });
     }
   });
 };
