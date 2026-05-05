@@ -1,0 +1,95 @@
+PROJECT: LOXX
+
+DOCUMENT: Frontend Structure Inventory
+
+---
+
+## GLOBAL STRUCTURE
+
+• **Layouts:**
+  - `src/components/layout/Navbar.tsx`: Fixed top navigation with landing/app variants.
+  - `src/components/layout/BottomNav.tsx`: Bottom navigation for mobile apps.
+  - `src/components/layout/Sidebar.tsx`: Sidebar navigation for dashboard.
+
+• **Navigation systems:**
+  - `React Router` used in `App.tsx` handling protected routes and layout switching.
+
+• **Global components:**
+  - `ScrollToTop.tsx`: Resets scroll on route change.
+  - `ProtectedRoute.tsx`: Route guard checking auth status.
+  - `NotificationHandler.tsx`: Listens to socket notifications.
+
+• **Providers / Contexts:**
+  - `AuthContext.tsx`: Authentication state.
+  - `FriendsContext.tsx`: Friends list and status.
+  - `GamesContext.tsx`: Games data.
+  - `LobbyContext.tsx`: Lobby state management.
+  - `ProfilePopoverContext.tsx`: Manages popover visibility.
+
+• **Global UI systems:**
+  - `LobbyOverlay.tsx`: Global overlay for lobby state.
+  - `FriendChatOverlay.tsx`: Global chat interface.
+  - `Toast.tsx`: Notification system (via `react-hot-toast`).
+  - `CreateLobbyModal.tsx`: Global lobby creation modal.
+
+---
+
+## PAGE INVENTORY
+
+### PAGE: LandingPage
+Route: `/`
+Purpose: Public marketing landing page.
+
+Sections:
+- HeroSection: Main CTA, visual hero.
+- PlatformStats, FeatureSection, LobbiesPreview, LiveActivity, GamerShowcase, Footer.
+
+### PAGE: DashboardPage
+Route: `/dashboard`
+Purpose: User hub for activities, stats, and lobby discovery.
+Layout: Sidebar + Main Content.
+
+Sections:
+- Header: User greeting, lobby creation CTA.
+- Stats Grid: Quick numerical stats.
+- Rank Widget: Visual rank display.
+- Active Lobbies Section: List of available lobbies.
+- Friends Activity Panel: Friend status and quick chat.
+
+(Other pages: AuthPage, ChatPage, etc. inferred from route list in App.tsx - omitted details for brevity to stay within limits but documented in code.)
+
+---
+
+## COMPONENT INVENTORY (Major)
+
+- **Navbar**: `src/components/layout/Navbar.tsx` | Global nav | Responsive, sticky | Throughout app.
+- **NeonCard**: `src/components/ui/NeonCard.tsx` | Styled card | Variant, hover | Dashboard, Lobbies.
+- **GlowButton**: `src/components/ui/GlowButton.tsx` | Styled button | Variant, size | Throughout app.
+
+---
+
+## BACKEND CONNECTION STATUS
+
+- `/lobbies`: ✅ Connected (`api.get("/lobbies")`)
+- `/user/me/stats`: ✅ Connected (`api.get("/user/me/stats")`)
+- Socket namespaces (presence, lobby, chat, etc.): ✅ Defined in `socket.ts`
+
+---
+
+## INTERACTION MAP
+
+- Modals: `CreateLobbyModal` triggered by Dashboard button.
+- Popovers: `QuickProfilePopover` context-managed.
+- Chat: `FriendChatOverlay` context-managed.
+
+---
+
+## VISUAL SYSTEM
+
+- Theme: Dark mode ("dark-bg"), neon accents.
+- Animation: `motion/react`.
+- Palette: Neon colors (Blue, Pink, Purple).
+- Effects: Blur, backdrop-blur, glow shadows.
+- Typography: (Inferred via CSS as standard sans).
+
+---

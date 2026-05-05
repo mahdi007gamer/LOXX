@@ -44,30 +44,37 @@ export const PublicProfilePage = () => {
     );
   }
 
+  const isVip = profile.membership === "VIP" || profile.membership === "PLUS";
+
   return (
     <div className="flex min-h-[calc(100vh-64px)]">
       <Sidebar />
       <main className="flex-1 px-4 py-8 md:mr-64 lg:px-8">
         <div className="container mx-auto max-w-5xl">
           {/* Profile Header */}
-          <div className="relative mb-8 overflow-hidden rounded-3xl bg-white/[0.02] border border-white/10">
-            <div className="h-48 w-full bg-gradient-to-r from-neon-blue/10 via-neon-purple/10 to-neon-pink/10" />
+          <div className={`relative mb-8 overflow-hidden rounded-3xl bg-white/[0.02] border transition-all duration-500 ${isVip ? "border-neon-purple/50 shadow-[0_0_30px_-5px_rgba(168,85,247,0.3)]" : "border-white/10"}`}>
+            <div className={`h-48 w-full bg-gradient-to-r ${isVip ? "from-neon-purple/30 via-neon-pink/30 to-neon-blue/30" : "from-neon-blue/10 via-neon-purple/10 to-neon-pink/10"}`}>
+               {profile.bannerUrl && <img src={profile.bannerUrl} alt="Banner" className="w-full h-full object-cover mix-blend-overlay opacity-50" />}
+            </div>
             
             <div className="px-8 pb-8">
               <div className="relative -mt-16 flex flex-col items-start gap-6 sm:flex-row">
                 <div className="relative group mx-auto sm:mx-0">
-                  <div className="h-32 w-32 rounded-3xl border-4 border-dark-bg bg-dark-card shadow-2xl overflow-hidden">
+                  <div className={`h-32 w-32 rounded-3xl border-4 ${isVip ? "border-neon-purple/80" : "border-dark-bg"} bg-dark-card shadow-2xl overflow-hidden relative`}>
                     <div className="flex h-full w-full items-center justify-center bg-neon-blue/20 text-neon-blue">
                       {profile.avatarUrl ? <img src={profile.avatarUrl} alt={profile.username} className="h-full w-full object-cover" /> : <User size={64} />}
                     </div>
                   </div>
+                  {isVip && (
+                    <div className="absolute -top-3 -right-3 text-2xl drop-shadow-[0_0_10px_rgba(255,215,0,1)]">👑</div>
+                  )}
                 </div>
                 
                 <div className="flex-1 space-y-2 mt-4 sm:mt-16 text-center sm:text-right w-full">
                   <div className="flex items-center justify-center sm:justify-start gap-3">
-                    <h1 className="text-2xl font-black text-white">{profile.displayName || profile.username}</h1>
+                    <h1 className={`text-2xl font-black ${isVip ? "text-transparent bg-clip-text bg-gradient-to-r from-neon-purple to-neon-pink drop-shadow-[0_0_8px_rgba(236,72,153,0.8)]" : "text-white"}`}>{profile.displayName || profile.username}</h1>
                     {profile.membership !== "NONE" && (
-                      <span className="rounded-md bg-neon-purple/20 px-2 py-0.5 text-[10px] font-bold text-neon-purple border border-neon-purple/30">
+                      <span className={`rounded-md px-2 py-0.5 text-[10px] font-bold border ${profile.membership === "VIP" ? "bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-500 border-yellow-500/50" : "bg-neon-purple/20 text-neon-purple border-neon-purple/30"}`}>
                         {profile.membership}
                       </span>
                     )}
@@ -88,19 +95,19 @@ export const PublicProfilePage = () => {
           
           <div className="grid gap-6 md:grid-cols-3">
             <div className="md:col-span-1 space-y-6">
-              <NeonCard className="p-6">
+              <NeonCard className={`p-6 ${isVip ? "border-neon-purple/30 bg-gradient-to-br from-neon-purple/5 to-transparent" : ""}`}>
                 <div className="text-center">
                   <div className="text-[10px] font-bold text-gray-500 mb-1">سطح کاربر</div>
-                  <div className="text-3xl font-black text-neon-blue">{profile.level || 1}</div>
+                  <div className={`text-3xl font-black ${isVip ? "text-neon-pink" : "text-neon-blue"}`}>{profile.level || 1}</div>
                 </div>
               </NeonCard>
             </div>
             
             <div className="md:col-span-2 space-y-6">
               {/* Bio section */}
-              <NeonCard className="p-6">
+              <NeonCard className={`p-6 ${isVip ? "border-neon-pink/30 bg-gradient-to-br from-transparent to-neon-pink/5" : ""}`}>
                 <h3 className="text-lg font-bold text-white mb-4">درباره کاربر</h3>
-                <p className="text-gray-400 text-sm leading-relaxed whitespace-pre-wrap">
+                <p className={`text-sm leading-relaxed whitespace-pre-wrap ${isVip ? "text-gray-200" : "text-gray-400"}`}>
                   {profile.bio || "بیوگرافی تنظیم نشده است."}
                 </p>
               </NeonCard>

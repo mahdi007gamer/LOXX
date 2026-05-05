@@ -52,7 +52,8 @@ export class UserController {
           bio: user.profile?.bio,
           level: user.profile?.level,
           membership: user.profile?.membershipType,
-          avatarUrl: user.profile?.avatarUrl
+          avatarUrl: user.profile?.avatarUrl,
+          bannerUrl: user.profile?.bannerUrl
         }
       });
     } catch (error: any) {

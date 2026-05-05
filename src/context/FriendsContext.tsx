@@ -5,10 +5,18 @@ import { presenceSocket, chatSocket, notifySocket } from "../lib/socket";
 import { useAuth } from "./AuthContext";
 import { toast } from "react-hot-toast";
 
+export interface FriendActivity {
+  id: string;
+  user: string;
+  action: string;
+  time: string;
+}
+
 interface FriendsContextType {
   friends: Friend[];
   requests: FriendRequest[];
   chats: FriendChat[];
+  recentActivities: FriendActivity[];
   addFriend: (username: string) => Promise<void>;
   acceptRequest: (requestId: string) => Promise<void>;
   declineRequest: (requestId: string) => Promise<void>;
@@ -32,6 +40,7 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [friends, setFriends] = useState<Friend[]>([]);
   const [requests, setRequests] = useState<FriendRequest[]>([]);
   const [chats, setChats] = useState<FriendChat[]>([]);
+  const [recentActivities, setRecentActivities] = useState<FriendActivity[]>([]);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [chatTrigger, setChatTrigger] = useState(0);
   const { user } = useAuth();
@@ -181,6 +190,55 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
       };
     }
   }, [user, activeChatId, fetchFriends, fetchRequests]);
+
+  // Handle Lobby Invites globally
+  useEffect(() => {
+    if (!user) return;
+    const handleLobbyInvite = (data: { lobbyId: string, fromId: string, fromUsername: string, gameTitle: string }) => {
+      toast.custom(
+        (t) => (
+          <div className="bg-dark-bg/80 backdrop-blur-xl border border-neon-purple/30 p-4 rounded-3xl shadow-[0_0_40px_-10px_rgba(168,85,247,0.4)] flex flex-col gap-3 min-w-[300px]">
+             <div className="flex items-center gap-3">
+               <div className="h-10 w-10 rounded-full bg-neon-purple/20 flex items-center justify-center text-neon-purple text-lg border border-neon-purple/30 shadow-inner">🎮</div>
+               <div className="flex-1">
+                 <p className="font-bold text-white text-sm">{data.fromUsername} شما را دعوت کرده</p>
+                 <p className="text-xs text-gray-400">به لابی {data.gameTitle} بپیوندید</p>
+               </div>
+             </div>
+             <div className="flex gap-2 w-full mt-2">
+               <button onClick={() => {
+                 toast.dismiss(t.id);
+                 api.post(`/lobby/${data.lobbyId}/join`).then(() => {
+                    toast.success("وارد لابی شدید");
+                    window.location.href = `/lobby/${data.lobbyId}`;
+                 }).catch(() => toast.error("لابی در دسترس نیست"));
+               }} className="flex-1 bg-neon-blue text-dark-bg font-black py-2 rounded-xl text-xs hover:bg-white transition-all shadow-[0_0_15px_-3px_rgba(0,229,255,0.4)]">
+                 قبول دعوت
+               </button>
+               <button onClick={() => {
+                 toast.dismiss(t.id);
+                 // We could notify sender here using dot protocol or API
+               }} className="flex-1 bg-dark-card border border-white/10 text-gray-400 font-bold py-2 rounded-xl text-xs hover:text-white hover:bg-white/5 transition-all">
+                 رد کردن
+               </button>
+             </div>
+          </div>
+        ),
+        { duration: 15000, position: 'top-center' }
+      );
+    }
+    
+    // assuming notifySocket is exported from socket.service.ts or we can use the context one
+    import("../lib/socket.service").then(({ notifySocket }) => {
+       notifySocket.on("lobby.invite", handleLobbyInvite);
+    });
+
+    return () => {
+       import("../lib/socket.service").then(({ notifySocket }) => {
+          notifySocket.off("lobby.invite", handleLobbyInvite);
+       });
+    }
+  }, [user]);
 
   const addFriend = async (username: string) => {
     try {

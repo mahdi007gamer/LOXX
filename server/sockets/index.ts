@@ -284,6 +284,28 @@ export function setupWebSockets(io: Server) {
       } catch (err) {}
     });
 
+    socket.on("invite_player", async (data: { lobbyId: string, targetUserId: string }) => {
+      try {
+         const { lobbyId, targetUserId } = data;
+         const lobby = await prisma.lobby.findUnique({ 
+            where: { id: lobbyId },
+            include: { game: true }
+         });
+         const fromUser = await prisma.user.findUnique({ where: { id: userId } });
+         
+         if (lobby && fromUser) {
+             const payload = {
+                lobbyId,
+                fromId: userId,
+                fromUsername: fromUser.username,
+                gameTitle: lobby.game ? lobby.game.title : lobby.title
+             };
+             // Send to the target user via notify namespace
+             notifyNs.to(`user:${targetUserId}`).emit("lobby.invite", payload);
+         }
+      } catch(e) {}
+    });
+
     socket.on("start_match_confirm", async (data: { lobbyId: string }) => {
       const { lobbyId } = data;
       try {

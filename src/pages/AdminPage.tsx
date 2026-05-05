@@ -2,7 +2,8 @@ import React, { useState, useEffect } from "react";
 import { Sidebar } from "../components/layout/Sidebar";
 import { NeonCard } from "../components/ui/NeonCard";
 import { GlowButton } from "../components/ui/GlowButton";
-import { Users, Gamepad2, Settings, Shield, Plus, Trash2, Edit2, Search } from "lucide-react";
+import { Modal } from "../components/ui/Modal";
+import { Users, Gamepad2, Settings, Shield, Plus, Trash2, Edit2, Search, X } from "lucide-react";
 import api from "../lib/api";
 import { toast } from "react-hot-toast";
 
@@ -65,14 +66,36 @@ export const AdminPage = () => {
     }
   };
 
-  const addGame = async () => {
-    const title = window.prompt("نام بازی:");
-    if (!title) return;
-    const genre = window.prompt("ژانر بازی:") || "عمومی";
+  const [isAddGameModalOpen, setIsAddGameModalOpen] = useState(false);
+  const [newGame, setNewGame] = useState({
+    title: "",
+    bannerUrl: "",
+    icon: "",
+    genres: [] as string[],
+    regions: ["IR", "ME", "EU"] as string[],
+    maxPlayers: 5,
+    modes: [] as string[]
+  });
 
+  const availableGenres = ["شوتر اول شخص", "بتل رویال", "استراتژی", "ورزشی", "موبا", "نقش آفرینی", "مسابقه‌ای", "بقا", "کارتی", "پازل", "سندباکس", "مخفی کاری"];
+  const availableRegions = ["IR", "ME", "EU", "TR", "NA", "AS"];
+
+  const handleCreateGame = async () => {
+    if (!newGame.title) return toast.error("نام بازی الزامی است");
     try {
-      await api.post("/admin/games", { title, genre });
+      await api.post("/admin/games", { 
+        title: newGame.title, 
+        bannerUrl: newGame.bannerUrl, 
+        metadata: {
+          icon: newGame.icon,
+          genres: newGame.genres,
+          regions: newGame.regions,
+          maxPlayers: newGame.maxPlayers,
+          modes: newGame.modes
+        }
+      });
       toast.success("بازی اضافه شد");
+      setIsAddGameModalOpen(false);
       fetchData();
     } catch {
       toast.error("خطا در افزودن بازی");
@@ -208,26 +231,99 @@ export const AdminPage = () => {
                </div>
 
                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {games.map((game) => (
-                    <NeonCard key={game.id} className="p-4 flex gap-4 items-center">
-                      <div className="h-16 w-16 rounded-xl bg-white/5 flex items-center justify-center text-2xl">
-                        {game.title[0]}
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-black text-white">{game.title}</h3>
-                        <p className="text-xs text-gray-500">{game.genre}</p>
-                        <div className="flex gap-2 mt-2">
-                          <button onClick={() => toast("بزودی...")} className="text-[10px] font-black text-neon-blue hover:underline">ویرایش</button>
-                          <button onClick={() => removeGame(game.id)} className="text-[10px] font-black text-red-500 hover:underline">حذف</button>
-                        </div>
-                      </div>
-                    </NeonCard>
-                  ))}
+               {games.length === 0 ? (
+                 <div className="text-center py-12 text-gray-500">موردی یافت نشد</div>
+               ) : games.map((game) => {
+                 let meta: any = {};
+                 try { meta = JSON.parse(game.metadata || "{}"); } catch(e){}
+                 return (
+                   <NeonCard key={game.id} className="p-4 flex gap-4">
+                     <div className="h-16 w-16 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-neon-blue font-black overflow-hidden relative">
+                       {game.bannerUrl && <img src={game.bannerUrl} alt={game.title} className="absolute inset-0 w-full h-full object-cover opacity-50 blur-sm" />}
+                       {meta.icon && <img src={meta.icon} className="w-10 h-10 object-contain relative z-10 drop-shadow-lg" />}
+                       {!meta.icon && game.title[0]}
+                     </div>
+                     <div className="flex-1">
+                       <h3 className="font-black text-white">{game.title}</h3>
+                       <p className="text-[10px] text-gray-500 line-clamp-1">{meta.genres?.join(", ") || game.genre}</p>
+                       <div className="flex gap-2 mt-2">
+                         <button onClick={() => toast("بزودی...")} className="text-[10px] font-black text-neon-blue hover:underline">ویرایش</button>
+                         <button onClick={() => removeGame(game.id)} className="text-[10px] font-black text-red-500 hover:underline">حذف</button>
+                       </div>
+                     </div>
+                   </NeonCard>
+                 );
+               })}
                </div>
             </div>
           )}
         </div>
       </div>
+      <Modal isOpen={isAddGameModalOpen} title="افزودن بازی جدید" onClose={() => setIsAddGameModalOpen(false)}>
+        <div className="space-y-4">
+          <div>
+            <label className="text-xs font-bold text-gray-400 mb-1 block">نام بازی</label>
+            <input type="text" value={newGame.title} onChange={e => setNewGame({...newGame, title: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-neon-blue focus:outline-none transition-all" placeholder="مثال: مافیا آنلاین..." />
+          </div>
+          <div>
+            <label className="text-xs font-bold text-gray-400 mb-1 block">آدرس تصویر کاور (Banner - 1920x1080)</label>
+            <input type="text" value={newGame.bannerUrl} onChange={e => setNewGame({...newGame, bannerUrl: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-neon-blue focus:outline-none transition-all" placeholder="لینک تصویر پس‌زمینه" />
+          </div>
+          <div>
+            <label className="text-xs font-bold text-gray-400 mb-1 block">آدرس آیکن ساز (Icon - PNG شفاف 512x512)</label>
+            <input type="text" value={newGame.icon} onChange={e => setNewGame({...newGame, icon: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-neon-blue focus:outline-none transition-all" placeholder="لینک آیکن" />
+          </div>
+          <div>
+            <label className="text-xs font-bold text-gray-400 mb-2 block">ژانرها (چند انتخاب)</label>
+            <div className="flex flex-wrap gap-2">
+              {availableGenres.map(g => (
+                <button 
+                  key={g} 
+                  onClick={() => setNewGame(prev => ({ ...prev, genres: prev.genres.includes(g) ? prev.genres.filter(x => x !== g) : [...prev.genres, g] }))} 
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${newGame.genres.includes(g) ? 'bg-neon-purple/20 text-neon-purple border-neon-purple/30' : 'bg-white/5 text-gray-400 border-white/10 hover:bg-white/10'}`}
+                >
+                  {g}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="text-xs font-bold text-gray-400 mb-2 block">ریجن‌های پشتیبانی شده</label>
+            <div className="flex flex-wrap gap-2">
+              {availableRegions.map(r => (
+                <button 
+                  key={r} 
+                  onClick={() => setNewGame(prev => ({ ...prev, regions: prev.regions.includes(r) ? prev.regions.filter(x => x !== r) : [...prev.regions, r] }))} 
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${newGame.regions.includes(r) ? 'bg-neon-pink/20 text-neon-pink border-neon-pink/30' : 'bg-white/5 text-gray-400 border-white/10 hover:bg-white/10'}`}
+                >
+                  {r}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-xs font-bold text-gray-400 mb-1 block">حداکثر بازیکن در هر لابی</label>
+              <input type="number" min="2" max="100" value={newGame.maxPlayers} onChange={e => setNewGame({...newGame, maxPlayers: parseInt(e.target.value) || 5})} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-neon-blue focus:outline-none transition-all" />
+            </div>
+            <div>
+               <label className="text-xs font-bold text-gray-400 mb-1 block">مودهای بازی</label>
+               <input 
+                 type="text" 
+                 placeholder="با کاما جدا کنید..." 
+                 value={newGame.modes.join(', ')} 
+                 onChange={e => setNewGame({...newGame, modes: e.target.value.split(',').map(s => s.trim()).filter(Boolean)})} 
+                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-neon-blue focus:outline-none transition-all" 
+               />
+            </div>
+          </div>
+
+          <div className="pt-4 mt-4 border-t border-white/10 flex justify-end gap-3">
+             <button onClick={() => setIsAddGameModalOpen(false)} className="px-4 py-2 rounded-xl text-sm font-bold text-gray-400 hover:text-white transition-colors">انصراف</button>
+             <GlowButton onClick={handleCreateGame}>ایجاد بازی</GlowButton>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

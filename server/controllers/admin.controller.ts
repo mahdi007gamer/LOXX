@@ -67,10 +67,10 @@ export const updateUserMembership = async (req: Request, res: Response) => {
 };
 
 export const createGame = async (req: Request, res: Response) => {
-  const { title, genre, imageUrl } = req.body;
+  const { title, genre, bannerUrl, metadata } = req.body;
   try {
     const game = await prisma.game.create({
-      data: { title, genre, imageUrl }
+      data: { title, bannerUrl, metadata: metadata ? JSON.stringify(metadata) : null }
     });
     res.json({ status: "success", data: game });
   } catch (error: any) {
