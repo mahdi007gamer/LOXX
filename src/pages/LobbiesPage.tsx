@@ -63,8 +63,6 @@ export const LobbiesPage = () => {
   const handleLobbyCreated = () => {
     setIsModalOpen(false);
     setShowToast(true);
-    // Snappy redirection
-    navigate("/lobby/LX-PREMIUM-101");
   };
 
   return (

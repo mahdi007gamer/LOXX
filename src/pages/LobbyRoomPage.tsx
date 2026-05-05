@@ -3,7 +3,8 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { useLobby } from "../context/LobbyContext";
 import { useAuth } from "../context/AuthContext";
-import { chatSocket } from "../lib/socket";
+import { chatSocket, lobbySocket } from "../lib/socket";
+import { toast } from "react-hot-toast";
 import { 
   Users, 
   Shield, 
@@ -188,6 +189,26 @@ export const LobbyRoomPage = () => {
       lobbySocket.emit("reopen_lobby", { lobbyId: lobby?.id });
     }
   };
+  
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (isStarting && countdown > 0) {
+      timer = setTimeout(() => {
+        setCountdown(prev => prev - 1);
+      }, 1000);
+    } else if (countdown === 0 && isStarting) {
+      if (isHost) {
+        lobbySocket.emit("start_match_confirm", { lobbyId: lobby?.id });
+      }
+    }
+    return () => clearTimeout(timer);
+  }, [isStarting, countdown, isHost, lobby?.id]);
+
+  useEffect(() => {
+    if (!isStarting) {
+      setCountdown(5);
+    }
+  }, [isStarting]);
 
   const handlePlayerVolume = (id: string, vol: number) => {
     // Local volume state if needed
@@ -306,7 +327,7 @@ export const LobbyRoomPage = () => {
                   isSelected={selectedPlayer === player.id}
                   onSelect={() => setSelectedPlayer(selectedPlayer === player.id ? null : player.id)}
                   onVolumeChange={(val) => handlePlayerVolume(player.id, val)}
-                  onMute={(id) => setPlayers(prev => prev.map(p => p.id === id ? { ...p, isMuted: !p.isMuted } : p))}
+                  onMute={(id) => console.log("Mute player", id)}
                   onInvite={() => setIsInviteModalOpen(true)}
                   onProfile={(id) => setActiveProfileUserId(id)}
                   onDirectMessage={(id) => {
@@ -460,7 +481,7 @@ export const LobbyRoomPage = () => {
                     </div>
                     <button 
                       onClick={() => {
-                        lobbySocket.emit("invite_player", { lobbyId: lobby?.id, targetUserId: friend.userId });
+                        lobbySocket.emit("invite_player", { lobbyId: lobby?.id, targetUserId: friend.id });
                         toast.success(`دعوت برای ${friend.username} ارسال شد`);
                       }}
                       className="px-4 py-2 rounded-xl bg-neon-blue text-dark-bg text-[10px] font-black uppercase hover:scale-105 transition-transform"

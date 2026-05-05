@@ -5,24 +5,24 @@ export enum FriendStatus {
   OFFLINE = "offline"
 }
 
+export interface LobbyMember {
+  userId: string;
+  username: string;
+  role: "HOST" | "PLAYER" | "SPECTATOR";
+  isReady: boolean;
+}
+
 export interface Lobby {
-  id: number;
-  game: string;
+  id: string;
+  gameId: string;
+  gameTitle?: string;
   title: string;
-  players: number;
-  max: number;
-  rank: string;
-  icon: string;
-  variant: "blue" | "pink" | "purple";
+  hostId: string;
+  maxPlayers: number;
+  status: "WAITING" | "STARTING" | "IN_PROGRESS" | "FINISHED";
   region: string;
-  mode: string;
+  players: LobbyMember[];
   createdAt: string;
-  status: "hot" | "new" | "normal";
-  gameBanner?: string;
-  isPrivate?: boolean;
-  micRequired?: boolean;
-  discordRequired?: boolean;
-  isAgeRestricted?: boolean;
 }
 
 export interface Game {

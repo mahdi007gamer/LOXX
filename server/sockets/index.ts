@@ -53,12 +53,21 @@ export function setupWebSockets(io: Server) {
       });
 
       if (lobby) {
+        let status = lobby.status;
+        if (status === "WAITING" && lobby.members.length >= 2 && lobby.members.every(m => m.isReady || m.userId === lobby.hostId)) {
+          status = "READY";
+        }
+
         lobbyNs.to(`lobby:${lobbyId}`).emit("lobby_update", {
           id: lobby.id,
+          gameId: lobby.gameId,
           gameTitle: lobby.game.title,
-          status: lobby.status,
+          title: lobby.title,
+          status: status,
           maxPlayers: lobby.maxPlayers,
           hostId: lobby.hostId,
+          region: lobby.region,
+          createdAt: lobby.createdAt,
           players: lobby.members.map(m => ({
             userId: m.userId,
             username: m.user.username,
@@ -132,6 +141,70 @@ export function setupWebSockets(io: Server) {
         type: "LOBBY_INVITE",
         data: { lobbyId, fromUserId: userId }
       });
+    });
+
+    socket.on("start_match", async (data: { lobbyId: string }) => {
+      const { lobbyId } = data;
+      try {
+        const lobby = await prisma.lobby.findUnique({ where: { id: lobbyId } });
+        if (lobby && lobby.hostId === userId) {
+          await prisma.lobby.update({
+            where: { id: lobbyId },
+            data: { status: "STARTING" }
+          });
+          await broadcastLobbyUpdate(lobbyId);
+        }
+      } catch (err) {
+        socket.emit("error", { message: "Failed to start match" });
+      }
+    });
+
+    socket.on("cancel_match", async (data: { lobbyId: string }) => {
+      const { lobbyId } = data;
+      try {
+        const lobby = await prisma.lobby.findUnique({ where: { id: lobbyId } });
+        if (lobby && lobby.hostId === userId) {
+          await prisma.lobby.update({
+            where: { id: lobbyId },
+            data: { status: "WAITING" }
+          });
+          await broadcastLobbyUpdate(lobbyId);
+        }
+      } catch (err) {
+        socket.emit("error", { message: "Failed to cancel match" });
+      }
+    });
+
+    socket.on("reopen_lobby", async (data: { lobbyId: string }) => {
+      const { lobbyId } = data;
+      try {
+        const lobby = await prisma.lobby.findUnique({ where: { id: lobbyId } });
+        if (lobby && lobby.hostId === userId) {
+          await prisma.lobby.update({
+            where: { id: lobbyId },
+            data: { status: "WAITING" }
+          });
+          await broadcastLobbyUpdate(lobbyId);
+        }
+      } catch (err) {
+        socket.emit("error", { message: "Failed to reopen lobby" });
+      }
+    });
+
+    socket.on("start_match_confirm", async (data: { lobbyId: string }) => {
+      const { lobbyId } = data;
+      try {
+        const lobby = await prisma.lobby.findUnique({ where: { id: lobbyId } });
+        if (lobby && lobby.hostId === userId) {
+          await prisma.lobby.update({
+            where: { id: lobbyId },
+            data: { status: "IN_PROGRESS" }
+          });
+          await broadcastLobbyUpdate(lobbyId);
+        }
+      } catch (err) {
+        socket.emit("error", { message: "Failed to confirm match start" });
+      }
     });
   });
 

@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { GlowButton } from "../ui/GlowButton";
 import { cn } from "@/src/lib/utils";
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { useGames } from "../../context/GamesContext";
 import api from "../../lib/api";
 import { toast } from "react-hot-toast";
@@ -90,7 +90,7 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
     
     setIsGeneratingAi(true);
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+      const ai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
       
       const prompt = `Write a short, professional, and cool gaming lobby description for LOXX gaming platform. 
       Game: ${selectedGame?.title || "Gaming"}
@@ -99,7 +99,8 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
       Tone: Serious and competitive. 
       Keep it under 30 words. Return ONLY the text of the description in Persian (Farsi).`;
 
-      const result = await ai.getGenerativeModel({ model: "gemini-1.5-flash" }).generateContent(prompt);
+      const model = ai.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const result = await model.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
 
