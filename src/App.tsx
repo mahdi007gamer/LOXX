@@ -27,6 +27,7 @@ import { SettingsPage } from "./pages/SettingsPage";
 import { FriendsPage } from "./pages/FriendsPage";
 import { GamesPage } from "./pages/GamesPage";
 import { MyGamesPage } from "./pages/MyGamesPage";
+import { NotificationHandler } from "./components/NotificationHandler";
 import { cn } from "./lib/utils";
 
 import { AuthProvider } from "./context/AuthContext";
@@ -38,6 +39,7 @@ const AppContent = () => {
 
   return (
     <div className="min-h-screen bg-dark-bg text-gray-100 selection:bg-neon-pink selection:text-white pb-20 md:pb-0">
+      <NotificationHandler />
       {/* Abstract background effects */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10">
         <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-neon-blue/5 rounded-full blur-[120px]" />

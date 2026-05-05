@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { useLobby } from "../context/LobbyContext";
+import { useAuth } from "../context/AuthContext";
+import { chatSocket } from "../lib/socket";
 import { 
   Users, 
   Shield, 
@@ -124,6 +126,27 @@ export const LobbyRoomPage = () => {
     { id: "1", user: "LOXX BOT", text: "لابی ساخته شد. منتظر هم‌تیمی‌ها هستیم...", time: "10:22 PM", isSystem: true },
   ]);
 
+  useEffect(() => {
+    if (id) {
+      chatSocket.emit("join_chat", { type: "lobby", id });
+      
+      const handleNewMessage = (msg: any) => {
+        setMessages(prev => [...prev, {
+          id: msg.id,
+          user: msg.senderName,
+          text: msg.content,
+          time: new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }]);
+      };
+
+      chatSocket.on("new_message", handleNewMessage);
+
+      return () => {
+        chatSocket.off("new_message", handleNewMessage);
+      };
+    }
+  }, [id]);
+
   const [inputMessage, setInputMessage] = useState("");
 
   const handleCopyCode = () => {
@@ -134,14 +157,13 @@ export const LobbyRoomPage = () => {
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputMessage.trim()) return;
-    // Lobby chat via socket? Not implemented yet, so just local for now
-    setMessages(prev => [...prev, {
-      id: Date.now().toString(),
-      user: user?.username || "You",
-      text: inputMessage,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    }]);
+    if (!inputMessage.trim() || !id) return;
+    
+    chatSocket.emit("send_message", {
+      target: { type: "lobby", id },
+      content: inputMessage
+    });
+    
     setInputMessage("");
   };
 

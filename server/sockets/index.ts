@@ -43,32 +43,95 @@ export function setupWebSockets(io: Server) {
   lobbyNs.on("connection", (socket: AuthenticatedSocket) => {
     const userId = socket.userId!;
 
-    socket.on("lobby.join", async (data, callback) => {
-      const { lobbyId } = data;
-      socket.join(`lobby:${lobbyId}`);
-      
+    const broadcastLobbyUpdate = async (lobbyId: string) => {
       const lobby = await prisma.lobby.findUnique({
         where: { id: lobbyId },
-        include: { members: { include: { user: { include: { profile: true } } } } }
+        include: { 
+          game: true,
+          members: { include: { user: { include: { profile: true } } } } 
+        }
       });
 
       if (lobby) {
-        lobbyNs.to(`lobby:${lobbyId}`).emit("lobby.member_joined", {
-          user: { id: userId, username: "User" }, // Simplified
-          membersCount: lobby.members.length
+        lobbyNs.to(`lobby:${lobbyId}`).emit("lobby_update", {
+          id: lobby.id,
+          gameTitle: lobby.game.title,
+          status: lobby.status,
+          maxPlayers: lobby.maxPlayers,
+          hostId: lobby.hostId,
+          players: lobby.members.map(m => ({
+            userId: m.userId,
+            username: m.user.username,
+            role: m.role,
+            isReady: m.isReady
+          }))
         });
+      }
+    };
 
-        if (callback) callback({ status: "ok", data: { lobbyId, members: lobby.members } });
+    socket.on("join_lobby", async (data: { lobbyId: string }) => {
+      const { lobbyId } = data;
+      socket.join(`lobby:${lobbyId}`);
+      
+      try {
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+        lobbyNs.to(`lobby:${lobbyId}`).emit("player_joined", { 
+          userId, 
+          username: user?.username || "Unknown" 
+        });
+        await broadcastLobbyUpdate(lobbyId);
+      } catch (err) {
+        socket.emit("error", { message: "Could not join lobby" });
       }
     });
 
-    socket.on("lobby.ready", async (data, callback) => {
-      await prisma.lobbyMember.update({
-        where: { lobbyId_userId: { lobbyId: data.lobbyId, userId } },
-        data: { isReady: data.ready }
+    socket.on("leave_lobby", async (data: { lobbyId: string }) => {
+      const { lobbyId } = data;
+      socket.leave(`lobby:${lobbyId}`);
+      
+      try {
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+        lobbyNs.to(`lobby:${lobbyId}`).emit("player_left", { 
+          userId, 
+          username: user?.username || "Unknown" 
+        });
+        // Remove from DB if necessary, but here we just leave the socket room
+        // Real logic should probably remove LobbyMember record too
+        await prisma.lobbyMember.delete({
+          where: { lobbyId_userId: { lobbyId, userId } }
+        }).catch(() => {});
+
+        await broadcastLobbyUpdate(lobbyId);
+      } catch (err) {
+        socket.emit("error", { message: "Could not leave lobby" });
+      }
+    });
+
+    socket.on("toggle_ready", async (data: { lobbyId: string }) => {
+      const { lobbyId } = data;
+      try {
+        const member = await prisma.lobbyMember.findUnique({
+          where: { lobbyId_userId: { lobbyId, userId } }
+        });
+        if (member) {
+          await prisma.lobbyMember.update({
+            where: { lobbyId_userId: { lobbyId, userId } },
+            data: { isReady: !member.isReady }
+          });
+          await broadcastLobbyUpdate(lobbyId);
+        }
+      } catch (err) {
+        socket.emit("error", { message: "Failed to toggle ready status" });
+      }
+    });
+
+    socket.on("invite_player", async (data: { lobbyId: string, targetUserId: string }) => {
+      const { lobbyId, targetUserId } = data;
+      // Emit to the target user in the notification namespace
+      notifyNs.to(`user:${targetUserId}`).emit("notification", {
+        type: "LOBBY_INVITE",
+        data: { lobbyId, fromUserId: userId }
       });
-      lobbyNs.to(`lobby:${data.lobbyId}`).emit("lobby.member_updated", { userId, isReady: data.ready });
-      if (callback) callback({ status: "ok" });
     });
   });
 
@@ -76,16 +139,64 @@ export function setupWebSockets(io: Server) {
   chatNs.on("connection", (socket: AuthenticatedSocket) => {
     const userId = socket.userId!;
 
+    socket.on("join_chat", (data: { type: "lobby" | "channel" | "user", id: string }) => {
+      if (data.type === "lobby") socket.join(`lobby:${data.id}`);
+      if (data.type === "channel") socket.join(`channel:${data.id}`);
+      if (data.type === "user") socket.join(`user:${userId}`); // Private chat room
+    });
+
+    socket.on("send_message", async (data: { target: { type: "lobby" | "channel" | "user", id: string }, content: string }) => {
+      const { target, content } = data;
+      
+      try {
+        const user = await prisma.user.findUnique({ 
+          where: { id: userId },
+          include: { profile: true } 
+        });
+
+        const messageData = {
+          id: Math.random().toString(36).substr(2, 9),
+          content,
+          senderId: userId,
+          senderName: user?.username || "Unknown",
+          senderAvatar: user?.profile?.avatarUrl,
+          createdAt: new Date(),
+          targetType: target.type,
+          targetId: target.id
+        };
+
+        if (target.type === "lobby") {
+          chatNs.to(`lobby:${target.id}`).emit("new_message", messageData);
+        } else if (target.type === "channel") {
+          chatNs.to(`channel:${target.id}`).emit("new_message", messageData);
+          // Also save to DB for channels
+          await prisma.message.create({
+            data: {
+              content,
+              senderId: userId,
+              channelId: target.id
+            }
+          });
+        } else if (target.type === "user") {
+          // Private message
+          chatNs.to(`user:${target.id}`).emit("new_message", messageData);
+          socket.emit("new_message", messageData); // Echo to sender
+        }
+      } catch (err) {
+        socket.emit("error", { message: "Failed to send message" });
+      }
+    });
+
     socket.on("chat.send", async (data, callback) => {
+      // Maintaining legacy for now if needed
       const { target, content, tempId } = data;
       const room = target.type === "lobby" ? `lobby:${target.id}` : `channel:${target.id}`;
       
-      // Save to DB
       const msg = await prisma.message.create({
         data: {
           content,
           senderId: userId,
-          channelId: target.id // Simplified: using target.id as channelId
+          channelId: target.id 
         },
         include: { sender: true }
       });
@@ -111,6 +222,12 @@ export function setupWebSockets(io: Server) {
     socket.on("voice.produce", (data, callback) => {
       if (callback) callback({ status: "ok", id: "producer-id" });
     });
+  });
+
+  // Notify Namespace
+  notifyNs.on("connection", (socket: AuthenticatedSocket) => {
+    const userId = socket.userId!;
+    socket.join(`user:${userId}`);
   });
 
   console.log("WebSocket namespaces initialized");
