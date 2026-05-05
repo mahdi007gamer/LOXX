@@ -12,7 +12,7 @@ import { LobbyProvider } from "./context/LobbyContext";
 import { FriendsProvider } from "./context/FriendsContext";
 import { GamesProvider } from "./context/GamesContext";
 import { ProfilePopoverProvider } from "./context/ProfilePopoverContext";
-import { ActiveLobbyWidget } from "./components/ui/ActiveLobbyWidget";
+import { LobbyOverlay } from "./components/LobbyOverlay";
 import { FriendChatOverlay } from "./components/ui/FriendChatOverlay";
 import ScrollToTop from "./components/ScrollToTop";
 import { DashboardPage } from "./pages/DashboardPage";
@@ -90,7 +90,7 @@ function App() {
               <Router>
                 <ScrollToTop />
                 <AppContent />
-                <ActiveLobbyWidget />
+                <LobbyOverlay />
                 <FriendChatOverlay />
                 <Toaster position="bottom-right" />
               </Router>

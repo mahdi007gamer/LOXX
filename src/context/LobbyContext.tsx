@@ -60,6 +60,16 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   useEffect(() => {
     // Listen for member updates using the new dot-protocol
+    lobbySocket.on("lobby.closed", (data: { lobbyId: string }) => {
+      setLobby(prev => {
+        if (prev?.id === data.lobbyId) {
+          toast.error("لابی توسط میزبان بسته شد", { icon: '🚫' });
+          return null;
+        }
+        return prev;
+      });
+    });
+
     lobbySocket.on("lobby.member_joined", (data: { user: any, membersCount: number }) => {
       setLobby(prev => {
         if (!prev) return null;
@@ -148,15 +158,23 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     });
 
     return () => {
+      lobbySocket.off("lobby.closed");
       lobbySocket.off("lobby.member_joined");
       lobbySocket.off("lobby.member_left");
       lobbySocket.off("lobby.member_updated");
+      lobbySocket.off("lobby.status_changed");
       lobbySocket.off("error");
     };
   }, []);
 
+  const [isJoining, setIsJoining] = useState<string | null>(null);
+
   const joinLobby = (lobbyId: string) => {
+    if (lobby?.id === lobbyId || isJoining === lobbyId) return;
+    
+    setIsJoining(lobbyId);
     lobbySocket.emit("lobby.join", { lobbyId }, (ack: any) => {
+      setIsJoining(null);
       if (ack?.status === "ok") {
         setLobby({
           ...ack.data,

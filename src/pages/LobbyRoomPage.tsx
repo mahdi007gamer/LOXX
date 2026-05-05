@@ -76,6 +76,8 @@ export const LobbyRoomPage = () => {
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [activeProfileUserId, setActiveProfileUserId] = useState<string | null>(null);
 
+  const [wasInLobby, setWasInLobby] = useState(false);
+
   // Join lobby on mount
   useEffect(() => {
     if (id) {
@@ -86,13 +88,21 @@ export const LobbyRoomPage = () => {
     };
   }, [id]);
 
+  // Redirect if lobby becomes null (e.g., closed by host)
+  useEffect(() => {
+    if (lobby) setWasInLobby(true);
+    if (wasInLobby && !lobby && id) {
+       navigate("/lobbies");
+    }
+  }, [lobby, wasInLobby, id, navigate]);
+
   const players = lobby?.players?.map(p => ({
     id: p.userId,
-    name: p.username,
+    name: p.username || "Guest Player",
     avatar: p.role === "HOST" ? "👑" : "👤",
     rank: "Verified Gamer",
     isHost: p.role === "HOST",
-    isReady: p.isReady,
+    isReady: !!p.isReady,
     hasMic: true,
     isMuted: !!p.micMuted,
     ping: 25,
@@ -256,7 +266,7 @@ export const LobbyRoomPage = () => {
            <div className="min-w-0 flex-1">
              <div className="flex items-center gap-2 md:gap-3 mb-0.5 md:mb-1">
                <h1 className="text-sm md:text-3xl font-black tracking-tight text-white truncate max-w-[150px] md:max-w-none">
-                 {lobby?.title || "در حال بارگذاری..."}
+                 {lobby ? (lobby.title || "Elite Lobby") : "در حال بارگذاری..."}
                </h1>
                <div className="px-1.5 md:px-3 py-0.5 md:py-1 rounded-full bg-neon-blue/10 border border-neon-blue/20 text-[7px] md:text-[10px] font-black text-neon-blue uppercase tracking-tighter shrink-0">
                  ME
@@ -273,7 +283,7 @@ export const LobbyRoomPage = () => {
           <div className="hidden sm:flex items-center gap-2 bg-black/60 rounded-2xl p-1 border border-white/10">
              <div className="px-4 py-2 text-[10px] font-black text-gray-500 border-l border-white/10 uppercase tracking-widest">کد لابی</div>
              <div className="px-4 py-2 font-mono text-sm text-neon-blue flex items-center gap-3">
-               {lobby?.id?.substring(0, 8).toUpperCase() || "LX-LOBBY"}
+               {lobby?.id ? lobby.id.substring(0, 8).toUpperCase() : "LX-LOBBY"}
                <button onClick={handleCopyCode} className="hover:text-white transition-colors">
                  {copied ? <Check size={16} /> : <Copy size={16} />}
                </button>

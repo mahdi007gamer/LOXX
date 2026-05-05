@@ -107,7 +107,8 @@ export function setupWebSockets(io: Server) {
 
         if (!lobby) throw new Error("RESOURCE_NOT_FOUND");
         if (lobby.password && lobby.password !== password) throw new Error("INVALID_PASSWORD");
-        if (lobby.members.length >= lobby.maxPlayers) throw new Error("LOBBY_FULL");
+        const existingMember = lobby.members.find(m => m.userId === userId);
+        if (!existingMember && lobby.members.length >= lobby.maxPlayers) throw new Error("LOBBY_FULL");
 
         // Join DB
         const member = await prisma.lobbyMember.upsert({
@@ -131,33 +132,39 @@ export function setupWebSockets(io: Server) {
 
         if (ack) {
           const updatedLobby = await getLobbyFullData(lobbyId);
+
+          if (!updatedLobby) {
+            return ack({ status: "error", error: { code: "NOT_FOUND", message: "Lobby not found" } });
+          }
+
           ack({ 
             status: "ok", 
             data: { 
               id: lobbyId,
-              title: updatedLobby?.title,
-              gameTitle: updatedLobby?.game?.title,
-              maxPlayers: updatedLobby?.maxPlayers,
-              hostId: updatedLobby?.hostId,
-              status: updatedLobby?.status,
-              mode: updatedLobby?.mode,
-              selectedMaps: updatedLobby?.selectedMaps,
-              description: updatedLobby?.description,
-              micRequired: updatedLobby?.micRequired,
-              isPrivate: updatedLobby?.isPrivate,
-              players: updatedLobby?.members.map(m => ({
+              title: updatedLobby.title,
+              gameTitle: updatedLobby.game?.title,
+              maxPlayers: updatedLobby.maxPlayers,
+              hostId: updatedLobby.hostId,
+              status: updatedLobby.status,
+              mode: updatedLobby.mode,
+              selectedMaps: updatedLobby.selectedMaps,
+              description: updatedLobby.description,
+              micRequired: updatedLobby.micRequired,
+              isPrivate: updatedLobby.isPrivate,
+              players: updatedLobby.members?.map(m => ({
                 userId: m.userId,
                 username: m.user.username,
                 role: m.role,
                 isReady: m.isReady,
                 micMuted: !m.micStatus
-              })),
+              })) || [],
               you: { role: member.role, isReady: member.isReady, micMuted: !member.micStatus }
             } 
           });
         }
       } catch (err: any) {
-        if (ack) ack({ status: "error", error: { code: err.message, message: "Could not join lobby" } });
+        console.error("[Lobby Join Critical Error]", err);
+        if (ack) ack({ status: "error", error: { code: err.code || "JOIN_FAILED", message: err.message || "Could not join lobby", details: err.stack } });
       }
     });
 
@@ -166,16 +173,24 @@ export function setupWebSockets(io: Server) {
       socket.leave(`lobby:${lobbyId}`);
       
       try {
+        const lobby = await prisma.lobby.findUnique({ where: { id: lobbyId } });
+        
         await prisma.lobbyMember.delete({
           where: { lobbyId_userId: { lobbyId, userId } }
         }).catch(() => {});
 
-        const lobby = await prisma.lobby.findUnique({ where: { id: lobbyId }, include: { members: true } });
-        
-        lobbyNs.to(`lobby:${lobbyId}`).emit("lobby.member_left", { 
-          userId, 
-          membersCount: lobby?.members.length || 0
-        });
+        // If host leaves, delete lobby or transfer ownership
+        if (lobby?.hostId === userId) {
+          // For now, let's delete the lobby if the host leaves
+          await prisma.lobby.delete({ where: { id: lobbyId } }).catch(() => {});
+          lobbyNs.to(`lobby:${lobbyId}`).emit("lobby.closed", { lobbyId });
+        } else {
+          const remainingLobby = await prisma.lobby.findUnique({ where: { id: lobbyId }, include: { members: true } });
+          lobbyNs.to(`lobby:${lobbyId}`).emit("lobby.member_left", { 
+            userId, 
+            membersCount: remainingLobby?.members.length || 0
+          });
+        }
 
         if (ack) ack({ status: "ok" });
       } catch (err) {
@@ -301,17 +316,35 @@ export function setupWebSockets(io: Server) {
           include: { profile: true }
         });
 
+        if (target.type === "lobby") {
+          // Do not save to DB for lobbies as they are ephemeral
+          const msgPayload = {
+            id: tempId || Date.now().toString(),
+            from: { 
+              userId, 
+              username: user?.username, 
+              membership: user?.profile?.membershipType || "NONE" 
+            },
+            content,
+            createdAt: Date.now()
+          };
+          
+          chatNs.to(room).emit("chat.message", msgPayload);
+          if (ack) ack({ status: "ok", data: { tempId, messageId: msgPayload.id, createdAt: msgPayload.createdAt } });
+          return;
+        }
+
         const msg = await prisma.message.create({
           data: {
             content,
             senderId: userId,
-            channelId: target.type === "channel" ? target.id : "lobby-channel-" + target.id, // In real app, lobbies have their own channel
+            channelId: target.id, 
             replyToId: replyToId ? parseInt(replyToId) : undefined
           }
         });
 
         chatNs.to(room).emit("chat.message", {
-          messageId: msg.id.toString(),
+          id: msg.id.toString(), // Use id consistently
           from: { 
             userId, 
             username: user?.username, 
