@@ -174,20 +174,27 @@ export const LobbiesPage = () => {
                         </div>
                         <div className="flex items-center gap-1 px-2 py-1 md:px-3 md:py-1.5 rounded-lg bg-white/5 border border-white/5 text-[9px] md:text-xs font-bold text-neon-blue">
                           <Gamepad2 size={11} />
-                          <span>رایگان</span>
+                          <span>{lobby.mode || "Competitive"}</span>
                         </div>
                       </div>
 
                       {/* Feature Icons Row */}
                       <div className="mb-4 md:mb-6 flex flex-wrap gap-2">
                         {lobby.password && (
-                          <div className="h-7 w-7 md:h-8 md:w-8 rounded-lg bg-neon-pink/10 border border-neon-pink/20 flex items-center justify-center text-neon-pink">
+                          <div className="h-7 w-7 md:h-8 md:w-8 rounded-lg bg-neon-pink/10 border border-neon-pink/20 flex items-center justify-center text-neon-pink" title="رمزگذاری شده">
                             <Lock size={12} />
                           </div>
                         )}
-                        <div className="h-7 w-7 md:h-8 md:w-8 rounded-lg bg-neon-blue/10 border border-neon-blue/20 flex items-center justify-center text-neon-blue">
-                          <Mic size={12} />
-                        </div>
+                        {lobby.micRequired && (
+                          <div className="h-7 w-7 md:h-8 md:w-8 rounded-lg bg-neon-blue/10 border border-neon-blue/20 flex items-center justify-center text-neon-blue" title="میکروفون اجباری">
+                            <Mic size={12} />
+                          </div>
+                        )}
+                        {lobby.isPrivate && (
+                           <div className="h-7 w-7 md:h-8 md:w-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-gray-500" title="خصوصی">
+                             <ShieldCheck size={12} />
+                           </div>
+                        )}
                       </div>
 
                       <div className="flex items-center gap-2 text-[11px] md:text-base text-gray-400 mt-auto">

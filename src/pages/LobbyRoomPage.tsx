@@ -273,7 +273,9 @@ export const LobbyRoomPage = () => {
            
            <div className="min-w-0 flex-1">
              <div className="flex items-center gap-2 md:gap-3 mb-0.5 md:mb-1">
-               <h1 className="text-sm md:text-3xl font-black tracking-tight text-white truncate max-w-[150px] md:max-w-none">[CS2] رقابتی | رنک‌آپ سریع</h1>
+               <h1 className="text-sm md:text-3xl font-black tracking-tight text-white truncate max-w-[150px] md:max-w-none">
+                 {lobby?.title || "در حال بارگذاری..."}
+               </h1>
                <div className="px-1.5 md:px-3 py-0.5 md:py-1 rounded-full bg-neon-blue/10 border border-neon-blue/20 text-[7px] md:text-[10px] font-black text-neon-blue uppercase tracking-tighter shrink-0">
                  ME
                </div>
@@ -675,11 +677,11 @@ const MatchInfoPanel = ({ isStarting, isMatchStarted, countdown, players, onCanc
             <div className="flex items-center gap-8">
                <div className="flex items-center gap-3">
                  <span className="text-[10px] font-black text-gray-600 uppercase">MAP</span>
-                 <span className="text-xs font-bold text-white">Mirage</span>
+                 <span className="text-xs font-bold text-white max-w-[80px] truncate">{lobby?.selectedMaps ? (Array.isArray(JSON.parse(lobby.selectedMaps)) ? JSON.parse(lobby.selectedMaps).join(', ') : lobby.selectedMaps) : "Any"}</span>
                </div>
                <div className="flex items-center gap-3">
                  <span className="text-[10px] font-black text-gray-600 uppercase">MODE</span>
-                 <span className="text-xs font-bold text-neon-blue">Competitive</span>
+                 <span className="text-xs font-bold text-neon-blue">{lobby?.mode || "Competitive"}</span>
                </div>
             </div>
           </motion.div>

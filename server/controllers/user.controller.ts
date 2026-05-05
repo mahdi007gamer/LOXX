@@ -59,4 +59,32 @@ export class UserController {
       res.status(500).json({ status: "error", error: { code: "INTERNAL_ERROR", message: error.message } });
     }
   }
+
+  static async getStats(req: AuthenticatedRequest, res: Response) {
+    try {
+      const stats = await UserService.getDashboardStats(req.user!.userId);
+      res.json({ status: "success", data: stats });
+    } catch (error: any) {
+      res.status(500).json({ status: "error", error: { code: "INTERNAL_ERROR", message: error.message } });
+    }
+  }
+
+  static async getMyGames(req: AuthenticatedRequest, res: Response) {
+    try {
+      const games = await UserService.getMyGames(req.user!.userId);
+      res.json({ status: "success", data: games.map(ug => ug.game) });
+    } catch (error: any) {
+      res.status(500).json({ status: "error", error: { code: "INTERNAL_ERROR", message: error.message } });
+    }
+  }
+
+  static async toggleGame(req: AuthenticatedRequest, res: Response) {
+    try {
+      const { gameId } = req.body;
+      const result = await UserService.toggleGame(req.user!.userId, gameId);
+      res.json({ status: "success", data: result });
+    } catch (error: any) {
+      res.status(500).json({ status: "error", error: { code: "INTERNAL_ERROR", message: error.message } });
+    }
+  }
 }

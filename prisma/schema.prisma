@@ -32,6 +32,7 @@ model User {
   xpLogs          XPLog[]
   subscriptions   Subscription[]
   auditLogs       AuditLog[]
+  userGames       UserGame[]
 }
 
 model Profile {
@@ -72,6 +73,7 @@ model Game {
   metadata        String?  // JSON string
   lobbies         Lobby[]
   channels        Channel[]
+  userGames       UserGame[]
 }
 
 model Channel {
@@ -111,9 +113,25 @@ model Lobby {
   password        String?
   region          String      @default("IR") // IR, TR, EU, ME
   status          String      @default("WAITING") // WAITING, STARTING, IN_PROGRESS, FINISHED
+  mode            String?     // e.g. "Competitive", "Casual"
+  selectedMaps    String?     // JSON string or comma-separated
+  description     String?     // Lobby description
+  skillLevel      String?     // e.g. "Silver - Global"
+  micRequired     Boolean     @default(false)
+  isPrivate       Boolean     @default(false)
   createdAt       DateTime    @default(now())
 
   members         LobbyMember[]
+}
+
+model UserGame {
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  gameId    String
+  game      Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([userId, gameId])
 }
 
 model LobbyMember {

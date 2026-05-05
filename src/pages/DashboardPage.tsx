@@ -35,6 +35,15 @@ export const DashboardPage = () => {
   const [isLobbyModalOpen, setIsLobbyModalOpen] = useState(false);
   const [isFriendsExpanded, setIsFriendsExpanded] = useState(false);
   const [suggestedLobbies, setSuggestedLobbies] = useState([]);
+  const [stats, setStats] = useState({
+    joinedAt: new Date().toISOString(),
+    lobbiesCount: 0,
+    friendsCount: 0,
+    gamesCount: 0,
+    xp: 0,
+    level: 1,
+    unreadNotifications: 0
+  });
   const navigate = useNavigate();
   const { friends, removeFriend, sendMessage } = useFriends();
   const { user } = useAuth();
@@ -45,6 +54,11 @@ export const DashboardPage = () => {
       try {
         const lobbiesRes = await api.get("/lobbies");
         setSuggestedLobbies(lobbiesRes.data.data.items);
+
+        const statsRes = await api.get("/user/me/stats");
+        if (statsRes.data.status === "success") {
+          setStats(statsRes.data.data);
+        }
       } catch (err) {
         console.error("Failed to fetch dashboard data", err);
       } finally {
@@ -55,6 +69,10 @@ export const DashboardPage = () => {
   }, []);
 
   const visibleFriends = isFriendsExpanded ? friends : friends.slice(0, 3);
+  
+  const memberDays = stats.joinedAt 
+    ? Math.floor((new Date().getTime() - new Date(stats.joinedAt).getTime()) / (1000 * 3600 * 24))
+    : 0;
 
   return (
     <div className="flex min-h-[calc(100vh-64px)]">
@@ -87,10 +105,10 @@ export const DashboardPage = () => {
             {/* Main Stats Grid */}
             <div className="lg:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-4">
               {[
-                { label: "روز عضویت", val: "۱۴", icon: Activity, color: "blue" },
-                { label: "لابی‌های جوین شده", val: "۲۸", icon: Target, color: "pink" },
-                { label: "تعداد دوستان", val: friends.length, icon: Users, color: "purple" },
-                { label: "لابی‌های آماده", val: "۱۲", icon: Trophy, color: "pink" },
+                { label: "روز عضویت", val: memberDays || 1, icon: Activity, color: "blue" },
+                { label: "لابی‌های جوین شده", val: stats.lobbiesCount, icon: Target, color: "pink" },
+                { label: "تعداد دوستان", val: stats.friendsCount, icon: Users, color: "purple" },
+                { label: "لابی‌های آماده", val: suggestedLobbies.length, icon: Trophy, color: "pink" },
               ].map((stat, i) => (
                 <motion.div
                   key={i}
@@ -134,20 +152,20 @@ export const DashboardPage = () => {
                     <div className="flex items-center gap-4">
                        <div className="h-16 w-16 rounded-full border-2 border-neon-blue p-1 flex items-center justify-center bg-white/5 relative">
                           <Trophy className="text-neon-blue" size={32} />
-                          <div className="absolute -bottom-1 -right-1 h-6 w-6 rounded-full bg-white text-dark-bg border-2 border-dark-bg flex items-center justify-center text-[10px] font-black italic">
-                             #{user?.rank || "0"}
+                          <div className="absolute -bottom-1 -right-1 h-6 w-6 rounded-full bg-white text-dark-bg border-2 border-dark-bg flex items-center justify-center text-[10px] font-black italic text-right" dir="ltr">
+                             #{stats.level > 5 ? "Top 100" : "New"}
                           </div>
                        </div>
                        <div>
                           <p className="text-[10px] text-gray-500 font-bold uppercase mb-0.5">رتبه شما در این هفته</p>
-                          <h4 className="text-xl font-black text-white uppercase italic">سطح {user?.level || "1"}</h4>
+                          <h4 className="text-xl font-black text-white uppercase italic">سطح {stats.level}</h4>
                           <div className="flex items-center gap-1.5 mt-1 font-bold">
                              <div className="flex items-center gap-1 text-[10px] text-neon-blue">
                                 <Zap size={10} />
                                 <span>امتیاز (XP)</span>
                              </div>
                              <div className="h-3 w-[1px] bg-white/10" />
-                             <span className="text-[10px] text-gray-500">{user?.xp || "0"} امتیاز</span>
+                             <span className="text-[10px] text-gray-500">{stats.xp} امتیاز</span>
                           </div>
                        </div>
                     </div>

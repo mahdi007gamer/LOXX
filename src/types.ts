@@ -22,6 +22,12 @@ export interface Lobby {
   status: "WAITING" | "STARTING" | "IN_PROGRESS" | "FINISHED";
   region: string;
   players: LobbyMember[];
+  mode?: string;
+  selectedMaps?: string[];
+  description?: string;
+  skillLevel?: string;
+  micRequired?: boolean;
+  isPrivate?: boolean;
   createdAt: string;
 }
 
@@ -30,6 +36,9 @@ export interface Game {
   title: string;
   genre: string;
   image: string;
+  bannerUrl?: string;
+  variants?: string[];
+  maps?: string[];
   activeLobbies: number;
   playerCount: string;
   friendsPlaying: string[]; 

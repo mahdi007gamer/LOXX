@@ -63,11 +63,11 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
 
   const selectedGame = games?.find(g => g.id === formData.gameId);
   const activeGameInfo = selectedGame ? {
-    modes: (selectedGame as any).variants || ["Competitive"],
-    maps: ["Mirage", "Inferno", "Dust 2", "Nuke"], // Placeholder maps for now
+    modes: selectedGame.variants || ["Competitive", "Casual", "Ranked"],
+    maps: selectedGame.maps || ["Mirage", "Inferno", "Dust 2", "Nuke", "Overpass", "Vertigo"],
     icon: (selectedGame as any).icon || "🎮",
     color: "blue",
-    banner: (selectedGame as any).banner || ""
+    banner: selectedGame.bannerUrl || "https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&q=80&w=2070"
   } : {
     modes: ["Competitive"],
     maps: [],
@@ -86,7 +86,10 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
   };
 
   const generateAiDescription = async () => {
-    if (!process.env.GEMINI_API_KEY) return;
+    if (!process.env.GEMINI_API_KEY) {
+      toast.error("Gemini API Key is not configured");
+      return;
+    }
     
     setIsGeneratingAi(true);
     try {
@@ -105,10 +108,14 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
       const text = response.text();
 
       if (text) {
-        setFormData(prev => ({ ...prev, description: text.trim() }));
+        setFormData(prev => {
+           console.log("Setting AI description:", text);
+           return { ...prev, description: text.trim() };
+        });
       }
     } catch (error) {
       console.error("AI Generation failed:", error);
+      toast.error("خطا در تولید هوشمند توضیحات");
     } finally {
       setIsGeneratingAi(false);
     }
@@ -132,7 +139,8 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
         micRequired: formData.micRequired,
         isPrivate: formData.isPrivate,
         description: formData.description,
-        variant: formData.mode
+        mode: formData.mode,
+        selectedMaps: formData.selectedMaps
       });
 
       if (response.data.status === "success") {
@@ -218,7 +226,16 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
                       </div>
                       <select
                         value={formData.gameId}
-                        onChange={(e) => setFormData(prev => ({ ...prev, gameId: e.target.value, mode: games.find(g => g.id === e.target.value)?.variants[0] || "Competitive" }))}
+                        onChange={(e) => {
+                          const gId = e.target.value;
+                          const game = games?.find(g => g.id === gId);
+                          setFormData(prev => ({ 
+                            ...prev, 
+                            gameId: gId, 
+                            mode: game?.variants?.[0] || "Competitive",
+                            selectedMaps: [] 
+                          }));
+                        }}
                         className="w-full rounded-2xl border border-white/10 bg-white/5 py-4 px-5 text-white focus:border-neon-blue/50 focus:outline-none transition-all appearance-none"
                       >
                         {games.map(game => (

@@ -26,4 +26,60 @@ export class UserService {
       }
     });
   }
+
+  static async getDashboardStats(userId: string) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        createdAt: true,
+        profile: true,
+        _count: {
+          select: {
+            sentFriendReq: { where: { status: "ACCEPTED" } },
+            recvFriendReq: { where: { status: "ACCEPTED" } },
+            lobbyMembers: true,
+            userGames: true,
+            notifications: { where: { isRead: false } }
+          }
+        }
+      }
+    });
+
+    const friendsCount = (user?._count.sentFriendReq || 0) + (user?._count.recvFriendReq || 0);
+
+    return {
+      joinedAt: user?.createdAt,
+      lobbiesCount: user?._count.lobbyMembers || 0,
+      friendsCount,
+      gamesCount: user?._count.userGames || 0,
+      xp: user?.profile?.xp || 0,
+      level: user?.profile?.level || 1,
+      unreadNotifications: user?._count.notifications || 0
+    };
+  }
+
+  static async toggleGame(userId: string, gameId: string) {
+    const existing = await prisma.userGame.findUnique({
+      where: { userId_gameId: { userId, gameId } }
+    });
+
+    if (existing) {
+      await prisma.userGame.delete({
+        where: { userId_gameId: { userId, gameId } }
+      });
+      return { added: false };
+    } else {
+      await prisma.userGame.create({
+        data: { userId, gameId }
+      });
+      return { added: true };
+    }
+  }
+
+  static async getMyGames(userId: string) {
+    return prisma.userGame.findMany({
+      where: { userId },
+      include: { game: true }
+    });
+  }
 }

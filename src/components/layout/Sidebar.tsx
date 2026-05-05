@@ -29,7 +29,7 @@ const menuItems = [
 ];
 
 export const Sidebar = () => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   
   return (
     <aside className="fixed right-0 top-16 hidden h-[calc(100vh-64px)] w-64 border-l border-white/10 bg-dark-bg/50 backdrop-blur-lg md:block">
@@ -68,7 +68,10 @@ export const Sidebar = () => {
         </div>
 
         <div className="px-4">
-          <button className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-neon-pink/10 hover:text-neon-pink transition-all">
+          <button 
+            onClick={logout}
+            className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-neon-pink/10 hover:text-neon-pink transition-all"
+          >
             <LogOut size={20} />
             <span className="font-medium">خروج</span>
           </button>

@@ -23,6 +23,11 @@ export const GamesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         if (response.data.status === "success") {
           setAllGames(response.data.data);
         }
+
+        const myGamesRes = await api.get("/user/me/games");
+        if (myGamesRes.data.status === "success") {
+          setMyGames(myGamesRes.data.data.map((g: any) => g.id));
+        }
       } catch (error) {
         console.error("Failed to fetch games:", error);
       } finally {
@@ -33,12 +38,20 @@ export const GamesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     fetchGames();
   }, []);
 
-  const toggleMyGame = (gameId: string) => {
-    setMyGames(prev => 
-      prev.includes(gameId) 
-        ? prev.filter(id => id !== gameId) 
-        : [...prev, gameId]
-    );
+  const toggleMyGame = async (gameId: string) => {
+    try {
+      const response = await api.post("/user/me/games/toggle", { gameId });
+      if (response.data.status === "success") {
+        const isAdded = response.data.data.added;
+        setMyGames(prev => 
+          isAdded 
+            ? [...prev, gameId] 
+            : prev.filter(id => id !== gameId)
+        );
+      }
+    } catch (error) {
+      console.error("Failed to toggle game:", error);
+    }
   };
 
   return (

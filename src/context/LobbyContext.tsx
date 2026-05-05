@@ -13,6 +13,7 @@ interface LobbyMember {
 
 interface LobbyState {
   id: string | null;
+  title?: string;
   gameTitle: string;
   players: LobbyMember[];
   maxPlayers: number;
@@ -20,6 +21,11 @@ interface LobbyState {
   hostId: string | null;
   countdown?: number;
   isMuted?: boolean;
+  mode?: string;
+  selectedMaps?: string;
+  description?: string;
+  micRequired?: boolean;
+  isPrivate?: boolean;
 }
 
 interface LobbyContextType {

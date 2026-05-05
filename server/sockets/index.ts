@@ -130,8 +130,18 @@ export function setupWebSockets(io: Server) {
           ack({ 
             status: "ok", 
             data: { 
-              lobbyId, 
-              members: updatedLobby?.members.map(m => ({
+              id: lobbyId,
+              title: updatedLobby?.title,
+              gameTitle: updatedLobby?.game?.title,
+              maxPlayers: updatedLobby?.maxPlayers,
+              hostId: updatedLobby?.hostId,
+              status: updatedLobby?.status,
+              mode: updatedLobby?.mode,
+              selectedMaps: updatedLobby?.selectedMaps,
+              description: updatedLobby?.description,
+              micRequired: updatedLobby?.micRequired,
+              isPrivate: updatedLobby?.isPrivate,
+              players: updatedLobby?.members.map(m => ({
                 userId: m.userId,
                 username: m.user.username,
                 role: m.role,

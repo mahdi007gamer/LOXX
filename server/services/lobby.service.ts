@@ -4,13 +4,19 @@ export class LobbyService {
   static async createLobby(userId: string, data: any) {
     return prisma.lobby.create({
       data: {
-        gameId: data.game_id || data.gameId,
+        gameId: data.gameId || data.game_id,
         title: data.title,
         hostId: userId,
-        maxPlayers: data.max_players || data.maxPlayers || 5,
+        maxPlayers: data.maxPlayers || data.max_players || 5,
         password: data.password,
         region: data.region || "IR",
         status: "WAITING",
+        mode: data.mode,
+        selectedMaps: Array.isArray(data.selectedMaps) ? JSON.stringify(data.selectedMaps) : data.selectedMaps,
+        description: data.description,
+        skillLevel: data.skillLevel || data.rankRange,
+        micRequired: !!data.micRequired,
+        isPrivate: !!data.isPrivate,
         members: {
           create: {
             userId,
