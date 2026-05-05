@@ -84,7 +84,7 @@ export const LobbyRoomPage = () => {
     };
   }, [id]);
 
-  const players = lobby?.players.map(p => ({
+  const players = lobby?.players?.map(p => ({
     id: p.userId,
     name: p.username,
     avatar: p.role === "HOST" ? "👑" : "👤",
@@ -115,7 +115,7 @@ export const LobbyRoomPage = () => {
     });
   }
 
-  const isReady = lobby?.players.find(p => p.userId === user?.id)?.isReady || false;
+  const isReady = lobby?.players?.find(p => p.userId === user?.id)?.isReady || false;
   const isHost = lobby?.hostId === user?.id;
   
   const isStarting = lobby?.status === "STARTING";

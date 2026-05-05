@@ -23,31 +23,33 @@ export const ActiveLobbyWidget = () => {
   const [copied, setCopied] = useState(false);
 
   // Don't show if not in a lobby OR if already on the lobby room page
-  if (!lobby.id || location.pathname.startsWith("/lobby/")) {
+  if (!lobby || !lobby.id || location.pathname.startsWith("/lobby/")) {
     return null;
   }
 
   const handleCopyCode = (e: React.MouseEvent) => {
     e.stopPropagation();
-    navigator.clipboard.writeText(lobby.lobbyCode);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    if (lobby?.id) {
+      navigator.clipboard.writeText(lobby.id);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
-  const statusColors = {
-    waiting: "bg-yellow-500",
-    ready: "bg-green-500",
-    starting: "bg-purple-500",
-    started: "bg-green-600",
-    closing: "bg-red-500",
+  const statusColors: Record<string, string> = {
+    WAITING: "bg-yellow-500",
+    READY: "bg-green-500",
+    STARTING: "bg-purple-500",
+    IN_PROGRESS: "bg-green-600",
+    FINISHED: "bg-red-500",
   };
 
-  const statusFarsi = {
-    waiting: "در انتظار بازیکن",
-    ready: "همه آماده",
-    starting: "در حال شروع...",
-    started: "در حال بازی",
-    closing: "در حال بستن",
+  const statusFarsi: Record<string, string> = {
+    WAITING: "در انتظار بازیکن",
+    READY: "همه آماده",
+    STARTING: "در حال شروع...",
+    IN_PROGRESS: "در حال بازی",
+    FINISHED: "پایان بازی",
   };
 
   return (
@@ -55,7 +57,7 @@ export const ActiveLobbyWidget = () => {
       initial={{ x: 100, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
       exit={{ x: 100, opacity: 0 }}
-      className="fixed bottom-[88px] md:bottom-6 right-4 md:right-6 z-[9999] pointer-events-none"
+      className="fixed bottom-[88px] md:bottom-6 right-4 md:right-6 z-[9999] pointer-events-auto"
       dir="rtl"
     >
       <motion.div
@@ -63,20 +65,20 @@ export const ActiveLobbyWidget = () => {
         onMouseLeave={() => setIsExpanded(false)}
         onClick={() => navigate(`/lobby/${lobby.id}`)}
         className={cn(
-          "pointer-events-auto cursor-pointer glass border border-white/10 rounded-full flex items-center transition-all duration-500 shadow-2xl overflow-hidden",
+          "cursor-pointer glass border border-white/10 rounded-full flex items-center transition-all duration-500 shadow-2xl overflow-hidden",
           isExpanded ? "p-2 pl-6" : "p-2"
         )}
       >
         {/* Status Indicator */}
         <div className="relative flex-shrink-0">
-          <div className={cn("h-10 w-10 rounded-full flex items-center justify-center text-white relative z-10", statusColors[lobby.status])}>
-            {lobby.status === "starting" ? (
+          <div className={cn("h-10 w-10 rounded-full flex items-center justify-center text-white relative z-10", statusColors[lobby.status] || "bg-gray-500")}>
+            {lobby.status === "STARTING" ? (
               <span className="text-xs font-black">{lobby.countdown}</span>
             ) : (
               <Users size={18} />
             )}
           </div>
-          <div className={cn("absolute inset-0 rounded-full animate-ping opacity-20", statusColors[lobby.status])} />
+          <div className={cn("absolute inset-0 rounded-full animate-ping opacity-20", statusColors[lobby.status] || "bg-gray-500")} />
         </div>
 
         <AnimatePresence>
@@ -90,12 +92,12 @@ export const ActiveLobbyWidget = () => {
               <div className="flex flex-col">
                 <div className="flex items-center gap-2">
                   <img src="/logo.png" alt="LX" className="h-4 w-auto drop-shadow-[0_0_5px_rgba(0,229,255,0.5)]" />
-                  <span className="text-[11px] font-black text-white">{lobby.game} | رقابتی</span>
-                  <span className={cn("h-1.5 w-1.5 rounded-full", statusColors[lobby.status])} />
+                  <span className="text-[11px] font-black text-white">{lobby.gameTitle} | رقابتی</span>
+                  <span className={cn("h-1.5 w-1.5 rounded-full", statusColors[lobby.status] || "bg-gray-500")} />
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{lobby.playersCount} / {lobby.maxPlayers} نفر</span>
-                  <span className="text-[9px] font-bold text-neon-blue">{statusFarsi[lobby.status]}</span>
+                  <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{lobby.players.length} / {lobby.maxPlayers} نفر</span>
+                  <span className="text-[9px] font-bold text-neon-blue">{statusFarsi[lobby.status] || lobby.status}</span>
                 </div>
               </div>
 

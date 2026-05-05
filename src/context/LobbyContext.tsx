@@ -18,6 +18,8 @@ interface LobbyState {
   maxPlayers: number;
   status: LobbyStatus;
   hostId: string | null;
+  countdown?: number;
+  isMuted?: boolean;
 }
 
 interface LobbyContextType {
@@ -25,6 +27,7 @@ interface LobbyContextType {
   joinLobby: (lobbyId: string) => void;
   leaveLobby: () => void;
   toggleReady: () => void;
+  setLobbyMuted: (muted: boolean) => void;
 }
 
 const LobbyContext = createContext<LobbyContextType | undefined>(undefined);
@@ -34,7 +37,7 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   useEffect(() => {
     lobbySocket.on("lobby_update", (data) => {
-      setLobby(data);
+      setLobby(prev => ({ ...prev, ...data }));
     });
 
     lobbySocket.on("player_joined", (data) => {
@@ -74,12 +77,17 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
+  const setLobbyMuted = (muted: boolean) => {
+    setLobby(prev => prev ? { ...prev, isMuted: muted } : null);
+  };
+
   return (
     <LobbyContext.Provider value={{ 
       lobby, 
       joinLobby,
       leaveLobby,
-      toggleReady
+      toggleReady,
+      setLobbyMuted
     }}>
       {children}
     </LobbyContext.Provider>

@@ -199,7 +199,7 @@ export const LobbiesPage = () => {
                     <div className="mt-2 flex items-center justify-between border-t border-white/5 p-3 md:p-5 transition-all relative overflow-hidden h-14 md:h-18">
                       <div className="flex items-center gap-1.5 md:gap-2.5 transition-transform duration-300 md:group-hover:-translate-y-20">
                          <div className="flex -space-x-2">
-                           {lobby.members?.slice(0, 3).map((m: any) => (
+                           {lobby.members?.slice(0, 3)?.map((m: any) => (
                               <div key={m.userId} className="h-6 w-6 md:h-8 md:w-8 rounded-full border border-dark-card bg-white/10 flex items-center justify-center text-[10px] overflow-hidden">
                                 {m.user?.profile?.avatarUrl ? <img src={m.user.profile.avatarUrl} alt="" /> : "👤"}
                               </div>
