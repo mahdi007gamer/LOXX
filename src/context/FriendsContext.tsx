@@ -109,6 +109,24 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
         if (!isSelf && activeChatId !== from.userId) {
           toast(`پیام جدید از ${from.username}`, { icon: '💬' });
+          // Force open chat panel
+          setActiveChatId(from.userId);
+          setChatTrigger(t => t + 1);
+          // Play a simple notification sound (using base64 inline audio to avoid missing assets)
+          try {
+            const beep = new Audio("data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU"); // tiny silent/beep header, better to just use a real URL if exists or construct oscillator
+            const ctx = new AudioContext();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.type = "sine";
+            osc.frequency.setValueAtTime(880, ctx.currentTime);
+            gain.gain.setValueAtTime(0.1, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.5);
+          } catch(e) {}
         }
       });
 

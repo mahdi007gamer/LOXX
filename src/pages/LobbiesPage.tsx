@@ -41,7 +41,7 @@ export const LobbiesPage = () => {
     try {
       const response = await api.get("/lobbies");
       if (response.data.status === "success") {
-        setLobbies(response.data.data.items);
+        setLobbies(response.data.data.items.filter((l: any) => l.status === "READY" || l.status === "WAITING" || l.status === "STARTING" || l.status === "IN_PROGRESS"));
       }
     } catch (error) {
       console.error("Failed to fetch lobbies:", error);
@@ -217,14 +217,23 @@ export const LobbiesPage = () => {
                       
                       {/* Join Button */}
                       <div className="md:absolute md:inset-0 md:flex md:items-center md:justify-center md:translate-y-full md:group-hover:translate-y-0 transition-transform duration-300 md:bg-gradient-to-t md:from-[#0a0a0f] md:to-transparent z-10 px-3 md:px-0">
-                        <GlowButton 
-                          variant={i % 3 === 0 ? "blue" : i % 3 === 1 ? "pink" : "purple"} 
-                          className="h-8 md:h-10 px-3 md:px-8 !rounded-lg text-[9px] md:text-[11px] font-black uppercase italic"
-                          onClick={() => navigate(`/lobby/${lobby.id}`)}
-                        >
-                          <span className="md:hidden">همین الان وارد شو!!</span>
-                          <span className="hidden md:inline">الان وارد لابی شو!!</span>
-                        </GlowButton>
+                        {lobby.status === "READY" || lobby.status === "WAITING" ? (
+                          <GlowButton 
+                            variant={i % 3 === 0 ? "blue" : i % 3 === 1 ? "pink" : "purple"} 
+                            className="h-8 md:h-10 px-3 md:px-8 !rounded-lg text-[9px] md:text-[11px] font-black uppercase italic"
+                            onClick={() => navigate(`/lobby/${lobby.id}`)}
+                          >
+                            <span className="md:hidden">همین الان وارد شو!!</span>
+                            <span className="hidden md:inline">الان وارد لابی شو!!</span>
+                          </GlowButton>
+                        ) : (
+                          <button 
+                            disabled
+                            className="h-8 md:h-10 px-3 md:px-8 bg-black/40 border border-white/5 rounded-lg text-[9px] md:text-[11px] font-black uppercase italic text-gray-500 cursor-not-allowed"
+                          >
+                            در حال بازی
+                          </button>
+                        )}
                       </div>
                     </div>
                   </NeonCard>

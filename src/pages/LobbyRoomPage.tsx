@@ -92,6 +92,12 @@ export const LobbyRoomPage = () => {
   const [countdown, setCountdown] = useState(5);
   const [localVolume, setLocalVolume] = useState(0);
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
+  
+  // Voice Settings
+  const [voiceMode, setVoiceMode] = useState<"activation" | "ptt">("activation");
+  const [pttKey, setPttKey] = useState<string>("v");
+  const [isPttPressed, setIsPttPressed] = useState(false);
+  const [isListeningForKey, setIsListeningForKey] = useState(false);
 
   useEffect(() => {
     if (lobby) setWasInLobby(true);
@@ -223,9 +229,38 @@ export const LobbyRoomPage = () => {
 
   useEffect(() => {
     if (localStream && localStream.getAudioTracks().length > 0) {
-      localStream.getAudioTracks()[0].enabled = !isMicMuted;
+      if (isMicMuted) {
+        localStream.getAudioTracks()[0].enabled = false;
+      } else if (voiceMode === "ptt") {
+        localStream.getAudioTracks()[0].enabled = isPttPressed;
+      } else {
+        localStream.getAudioTracks()[0].enabled = true;
+      }
     }
-  }, [isMicMuted, localStream]);
+  }, [isMicMuted, localStream, voiceMode, isPttPressed]);
+
+  useEffect(() => {
+    if (voiceMode !== "ptt") return;
+    
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if (e.key.toLowerCase() === pttKey.toLowerCase()) {
+        if (!isPttPressed) setIsPttPressed(true);
+      }
+    };
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() === pttKey.toLowerCase()) {
+        setIsPttPressed(false);
+      }
+    };
+    
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+    };
+  }, [voiceMode, pttKey, isPttPressed]);
 
   const { remoteStreams } = useWebRTC(lobby?.id || null, localStream, user?.id);
 
@@ -239,8 +274,8 @@ export const LobbyRoomPage = () => {
     { id: "1", user: "LOXX BOT", text: "لابی ساخته شد. منتظر همرزمان هستیم...", time: "System", isSystem: true, fromUserId: "system" },
     ...(lobby?.messages?.map(m => ({
       id: m.id,
-      fromUserId: m.from.userId,
-      user: m.from.username || "بازیکن",
+      fromUserId: m.from?.userId,
+      user: m.from?.username || "بازیکن",
       text: m.content,
       time: new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     })) || [])
@@ -710,22 +745,56 @@ export const LobbyRoomPage = () => {
                 <div className="space-y-2">
                   <label className="text-xs font-black text-gray-400">حالت صحبت (Voice Mode)</label>
                   <div className="flex gap-2">
-                    <button className="flex-1 py-2 rounded-xl bg-neon-pink/10 border border-neon-pink/20 text-neon-pink text-xs font-black">
+                    <button 
+                      onClick={() => setVoiceMode("activation")}
+                      className={cn(
+                        "flex-1 py-2 rounded-xl text-xs font-black transition",
+                        voiceMode === "activation" 
+                          ? "bg-neon-pink/10 border border-neon-pink/20 text-neon-pink" 
+                          : "bg-white/5 border border-white/5 text-gray-400 hover:bg-white/10"
+                      )}
+                    >
                       Voice Activation
                     </button>
-                    <button className="flex-1 py-2 rounded-xl bg-white/5 border border-white/5 text-gray-400 text-xs font-black hover:bg-white/10 transition">
+                    <button 
+                      onClick={() => setVoiceMode("ptt")}
+                      className={cn(
+                        "flex-1 py-2 rounded-xl text-xs font-black transition",
+                        voiceMode === "ptt" 
+                          ? "bg-neon-pink/10 border border-neon-pink/20 text-neon-pink" 
+                          : "bg-white/5 border border-white/5 text-gray-400 hover:bg-white/10"
+                      )}
+                    >
                       Push to Talk
                     </button>
                   </div>
                 </div>
                 
-                <div className="space-y-2 opacity-50 pointer-events-none">
+                <div className={cn("space-y-2 transition-opacity", voiceMode !== "ptt" && "opacity-50 pointer-events-none")}>
                   <label className="text-xs font-black text-gray-400 flex items-center justify-between">
                     کلید Push to Talk
-                    <span className="text-[9px] bg-white/10 px-2 py-0.5 rounded text-white font-mono">V</span>
+                    <span className="text-[9px] bg-white/10 px-2 py-0.5 rounded text-white font-mono uppercase">{pttKey}</span>
                   </label>
-                  <button className="w-full py-2 rounded-xl bg-white/5 border border-white/10 text-gray-500 text-xs font-black text-left pl-4">
-                     Click to set keybinding...
+                  <button 
+                    onClick={() => {
+                        setIsListeningForKey(true);
+                    }}
+                    onKeyDown={(e) => {
+                        if (isListeningForKey) {
+                            e.preventDefault();
+                            if (e.key !== "Escape") {
+                                setPttKey(e.key);
+                            }
+                            setIsListeningForKey(false);
+                        }
+                    }}
+                    onBlur={() => setIsListeningForKey(false)}
+                    className={cn(
+                       "w-full py-2 rounded-xl bg-white/5 border border-white/10 text-gray-500 text-xs font-black text-left pl-4 focus:outline-none transition-colors",
+                       isListeningForKey && "border-neon-pink text-neon-pink"
+                    )}
+                  >
+                     {isListeningForKey ? "Press any key..." : "Click to set keybinding..."}
                   </button>
                 </div>
               </div>

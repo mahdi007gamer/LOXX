@@ -4,6 +4,23 @@ import { voiceSocket } from '../lib/socket';
 export const useWebRTC = (roomId: string | null, localStream: MediaStream | null, userId: string | undefined) => {
   const peersRef = useRef<Map<string, RTCPeerConnection>>(new Map());
   const [remoteStreams, setRemoteStreams] = useState<Map<string, MediaStream>>(new Map());
+  const localStreamRef = useRef<MediaStream | null>(null);
+
+  useEffect(() => {
+    // If localStream changed, add tracks to all existing peers
+    if (localStream && localStream !== localStreamRef.current) {
+      localStreamRef.current = localStream;
+      peersRef.current.forEach(pc => {
+        const senders = pc.getSenders();
+        localStream.getTracks().forEach(track => {
+            const isAlreadySending = senders.some(s => s.track === track);
+            if (!isAlreadySending) {
+               pc.addTrack(track, localStream);
+            }
+        });
+      });
+    }
+  }, [localStream]);
 
   useEffect(() => {
     if (!roomId || !userId) return;
@@ -19,9 +36,9 @@ export const useWebRTC = (roomId: string | null, localStream: MediaStream | null
         ]
       });
 
-      if (localStream) {
-        localStream.getTracks().forEach(track => {
-          pc.addTrack(track, localStream);
+      if (localStreamRef.current) {
+        localStreamRef.current.getTracks().forEach(track => {
+          pc.addTrack(track, localStreamRef.current!);
         });
       }
 
@@ -45,6 +62,17 @@ export const useWebRTC = (roomId: string | null, localStream: MediaStream | null
           map.set(targetUserId, stream);
           return map;
         });
+      };
+
+      pc.onnegotiationneeded = async () => {
+         // Only initiator creates offer again to avoid glare
+         if (initiator) {
+             try {
+                const offer = await pc.createOffer();
+                await pc.setLocalDescription(offer);
+                voiceSocket.emit('voice.signal', { targetUserId, signal: pc.localDescription });
+             } catch(e) {}
+         }
       };
 
       if (initiator) {
@@ -124,7 +152,7 @@ export const useWebRTC = (roomId: string | null, localStream: MediaStream | null
       peersRef.current.clear();
       setRemoteStreams(new Map());
     };
-  }, [roomId, userId, localStream]);
+  }, [roomId, userId]);
 
   return { remoteStreams };
 };
