@@ -58,7 +58,6 @@ async function startServer() {
   app.use("/api/v1/profile", userRoutes); // Keep for compatibility if used elsewhere
   app.use("/api/v1/friends", friendshipRoutes);
   app.use("/api/v1/lobbies", lobbyRoutes);
-  app.use("/api/v1/lobby", lobbyRoutes); // Alias for singular join
   app.use("/api/v1/games", gameRoutes);
   app.use("/api/v1/ranking", rankingRoutes);
   app.use("/api/v1/notifications", notificationRoutes);

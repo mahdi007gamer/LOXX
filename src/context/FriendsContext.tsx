@@ -63,8 +63,6 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   }, []);
 
-  const lastKnownPresence = React.useRef<Record<string, string>>({});
-
   useEffect(() => {
     if (user) {
       fetchFriends();
@@ -76,31 +74,14 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
         presenceSocket.emit("presence.update", { status: "online" });
       }, 4 * 60 * 1000);
 
-      // Listen for presence snapshot
-      presenceSocket.on("presence.snapshot", (data: { users: { userId: string, status: string }[] }) => {
-        setFriends(prev => prev.map(f => {
-          const statusData = data.users.find(u => u.userId === f.id);
-          const status = (statusData ? statusData.status : "offline") as FriendStatus;
-          lastKnownPresence.current[f.id] = status;
-          return { ...f, status };
-        }));
-      });
-
       // Listen for presence changes using dot protocol
       presenceSocket.on("presence.changed", (data: { userId: string, status: string, activity?: string }) => {
         setFriends(prev => {
           const friend = prev.find(f => f.id === data.userId);
-          const lastStatus = lastKnownPresence.current[data.userId] || (friend?.status);
-          
-          if (friend && lastStatus !== "online" && data.status === "online") {
-             toast(`${friend.displayName || friend.username} آنلاین شد`, { 
-               icon: '🟢', 
-               id: `online-${data.userId}` 
-             });
+          // If friend is transitioning to online from something else, toast
+          if (friend && friend.status !== "online" && data.status === "online") {
+             toast(`${friend.displayName || friend.username} آنلاین شد`, { icon: '🟢' });
           }
-          
-          lastKnownPresence.current[data.userId] = data.status;
-
           return prev.map(f => f.id === data.userId ? { 
             ...f, 
             status: data.status as FriendStatus,
@@ -216,7 +197,7 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const handleLobbyInvite = (data: { lobbyId: string, fromId: string, fromUsername: string, gameTitle: string }) => {
       toast.custom(
         (t) => (
-          <div className="bg-dark-bg/80 backdrop-blur-xl border border-neon-purple/30 p-4 rounded-3xl shadow-[0_0_40px_-10px_rgba(168,85,247,0.4)] flex flex-col gap-3 min-w-[300px] z-[50000]">
+          <div className="bg-dark-bg/80 backdrop-blur-xl border border-neon-purple/30 p-4 rounded-3xl shadow-[0_0_40px_-10px_rgba(168,85,247,0.4)] flex flex-col gap-3 min-w-[300px]">
              <div className="flex items-center gap-3">
                <div className="h-10 w-10 rounded-full bg-neon-purple/20 flex items-center justify-center text-neon-purple text-lg border border-neon-purple/30 shadow-inner">🎮</div>
                <div className="flex-1">

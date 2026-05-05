@@ -23,7 +23,7 @@ export const Toast = ({ message, isVisible, onClose }: ToastProps) => {
           initial={{ opacity: 0, y: 50, scale: 0.9 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
-          className="fixed bottom-8 left-1/2 z-[20000] -translate-x-1/2"
+          className="fixed bottom-8 left-1/2 z-[1000] -translate-x-1/2"
         >
           <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-dark-bg/80 px-6 py-4 shadow-[0_20px_50px_rgba(0,0,0,0.5)] backdrop-blur-xl">
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-neon-blue/20 text-neon-blue">

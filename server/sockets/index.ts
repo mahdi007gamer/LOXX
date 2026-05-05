@@ -25,8 +25,6 @@ export function setupWebSockets(io: Server) {
   // Middleware for Auth
   io.use(authMiddleware);
 
-  const userConnections = new Map<string, Set<string>>(); // userId -> Set of socketIds
-
   // Namespaces
   const presenceNs = io.of("/presence");
   const lobbyNs = io.of("/lobby");
@@ -34,34 +32,16 @@ export function setupWebSockets(io: Server) {
   const notifyNs = io.of("/notify");
   const voiceNs = io.of("/voice");
 
-  // Helper to handle user connection tracking
-  const trackUser = (userId: string, socketId: string) => {
-    if (!userId) return false;
-    if (!userConnections.has(userId)) {
-      userConnections.set(userId, new Set());
-    }
-    userConnections.get(userId)!.add(socketId);
-    return userConnections.get(userId)!.size === 1; // True if first connection
-  };
-
-  const untrackUser = (userId: string, socketId: string) => {
-    if (!userId) return false;
-    const connections = userConnections.get(userId);
-    if (connections) {
-      connections.delete(socketId);
-      if (connections.size === 0) {
-        userConnections.delete(userId);
-        return true; // True if last connection
-      }
-    }
-    return false;
-  };
+  presenceNs.use(authMiddleware);
+  lobbyNs.use(authMiddleware);
+  chatNs.use(authMiddleware);
+  notifyNs.use(authMiddleware);
+  voiceNs.use(authMiddleware);
 
   // Voice Namespace (WebRTC Signaling)
   voiceNs.on("connection", (socket: AuthenticatedSocket) => {
     const userId = socket.userId!;
     socket.join(`user:${userId}`);
-    trackUser(userId, socket.id);
 
     socket.on("voice.join", (data: { roomId: string }) => {
       socket.join(`voice:${data.roomId}`);
@@ -85,42 +65,16 @@ export function setupWebSockets(io: Server) {
     socket.on("voice.talking", (data: { roomId: string, isTalking: boolean }) => {
       voiceNs.to(`voice:${data.roomId}`).emit("voice.talking", { userId, isTalking: data.isTalking });
     });
-
-    socket.on("disconnect", () => {
-      untrackUser(userId, socket.id);
-    });
   });
 
   // Presence Namespace
   presenceNs.on("connection", async (socket: AuthenticatedSocket) => {
-    const userId = socket.userId;
-    if (!userId) return;
-    
+    const userId = socket.userId!;
     socket.join(`user:${userId}`);
-    const isFirst = trackUser(userId, socket.id);
 
-    // Initial state: Send online status of current user connections
-    try {
-      if (isFirst) {
-        presenceNs.emit("presence.changed", { userId, status: "online" });
-      }
-
-      const friendships = await prisma.friendship.findMany({
-        where: {
-          OR: [
-            { requesterId: userId, status: "ACCEPTED" },
-            { targetId: userId, status: "ACCEPTED" }
-          ]
-        }
-      });
-      
-      const friendIds = friendships.map(f => f.requesterId === userId ? f.targetId : f.requesterId);
-      const onlineFriends = friendIds.filter(id => userConnections.has(id));
-      
-      socket.emit("presence.snapshot", { 
-        users: onlineFriends.map(id => ({ userId: id, status: "online" })) 
-      });
-    } catch (e) {}
+    // Initial state: Send online friends to the user
+    // In a real app, we would query the user's friends and their online status
+    socket.emit("presence.snapshot", { users: [] });
 
     socket.on("presence.update", async (data: { status: string, activity?: string }) => {
       // Update profile last activity
@@ -129,21 +83,16 @@ export function setupWebSockets(io: Server) {
         data: { lastActivity: new Date() }
       }).catch(() => {});
 
+      // Broadcast to all "ACCEPTED" friends
+      // For simplicity, we broadcast to everyone for now, but in production, 
+      // you would filter by a friendship room or individual user rooms.
       presenceNs.emit("presence.changed", { userId, ...data });
-    });
-
-    socket.on("disconnect", () => {
-      const isLast = untrackUser(userId, socket.id);
-      if (isLast) {
-        presenceNs.emit("presence.changed", { userId, status: "offline" });
-      }
     });
   });
 
   // Lobby Namespace
   lobbyNs.on("connection", (socket: AuthenticatedSocket) => {
     const userId = socket.userId!;
-    trackUser(userId, socket.id);
 
     const getLobbyFullData = async (lobbyId: string) => {
       const lobby = await prisma.lobby.findUnique({
@@ -260,38 +209,6 @@ export function setupWebSockets(io: Server) {
         if (ack) ack({ status: "ok" });
       } catch (err) {
         if (ack) ack({ status: "error", error: { message: "Could not leave lobby" } });
-      }
-    });
-
-    socket.on("disconnect", async () => {
-      if (!userId) return;
-      const isLast = untrackUser(userId, socket.id);
-      if (isLast) {
-        // Find all lobbies the user is in and remove them
-        const memberships = await prisma.lobbyMember.findMany({
-          where: { userId },
-          include: { lobby: { include: { members: true } } }
-        });
-
-        for (const m of memberships) {
-          const lobbyId = m.lobbyId;
-          const lobby = m.lobby;
-
-          await prisma.lobbyMember.delete({
-            where: { lobbyId_userId: { lobbyId, userId } }
-          }).catch(() => {});
-
-          if (lobby.hostId === userId || lobby.members.length <= 1) {
-            // Delete lobby if host leaves or it was the last member
-            await prisma.lobby.delete({ where: { id: lobbyId } }).catch(() => {});
-            lobbyNs.to(`lobby:${lobbyId}`).emit("lobby.closed", { lobbyId });
-          } else {
-            lobbyNs.to(`lobby:${lobbyId}`).emit("lobby.member_left", { 
-              userId, 
-              membersCount: lobby.members.length - 1
-            });
-          }
-        }
       }
     });
 
