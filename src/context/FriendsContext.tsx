@@ -1,5 +1,9 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { Friend, FriendStatus, FriendRequest, FriendChat, ChatMessage } from "../types";
+import api from "../lib/api";
+import { presenceSocket, chatSocket } from "../lib/socket";
+import { useAuth } from "./AuthContext";
+import { toast } from "react-hot-toast";
 
 interface FriendsContextType {
   friends: Friend[];
@@ -25,141 +29,144 @@ interface FriendsContextType {
 const FriendsContext = createContext<FriendsContextType | undefined>(undefined);
 
 export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [friends, setFriends] = useState<Friend[]>([
-    {
-      id: "1",
-      username: "Ali_Gamer",
-      displayName: "علی گیمر",
-      status: FriendStatus.IN_GAME,
-      currentGame: "Counter Strike 2",
-      level: 42,
-      isFavorite: true,
-      isBlocked: false,
-      isMuted: false,
-    },
-    {
-      id: "2",
-      username: "Sina_King",
-      displayName: "سینا سلطان",
-      status: FriendStatus.IN_LOBBY,
-      level: 35,
-      isFavorite: false,
-      isBlocked: false,
-      isMuted: false,
-    },
-    {
-      id: "3",
-      username: "Reza_x",
-      displayName: "رضا",
-      status: FriendStatus.ONLINE,
-      level: 28,
-      isFavorite: false,
-      isBlocked: false,
-      isMuted: false,
-    },
-    {
-      id: "4",
-      username: "Sara_Player",
-      displayName: "سارا پلی‌یر",
-      status: FriendStatus.OFFLINE,
-      lastSeen: "۳۰ دقیقه پیش",
-      level: 31,
-      isFavorite: false,
-      isBlocked: false,
-      isMuted: false,
-    },
-    {
-      id: "5",
-      username: "Nima",
-      displayName: "نیما",
-      status: FriendStatus.OFFLINE,
-      lastSeen: "۳ روز پیش",
-      level: 15,
-      isFavorite: false,
-      isBlocked: false,
-      isMuted: false,
-    }
-  ]);
-
-  const [requests, setRequests] = useState<FriendRequest[]>([
-    {
-      id: "req1",
-      userId: "10",
-      username: "NeonHunter",
-      displayName: "شکارچی نئون",
-      level: 42,
-      type: "incoming",
-      timestamp: "۱۰ دقیقه پیش"
-    },
-    {
-      id: "req2",
-      userId: "11",
-      username: "ShadowWalker",
-      displayName: "سایه رو",
-      level: 25,
-      type: "outgoing",
-      timestamp: "۱ ساعت پیش"
-    }
-  ]);
-
+  const [friends, setFriends] = useState<Friend[]>([]);
+  const [requests, setRequests] = useState<FriendRequest[]>([]);
   const [chats, setChats] = useState<FriendChat[]>([]);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [chatTrigger, setChatTrigger] = useState(0);
+  const { user } = useAuth();
+
+  const fetchFriends = useCallback(async () => {
+    try {
+      const response = await api.get("/social/friends");
+      setFriends(response.data.data || []);
+    } catch (error) {
+      console.error("Failed to fetch friends:", error);
+    }
+  }, []);
+
+  const fetchRequests = useCallback(async () => {
+    try {
+      const response = await api.get("/social/requests");
+      setRequests(response.data.data || []);
+    } catch (error) {
+      console.error("Failed to fetch requests:", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (user) {
+      fetchFriends();
+      fetchRequests();
+
+      // Listen for online status changes
+      presenceSocket.on("friend_status", ({ userId, status, currentGame }) => {
+        setFriends(prev => prev.map(f => f.id === userId ? { ...f, status, currentGame } : f));
+      });
+
+      // Listen for incoming chat messages
+      chatSocket.on("private_message", (msg: any) => {
+        const isSelf = msg.senderId === user.id;
+        const friendId = isSelf ? msg.receiverId : msg.senderId;
+
+        const chatMsg: ChatMessage = {
+          id: msg.id.toString(),
+          senderId: msg.senderId,
+          senderName: msg.sender?.username || "Unknown",
+          senderLevel: msg.sender?.level || 1,
+          self: isSelf,
+          text: msg.content,
+          timestamp: new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          isRead: false
+        };
+
+        setChats(prev => {
+          const existingChat = prev.find(c => c.friendId === friendId);
+          if (existingChat) {
+            return prev.map(c => c.friendId === friendId 
+              ? { 
+                  ...c, 
+                  messages: [...c.messages, chatMsg],
+                  unreadCount: (activeChatId === friendId || isSelf) ? 0 : c.unreadCount + 1
+                } 
+              : c);
+          } else {
+            return [...prev, { 
+              friendId, 
+              messages: [chatMsg], 
+              isTyping: false, 
+              unreadCount: (activeChatId === friendId || isSelf) ? 0 : 1 
+            }];
+          }
+        });
+
+        if (!isSelf && activeChatId !== friendId) {
+          toast(`پیام جدید از ${msg.sender?.username}`, { icon: '💬' });
+        }
+      });
+
+      return () => {
+        presenceSocket.off("friend_status");
+        chatSocket.off("private_message");
+      };
+    }
+  }, [user, activeChatId, fetchFriends, fetchRequests]);
 
   const addFriend = async (username: string) => {
-    // Mock API call
-    console.log("Sending friend request to:", username);
-    setRequests(prev => [...prev, {
-      id: Math.random().toString(),
-      userId: Math.random().toString(),
-      username: username,
-      displayName: username,
-      level: 1,
-      type: "outgoing",
-      timestamp: "همین الان"
-    }]);
+    try {
+      await api.post("/social/request", { targetUsername: username });
+      toast.success("درخواست دوستی ارسال شد");
+      fetchRequests();
+    } catch (error: any) {
+      toast.error(error.response?.data?.error?.message || "ارسال درخواست با خطا مواجه شد");
+    }
   };
 
   const acceptRequest = async (requestId: string) => {
-    const request = requests.find(r => r.id === requestId);
-    if (request) {
-      setFriends(prev => [...prev, {
-        id: request.userId,
-        username: request.username,
-        displayName: request.displayName,
-        status: FriendStatus.ONLINE,
-        level: request.level,
-        isFavorite: false,
-        isBlocked: false,
-        isMuted: false,
-      }]);
-      setRequests(prev => prev.filter(r => r.id !== requestId));
+    try {
+      await api.post(`/social/request/${requestId}/accept`);
+      toast.success("درخواست دوستی پذیرفته شد");
+      fetchRequests();
+      fetchFriends();
+    } catch (error) {
+      toast.error("خطا در پذیرش درخواست");
     }
   };
 
   const declineRequest = async (requestId: string) => {
-    setRequests(prev => prev.filter(r => r.id !== requestId));
+    try {
+      await api.post(`/social/request/${requestId}/decline`);
+      toast.success("درخواست رد شد");
+      fetchRequests();
+    } catch (error) {
+      toast.error("خطا در رد درخواست");
+    }
   };
 
   const cancelRequest = async (requestId: string) => {
-    setRequests(prev => prev.filter(r => r.id !== requestId));
+    try {
+      await api.delete(`/social/request/${requestId}`);
+      toast.success("درخواست لغو شد");
+      fetchRequests();
+    } catch (error) {
+      toast.error("خطا در لغو درخواست");
+    }
   };
 
   const removeFriend = async (friendId: string) => {
-    setFriends(prev => prev.filter(f => f.id !== friendId));
+    try {
+      await api.delete(`/social/friend/${friendId}`);
+      toast.success("دوست از لیست حذف شد");
+      fetchFriends();
+    } catch (error) {
+      toast.error("خطا در حذف دوست");
+    }
   };
 
   const openChat = (friendId: string, displayName?: string) => {
-    console.log(`Opening chat for: ${friendId} (${displayName})`);
     setChats(prev => {
       const existingChat = prev.find(c => c.friendId === friendId);
-      if (existingChat) {
-        // If it exists, update display name if provided and return
-        if (displayName && !existingChat.tempDisplayName && !friends.find(f => f.id === friendId)) {
-          return prev.map(c => c.friendId === friendId ? { ...c, tempDisplayName: displayName } : c);
-        }
-        return prev;
-      }
+      if (existingChat) return prev;
       return [...prev, { friendId, messages: [], isTyping: false, unreadCount: 0, tempDisplayName: displayName }];
     });
     setActiveChatId(friendId);
@@ -167,28 +174,7 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const sendMessage = (friendId: string, text: string) => {
-    const newMessage: ChatMessage = {
-      id: Math.random().toString(),
-      senderId: "me",
-      senderName: "من",
-      senderLevel: 10,
-      self: true,
-      text,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      isRead: true
-    };
-
-    setChats(prev => {
-      const existingChat = prev.find(c => c.friendId === friendId);
-      if (existingChat) {
-        return prev.map(c => c.friendId === friendId 
-          ? { ...c, messages: [...c.messages, newMessage] } 
-          : c);
-      } else {
-        return [...prev, { friendId, messages: [newMessage], isTyping: false, unreadCount: 0 }];
-      }
-    });
-    setActiveChatId(friendId);
+    chatSocket.emit("private_message", { receiverId: friendId, content: text });
   };
 
   const markAsRead = (friendId: string) => {
@@ -200,16 +186,21 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (activeChatId === friendId) setActiveChatId(null);
   };
 
-  const toggleFavorite = (friendId: string) => {
-    setFriends(prev => prev.map(f => f.id === friendId ? { ...f, isFavorite: !f.isFavorite } : f));
+  const toggleFavorite = async (friendId: string) => {
+     try {
+       await api.patch(`/social/friend/${friendId}/favorite`);
+       setFriends(prev => prev.map(f => f.id === friendId ? { ...f, isFavorite: !f.isFavorite } : f));
+     } catch (error) {
+        toast.error("خطا در تغییر وضعیت موردعلاقه");
+     }
   };
 
-  const toggleBlock = (friendId: string) => {
-    setFriends(prev => prev.map(f => f.id === friendId ? { ...f, isBlocked: !f.isBlocked } : f));
+  const toggleBlock = async (friendId: string) => {
+    // block logic if implemented in backend
   };
 
-  const toggleMute = (friendId: string) => {
-    setFriends(prev => prev.map(f => f.id === friendId ? { ...f, isMuted: !f.isMuted } : f));
+  const toggleMute = async (friendId: string) => {
+     // mute logic if implemented in backend
   };
 
   return (

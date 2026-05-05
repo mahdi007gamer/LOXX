@@ -29,6 +29,9 @@ import { GamesPage } from "./pages/GamesPage";
 import { MyGamesPage } from "./pages/MyGamesPage";
 import { cn } from "./lib/utils";
 
+import { AuthProvider } from "./context/AuthContext";
+import { Toaster } from "react-hot-toast";
+
 const AppContent = () => {
   const location = useLocation();
   const isLanding = location.pathname === "/";
@@ -72,20 +75,23 @@ const AppContent = () => {
 
 function App() {
   return (
-    <GamesProvider>
-      <FriendsProvider>
-        <LobbyProvider>
-          <ProfilePopoverProvider>
-            <Router>
-              <ScrollToTop />
-              <AppContent />
-              <ActiveLobbyWidget />
-              <FriendChatOverlay />
-            </Router>
-          </ProfilePopoverProvider>
-        </LobbyProvider>
-      </FriendsProvider>
-    </GamesProvider>
+    <AuthProvider>
+      <GamesProvider>
+        <FriendsProvider>
+          <LobbyProvider>
+            <ProfilePopoverProvider>
+              <Router>
+                <ScrollToTop />
+                <AppContent />
+                <ActiveLobbyWidget />
+                <FriendChatOverlay />
+                <Toaster position="bottom-right" />
+              </Router>
+            </ProfilePopoverProvider>
+          </LobbyProvider>
+        </FriendsProvider>
+      </GamesProvider>
+    </AuthProvider>
   );
 }
 

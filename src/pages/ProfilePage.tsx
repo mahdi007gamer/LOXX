@@ -2,6 +2,7 @@ import React from "react";
 import { Sidebar } from "../components/layout/Sidebar";
 import { NeonCard } from "../components/ui/NeonCard";
 import { GlowButton } from "../components/ui/GlowButton";
+import { useAuth } from "../context/AuthContext";
 import { 
   User, 
   Settings, 
@@ -14,9 +15,11 @@ import {
   Edit2,
   Share2
 } from "lucide-react";
-import { cn } from "@/src/lib/utils";
+import { cn } from "../lib/utils";
 
 export const ProfilePage = () => {
+  const { user } = useAuth();
+
   return (
     <div className="flex min-h-[calc(100vh-64px)]">
       <Sidebar />
@@ -32,7 +35,7 @@ export const ProfilePage = () => {
                 <div className="relative">
                   <div className="h-32 w-32 rounded-3xl border-4 border-dark-bg bg-dark-card shadow-2xl overflow-hidden">
                     <div className="flex h-full w-full items-center justify-center bg-neon-blue/20 text-neon-blue">
-                      <User size={64} />
+                      {user?.avatarUrl ? <img src={user.avatarUrl} alt={user.username} className="h-full w-full object-cover" /> : <User size={64} />}
                     </div>
                   </div>
                   <button className="absolute -bottom-2 -left-2 rounded-xl bg-neon-blue p-2 text-dark-bg shadow-lg hover:scale-110 transition-transform">
@@ -42,12 +45,12 @@ export const ProfilePage = () => {
 
                 <div className="flex-1 pt-4 text-right">
                   <div className="flex items-center gap-3">
-                    <h1 className="text-3xl font-black text-white">Ali_Gamer_98</h1>
+                    <h1 className="text-3xl font-black text-white">{user?.displayName || user?.username}</h1>
                     <div className="rounded-lg bg-neon-blue/10 px-2 py-0.5 text-[10px] font-bold text-neon-blue border border-neon-blue/30">
-                      LEVEL 42
+                      LEVEL {user?.level || 1}
                     </div>
                   </div>
-                  <p className="mt-1 text-gray-400">عاشق بازی‌های رقابتی و شوتر اول شخص</p>
+                  <p className="mt-1 text-gray-400">{user?.bio || "بایوگرافی هنوز تنظیم نشده است"}</p>
                   
                   <div className="mt-4 flex flex-wrap gap-4 text-xs text-gray-500">
                     <div className="flex items-center gap-1.5">

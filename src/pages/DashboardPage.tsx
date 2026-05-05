@@ -4,7 +4,10 @@ import { NeonCard } from "../components/ui/NeonCard";
 import { GlowButton } from "../components/ui/GlowButton";
 import { ListSkeleton } from "../components/ui/Skeleton";
 import { CreateLobbyModal } from "../components/modals/CreateLobbyModal";
+import { useNavigate } from "react-router-dom";
 import { useFriends } from "../context/FriendsContext";
+import { useAuth } from "../context/AuthContext";
+import api from "../lib/api";
 import { FriendStatus } from "../types";
 import { 
   Trophy, 
@@ -31,11 +34,24 @@ export const DashboardPage = () => {
   const [loading, setLoading] = useState(true);
   const [isLobbyModalOpen, setIsLobbyModalOpen] = useState(false);
   const [isFriendsExpanded, setIsFriendsExpanded] = useState(false);
+  const [suggestedLobbies, setSuggestedLobbies] = useState([]);
+  const navigate = useNavigate();
   const { friends, removeFriend, sendMessage } = useFriends();
+  const { user } = useAuth();
 
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 800);
-    return () => clearTimeout(timer);
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const lobbiesRes = await api.get("/lobbies");
+        setSuggestedLobbies(lobbiesRes.data.data.items);
+      } catch (err) {
+        console.error("Failed to fetch dashboard data", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
   }, []);
 
   const visibleFriends = isFriendsExpanded ? friends : friends.slice(0, 3);
@@ -52,7 +68,7 @@ export const DashboardPage = () => {
               className="text-center sm:text-right"
             >
               <div className="flex items-center justify-center sm:justify-start gap-4 mb-1">
-                 <h1 className="text-2xl md:text-3xl font-black text-white italic uppercase tracking-tighter">سلام، خوش اومدی!</h1>
+                 <h1 className="text-2xl md:text-3xl font-black text-white italic uppercase tracking-tighter">سلام {user?.displayName || user?.username || "گیمر"}، خوش اومدی!</h1>
                  <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-500 shadow-[0_0_15px_rgba(249,115,22,0.1)]">
                     <Flame size={14} fill="currentColor" className="animate-bounce" />
                     <span className="text-[10px] font-black italic tracking-widest uppercase">۷ روز فعالیت مستمر</span>
@@ -119,19 +135,19 @@ export const DashboardPage = () => {
                        <div className="h-16 w-16 rounded-full border-2 border-neon-blue p-1 flex items-center justify-center bg-white/5 relative">
                           <Trophy className="text-neon-blue" size={32} />
                           <div className="absolute -bottom-1 -right-1 h-6 w-6 rounded-full bg-white text-dark-bg border-2 border-dark-bg flex items-center justify-center text-[10px] font-black italic">
-                             رتبه ۱۲#
+                             #{user?.rank || "0"}
                           </div>
                        </div>
                        <div>
                           <p className="text-[10px] text-gray-500 font-bold uppercase mb-0.5">رتبه شما در این هفته</p>
-                          <h4 className="text-xl font-black text-white uppercase italic">سطح ۲۴ - کاوشگر</h4>
+                          <h4 className="text-xl font-black text-white uppercase italic">سطح {user?.level || "1"}</h4>
                           <div className="flex items-center gap-1.5 mt-1 font-bold">
                              <div className="flex items-center gap-1 text-[10px] text-neon-blue">
                                 <Zap size={10} />
-                                <span>۱۲+ امتیاز (XP)</span>
+                                <span>امتیاز (XP)</span>
                              </div>
                              <div className="h-3 w-[1px] bg-white/10" />
-                             <span className="text-[10px] text-gray-500">۴,۲۸۰ امتیاز</span>
+                             <span className="text-[10px] text-gray-500">{user?.xp || "0"} امتیاز</span>
                           </div>
                        </div>
                     </div>
@@ -170,11 +186,7 @@ export const DashboardPage = () => {
                 {loading ? (
                   <ListSkeleton />
                 ) : (
-                  [
-                    { id: 1, game: "Counter Strike 2", players: "۴/۵", rank: "Global", type: "رقابتی", icon: "🔫" },
-                    { id: 2, game: "Dota 2", players: "۲/۵", rank: "Immortal", type: "دوستانه", icon: "⚔️" },
-                    { id: 3, game: "Valorant", players: "۳/۵", rank: "Diamond", type: "تورنمنت", icon: "⚡" },
-                  ].map((item, i) => (
+                  suggestedLobbies.map((item: any, i) => (
                     <motion.div
                       key={item.id}
                       initial={{ opacity: 0, y: 10 }}
@@ -184,23 +196,26 @@ export const DashboardPage = () => {
                       <NeonCard variant="blue" className="flex items-center justify-between p-4" hover={true}>
                         <div className="flex items-center gap-4">
                           <div className="h-12 w-12 rounded bg-neon-blue/10 flex items-center justify-center text-neon-blue text-xl font-bold">
-                            {item.icon}
+                            {item.game?.title?.[0] || "🎮"}
                           </div>
                           <div>
-                            <h4 className="font-bold text-white">{item.game}</h4>
-                            <p className="text-xs text-gray-400">{item.type} • سطح {item.rank}</p>
+                            <h4 className="font-bold text-white">{item.title}</h4>
+                            <p className="text-xs text-gray-400">{item.game?.title} • {item.region}</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-6">
                           <div className="text-left">
                             <p className="text-xs text-gray-400">ظرفیت</p>
-                            <p className="font-bold text-neon-blue">{item.players}</p>
+                            <p className="font-bold text-neon-blue">{item.members?.length || 0}/{item.maxPlayers}</p>
                           </div>
-                          <GlowButton variant="blue" size="sm">عضویت</GlowButton>
+                          <GlowButton variant="blue" size="sm" onClick={() => navigate(`/lobby/${item.id}`)}>عضویت</GlowButton>
                         </div>
                       </NeonCard>
                     </motion.div>
                   ))
+                )}
+                {!loading && suggestedLobbies.length === 0 && (
+                  <div className="text-center py-8 text-gray-500 italic">لابی فعالی پیدا نشد.</div>
                 )}
               </div>
             </div>

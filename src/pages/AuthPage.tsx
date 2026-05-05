@@ -3,11 +3,59 @@ import { motion, AnimatePresence } from "motion/react";
 import { NeonCard } from "../components/ui/NeonCard";
 import { Input } from "../components/ui/Input";
 import { GlowButton } from "../components/ui/GlowButton";
-import { Gamepad2, Mail, Lock, User, ArrowRight } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Gamepad2, Mail, Lock, User, ArrowRight, Loader2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import api from "../lib/api";
+import { toast } from "react-hot-toast";
 
 export const AuthPage = () => {
   const [isLogin, setIsLogin] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    username: "",
+    email: "",
+    password: ""
+  });
+
+  const navigate = useNavigate();
+  const { login } = useAuth();
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      if (isLogin) {
+        const response = await api.post("/auth/login", {
+          email: formData.email,
+          password: formData.password
+        });
+        
+        login(response.data.token, response.data.user);
+        toast.success("خوش آمدید!");
+        navigate("/dashboard");
+      } else {
+        await api.post("/auth/register", {
+          username: formData.username,
+          email: formData.email,
+          password: formData.password
+        });
+        
+        toast.success("ثبت‌نام با موفقیت انجام شد. وارد شوید.");
+        setIsLogin(true);
+      }
+    } catch (error: any) {
+      const message = error.response?.data?.error?.message || "خطایی رخ داد";
+      toast.error(message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="flex min-h-[calc(100vh-64px)] items-center justify-center px-4 py-12">
@@ -42,7 +90,7 @@ export const AuthPage = () => {
                 </p>
               </div>
 
-              <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
+              <form className="space-y-4" onSubmit={handleSubmit}>
                 <AnimatePresence>
                   {!isLogin && (
                     <motion.div
@@ -54,7 +102,11 @@ export const AuthPage = () => {
                       <Input 
                         label="نام کاربری" 
                         placeholder="Gamer123" 
+                        name="username"
+                        value={formData.username}
+                        onChange={handleInputChange}
                         icon={<User size={18} />} 
+                        required={!isLogin}
                       />
                     </motion.div>
                   )}
@@ -63,14 +115,22 @@ export const AuthPage = () => {
                 <Input 
                   label="ایمیل" 
                   type="email" 
+                  name="email"
                   placeholder="example@gmail.com" 
+                  value={formData.email}
+                  onChange={handleInputChange}
                   icon={<Mail size={18} />} 
+                  required
                 />
                 <Input 
                   label="رمز عبور" 
                   type="password" 
+                  name="password"
                   placeholder="••••••••" 
+                  value={formData.password}
+                  onChange={handleInputChange}
                   icon={<Lock size={18} />} 
+                  required
                 />
                 
                 {isLogin && (
@@ -89,8 +149,13 @@ export const AuthPage = () => {
                     variant={isLogin ? "blue" : "pink"} 
                     className="w-full"
                     size="lg"
+                    disabled={loading}
                   >
-                    {isLogin ? "ورود به لابی" : "ساخت اکانت"}
+                    {loading ? (
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                    ) : (
+                      isLogin ? "ورود به لابی" : "ساخت اکانت"
+                    )}
                   </GlowButton>
                 </motion.div>
               </form>

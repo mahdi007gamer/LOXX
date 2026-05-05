@@ -1,61 +1,85 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { lobbySocket } from "../lib/socket";
+import { toast } from "react-hot-toast";
 
-export type LobbyStatus = "waiting" | "ready" | "starting" | "started" | "closing";
+export type LobbyStatus = "WAITING" | "READY" | "STARTING" | "IN_PROGRESS" | "FINISHED";
+
+interface LobbyMember {
+  userId: string;
+  username: string;
+  role: "HOST" | "PLAYER";
+  isReady: boolean;
+}
 
 interface LobbyState {
   id: string | null;
-  game: string;
-  playersCount: number;
+  gameTitle: string;
+  players: LobbyMember[];
   maxPlayers: number;
   status: LobbyStatus;
-  countdown: number;
-  isMuted: boolean;
-  lobbyCode: string;
+  hostId: string | null;
 }
 
 interface LobbyContextType {
-  lobby: LobbyState;
-  setLobbyId: (id: string | null) => void;
-  setLobbyStatus: (status: LobbyStatus) => void;
-  setLobbyPlayers: (count: number) => void;
-  setLobbyCountdown: (count: number) => void;
-  setLobbyMuted: (muted: boolean) => void;
+  lobby: LobbyState | null;
+  joinLobby: (lobbyId: string) => void;
   leaveLobby: () => void;
+  toggleReady: () => void;
 }
 
 const LobbyContext = createContext<LobbyContextType | undefined>(undefined);
 
 export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [lobby, setLobby] = useState<LobbyState>({
-    id: null,
-    game: "CS2",
-    playersCount: 3,
-    maxPlayers: 5,
-    status: "waiting",
-    countdown: 5,
-    isMuted: false,
-    lobbyCode: "LX-9921-XP",
-  });
+  const [lobby, setLobby] = useState<LobbyState | null>(null);
 
-  const setLobbyId = (id: string | null) => setLobby((prev) => ({ ...prev, id }));
-  const setLobbyStatus = (status: LobbyStatus) => setLobby((prev) => ({ ...prev, status }));
-  const setLobbyPlayers = (count: number) => setLobby((prev) => ({ ...prev, playersCount: count }));
-  const setLobbyCountdown = (count: number) => setLobby((prev) => ({ ...prev, countdown: count }));
-  const setLobbyMuted = (muted: boolean) => setLobby((prev) => ({ ...prev, isMuted: muted }));
-  
+  useEffect(() => {
+    lobbySocket.on("lobby_update", (data) => {
+      setLobby(data);
+    });
+
+    lobbySocket.on("player_joined", (data) => {
+       toast(`${data.username} وارد لابی شد`, { icon: '👋' });
+    });
+
+    lobbySocket.on("player_left", (data) => {
+      toast(`${data.username} از لابی خارج شد`, { icon: '🚪' });
+    });
+
+    lobbySocket.on("error", (err) => {
+      toast.error(err.message || "خطایی در لابی رخ داد");
+    });
+
+    return () => {
+      lobbySocket.off("lobby_update");
+      lobbySocket.off("player_joined");
+      lobbySocket.off("player_left");
+      lobbySocket.off("error");
+    };
+  }, []);
+
+  const joinLobby = (lobbyId: string) => {
+    lobbySocket.emit("join_lobby", { lobbyId });
+  };
+
   const leaveLobby = () => {
-    setLobby((prev) => ({ ...prev, id: null, status: "waiting" }));
+    if (lobby) {
+      lobbySocket.emit("leave_lobby", { lobbyId: lobby.id });
+      setLobby(null);
+    }
+  };
+
+  const toggleReady = () => {
+    if (lobby) {
+      lobbySocket.emit("ready_status", { lobbyId: lobby.id, isReady: !lobby.players.find(p => p.userId === "me" /* placeholder */)?.isReady });
+    }
   };
 
   return (
     <LobbyContext.Provider value={{ 
       lobby, 
-      setLobbyId, 
-      setLobbyStatus, 
-      setLobbyPlayers, 
-      setLobbyCountdown, 
-      setLobbyMuted,
-      leaveLobby 
+      joinLobby,
+      leaveLobby,
+      toggleReady
     }}>
       {children}
     </LobbyContext.Provider>
