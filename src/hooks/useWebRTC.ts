@@ -35,9 +35,14 @@ export const useWebRTC = (roomId: string | null, localStream: MediaStream | null
       };
 
       pc.ontrack = event => {
+        let stream = event.streams && event.streams[0];
+        if (!stream) {
+          stream = new MediaStream();
+          stream.addTrack(event.track);
+        }
         setRemoteStreams(prev => {
           const map = new Map(prev);
-          map.set(targetUserId, event.streams[0]);
+          map.set(targetUserId, stream);
           return map;
         });
       };

@@ -52,6 +52,7 @@ interface LobbyContextType {
   toggleReady: () => void;
   setLobbyMuted: (muted: boolean) => void;
   sendMessage: (content: string) => void;
+  updateLobbySettings: (settings: { isPrivate?: boolean, micRequired?: boolean }) => void;
 }
 
 const LobbyContext = createContext<LobbyContextType | undefined>(undefined);
@@ -83,7 +84,7 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         };
       });
       if (data.user.id !== user?.id) {
-        toast(`${data.user.username} وارد لابی شد`, { icon: '👋' });
+        toast(`${data.user.username} وارد لابی شد`, { icon: '👋', id: `join-${data.user.id}` });
       }
     });
 
@@ -155,6 +156,17 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (data.status === "STARTING") {
         toast.success("بازی در حال شروع است!", { icon: '🚀' });
       }
+    });
+
+    lobbySocket.on("lobby.settings_updated", (data: { lobbyId: string, isPrivate?: boolean, micRequired?: boolean }) => {
+      setLobby(prev => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          ...(data.isPrivate !== undefined && { isPrivate: data.isPrivate }),
+          ...(data.micRequired !== undefined && { micRequired: data.micRequired })
+        };
+      });
     });
 
     lobbySocket.on("error", (err) => {
@@ -230,6 +242,16 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
+  const updateLobbySettings = (settings: { isPrivate?: boolean, micRequired?: boolean }) => {
+    if (lobby) {
+      lobbySocket.emit("lobby.update_settings", { lobbyId: lobby.id, ...settings }, (ack: any) => {
+        if (ack?.status === "error") {
+          toast.error(ack.error?.message || "مشکلی در ذخیره تنظیمات پیش آمد");
+        }
+      });
+    }
+  };
+
   return (
     <LobbyContext.Provider value={{ 
       lobby, 
@@ -237,7 +259,8 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       leaveLobby,
       toggleReady,
       setLobbyMuted,
-      sendMessage
+      sendMessage,
+      updateLobbySettings
     }}>
       {children}
     </LobbyContext.Provider>

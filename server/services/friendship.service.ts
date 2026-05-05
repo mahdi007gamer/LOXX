@@ -18,7 +18,7 @@ export class FriendshipService {
     return friendships.map(f => {
       const friend = f.requesterId === userId ? f.target : f.requester;
       return {
-        userId: friend.id,
+        id: friend.id,
         username: friend.username,
         displayName: friend.profile?.displayName,
         status: "offline", // Default, updated via WebSocket
@@ -56,21 +56,29 @@ export class FriendshipService {
   static async getRequests(userId: string) {
     const requests = await prisma.friendship.findMany({
       where: {
-        targetId: userId,
-        status: "PENDING"
+        OR: [
+          { targetId: userId, status: "PENDING" },
+          { requesterId: userId, status: "PENDING" }
+        ]
       },
       include: {
-        requester: { include: { profile: true } }
+        requester: { include: { profile: true } },
+        target: { include: { profile: true } }
       }
     });
 
-    return requests.map(r => ({
-      id: r.id,
-      senderId: r.requesterId,
-      senderUsername: r.requester.username,
-      senderDisplayName: r.requester.profile?.displayName,
-      createdAt: r.createdAt
-    }));
+    return requests.map(r => {
+      const isIncoming = r.targetId === userId;
+      const otherUser = isIncoming ? r.requester : r.target;
+      return {
+        id: r.id,
+        userId: otherUser.id,
+        username: otherUser.username,
+        displayName: otherUser.profile?.displayName || otherUser.username,
+        type: isIncoming ? "incoming" : "outgoing",
+        createdAt: r.createdAt
+      };
+    });
   }
 
   static async sendRequestByUsername(requesterId: string, username: string) {
@@ -110,6 +118,66 @@ export class FriendshipService {
     return prisma.friendship.update({
       where: { id: requestId },
       data: { status: action }
+    });
+  }
+
+  static async toggleFavorite(userId: string, targetId: string) {
+    const friendship = await prisma.friendship.findFirst({
+      where: {
+        OR: [
+          { requesterId: userId, targetId: targetId },
+          { requesterId: targetId, targetId: userId }
+        ]
+      }
+    });
+    if (!friendship) throw new Error("Friendship not found");
+    return prisma.friendship.update({
+      where: { id: friendship.id },
+      data: { isFavorite: !friendship.isFavorite }
+    });
+  }
+
+  static async toggleMute(userId: string, targetId: string) {
+    const friendship = await prisma.friendship.findFirst({
+      where: {
+        OR: [
+          { requesterId: userId, targetId: targetId },
+          { requesterId: targetId, targetId: userId }
+        ]
+      }
+    });
+    if (!friendship) throw new Error("Friendship not found");
+    return prisma.friendship.update({
+      where: { id: friendship.id },
+      data: { isMuted: !friendship.isMuted }
+    });
+  }
+
+  static async toggleBlock(userId: string, targetId: string) {
+    const friendship = await prisma.friendship.findFirst({
+      where: {
+        OR: [
+          { requesterId: userId, targetId: targetId },
+          { requesterId: targetId, targetId: userId }
+        ]
+      }
+    });
+    if (!friendship) throw new Error("Friendship not found");
+    const newStatus = friendship.status === "BLOCKED" ? "ACCEPTED" : "BLOCKED";
+    return prisma.friendship.update({
+      where: { id: friendship.id },
+      data: { status: newStatus }
+    });
+  }
+
+  static async removeFriend(userId: string, targetId: string) {
+    return prisma.friendship.deleteMany({
+      where: {
+        OR: [
+          { requesterId: userId, targetId: targetId },
+          { requesterId: targetId, targetId: userId }
+        ]
+      }
     });
   }
 }

@@ -42,4 +42,40 @@ export class FriendshipController {
       res.status(400).json({ status: "error", error: { code: "VALIDATION_FAILED", message: error.message } });
     }
   }
+
+  static async toggleFavorite(req: AuthenticatedRequest, res: Response) {
+    try {
+      await FriendshipService.toggleFavorite(req.user!.userId, req.params.id);
+      res.json({ status: "success", message: "تغییر وضعیت انجام شد" });
+    } catch (error: any) {
+      res.status(400).json({ status: "error", error: { code: "NOT_FOUND", message: error.message } });
+    }
+  }
+
+  static async toggleMute(req: AuthenticatedRequest, res: Response) {
+    try {
+      await FriendshipService.toggleMute(req.user!.userId, req.params.id);
+      res.json({ status: "success", message: "تغییر وضعیت انجام شد" });
+    } catch (error: any) {
+      res.status(400).json({ status: "error", error: { code: "NOT_FOUND", message: error.message } });
+    }
+  }
+
+  static async toggleBlock(req: AuthenticatedRequest, res: Response) {
+    try {
+      await FriendshipService.toggleBlock(req.user!.userId, req.params.id);
+      res.json({ status: "success", message: "تغییر وضعیت انجام شد" });
+    } catch (error: any) {
+      res.status(400).json({ status: "error", error: { code: "NOT_FOUND", message: error.message } });
+    }
+  }
+
+  static async removeFriend(req: AuthenticatedRequest, res: Response) {
+    try {
+      await FriendshipService.removeFriend(req.user!.userId, req.params.id);
+      res.json({ status: "success", message: "دوست حذف شد" });
+    } catch (error: any) {
+      res.status(400).json({ status: "error", error: { code: "NOT_FOUND", message: error.message } });
+    }
+  }
 }

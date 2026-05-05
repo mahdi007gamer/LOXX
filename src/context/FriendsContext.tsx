@@ -150,9 +150,9 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
-  const cancelRequest = async (requestId: string) => {
+  const cancelRequest = async (targetUserId: string) => {
     try {
-      await api.delete(`/social/request/${requestId}`);
+      await api.delete(`/friends/${targetUserId}`);
       toast.success("درخواست لغو شد");
       fetchRequests();
     } catch (error) {
@@ -162,7 +162,7 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const removeFriend = async (friendId: string) => {
     try {
-      await api.delete(`/social/friend/${friendId}`);
+      await api.delete(`/friends/${friendId}`);
       toast.success("دوست از لیست حذف شد");
       fetchFriends();
     } catch (error) {
@@ -199,7 +199,7 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const toggleFavorite = async (friendId: string) => {
      try {
-       await api.patch(`/social/friend/${friendId}/favorite`);
+       await api.patch(`/friends/${friendId}/favorite`);
        setFriends(prev => prev.map(f => f.id === friendId ? { ...f, isFavorite: !f.isFavorite } : f));
      } catch (error) {
         toast.error("خطا در تغییر وضعیت موردعلاقه");
@@ -207,11 +207,22 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const toggleBlock = async (friendId: string) => {
-    // block logic if implemented in backend
+     try {
+       await api.patch(`/friends/${friendId}/block`);
+       fetchFriends(); // refetch because blocked friends are removed from list
+       toast.success("وضعیت تغییر کرد");
+     } catch (error) {
+        toast.error("خطا در تغییر وضعیت بلاک");
+     }
   };
 
   const toggleMute = async (friendId: string) => {
-     // mute logic if implemented in backend
+     try {
+       await api.patch(`/friends/${friendId}/mute`);
+       setFriends(prev => prev.map(f => f.id === friendId ? { ...f, isMuted: !f.isMuted } : f));
+     } catch (error) {
+        toast.error("خطا در تغییر وضعیت میوت");
+     }
   };
 
   return (

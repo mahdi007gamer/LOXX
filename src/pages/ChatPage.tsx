@@ -56,7 +56,7 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
       id={`msg-${message.id}`}
       className={cn(
         "flex gap-2 md:gap-3 transition-all duration-300 mb-6 px-1 md:px-0 relative w-full",
-        message.self ? "flex-row-reverse justify-start" : "flex-row justify-start"
+        message.self ? "flex-row justify-start" : "flex-row-reverse justify-start"
       )}
     >
       {/* Interaction Menu Popover Overlay - Globally available */}
@@ -104,7 +104,7 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
       <div 
         className={cn(
           "flex flex-col gap-1 max-w-[82%] md:max-w-[70%] min-w-0 transition-all duration-200 group/msg-content",
-          message.self ? "items-end text-right" : "items-start text-left",
+          message.self ? "items-start text-right" : "items-end text-left",
           showActions && "scale-[1.02] z-50 relative"
         )}
         onClick={() => setShowActions(!showActions)}
@@ -112,7 +112,7 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
         {/* Header - Name -> Badge -> Time (Order follows container flow) */}
         <div className={cn(
           "flex items-center gap-1.5 mb-1 px-0.5",
-          message.self ? "flex-row-reverse" : "flex-row"
+          message.self ? "flex-row" : "flex-row-reverse"
         )}>
           <span 
               className={cn("text-[11px] font-black tracking-tight cursor-pointer hover:underline flex items-center gap-1", nameColorClass)}

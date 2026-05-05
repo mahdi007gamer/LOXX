@@ -8,5 +8,9 @@ router.get("/list", authenticate, FriendshipController.listFriends);
 router.get("/requests", authenticate, FriendshipController.listRequests);
 router.post("/request", authenticate, FriendshipController.sendRequest);
 router.post("/respond", authenticate, FriendshipController.respondRequest);
+router.patch("/:id/favorite", authenticate, FriendshipController.toggleFavorite);
+router.patch("/:id/mute", authenticate, FriendshipController.toggleMute);
+router.patch("/:id/block", authenticate, FriendshipController.toggleBlock);
+router.delete("/:id", authenticate, FriendshipController.removeFriend);
 
 export default router;

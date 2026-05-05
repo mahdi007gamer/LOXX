@@ -66,10 +66,11 @@ export const LobbyRoomPage = () => {
     leaveLobby,
     toggleReady,
     setLobbyMuted,
-    sendMessage
+    sendMessage,
+    updateLobbySettings
   } = useLobby();
   const { user } = useAuth();
-  const { openChat } = useFriends();
+  const { openChat, addFriend } = useFriends();
   
   const [copied, setCopied] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -436,14 +437,27 @@ export const LobbyRoomPage = () => {
                   isSelected={selectedPlayer === player.id}
                   onSelect={() => setSelectedPlayer(selectedPlayer === player.id ? null : player.id)}
                   onVolumeChange={(val) => handlePlayerVolume(player.id, val)}
-                  onMute={(id) => console.log("Mute player", id)}
+                  onMute={(id) => {
+                    const p = players.find(player => player.id === id);
+                    if (p && !p.id.startsWith("slot-")) {
+                      // We don't have a specific contextual mute function, but we can set their volume to 0 locally
+                      handlePlayerVolume(id, p.volume === 0 ? 100 : 0);
+                    }
+                  }}
                   onInvite={() => setIsInviteModalOpen(true)}
                   onProfile={(id) => setActiveProfileUserId(id)}
                   onDirectMessage={(id) => {
                     const p = players.find(player => player.id === id);
-                    openChat(id, p?.name);
+                    if (p && !p.id.startsWith("slot-")) {
+                      openChat(id, p.name);
+                    }
                   }}
-                  onAddFriend={() => {}}
+                  onAddFriend={(id) => {
+                    const p = players.find(player => player.id === id);
+                    if (p && !p.id.startsWith("slot-")) {
+                      addFriend(p.name);
+                    }
+                  }}
                 />
               ))}
             </AnimatePresence>
@@ -654,8 +668,17 @@ export const LobbyRoomPage = () => {
                       <p className="text-sm font-black text-white">لابی خصوصی</p>
                       <p className="text-[10px] text-gray-500 font-bold">فقط با کد دعوت یا لینک</p>
                     </div>
-                    <div className="w-12 h-6 rounded-full bg-neon-blue/20 relative cursor-pointer border border-neon-blue/30 scale-90">
-                      <div className="absolute right-1 top-1 h-4 w-4 rounded-full bg-neon-blue shadow-[0_0_10px_rgba(0,229,255,1)]" />
+                    <div 
+                      onClick={() => updateLobbySettings({ isPrivate: !lobby?.isPrivate })}
+                      className={cn(
+                        "w-12 h-6 rounded-full relative cursor-pointer border transition-colors",
+                         lobby?.isPrivate ? "bg-neon-blue/20 border-neon-blue/30" : "bg-white/5 border-white/10"
+                      )}
+                    >
+                      <div className={cn(
+                        "absolute top-1 h-4 w-4 rounded-full transition-all",
+                        lobby?.isPrivate ? "right-1 bg-neon-blue shadow-[0_0_10px_rgba(0,229,255,1)]" : "right-7 bg-gray-500"
+                      )} />
                     </div>
                   </div>
 
@@ -664,8 +687,17 @@ export const LobbyRoomPage = () => {
                       <p className="text-sm font-black text-white">دسترسی میکروفون</p>
                       <p className="text-[10px] text-gray-500 font-bold">بازیکنان برای چت صوتی نیاز به میکروفون دارند</p>
                     </div>
-                    <div className="w-12 h-6 rounded-full bg-neon-blue/20 relative cursor-pointer border border-neon-blue/30 scale-90">
-                      <div className="absolute right-1 top-1 h-4 w-4 rounded-full bg-neon-blue shadow-[0_0_10px_rgba(0,229,255,1)]" />
+                    <div 
+                      onClick={() => updateLobbySettings({ micRequired: !lobby?.micRequired })}
+                      className={cn(
+                        "w-12 h-6 rounded-full relative cursor-pointer border transition-colors",
+                         lobby?.micRequired ? "bg-neon-blue/20 border-neon-blue/30" : "bg-white/5 border-white/10"
+                      )}
+                    >
+                      <div className={cn(
+                        "absolute top-1 h-4 w-4 rounded-full transition-all",
+                        lobby?.micRequired ? "right-1 bg-neon-blue shadow-[0_0_10px_rgba(0,229,255,1)]" : "right-7 bg-gray-500"
+                      )} />
                     </div>
                   </div>
                 </div>
@@ -712,12 +744,13 @@ const StatCard = ({ label, value }: { label: string, value: string }) => (
   </div>
 );
 
-const RemoteAudioPlayer = ({ stream, onVolumeChange, volumeLevel }: { stream: MediaStream, onVolumeChange: (vol: number) => void, volumeLevel: number }) => {
+const RemoteAudioPlayer = ({ stream, onVolumeChange, volumeLevel, key }: { stream: MediaStream, onVolumeChange: (vol: number) => void, volumeLevel: number, key?: React.Key }) => {
   const audioRef = useRef<HTMLAudioElement>(null);
   
   useEffect(() => {
     if (audioRef.current && stream) {
       audioRef.current.srcObject = stream;
+      audioRef.current.play().catch(e => console.error("Audio play failed:", e));
     }
   }, [stream]);
 
@@ -1172,7 +1205,7 @@ const ChatPanel = ({ messages, players, inputMessage, setInputMessage, onSend, o
           return (
           <div key={`${msg.id}-${index}`} className={cn(
             "group flex flex-col gap-1.5", 
-            msg.isSystem ? "items-center my-4" : isYou ? "items-end" : "items-start"
+            msg.isSystem ? "items-center my-4" : isYou ? "items-start" : "items-end"
           )}>
             {msg.isSystem ? (
               <div className="relative w-full flex items-center justify-center p-3 rounded-2xl border border-neon-blue/10 bg-neon-blue/[0.02]">
@@ -1183,13 +1216,13 @@ const ChatPanel = ({ messages, players, inputMessage, setInputMessage, onSend, o
             ) : (
               <div className={cn(
                 "flex items-start gap-3 max-w-[85%]",
-                isYou ? "flex-row-reverse" : "flex-row"
+                isYou ? "flex-row" : "flex-row-reverse"
               )}>
                 <div className="h-8 w-8 rounded-xl bg-white/5 border border-white/10 flex-shrink-0 flex items-center justify-center text-lg mt-1 font-black uppercase">
                    {isYou ? "ME" : msg.user.charAt(0)}
                 </div>
-                <div className={cn("flex-1 space-y-1", isYou ? "text-left" : "text-right")}>
-                  <div className={cn("flex items-center gap-3", isYou ? "flex-row-reverse" : "flex-row")}>
+                <div className={cn("flex-1 space-y-1", isYou ? "text-right" : "text-left")}>
+                  <div className={cn("flex items-center gap-3", isYou ? "flex-row" : "flex-row-reverse")}>
                     <span className={cn(
                       "text-[10px] font-black uppercase tracking-widest truncate max-w-[120px]",
                       isYou ? "text-neon-pink" : "text-neon-blue"
@@ -1198,7 +1231,7 @@ const ChatPanel = ({ messages, players, inputMessage, setInputMessage, onSend, o
                   </div>
                   <div className={cn(
                     "border border-white/10 rounded-2xl px-4 py-2.5 text-xs text-gray-300 leading-relaxed shadow-lg",
-                    isYou ? "bg-neon-pink/5 rounded-tl-none border-neon-pink/10" : "bg-white/5 rounded-tr-none"
+                    isYou ? "bg-neon-pink/5 rounded-tr-none border-neon-pink/10" : "bg-white/5 rounded-tl-none"
                   )}>
                     {msg.text}
                   </div>

@@ -245,6 +245,29 @@ export function setupWebSockets(io: Server) {
       }
     });
 
+    socket.on("lobby.update_settings", async (data: { lobbyId: string, isPrivate?: boolean, micRequired?: boolean }, ack) => {
+      const { lobbyId, isPrivate, micRequired } = data;
+      try {
+        const lobby = await prisma.lobby.findUnique({ where: { id: lobbyId } });
+        if (lobby?.hostId !== userId) {
+          if (ack) ack({ status: "error", error: { message: "Only host can update settings" } });
+          return;
+        }
+        await prisma.lobby.update({
+          where: { id: lobbyId },
+          data: {
+            ...(isPrivate !== undefined && { isPrivate }),
+            ...(micRequired !== undefined && { micRequired })
+          }
+        });
+        
+        lobbyNs.to(`lobby:${lobbyId}`).emit("lobby.settings_updated", { lobbyId, isPrivate, micRequired });
+        if (ack) ack({ status: "ok" });
+      } catch (err) {
+        if (ack) ack({ status: "error", error: { message: "Failed to update settings" } });
+      }
+    });
+
     socket.on("lobby.start", async (data: { lobbyId: string }) => {
       const { lobbyId } = data;
       try {
