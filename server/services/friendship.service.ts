@@ -17,11 +17,15 @@ export class FriendshipService {
 
     return friendships.map(f => {
       const friend = f.requesterId === userId ? f.target : f.requester;
+      const isOnline = friend.profile?.lastActivity 
+        ? (new Date().getTime() - new Date(friend.profile.lastActivity).getTime()) < 5 * 60 * 1000 
+        : false;
+
       return {
         id: friend.id,
         username: friend.username,
         displayName: friend.profile?.displayName,
-        status: "offline", // Default, updated via WebSocket
+        status: isOnline ? "online" : "offline",
         activity: "Online",
         isFavorite: f.isFavorite,
         isMuted: f.isMuted

@@ -105,9 +105,9 @@ export const DashboardPage = () => {
             {/* Main Stats Grid */}
             <div className="lg:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-4">
               {[
-                { label: "روز عضویت", val: memberDays || 1, icon: Activity, color: "blue" },
+                { label: "روز عضویت", val: memberDays === 0 ? 1 : memberDays, icon: Activity, color: "blue" },
                 { label: "لابی‌های جوین شده", val: stats.lobbiesCount, icon: Target, color: "pink" },
-                { label: "تعداد دوستان", val: stats.friendsCount, icon: Users, color: "purple" },
+                { label: "تعداد دوستان", val: friends.length, icon: Users, color: "purple" },
                 { label: "لابی‌های آماده", val: suggestedLobbies.length, icon: Trophy, color: "pink" },
               ].map((stat, i) => (
                 <motion.div

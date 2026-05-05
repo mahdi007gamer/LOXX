@@ -504,6 +504,7 @@ export const LobbyRoomPage = () => {
         {/* Desktop Chat Sidebar (Right) */}
         <div className="hidden lg:flex w-full lg:w-[280px] xl:w-[320px] flex-col h-full overflow-hidden order-first">
            <ChatPanel 
+             currentUserId={user?.id}
              messages={messages} 
              players={players}
              inputMessage={inputMessage} 
@@ -576,6 +577,7 @@ export const LobbyRoomPage = () => {
               <div className="h-1.5 w-12 bg-white/10 rounded-full mx-auto mt-4 mb-2" />
               <div className="flex-1 overflow-hidden">
                 <ChatPanel 
+                  currentUserId={user?.id}
                   messages={messages} 
                   players={players}
                   inputMessage={inputMessage} 

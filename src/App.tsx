@@ -36,6 +36,8 @@ import { Toaster } from "react-hot-toast";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AdminPage } from "./pages/AdminPage";
 
+import { PublicProfilePage } from "./pages/PublicProfilePage";
+
 const AppContent = () => {
   const location = useLocation();
   const isLanding = location.pathname === "/";
@@ -65,6 +67,7 @@ const AppContent = () => {
           <Route path="/lobbies" element={<ProtectedRoute><LobbiesPage /></ProtectedRoute>} />
           <Route path="/lobby/:id" element={<ProtectedRoute><LobbyRoomPage /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+          <Route path="/profile/:username" element={<ProtectedRoute><PublicProfilePage /></ProtectedRoute>} />
           <Route path="/ranking" element={<ProtectedRoute><LeaderboardPage /></ProtectedRoute>} />
           <Route path="/premium" element={<ProtectedRoute><PremiumPage /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />

@@ -23,11 +23,22 @@ export class FriendshipController {
 
   static async sendRequest(req: AuthenticatedRequest, res: Response) {
     try {
+      let friendship;
       if (req.body.username) {
-        await FriendshipService.sendRequestByUsername(req.user!.userId, req.body.username);
+        friendship = await FriendshipService.sendRequestByUsername(req.user!.userId, req.body.username);
       } else {
-        await FriendshipService.sendRequest(req.user!.userId, req.body.target_id);
+        friendship = await FriendshipService.sendRequest(req.user!.userId, req.body.target_id);
       }
+
+      // Realtime emit
+      const io = req.app.get("io");
+      if (io && friendship) {
+         io.of("/notify").to(`user:${friendship.targetId}`).emit("friend_request_received", {
+           requestId: friendship.id,
+           requesterId: friendship.requesterId
+         });
+      }
+
       res.json({ status: "success", message: "درخواست ارسال شد" });
     } catch (error: any) {
       res.status(400).json({ status: "error", error: { code: "CONFLICT", message: error.message } });
@@ -36,7 +47,24 @@ export class FriendshipController {
 
   static async respondRequest(req: AuthenticatedRequest, res: Response) {
     try {
-      await FriendshipService.respondRequest(req.user!.userId, req.body.request_id, req.body.action);
+      const friendship = await FriendshipService.respondRequest(req.user!.userId, req.body.request_id, req.body.action);
+      
+      // Realtime emit
+      const io = req.app.get("io");
+      if (io && friendship) {
+         // Tell the requester that their request was accepted or rejected
+         io.of("/notify").to(`user:${friendship.requesterId}`).emit("friend_request_responded", {
+           requestId: friendship.id,
+           targetId: friendship.targetId,
+           action: req.body.action
+         });
+         // Tell both parties their friend list updated
+         if (req.body.action === "ACCEPTED") {
+            io.of("/notify").to(`user:${friendship.requesterId}`).emit("friend_list_updated");
+            io.of("/notify").to(`user:${friendship.targetId}`).emit("friend_list_updated");
+         }
+      }
+
       res.json({ status: "success", message: "عملیات با موفقیت انجام شد" });
     } catch (error: any) {
       res.status(400).json({ status: "error", error: { code: "VALIDATION_FAILED", message: error.message } });

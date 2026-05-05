@@ -8,6 +8,10 @@ router.use(authenticate, authorizeAdmin);
 
 router.get("/users", adminController.getAllUsers);
 router.patch("/users/:id/role", adminController.updateUserRole);
+router.patch("/users/:id/membership", adminController.updateUserMembership);
 router.delete("/users/:id", adminController.deleteUser);
+
+router.post("/games", adminController.createGame);
+router.delete("/games/:id", adminController.deleteGame);
 
 export default router;

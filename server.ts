@@ -38,6 +38,8 @@ async function startServer() {
     }
   });
 
+  app.set("io", io);
+
   // Basic Middleware
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));

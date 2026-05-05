@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { Friend, FriendStatus, FriendRequest, FriendChat, ChatMessage } from "../types";
 import api from "../lib/api";
-import { presenceSocket, chatSocket } from "../lib/socket";
+import { presenceSocket, chatSocket, notifySocket } from "../lib/socket";
 import { useAuth } from "./AuthContext";
 import { toast } from "react-hot-toast";
 
@@ -59,13 +59,26 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
       fetchFriends();
       fetchRequests();
 
+      // Emit our initial presence state in a timeout, then every 4 minutes (since 5 is threshold)
+      presenceSocket.emit("presence.update", { status: "online" });
+      const presenceInterval = setInterval(() => {
+        presenceSocket.emit("presence.update", { status: "online" });
+      }, 4 * 60 * 1000);
+
       // Listen for presence changes using dot protocol
       presenceSocket.on("presence.changed", (data: { userId: string, status: string, activity?: string }) => {
-        setFriends(prev => prev.map(f => f.id === data.userId ? { 
-          ...f, 
-          status: data.status as FriendStatus,
-          currentGame: data.activity 
-        } : f));
+        setFriends(prev => {
+          const friend = prev.find(f => f.id === data.userId);
+          // If friend is transitioning to online from something else, toast
+          if (friend && friend.status !== "online" && data.status === "online") {
+             toast(`${friend.displayName || friend.username} آنلاین شد`, { icon: '🟢' });
+          }
+          return prev.map(f => f.id === data.userId ? { 
+            ...f, 
+            status: data.status as FriendStatus,
+            currentGame: data.activity 
+          } : f);
+        });
       });
 
       // Listen for incoming chat messages using dot protocol
@@ -112,9 +125,8 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
           // Force open chat panel
           setActiveChatId(friendId);
           setChatTrigger(t => t + 1);
-          // Play a simple notification sound (using base64 inline audio to avoid missing assets)
+          // Play a simple notification sound
           try {
-            const beep = new Audio("data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU"); // tiny silent/beep header, better to just use a real URL if exists or construct oscillator
             const ctx = new AudioContext();
             const osc = ctx.createOscillator();
             const gain = ctx.createGain();
@@ -130,9 +142,42 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
         }
       });
 
+      // Notify Listeners
+      const handleFriendRequestReceived = () => {
+        toast("درخواست دوستی جدید", { icon: "👋" });
+        fetchRequests();
+        try {
+          const ctx = new AudioContext();
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.type = "triangle";
+          osc.frequency.setValueAtTime(600, ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.3);
+          gain.gain.setValueAtTime(0.1, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.3);
+        } catch(e) {}
+      };
+
+      const handleFriendListUpdated = () => {
+        fetchFriends();
+        fetchRequests();
+      };
+
+      notifySocket.on("friend_request_received", handleFriendRequestReceived);
+      notifySocket.on("friend_request_responded", handleFriendListUpdated);
+      notifySocket.on("friend_list_updated", handleFriendListUpdated);
+
       return () => {
+        clearInterval(presenceInterval);
         presenceSocket.off("presence.changed");
         chatSocket.off("chat.message");
+        notifySocket.off("friend_request_received", handleFriendRequestReceived);
+        notifySocket.off("friend_request_responded", handleFriendListUpdated);
+        notifySocket.off("friend_list_updated", handleFriendListUpdated);
       };
     }
   }, [user, activeChatId, fetchFriends, fetchRequests]);

@@ -45,6 +45,51 @@ export const AdminPage = () => {
     }
   };
 
+  const updateRole = async (id: string, role: string) => {
+    try {
+      await api.patch(`/admin/users/${id}/role`, { role });
+      toast.success("نقش بروزرسانی شد");
+      fetchData();
+    } catch {
+      toast.error("خطا در بروزرسانی");
+    }
+  };
+
+  const updateMembership = async (id: string, membershipType: string) => {
+    try {
+      await api.patch(`/admin/users/${id}/membership`, { membershipType });
+      toast.success("عضویت بروزرسانی شد");
+      fetchData();
+    } catch {
+      toast.error("خطا در بروزرسانی");
+    }
+  };
+
+  const addGame = async () => {
+    const title = window.prompt("نام بازی:");
+    if (!title) return;
+    const genre = window.prompt("ژانر بازی:") || "عمومی";
+
+    try {
+      await api.post("/admin/games", { title, genre });
+      toast.success("بازی اضافه شد");
+      fetchData();
+    } catch {
+      toast.error("خطا در افزودن بازی");
+    }
+  };
+
+  const removeGame = async (id: string) => {
+    if (!window.confirm("حذف شود؟")) return;
+    try {
+      await api.delete(`/admin/games/${id}`);
+      toast.success("بازی حذف شد");
+      fetchData();
+    } catch {
+      toast.error("خطا در حذف بازی");
+    }
+  };
+
   return (
     <div className="flex min-h-screen bg-dark-bg">
       <Sidebar />
@@ -100,27 +145,40 @@ export const AdminPage = () => {
                     <tr>
                       <th className="px-6 py-4">کاربر</th>
                       <th className="px-6 py-4">ایمیل</th>
-                      <th className="px-6 py-4">وضعیت</th>
+                      <th className="px-6 py-4">نقش</th>
+                      <th className="px-6 py-4">عضویت ویژه</th>
                       <th className="px-6 py-4">عملیات</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5">
                     {users.length === 0 ? (
                       <tr>
-                        <td colSpan={4} className="px-6 py-12 text-center text-gray-500 text-sm">کاربری یافت نشد (دیتابیس تازه بازنشانی شده است)</td>
+                        <td colSpan={5} className="px-6 py-12 text-center text-gray-500 text-sm">کاربری یافت نشد (دیتابیس تازه بازنشانی شده است)</td>
                       </tr>
                     ) : (
                       users.map((user) => (
                         <tr key={user.id} className="hover:bg-white/5 transition-colors">
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-3">
-                              <div className="h-8 w-8 rounded-lg bg-neon-blue/20 flex items-center justify-center text-neon-blue font-black">{user.username[0]}</div>
+                              <div className="h-8 w-8 rounded-lg bg-neon-blue/20 flex items-center justify-center text-neon-blue font-black" style={{ backgroundImage: user.profile?.avatarUrl ? `url(${user.profile.avatarUrl})` : undefined, backgroundSize: 'cover' }}>
+                                {!user.profile?.avatarUrl && user.username[0]}
+                              </div>
                               <span className="font-bold">{user.username}</span>
                             </div>
                           </td>
                           <td className="px-6 py-4 text-sm text-gray-400">{user.email}</td>
                           <td className="px-6 py-4">
-                             <span className="px-2 py-1 rounded bg-green-500/10 text-green-500 text-[10px] font-black uppercase">فعال</span>
+                             <select className="bg-white/5 border border-white/10 rounded px-2 py-1 text-xs text-white" value={user.role} onChange={e => updateRole(user.id, e.target.value)}>
+                               <option value="USER">کاربر عادی</option>
+                               <option value="ADMIN">مدیر</option>
+                             </select>
+                          </td>
+                          <td className="px-6 py-4">
+                             <select className="bg-white/5 border border-white/10 rounded px-2 py-1 text-xs text-neon-purple focus:border-neon-purple outline-none" value={user.profile?.membershipType || "NONE"} onChange={e => updateMembership(user.id, e.target.value)}>
+                               <option value="NONE" className="text-gray-400">عادی</option>
+                               <option value="PLUS" className="text-neon-blue">سطح Plus</option>
+                               <option value="VIP" className="text-neon-pink">سطح VIP</option>
+                             </select>
                           </td>
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-2">
@@ -144,7 +202,7 @@ export const AdminPage = () => {
             <div className="space-y-4">
                <div className="flex justify-between items-center">
                   <h2 className="text-xl font-black text-white">لیست بازی‌های فعال</h2>
-                  <GlowButton onClick={() => toast("بزودی...")}>
+                  <GlowButton onClick={addGame}>
                     <Plus size={16} className="ml-2" /> افزودن بازی جدید
                   </GlowButton>
                </div>
@@ -159,8 +217,8 @@ export const AdminPage = () => {
                         <h3 className="font-black text-white">{game.title}</h3>
                         <p className="text-xs text-gray-500">{game.genre}</p>
                         <div className="flex gap-2 mt-2">
-                          <button className="text-[10px] font-black text-neon-blue hover:underline">ویرایش</button>
-                          <button className="text-[10px] font-black text-red-500 hover:underline">حذف</button>
+                          <button onClick={() => toast("بزودی...")} className="text-[10px] font-black text-neon-blue hover:underline">ویرایش</button>
+                          <button onClick={() => removeGame(game.id)} className="text-[10px] font-black text-red-500 hover:underline">حذف</button>
                         </div>
                       </div>
                     </NeonCard>
