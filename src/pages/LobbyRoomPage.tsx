@@ -97,6 +97,9 @@ export const LobbyRoomPage = () => {
     }
   }, [lobby, wasInLobby, id, navigate]);
 
+  const [peerVolumes, setPeerVolumes] = useState<Record<string, number>>({});
+  const [peerActivity, setPeerActivity] = useState<Record<string, number>>({});
+
   const players = lobby?.players?.map(p => ({
     id: p.userId,
     name: p.username || "Guest Player",
@@ -107,8 +110,13 @@ export const LobbyRoomPage = () => {
     hasMic: true,
     isMuted: !!p.micMuted,
     ping: 25,
-    isSpeaking: lobby?.talkingUsers?.includes(p.userId) || false,
-    volume: p.userId === user?.id ? localVolume : 0 // For visual only, 0 for others to keep silent if not needed
+    isSpeaking: p.userId === user?.id 
+      ? localVolume > 10 
+      : peerActivity[p.userId] > 10 || (lobby?.talkingUsers?.includes(p.userId) || false),
+    volume: p.userId === user?.id 
+      ? localVolume 
+      : (peerVolumes[p.userId] !== undefined ? peerVolumes[p.userId] : 100),
+    activity: p.userId === user?.id ? localVolume : (peerActivity[p.userId] || 0)
   })) || [];
 
   // Add empty slots
@@ -134,9 +142,7 @@ export const LobbyRoomPage = () => {
   
   const isStarting = lobby?.status === "STARTING";
   const isMatchStarted = lobby?.status === "IN_PROGRESS";
-  const [countdown, setCountdown] = useState(5);
   const allReadyPulse = lobby?.status === "READY";
-  const [localVolume, setLocalVolume] = useState(0);
 
   useEffect(() => {
     let audioContext: AudioContext;
