@@ -224,24 +224,24 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
                           className="w-full rounded-2xl border border-white/10 bg-white/5 py-4 px-5 text-white placeholder:text-gray-600 focus:border-neon-blue/50 focus:outline-none focus:ring-1 focus:ring-neon-blue/20 transition-all"
                         />
                       </div>
-                      <select
-                        value={formData.gameId}
-                        onChange={(e) => {
-                          const gId = e.target.value;
-                          const game = games?.find(g => g.id === gId);
-                          setFormData(prev => ({ 
-                            ...prev, 
-                            gameId: gId, 
-                            mode: game?.variants?.[0] || "Competitive",
-                            selectedMaps: [] 
-                          }));
-                        }}
-                        className="w-full rounded-2xl border border-white/10 bg-white/5 py-4 px-5 text-white focus:border-neon-blue/50 focus:outline-none transition-all appearance-none"
-                      >
-                        {games.map(game => (
-                          <option key={game.id} value={game.id} className="bg-dark-card">{game.title}</option>
-                        ))}
-                      </select>
+                        <select
+                          value={formData.gameId}
+                          onChange={(e) => {
+                            const gId = e.target.value;
+                            const game = games?.find(g => g.id === gId);
+                            setFormData(prev => ({ 
+                              ...prev, 
+                              gameId: gId, 
+                              mode: game?.variants?.[0] || "Competitive",
+                              selectedMaps: [] 
+                            }));
+                          }}
+                          className="w-full rounded-2xl border border-white/10 bg-white/5 py-4 px-5 text-white focus:border-neon-blue/50 focus:outline-none transition-all appearance-none"
+                        >
+                          {games && games.map(game => (
+                            <option key={game.id} value={game.id} className="bg-dark-card">{game.title}</option>
+                          ))}
+                        </select>
                     </div>
                   </div>
 

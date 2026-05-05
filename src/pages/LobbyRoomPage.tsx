@@ -323,6 +323,7 @@ export const LobbyRoomPage = () => {
             isMatchStarted={isMatchStarted} 
             countdown={countdown} 
             players={players} 
+            lobby={lobby}
             onCancel={handleCancelMatch}
             onReopen={handleReopenLobby}
           />
@@ -588,11 +589,12 @@ const ControlButton = ({ icon, active = false, onClick, className }: { icon: Rea
   </button>
 );
 
-const MatchInfoPanel = ({ isStarting, isMatchStarted, countdown, players, onCancel, onReopen }: { 
+const MatchInfoPanel = ({ isStarting, isMatchStarted, countdown, players, lobby, onCancel, onReopen }: { 
   isStarting: boolean, 
   isMatchStarted: boolean,
   countdown: number, 
   players: Player[],
+  lobby: any,
   onCancel: () => void,
   onReopen: () => void
 }) => {

@@ -14,15 +14,20 @@ export class GameController {
 
       res.json({
         status: "success",
-        data: games.map(g => ({
-          ...g,
-          activeLobbies: g._count.lobbies,
-          // Mapping to the frontend expected structure partially
-          image: g.bannerUrl,
-          genre: "بازی آنلاین", // Default for now
-          playerCount: "نامشخص",
-          friendsPlaying: []
-        }))
+        data: games.map(g => {
+          const metadata = g.metadata ? JSON.parse(g.metadata) : {};
+          return {
+            ...g,
+            ...metadata,
+            activeLobbies: g._count.lobbies,
+            image: g.bannerUrl || metadata.image || "https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&q=80&w=2070",
+            genre: metadata.genre || "بازی آنلاین",
+            playerCount: metadata.playerCount || "10K+",
+            friendsPlaying: metadata.friendsPlaying || [],
+            variants: metadata.variants || ["Competitive", "Casual", "Ranked"],
+            maps: metadata.maps || ["Mirage", "Inferno", "Dust 2", "Nuke", "Overpass", "Vertigo"]
+          };
+        })
       });
     } catch (error) {
       res.status(500).json({ status: "error", message: "Failed to fetch games" });

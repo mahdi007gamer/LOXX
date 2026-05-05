@@ -52,7 +52,8 @@ async function startServer() {
 
   // API Routes (to be implemented)
   app.use("/api/v1/auth", authRoutes);
-  app.use("/api/v1/profile", userRoutes);
+  app.use("/api/v1/user", userRoutes);
+  app.use("/api/v1/profile", userRoutes); // Keep for compatibility if used elsewhere
   app.use("/api/v1/friends", friendshipRoutes);
   app.use("/api/v1/lobbies", lobbyRoutes);
   app.use("/api/v1/games", gameRoutes);
