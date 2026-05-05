@@ -36,7 +36,7 @@ const REGIONS = ["Middle East", "Europe", "Asia", "North America", "Auto"];
 const SKILL_LEVELS = ["مبتدی", "متوسط", "حرفه‌ای", "نخبه (Elite)"];
 
 export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModalProps) => {
-  const { games } = useGames();
+  const { allGames: games } = useGames();
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -56,18 +56,18 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
   });
 
   useEffect(() => {
-    if (games.length > 0 && !formData.gameId) {
+    if (games && games.length > 0 && !formData.gameId) {
       setFormData(prev => ({ ...prev, gameId: games[0].id }));
     }
   }, [games]);
 
-  const selectedGame = games.find(g => g.id === formData.gameId);
+  const selectedGame = games?.find(g => g.id === formData.gameId);
   const activeGameInfo = selectedGame ? {
-    modes: selectedGame.variants,
+    modes: (selectedGame as any).variants || ["Competitive"],
     maps: ["Mirage", "Inferno", "Dust 2", "Nuke"], // Placeholder maps for now
-    icon: selectedGame.icon || "🎮",
+    icon: (selectedGame as any).icon || "🎮",
     color: "blue",
-    banner: selectedGame.banner
+    banner: (selectedGame as any).banner || ""
   } : {
     modes: ["Competitive"],
     maps: [],

@@ -13,6 +13,9 @@ import {
 } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 
+import { useAuth } from "../../context/AuthContext";
+import { Shield } from "lucide-react";
+
 const menuItems = [
   { icon: LayoutDashboard, label: "داشبورد", path: "/dashboard" },
   { icon: Gamepad2, label: "بازی‌ها", path: "/games" },
@@ -26,6 +29,8 @@ const menuItems = [
 ];
 
 export const Sidebar = () => {
+  const { user } = useAuth();
+  
   return (
     <aside className="fixed right-0 top-16 hidden h-[calc(100vh-64px)] w-64 border-l border-white/10 bg-dark-bg/50 backdrop-blur-lg md:block">
       <div className="flex h-full flex-col justify-between py-6">
@@ -45,6 +50,21 @@ export const Sidebar = () => {
               <span className="font-medium">{item.label}</span>
             </NavLink>
           ))}
+          
+          {user?.email === "admin@test.com" && (
+            <NavLink
+              to="/admin"
+              className={({ isActive }) => cn(
+                "flex items-center gap-3 rounded-lg px-4 py-3 transition-all duration-300",
+                isActive 
+                  ? "bg-neon-blue/10 text-neon-blue shadow-[inset_0_0_10px_rgba(0,229,255,0.1)] border-r-2 border-neon-blue" 
+                  : "text-amber-400/80 hover:bg-white/5 hover:text-amber-400"
+              )}
+            >
+              <Shield size={20} />
+              <span className="font-medium">پنل مدیریت</span>
+            </NavLink>
+          )}
         </div>
 
         <div className="px-4">

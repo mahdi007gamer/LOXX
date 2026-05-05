@@ -33,6 +33,9 @@ import { cn } from "./lib/utils";
 import { AuthProvider } from "./context/AuthContext";
 import { Toaster } from "react-hot-toast";
 
+import { ProtectedRoute } from "./components/ProtectedRoute";
+import { AdminPage } from "./pages/AdminPage";
+
 const AppContent = () => {
   const location = useLocation();
   const isLanding = location.pathname === "/";
@@ -56,17 +59,19 @@ const AppContent = () => {
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/auth" element={<AuthPage />} />
-          <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/chat" element={<ChatPage />} />
-          <Route path="/lobbies" element={<LobbiesPage />} />
-          <Route path="/lobby/:id" element={<LobbyRoomPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/ranking" element={<LeaderboardPage />} />
-          <Route path="/premium" element={<PremiumPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
-          <Route path="/friends" element={<FriendsPage />} />
-          <Route path="/games" element={<GamesPage />} />
-          <Route path="/my-games" element={<MyGamesPage />} />
+          
+          <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+          <Route path="/chat" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
+          <Route path="/lobbies" element={<ProtectedRoute><LobbiesPage /></ProtectedRoute>} />
+          <Route path="/lobby/:id" element={<ProtectedRoute><LobbyRoomPage /></ProtectedRoute>} />
+          <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+          <Route path="/ranking" element={<ProtectedRoute><LeaderboardPage /></ProtectedRoute>} />
+          <Route path="/premium" element={<ProtectedRoute><PremiumPage /></ProtectedRoute>} />
+          <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+          <Route path="/friends" element={<ProtectedRoute><FriendsPage /></ProtectedRoute>} />
+          <Route path="/games" element={<ProtectedRoute><GamesPage /></ProtectedRoute>} />
+          <Route path="/my-games" element={<ProtectedRoute><MyGamesPage /></ProtectedRoute>} />
+          <Route path="/admin" element={<ProtectedRoute adminOnly={true}><AdminPage /></ProtectedRoute>} />
         </Routes>
       </main>
 
