@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { Game } from "../types";
-import api from "../lib/api.js";
+import api from "../lib/api";
 
 interface GamesContextType {
   allGames: Game[];

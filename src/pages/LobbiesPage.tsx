@@ -5,7 +5,7 @@ import { NeonCard } from "../components/ui/NeonCard";
 import { GlowButton } from "../components/ui/GlowButton";
 import { CardSkeleton } from "../components/ui/Skeleton";
 import { Toast } from "../components/ui/Toast";
-import api from "../lib/api.js";
+import api from "../lib/api";
 import { 
   Gamepad2, 
   Users, 

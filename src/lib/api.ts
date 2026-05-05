@@ -36,7 +36,9 @@ api.interceptors.response.use(
         return api(originalRequest);
       } catch (refreshError) {
         localStorage.removeItem("loxx_token");
-        window.location.href = "/auth";
+        if (window.location.pathname !== "/auth" && window.location.pathname !== "/") {
+          window.location.href = "/auth";
+        }
         return Promise.reject(refreshError);
       }
     }
