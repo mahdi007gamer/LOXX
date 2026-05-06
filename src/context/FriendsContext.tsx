@@ -212,56 +212,13 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }, [user, activeChatId, fetchFriends, fetchRequests]);
 
 
-  // Handle Lobby Invites globally
+  // Handle Lobby Invites globally - REMOVED: Now handled by NotificationHandler.tsx
   useEffect(() => {
     if (!user) return;
-    const handleLobbyInvite = (data: { lobbyId: string, fromId: string, fromUsername: string, gameTitle: string }) => {
-      toast.custom(
-        (t) => (
-          <div 
-            className={cn(
-              "bg-[#0a0a0f]/95 backdrop-blur-2xl border border-neon-purple/50 p-5 rounded-[2rem] shadow-[0_0_50px_-10px_rgba(168,85,247,0.5)] flex flex-col gap-4 min-w-[320px] max-w-[400px] transition-all duration-300",
-              t.visible ? "translate-y-0 opacity-100 scale-100" : "translate-y-[-20px] opacity-0 scale-95"
-            )}
-            style={{ 
-              zIndex: 999999999, // Extremely high z-index
-              position: 'relative' 
-            }}
-          >
-             <div className="flex items-center gap-3">
-               <div className="h-10 w-10 rounded-full bg-neon-purple/20 flex items-center justify-center text-neon-purple text-lg border border-neon-purple/30 shadow-inner">🎮</div>
-               <div className="flex-1">
-                 <p className="font-bold text-white text-sm">{data.fromUsername} شما را دعوت کرده</p>
-                 <p className="text-xs text-gray-400">به لابی {data.gameTitle} بپیوندید</p>
-               </div>
-             </div>
-             <div className="flex gap-2 w-full mt-2">
-               <button onClick={() => {
-                 toast.dismiss(t.id);
-                 api.post(`/lobby/${data.lobbyId}/join`).then(() => {
-                    toast.success("وارد لابی شدید");
-                    window.location.href = `/lobby/${data.lobbyId}`;
-                 }).catch(() => toast.error("لابی در دسترس نیست"));
-               }} className="flex-1 bg-neon-blue text-dark-bg font-black py-2 rounded-xl text-xs hover:bg-white transition-all shadow-[0_0_15px_-3px_rgba(0,229,255,0.4)]">
-                 قبول دعوت
-               </button>
-               <button onClick={() => {
-                 toast.dismiss(t.id);
-               }} className="flex-1 bg-dark-card border border-white/10 text-gray-400 font-bold py-2 rounded-xl text-xs hover:text-white hover:bg-white/5 transition-all">
-                 رد کردن
-               </button>
-             </div>
-          </div>
-        ),
-        { duration: 15000, position: 'top-center' }
-      );
-    }
     
-    notifySocket.on("lobby.invite", handleLobbyInvite);
-
-    return () => {
-       notifySocket.off("lobby.invite", handleLobbyInvite);
-    }
+    // This handler was moved to NotificationHandler.tsx to consolidate 
+    // all real-time notifications and use a consistent Glassmorphism UI.
+    
   }, [user]);
 
   const addFriend = async (username: string) => {

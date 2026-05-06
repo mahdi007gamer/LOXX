@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { notifySocket } from "../lib/socket";
 import { toast } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
+import api from "../lib/api";
 
 export const NotificationHandler = () => {
   const navigate = useNavigate();
@@ -13,64 +14,86 @@ export const NotificationHandler = () => {
       audio.play().catch(() => {});
     };
 
-    notifySocket.on("notification", (data: any) => {
-      console.log("New notification:", data);
+    const handleLobbyInvite = (inviteData: any) => {
+      console.log("New lobby invite:", inviteData);
       playNotifySFX();
       
-      if (data.type === "LOBBY_INVITE") {
-        toast.custom((t) => (
-          <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} flex flex-col gap-3 w-[320px] p-4 text-white text-right direction-rtl`} style={{ background: 'rgba(13, 13, 20, 0.4)', backdropFilter: 'blur(16px) saturate(200%)', WebkitBackdropFilter: 'blur(16px) saturate(200%)', borderRadius: '20px', boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.8)', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-neon-blue/20 flex items-center justify-center border border-neon-blue/30 overflow-hidden shrink-0">
-                 {data.data?.sender?.avatar ? (
-                   <img src={data.data.sender.avatar} alt="" className="w-full h-full object-cover" />
-                 ) : (
-                   <div className="text-neon-blue font-bold tracking-tighter">{(data.data?.sender?.username || "A")[0].toUpperCase()}</div>
-                 )}
-              </div>
-              <div className="flex-1 text-right">
-                <div className="text-sm font-bold text-white leading-tight">
-                  <span className="text-neon-blue text-[10px] uppercase font-black tracking-widest">{data.data?.sender?.username}</span>
-                  <div className="text-xs text-white/90">شما را به لابی دعوت کرد</div>
-                </div>
-                <div className="text-[10px] text-white/50 font-medium tracking-tight">لابی {data.data?.lobbyName || "بازی جدید"}</div>
-              </div>
+      // Normalize data structure if it comes from the direct lobby.invite event
+      const lobbyId = inviteData.lobbyId || inviteData.data?.lobbyId;
+      const username = inviteData.fromUsername || inviteData.data?.sender?.username;
+      const lobbyName = inviteData.gameTitle || inviteData.data?.lobbyName || "لابی جدید";
+      const senderId = inviteData.fromId || inviteData.data?.sender?.id;
+
+      toast.custom((t) => (
+        <div 
+          className={`${t.visible ? 'animate-enter' : 'animate-leave'} modern-glass-toast relative flex flex-col gap-5 w-[360px] p-6 bg-[#0d0d14]/70 backdrop-blur-2xl rounded-[28px] border border-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.6)] overflow-hidden group`} 
+          dir="rtl"
+        >
+          {/* Top Accent Line */}
+          <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-neon-blue/60 to-transparent" />
+          
+          {/* Glow Effect */}
+          <div className="absolute -top-12 -right-12 w-40 h-40 bg-neon-pink/15 rounded-full blur-[60px] pointer-events-none group-hover:bg-neon-blue/20 transition-colors duration-500" />
+
+          <div className="flex items-center gap-4 relative z-10">
+            <div className="w-14 h-14 rounded-2xl bg-neon-blue/20 flex items-center justify-center border border-neon-blue/30 overflow-hidden shrink-0 shadow-[0_0_25px_rgba(0,229,255,0.15)] ring-1 ring-white/5">
+              <div className="text-neon-blue font-black text-xl tracking-tighter">{(username || "A")[0].toUpperCase()}</div>
             </div>
-            <div className="flex gap-2">
-               <button 
-                onClick={() => {
-                   toast.dismiss(t.id);
-                   navigate(`/lobby/${data.data.lobbyId}`);
-                }}
-                className="flex-1 py-2 rounded-xl bg-neon-blue text-black text-xs font-bold shadow-[0_0_15px_rgba(0,229,255,0.4)] hover:scale-[1.02] active:scale-95 transition-all w-full"
-               >
-                 قبول دعوت
-               </button>
-               <button 
-                onClick={() => toast.dismiss(t.id)}
-                className="flex-1 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-bold text-white/70 transition-colors border border-white/5 w-full"
-               >
-                 رد کردن
-               </button>
+            <div className="flex-1 text-right">
+              <div className="flex flex-col">
+                <span className="text-neon-blue text-[10px] uppercase font-black tracking-[0.2em] mb-1">{username}</span>
+                <div className="text-sm font-bold text-white/95 leading-tight">شما را به لابی دعوت کرد</div>
+              </div>
+              <div className="text-[11px] text-white/40 font-medium tracking-tight mt-1 bg-white/5 w-fit px-2 py-0.5 rounded-full border border-white/5">
+                {lobbyName}
+              </div>
             </div>
           </div>
-        ), { 
-          duration: 15000,
-          position: "bottom-left",
-          id: `invite-${data.data?.lobbyId}-${data.data?.sender?.id}`,
-          style: {
-            background: 'transparent',
-            border: 'none',
-            padding: 0,
-            boxShadow: 'none'
-          }
-        });
+
+          <div className="flex gap-3 mt-1 relative z-10">
+             <button 
+              onClick={async () => {
+                 toast.dismiss(t.id);
+                 try {
+                   await api.post(`/lobby/${lobbyId}/join`);
+                   toast.success("وارد لابی شدید");
+                   navigate(`/lobby/${lobbyId}`);
+                 } catch (err) {
+                   toast.error("لابی در دسترس نیست یا بسته شده است");
+                 }
+              }}
+              className="flex-1 py-3.5 rounded-2xl bg-neon-blue text-dark-bg text-[11px] font-black uppercase tracking-widest shadow-[0_8px_25px_rgba(0,229,255,0.35)] hover:shadow-[0_12px_35px_rgba(0,229,255,0.5)] hover:scale-[1.02] active:scale-95 transition-all duration-300 cursor-pointer"
+             >
+               قبول دعوت
+             </button>
+             <button 
+              onClick={() => toast.dismiss(t.id)}
+              className="flex-1 py-3.5 rounded-2xl bg-white/5 hover:bg-white/10 text-[11px] font-black uppercase tracking-widest text-white/50 hover:text-white/90 border border-white/10 transition-all duration-300 cursor-pointer"
+             >
+               رد کردن
+             </button>
+          </div>
+        </div>
+      ), { 
+        duration: 15000,
+        position: "bottom-left",
+        id: `invite-${lobbyId}-${senderId}`,
+      });
+    };
+
+    notifySocket.on("lobby.invite", handleLobbyInvite);
+    notifySocket.on("notification", (data: any) => {
+      console.log("New notification:", data);
+      if (data.type === "LOBBY_INVITE") {
+        handleLobbyInvite(data);
       } else {
+        playNotifySFX();
         toast(data.message || "اطلاعیه جدید دریافت شد");
       }
     });
 
     return () => {
+      notifySocket.off("lobby.invite");
       notifySocket.off("notification");
     };
   }, [navigate]);
