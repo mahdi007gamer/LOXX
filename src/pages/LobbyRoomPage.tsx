@@ -27,7 +27,9 @@ import {
   Trophy,
   ChevronLeft,
   X,
-  Crown
+  Crown,
+  ShieldAlert,
+  Gavel
 } from "lucide-react";
 import { GlowButton } from "../components/ui/GlowButton";
 import { useFriends } from "../context/FriendsContext";
@@ -67,7 +69,9 @@ export const LobbyRoomPage = () => {
     toggleReady,
     setLobbyMuted,
     sendMessage,
-    updateLobbySettings
+    updateLobbySettings,
+    kickPlayer,
+    banPlayer
   } = useLobby();
   const { user } = useAuth();
   const { openChat, addFriend } = useFriends();
@@ -550,6 +554,9 @@ export const LobbyRoomPage = () => {
                       addFriend(p.name);
                     }
                   }}
+                  onKick={kickPlayer}
+                  onBan={banPlayer}
+                  isHostView={isHost}
                 />
               ))}
             </AnimatePresence>
@@ -1117,11 +1124,16 @@ const PlayerCard = ({ player, isSelected, onSelect, onVolumeChange, onMute, onIn
   onInvite: () => void,
   onProfile: (id: string) => void,
   onDirectMessage: (id: string) => void,
-  onAddFriend: (id: string) => void,
-  disabled?: boolean,
+  onAddFriend: (id: string) => void;
+  onKick?: (id: string) => void;
+  onBan?: (id: string) => void;
+  isHostView?: boolean;
+  disabled?: boolean;
   key?: React.Key
 }) => {
   const isSlot = player.name === "Empty Slot";
+  const { user } = useAuth();
+  const isMe = user?.id === player.id;
 
   return (
       <motion.div
@@ -1266,6 +1278,22 @@ const PlayerCard = ({ player, isSelected, onSelect, onVolumeChange, onMute, onIn
                   onClick={() => onMute(player.id)}
                   color={player.isMuted ? "blue" : "pink"}
                 />
+                {isHostView && !isMe && (
+                  <>
+                    <QuickAction 
+                      icon={<ShieldAlert size={14} />} 
+                      tooltip="اخراج" 
+                      onClick={() => onKick?.(player.id)}
+                      color="pink"
+                    />
+                    <QuickAction 
+                      icon={<Gavel size={14} />} 
+                      tooltip="مسدود سازی" 
+                      onClick={() => onBan?.(player.id)}
+                      color="pink"
+                    />
+                  </>
+                )}
              </div>
           </div>
 

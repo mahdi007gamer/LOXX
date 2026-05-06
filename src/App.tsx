@@ -100,6 +100,22 @@ function App() {
                   containerStyle={{
                     zIndex: 999999999,
                   }}
+                  toastOptions={{
+                    className: '',
+                    style: {
+                      background: 'rgba(13, 13, 20, 0.8)',
+                      backdropFilter: 'blur(12px)',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      color: '#fff',
+                      borderRadius: '20px',
+                      padding: '16px 24px',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      boxShadow: '0 20px 50px rgba(0,0,0,0.5)',
+                      maxWidth: '400px',
+                      textAlign: 'right'
+                    },
+                  }}
                 />
               </Router>
             </ProfilePopoverProvider>

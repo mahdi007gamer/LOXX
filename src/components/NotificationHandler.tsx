@@ -7,8 +7,15 @@ export const NotificationHandler = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    const playNotifySFX = () => {
+      const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2361/2361-preview.mp3');
+      audio.volume = 0.4;
+      audio.play().catch(() => {});
+    };
+
     notifySocket.on("notification", (data: any) => {
       console.log("New notification:", data);
+      playNotifySFX();
       
       if (data.type === "LOBBY_INVITE") {
         toast((t) => (

@@ -53,6 +53,8 @@ interface LobbyContextType {
   setLobbyMuted: (muted: boolean) => void;
   sendMessage: (content: string) => void;
   updateLobbySettings: (settings: { isPrivate?: boolean, micRequired?: boolean }) => void;
+  kickPlayer: (userId: string) => void;
+  banPlayer: (userId: string) => void;
 }
 
 const LobbyContext = createContext<LobbyContextType | undefined>(undefined);
@@ -73,6 +75,20 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     userRef.current = user;
   }, [user]);
 
+  // SFX Helper
+  const playSFX = (type: 'message' | 'join' | 'leave' | 'notification' | 'action') => {
+    const sounds = {
+      message: 'https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3',
+      join: 'https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3',
+      leave: 'https://assets.mixkit.co/active_storage/sfx/2359/2359-preview.mp3',
+      notification: 'https://assets.mixkit.co/active_storage/sfx/2361/2361-preview.mp3',
+      action: 'https://assets.mixkit.co/active_storage/sfx/2362/2362-preview.mp3'
+    };
+    const audio = new Audio(sounds[type]);
+    audio.volume = 0.4;
+    audio.play().catch(() => {}); // Catch autoplay block
+  };
+
   useEffect(() => {
     // Listen for member updates using the new dot-protocol
     lobbySocket.on("lobby.closed", (data: { lobbyId: string }) => {
@@ -86,7 +102,27 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       });
 
       if (currentLobby?.id === data.lobbyId) {
+        playSFX('notification');
         toast.error("لابی توسط میزبان بسته شد", { icon: '🚫' });
+      }
+    });
+
+    lobbySocket.on("lobby.kicked", (data: { lobbyId: string, userId: string }) => {
+      const currentLobby = lobbyRef.current;
+      const currentUser = userRef.current;
+
+      if (currentUser?.id === data.userId && currentLobby?.id === data.lobbyId) {
+        setLobby(null);
+        playSFX('notification');
+        toast.error("شما از لابی اخراج شدید", { icon: '👢' });
+      } else {
+        setLobby(prev => {
+          if (!prev || prev.id !== data.lobbyId) return prev;
+          return {
+            ...prev,
+            players: prev.players.filter(p => p.userId !== data.userId)
+          };
+        });
       }
     });
 
@@ -102,6 +138,7 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       });
       
       if (data.user.id !== userRef.current?.id) {
+        playSFX('join');
         toast(`${data.user.username} وارد لابی شد`, { icon: '👋', id: `join-${data.user.id}` });
       }
     });
@@ -114,6 +151,7 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           players: prev.players.filter(p => p.userId !== data.userId)
         };
       });
+      playSFX('leave');
     });
 
     lobbySocket.on("lobby.member_updated", (data: { userId: string, isReady?: boolean, micMuted?: boolean }) => {
@@ -179,6 +217,10 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           messages: [...(prev.messages || []), msg]
         };
       });
+      
+      if (msg.from?.userId !== userRef.current?.id) {
+        playSFX('message');
+      }
     };
     chatSocket.on("chat.message", handleChatMessage);
 
@@ -358,6 +400,32 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
+  const kickPlayer = (userId: string) => {
+    if (lobby) {
+      lobbySocket.emit("lobby.kick", { lobbyId: lobby.id, targetUserId: userId }, (ack: any) => {
+        if (ack?.status === "ok") {
+          playSFX('action');
+          toast.success("کاربر اخراج شد");
+        } else {
+          toast.error(ack?.error?.message || "خطا در اخراج کاربر");
+        }
+      });
+    }
+  };
+
+  const banPlayer = (userId: string) => {
+    if (lobby) {
+      lobbySocket.emit("lobby.ban", { lobbyId: lobby.id, targetUserId: userId }, (ack: any) => {
+        if (ack?.status === "ok") {
+          playSFX('action');
+          toast.success("کاربر مسدود شد");
+        } else {
+          toast.error(ack?.error?.message || "خطا در مسدود سازی کاربر");
+        }
+      });
+    }
+  };
+
   return (
     <LobbyContext.Provider value={{ 
       lobby, 
@@ -366,7 +434,9 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       toggleReady,
       setLobbyMuted,
       sendMessage,
-      updateLobbySettings
+      updateLobbySettings,
+      kickPlayer,
+      banPlayer
     }}>
       {children}
     </LobbyContext.Provider>
