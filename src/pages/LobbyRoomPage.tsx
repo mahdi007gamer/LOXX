@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { useLobby } from "../context/LobbyContext";
@@ -109,41 +109,45 @@ export const LobbyRoomPage = () => {
   const [peerVolumes, setPeerVolumes] = useState<Record<string, number>>({});
   const [peerActivity, setPeerActivity] = useState<Record<string, number>>({});
 
-  const players = lobby?.players?.map(p => ({
-    id: p.userId,
-    name: p.username || "Guest Player",
-    avatar: p.role === "HOST" ? "👑" : "👤",
-    rank: "Verified Gamer",
-    isHost: p.role === "HOST",
-    isReady: !!p.isReady,
-    hasMic: true,
-    isMuted: !!p.micMuted,
-    ping: 25,
-    isSpeaking: p.userId === user?.id 
-      ? localVolume > 10 
-      : peerActivity[p.userId] > 10 || (lobby?.talkingUsers?.includes(p.userId) || false),
-    volume: p.userId === user?.id 
-      ? localVolume 
-      : (peerVolumes[p.userId] !== undefined ? peerVolumes[p.userId] : 100),
-    activity: p.userId === user?.id ? localVolume : (peerActivity[p.userId] || 0)
-  })) || [];
+  const players = useMemo(() => {
+    const list = lobby?.players?.map(p => ({
+      id: p.userId,
+      name: p.username || "Guest Player",
+      avatar: p.role === "HOST" ? "👑" : "👤",
+      rank: "Verified Gamer",
+      isHost: p.role === "HOST",
+      isReady: !!p.isReady,
+      hasMic: true,
+      isMuted: !!p.micMuted,
+      ping: 25,
+      isSpeaking: p.userId === user?.id 
+        ? localVolume > 15 
+        : (peerActivity[p.userId] || 0) > 15 || (lobby?.talkingUsers?.includes(p.userId) || false),
+      volume: p.userId === user?.id 
+        ? localVolume 
+        : (peerVolumes[p.userId] !== undefined ? peerVolumes[p.userId] : 100),
+      activity: p.userId === user?.id ? localVolume : (peerActivity[p.userId] || 0)
+    })) || [];
 
-  // Add empty slots
-  const maxPlayers = lobby?.maxPlayers || 5;
-  while (players.length < maxPlayers) {
-    players.push({
-      id: `slot-${players.length}`,
-      name: "Empty Slot",
-      avatar: "",
-      rank: "",
-      isReady: false,
-      hasMic: false,
-      isMuted: false,
-      ping: 0,
-      isSpeaking: false,
-      volume: 100
-    });
-  }
+    // Add empty slots
+    const maxPlayers = lobby?.maxPlayers || 5;
+    const result = [...list];
+    while (result.length < maxPlayers) {
+      result.push({
+        id: `slot-${result.length}`,
+        name: "Empty Slot",
+        avatar: "",
+        rank: "",
+        isReady: false,
+        hasMic: false,
+        isMuted: false,
+        ping: 0,
+        isSpeaking: false,
+        volume: 100
+      });
+    }
+    return result;
+  }, [lobby?.players, lobby?.maxPlayers, localVolume, peerActivity, lobby?.talkingUsers, peerVolumes, user?.id, user?.username]);
 
   const isReady = lobby?.players?.find(p => p.userId === user?.id)?.isReady || false;
   const isMicMuted = !!(lobby?.players?.find(p => p.userId === user?.id) as any)?.micMuted;
@@ -167,6 +171,7 @@ export const LobbyRoomPage = () => {
     let stream: MediaStream;
     let rafId: number;
     let isTalking = false;
+    let lastVol = 0;
 
     if (lobby && user) {
       navigator.mediaDevices.getUserMedia({ audio: true })
@@ -193,16 +198,22 @@ export const LobbyRoomPage = () => {
                const avg = sum / bufferLength;
                const newVol = Math.min(100, Math.round(avg * 2));
                
-               // Only update state if change is significant (> 10%)
-               setLocalVolume(prev => Math.abs(prev - newVol) > 10 ? newVol : prev);
+               // Only update local state if change is very significant
+               if (Math.abs(newVol - lastVol) > 15) {
+                 lastVol = newVol;
+                 setLocalVolume(newVol);
+               }
 
-               const talkingNow = avg > 15; // Higher threshold for "isSpeaking"
+               const talkingNow = avg > 20; 
                if (talkingNow !== isTalking) {
                  isTalking = talkingNow;
                  voiceSocket.emit("voice.talking", { roomId: lobby.id, isTalking });
                }
              } else {
-               setLocalVolume(prev => prev === 0 ? prev : 0);
+               if (lastVol !== 0) {
+                 lastVol = 0;
+                 setLocalVolume(0);
+               }
                if (isTalking) {
                  isTalking = false;
                  voiceSocket.emit("voice.talking", { roomId: lobby.id, isTalking: false });
@@ -273,16 +284,18 @@ export const LobbyRoomPage = () => {
     }
   };
 
-  const messages: Message[] = [
-    { id: "1", user: "LOXX BOT", text: "لابی ساخته شد. منتظر همرزمان هستیم...", time: "System", isSystem: true, fromUserId: "system" },
-    ...(lobby?.messages?.map(m => ({
-      id: m.id,
-      fromUserId: m.from?.userId,
-      user: m.from?.username || "بازیکن",
-      text: m.content,
-      time: new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    })) || [])
-  ];
+  const messages = useMemo(() => {
+    return [
+      { id: "system-1", user: "LOXX BOT", text: "لابی ساخته شد. منتظر همرزمان هستیم...", time: "System", isSystem: true, fromUserId: "system" },
+      ...(lobby?.messages?.map(m => ({
+        id: m.id,
+        fromUserId: m.from?.userId,
+        user: m.from?.username || "بازیکن",
+        text: m.content,
+        time: m.createdAt ? new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "Recently"
+      })) || [])
+    ];
+  }, [lobby?.messages]);
 
   const [inputMessage, setInputMessage] = useState("");
 
@@ -866,10 +879,11 @@ const RemoteAudioPlayer = ({ stream, onVolumeChange, volumeLevel, key }: { strea
                sum += dataArray[i];
              }
              const avg = sum / bufferLength;
-             const currentVol = Math.min(100, Math.round(avg * 2));
+             const currentVol = Math.min(100, Math.round(avg * 2.5));
              
              // Only report significant changes to parent state to avoid re-render loops
-             if (Math.abs(currentVol - lastVol) > 15) {
+             // Increased threshold to 25 and added absolute check for 0
+             if (Math.abs(currentVol - lastVol) > 25 || (currentVol === 0 && lastVol !== 0) || (currentVol > 10 && lastVol === 0)) {
                lastVol = currentVol;
                onVolumeChange(currentVol);
              }

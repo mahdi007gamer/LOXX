@@ -201,7 +201,12 @@ export function setupWebSockets(io: Server) {
         where: { id: lobbyId },
         include: { 
           game: true,
-          members: { include: { user: { include: { profile: true } } } } 
+          members: { include: { user: { include: { profile: true } } } },
+          messages: {
+            take: 50,
+            orderBy: { createdAt: "desc" },
+            include: { sender: { include: { profile: true } } }
+          }
         }
       });
       return lobby;
@@ -257,7 +262,7 @@ export function setupWebSockets(io: Server) {
         await RankingService.addXP(userId, 10, "LOBBY_JOIN");
 
         if (ack) {
-          const updatedLobby = await getLobbyFullData(lobbyId);
+          const updatedLobby = await getLobbyFullData(lobbyId) as any;
 
           if (!updatedLobby) {
             return ack({ status: "error", error: { code: "NOT_FOUND", message: "Lobby not found" } });
@@ -277,13 +282,25 @@ export function setupWebSockets(io: Server) {
               description: updatedLobby.description,
               micRequired: updatedLobby.micRequired,
               isPrivate: updatedLobby.isPrivate,
-              players: updatedLobby.members?.map(m => ({
+              players: updatedLobby.members?.map((m: any) => ({
                 userId: m.userId,
                 username: m.user.username,
                 role: m.role,
                 isReady: m.isReady,
                 micMuted: !m.micStatus
               })) || [],
+              messages: updatedLobby.messages?.map((m: any) => ({
+                id: m.id.toString(),
+                from: {
+                  userId: m.senderId,
+                  username: m.sender.username,
+                  membership: m.sender.profile?.membershipType || "NONE"
+                },
+                content: m.content,
+                createdAt: m.createdAt.getTime(),
+                targetType: "lobby",
+                targetId: lobbyId
+              })).reverse() || [],
               you: { role: member.role, isReady: member.isReady, micMuted: !member.micStatus }
             } 
           });
@@ -501,8 +518,22 @@ export function setupWebSockets(io: Server) {
         });
 
         if (target.type === "lobby") {
+          // Verify membership
+          const membership = await prisma.lobbyMember.findUnique({
+             where: { lobbyId_userId: { lobbyId: target.id, userId } }
+          });
+          if (!membership) throw new Error("NOT_MEMBER");
+
+          const msg = await prisma.message.create({
+            data: {
+              content,
+              senderId: userId,
+              lobbyId: target.id,
+            }
+          }) as any;
+
           const msgPayload = {
-            id: tempId || Date.now().toString(),
+            id: msg.id.toString(),
             from: { 
               userId, 
               username: user?.username, 
@@ -511,16 +542,24 @@ export function setupWebSockets(io: Server) {
             targetType: "lobby",
             targetId: target.id,
             content,
-            createdAt: Date.now()
+            createdAt: msg.createdAt.getTime()
           };
           chatNs.to(`lobby:${target.id}`).emit("chat.message", msgPayload);
-          if (ack) ack({ status: "ok", data: { tempId, messageId: msgPayload.id, createdAt: msgPayload.createdAt } });
+          if (ack) ack({ status: "ok", data: { tempId, messageId: msg.id.toString(), createdAt: msg.createdAt.getTime() } });
           return;
         }
         
         if (target.type === "user") {
+          const msg = await prisma.message.create({
+            data: {
+              content,
+              senderId: userId,
+              receiverId: target.id,
+            }
+          }) as any;
+
           const msgPayload = {
-            id: tempId || Date.now().toString(),
+            id: msg.id.toString(),
             from: { 
               userId, 
               username: user?.username, 
@@ -529,12 +568,12 @@ export function setupWebSockets(io: Server) {
             targetType: "user",
             targetId: target.id,
             content,
-            createdAt: Date.now()
+            createdAt: msg.createdAt.getTime()
           };
-          // Send to the other user and to self (for multi-device sync, if we had it, but here we just send to both)
+          // Send to the other user and to self (for multi-device sync)
           chatNs.to(`user:${target.id}`).emit("chat.message", msgPayload);
           chatNs.to(`user:${userId}`).emit("chat.message", msgPayload);
-          if (ack) ack({ status: "ok", data: { tempId, messageId: msgPayload.id, createdAt: msgPayload.createdAt } });
+          if (ack) ack({ status: "ok", data: { tempId, messageId: msg.id.toString(), createdAt: msg.createdAt.getTime() } });
           return;
         }
 

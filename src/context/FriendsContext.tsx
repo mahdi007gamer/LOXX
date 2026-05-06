@@ -91,6 +91,14 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
         presenceSocket.emit("presence.update", { status: "online" });
       }, 4 * 60 * 1000);
 
+      return () => {
+        clearInterval(presenceInterval);
+      };
+    }
+  }, [user, fetchFriends, fetchRequests]);
+
+  useEffect(() => {
+    if (user) {
       // Listen for presence snapshot
       presenceSocket.on("presence.snapshot", (data: { users: { userId: string, status: string }[] }) => {
         setFriends(prev => {
@@ -111,12 +119,15 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setFriends(prev => {
           const friend = prev.find(f => f.id === data.userId);
           // If friend is transitioning to online from something else, toast
-          // We use a specific ID for the toast to avoid duplicates if multiple connections emit changed
           if (friend && friend.status !== "online" && data.status === "online") {
-             toast(`${friend.displayName || friend.username} آنلاین شد`, { 
-               icon: '🟢', 
-               id: `online-${data.userId}` 
-             });
+             // Side effect (toast) should be outside setter, but we have data here.
+             // We'll use a timeout or just do it separately.
+             setTimeout(() => {
+               toast(`${friend.displayName || friend.username} آنلاین شد`, { 
+                 icon: '🟢', 
+                 id: `online-${data.userId}` 
+               });
+             }, 0);
           }
           return prev.map(f => f.id === data.userId ? { 
             ...f, 
@@ -165,25 +176,13 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
           }
         });
 
-        if (!isSelf && activeChatId !== friendId) {
-          toast(`پیام جدید از ${from.username}`, { icon: '💬' });
-          // Force open chat panel
-          setActiveChatId(friendId);
-          setChatTrigger(t => t + 1);
-          // Play a simple notification sound
-          try {
-            const ctx = new AudioContext();
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            osc.connect(gain);
-            gain.connect(ctx.destination);
-            osc.type = "sine";
-            osc.frequency.setValueAtTime(880, ctx.currentTime);
-            gain.gain.setValueAtTime(0.1, ctx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
-            osc.start();
-            osc.stop(ctx.currentTime + 0.5);
-          } catch(e) {}
+        if (!isSelf) {
+          // If the message is not self, we show a toast
+          // and if this chat is not the active one, we might notify differently
+          // No need to forcefully open chat if not requested by user, but user said message icon not working.
+          if (activeChatId !== friendId) {
+            toast(`پیام جدید از ${from.username}`, { icon: '💬' });
+          }
         }
       });
 
@@ -191,20 +190,6 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const handleFriendRequestReceived = () => {
         toast("درخواست دوستی جدید", { icon: "👋" });
         fetchRequests();
-        try {
-          const ctx = new AudioContext();
-          const osc = ctx.createOscillator();
-          const gain = ctx.createGain();
-          osc.connect(gain);
-          gain.connect(ctx.destination);
-          osc.type = "triangle";
-          osc.frequency.setValueAtTime(600, ctx.currentTime);
-          osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.3);
-          gain.gain.setValueAtTime(0.1, ctx.currentTime);
-          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
-          osc.start();
-          osc.stop(ctx.currentTime + 0.3);
-        } catch(e) {}
       };
 
       const handleFriendListUpdated = () => {
@@ -217,7 +202,7 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
       notifySocket.on("friend_list_updated", handleFriendListUpdated);
 
       return () => {
-        clearInterval(presenceInterval);
+        presenceSocket.off("presence.snapshot");
         presenceSocket.off("presence.changed");
         chatSocket.off("chat.message");
         notifySocket.off("friend_request_received", handleFriendRequestReceived);
@@ -226,6 +211,7 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
       };
     }
   }, [user, activeChatId, fetchFriends, fetchRequests]);
+
 
   // Handle Lobby Invites globally
   useEffect(() => {
@@ -333,7 +319,12 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const openChat = (friendId: string, displayName?: string) => {
     setChats(prev => {
       const existingChat = prev.find(c => c.friendId === friendId);
-      if (existingChat) return prev;
+      if (existingChat) {
+        if (displayName && existingChat.tempDisplayName !== displayName) {
+          return prev.map(c => c.friendId === friendId ? { ...c, tempDisplayName: displayName } : c);
+        }
+        return prev;
+      }
       return [...prev, { friendId, messages: [], isTyping: false, unreadCount: 0, tempDisplayName: displayName }];
     });
     setActiveChatId(friendId);
