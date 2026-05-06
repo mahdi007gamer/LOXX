@@ -838,7 +838,7 @@ const StatCard = ({ label, value }: { label: string, value: string }) => (
   </div>
 );
 
-const RemoteAudioPlayer = ({ stream, onVolumeChange, volumeLevel, key }: { stream: MediaStream, onVolumeChange: (vol: number) => void, volumeLevel: number, key?: React.Key }) => {
+const RemoteAudioPlayer = ({ stream, onVolumeChange, volumeLevel }: { stream: MediaStream, onVolumeChange: (vol: number) => void, volumeLevel: number }) => {
   const audioRef = useRef<HTMLAudioElement>(null);
   
   useEffect(() => {

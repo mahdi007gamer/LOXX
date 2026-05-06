@@ -191,23 +191,26 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, []);
 
   useEffect(() => {
-    if (lobby) {
-      if (chatSocket.connected) {
-        chatSocket.emit("chat.join", { type: "lobby", id: lobby.id });
+    const syncRooms = () => {
+      if (lobby?.id) {
+        if (chatSocket.connected) {
+          chatSocket.emit("chat.join", { type: "lobby", id: lobby.id });
+        }
+        if (voiceSocket.connected) {
+          voiceSocket.emit("voice.join", { roomId: lobby.id });
+        }
       }
-      if (voiceSocket.connected) {
-        voiceSocket.emit("voice.join", { roomId: lobby.id });
-      }
+    };
 
-      const onChatConnect = () => chatSocket.emit("chat.join", { type: "lobby", id: lobby.id });
-      const onVoiceConnect = () => voiceSocket.emit("voice.join", { roomId: lobby.id });
+    if (lobby?.id) {
+      syncRooms();
 
-      chatSocket.on("connect", onChatConnect);
-      voiceSocket.on("connect", onVoiceConnect);
+      chatSocket.on("connect", syncRooms);
+      voiceSocket.on("connect", syncRooms);
 
       return () => {
-        chatSocket.off("connect", onChatConnect);
-        voiceSocket.off("connect", onVoiceConnect);
+        chatSocket.off("connect", syncRooms);
+        voiceSocket.off("connect", syncRooms);
       };
     }
   }, [lobby?.id, chatSocket.connected, voiceSocket.connected]);

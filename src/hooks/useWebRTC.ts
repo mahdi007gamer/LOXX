@@ -29,6 +29,8 @@ export const useWebRTC = (roomId: string | null, localStream: MediaStream | null
     // Join the voice signaling channel
     voiceSocket.emit('voice.join', { roomId });
 
+    const timers = new Map<string, any>();
+
     const createPeer = (targetUserId: string, initiator: boolean) => {
       const pc = new RTCPeerConnection({
         iceServers: [
@@ -36,6 +38,11 @@ export const useWebRTC = (roomId: string | null, localStream: MediaStream | null
           { urls: 'stun:stun1.l.google.com:19302' }
         ]
       });
+
+      // Perfect Negotiation state
+      let makingOffer = false;
+      let ignoreOffer = false;
+      const isSlowNode = userId! > targetUserId; // Deterministic tie-breaker
 
       if (localStreamRef.current) {
         localStreamRef.current.getTracks().forEach(track => {
@@ -66,27 +73,25 @@ export const useWebRTC = (roomId: string | null, localStream: MediaStream | null
       };
 
       pc.onnegotiationneeded = async () => {
-         try {
-            if (pc.signalingState !== 'stable') return;
-            const offer = await pc.createOffer();
-            if (pc.signalingState !== 'stable') return;
-            await pc.setLocalDescription(offer);
-            voiceSocket.emit('voice.signal', { targetUserId, signal: pc.localDescription });
-         } catch(e) {
-            console.error("Negotiation error", e);
-         }
-      };
-
-      if (initiator) {
-        pc.createOffer().then(offer => {
-          if (pc.signalingState !== 'stable') return;
-          pc.setLocalDescription(offer);
+        try {
+          makingOffer = true;
+          await pc.setLocalDescription(); // Implicitly creates offer
           voiceSocket.emit('voice.signal', {
             targetUserId,
-            signal: offer
+            signal: pc.localDescription
           });
-        }).catch(e => console.error("Offer creation error", e));
-      }
+        } catch (err) {
+          console.error("Negotiation error:", err);
+        } finally {
+          makingOffer = false;
+        }
+      };
+
+      pc.oniceconnectionstatechange = () => {
+        if (pc.iceConnectionState === "failed") {
+          pc.restartIce();
+        }
+      };
 
       return pc;
     };
@@ -94,8 +99,10 @@ export const useWebRTC = (roomId: string | null, localStream: MediaStream | null
     const handleUserJoined = (data: { userId: string }) => {
       if (data.userId === userId) return;
       console.log("WebRTC: user joined", data.userId);
-      const pc = createPeer(data.userId, true);
-      peersRef.current.set(data.userId, pc);
+      if (!peersRef.current.has(data.userId)) {
+        const pc = createPeer(data.userId, true);
+        peersRef.current.set(data.userId, pc);
+      }
     };
 
     const handleUserLeft = (data: { userId: string }) => {
@@ -114,64 +121,44 @@ export const useWebRTC = (roomId: string | null, localStream: MediaStream | null
     const handleSignal = async (data: { fromUserId: string, signal: any }) => {
       if (data.fromUserId === userId) return;
       
-      let pc = peersRef.current.get(data.fromUserId);
-      const isOffer = data.signal.type === 'offer';
-
+      const pc = peersRef.current.get(data.fromUserId);
       if (!pc) {
-        pc = createPeer(data.fromUserId, false);
-        peersRef.current.set(data.fromUserId, pc);
+        // If we get a signal but have no PC, create one (polite side)
+        const newPc = createPeer(data.fromUserId, false);
+        peersRef.current.set(data.fromUserId, newPc);
+        // Wait a tiny bit then handle the signal again now that PC exists
+        await handleSignal(data);
+        return;
       }
 
+      const isSlowNode = userId! > data.fromUserId;
+      const description = data.signal;
+
       try {
-        if (data.signal.type === 'offer') {
-           if (pc.signalingState !== 'stable' && pc.signalingState !== 'have-local-offer') {
-             console.warn("Ignoring offer while in state", pc.signalingState);
-             return;
-           }
-           await pc.setRemoteDescription(new RTCSessionDescription(data.signal));
-           const answer = await pc.createAnswer();
-           await pc.setLocalDescription(answer);
-           voiceSocket.emit('voice.signal', {
-             targetUserId: data.fromUserId,
-             signal: answer
-           });
-           
-           // Process queued candidates
-           const pending = pendingCandidatesRef.current.get(data.fromUserId) || [];
-           for (const candidate of pending) {
-             try {
-               await pc.addIceCandidate(new RTCIceCandidate(candidate));
-             } catch (e) {
-               console.error("Error adding queued candidate", e);
-             }
-           }
-           pendingCandidatesRef.current.delete(data.fromUserId);
-        } else if (data.signal.type === 'answer') {
-           if (pc.signalingState === 'have-local-offer') {
-             await pc.setRemoteDescription(new RTCSessionDescription(data.signal));
-             
-             // Process queued candidates
-             const pending = pendingCandidatesRef.current.get(data.fromUserId) || [];
-             for (const candidate of pending) {
-               try {
-                 await pc.addIceCandidate(new RTCIceCandidate(candidate));
-               } catch (e) {
-                 console.error("Error adding queued candidate", e);
-               }
-             }
-             pendingCandidatesRef.current.delete(data.fromUserId);
-           }
-        } else if (data.signal.type === 'candidate' && data.signal.candidate) {
-           if (pc.remoteDescription) {
-             await pc.addIceCandidate(new RTCIceCandidate(data.signal.candidate));
-           } else {
-             const pending = pendingCandidatesRef.current.get(data.fromUserId) || [];
-             pending.push(data.signal.candidate);
-             pendingCandidatesRef.current.set(data.fromUserId, pending);
-           }
+        if (description.type) {
+          const offerCollision = description.type === "offer" &&
+            (makingOffer || pc.signalingState !== "stable");
+
+          ignoreOffer = !isSlowNode && offerCollision;
+          if (ignoreOffer) return;
+
+          await pc.setRemoteDescription(description);
+          if (description.type === "offer") {
+            await pc.setLocalDescription();
+            voiceSocket.emit('voice.signal', {
+              targetUserId: data.fromUserId,
+              signal: pc.localDescription
+            });
+          }
+        } else if (description.candidate) {
+          try {
+            await pc.addIceCandidate(description.candidate);
+          } catch (err) {
+            if (!ignoreOffer) throw err;
+          }
         }
       } catch (err) {
-        console.error("WebRTC Error parsing signal from user", data.fromUserId, err);
+        console.error("Signal Handling Error:", err);
       }
     };
 
