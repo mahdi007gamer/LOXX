@@ -104,7 +104,13 @@ export const GameAdminModal = ({
     if (!option.trim()) return;
     setFormData(prev => {
       const newFeatures = [...(prev.metadata?.features || [])];
-      newFeatures[featureIndex].options.push(option);
+      const currentFeature = newFeatures[featureIndex];
+      if (!currentFeature.options.includes(option)) {
+        newFeatures[featureIndex] = {
+           ...currentFeature,
+           options: [...currentFeature.options, option]
+        };
+      }
       return { ...prev, metadata: { ...prev.metadata, features: newFeatures } };
     });
   };

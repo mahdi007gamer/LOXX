@@ -2,11 +2,12 @@ import React, { useState } from "react";
 import { cn } from "@/src/lib/utils";
 
 interface NeonCardProps extends React.HTMLAttributes<HTMLDivElement> {
-  variant?: "blue" | "pink" | "purple";
+  variant?: "blue" | "pink" | "purple" | "green" | "red";
   hover?: boolean;
   children?: React.ReactNode;
   className?: string;
   key?: React.Key | null;
+  onClick?: React.MouseEventHandler<HTMLDivElement>;
 }
 
 export const NeonCard = ({

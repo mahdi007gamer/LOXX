@@ -121,9 +121,17 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
             <div className="w-full rounded-3xl overflow-hidden bg-dark-card border border-white/5 relative shadow-xl">
                {/* Background Cover */}
                <div className="h-24 w-full relative">
+                 {formData.isPrivate && (
+                   <div className="absolute inset-0 z-10 bg-black/50 backdrop-blur-[1px] flex items-center justify-center transition-all">
+                      <div className="flex flex-col items-center gap-2 text-white/50">
+                        <Lock size={16} />
+                        <span className="text-[8px] font-black uppercase tracking-[0.2em]">PRIVATE LOBBY</span>
+                      </div>
+                   </div>
+                 )}
                  <img src={selectedGameData?.bannerUrl || "https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&q=80&w=2070"} className="h-full w-full object-cover opacity-50" />
-                 <div className="absolute inset-0 bg-gradient-to-t from-[#16181c] to-transparent" />
-                 <div className="absolute top-3 left-3 bg-neon-blue/20 text-neon-blue border border-neon-blue/30 px-3 py-1 rounded-full text-[10px] font-black flex items-center gap-1">
+                 <div className="absolute inset-0 bg-gradient-to-t from-[#16181c] to-transparent z-0" />
+                 <div className="absolute top-3 left-3 bg-neon-blue/20 text-neon-blue border border-neon-blue/30 px-3 py-1 rounded-full text-[10px] font-black flex items-center gap-1 z-20">
                    <Sparkles size={12} /> جدید
                  </div>
                </div>
@@ -147,13 +155,34 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
                  </div>
 
                  {/* Tags */}
-                 <div className="flex flex-wrap items-center justify-center gap-2 mb-6 w-full">
-                   {Object.values(formData.metadata).filter(Boolean).slice(0, 2).map((val, i) => (
-                     <span key={i} className="px-2 py-1 rounded-lg bg-white/5 border border-white/10 text-[10px] font-bold text-gray-300">
-                       {val}
+                 <div className="flex flex-wrap items-center justify-center gap-2 mb-6 w-full text-right" dir="rtl">
+                   {formData.region && <span className="px-2 py-1 flex items-center gap-1 rounded-lg bg-white/5 border border-white/10 text-[10px] font-bold text-gray-300"><Globe size={10} className="text-neon-pink" /> {formData.region}</span>}
+                   {formData.isPrivate && (
+                      <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-neon-purple/10 border border-neon-purple/20 text-[10px] font-black text-neon-purple">
+                        <Lock size={10} /> خصوصی
+                      </div>
+                   )}
+                   {formData.micRequired && (
+                      <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-neon-blue/10 border border-neon-blue/20 text-[10px] font-black text-neon-blue">
+                        <Mic size={10} /> میکروفون
+                      </div>
+                   )}
+                   {formData.discordRequired && (
+                      <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-[#5865F2]/10 border border-[#5865F2]/20 text-[10px] font-black text-[#5865F2]">
+                        <svg width="10" height="10" viewBox="0 0 127.14 96.36" fill="currentColor"><path d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.7,77.7,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1A105.25,105.25,0,0,0,126.6,80.22h0C129.24,52.84,122.09,29.11,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53s5-12.74,11.43-12.74S54,46,53.89,53,48.84,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.31,60,73.31,53s5-12.74,11.43-12.74S96.2,46,96.1,53,91.08,65.69,84.69,65.69Z"/></svg>
+                        دیسکورد
+                      </div>
+                   )}
+                   {formData.ageRestricted && (
+                      <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-red-500/10 border border-red-500/20 text-[10px] font-black text-red-500">
+                        +18
+                      </div>
+                   )}
+                   {Object.entries(formData.metadata).filter(([k]) => !['discordRequired', 'ageRestricted', 'autoClose', 'autoArchive'].includes(k)).slice(0, 2).map(([key, val]) => (
+                     <span key={key} className="px-2 py-1 rounded-lg bg-white/5 border border-white/10 text-[10px] font-bold text-gray-400">
+                       {val as string}
                      </span>
                    ))}
-                   {formData.region && <span className="px-2 py-1 flex items-center gap-1 rounded-lg bg-white/5 border border-white/10 text-[10px] font-bold text-gray-300"><Globe size={10} /> {formData.region}</span>}
                  </div>
 
                  {/* Stats */}

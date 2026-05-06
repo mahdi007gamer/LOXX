@@ -154,10 +154,21 @@ export const LobbiesPage = () => {
                   >
                     <NeonCard 
                       className={cn(
-                        "group relative flex flex-col h-full overflow-hidden p-0 border-white/5 bg-[#0a0a0f] transition-all hover:border-neon-blue/20",
+                        "group relative flex flex-col h-full overflow-hidden p-0 border-white/5 bg-[#0a0a0f] transition-all hover:border-neon-blue/20 cursor-pointer",
                         lobby.isPrivate && "opacity-90"
                       )}
+                      onClick={() => navigate(`/lobby/${lobby.id}`)}
                     >
+                      {/* Hover Overlay */}
+                      <div className="absolute inset-0 z-50 bg-[#0a0a0f]/40 backdrop-blur-[2px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none">
+                         <GlowButton 
+                           variant={lobby.isPrivate ? "purple" : "blue"} 
+                           className="px-8 h-12 scale-90 group-hover:scale-100 shadow-[0_0_40px_rgba(0,229,255,0.6)]"
+                         >
+                           {lobby.isPrivate ? "کد امنیتی" : "ورود به لابی"}
+                         </GlowButton>
+                      </div>
+
                       {/* Game Banner */}
                       <div className="relative h-40 w-full overflow-hidden shrink-0">
                         {lobby.isPrivate && (
@@ -208,8 +219,29 @@ export const LobbiesPage = () => {
                             <Globe size={12} className="text-neon-pink" />
                             <span>{lobby.region}</span>
                           </div>
-                          {Object.entries(meta).map(([key, val]) => (
-                            <div key={key} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/5 text-[10px] font-black text-neon-blue">
+                          {lobby.isPrivate && (
+                             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neon-purple/10 border border-neon-purple/20 text-[10px] font-black text-neon-purple">
+                               <Lock size={12} /> خصوصی
+                             </div>
+                          )}
+                          {lobby.micRequired && (
+                             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neon-blue/10 border border-neon-blue/20 text-[10px] font-black text-neon-blue">
+                               <Mic size={12} /> میکروفون
+                             </div>
+                          )}
+                          {meta.discordRequired && (
+                             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#5865F2]/10 border border-[#5865F2]/20 text-[10px] font-black text-[#5865F2]">
+                               <svg width="12" height="12" viewBox="0 0 127.14 96.36" fill="currentColor"><path d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.7,77.7,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1A105.25,105.25,0,0,0,126.6,80.22h0C129.24,52.84,122.09,29.11,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53s5-12.74,11.43-12.74S54,46,53.89,53,48.84,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.31,60,73.31,53s5-12.74,11.43-12.74S96.2,46,96.1,53,91.08,65.69,84.69,65.69Z"/></svg>
+                               دیسکورد
+                             </div>
+                          )}
+                          {meta.ageRestricted && (
+                             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/20 text-[10px] font-black text-red-500">
+                               +18
+                             </div>
+                          )}
+                          {Object.entries(meta).filter(([k]) => !['discordRequired', 'ageRestricted', 'autoClose', 'autoArchive'].includes(k)).map(([key, val]) => (
+                            <div key={key} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/5 text-[10px] font-black text-gray-400">
                               {val as string}
                             </div>
                           ))}
