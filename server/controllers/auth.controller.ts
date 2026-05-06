@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { AuthService } from "../services/auth.service.js";
+import prisma from "../utils/prisma.js";
 
 export class AuthController {
   static async register(req: Request, res: Response) {
@@ -49,6 +50,14 @@ export class AuthController {
 
     try {
       const { userId } = AuthService.verifyRefreshToken(token);
+      
+      // Verify user exists in DB
+      const userExits = await prisma.user.findUnique({ where: { id: userId } });
+      if (!userExits) {
+        res.clearCookie("refresh_token");
+        return res.status(401).json({ status: "error", error: { code: "UNAUTHORIZED", message: "User no longer exists" } });
+      }
+
       const newAccessToken = AuthService.generateAccessToken(userId);
       res.json({ status: "success", token: newAccessToken });
     } catch (error) {

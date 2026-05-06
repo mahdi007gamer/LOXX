@@ -6,7 +6,7 @@ export class UserController {
   static async getMe(req: AuthenticatedRequest, res: Response) {
     try {
       const user = await UserService.getMe(req.user!.userId);
-      if (!user) return res.status(404).json({ status: "error", error: { code: "RESOURCE_NOT_FOUND", message: "User not found" } });
+      if (!user) return res.status(401).json({ status: "error", error: { code: "UNAUTHORIZED", message: "User not found" } });
 
       res.json({
         status: "success",

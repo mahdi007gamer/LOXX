@@ -1,9 +1,12 @@
 import { PrismaClient } from "@prisma/client";
+import argon2 from "argon2";
 
 const prisma = new PrismaClient();
 
 async function main() {
   console.log("Seeding database...");
+
+  const hashedPw = await argon2.hash("password123");
 
   // Create some games
   const counterStrike = await prisma.game.upsert({
@@ -64,6 +67,46 @@ async function main() {
   });
 
   console.log("Seed finished.");
+
+  // Create some users and profiles for leaderboard
+  const adminUser = await prisma.user.upsert({
+    where: { username: "admin" },
+    update: {},
+    create: {
+      username: "admin",
+      email: "admin@loxx.ir",
+      passwordHash: hashedPw,
+      role: "ADMIN",
+      profile: {
+        create: {
+          displayName: "Loxx Admin",
+          xp: 10000,
+          level: 10,
+          region: "Tehran"
+        }
+      }
+    }
+  });
+
+  const player1 = await prisma.user.upsert({
+    where: { username: "ProPlayer" },
+    update: {},
+    create: {
+      username: "ProPlayer",
+      email: "player1@gmail.com",
+      passwordHash: hashedPw,
+      profile: {
+        create: {
+          displayName: "Master Shooter",
+          xp: 5400,
+          level: 5,
+          region: "Shiraz"
+        }
+      }
+    }
+  });
+
+  console.log("Users and Profiles seeded.");
 }
 
 main()
