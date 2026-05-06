@@ -245,6 +245,7 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }
     };
     chatSocket.on("chat.message", handleChatMessage);
+    lobbySocket.on("chat.message", handleChatMessage);
 
     // Voice Listeners (Talking indicators)
     const handleVoiceTalking = (data: { userId: string, isTalking: boolean }) => {
@@ -296,6 +297,7 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       lobbySocket.off("lobby.status_changed");
       lobbySocket.off("error");
       chatSocket.off("chat.message", handleChatMessage);
+      lobbySocket.off("chat.message", handleChatMessage);
       voiceSocket.off("voice.talking", handleVoiceTalking);
     };
   }, []);
@@ -412,7 +414,14 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       });
 
       console.log("LobbyContext: sending message", msgData);
-      chatSocket.emit("chat.send", msgData);
+      chatSocket.emit("chat.send", msgData, (ack: any) => {
+        if (ack?.status === "error") {
+          console.error("LobbyContext: Failed to send message", ack.error);
+          toast.error(`خطا در ارسال پیام: ${ack.error?.message}`);
+        } else {
+          console.log("LobbyContext: Message sent successfully", ack);
+        }
+      });
     }
   };
 

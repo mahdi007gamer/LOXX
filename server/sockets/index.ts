@@ -502,6 +502,7 @@ export function setupWebSockets(io: Server) {
     socket.on("chat.join", (data: { type: "channel" | "lobby", id: string }) => {
       const room = data.type === "lobby" ? `lobby:${data.id}` : `channel:${data.id}`;
       socket.join(room);
+      console.log(`[CHAT] User ${userId} joined room ${room}`);
     });
 
     socket.on("disconnect", () => {
@@ -510,6 +511,7 @@ export function setupWebSockets(io: Server) {
 
     socket.on("chat.send", async (data: { target: { type: "channel" | "lobby" | "user", id: string }, content: string, tempId: string, replyToId?: string }, ack) => {
       const { target, content, tempId, replyToId } = data;
+      console.log(`[CHAT] send target=${target.type}:${target.id} from=${userId} content="${content}"`);
       
       try {
         const user = await prisma.user.findUnique({ 
@@ -544,7 +546,11 @@ export function setupWebSockets(io: Server) {
             content,
             createdAt: msg.createdAt.getTime()
           };
+          console.log(`[CHAT] Broadcasting to room lobby:${target.id}`);
           chatNs.to(`lobby:${target.id}`).emit("chat.message", msgPayload);
+          // Fallback to lobby namespace in case chat socket is having issues
+          lobbyNs.to(`lobby:${target.id}`).emit("chat.message", msgPayload);
+          
           if (ack) ack({ status: "ok", data: { tempId, messageId: msg.id.toString(), createdAt: msg.createdAt.getTime() } });
           return;
         }
