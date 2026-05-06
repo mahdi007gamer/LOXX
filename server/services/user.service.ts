@@ -49,7 +49,7 @@ export class UserService {
 
     return {
       joinedAt: user?.createdAt,
-      lobbiesCount: user?._count.lobbyMembers || 0,
+      lobbiesCount: user?.profile?.totalLobbiesJoined || 0,
       friendsCount,
       gamesCount: user?._count.userGames || 0,
       xp: user?.profile?.xp || 0,

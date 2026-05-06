@@ -47,6 +47,7 @@ model Profile {
   membershipType  String         @default("NONE") // NONE, PLUS, VIP
   region          String         @default("IR")   // IR, TR, EU, ME
   lastActivity    DateTime       @default(now())
+  totalLobbiesJoined Int          @default(0)
 }
 
 model Friendship {

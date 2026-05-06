@@ -81,8 +81,7 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
       fetchFriends();
       fetchRequests();
 
-      // Emit our initial presence state in a timeout, then every 4 minutes (since 5 is threshold)
-      presenceSocket.emit("presence.update", { status: "online" });
+      // Heartland interval every 4 minutes (since 5 is threshold)
       const presenceInterval = setInterval(() => {
         presenceSocket.emit("presence.update", { status: "online" });
       }, 4 * 60 * 1000);

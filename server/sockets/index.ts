@@ -34,13 +34,31 @@ export function setupWebSockets(io: Server) {
   const notifyNs = io.of("/notify");
   const voiceNs = io.of("/voice");
 
-  // Helper to handle user connection tracking
+  // Helper to handle user connection tracking and global presence broadcasting
+  const updatePresence = async (userId: string, status: "online" | "offline") => {
+    try {
+      // Update DB if needed (optional, for persistency)
+      await prisma.profile.update({
+        where: { userId },
+        data: { lastActivity: status === "online" ? new Date() : undefined }
+      }).catch(() => {});
+
+      // Broadcast to presence namespace
+      presenceNs.emit("presence.changed", { userId, status });
+    } catch (e) {}
+  };
+
   const trackUser = (userId: string, socketId: string) => {
     if (!userConnections.has(userId)) {
       userConnections.set(userId, new Set());
     }
     userConnections.get(userId)!.add(socketId);
-    return userConnections.get(userId)!.size === 1; // True if first connection
+    
+    if (userConnections.get(userId)!.size === 1) {
+      updatePresence(userId, "online");
+      return true;
+    }
+    return false;
   };
 
   const untrackUser = (userId: string, socketId: string) => {
@@ -49,7 +67,8 @@ export function setupWebSockets(io: Server) {
       connections.delete(socketId);
       if (connections.size === 0) {
         userConnections.delete(userId);
-        return true; // True if last connection
+        updatePresence(userId, "offline");
+        return true;
       }
     }
     return false;
@@ -121,10 +140,6 @@ export function setupWebSockets(io: Server) {
       socket.emit("presence.snapshot", { 
         users: onlineFriends.map(id => ({ userId: id, status: "online" })) 
       });
-
-      if (isFirst) {
-        presenceNs.emit("presence.changed", { userId, status: "online" });
-      }
     } catch (e) {}
 
     socket.on("presence.update", async (data: { status: string, activity?: string }) => {
@@ -138,10 +153,7 @@ export function setupWebSockets(io: Server) {
     });
 
     socket.on("disconnect", () => {
-      const isLast = untrackUser(userId, socket.id);
-      if (isLast) {
-        presenceNs.emit("presence.changed", { userId, status: "offline" });
-      }
+      untrackUser(userId, socket.id);
     });
   });
 
@@ -179,12 +191,25 @@ export function setupWebSockets(io: Server) {
         const existingMember = lobby.members.find(m => m.userId === userId);
         if (!existingMember && lobby.members.length >= lobby.maxPlayers) throw new Error("LOBBY_FULL");
 
+        // Check if already a member before upserting to know if we should increment
+        const existingMemberRecord = await prisma.lobbyMember.findUnique({
+          where: { lobbyId_userId: { lobbyId, userId } }
+        });
+
         // Join DB
         const member = await prisma.lobbyMember.upsert({
           where: { lobbyId_userId: { lobbyId, userId } },
           update: {},
           create: { lobbyId, userId, role: "PLAYER", isReady: false }
         });
+
+        // Increment total joined ONLY if it's a new join
+        if (!existingMemberRecord) {
+          await prisma.profile.update({
+            where: { userId },
+            data: { totalLobbiesJoined: { increment: 1 } }
+          }).catch(() => {});
+        }
 
         socket.join(`lobby:${lobbyId}`);
         

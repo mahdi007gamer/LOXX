@@ -3,7 +3,8 @@ import prisma from "../utils/prisma.js";
 export class LobbyService {
   static async createLobby(userId: string, data: any) {
     const id = "LX" + Math.random().toString(36).substring(2, 8).toUpperCase();
-    return prisma.lobby.create({
+    
+    const lobby = await prisma.lobby.create({
       data: {
         id,
         gameId: data.gameId || data.game_id,
@@ -32,6 +33,14 @@ export class LobbyService {
         game: true
       }
     });
+
+    // Increment total joined for host
+    await prisma.profile.update({
+      where: { userId },
+      data: { totalLobbiesJoined: { increment: 1 } }
+    }).catch(() => {});
+
+    return lobby;
   }
 
   static async getLobbies(filters: { gameId?: string; region?: string; status?: string } = {}) {
@@ -85,7 +94,7 @@ export class LobbyService {
 
     if (existing) return existing;
 
-    return prisma.lobbyMember.create({
+    const member = await prisma.lobbyMember.create({
       data: {
         lobbyId,
         userId,
@@ -93,6 +102,14 @@ export class LobbyService {
         isReady: false
       }
     });
+
+    // Increment total joined
+    await prisma.profile.update({
+      where: { userId },
+      data: { totalLobbiesJoined: { increment: 1 } }
+    }).catch(() => {});
+
+    return member;
   }
 
   static async leaveLobby(userId: string, lobbyId: string) {

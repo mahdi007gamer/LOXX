@@ -68,7 +68,17 @@ export const FriendChatOverlay = () => {
                 </div>
                 <div>
                   <p className="text-xs font-bold text-white">{activeFriend?.displayName || activeChat?.tempDisplayName || (activeChatId === "1" ? "شما" : "کاربر")}</p>
-                  <p className="text-[10px] text-green-500">آنلاین</p>
+                  <p className={cn(
+                    "text-[10px]",
+                    activeFriend?.status === FriendStatus.ONLINE ? "text-green-500" :
+                    activeFriend?.status === FriendStatus.IN_GAME ? "text-neon-purple shadow-[0_0_8px_rgba(160,32,240,0.5)]" :
+                    activeFriend?.status === FriendStatus.IN_LOBBY ? "text-neon-blue shadow-[0_0_8px_rgba(0,229,255,0.5)]" :
+                    "text-gray-500"
+                  )}>
+                    {activeFriend?.status === FriendStatus.IN_GAME ? "در حال بازی" :
+                     activeFriend?.status === FriendStatus.IN_LOBBY ? "داخل لابی" :
+                     activeFriend?.status === FriendStatus.ONLINE ? "آنلاین" : "آفلاین"}
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-1">
