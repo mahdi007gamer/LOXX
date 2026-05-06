@@ -97,7 +97,10 @@ function App() {
                 <FriendChatOverlay />
                 <Toaster 
                   position="bottom-left" 
+                  gutter={12}
                   containerStyle={{
+                    bottom: 80,
+                    left: 20,
                     zIndex: 999999999,
                   }}
                   toastOptions={{

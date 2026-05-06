@@ -19,7 +19,7 @@ export const NotificationHandler = () => {
       
       if (data.type === "LOBBY_INVITE") {
         toast.custom((t) => (
-          <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} modern-glass-toast flex flex-col gap-3 w-[350px] p-4 text-white text-right direction-rtl`} style={{ background: 'rgba(13, 13, 20, 0.4)', backdropFilter: 'blur(16px) saturate(200%)', WebkitBackdropFilter: 'blur(16px) saturate(200%)', borderRadius: '20px', boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.8)' }}>
+          <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} flex flex-col gap-3 w-[320px] p-4 text-white text-right direction-rtl`} style={{ background: 'rgba(13, 13, 20, 0.4)', backdropFilter: 'blur(16px) saturate(200%)', WebkitBackdropFilter: 'blur(16px) saturate(200%)', borderRadius: '20px', boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.8)', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-neon-blue/20 flex items-center justify-center border border-neon-blue/30 overflow-hidden shrink-0">
                  {data.data?.sender?.avatar ? (
@@ -55,9 +55,15 @@ export const NotificationHandler = () => {
             </div>
           </div>
         ), { 
-          duration: 10000,
-          position: "top-center",
-          id: `invite-${data.data?.lobbyId}-${data.data?.sender?.id}`
+          duration: 15000,
+          position: "bottom-left",
+          id: `invite-${data.data?.lobbyId}-${data.data?.sender?.id}`,
+          style: {
+            background: 'transparent',
+            border: 'none',
+            padding: 0,
+            boxShadow: 'none'
+          }
         });
       } else {
         toast(data.message || "اطلاعیه جدید دریافت شد");

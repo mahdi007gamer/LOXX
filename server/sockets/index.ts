@@ -442,6 +442,53 @@ export function setupWebSockets(io: Server) {
       } catch(e) {}
     });
 
+    socket.on("lobby.chat.send", async (data: { content: string, tempId: string, target: any }, ack) => {
+      const { content, tempId, target } = data;
+      try {
+        if (!target?.id) throw new Error("Missing lobby id");
+        const lobbyId = target.id;
+        
+        const member = await prisma.lobbyMember.findFirst({
+           where: { userId, lobbyId }
+        });
+        if (!member) {
+           if (ack) ack({ status: "error", error: { message: "Not in this lobby" } });
+           return;
+        }
+
+        const user = await prisma.user.findUnique({ where: { id: userId }, include: { profile: true } });
+
+        const msg = await prisma.message.create({
+          data: {
+            content,
+            senderId: userId,
+            lobbyId,
+          }
+        }) as any;
+
+        const msgPayload = {
+          id: msg.id.toString(),
+          from: { 
+            userId, 
+            username: user?.username, 
+            membership: user?.profile?.membershipType || "NONE" 
+          },
+          targetType: "lobby",
+          targetId: lobbyId,
+          content,
+          createdAt: msg.createdAt.getTime()
+        };
+        
+        console.log(`[LOBBY CHAT] ${user?.username} sent message to ${lobbyId}`);
+        lobbyNs.to(`lobby:${lobbyId}`).emit("chat.message", msgPayload);
+
+        if (ack) ack({ status: "ok", data: { tempId, messageId: msg.id.toString(), createdAt: msg.createdAt.getTime() } });
+      } catch (err: any) {
+        console.error("Lobby Chat Error:", err);
+        if (ack) ack({ status: "error", error: { message: "Failed to send message: " + err.message } });
+      }
+    });
+
     socket.on("start_match_confirm", async (data: { lobbyId: string }) => {
       const { lobbyId } = data;
       try {
@@ -546,9 +593,12 @@ export function setupWebSockets(io: Server) {
             content,
             createdAt: msg.createdAt.getTime()
           };
-          console.log(`[CHAT] Broadcasting to room lobby:${target.id}`);
+          console.log(`[CHAT] Broadcasting lobby message to room lobby:${target.id}`);
+          const clientsInRoom = await chatNs.in(`lobby:${target.id}`).fetchSockets();
+          console.log(`[CHAT] Room lobby:${target.id} has ${clientsInRoom.length} clients`);
+          
           chatNs.to(`lobby:${target.id}`).emit("chat.message", msgPayload);
-          // Fallback to lobby namespace in case chat socket is having issues
+          // Fallback to lobby namespace
           lobbyNs.to(`lobby:${target.id}`).emit("chat.message", msgPayload);
           
           if (ack) ack({ status: "ok", data: { tempId, messageId: msg.id.toString(), createdAt: msg.createdAt.getTime() } });

@@ -177,26 +177,20 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const handleChatMessage = (msg: any) => {
       console.log("LobbyContext: [SOCKET_MSG_INCOMING]", msg);
       
-      // Some servers use 'target' object, some use 'targetType'/'targetId'
       const tType = msg.targetType || msg.target?.type;
-      const tId = msg.targetId || msg.target?.id;
+      const tId = msg.targetId || (msg.target?.id ? String(msg.target.id) : undefined);
 
-      console.log("LobbyContext: Parsed target ->", { tType, tId });
+      console.log("LobbyContext: Parsed target ->", { tType, tId, currentLobbyId: lobbyRef.current?.id });
 
       if (tType !== "lobby") {
-        console.log("LobbyContext: Msg ignored (not lobby)");
         return;
       }
 
       setLobby(prev => {
-        if (!prev) {
-          console.log("LobbyContext: Msg ignored (no lobby in state)");
-          return null;
-        }
+        if (!prev) return null;
         
-        // Match current lobby ID
-        if (tId && tId !== prev.id) {
-          console.log(`LobbyContext: Msg ignored (ID mismatch). Received: ${tId}, Current: ${prev.id}`);
+        // Ensure both IDs are compared as strings
+        if (tId && String(tId) !== String(prev.id)) {
           return prev;
         }
         
@@ -414,7 +408,7 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       });
 
       console.log("LobbyContext: sending message", msgData);
-      chatSocket.emit("chat.send", msgData, (ack: any) => {
+      lobbySocket.emit("lobby.chat.send", msgData, (ack: any) => {
         if (ack?.status === "error") {
           console.error("LobbyContext: Failed to send message", ack.error);
           toast.error(`خطا در ارسال پیام: ${ack.error?.message}`);
