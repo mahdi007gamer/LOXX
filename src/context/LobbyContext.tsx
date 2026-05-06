@@ -136,16 +136,20 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     // Chat Listeners
     const handleChatMessage = (msg: any) => {
-      if (msg.targetType !== "lobby") return;
+      console.log("LobbyContext: received chat message", msg);
+      if (msg.targetType !== "lobby" && msg.target?.type !== "lobby") return;
+
+      const targetId = msg.targetId || msg.target?.id;
 
       setLobby(prev => {
         if (!prev) return null;
         // Ensure message belongs to this lobby
-        if (msg.targetId && msg.targetId !== prev.id) return prev;
+        if (targetId && targetId !== prev.id) return prev;
         
-        // Anti-duplicate check
+        // Anti-duplicate check (includes checking if we already have this message via optimistic update or ID)
         const isDuplicate = prev.messages?.some(m => 
           m.id === msg.id || 
+          m.id === msg.tempId ||
           (m.timestamp === msg.timestamp && m.content === msg.content && m.from.userId === msg.from.userId)
         );
         if (isDuplicate) return prev;
@@ -214,17 +218,20 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   useEffect(() => {
     const syncRooms = () => {
-      if (lobby?.id) {
+      const currentLobby = lobbyRef.current;
+      if (currentLobby?.id) {
+        console.log("LobbyContext: syncing rooms for", currentLobby.id);
         if (chatSocket.connected) {
-          chatSocket.emit("chat.join", { type: "lobby", id: lobby.id });
+          chatSocket.emit("chat.join", { type: "lobby", id: currentLobby.id });
         }
         if (voiceSocket.connected) {
-          voiceSocket.emit("voice.join", { roomId: lobby.id });
+          voiceSocket.emit("voice.join", { roomId: currentLobby.id });
         }
       }
     };
 
     if (lobby?.id) {
+      // Sync immediately if possible
       syncRooms();
 
       chatSocket.on("connect", syncRooms);
@@ -235,7 +242,7 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         voiceSocket.off("connect", syncRooms);
       };
     }
-  }, [lobby?.id, chatSocket.connected, voiceSocket.connected]);
+  }, [lobby?.id]); // Only depend on lobby.id changes
 
   const [isJoining, setIsJoining] = useState<string | null>(null);
 
@@ -288,13 +295,38 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const sendMessage = (content: string) => {
-    if (lobby) {
-      console.log("WebRTC sending chat msg", content, chatSocket.connected);
-      chatSocket.emit("chat.send", {
-         target: { type: "lobby", id: lobby.id },
-         content,
-         tempId: crypto.randomUUID()
+    if (lobby && user) {
+      const tempId = crypto.randomUUID();
+      const msgData = {
+        target: { type: "lobby", id: lobby.id },
+        content,
+        tempId
+      };
+      
+      // Optimistic update
+      const optimisticMsg: ChatMessage = {
+        id: tempId,
+        from: {
+          userId: user.id,
+          username: user.username,
+          membership: "MEMBER"
+        },
+        content,
+        createdAt: Date.now(),
+        targetType: "lobby",
+        targetId: lobby.id
+      };
+
+      setLobby(prev => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          messages: [...(prev.messages || []), optimisticMsg]
+        };
       });
+
+      console.log("LobbyContext: sending message", msgData);
+      chatSocket.emit("chat.send", msgData);
     }
   };
 

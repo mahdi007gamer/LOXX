@@ -79,7 +79,29 @@ export const LobbyRoomPage = () => {
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [activeProfileUserId, setActiveProfileUserId] = useState<string | null>(null);
 
+  const [isAudioContextResumed, setIsAudioContextResumed] = useState(true);
   const [wasInLobby, setWasInLobby] = useState(false);
+
+  const resumeAudio = useCallback(async () => {
+    try {
+      const ctx = new AudioContext();
+      if (ctx.state === "suspended") {
+        await ctx.resume();
+      }
+      setIsAudioContextResumed(true);
+      toast.success("سیستم صوتی فعال شد", { id: 'audio-resume' });
+    } catch (e) {
+      console.error("Audio resume failed", e);
+    }
+  }, []);
+
+  useEffect(() => {
+    const ctx = new AudioContext();
+    if (ctx.state === "suspended") {
+      setIsAudioContextResumed(false);
+    }
+    ctx.close();
+  }, []);
 
   // Join lobby on mount
   useEffect(() => {
@@ -437,6 +459,16 @@ export const LobbyRoomPage = () => {
         </div>
 
         <div className="flex items-center gap-2 md:gap-4 shrink-0">
+          {!isAudioContextResumed && (
+            <button 
+              onClick={resumeAudio}
+              className="p-2 md:p-3 rounded-xl bg-neon-pink/20 text-neon-pink border border-neon-pink/30 animate-pulse flex items-center gap-2 text-[10px] md:text-xs font-black uppercase"
+            >
+              <Mic size={14} className="md:size-18" />
+              <span>فعال‌سازی صدا</span>
+            </button>
+          )}
+
           <div className="hidden sm:flex items-center gap-2 bg-black/60 rounded-2xl p-1 border border-white/10">
              <div className="px-4 py-2 text-[10px] font-black text-gray-500 border-l border-white/10 uppercase tracking-widest">کد لابی</div>
              <div className="px-4 py-2 font-mono text-sm text-neon-blue flex items-center gap-3">
