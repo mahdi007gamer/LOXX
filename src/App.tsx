@@ -96,23 +96,26 @@ function App() {
                 <LobbyOverlay />
                 <FriendChatOverlay />
                 <Toaster 
-                  position="top-center" 
+                  position="bottom-left" 
                   containerStyle={{
                     zIndex: 999999999,
+                    left: '20px',
+                    bottom: '20px',
                   }}
                   toastOptions={{
-                    className: '',
+                    className: 'modern-glass-toast',
                     style: {
-                      background: 'rgba(13, 13, 20, 0.8)',
-                      backdropFilter: 'blur(12px)',
+                      background: 'rgba(13, 13, 20, 0.6)',
+                      backdropFilter: 'blur(20px) saturate(180%)',
+                      WebkitBackdropFilter: 'blur(20px) saturate(180%)',
                       border: '1px solid rgba(255, 255, 255, 0.1)',
                       color: '#fff',
-                      borderRadius: '20px',
-                      padding: '16px 24px',
+                      borderRadius: '24px',
+                      padding: '14px 28px',
                       fontSize: '14px',
-                      fontWeight: '600',
-                      boxShadow: '0 20px 50px rgba(0,0,0,0.5)',
-                      maxWidth: '400px',
+                      fontWeight: '700',
+                      boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.6), inset 0 0 0 1px rgba(255, 255, 255, 0.05)',
+                      maxWidth: '420px',
                       textAlign: 'right'
                     },
                   }}

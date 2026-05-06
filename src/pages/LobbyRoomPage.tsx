@@ -1115,7 +1115,21 @@ const MatchInfoPanel = ({ isStarting, isMatchStarted, countdown, players, lobby,
   );
 };
 
-const PlayerCard = ({ player, isSelected, onSelect, onVolumeChange, onMute, onInvite, onProfile, onDirectMessage, onAddFriend, disabled }: { 
+const PlayerCard = ({ 
+  player, 
+  isSelected, 
+  onSelect, 
+  onVolumeChange, 
+  onMute, 
+  onInvite, 
+  onProfile, 
+  onDirectMessage, 
+  onAddFriend, 
+  onKick,
+  onBan,
+  isHostView,
+  disabled 
+}: { 
   player: Player, 
   isSelected: boolean,
   onSelect: () => void,

@@ -43,7 +43,7 @@ export const GamerShowcase = () => {
                 </div>
                 
                 {/* Overlay Textures */}
-                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 pointer-events-none" />
+                <div className="absolute inset-0 bg-[url('https://res.cloudinary.com/dvf7t6v7v/image/upload/v16912345/noise.svg')] opacity-20 pointer-events-none" />
                 <div className="absolute inset-0 bg-gradient-to-t from-dark-bg via-transparent to-transparent" />
             </div>
             
