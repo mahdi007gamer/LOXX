@@ -1143,7 +1143,6 @@ const PlayerCard = ({
   onBan?: (id: string) => void;
   isHostView?: boolean;
   disabled?: boolean;
-  key?: React.Key
 }) => {
   const isSlot = player.name === "Empty Slot";
   const { user } = useAuth();

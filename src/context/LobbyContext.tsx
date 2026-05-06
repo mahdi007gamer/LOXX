@@ -76,8 +76,9 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [user]);
 
   // SFX Helper
-  const playSFX = (type: 'message' | 'join' | 'leave' | 'notification' | 'action') => {
+  const playSFX = (type: 'message' | 'join' | 'leave' | 'notification' | 'action' | 'pop') => {
     const sounds = {
+      pop: 'https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3', // Quick pop
       message: 'https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3',
       join: 'https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3',
       leave: 'https://assets.mixkit.co/active_storage/sfx/2359/2359-preview.mp3',
@@ -85,8 +86,8 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       action: 'https://assets.mixkit.co/active_storage/sfx/2362/2362-preview.mp3'
     };
     const audio = new Audio(sounds[type]);
-    audio.volume = 0.4;
-    audio.play().catch(() => {}); // Catch autoplay block
+    audio.volume = 0.3;
+    audio.play().catch(() => {});
   };
 
   useEffect(() => {
@@ -176,7 +177,6 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const handleChatMessage = (msg: any) => {
       console.log("LobbyContext: Received message", msg);
       
-      // Determine target type and ID from various possible structures
       const tType = msg.targetType || msg.target?.type;
       const tId = msg.targetId || msg.target?.id;
 
@@ -184,26 +184,20 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
       setLobby(prev => {
         if (!prev) return null;
-        // If it's a lobby message, ensure it's for this lobby
-        if (tId && tId !== prev.id) {
-          console.log("LobbyContext: Skip msg, ID mismatch", tId, prev.id);
-          return prev;
-        }
+        if (tId && tId !== prev.id) return prev;
         
-        // Comprehensive anti-duplicate check
+        // Simple and safe duplicate check
         const isDuplicate = prev.messages?.some(m => 
           (msg.id && m.id === msg.id) || 
-          (msg.tempId && m.id === msg.tempId) ||
-          (m.content === msg.content && m.from.userId === msg.from.userId && Math.abs((m.timestamp || m.createdAt) - (msg.timestamp || msg.createdAt)) < 5000)
+          (msg.tempId && m.id === msg.tempId)
         );
 
         if (isDuplicate) {
-          // If we found a duplicate by content/time but now have a real ID, update it
           if (msg.id) {
             return {
               ...prev,
               messages: prev.messages.map(m => 
-                (!m.id || m.id === msg.tempId) && m.content === msg.content && m.from.userId === msg.from.userId 
+                (m.id === msg.tempId || !m.id) && m.content === msg.content && m.from.userId === msg.from.userId 
                   ? { ...m, id: msg.id } 
                   : m
               )
@@ -219,7 +213,7 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       });
       
       if (msg.from?.userId !== userRef.current?.id) {
-        playSFX('message');
+        playSFX('pop');
       }
     };
     chatSocket.on("chat.message", handleChatMessage);
@@ -282,7 +276,7 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const syncRooms = () => {
       const currentLobby = lobbyRef.current;
       if (currentLobby?.id) {
-        console.log("LobbyContext: Forcing room sync", currentLobby.id);
+        console.log("LobbyContext: Syncing rooms for lobby", currentLobby.id);
         chatSocket.emit("chat.join", { type: "lobby", id: currentLobby.id });
         voiceSocket.emit("voice.join", { roomId: currentLobby.id });
       }
@@ -290,16 +284,17 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     if (lobby?.id) {
       syncRooms();
-
-      // Re-sync on reconnection
-      chatSocket.on("connect", syncRooms);
+      
+      // Periodically ensure we are in the room, especially after re-connection
+      chatSocket.on("connect", () => {
+        console.log("Chat Socket reconnected, re-joining lobby room...");
+        syncRooms();
+      });
       voiceSocket.on("connect", syncRooms);
       
-      // Also listen for re-authenticated events if any
-      
       return () => {
-        chatSocket.off("connect", syncRooms);
-        voiceSocket.off("connect", syncRooms);
+        chatSocket.off("connect");
+        voiceSocket.off("connect");
       };
     }
   }, [lobby?.id]);

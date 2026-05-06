@@ -8,8 +8,8 @@ export const NotificationHandler = () => {
 
   useEffect(() => {
     const playNotifySFX = () => {
-      const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2361/2361-preview.mp3');
-      audio.volume = 0.4;
+      const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3');
+      audio.volume = 0.3;
       audio.play().catch(() => {});
     };
 

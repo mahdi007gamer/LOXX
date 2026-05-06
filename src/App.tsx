@@ -99,24 +99,28 @@ function App() {
                   position="bottom-left" 
                   containerStyle={{
                     zIndex: 999999999,
-                    left: '20px',
-                    bottom: '20px',
+                    left: '40px',
+                    bottom: '40px',
                   }}
                   toastOptions={{
                     className: 'modern-glass-toast',
                     style: {
-                      background: 'rgba(13, 13, 20, 0.6)',
-                      backdropFilter: 'blur(20px) saturate(180%)',
-                      WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+                      background: 'rgba(13, 13, 20, 0.4)',
+                      backdropFilter: 'blur(16px) saturate(200%)',
+                      WebkitBackdropFilter: 'blur(16px) saturate(200%)',
                       border: '1px solid rgba(255, 255, 255, 0.1)',
                       color: '#fff',
-                      borderRadius: '24px',
-                      padding: '14px 28px',
+                      borderRadius: '20px',
+                      padding: '12px 24px',
                       fontSize: '14px',
                       fontWeight: '700',
-                      boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.6), inset 0 0 0 1px rgba(255, 255, 255, 0.05)',
-                      maxWidth: '420px',
-                      textAlign: 'right'
+                      boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.8)',
+                      maxWidth: '400px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      textAlign: 'left',
+                      direction: 'ltr'
                     },
                   }}
                 />
