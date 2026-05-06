@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useRef } from "react";
 import { lobbySocket, chatSocket, voiceSocket } from "../lib/socket";
 import { toast } from "react-hot-toast";
 import { useAuth } from "./AuthContext";
@@ -136,18 +136,19 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     // Chat Listeners
     const handleChatMessage = (msg: any) => {
-      console.log("LobbyContext: received message", msg);
       if (msg.targetType !== "lobby") return;
-
-      const currentLobby = lobbyRef.current;
-      if (!currentLobby || (msg.targetId && msg.targetId !== currentLobby.id)) return;
 
       setLobby(prev => {
         if (!prev) return null;
+        // Ensure message belongs to this lobby
+        if (msg.targetId && msg.targetId !== prev.id) return prev;
         
-        // Anti-duplicate
-        const exists = prev.messages?.some(m => m.id === msg.id || (m.timestamp === msg.timestamp && m.content === msg.content && m.from.userId === msg.from.userId));
-        if (exists) return prev;
+        // Anti-duplicate check
+        const isDuplicate = prev.messages?.some(m => 
+          m.id === msg.id || 
+          (m.timestamp === msg.timestamp && m.content === msg.content && m.from.userId === msg.from.userId)
+        );
+        if (isDuplicate) return prev;
 
         return {
           ...prev,
