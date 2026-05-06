@@ -119,12 +119,23 @@ export const LobbiesPage = () => {
                   transition={{ delay: i * 0.05 }}
                 >
                   <NeonCard 
-                    variant={i % 3 === 0 ? "blue" : i % 3 === 1 ? "pink" : "purple"} 
-                    hover={true}
-                    className="group relative flex flex-col h-full overflow-hidden p-0 border-white/5 bg-[#0a0a0f]"
+                    variant={lobby.isPrivate ? "purple" : (i % 3 === 0 ? "blue" : i % 3 === 1 ? "pink" : "purple")} 
+                    hover={!lobby.isPrivate}
+                    className={cn(
+                      "group relative flex flex-col h-full overflow-hidden p-0 border-white/5 bg-[#0a0a0f]",
+                      lobby.isPrivate && "opacity-80"
+                    )}
                   >
                     {/* Game Banner */}
                     <div className="relative h-28 md:h-36 w-full overflow-hidden shrink-0">
+                      {lobby.isPrivate && (
+                        <div className="absolute inset-0 z-10 bg-black/40 backdrop-blur-[2px] flex items-center justify-center">
+                           <div className="flex flex-col items-center gap-2 text-white/40">
+                             <Lock size={32} />
+                             <span className="text-[10px] font-black uppercase tracking-widest">PRIVATE LOBBY</span>
+                           </div>
+                        </div>
+                      )}
                       <img 
                         src={lobby.game?.bannerUrl || "https://placehold.co/600x400?text=Game"} 
                         alt={lobby.game?.title} 
@@ -217,7 +228,15 @@ export const LobbiesPage = () => {
                       
                       {/* Join Button */}
                       <div className="md:absolute md:inset-0 md:flex md:items-center md:justify-center md:translate-y-full md:group-hover:translate-y-0 transition-transform duration-300 md:bg-gradient-to-t md:from-[#0a0a0f] md:to-transparent z-10 px-3 md:px-0">
-                        {lobby.status === "READY" || lobby.status === "WAITING" ? (
+                        {lobby.isPrivate ? (
+                          <button 
+                            disabled
+                            className="h-8 md:h-10 px-3 md:px-8 bg-white/5 border border-white/10 rounded-lg text-[9px] md:text-[11px] font-black uppercase inline-flex items-center gap-2 text-gray-500 cursor-not-allowed"
+                          >
+                            <Lock size={12} />
+                            <span>لابی خصوصی</span>
+                          </button>
+                        ) : (lobby.status === "READY" || lobby.status === "WAITING") ? (
                           <GlowButton 
                             variant={i % 3 === 0 ? "blue" : i % 3 === 1 ? "pink" : "purple"} 
                             className="h-8 md:h-10 px-3 md:px-8 !rounded-lg text-[9px] md:text-[11px] font-black uppercase italic"

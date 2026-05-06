@@ -475,12 +475,17 @@ export function setupWebSockets(io: Server) {
 
   // Chat Namespace
   chatNs.on("connection", (socket: AuthenticatedSocket) => {
-    const userId = socket.userId!;
-    socket.join(`user:${userId}`);
+    const userId = socket.userId;
+    if (!userId) return;
+    trackUser(userId, socket.id);
 
     socket.on("chat.join", (data: { type: "channel" | "lobby", id: string }) => {
       const room = data.type === "lobby" ? `lobby:${data.id}` : `channel:${data.id}`;
       socket.join(room);
+    });
+
+    socket.on("disconnect", () => {
+      untrackUser(userId, socket.id);
     });
 
     socket.on("chat.send", async (data: { target: { type: "channel" | "lobby" | "user", id: string }, content: string, tempId: string, replyToId?: string }, ack) => {
@@ -571,6 +576,11 @@ export function setupWebSockets(io: Server) {
   notifyNs.on("connection", (socket: AuthenticatedSocket) => {
     const userId = socket.userId!;
     socket.join(`user:${userId}`);
+    trackUser(userId, socket.id);
+
+    socket.on("disconnect", () => {
+      untrackUser(userId, socket.id);
+    });
   });
 
   console.log("WebSocket namespaces initialized");
