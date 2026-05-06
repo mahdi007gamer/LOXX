@@ -3,6 +3,7 @@ import { voiceSocket } from '../lib/socket';
 
 export const useWebRTC = (roomId: string | null, localStream: MediaStream | null, userId: string | undefined) => {
   const peersRef = useRef<Map<string, RTCPeerConnection>>(new Map());
+  const negotiationStateRef = useRef<Map<string, { makingOffer: boolean, ignoreOffer: boolean }>>(new Map());
   const pendingCandidatesRef = useRef<Map<string, any[]>>(new Map());
   const [remoteStreams, setRemoteStreams] = useState<Map<string, MediaStream>>(new Map());
   const localStreamRef = useRef<MediaStream | null>(null);
@@ -29,43 +30,38 @@ export const useWebRTC = (roomId: string | null, localStream: MediaStream | null
     // Join the voice signaling channel
     voiceSocket.emit('voice.join', { roomId });
 
-    const timers = new Map<string, any>();
+    const getNegotiationState = (uId: string) => {
+      if (!negotiationStateRef.current.has(uId)) {
+        negotiationStateRef.current.set(uId, { makingOffer: false, ignoreOffer: false });
+      }
+      return negotiationStateRef.current.get(uId)!;
+    };
 
     const createPeer = (targetUserId: string, initiator: boolean) => {
       const pc = new RTCPeerConnection({
         iceServers: [
-          { urls: 'stun:stun.l.google.com:19302' },
-          { urls: 'stun:stun1.l.google.com:19302' }
-        ]
+          { urls: "stun:stun.l.google.com:19302" },
+          { urls: "stun:stun1.l.google.com:19302" },
+        ],
       });
 
-      // Perfect Negotiation state
-      let makingOffer = false;
-      let ignoreOffer = false;
-      const isSlowNode = userId! > targetUserId; // Deterministic tie-breaker
-
-      if (localStreamRef.current) {
-        localStreamRef.current.getTracks().forEach(track => {
-          pc.addTrack(track, localStreamRef.current!);
-        });
-      }
-
-      pc.onicecandidate = event => {
+      pc.onicecandidate = (event) => {
         if (event.candidate) {
-          voiceSocket.emit('voice.signal', {
+          voiceSocket.emit("voice.signal", {
             targetUserId,
-            signal: { type: 'candidate', candidate: event.candidate }
+            signal: { candidate: event.candidate },
           });
         }
       };
 
-      pc.ontrack = event => {
+      pc.ontrack = (event) => {
+        console.log("WebRTC: received remote track", targetUserId);
         let stream = event.streams && event.streams[0];
         if (!stream) {
           stream = new MediaStream();
           stream.addTrack(event.track);
         }
-        setRemoteStreams(prev => {
+        setRemoteStreams((prev) => {
           const map = new Map(prev);
           map.set(targetUserId, stream);
           return map;
@@ -74,16 +70,20 @@ export const useWebRTC = (roomId: string | null, localStream: MediaStream | null
 
       pc.onnegotiationneeded = async () => {
         try {
-          makingOffer = true;
-          await pc.setLocalDescription(); // Implicitly creates offer
-          voiceSocket.emit('voice.signal', {
+          const state = getNegotiationState(targetUserId);
+          state.makingOffer = true;
+          const offer = await pc.createOffer();
+          if (pc.signalingState !== "stable") return;
+          await pc.setLocalDescription(offer);
+          voiceSocket.emit("voice.signal", {
             targetUserId,
-            signal: pc.localDescription
+            signal: pc.localDescription,
           });
         } catch (err) {
           console.error("Negotiation error:", err);
         } finally {
-          makingOffer = false;
+          const state = getNegotiationState(targetUserId);
+          state.makingOffer = false;
         }
       };
 
@@ -92,6 +92,13 @@ export const useWebRTC = (roomId: string | null, localStream: MediaStream | null
           pc.restartIce();
         }
       };
+
+      // Add tracks AFTER setting handlers to ensure onnegotiationneeded triggers
+      if (localStreamRef.current) {
+        localStreamRef.current.getTracks().forEach((track) => {
+          pc.addTrack(track, localStreamRef.current!);
+        });
+      }
 
       return pc;
     };
@@ -111,6 +118,7 @@ export const useWebRTC = (roomId: string | null, localStream: MediaStream | null
         peersRef.current.get(data.userId)?.close();
         peersRef.current.delete(data.userId);
       }
+      negotiationStateRef.current.delete(data.userId);
       setRemoteStreams(prev => {
         const map = new Map(prev);
         map.delete(data.userId);
@@ -133,28 +141,40 @@ export const useWebRTC = (roomId: string | null, localStream: MediaStream | null
 
       const isSlowNode = userId! > data.fromUserId;
       const description = data.signal;
+      const state = getNegotiationState(data.fromUserId);
 
       try {
         if (description.type) {
-          const offerCollision = description.type === "offer" &&
-            (makingOffer || pc.signalingState !== "stable");
+          const offerCollision =
+            description.type === "offer" &&
+            (state.makingOffer || pc.signalingState !== "stable");
 
-          ignoreOffer = !isSlowNode && offerCollision;
-          if (ignoreOffer) return;
+          state.ignoreOffer = !isSlowNode && offerCollision;
+          if (state.ignoreOffer) return;
 
-          await pc.setRemoteDescription(description);
+          await pc.setRemoteDescription(new RTCSessionDescription(description));
           if (description.type === "offer") {
-            await pc.setLocalDescription();
-            voiceSocket.emit('voice.signal', {
+            const answer = await pc.createAnswer();
+            await pc.setLocalDescription(answer);
+            voiceSocket.emit("voice.signal", {
               targetUserId: data.fromUserId,
-              signal: pc.localDescription
+              signal: pc.localDescription,
             });
           }
+
+          // Process buffered candidates
+          const candidates = pendingCandidatesRef.current.get(data.fromUserId) || [];
+          for (const cand of candidates) {
+            await pc.addIceCandidate(cand);
+          }
+          pendingCandidatesRef.current.delete(data.fromUserId);
         } else if (description.candidate) {
-          try {
+          if (pc.remoteDescription) {
             await pc.addIceCandidate(description.candidate);
-          } catch (err) {
-            if (!ignoreOffer) throw err;
+          } else {
+            const buffered = pendingCandidatesRef.current.get(data.fromUserId) || [];
+            buffered.push(description.candidate);
+            pendingCandidatesRef.current.set(data.fromUserId, buffered);
           }
         }
       } catch (err) {

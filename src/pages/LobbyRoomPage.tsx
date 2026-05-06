@@ -842,11 +842,13 @@ const RemoteAudioPlayer = ({ stream, onVolumeChange, volumeLevel }: { stream: Me
   const audioRef = useRef<HTMLAudioElement>(null);
   
   useEffect(() => {
-    let isPlaying = false;
     if (audioRef.current && stream) {
+      console.log("RemoteAudioPlayer: attaching stream", stream.id);
       audioRef.current.srcObject = stream;
       audioRef.current.play()
-        .then(() => { isPlaying = true; })
+        .then(() => { 
+          console.log("RemoteAudioPlayer: playing success");
+        })
         .catch(e => {
           if (e.name !== "AbortError") {
             console.error("Audio play failed:", e);

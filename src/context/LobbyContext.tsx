@@ -118,21 +118,30 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     // Chat Listeners
     const handleChatMessage = (msg: any) => {
-      console.log("WebRTC received chat msg", msg);
-      if (msg.targetType && msg.targetType !== "lobby") return;
+      console.log("LobbyContext: received chat message", msg);
       
-      setLobby(prev => {
-        if (!prev) return null;
-        // Ensure message belongs to this lobby
-        if (msg.targetId && msg.targetId !== prev.id) return prev;
-        
-        // prevent duplicate messages by checking id
-        if (prev.messages?.some(m => m.id === msg.id)) return prev;
-        return {
-          ...prev,
-          messages: [...(prev.messages || []), msg]
-        };
-      });
+      // If it's a lobby message, ensure it's for this lobby
+      if (msg.targetType === "lobby") {
+        setLobby(prev => {
+          if (!prev) {
+            console.log("LobbyContext: ignoring msg, no active lobby state");
+            return null;
+          }
+          if (msg.targetId && msg.targetId !== prev.id) {
+            console.log("LobbyContext: msg targetId mismatch", msg.targetId, prev.id);
+            return prev;
+          }
+          
+          if (prev.messages?.some(m => m.id === msg.id)) {
+            console.log("LobbyContext: duplicate message ignored", msg.id);
+            return prev;
+          }
+          return {
+            ...prev,
+            messages: [...(prev.messages || []), msg]
+          };
+        });
+      }
     };
     chatSocket.on("chat.message", handleChatMessage);
 
