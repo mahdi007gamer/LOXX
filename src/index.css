@@ -134,3 +134,21 @@
   0%, 100% { border-color: rgba(255, 255, 255, 0.15); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8); }
   50% { border-color: rgba(0, 229, 255, 0.3); box-shadow: 0 0 25px rgba(0, 229, 255, 0.15), 0 8px 32px 0 rgba(0, 0, 0, 0.8); }
 }
+
+@keyframes enter {
+  0% { transform: scale(0.9) translateY(20px); opacity: 0; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+@keyframes leave {
+  0% { transform: scale(1) translateY(0); opacity: 1; }
+  100% { transform: scale(0.9) translateY(20px); opacity: 0; }
+}
+
+.animate-enter {
+  animation: enter 0.35s cubic-bezier(0.21, 1.02, 0.35, 1) forwards;
+}
+
+.animate-leave {
+  animation: leave 0.25s cubic-bezier(0.4, 0, 1, 1) forwards;
+}
