@@ -71,11 +71,16 @@ model Friendship {
 model Game {
   id              String   @id @default(uuid())
   title           String   @unique // Persian
+  iconUrl         String?
   bannerUrl       String?
-  metadata        String?  // JSON string
+  genres          String?  // JSON array: ["FPS", "MOBA", etc]
+  regions         String?  // JSON array: ["IR", "EU", etc]
+  metadata        String?  // JSON string: { features: [{ name: "Mode", options: [] }] }
   lobbies         Lobby[]
   channels        Channel[]
   userGames       UserGame[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
 
 model Channel {
@@ -118,6 +123,7 @@ model Lobby {
   game            Game        @relation(fields: [gameId], references: [id])
   title           String      // Persian
   hostId          String
+  host            User        @relation("LobbyHost", fields: [hostId], references: [id])
   maxPlayers      Int         @default(5)
   password        String?
   region          String      @default("IR") // IR, TR, EU, ME
@@ -125,13 +131,17 @@ model Lobby {
   mode            String?     // e.g. "Competitive", "Casual"
   selectedMaps    String?     // JSON string or comma-separated
   description     String?     // Lobby description
+  metadata        String?     // JSON string for dynamic features
   skillLevel      String?     // e.g. "Silver - Global"
   micRequired     Boolean     @default(false)
   isPrivate       Boolean     @default(false)
   createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt @default(now())
 
   members         LobbyMember[]
   messages        Message[]
+
+  @@index([hostId])
 }
 
 model UserGame {

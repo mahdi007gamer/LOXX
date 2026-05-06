@@ -36,7 +36,9 @@ export interface Game {
   title: string;
   genre: string;
   image: string;
+  iconUrl?: string; // Admin uploaded icon
   bannerUrl?: string;
+  metadata?: string; // JSON string for features, regions, etc.
   variants?: string[];
   maps?: string[];
   activeLobbies: number;

@@ -150,22 +150,6 @@ export const Navbar = () => {
                     <span className="text-lg font-bold">{item.label}</span>
                   </NavLink>
                 ))}
-                
-                {(user?.role === "ADMIN" || user?.email === "admin@loxx.ir" || user?.email === "admin@test.com") && (
-                  <NavLink
-                    to="/admin"
-                    onClick={() => setIsMenuOpen(false)}
-                    className={({ isActive }) => cn(
-                      "flex items-center gap-4 rounded-xl px-4 py-4 transition-all",
-                      isActive 
-                        ? "bg-amber-400/10 text-amber-500 border-r-4 border-amber-500" 
-                        : "text-amber-400/70 hover:bg-white/5 hover:text-amber-400"
-                    )}
-                  >
-                    < Shield size={22} />
-                    <span className="text-lg font-bold">پنل مدیریت</span>
-                  </NavLink>
-                )}
               </div>
 
               <div className="absolute bottom-10 left-6 right-6">

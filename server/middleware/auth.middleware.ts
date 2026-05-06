@@ -29,7 +29,7 @@ export const authorizeAdmin = async (req: AuthenticatedRequest, res: Response, n
   const user = await prisma.user.findUnique({ where: { id: req.user.userId } });
   const isAdminEmail = user?.email === "admin@loxx.ir" || user?.email === "admin@test.com";
 
-  if (user?.role !== "ADMIN" && !isAdminEmail) {
+  if (!isAdminEmail) {
     return res.status(403).json({ status: "error", message: "Admin access required" });
   }
   

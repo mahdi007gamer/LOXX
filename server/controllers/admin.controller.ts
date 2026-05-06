@@ -66,11 +66,62 @@ export const updateUserMembership = async (req: Request, res: Response) => {
   }
 };
 
-export const createGame = async (req: Request, res: Response) => {
-  const { title, genre, bannerUrl, metadata } = req.body;
+export const getGameById = async (req: Request, res: Response) => {
+  const { id } = req.params;
   try {
-    const game = await prisma.game.create({
-      data: { title, bannerUrl, metadata: metadata ? JSON.stringify(metadata) : null }
+    const game = await prisma.game.findUnique({
+      where: { id }
+    }) as any;
+    
+    if (!game) return res.status(404).json({ status: "error", message: "Game not found" });
+    
+    // Parse JSON fields
+    const parsedGame = {
+      ...game,
+      genres: game.genres ? JSON.parse(game.genres) : [],
+      regions: game.regions ? JSON.parse(game.regions) : [],
+      metadata: game.metadata ? JSON.parse(game.metadata) : { features: [] }
+    };
+    
+    res.json({ status: "success", data: parsedGame });
+  } catch (error: any) {
+    res.status(500).json({ status: "error", message: error.message });
+  }
+};
+
+export const createGame = async (req: Request, res: Response) => {
+  const { title, iconUrl, bannerUrl, genres, regions, metadata } = req.body;
+  try {
+    const game = await (prisma.game.create as any)({
+      data: { 
+        title, 
+        iconUrl,
+        bannerUrl,
+        genres: genres ? JSON.stringify(genres) : null,
+        regions: regions ? JSON.stringify(regions) : null,
+        metadata: metadata ? JSON.stringify(metadata) : null
+      }
+    });
+    res.json({ status: "success", data: game });
+  } catch (error: any) {
+    res.status(500).json({ status: "error", message: error.message });
+  }
+};
+
+export const updateGame = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { title, iconUrl, bannerUrl, genres, regions, metadata } = req.body;
+  try {
+    const game = await (prisma.game.update as any)({
+      where: { id },
+      data: { 
+        title, 
+        iconUrl,
+        bannerUrl,
+        genres: genres ? JSON.stringify(genres) : null,
+        regions: regions ? JSON.stringify(regions) : null,
+        metadata: metadata ? JSON.stringify(metadata) : null
+      }
     });
     res.json({ status: "success", data: game });
   } catch (error: any) {

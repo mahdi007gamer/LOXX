@@ -17,6 +17,7 @@ export class LobbyService {
         mode: data.mode,
         selectedMaps: Array.isArray(data.selectedMaps) ? JSON.stringify(data.selectedMaps) : data.selectedMaps,
         description: data.description,
+        metadata: data.metadata ? (typeof data.metadata === 'string' ? data.metadata : JSON.stringify(data.metadata)) : null,
         skillLevel: data.skillLevel || data.rankRange,
         micRequired: !!data.micRequired,
         isPrivate: !!data.isPrivate,

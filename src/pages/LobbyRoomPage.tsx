@@ -29,7 +29,8 @@ import {
   X,
   Crown,
   ShieldAlert,
-  Gavel
+  Gavel,
+  Gamepad2
 } from "lucide-react";
 import { GlowButton } from "../components/ui/GlowButton";
 import { useFriends } from "../context/FriendsContext";
@@ -47,6 +48,7 @@ interface Player {
   ping: number;
   isSpeaking: boolean;
   volume: number;
+  activity: number;
 }
 
 interface Message {
@@ -446,6 +448,12 @@ export const LobbyRoomPage = () => {
              <ChevronLeft size={18} className="md:size-5 rotate-180" />
            </button>
            
+           <div className="h-10 w-10 md:h-14 md:w-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0 overflow-hidden">
+              {lobby?.game?.iconUrl ? (
+                <img src={lobby.game.iconUrl} className="w-full h-full object-contain" />
+              ) : <Gamepad2 className="text-neon-blue" size={24} />}
+           </div>
+           
            <div className="min-w-0 flex-1">
              <div className="flex items-center gap-2 md:gap-3 mb-0.5 md:mb-1">
                <h1 className="text-sm md:text-3xl font-black tracking-tight text-white truncate max-w-[150px] md:max-w-none">
@@ -456,7 +464,7 @@ export const LobbyRoomPage = () => {
                </div>
              </div>
              <div className="flex items-center gap-3 md:gap-5 text-[9px] md:text-[11px] text-gray-500 font-black uppercase tracking-widest">
-               <span className="flex items-center gap-1 md:gap-1.5"><Users size={10} md:size={12} className="text-neon-blue shrink-0" /> {players.filter(p => p.name !== "Empty Slot").length} / 5</span>
+               <span className="flex items-center gap-1 md:gap-1.5 font-bold"><Users size={12} className="text-neon-blue shrink-0 md:size-[14px]" /> {players.filter(p => !p.id.startsWith("slot-")).length} / {lobby?.maxPlayers || 5}</span>
                <span className="flex items-center gap-1 md:gap-1.5"><Trophy size={11} md:size={13} className="text-neon-pink shrink-0" /> حرفه‌ای</span>
              </div>
            </div>
@@ -877,7 +885,7 @@ const StatCard = ({ label, value }: { label: string, value: string }) => (
   </div>
 );
 
-const RemoteAudioPlayer = ({ stream, onVolumeChange, volumeLevel }: { stream: MediaStream, onVolumeChange: (vol: number) => void, volumeLevel: number }) => {
+const RemoteAudioPlayer = ({ stream, onVolumeChange, volumeLevel }: { stream: MediaStream, onVolumeChange: (vol: number) => void, volumeLevel: number, key?: any }) => {
   const audioRef = useRef<HTMLAudioElement>(null);
   
   useEffect(() => {
@@ -1010,7 +1018,7 @@ const MatchInfoPanel = ({ isStarting, isMatchStarted, countdown, players, lobby,
   onCancel: () => void,
   onReopen: () => void
 }) => {
-  const activePlayers = players.filter(p => p.name !== "Empty Slot");
+  const activePlayers = players.filter(p => !p.id.startsWith("slot-"));
   const readyCount = activePlayers.filter(p => p.isReady).length;
 
   return (
@@ -1076,7 +1084,7 @@ const MatchInfoPanel = ({ isStarting, isMatchStarted, countdown, players, lobby,
             key="waiting"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 bg-white/5 py-4 rounded-[28px] border border-white/5"
+            className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 bg-white/5 py-5 rounded-[28px] border border-white/5"
           >
             <div className="flex items-center gap-4">
                <div className="relative">
@@ -1088,26 +1096,27 @@ const MatchInfoPanel = ({ isStarting, isMatchStarted, countdown, players, lobby,
                </span>
             </div>
 
-            <div className="flex items-center gap-8">
-               <div className="flex items-center gap-3">
-                 <span className="text-[10px] font-black text-gray-600 uppercase">MAP</span>
-                 <span className="text-xs font-bold text-white max-w-[80px] truncate">
-                  {(() => {
-                    if (!lobby?.selectedMaps) return "Any";
-                    try {
-                      const parsed = JSON.parse(lobby.selectedMaps);
-                      return Array.isArray(parsed) ? parsed.join(', ') : String(parsed);
-                    } catch (e) {
-                      return lobby.selectedMaps;
-                    }
-                  })()}
-                </span>
-               </div>
-               <div className="flex items-center gap-3">
-                 <span className="text-[10px] font-black text-gray-600 uppercase">MODE</span>
-                 <span className="text-xs font-bold text-neon-blue">{lobby?.mode || "Competitive"}</span>
-               </div>
-            </div>
+             <div className="flex flex-wrap items-center gap-6">
+                <div className="flex items-center gap-3 border-r border-white/10 pr-6">
+                   <span className="text-[10px] font-black text-gray-600 uppercase tracking-widest">REGION</span>
+                   <span className="text-xs font-black text-neon-pink uppercase">{lobby?.region || "ME"}</span>
+                </div>
+                
+                {/* Dynamic Metadata */}
+                {(() => {
+                  let meta: any = {};
+                  try { 
+                    meta = typeof lobby?.metadata === 'string' ? JSON.parse(lobby.metadata || "{}") : (lobby?.metadata || {}); 
+                  } catch(e) {}
+                  
+                  return Object.entries(meta).map(([key, val]) => (
+                    <div key={key} className="flex items-center gap-3">
+                      <span className="text-[10px] font-black text-gray-600 uppercase tracking-widest">{key}</span>
+                      <span className="text-xs font-black text-white bg-white/5 px-3 py-1 rounded-lg border border-white/10">{val as string}</span>
+                    </div>
+                  ));
+                })()}
+             </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -1143,6 +1152,7 @@ const PlayerCard = ({
   onBan?: (id: string) => void;
   isHostView?: boolean;
   disabled?: boolean;
+  key?: any;
 }) => {
   const isSlot = player.name === "Empty Slot";
   const { user } = useAuth();

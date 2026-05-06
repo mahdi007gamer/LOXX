@@ -21,27 +21,30 @@ import {
   Sparkles,
   Mic,
   MessageSquare,
-  Lock
+  Lock,
+  Target
 } from "lucide-react";
 import { motion } from "motion/react";
 import { cn } from "../lib/utils";
 import { CreateLobbyModal } from "../components/modals/CreateLobbyModal";
-import { Lobby } from "../types";
+import { useGames } from "../context/GamesContext";
 
 export const LobbiesPage = () => {
   const navigate = useNavigate();
+  const { allGames: games } = useGames();
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [lobbies, setLobbies] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [activeFilter, setActiveFilter] = useState("all");
 
   const fetchLobbies = async () => {
     setLoading(true);
     try {
       const response = await api.get("/lobbies");
       if (response.data.status === "success") {
-        setLobbies(response.data.data.items.filter((l: any) => l.status === "READY" || l.status === "WAITING" || l.status === "STARTING" || l.status === "IN_PROGRESS"));
+        setLobbies(response.data.data.items);
       }
     } catch (error) {
       console.error("Failed to fetch lobbies:", error);
@@ -50,20 +53,21 @@ export const LobbiesPage = () => {
     }
   };
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
   useEffect(() => {
     fetchLobbies();
   }, []);
 
-  const handleRequestAccess = () => {
-    setShowToast(true);
-  };
-
   const handleLobbyCreated = () => {
     setIsModalOpen(false);
-    setShowToast(true);
+    fetchLobbies();
   };
+
+  const filteredLobbies = lobbies.filter(lobby => {
+    const matchesSearch = lobby.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                         lobby.game?.title.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesGame = activeFilter === "all" || lobby.gameId === activeFilter;
+    return matchesSearch && matchesGame;
+  });
 
   return (
     <div className="flex min-h-[calc(100vh-64px)]">
@@ -72,8 +76,8 @@ export const LobbiesPage = () => {
         <div className="container mx-auto max-w-6xl">
           <header className="mb-4 flex flex-col items-center justify-between gap-3 md:flex-row md:mb-12">
             <div className="text-right w-full">
-              <h1 className="text-lg md:text-4xl font-black text-white">لابی‌های فعال</h1>
-              <p className="mt-0.5 text-[9px] md:text-base text-gray-500 font-bold uppercase tracking-widest">تیم خود را پیدا کنید و بازی کنید</p>
+              <h1 className="text-2xl md:text-4xl font-black text-white">لابی‌های فعال</h1>
+              <p className="mt-0.5 text-[9px] md:text-base text-gray-500 font-bold uppercase tracking-widest leading-relaxed">تیم خود را پیدا کنید و در کنار بقیه بازیکنان حرفه‌ای بازی کنید</p>
             </div>
             
             <div className="flex w-full items-center gap-2 md:gap-3 md:w-auto overflow-hidden">
@@ -81,198 +85,180 @@ export const LobbiesPage = () => {
                 <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-700" size={14} />
                 <input 
                    type="text" 
-                   placeholder="جستجوی لابی..."
+                   value={searchTerm}
+                   onChange={(e) => setSearchTerm(e.target.value)}
+                   placeholder="جستجوی لابی یا بازی..."
                    className="w-full rounded-xl border border-white/5 bg-white/5 py-1.5 md:py-2.5 pr-8 text-[10px] md:text-sm text-white focus:border-neon-blue/40 focus:outline-none transition-all placeholder:text-gray-700 font-bold"
                  />
               </div>
-              <GlowButton variant="blue" className="flex gap-1.5 h-8 md:h-10 px-3 md:px-6 shrink-0" onClick={() => setIsModalOpen(true)}>
-                <Plus size={14} />
-                <span className="text-[10px] md:text-sm font-black">ساخت لابی</span>
+              <GlowButton variant="blue" className="flex gap-1.5 h-10 md:h-12 px-4 md:px-8 shrink-0 shadow-[0_0_20px_rgba(0,229,255,0.2)]" onClick={() => setIsModalOpen(true)}>
+                <Plus size={16} />
+                <span className="text-[11px] md:text-sm font-black">ساخت لابی جدید</span>
               </GlowButton>
             </div>
           </header>
 
           {/* Game Filters */}
-          <div className="mb-6 flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-none no-scrollbar">
-             <button className="whitespace-nowrap rounded-lg bg-neon-blue px-3 md:px-6 py-1 md:py-2 text-[10px] md:text-sm font-black text-dark-bg transition-all">همه</button>
-             {["CS 2", "Dota 2", "Valorant", "Apex"].map((game, i) => (
-                <button key={i} className="whitespace-nowrap rounded-lg border border-white/5 bg-white/5 px-3 md:px-6 py-1 md:py-2 text-[10px] md:text-sm font-bold text-gray-600 hover:text-white transition-all">
-                  {game}
+          <div className="mb-8 flex items-center gap-3 overflow-x-auto pb-4 scrollbar-none no-scrollbar">
+             <button 
+                onClick={() => setActiveFilter("all")}
+                className={cn(
+                  "whitespace-nowrap rounded-xl px-5 py-2 text-xs font-black transition-all",
+                  activeFilter === "all" 
+                    ? "bg-neon-blue text-dark-bg shadow-[0_0_15px_rgba(0,229,255,0.3)]" 
+                    : "bg-white/5 text-gray-500 hover:text-white border border-white/5"
+                )}
+             >
+               همه بازی‌ها
+             </button>
+             {games?.map((game) => (
+                <button 
+                  key={game.id} 
+                  onClick={() => setActiveFilter(game.id)}
+                  className={cn(
+                    "whitespace-nowrap rounded-xl border px-5 py-2 text-xs font-black transition-all flex items-center gap-2",
+                    activeFilter === game.id
+                      ? "bg-neon-blue/20 border-neon-blue text-neon-blue shadow-[0_0_15px_rgba(0,229,255,0.1)]"
+                      : "border-white/5 bg-white/5 text-gray-500 hover:text-white"
+                  )}
+                >
+                  {game.iconUrl && <img src={game.iconUrl} className="w-4 h-4 object-contain" alt="" />}
+                  {game.title}
                 </button>
              ))}
-             <button className="flex items-center gap-1 rounded-lg border border-white/5 bg-white/5 px-2 md:px-4 py-1 text-[10px] text-gray-600 shrink-0">
-               <Filter size={12} />
-               <span>فیلتر</span>
-             </button>
           </div>
 
           {/* Lobbies Grid */}
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
             {loading ? (
               [1, 2, 3, 4, 5, 6].map(i => <CardSkeleton key={i} />)
+            ) : filteredLobbies.length === 0 ? (
+              <div className="col-span-full py-20 text-center">
+                 <div className="inline-flex h-20 w-20 items-center justify-center rounded-full bg-white/5 border border-white/10 text-gray-600 mb-4">
+                    <Gamepad2 size={40} />
+                 </div>
+                 <h3 className="text-xl font-black text-white">لابی فعالی یافت نشد</h3>
+                 <p className="text-gray-500 mt-2 font-bold">اولین لابی را شما بسازید!</p>
+              </div>
             ) : (
-              lobbies.map((lobby, i) => (
-                <motion.div
-                  key={lobby.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.05 }}
-                >
-                  <NeonCard 
-                    variant={lobby.isPrivate ? "purple" : (i % 3 === 0 ? "blue" : i % 3 === 1 ? "pink" : "purple")} 
-                    hover={!lobby.isPrivate}
-                    className={cn(
-                      "group relative flex flex-col h-full overflow-hidden p-0 border-white/5 bg-[#0a0a0f]",
-                      lobby.isPrivate && "opacity-80"
-                    )}
+              filteredLobbies.map((lobby, i) => {
+                let meta: any = {};
+                try { meta = typeof lobby.metadata === 'string' ? JSON.parse(lobby.metadata || "{}") : (lobby.metadata || {}); } catch(e){}
+                
+                return (
+                  <motion.div
+                    key={lobby.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.05 }}
                   >
-                    {/* Game Banner */}
-                    <div className="relative h-28 md:h-36 w-full overflow-hidden shrink-0">
-                      {lobby.isPrivate && (
-                        <div className="absolute inset-0 z-10 bg-black/40 backdrop-blur-[2px] flex items-center justify-center">
-                           <div className="flex flex-col items-center gap-2 text-white/40">
-                             <Lock size={32} />
-                             <span className="text-[10px] font-black uppercase tracking-widest">PRIVATE LOBBY</span>
-                           </div>
-                        </div>
+                    <NeonCard 
+                      className={cn(
+                        "group relative flex flex-col h-full overflow-hidden p-0 border-white/5 bg-[#0a0a0f] transition-all hover:border-neon-blue/20",
+                        lobby.isPrivate && "opacity-90"
                       )}
-                      <img 
-                        src={lobby.game?.bannerUrl || "https://placehold.co/600x400?text=Game"} 
-                        alt={lobby.game?.title} 
-                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-                        referrerPolicy="no-referrer"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0f] via-transparent to-transparent" />
-                      
-                      {/* Status Badge */}
-                      <div className="absolute top-2 md:top-4 right-2 md:right-4 flex items-center gap-1.5 px-2 py-1 md:px-3 md:py-1.5 rounded-full text-[9px] md:text-xs font-black uppercase backdrop-blur-md border bg-neon-blue/20 border-neon-blue/30 text-neon-blue">
-                         <Sparkles size={10} />
-                         <span>جدید</span>
-                      </div>
-
-                      {/* Time Badge */}
-                      <div className="absolute bottom-2 md:bottom-4 right-2 md:right-4 flex items-center gap-1 text-[9px] md:text-xs font-bold text-gray-300">
-                        <Clock size={12} />
-                        <span>{new Date(lobby.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                      </div>
-
-                      {/* Game Icon Overlay */}
-                      <div className="absolute -bottom-4 md:-bottom-5 left-3 md:left-5 h-10 w-10 md:h-12 md:w-12 flex items-center justify-center rounded-xl bg-[#0a0a0f] border border-white/10 text-xl md:text-2xl shadow-2xl z-20 text-white">
-                        {lobby.game?.title?.[0] || "🎮"}
-                      </div>
-                    </div>
-
-                    <div className="p-4 md:p-8 pt-6 md:pt-10 flex-1 flex flex-col">
-                      <div className="mb-2 md:mb-4 flex items-center justify-between">
-                        <div className="rounded-full px-2 py-0.5 md:px-3 md:py-1 text-[9px] md:text-xs font-black uppercase tracking-tight border truncate max-w-[120px] md:max-w-none bg-neon-blue/10 text-neon-blue border-neon-blue/20">
-                          {lobby.game?.title}
-                        </div>
-                        <div className="flex items-center gap-1 md:gap-2 text-white shrink-0">
-                          <Users size={14} className="text-gray-500" />
-                          <span className="text-[11px] md:text-sm font-black">{lobby.members?.length || 0} / {lobby.maxPlayers}</span>
-                        </div>
-                      </div>
-                      
-                      <h3 className="mb-3 md:mb-4 text-sm md:text-2xl font-black text-white line-clamp-1 group-hover:text-neon-blue transition-colors">
-                        {lobby.title}
-                      </h3>
-
-                      {/* Region & Mode Badges */}
-                      <div className="mb-4 md:mb-5 flex flex-wrap gap-1.5 md:gap-2.5 text-right" dir="rtl">
-                        <div className="flex items-center gap-1 px-2 py-1 md:px-3 md:py-1.5 rounded-lg bg-white/5 border border-white/5 text-[9px] md:text-xs font-bold text-gray-400">
-                          <Globe size={11} />
-                          <span>{lobby.region}</span>
-                        </div>
-                        <div className="flex items-center gap-1 px-2 py-1 md:px-3 md:py-1.5 rounded-lg bg-white/5 border border-white/5 text-[9px] md:text-xs font-bold text-neon-blue">
-                          <Gamepad2 size={11} />
-                          <span>{lobby.mode || "Competitive"}</span>
-                        </div>
-                      </div>
-
-                      {/* Feature Icons Row */}
-                      <div className="mb-4 md:mb-6 flex flex-wrap gap-2">
-                        {lobby.password && (
-                          <div className="h-7 w-7 md:h-8 md:w-8 rounded-lg bg-neon-pink/10 border border-neon-pink/20 flex items-center justify-center text-neon-pink" title="رمزگذاری شده">
-                            <Lock size={12} />
-                          </div>
-                        )}
-                        {lobby.micRequired && (
-                          <div className="h-7 w-7 md:h-8 md:w-8 rounded-lg bg-neon-blue/10 border border-neon-blue/20 flex items-center justify-center text-neon-blue" title="میکروفون اجباری">
-                            <Mic size={12} />
-                          </div>
-                        )}
+                    >
+                      {/* Game Banner */}
+                      <div className="relative h-40 w-full overflow-hidden shrink-0">
                         {lobby.isPrivate && (
-                           <div className="h-7 w-7 md:h-8 md:w-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-gray-500" title="خصوصی">
-                             <ShieldCheck size={12} />
-                           </div>
+                          <div className="absolute inset-0 z-10 bg-black/50 backdrop-blur-[1px] flex items-center justify-center">
+                             <div className="flex flex-col items-center gap-2 text-white/50">
+                               <Lock size={28} />
+                               <span className="text-[9px] font-black uppercase tracking-[0.2em]">PRIVATE LOBBY</span>
+                             </div>
+                          </div>
                         )}
+                        <img 
+                          src={lobby.game?.bannerUrl || "https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&q=80&w=1000"} 
+                          alt={lobby.game?.title} 
+                          className="h-full w-full object-cover transition-transform duration-1000 group-hover:scale-110"
+                          referrerPolicy="no-referrer"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0f] via-transparent to-transparent opacity-80" />
+                        
+                        <div className="absolute top-4 right-4 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase backdrop-blur-md border border-white/10 bg-white/5 text-white">
+                           <Clock size={12} className="text-neon-blue" />
+                           <span>{new Date(lobby.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                        </div>
+
+                        {/* Game Icon Overlay */}
+                        <div className="absolute -bottom-5 left-5 h-12 w-12 flex items-center justify-center rounded-xl bg-[#0a0a0f] border border-white/10 shadow-2xl z-20 text-white overflow-hidden">
+                          {lobby.game?.iconUrl ? <img src={lobby.game.iconUrl} className="w-8 h-8 object-contain" /> : (lobby.game?.title?.[0] || "🎮")}
+                        </div>
                       </div>
 
-                      <div className="flex items-center gap-2 text-[11px] md:text-base text-gray-400 mt-auto">
-                        <ShieldCheck size={14} className="text-green-500 shrink-0" />
-                        <span className="font-bold truncate">وضعیت لابی: <span className="text-white">{lobby.status}</span></span>
-                      </div>
-                    </div>
+                      <div className="p-6 pt-10 flex-1 flex flex-col">
+                        <div className="mb-4 flex items-center justify-between">
+                          <div className="rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-tight border truncate max-w-[150px] bg-white/5 text-gray-400 border-white/10 group-hover:border-neon-blue/20 group-hover:text-neon-blue transition-all">
+                            {lobby.game?.title}
+                          </div>
+                          <div className="flex items-center gap-2 text-white shrink-0">
+                            <Users size={14} className="text-neon-blue" />
+                            <span className="text-xs font-black">{lobby.members?.length || 0} / {lobby.maxPlayers}</span>
+                          </div>
+                        </div>
+                        
+                        <h3 className="mb-4 text-xl font-black text-white line-clamp-1 group-hover:text-neon-blue transition-colors">
+                          {lobby.title}
+                        </h3>
 
-                    <div className="mt-2 flex items-center justify-between border-t border-white/5 p-3 md:p-5 transition-all relative overflow-hidden h-14 md:h-18">
-                      <div className="flex items-center gap-1.5 md:gap-2.5 transition-transform duration-300 md:group-hover:-translate-y-20">
-                         <div className="flex -space-x-2">
-                           {lobby.members?.slice(0, 3)?.map((m: any) => (
-                              <div key={m.userId} className="h-6 w-6 md:h-8 md:w-8 rounded-full border border-dark-card bg-white/10 flex items-center justify-center text-[10px] overflow-hidden">
-                                {m.user?.profile?.avatarUrl ? <img src={m.user.profile.avatarUrl} alt="" /> : "👤"}
+                        {/* Dynamic Metadata / Features */}
+                        <div className="mb-6 flex flex-wrap gap-2 text-right" dir="rtl">
+                          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/5 text-[10px] font-black text-gray-500">
+                            <Globe size={12} className="text-neon-pink" />
+                            <span>{lobby.region}</span>
+                          </div>
+                          {Object.entries(meta).map(([key, val]) => (
+                            <div key={key} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/5 text-[10px] font-black text-neon-blue">
+                              {val as string}
+                            </div>
+                          ))}
+                        </div>
+
+                        <div className="space-y-4 mt-auto">
+                           <div className="flex items-center gap-3">
+                              <div className="h-0.5 flex-1 bg-white/5" />
+                              <div className="flex items-center gap-2 text-[10px] font-black text-gray-600 uppercase tracking-widest">
+                                 <ShieldCheck size={14} className="text-green-500" />
+                                 Skill: <span className="text-white">{lobby.skillLevel}</span>
                               </div>
-                           ))}
-                         </div>
-                         <span className="text-[10px] md:text-sm font-bold text-gray-500">+{lobby.members?.length || 0} آنلاین</span>
+                              <div className="h-0.5 flex-1 bg-white/5" />
+                           </div>
+
+                           <div className="flex items-center justify-between">
+                              <div className="flex -space-x-3">
+                                {lobby.members?.slice(0, 4)?.map((m: any) => (
+                                   <div key={m.userId} className="h-8 w-8 rounded-full border-2 border-dark-bg bg-white/10 flex items-center justify-center overflow-hidden ring-1 ring-white/5">
+                                     {m.user?.profile?.avatarUrl ? <img src={m.user.profile.avatarUrl} alt="" className="w-full h-full object-cover" /> : <span className="text-[10px]">👤</span>}
+                                   </div>
+                                ))}
+                                {lobby.members?.length > 4 && (
+                                   <div className="h-8 w-8 rounded-full border-2 border-dark-bg bg-white/5 flex items-center justify-center text-[9px] font-black text-gray-500">+{(lobby.members.length - 4)}</div>
+                                )}
+                              </div>
+                              
+                              <GlowButton 
+                                variant={lobby.isPrivate ? "purple" : "blue"} 
+                                className="h-10 px-6 !rounded-xl text-[10px] font-black uppercase italic tracking-wider transition-transform hover:scale-105 active:scale-95"
+                                onClick={() => navigate(`/lobby/${lobby.id}`)}
+                              >
+                                {lobby.isPrivate ? "کد امنیتی" : "ورود به لابی"}
+                              </GlowButton>
+                           </div>
+                        </div>
                       </div>
-                      
-                      {/* Join Button */}
-                      <div className="md:absolute md:inset-0 md:flex md:items-center md:justify-center md:translate-y-full md:group-hover:translate-y-0 transition-transform duration-300 md:bg-gradient-to-t md:from-[#0a0a0f] md:to-transparent z-10 px-3 md:px-0">
-                        {lobby.isPrivate ? (
-                          <button 
-                            disabled
-                            className="h-8 md:h-10 px-3 md:px-8 bg-white/5 border border-white/10 rounded-lg text-[9px] md:text-[11px] font-black uppercase inline-flex items-center gap-2 text-gray-500 cursor-not-allowed"
-                          >
-                            <Lock size={12} />
-                            <span>لابی خصوصی</span>
-                          </button>
-                        ) : (lobby.status === "READY" || lobby.status === "WAITING") ? (
-                          <GlowButton 
-                            variant={i % 3 === 0 ? "blue" : i % 3 === 1 ? "pink" : "purple"} 
-                            className="h-8 md:h-10 px-3 md:px-8 !rounded-lg text-[9px] md:text-[11px] font-black uppercase italic"
-                            onClick={() => navigate(`/lobby/${lobby.id}`)}
-                          >
-                            <span className="md:hidden">همین الان وارد شو!!</span>
-                            <span className="hidden md:inline">الان وارد لابی شو!!</span>
-                          </GlowButton>
-                        ) : (
-                          <button 
-                            disabled
-                            className="h-8 md:h-10 px-3 md:px-8 bg-black/40 border border-white/5 rounded-lg text-[9px] md:text-[11px] font-black uppercase italic text-gray-500 cursor-not-allowed"
-                          >
-                            در حال بازی
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </NeonCard>
-                </motion.div>
-              ))
+                    </NeonCard>
+                  </motion.div>
+                );
+              })
             )}
           </div>
         </div>
 
-        {/* Premium Create Lobby Modal */}
         <CreateLobbyModal 
           isOpen={isModalOpen} 
           onClose={() => setIsModalOpen(false)} 
           onSuccess={handleLobbyCreated} 
-        />
-
-        <Toast 
-          isVisible={showToast} 
-          message="درخواست شما ارسال شد. منتظر تایید باشید." 
-          onClose={() => setShowToast(false)} 
         />
       </main>
     </div>
