@@ -136,23 +136,43 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     // Chat Listeners
     const handleChatMessage = (msg: any) => {
-      console.log("LobbyContext: received chat message", msg);
-      if (msg.targetType !== "lobby" && msg.target?.type !== "lobby") return;
+      console.log("LobbyContext: Received message", msg);
+      
+      // Determine target type and ID from various possible structures
+      const tType = msg.targetType || msg.target?.type;
+      const tId = msg.targetId || msg.target?.id;
 
-      const targetId = msg.targetId || msg.target?.id;
+      if (tType !== "lobby") return;
 
       setLobby(prev => {
         if (!prev) return null;
-        // Ensure message belongs to this lobby
-        if (targetId && targetId !== prev.id) return prev;
+        // If it's a lobby message, ensure it's for this lobby
+        if (tId && tId !== prev.id) {
+          console.log("LobbyContext: Skip msg, ID mismatch", tId, prev.id);
+          return prev;
+        }
         
-        // Anti-duplicate check (includes checking if we already have this message via optimistic update or ID)
+        // Comprehensive anti-duplicate check
         const isDuplicate = prev.messages?.some(m => 
-          m.id === msg.id || 
-          m.id === msg.tempId ||
-          (m.timestamp === msg.timestamp && m.content === msg.content && m.from.userId === msg.from.userId)
+          (msg.id && m.id === msg.id) || 
+          (msg.tempId && m.id === msg.tempId) ||
+          (m.content === msg.content && m.from.userId === msg.from.userId && Math.abs((m.timestamp || m.createdAt) - (msg.timestamp || msg.createdAt)) < 5000)
         );
-        if (isDuplicate) return prev;
+
+        if (isDuplicate) {
+          // If we found a duplicate by content/time but now have a real ID, update it
+          if (msg.id) {
+            return {
+              ...prev,
+              messages: prev.messages.map(m => 
+                (!m.id || m.id === msg.tempId) && m.content === msg.content && m.from.userId === msg.from.userId 
+                  ? { ...m, id: msg.id } 
+                  : m
+              )
+            };
+          }
+          return prev;
+        }
 
         return {
           ...prev,
@@ -220,29 +240,27 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const syncRooms = () => {
       const currentLobby = lobbyRef.current;
       if (currentLobby?.id) {
-        console.log("LobbyContext: syncing rooms for", currentLobby.id);
-        if (chatSocket.connected) {
-          chatSocket.emit("chat.join", { type: "lobby", id: currentLobby.id });
-        }
-        if (voiceSocket.connected) {
-          voiceSocket.emit("voice.join", { roomId: currentLobby.id });
-        }
+        console.log("LobbyContext: Forcing room sync", currentLobby.id);
+        chatSocket.emit("chat.join", { type: "lobby", id: currentLobby.id });
+        voiceSocket.emit("voice.join", { roomId: currentLobby.id });
       }
     };
 
     if (lobby?.id) {
-      // Sync immediately if possible
       syncRooms();
 
+      // Re-sync on reconnection
       chatSocket.on("connect", syncRooms);
       voiceSocket.on("connect", syncRooms);
-
+      
+      // Also listen for re-authenticated events if any
+      
       return () => {
         chatSocket.off("connect", syncRooms);
         voiceSocket.off("connect", syncRooms);
       };
     }
-  }, [lobby?.id]); // Only depend on lobby.id changes
+  }, [lobby?.id]);
 
   const [isJoining, setIsJoining] = useState<string | null>(null);
 
