@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { useLobby } from "../context/LobbyContext";
@@ -109,6 +109,15 @@ export const LobbyRoomPage = () => {
   const [peerVolumes, setPeerVolumes] = useState<Record<string, number>>({});
   const [peerActivity, setPeerActivity] = useState<Record<string, number>>({});
 
+  const handlePeerVolumeChange = useCallback((peerUserId: string, vol: number) => {
+    setPeerActivity(prev => {
+      if (prev[peerUserId] === vol) return prev;
+      // Only update if difference is significant to throttle re-renders
+      if (Math.abs((prev[peerUserId] || 0) - vol) < 15 && vol !== 0) return prev;
+      return { ...prev, [peerUserId]: vol };
+    });
+  }, []);
+
   const players = useMemo(() => {
     const list = lobby?.players?.map(p => ({
       id: p.userId,
@@ -199,7 +208,7 @@ export const LobbyRoomPage = () => {
                const newVol = Math.min(100, Math.round(avg * 2));
                
                // Only update local state if change is very significant
-               if (Math.abs(newVol - lastVol) > 15) {
+               if (Math.abs(newVol - lastVol) > 20 || (newVol === 0 && lastVol !== 0)) {
                  lastVol = newVol;
                  setLocalVolume(newVol);
                }
@@ -463,7 +472,7 @@ export const LobbyRoomPage = () => {
               key={peerUserId}
               stream={stream}
               volumeLevel={peerVolumes[peerUserId] !== undefined ? peerVolumes[peerUserId] : 100}
-              onVolumeChange={(vol) => setPeerActivity(prev => ({ ...prev, [peerUserId]: vol }))}
+              onVolumeChange={(vol) => handlePeerVolumeChange(peerUserId, vol)}
             />
           ))}
 
@@ -1041,7 +1050,17 @@ const MatchInfoPanel = ({ isStarting, isMatchStarted, countdown, players, lobby,
             <div className="flex items-center gap-8">
                <div className="flex items-center gap-3">
                  <span className="text-[10px] font-black text-gray-600 uppercase">MAP</span>
-                 <span className="text-xs font-bold text-white max-w-[80px] truncate">{lobby?.selectedMaps ? (Array.isArray(JSON.parse(lobby.selectedMaps)) ? JSON.parse(lobby.selectedMaps).join(', ') : lobby.selectedMaps) : "Any"}</span>
+                 <span className="text-xs font-bold text-white max-w-[80px] truncate">
+                  {(() => {
+                    if (!lobby?.selectedMaps) return "Any";
+                    try {
+                      const parsed = JSON.parse(lobby.selectedMaps);
+                      return Array.isArray(parsed) ? parsed.join(', ') : String(parsed);
+                    } catch (e) {
+                      return lobby.selectedMaps;
+                    }
+                  })()}
+                </span>
                </div>
                <div className="flex items-center gap-3">
                  <span className="text-[10px] font-black text-gray-600 uppercase">MODE</span>

@@ -1,52 +1,66 @@
 import { PrismaClient } from "@prisma/client";
-import argon2 from "argon2";
 
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log("Seeding LOXX database...");
+  console.log("Seeding database...");
 
-  // Create Admin User
-  const adminPassword = await argon2.hash("123456");
-  await prisma.user.upsert({
-    where: { email: "admin@test.com" },
+  // Create some games
+  const counterStrike = await prisma.game.upsert({
+    where: { title: "Counter-Strike 2" },
     update: {},
     create: {
-      email: "admin@test.com",
-      username: "admin",
-      passwordHash: adminPassword,
-      role: "ADMIN"
+      title: "Counter-Strike 2",
+      bannerUrl: "https://images.alphacoders.com/132/1328491.jpeg",
+      metadata: JSON.stringify({
+        slug: "cs2",
+        description: "Tactical first-person shooter",
+        imageUrl: "https://cdn.cloudflare.steamstatic.com/steam/apps/730/header.jpg",
+        genre: "FPS",
+        developer: "Valve",
+        platform: "PC",
+        modes: ["Competitive", "Casual", "Wingman"],
+        maps: ["Dust II", "Mirage", "Inferno", "Overpass", "Nuke", "Anubis", "Ancient"]
+      })
     }
   });
-  console.log("Admin user created.");
 
-  // Games
-  const games = [
-    { title: "مافیا آنلاین", bannerUrl: "https://placehold.co/600x400?text=Mafia" },
-    { title: "منچ", bannerUrl: "https://placehold.co/600x400?text=Ludo" },
-    { title: "حکم", bannerUrl: "https://placehold.co/600x400?text=Hokm" },
-    { title: "تخته نرد", bannerUrl: "https://placehold.co/600x400?text=Backgammon" }
-  ];
+  const dota2 = await prisma.game.upsert({
+    where: { title: "Dota 2" },
+    update: {},
+    create: {
+      title: "Dota 2",
+      bannerUrl: "https://images6.alphacoders.com/430/430580.jpg",
+      metadata: JSON.stringify({
+        slug: "dota2",
+        description: "Multiplayer online battle arena",
+        imageUrl: "https://api.typedream.com/v0/images/d6874aee-876e-44d4-a15d-8b0b5103aae6_dota2_png",
+        genre: "MOBA",
+        developer: "Valve",
+        platform: "PC",
+        modes: ["All Pick", "Turbo", "Captains Mode"],
+        maps: ["The Dota Map"]
+      })
+    }
+  });
 
-  for (const game of games) {
-    const g = await prisma.game.upsert({
-      where: { title: game.title },
-      update: {},
-      create: game
-    });
-
-    // Channels for each game
-    await prisma.channel.create({
-      data: {
-        title: `گفتگو ${game.title}`,
-        gameId: g.id
-      }
-    });
-  }
-
-  // Global Channels
-  await prisma.channel.create({
-    data: { title: "گفتگوی عمومی" }
+  const valorant = await prisma.game.upsert({
+    where: { title: "Valorant" },
+    update: {},
+    create: {
+      title: "Valorant",
+      bannerUrl: "https://images.alphacoders.com/108/1089228.jpg",
+      metadata: JSON.stringify({
+        slug: "valorant",
+        description: "Character-based tactical shooter",
+        imageUrl: "https://cmsassets.rgpub.io/pb/zh_tr/rso/images/VAL_Standard_1x1_Header.jpg",
+        genre: "FPS",
+        developer: "Riot Games",
+        platform: "PC",
+        modes: ["Standard", "Swiftplay", "Competitive"],
+        maps: ["Bind", "Haven", "Split", "Ascent", "Icebox", "Breeze", "Fracture", "Pearl", "Lotus"]
+      })
+    }
   });
 
   console.log("Seed finished.");

@@ -117,23 +117,25 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
       // Listen for presence changes using dot protocol
       presenceSocket.on("presence.changed", (data: { userId: string, status: string, activity?: string }) => {
         setFriends(prev => {
-          const friend = prev.find(f => f.id === data.userId);
-          // If friend is transitioning to online from something else, toast
-          if (friend && friend.status !== "online" && data.status === "online") {
-             // Side effect (toast) should be outside setter, but we have data here.
-             // We'll use a timeout or just do it separately.
-             setTimeout(() => {
-               toast(`${friend.displayName || friend.username} آنلاین شد`, { 
-                 icon: '🟢', 
-                 id: `online-${data.userId}` 
-               });
-             }, 0);
-          }
           return prev.map(f => f.id === data.userId ? { 
             ...f, 
             status: data.status as FriendStatus,
             currentGame: data.activity 
           } : f);
+        });
+
+        // Move side effect out of setter
+        setFriends(current => {
+          const friend = current.find(f => f.id === data.userId);
+          if (friend && data.status === "online") {
+             // We check if it was something else before? 
+             // Actually, presence.changed usually means it's a change.
+             toast(`${friend.displayName || friend.username} آنلاین شد`, { 
+               icon: '🟢', 
+               id: `online-${data.userId}` 
+             });
+          }
+          return current;
         });
       });
 

@@ -4,6 +4,6 @@ import { authenticate } from "../middleware/auth.middleware.js";
 
 const router = Router();
 
-router.get("/", authenticate, GameController.getAllGames);
+router.get("/", GameController.getAllGames);
 
 export default router;
