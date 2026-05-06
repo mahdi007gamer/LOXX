@@ -193,9 +193,10 @@ export const LobbyRoomPage = () => {
                const avg = sum / bufferLength;
                const newVol = Math.min(100, Math.round(avg * 2));
                
-               setLocalVolume(prev => Math.abs(prev - newVol) > 5 ? newVol : prev);
+               // Only update state if change is significant (> 10%)
+               setLocalVolume(prev => Math.abs(prev - newVol) > 10 ? newVol : prev);
 
-               const talkingNow = avg > 10;
+               const talkingNow = avg > 15; // Higher threshold for "isSpeaking"
                if (talkingNow !== isTalking) {
                  isTalking = talkingNow;
                  voiceSocket.emit("voice.talking", { roomId: lobby.id, isTalking });
@@ -819,9 +820,16 @@ const RemoteAudioPlayer = ({ stream, onVolumeChange, volumeLevel, key }: { strea
   const audioRef = useRef<HTMLAudioElement>(null);
   
   useEffect(() => {
+    let isPlaying = false;
     if (audioRef.current && stream) {
       audioRef.current.srcObject = stream;
-      audioRef.current.play().catch(e => console.error("Audio play failed:", e));
+      audioRef.current.play()
+        .then(() => { isPlaying = true; })
+        .catch(e => {
+          if (e.name !== "AbortError") {
+            console.error("Audio play failed:", e);
+          }
+        });
     }
   }, [stream]);
 
@@ -839,31 +847,42 @@ const RemoteAudioPlayer = ({ stream, onVolumeChange, volumeLevel, key }: { strea
     let rafId: number;
 
     if (stream && stream.getAudioTracks().length > 0) {
-      audioContext = new AudioContext();
-      analyzer = audioContext.createAnalyser();
-      microphone = audioContext.createMediaStreamSource(stream);
-      microphone.connect(analyzer);
-      
-      analyzer.fftSize = 256;
-      const bufferLength = analyzer.frequencyBinCount;
-      const dataArray = new Uint8Array(bufferLength);
+      try {
+        audioContext = new AudioContext();
+        analyzer = audioContext.createAnalyser();
+        microphone = audioContext.createMediaStreamSource(stream);
+        microphone.connect(analyzer);
+        
+        analyzer.fftSize = 256;
+        const bufferLength = analyzer.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
 
-      const analyzeVoice = () => {
-         // if track is disabled it's effectively 0, but analyzer might pick up residual. We'll check track state.
-         if (stream.getAudioTracks()[0].enabled) {
-           analyzer.getByteFrequencyData(dataArray);
-           let sum = 0;
-           for(let i = 0; i < bufferLength; i++) {
-             sum += dataArray[i];
+        let lastVol = 0;
+        const analyzeVoice = () => {
+           if (stream.getAudioTracks()[0].enabled) {
+             analyzer.getByteFrequencyData(dataArray);
+             let sum = 0;
+             for(let i = 0; i < bufferLength; i++) {
+               sum += dataArray[i];
+             }
+             const avg = sum / bufferLength;
+             const currentVol = Math.min(100, Math.round(avg * 2));
+             
+             // Only report significant changes to parent state to avoid re-render loops
+             if (Math.abs(currentVol - lastVol) > 15) {
+               lastVol = currentVol;
+               onVolumeChange(currentVol);
+             }
+           } else if (lastVol !== 0) {
+             lastVol = 0;
+             onVolumeChange(0);
            }
-           const avg = sum / bufferLength;
-           onVolumeChange(Math.min(100, Math.round(avg * 2)));
-         } else {
-           onVolumeChange(0);
-         }
-         rafId = requestAnimationFrame(analyzeVoice);
-      };
-      analyzeVoice();
+           rafId = requestAnimationFrame(analyzeVoice);
+        };
+        analyzeVoice();
+      } catch (e) {
+        console.error("Voice analysis setup failed", e);
+      }
     }
 
     return () => {

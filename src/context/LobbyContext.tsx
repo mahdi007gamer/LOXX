@@ -120,8 +120,12 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const handleChatMessage = (msg: any) => {
       console.log("WebRTC received chat msg", msg);
       if (msg.targetType && msg.targetType !== "lobby") return;
+      
       setLobby(prev => {
         if (!prev) return null;
+        // Ensure message belongs to this lobby
+        if (msg.targetId && msg.targetId !== prev.id) return prev;
+        
         // prevent duplicate messages by checking id
         if (prev.messages?.some(m => m.id === msg.id)) return prev;
         return {

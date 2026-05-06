@@ -69,19 +69,23 @@ export const useWebRTC = (roomId: string | null, localStream: MediaStream | null
          try {
             if (pc.signalingState !== 'stable') return;
             const offer = await pc.createOffer();
+            if (pc.signalingState !== 'stable') return;
             await pc.setLocalDescription(offer);
             voiceSocket.emit('voice.signal', { targetUserId, signal: pc.localDescription });
-         } catch(e) {}
+         } catch(e) {
+            console.error("Negotiation error", e);
+         }
       };
 
       if (initiator) {
         pc.createOffer().then(offer => {
+          if (pc.signalingState !== 'stable') return;
           pc.setLocalDescription(offer);
           voiceSocket.emit('voice.signal', {
             targetUserId,
             signal: offer
           });
-        });
+        }).catch(e => console.error("Offer creation error", e));
       }
 
       return pc;
@@ -120,6 +124,10 @@ export const useWebRTC = (roomId: string | null, localStream: MediaStream | null
 
       try {
         if (data.signal.type === 'offer') {
+           if (pc.signalingState !== 'stable' && pc.signalingState !== 'have-local-offer') {
+             console.warn("Ignoring offer while in state", pc.signalingState);
+             return;
+           }
            await pc.setRemoteDescription(new RTCSessionDescription(data.signal));
            const answer = await pc.createAnswer();
            await pc.setLocalDescription(answer);
