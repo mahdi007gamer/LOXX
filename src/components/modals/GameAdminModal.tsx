@@ -85,7 +85,7 @@ export const GameAdminModal = ({
       ...prev,
       metadata: {
         ...prev.metadata,
-        features: [...prev.metadata.features, { name: "", options: [] }]
+        features: [...(prev.metadata?.features || []), { name: "", options: [] }]
       }
     }));
   };
@@ -95,7 +95,7 @@ export const GameAdminModal = ({
       ...prev,
       metadata: {
         ...prev.metadata,
-        features: prev.metadata.features.filter((_, i) => i !== index)
+        features: (prev.metadata?.features || []).filter((_, i) => i !== index)
       }
     }));
   };
@@ -103,7 +103,7 @@ export const GameAdminModal = ({
   const addOptionToFeature = (featureIndex: number, option: string) => {
     if (!option.trim()) return;
     setFormData(prev => {
-      const newFeatures = [...prev.metadata.features];
+      const newFeatures = [...(prev.metadata?.features || [])];
       newFeatures[featureIndex].options.push(option);
       return { ...prev, metadata: { ...prev.metadata, features: newFeatures } };
     });
@@ -111,7 +111,7 @@ export const GameAdminModal = ({
 
   const removeOptionFromFeature = (featureIndex: number, optionIndex: number) => {
     setFormData(prev => {
-      const newFeatures = [...prev.metadata.features];
+      const newFeatures = [...(prev.metadata?.features || [])];
       newFeatures[featureIndex].options = newFeatures[featureIndex].options.filter((_, i) => i !== optionIndex);
       return { ...prev, metadata: { ...prev.metadata, features: newFeatures } };
     });
@@ -276,7 +276,7 @@ export const GameAdminModal = ({
               </div>
 
               <div className="space-y-4">
-                {formData.metadata.features.map((feature, fIndex) => (
+                {(formData.metadata?.features || []).map((feature, fIndex) => (
                   <div key={fIndex} className="bg-white/5 border border-white/10 rounded-3xl p-5 space-y-4 relative group">
                     <button 
                       onClick={() => removeFeature(fIndex)}
@@ -292,7 +292,7 @@ export const GameAdminModal = ({
                           type="text"
                           value={feature.name}
                           onChange={e => {
-                            const newFeatures = [...formData.metadata.features];
+                            const newFeatures = [...(formData.metadata?.features || [])];
                             newFeatures[fIndex].name = e.target.value;
                             setFormData({...formData, metadata: { ...formData.metadata, features: newFeatures }});
                           }}
@@ -305,7 +305,7 @@ export const GameAdminModal = ({
                     <div>
                       <label className="block text-[10px] font-black text-gray-500 uppercase mb-2">گزینه‌ها</label>
                       <div className="flex flex-wrap gap-2 mb-3">
-                        {feature.options.map((opt, oIndex) => (
+                        {(feature.options || []).map((opt, oIndex) => (
                           <div key={oIndex} className="flex items-center bg-neon-blue/10 border border-neon-blue/20 rounded-lg pr-3 pl-1 py-1 group/opt">
                             <span className="text-xs text-neon-blue font-bold ml-2">{opt}</span>
                             <button 

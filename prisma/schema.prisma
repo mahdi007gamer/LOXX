@@ -34,6 +34,7 @@ model User {
   subscriptions   Subscription[]
   auditLogs       AuditLog[]
   userGames       UserGame[]
+  hostedLobbies   Lobby[]      @relation("LobbyHost")
 }
 
 model Profile {
