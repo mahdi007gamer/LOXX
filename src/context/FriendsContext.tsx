@@ -44,11 +44,24 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [chatTrigger, setChatTrigger] = useState(0);
   const { user } = useAuth();
+  const pendingPresenceSnapshot = React.useRef<{ userId: string, status: string }[] | null>(null);
 
   const fetchFriends = useCallback(async () => {
     try {
       const response = await api.get("/friends/list");
-      setFriends(response.data.data.items || []);
+      const fetchedFriends = response.data.data.items || [];
+      
+      setFriends(prev => {
+        if (pendingPresenceSnapshot.current) {
+          const snapshot = pendingPresenceSnapshot.current;
+          pendingPresenceSnapshot.current = null;
+          return fetchedFriends.map((f: Friend) => {
+            const statusData = snapshot.find(u => u.userId === f.id);
+            return statusData ? { ...f, status: statusData.status as FriendStatus } : f;
+          });
+        }
+        return fetchedFriends;
+      });
     } catch (error) {
       console.error("Failed to fetch friends:", error);
     }
@@ -74,13 +87,32 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
         presenceSocket.emit("presence.update", { status: "online" });
       }, 4 * 60 * 1000);
 
+      // Listen for presence snapshot
+      presenceSocket.on("presence.snapshot", (data: { users: { userId: string, status: string }[] }) => {
+        setFriends(prev => {
+          if (prev.length === 0) {
+            pendingPresenceSnapshot.current = data.users;
+            return prev;
+          }
+          return prev.map(f => {
+            const statusData = data.users.find(u => u.userId === f.id);
+            const status = (statusData ? statusData.status : "offline") as FriendStatus;
+            return { ...f, status };
+          });
+        });
+      });
+
       // Listen for presence changes using dot protocol
       presenceSocket.on("presence.changed", (data: { userId: string, status: string, activity?: string }) => {
         setFriends(prev => {
           const friend = prev.find(f => f.id === data.userId);
           // If friend is transitioning to online from something else, toast
+          // We use a specific ID for the toast to avoid duplicates if multiple connections emit changed
           if (friend && friend.status !== "online" && data.status === "online") {
-             toast(`${friend.displayName || friend.username} آنلاین شد`, { icon: '🟢' });
+             toast(`${friend.displayName || friend.username} آنلاین شد`, { 
+               icon: '🟢', 
+               id: `online-${data.userId}` 
+             });
           }
           return prev.map(f => f.id === data.userId ? { 
             ...f, 

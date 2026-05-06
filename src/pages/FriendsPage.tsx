@@ -24,6 +24,7 @@ import {
   Check,
   ExternalLink,
 } from "lucide-react";
+import { toast } from "react-hot-toast";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";

@@ -225,7 +225,7 @@ export const AdminPage = () => {
             <div className="space-y-4">
                <div className="flex justify-between items-center">
                   <h2 className="text-xl font-black text-white">لیست بازی‌های فعال</h2>
-                  <GlowButton onClick={addGame}>
+                  <GlowButton onClick={() => setIsAddGameModalOpen(true)}>
                     <Plus size={16} className="ml-2" /> افزودن بازی جدید
                   </GlowButton>
                </div>
