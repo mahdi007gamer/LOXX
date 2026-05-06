@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
-import { Gamepad2, User, Bell, Menu, X, LayoutDashboard, Target, Users, MessageSquare, Trophy, Settings } from "lucide-react";
+import { Gamepad2, User, Bell, Menu, X, LayoutDashboard, Target, Users, MessageSquare, Trophy, Settings, Shield } from "lucide-react";
 import { GlowButton } from "../ui/GlowButton";
 import { motion, AnimatePresence, useScroll, useMotionValueEvent } from "motion/react";
 import { cn } from "@/src/lib/utils";
+import { useAuth } from "../../context/AuthContext";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "داشبورد", path: "/dashboard" },
@@ -15,6 +16,7 @@ const menuItems = [
 ];
 
 export const Navbar = () => {
+  const { user } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { scrollY } = useScroll();
   const [isScrolled, setIsScrolled] = useState(false);
@@ -148,6 +150,22 @@ export const Navbar = () => {
                     <span className="text-lg font-bold">{item.label}</span>
                   </NavLink>
                 ))}
+                
+                {(user?.role === "ADMIN" || user?.email === "admin@loxx.ir" || user?.email === "admin@test.com") && (
+                  <NavLink
+                    to="/admin"
+                    onClick={() => setIsMenuOpen(false)}
+                    className={({ isActive }) => cn(
+                      "flex items-center gap-4 rounded-xl px-4 py-4 transition-all",
+                      isActive 
+                        ? "bg-amber-400/10 text-amber-500 border-r-4 border-amber-500" 
+                        : "text-amber-400/70 hover:bg-white/5 hover:text-amber-400"
+                    )}
+                  >
+                    < Shield size={22} />
+                    <span className="text-lg font-bold">پنل مدیریت</span>
+                  </NavLink>
+                )}
               </div>
 
               <div className="absolute bottom-10 left-6 right-6">

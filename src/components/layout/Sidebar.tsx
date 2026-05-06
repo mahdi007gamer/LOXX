@@ -51,7 +51,7 @@ export const Sidebar = () => {
             </NavLink>
           ))}
           
-          {user?.email === "admin@test.com" && (
+          {(user?.role === "ADMIN" || user?.email === "admin@loxx.ir" || user?.email === "admin@test.com") && (
             <NavLink
               to="/admin"
               className={({ isActive }) => cn(
