@@ -175,24 +175,42 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     // Chat Listeners
     const handleChatMessage = (msg: any) => {
-      console.log("LobbyContext: Received message", msg);
+      console.log("LobbyContext: [SOCKET_MSG_INCOMING]", msg);
       
+      // Some servers use 'target' object, some use 'targetType'/'targetId'
       const tType = msg.targetType || msg.target?.type;
       const tId = msg.targetId || msg.target?.id;
 
-      if (tType !== "lobby") return;
+      console.log("LobbyContext: Parsed target ->", { tType, tId });
+
+      if (tType !== "lobby") {
+        console.log("LobbyContext: Msg ignored (not lobby)");
+        return;
+      }
 
       setLobby(prev => {
-        if (!prev) return null;
-        if (tId && tId !== prev.id) return prev;
+        if (!prev) {
+          console.log("LobbyContext: Msg ignored (no lobby in state)");
+          return null;
+        }
         
-        // Simple and safe duplicate check
+        // Match current lobby ID
+        if (tId && tId !== prev.id) {
+          console.log(`LobbyContext: Msg ignored (ID mismatch). Received: ${tId}, Current: ${prev.id}`);
+          return prev;
+        }
+        
+        // Comprehensive anti-duplicate check (check ID or content+from+time)
         const isDuplicate = prev.messages?.some(m => 
           (msg.id && m.id === msg.id) || 
-          (msg.tempId && m.id === msg.tempId)
+          (msg.tempId && m.id === msg.tempId) ||
+          (msg.tempId && m.id === msg.id) ||
+          (m.content === msg.content && m.from.userId === msg.from.userId && Math.abs(m.createdAt - (msg.createdAt || msg.timestamp || Date.now())) < 2000)
         );
 
         if (isDuplicate) {
+          console.log("LobbyContext: Duplicate msg detected.");
+          // Update tempId message with real ID if needed
           if (msg.id) {
             return {
               ...prev,
@@ -206,9 +224,19 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           return prev;
         }
 
+        console.log("LobbyContext: Adding message to UI state");
+        const newMessage: ChatMessage = {
+          id: msg.id || msg.tempId || crypto.randomUUID(),
+          from: msg.from,
+          content: msg.content,
+          createdAt: msg.createdAt || msg.timestamp || Date.now(),
+          targetType: tType,
+          targetId: tId
+        };
+
         return {
           ...prev,
-          messages: [...(prev.messages || []), msg]
+          messages: [...(prev.messages || []), newMessage]
         };
       });
       
@@ -285,14 +313,17 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (lobby?.id) {
       syncRooms();
       
-      // Periodically ensure we are in the room, especially after re-connection
+      // Re-sync on certain triggers
+      const syncInterval = setInterval(syncRooms, 15000); // Proactive sync every 15s
+
       chatSocket.on("connect", () => {
-        console.log("Chat Socket reconnected, re-joining lobby room...");
+        console.log("Chat Socket reconnected, syncing rooms...");
         syncRooms();
       });
       voiceSocket.on("connect", syncRooms);
       
       return () => {
+        clearInterval(syncInterval);
         chatSocket.off("connect");
         voiceSocket.off("connect");
       };

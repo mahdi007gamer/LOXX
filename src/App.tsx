@@ -101,6 +101,7 @@ function App() {
                     zIndex: 999999999,
                     left: '40px',
                     bottom: '40px',
+                    right: 'auto', // Force right to auto to prevent RTL flipping it
                   }}
                   toastOptions={{
                     className: 'modern-glass-toast',
@@ -119,8 +120,8 @@ function App() {
                       display: 'flex',
                       alignItems: 'center',
                       gap: '12px',
-                      textAlign: 'left',
-                      direction: 'ltr'
+                      textAlign: 'right',
+                      direction: 'rtl'
                     },
                   }}
                 />
