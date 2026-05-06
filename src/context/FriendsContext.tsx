@@ -4,6 +4,7 @@ import api from "../lib/api";
 import { presenceSocket, chatSocket, notifySocket } from "../lib/socket";
 import { useAuth } from "./AuthContext";
 import { toast } from "react-hot-toast";
+import { cn } from "../lib/utils";
 
 export interface FriendActivity {
   id: string;
@@ -232,10 +233,16 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const handleLobbyInvite = (data: { lobbyId: string, fromId: string, fromUsername: string, gameTitle: string }) => {
       toast.custom(
         (t) => (
-          <div className={cn(
-            "bg-[#0a0a0f]/95 backdrop-blur-2xl border border-neon-purple/50 p-5 rounded-[2rem] shadow-[0_0_50px_-10px_rgba(168,85,247,0.5)] flex flex-col gap-4 min-w-[320px] max-w-[400px] transition-all duration-300",
-            t.visible ? "translate-y-0 opacity-100 scale-100" : "translate-y-[-20px] opacity-0 scale-95"
-          )}>
+          <div 
+            className={cn(
+              "bg-[#0a0a0f]/95 backdrop-blur-2xl border border-neon-purple/50 p-5 rounded-[2rem] shadow-[0_0_50px_-10px_rgba(168,85,247,0.5)] flex flex-col gap-4 min-w-[320px] max-w-[400px] transition-all duration-300",
+              t.visible ? "translate-y-0 opacity-100 scale-100" : "translate-y-[-20px] opacity-0 scale-95"
+            )}
+            style={{ 
+              zIndex: 999999999, // Extremely high z-index
+              position: 'relative' 
+            }}
+          >
              <div className="flex items-center gap-3">
                <div className="h-10 w-10 rounded-full bg-neon-purple/20 flex items-center justify-center text-neon-purple text-lg border border-neon-purple/30 shadow-inner">🎮</div>
                <div className="flex-1">
