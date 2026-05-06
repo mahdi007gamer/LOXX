@@ -55,12 +55,13 @@ export const useWebRTC = (roomId: string | null, localStream: MediaStream | null
       };
 
       pc.ontrack = (event) => {
-        console.log("WebRTC: received remote track", targetUserId);
-        let stream = event.streams && event.streams[0];
-        if (!stream) {
-          stream = new MediaStream();
-          stream.addTrack(event.track);
+        console.log("WebRTC: received remote track", targetUserId, event.track.kind);
+        const stream = (event.streams && event.streams[0]) || new MediaStream();
+        
+        if (!stream.getTracks().includes(event.track)) {
+           stream.addTrack(event.track);
         }
+
         setRemoteStreams((prev) => {
           const map = new Map(prev);
           map.set(targetUserId, stream);

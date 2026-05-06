@@ -60,17 +60,34 @@ const LobbyContext = createContext<LobbyContextType | undefined>(undefined);
 export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [lobby, setLobby] = useState<LobbyState | null>(null);
   const { user } = useAuth();
+  
+  // Use refs to track latest state for socket listeners
+  const lobbyRef = useRef<LobbyState | null>(null);
+  const userRef = useRef<any>(null);
+
+  useEffect(() => {
+    lobbyRef.current = lobby;
+  }, [lobby]);
+
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
 
   useEffect(() => {
     // Listen for member updates using the new dot-protocol
     lobbySocket.on("lobby.closed", (data: { lobbyId: string }) => {
+      const currentLobby = lobbyRef.current;
+      
       setLobby(prev => {
         if (prev?.id === data.lobbyId) {
-          toast.error("لابی توسط میزبان بسته شد", { icon: '🚫' });
           return null;
         }
         return prev;
       });
+
+      if (currentLobby?.id === data.lobbyId) {
+        toast.error("لابی توسط میزبان بسته شد", { icon: '🚫' });
+      }
     });
 
     lobbySocket.on("lobby.member_joined", (data: { user: any, membersCount: number }) => {
@@ -83,7 +100,8 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           players: [...prev.players, { ...data.user, userId: data.user.id, isReady: false, micMuted: false }]
         };
       });
-      if (data.user.id !== user?.id) {
+      
+      if (data.user.id !== userRef.current?.id) {
         toast(`${data.user.username} وارد لابی شد`, { icon: '👋', id: `join-${data.user.id}` });
       }
     });
@@ -118,30 +136,24 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     // Chat Listeners
     const handleChatMessage = (msg: any) => {
-      console.log("LobbyContext: received chat message", msg);
-      
-      // If it's a lobby message, ensure it's for this lobby
-      if (msg.targetType === "lobby") {
-        setLobby(prev => {
-          if (!prev) {
-            console.log("LobbyContext: ignoring msg, no active lobby state");
-            return null;
-          }
-          if (msg.targetId && msg.targetId !== prev.id) {
-            console.log("LobbyContext: msg targetId mismatch", msg.targetId, prev.id);
-            return prev;
-          }
-          
-          if (prev.messages?.some(m => m.id === msg.id)) {
-            console.log("LobbyContext: duplicate message ignored", msg.id);
-            return prev;
-          }
-          return {
-            ...prev,
-            messages: [...(prev.messages || []), msg]
-          };
-        });
-      }
+      console.log("LobbyContext: received message", msg);
+      if (msg.targetType !== "lobby") return;
+
+      const currentLobby = lobbyRef.current;
+      if (!currentLobby || (msg.targetId && msg.targetId !== currentLobby.id)) return;
+
+      setLobby(prev => {
+        if (!prev) return null;
+        
+        // Anti-duplicate
+        const exists = prev.messages?.some(m => m.id === msg.id || (m.timestamp === msg.timestamp && m.content === msg.content && m.from.userId === msg.from.userId));
+        if (exists) return prev;
+
+        return {
+          ...prev,
+          messages: [...(prev.messages || []), msg]
+        };
+      });
     };
     chatSocket.on("chat.message", handleChatMessage);
 
@@ -238,9 +250,13 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           talkingUsers: []
         });
         
-        // Join chat room too
-        chatSocket.emit("chat.join", { type: "lobby", id: lobbyId });
-        voiceSocket.emit("voice.join", { roomId: lobbyId });
+        // Immediately join chat and voice rooms
+        if (chatSocket.connected) {
+          chatSocket.emit("chat.join", { type: "lobby", id: lobbyId });
+        }
+        if (voiceSocket.connected) {
+          voiceSocket.emit("voice.join", { roomId: lobbyId });
+        }
       } else {
         toast.error(ack?.error?.message || "Join failed");
       }

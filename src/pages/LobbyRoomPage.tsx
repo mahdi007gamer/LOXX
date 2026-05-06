@@ -1141,8 +1141,8 @@ const PlayerCard = ({ player, isSelected, onSelect, onVolumeChange, onMute, onIn
                     className="text-neon-blue"
                     style={{ strokeDasharray: "290" }}
                     initial={{ strokeDashoffset: 290 }}
-                    animate={{ strokeDashoffset: 290 - (290 * (player.volume || 100)) / 100 }}
-                    transition={{ type: "spring", bounce: 0 }}
+                    animate={{ strokeDashoffset: 290 - (290 * (player.activity || 0)) / 100 }}
+                    transition={{ type: "spring", bounce: 0, damping: 20 }}
                   />
                 </svg>
 
