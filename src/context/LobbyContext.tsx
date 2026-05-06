@@ -219,7 +219,6 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (ack?.status === "ok") {
         setLobby({
           ...ack.data,
-          messages: [],
           talkingUsers: []
         });
         

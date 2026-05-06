@@ -479,6 +479,7 @@ export function setupWebSockets(io: Server) {
   chatNs.on("connection", (socket: AuthenticatedSocket) => {
     const userId = socket.userId;
     if (!userId) return;
+    socket.join(`user:${userId}`);
     trackUser(userId, socket.id);
 
     socket.on("chat.join", (data: { type: "channel" | "lobby", id: string }) => {

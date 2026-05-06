@@ -99,18 +99,18 @@ export const FriendChatOverlay = () => {
             </div>
 
             {/* Chat Messages */}
-            <div className="h-80 overflow-y-auto p-4 space-y-4 flex flex-col-reverse bg-gradient-to-b from-transparent to-white/[0.02] no-scrollbar">
-               <div className="space-y-4">
+            <div className="h-80 overflow-y-auto p-4 space-y-4 flex flex-col bg-gradient-to-b from-transparent to-white/[0.02] no-scrollbar">
+               <div className="mt-auto space-y-4">
                  {activeChat?.messages.map(msg => (
                    <div key={msg.id} className={cn(
                      "flex flex-col gap-1 max-w-[85%]",
-                     msg.self ? "ml-auto items-start text-right" : "mr-auto items-end text-left"
+                     msg.self ? "mr-auto items-end text-right" : "ml-auto items-start text-left"
                    )} dir="rtl">
                      <div className={cn(
                        "rounded-2xl px-3 py-2 text-[11px] font-medium leading-relaxed shadow-lg",
                        msg.self 
-                         ? "bg-neon-blue text-dark-bg rounded-br-none" 
-                         : "bg-white/10 text-gray-200 rounded-bl-none border border-white/10"
+                         ? "bg-neon-blue text-dark-bg rounded-bl-none" 
+                         : "bg-white/10 text-gray-200 rounded-br-none border border-white/10"
                      )}>
                        {msg.text}
                      </div>

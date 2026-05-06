@@ -26,7 +26,8 @@ model User {
   profile         Profile?
   sentFriendReq   Friendship[] @relation("Requester")
   recvFriendReq   Friendship[] @relation("Target")
-  messages        Message[]
+  sentMessages     Message[]    @relation("SentMessages")
+  receivedMessages Message[]    @relation("ReceivedMessages")
   lobbyMembers    LobbyMember[]
   notifications   Notification[]
   xpLogs          XPLog[]
@@ -87,10 +88,14 @@ model Channel {
 
 model Message {
   id              Int      @id @default(autoincrement())
-  channelId       String
-  channel         Channel  @relation(fields: [channelId], references: [id])
+  channelId       String?
+  channel         Channel? @relation(fields: [channelId], references: [id])
+  lobbyId         String?
+  lobby           Lobby?   @relation(fields: [lobbyId], references: [id])
   senderId        String
-  sender          User     @relation(fields: [senderId], references: [id])
+  sender          User     @relation("SentMessages", fields: [senderId], references: [id])
+  receiverId      String?
+  receiver        User?    @relation("ReceivedMessages", fields: [receiverId], references: [id])
   content         String   // Persian/RTL
   replyToId       Int?
   replyTo         Message? @relation("Thread", fields: [replyToId], references: [id])
@@ -102,6 +107,9 @@ model Message {
   updatedAt       DateTime @updatedAt
 
   @@index([channelId, createdAt])
+  @@index([lobbyId, createdAt])
+  @@index([senderId, createdAt])
+  @@index([receiverId, createdAt])
 }
 
 model Lobby {
@@ -123,6 +131,7 @@ model Lobby {
   createdAt       DateTime    @default(now())
 
   members         LobbyMember[]
+  messages        Message[]
 }
 
 model UserGame {

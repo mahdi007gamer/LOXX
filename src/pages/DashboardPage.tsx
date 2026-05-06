@@ -45,7 +45,7 @@ export const DashboardPage = () => {
     unreadNotifications: 0
   });
   const navigate = useNavigate();
-  const { friends, removeFriend, sendMessage } = useFriends();
+  const { friends, removeFriend, openChat } = useFriends();
   const { user } = useAuth();
 
   useEffect(() => {
@@ -286,7 +286,7 @@ export const DashboardPage = () => {
                           {/* Hover Actions */}
                           <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                             <button 
-                              onClick={() => sendMessage(friend.id, "سلااام!")}
+                              onClick={() => openChat(friend.id, friend.displayName)}
                               className="p-1.5 text-gray-400 hover:text-neon-blue hover:bg-neon-blue/10 rounded-lg transition-all"
                             >
                               <MessageSquare size={14} />

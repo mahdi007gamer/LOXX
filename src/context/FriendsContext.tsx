@@ -262,7 +262,6 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
                </button>
                <button onClick={() => {
                  toast.dismiss(t.id);
-                 // We could notify sender here using dot protocol or API
                }} className="flex-1 bg-dark-card border border-white/10 text-gray-400 font-bold py-2 rounded-xl text-xs hover:text-white hover:bg-white/5 transition-all">
                  رد کردن
                </button>
@@ -273,15 +272,10 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
       );
     }
     
-    // assuming notifySocket is exported from socket.ts
-    import("../lib/socket").then(({ notifySocket }) => {
-       notifySocket.on("lobby.invite", handleLobbyInvite);
-    });
+    notifySocket.on("lobby.invite", handleLobbyInvite);
 
     return () => {
-       import("../lib/socket").then(({ notifySocket }) => {
-          notifySocket.off("lobby.invite", handleLobbyInvite);
-       });
+       notifySocket.off("lobby.invite", handleLobbyInvite);
     }
   }, [user]);
 
