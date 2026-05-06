@@ -95,7 +95,12 @@ function App() {
                 <AppContent />
                 <LobbyOverlay />
                 <FriendChatOverlay />
-                <Toaster position="bottom-right" />
+                <Toaster 
+                  position="top-center" 
+                  containerStyle={{
+                    zIndex: 99999,
+                  }}
+                />
               </Router>
             </ProfilePopoverProvider>
           </LobbyProvider>

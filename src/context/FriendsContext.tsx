@@ -232,7 +232,10 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const handleLobbyInvite = (data: { lobbyId: string, fromId: string, fromUsername: string, gameTitle: string }) => {
       toast.custom(
         (t) => (
-          <div className="bg-dark-bg/80 backdrop-blur-xl border border-neon-purple/30 p-4 rounded-3xl shadow-[0_0_40px_-10px_rgba(168,85,247,0.4)] flex flex-col gap-3 min-w-[300px] z-[999999]" style={{ position: 'relative', zIndex: 999999 }}>
+          <div className={cn(
+            "bg-[#0a0a0f]/95 backdrop-blur-2xl border border-neon-purple/50 p-5 rounded-[2rem] shadow-[0_0_50px_-10px_rgba(168,85,247,0.5)] flex flex-col gap-4 min-w-[320px] max-w-[400px] transition-all duration-300",
+            t.visible ? "translate-y-0 opacity-100 scale-100" : "translate-y-[-20px] opacity-0 scale-95"
+          )}>
              <div className="flex items-center gap-3">
                <div className="h-10 w-10 rounded-full bg-neon-purple/20 flex items-center justify-center text-neon-purple text-lg border border-neon-purple/30 shadow-inner">🎮</div>
                <div className="flex-1">
