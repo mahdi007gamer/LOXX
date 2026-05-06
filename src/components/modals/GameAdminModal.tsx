@@ -62,7 +62,12 @@ export const GameAdminModal = ({
 
   useEffect(() => {
     if (game) {
-      setFormData(game);
+      setFormData({
+        ...game,
+        metadata: game.metadata?.features ? game.metadata : { features: [] },
+        genres: Array.isArray(game.genres) ? game.genres : [],
+        regions: Array.isArray(game.regions) ? game.regions : []
+      });
     } else {
       setFormData({
         title: "",

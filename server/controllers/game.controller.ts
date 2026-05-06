@@ -15,17 +15,20 @@ export class GameController {
       res.json({
         status: "success",
         data: games.map(g => {
-          const metadata = g.metadata ? JSON.parse(g.metadata) : {};
+          let metadata = {};
+          if (g.metadata) {
+            try { metadata = JSON.parse(g.metadata); } catch(e) {}
+          }
           return {
             ...g,
             ...metadata,
             activeLobbies: g._count.lobbies,
-            image: g.bannerUrl || metadata.image || "https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&q=80&w=2070",
-            genre: metadata.genre || "بازی آنلاین",
-            playerCount: metadata.playerCount || "10K+",
-            friendsPlaying: metadata.friendsPlaying || [],
-            variants: metadata.variants || ["Competitive", "Casual", "Ranked"],
-            maps: metadata.maps || ["Mirage", "Inferno", "Dust 2", "Nuke", "Overpass", "Vertigo"]
+            image: g.bannerUrl || (metadata as any).image || "https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&q=80&w=2070",
+            genre: (metadata as any).genre || "بازی آنلاین",
+            playerCount: (metadata as any).playerCount || "10K+",
+            friendsPlaying: (metadata as any).friendsPlaying || [],
+            variants: (metadata as any).variants || ["Competitive", "Casual", "Ranked"],
+            maps: (metadata as any).maps || ["Mirage", "Inferno", "Dust 2", "Nuke", "Overpass", "Vertigo"]
           };
         })
       });

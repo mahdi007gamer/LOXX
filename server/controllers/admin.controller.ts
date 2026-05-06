@@ -75,13 +75,22 @@ export const getGameById = async (req: Request, res: Response) => {
     
     if (!game) return res.status(404).json({ status: "error", message: "Game not found" });
     
-    // Parse JSON fields
+    // Safely Parse JSON fields
+    const safeParse = (str: string, defaultVal: any) => {
+      if (!str) return defaultVal;
+      try { return JSON.parse(str); } catch (e) { return defaultVal; }
+    };
+    
     const parsedGame = {
       ...game,
-      genres: game.genres ? JSON.parse(game.genres) : [],
-      regions: game.regions ? JSON.parse(game.regions) : [],
-      metadata: game.metadata ? JSON.parse(game.metadata) : { features: [] }
+      genres: safeParse(game.genres, []),
+      regions: safeParse(game.regions, []),
+      metadata: safeParse(game.metadata, { features: [] })
     };
+    
+    if (!parsedGame.metadata?.features) {
+      parsedGame.metadata = { features: [] };
+    }
     
     res.json({ status: "success", data: parsedGame });
   } catch (error: any) {
