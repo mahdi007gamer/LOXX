@@ -10,6 +10,8 @@ import { useFriends } from "../context/FriendsContext";
 import { BadgeType, ChatMessage, Channel, MembershipType } from "../types";
 
 import { useProfilePopover } from "../context/ProfilePopoverContext";
+import { useAuth } from "../context/AuthContext";
+import { chatSocket } from "../lib/socket";
 
 // --- Sub-components ---
 
@@ -332,9 +334,10 @@ interface ChannelButtonProps {
   channel: Channel;
   active: boolean;
   onClick: () => void;
+  unreadCount?: number;
 }
 
-const ChannelButton: React.FC<ChannelButtonProps> = ({ channel, active, onClick }) => (
+const ChannelButton: React.FC<ChannelButtonProps> = ({ channel, active, onClick, unreadCount }) => (
   <button
     onClick={onClick}
     className={cn(
@@ -356,7 +359,12 @@ const ChannelButton: React.FC<ChannelButtonProps> = ({ channel, active, onClick 
       <span className={cn("text-xs font-black tracking-tight", active ? "text-white" : "")}>{channel.name}</span>
     </div>
     <div className="flex items-center gap-2 relative z-10">
-      <span className="text-[9px] font-bold opacity-0 group-hover:opacity-60 transition-opacity">{channel.users}</span>
+      {unreadCount ? (
+        <span className="bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+          {unreadCount > 99 ? '99+' : unreadCount}
+        </span>
+      ) : null}
+      <span className={cn("text-[9px] font-bold transition-opacity", unreadCount ? "opacity-40" : "opacity-0 group-hover:opacity-60")}>{channel.users}</span>
       {active && <div className="h-1.5 w-1.5 rounded-full bg-neon-blue shadow-[0_0_8px_rgba(0,229,255,0.8)]"></div>}
     </div>
     
@@ -512,8 +520,10 @@ const GIF_GALLERY = [
 
 export const ChatPage: React.FC = () => {
   const { allGames: games, myGames } = useGames();
+  const { user } = useAuth();
   const [activeChannelId, setActiveChannelId] = useState("general");
-  const [messages, setMessages] = useState<Record<string, ChatMessage[]>>(MOCK_MESSAGES);
+  const [messages, setMessages] = useState<Record<string, ChatMessage[]>>({});
+  const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
   const [input, setInput] = useState("");
   const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null);
   const [isTyping, setIsTyping] = useState(false);
@@ -522,17 +532,16 @@ export const ChatPage: React.FC = () => {
   const [savedGifs, setSavedGifs] = useState<string[]>([]);
   const [showSaveFeedback, setShowSaveFeedback] = useState(false);
   const [showFriendsSidebar, setShowFriendsSidebar] = useState(false);
-  const [userLvl, setUserLvl] = useState(42);
   const [showChannelMenu, setShowChannelMenu] = useState(false);
   const [chatTheme, setChatTheme] = useState<keyof typeof CHAT_THEMES>((localStorage.getItem("loxx-chat-theme") as any) || "aura");
   const [showThemeMenu, setShowThemeMenu] = useState(false);
-  const [gifSearch, setGifSearch] = useState("");
+  const [userLvl, setUserLvl] = useState(42);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     localStorage.setItem("loxx-chat-theme", chatTheme);
   }, [chatTheme]);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
   
   const { friends, sendMessage: sendFriendMessage } = useFriends();
   const [isFriendsLoading, setIsFriendsLoading] = useState(false);
@@ -544,27 +553,62 @@ export const ChatPage: React.FC = () => {
       return () => clearTimeout(timer);
     }
   }, [showFriendsSidebar]);
+
   useEffect(() => {
-    const timer = setTimeout(() => {
-      const vipMsg: ChatMessage = {
-        id: "vip-sim-" + Date.now(),
-        senderId: "u-vip",
-        senderName: "Amir VIP",
-        senderAvatar: "👑",
-        senderLevel: 99,
-        senderBadges: [BadgeType.VIP, BadgeType.CHAMPION, BadgeType.FOUNDER],
-        text: "سلام به همگی! من یک کاربر VIP هستم و این پیام من با افکت ویژه و Glow اختصاصی نمایش داده می‌شه. ✨",
-        timestamp: new Date().toLocaleTimeString("fa-IR", { hour: "2-digit", minute: "2-digit" }),
-        isRead: true,
-        self: false
-      };
-      setMessages(prev => ({
-        ...prev,
-        general: [...(prev.general || []), vipMsg]
-      }));
-    }, 4000);
-    return () => clearTimeout(timer);
-  }, []);
+    // Join channel and fetch history when switched
+    chatSocket.emit("chat.join", { type: "channel", id: activeChannelId }, (res: any) => {
+      if (res.status === "ok" && res.data?.messages) {
+        setMessages(prev => ({ ...prev, [activeChannelId]: res.data.messages.map((m: any) => formatIncomingMessage(m, user?.id)) }));
+        setUnreadCounts(prev => ({ ...prev, [activeChannelId]: 0 }));
+      }
+    });
+  }, [activeChannelId, user?.id]);
+
+  useEffect(() => {
+    const handleNewMessage = (msg: any) => {
+       const channelId = msg.targetId;
+       const formatted = formatIncomingMessage(msg, user?.id);
+       
+       setMessages(prev => {
+         const channelMsgs = prev[channelId] || [];
+         // Prevent duplicate messages
+         if (channelMsgs.some(m => m.id === formatted.id)) return prev;
+         return {
+           ...prev,
+           [channelId]: [...channelMsgs, formatted]
+         };
+       });
+
+       if (channelId !== activeChannelId) {
+         setUnreadCounts(prev => ({ ...prev, [channelId]: (prev[channelId] || 0) + 1 }));
+       }
+    };
+
+    chatSocket.on("chat.message", handleNewMessage);
+    return () => {
+       chatSocket.off("chat.message", handleNewMessage);
+    };
+  }, [activeChannelId, user?.id]);
+
+  const formatIncomingMessage = (msg: any, currentUserId?: string): ChatMessage => {
+     const badges: BadgeType[] = [];
+     if (msg.from.membership === "VIP") badges.push(BadgeType.VIP);
+     if (msg.from.membership === "PLUS") badges.push(BadgeType.PLUS);
+     
+     return {
+       id: msg.id,
+       senderId: msg.from.userId,
+       senderName: msg.from.username,
+       senderAvatar: msg.from.avatar,
+       senderLevel: msg.from.level,
+       senderBadges: badges,
+       text: msg.content,
+       timestamp: new Date(msg.createdAt).toLocaleTimeString("fa-IR", { hour: "2-digit", minute: "2-digit" }),
+       isRead: true,
+       self: msg.from.userId === currentUserId,
+       replyTo: msg.replyToId ? { id: msg.replyToId.toString(), user: "ناشناس", text: "پیام ریپلای شده..." } : undefined // Placeholder
+     };
+  };
 
   const myGamesChannels = (games || [])
     .filter(g => myGames?.includes(g.id))
@@ -572,7 +616,7 @@ export const ChatPage: React.FC = () => {
       id: `game-${g.id}`,
       name: `چت ${g.title}`,
       type: "game" as const,
-      users: Math.floor(Math.random() * 50) + 10,
+      users: 1054, // Mock total users
       icon: g.image
     }));
 
@@ -592,66 +636,53 @@ export const ChatPage: React.FC = () => {
     setShowNewMessageButton(!isAtBottom);
   };
 
-  const handleSend = (textOverride?: string, gifUrl?: string) => {
-    const messageText = textOverride || input;
-    if (!messageText.trim() && !gifUrl) return;
-    
-    setUserLvl(prev => prev + 0.1); // xp gain
+  const handleSend = () => {
+    const messageText = input;
+    if (!messageText.trim()) return;
 
-    const mentions = messageText.match(/@(\w+)/g)?.map(m => m.slice(1)) || [];
-    
-    // Auto-reply simulation for mentions
-    if (mentions.length > 0) {
-      setTimeout(() => {
-        setIsTyping(true);
-        setTimeout(() => {
-          setIsTyping(false);
-          const replyMsg: ChatMessage = {
-            id: Date.now().toString() + "-reply",
-            senderId: "u1",
-            senderName: "مازیار",
-            senderLevel: 24,
-            text: `@خودم سلام! چطوری؟`,
-            timestamp: new Date().toLocaleTimeString("fa-IR", { hour: "2-digit", minute: "2-digit" }),
-            isRead: true,
-            self: false,
-            mentions: ["خودم"]
-          };
-          setMessages(prev => ({
-            ...prev,
-            [activeChannelId]: [...(prev[activeChannelId] || []), replyMsg]
-          }));
-        }, 1500);
-      }, 500);
-    }
-
-    const newMessage: ChatMessage = {
-      id: Date.now().toString(),
-      senderId: "me",
-      senderName: "خودم",
-      senderLevel: Math.floor(userLvl),
-      senderColor: "#00e5ff",
-      senderBadges: [BadgeType.STREAMER, BadgeType.PLUS, BadgeType.PRO],
-      text: messageText,
-      timestamp: new Date().toLocaleTimeString("fa-IR", { hour: "2-digit", minute: "2-digit" }),
-      isRead: true,
-      self: true,
-      mentions,
-      gif: gifUrl,
-      replyTo: replyingTo ? {
-        id: replyingTo.id,
-        user: replyingTo.senderName,
-        text: replyingTo.text
-      } : undefined
+    const tempId = `temp-${Date.now()}`;
+    const newMsgObj: ChatMessage = {
+       id: tempId,
+       senderId: user?.id || "me",
+       senderName: user?.username || "شما",
+       senderLevel: 1,
+       text: messageText,
+       timestamp: new Date().toLocaleTimeString("fa-IR", { hour: "2-digit", minute: "2-digit" }),
+       isRead: true,
+       self: true,
+       replyTo: replyingTo ? { id: replyingTo.id, user: replyingTo.senderName, text: replyingTo.text } : undefined
     };
 
     setMessages(prev => ({
-      ...prev,
-      [activeChannelId]: [...(prev[activeChannelId] || []), newMessage]
+       ...prev,
+       [activeChannelId]: [...(prev[activeChannelId] || []), newMsgObj]
     }));
-    if (!textOverride) setInput("");
+    setInput("");
     setReplyingTo(null);
-    setShowGifPicker(false);
+
+    chatSocket.emit("chat.send", {
+      target: { type: "channel", id: activeChannelId },
+      content: messageText,
+      tempId,
+      replyToId: replyingTo?.id
+    }, (res: any) => {
+       if (res.status === "error") {
+          // Replace temp msg with error ? Or just log it.
+          alert(res.error?.message || "Error sending message");
+          setMessages(prev => ({
+             ...prev,
+             [activeChannelId]: prev[activeChannelId].filter(m => m.id !== tempId)
+          }));
+       } else {
+          setMessages(prev => {
+             const channelMsgs = prev[activeChannelId] || [];
+             return {
+               ...prev,
+               [activeChannelId]: channelMsgs.map(m => m.id === tempId ? { ...m, id: res.data.messageId } : m)
+             };
+          });
+       }
+    });
   };
 
   const handleReaction = (msgId: string, emoji: string) => {
@@ -763,6 +794,7 @@ export const ChatPage: React.FC = () => {
                   key={channel.id}
                   channel={channel}
                   active={activeChannelId === channel.id}
+                  unreadCount={unreadCounts[channel.id]}
                   onClick={() => setActiveChannelId(channel.id)}
                 />
               ))}
@@ -783,6 +815,7 @@ export const ChatPage: React.FC = () => {
                     key={channel.id}
                     channel={channel}
                     active={activeChannelId === channel.id}
+                    unreadCount={unreadCounts[channel.id]}
                     onClick={() => setActiveChannelId(channel.id)}
                   />
                 ))}
@@ -962,6 +995,7 @@ export const ChatPage: React.FC = () => {
                           key={channel.id}
                           channel={channel}
                           active={activeChannelId === channel.id}
+                          unreadCount={unreadCounts[channel.id]}
                           onClick={() => {
                             setActiveChannelId(channel.id);
                             setShowChannelMenu(false);
@@ -981,6 +1015,7 @@ export const ChatPage: React.FC = () => {
                             key={channel.id}
                             channel={channel}
                             active={activeChannelId === channel.id}
+                            unreadCount={unreadCounts[channel.id]}
                             onClick={() => {
                               setActiveChannelId(channel.id);
                               setShowChannelMenu(false);
@@ -1090,111 +1125,12 @@ export const ChatPage: React.FC = () => {
               )}
             </AnimatePresence>
 
-            {/* GIF Picker Popover */}
-            <AnimatePresence>
-              {showGifPicker && (
-               <motion.div
-                initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 20, scale: 0.95 }}
-                className="absolute bottom-24 right-0 md:right-8 w-full max-w-[350px] h-[450px] bg-[#09090b]/95 border border-white/10 rounded-[32px] shadow-[0_20px_50px_rgba(0,0,0,0.8)] z-50 overflow-hidden flex flex-col backdrop-blur-3xl"
-               >
-                 <div className="p-5 border-b border-white/5 flex flex-col gap-4">
-                   <div className="flex items-center justify-between rtl">
-                     <div className="flex items-center gap-2">
-                       <div className="h-6 w-6 rounded-lg bg-neon-blue/10 flex items-center justify-center text-neon-blue">
-                         <ImageIcon size={14} />
-                       </div>
-                       <h4 className="text-[10px] font-black text-white uppercase tracking-widest">گالری گیف هوشمند</h4>
-                     </div>
-                     <button onClick={() => setShowGifPicker(false)} className="text-gray-500 hover:text-white transition-colors">
-                       <X size={18} />
-                     </button>
-                   </div>
-
-                   <div className="relative">
-                      <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-gray-500">
-                        <Send size={12} className="rotate-180 opacity-50" />
-                      </div>
-                      <input 
-                        type="text" 
-                        placeholder="جستجوی گیف..." 
-                        value={gifSearch}
-                        onChange={(e) => setGifSearch(e.target.value)}
-                        className="w-full bg-white/5 border border-white/5 rounded-xl py-2.5 pr-10 pl-4 text-[11px] text-white focus:outline-none focus:border-neon-blue/40 transition-all text-right font-black"
-                      />
-                   </div>
-                 </div>
-
-                 <div className="flex-1 overflow-y-auto p-4 custom-scrollbar rtl">
-                   {gifSearch === "" && savedGifs.length > 0 && (
-                     <>
-                        <div className="py-2 border-b border-white/5 mb-3">
-                           <p className="text-[9px] text-neon-blue font-black uppercase tracking-widest flex items-center gap-2">
-                             <Star size={10} fill="currentColor" />
-                             ذخیره شده
-                           </p>
-                        </div>
-                        <div className="grid grid-cols-2 gap-2 mb-6">
-                          {savedGifs.map((url, i) => (
-                            <button 
-                              key={`saved-${i}`} 
-                              onClick={() => handleSend("", url)}
-                              className="group/gif-btn relative aspect-video rounded-xl overflow-hidden border border-neon-blue/20 hover:border-neon-blue transition-all"
-                            >
-                               <img src={url} alt="Saved GIF" className="w-full h-full object-cover transition-transform group-hover/gif-btn:scale-110" />
-                            </button>
-                          ))}
-                        </div>
-                     </>
-                   )}
-
-                   <div className="py-2 border-b border-white/5 mb-3">
-                      <p className="text-[9px] text-gray-500 font-bold uppercase tracking-widest">
-                        {gifSearch ? "نتایج جستجو" : "پیشنهادی برای شما"}
-                      </p>
-                   </div>
-
-                   <div className="grid grid-cols-2 gap-2">
-                    {GIF_GALLERY.filter(g => g.name.toLowerCase().includes(gifSearch.toLowerCase())).map((gif, i) => (
-                      <button 
-                       key={i} 
-                       onClick={() => handleSend("", gif.url)}
-                       className="group/gif-btn relative aspect-video rounded-xl overflow-hidden border border-white/5 hover:border-neon-blue transition-all bg-white/5"
-                      >
-                        <img src={gif.url} alt={gif.name} className="w-full h-full object-cover transition-transform group-hover/gif-btn:scale-110" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover/gif-btn:opacity-100 transition-opacity flex items-end p-2">
-                          <span className="text-[8px] text-white font-black truncate">{gif.name}</span>
-                        </div>
-                      </button>
-                    ))}
-                   </div>
-                   
-                   {GIF_GALLERY.filter(g => g.name.toLowerCase().includes(gifSearch.toLowerCase())).length === 0 && (
-                      <div className="py-10 text-center opacity-40">
-                         <MessageSquare size={32} className="mx-auto mb-2 text-gray-600" />
-                         <p className="text-[10px] font-black uppercase">گیفی پیدا نشد</p>
-                      </div>
-                   )}
-                 </div>
-               </motion.div>
-            )}
-          </AnimatePresence>
+            {/* GIF Picker Popover Removed */}
 
           <div className="relative group flex flex-row-reverse">
             <div className="absolute inset-0 bg-neon-blue/5 rounded-[24px] blur-2xl group-focus-within:bg-neon-blue/10 transition-all"></div>
             <div className="relative flex flex-1 items-center p-2 rounded-[24px] border border-white/5 bg-black/40 backdrop-blur-2xl shadow-2xl focus-within:border-neon-blue/30 transition-all">
               <div className="flex items-center gap-1 px-2 border-l border-white/5">
-                <button 
-                  onClick={() => setShowGifPicker(!showGifPicker)}
-                  className={cn(
-                    "p-2 rounded-xl transition-all",
-                    showGifPicker ? "text-neon-blue bg-neon-blue/10" : "text-gray-500 hover:text-neon-blue hover:bg-neon-blue/5"
-                  )} 
-                  title="ارسال گیف"
-                >
-                  <ImageIcon size={20} />
-                </button>
                 <button className="p-2 text-gray-500 hover:text-neon-blue hover:bg-neon-blue/5 rounded-xl transition-all">
                   <Smile size={20} />
                 </button>
@@ -1209,13 +1145,11 @@ export const ChatPage: React.FC = () => {
                 onKeyDown={(e) => {
                   if (e.key === "Enter") handleSend();
                 }}
+                maxLength={300}
                 placeholder={`پیام در ${activeChannel.name}...`}
                 className="flex-1 bg-transparent py-4 px-6 text-white text-sm focus:outline-none placeholder:text-gray-600 placeholder:font-bold text-right"
               />
               <div className="flex items-center gap-2 pl-2 border-r border-white/5">
-                 <button className="p-2 text-gray-500 hover:text-white transition-colors">
-                   <Plus size={20} />
-                 </button>
                  <GlowButton 
                   variant="blue" 
                   size="sm" 

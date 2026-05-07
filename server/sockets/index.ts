@@ -539,6 +539,20 @@ export function setupWebSockets(io: Server) {
     });
   });
 
+  const userRatings = new Map<string, number[]>();
+  const RATE_LIMIT_COUNT = 5;
+  const RATE_LIMIT_WINDOW_MS = 10000;
+  
+  const PROFANITY_WORDS = ["fuck", "shit", "bitch", "asshole", "کیر", "کون", "کس", "عن", "جنده", "دیوث", "بیشعور"];
+  function filterProfanity(text: string): string {
+    let filtered = text;
+    for (const word of PROFANITY_WORDS) {
+      const regex = new RegExp(word, "gi");
+      filtered = filtered.replace(regex, "***");
+    }
+    return filtered;
+  }
+
   // Chat Namespace
   chatNs.on("connection", (socket: AuthenticatedSocket) => {
     const userId = socket.userId;
@@ -546,10 +560,44 @@ export function setupWebSockets(io: Server) {
     socket.join(`user:${userId}`);
     trackUser(userId, socket.id);
 
-    socket.on("chat.join", (data: { type: "channel" | "lobby", id: string }) => {
-      const room = data.type === "lobby" ? `lobby:${data.id}` : `channel:${data.id}`;
+    socket.on("chat.join", async (data: { type: "channel" | "lobby" | "user", id: string }, ack) => {
+      const room = data.type === "lobby" ? `lobby:${data.id}` : data.type === "user" ? `user:${data.id}` : `channel:${data.id}`;
       socket.join(room);
       console.log(`[CHAT] User ${userId} joined room ${room}`);
+
+      // Fetch history for channel
+      try {
+        if (data.type === "channel") {
+           const messages = await prisma.message.findMany({
+             where: { channelId: data.id },
+             take: 50,
+             orderBy: { createdAt: "desc" },
+             include: { sender: { include: { profile: true } } }
+           });
+
+           const formatted = messages.map(msg => ({
+              id: msg.id.toString(),
+              from: {
+                userId: msg.senderId,
+                username: msg.sender.username,
+                membership: msg.sender.profile?.membershipType || "NONE",
+                level: msg.sender.profile?.level || 1,
+                avatar: msg.sender.profile?.avatarUrl
+              },
+              targetType: "channel",
+              targetId: data.id,
+              content: msg.content,
+              createdAt: msg.createdAt.getTime(),
+              replyToId: msg.replyToId
+           })).reverse();
+           
+           if (ack) ack({ status: "ok", data: { messages: formatted } });
+        } else {
+           if (ack) ack({ status: "ok", data: { messages: [] } });
+        }
+      } catch(e) {
+         if (ack) ack({ status: "error" });
+      }
     });
 
     socket.on("disconnect", () => {
@@ -558,7 +606,28 @@ export function setupWebSockets(io: Server) {
 
     socket.on("chat.send", async (data: { target: { type: "channel" | "lobby" | "user", id: string }, content: string, tempId: string, replyToId?: string }, ack) => {
       const { target, content, tempId, replyToId } = data;
-      console.log(`[CHAT] send target=${target.type}:${target.id} from=${userId} content="${content}"`);
+      
+      // Rate limiter
+      const now = Date.now();
+      const userTimestamps = userRatings.get(userId) || [];
+      const recentTimestamps = userTimestamps.filter(t => now - t < RATE_LIMIT_WINDOW_MS);
+      if (recentTimestamps.length >= RATE_LIMIT_COUNT) {
+         if (ack) ack({ status: "error", error: { code: "RATE_LIMIT", message: "تعداد پیام‌ها بیش از حد مجاز است. کمی صبر کنید." } });
+         return;
+      }
+      recentTimestamps.push(now);
+      userRatings.set(userId, recentTimestamps);
+
+      // Max length
+      if (content.length > 300) {
+        if (ack) ack({ status: "error", error: { code: "TOO_LONG", message: "طول پیام نمی‌تواند بیشتر از 300 کاراکتر باشد." } });
+        return;
+      }
+
+      // Profanity Filter
+      const safeContent = filterProfanity(content);
+
+      console.log(`[CHAT] send target=${target.type}:${target.id} from=${userId} content="${safeContent}"`);
       
       try {
         const user = await prisma.user.findUnique({ 
@@ -575,7 +644,7 @@ export function setupWebSockets(io: Server) {
 
           const msg = await prisma.message.create({
             data: {
-              content,
+              content: safeContent,
               senderId: userId,
               lobbyId: target.id,
             }
@@ -586,19 +655,17 @@ export function setupWebSockets(io: Server) {
             from: { 
               userId, 
               username: user?.username, 
-              membership: user?.profile?.membershipType || "NONE" 
+              membership: user?.profile?.membershipType || "NONE",
+              level: user?.profile?.level || 1,
+              avatar: user?.profile?.avatarUrl
             },
             targetType: "lobby",
             targetId: target.id,
-            content,
+            content: safeContent,
             createdAt: msg.createdAt.getTime()
           };
-          console.log(`[CHAT] Broadcasting lobby message to room lobby:${target.id}`);
-          const clientsInRoom = await chatNs.in(`lobby:${target.id}`).fetchSockets();
-          console.log(`[CHAT] Room lobby:${target.id} has ${clientsInRoom.length} clients`);
           
           chatNs.to(`lobby:${target.id}`).emit("chat.message", msgPayload);
-          // Fallback to lobby namespace
           lobbyNs.to(`lobby:${target.id}`).emit("chat.message", msgPayload);
           
           if (ack) ack({ status: "ok", data: { tempId, messageId: msg.id.toString(), createdAt: msg.createdAt.getTime() } });
@@ -608,7 +675,7 @@ export function setupWebSockets(io: Server) {
         if (target.type === "user") {
           const msg = await prisma.message.create({
             data: {
-              content,
+              content: safeContent,
               senderId: userId,
               receiverId: target.id,
             }
@@ -619,14 +686,15 @@ export function setupWebSockets(io: Server) {
             from: { 
               userId, 
               username: user?.username, 
-              membership: user?.profile?.membershipType || "NONE" 
+              membership: user?.profile?.membershipType || "NONE",
+              level: user?.profile?.level || 1,
+              avatar: user?.profile?.avatarUrl
             },
             targetType: "user",
             targetId: target.id,
-            content,
+            content: safeContent,
             createdAt: msg.createdAt.getTime()
           };
-          // Send to the other user and to self (for multi-device sync)
           chatNs.to(`user:${target.id}`).emit("chat.message", msgPayload);
           chatNs.to(`user:${userId}`).emit("chat.message", msgPayload);
           if (ack) ack({ status: "ok", data: { tempId, messageId: msg.id.toString(), createdAt: msg.createdAt.getTime() } });
@@ -635,9 +703,19 @@ export function setupWebSockets(io: Server) {
 
         const room = `channel:${target.id}`;
 
+        // Ensure Channel exists
+        await prisma.channel.upsert({
+           where: { id: target.id },
+           update: {},
+           create: {
+             id: target.id,
+             title: target.id // or a mapped title
+           }
+        });
+
         const msg = await prisma.message.create({
           data: {
-            content,
+            content: safeContent,
             senderId: userId,
             channelId: target.id, 
             replyToId: replyToId ? parseInt(replyToId) : undefined
@@ -645,19 +723,22 @@ export function setupWebSockets(io: Server) {
         });
 
         chatNs.to(room).emit("chat.message", {
-          id: msg.id.toString(), // Use id consistently
+          id: msg.id.toString(),
           from: { 
             userId, 
             username: user?.username, 
-            membership: user?.profile?.membershipType || "NONE" 
+            membership: user?.profile?.membershipType || "NONE",
+            level: user?.profile?.level || 1,
+            avatar: user?.profile?.avatarUrl
           },
           targetType: "channel",
           targetId: target.id,
-          content,
-          createdAt: Date.now()
+          content: safeContent,
+          createdAt: msg.createdAt.getTime(),
+          replyToId: replyToId
         });
 
-        if (ack) ack({ status: "ok", data: { tempId, messageId: msg.id.toString(), createdAt: Date.now() } });
+        if (ack) ack({ status: "ok", data: { tempId, messageId: msg.id.toString(), createdAt: msg.createdAt.getTime() } });
       } catch (err) {
         if (ack) ack({ status: "error", error: { code: "INTERNAL_ERROR", message: "Failed to send message" } });
       }
@@ -680,6 +761,21 @@ export function setupWebSockets(io: Server) {
       untrackUser(userId, socket.id);
     });
   });
+
+  // Cron Job for Cleaning Messages Older Than 7 Days
+  setInterval(async () => {
+    try {
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      const res = await prisma.message.deleteMany({
+        where: {
+          createdAt: { lt: sevenDaysAgo }
+        }
+      });
+      console.log(`[CRON] Cleaned up ${res.count} old messages`);
+    } catch (e) {
+       console.error("[CRON] Failed to clean up messages", e);
+    }
+  }, 24 * 60 * 60 * 1000); // Run daily
 
   console.log("WebSocket namespaces initialized");
 }
