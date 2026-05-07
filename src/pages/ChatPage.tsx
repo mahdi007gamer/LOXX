@@ -99,7 +99,7 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
         )}>
           {message.senderAvatar || (message.senderName ? message.senderName[0] : "?")}
         </div>
-        <div className={cn("absolute -bottom-1 h-3.5 w-3.5 rounded-full bg-green-500 border-2 border-[#050507] z-20", message.self ? "-left-1" : "-right-1")} />
+        <div className="absolute -bottom-1 -right-1 h-3.5 w-3.5 rounded-full bg-green-500 border-2 border-[#050507] z-20" />
       </div>
 
       {/* Message Content Area */}
@@ -430,9 +430,9 @@ const CHAT_THEMES = {
 // --- Main Page ---
 
 const INITIAL_CHANNELS: Channel[] = [
-  { id: "general", name: "چت عمومی", type: "public", users: 124 },
-  { id: "news", name: "اخبار گیمینگ", type: "public", users: 45 },
-  { id: "lfg", name: "پیدا کردن یار", type: "public", users: 89 },
+      { id: "general", name: "چت عمومی", type: "public", users: 15420 },
+      { id: "news", name: "اخبار گیمینگ", type: "public", users: 15420 },
+      { id: "lfg", name: "پیدا کردن یار", type: "public", users: 15420 },
 ];
 
 const MOCK_MESSAGES: Record<string, ChatMessage[]> = {
@@ -879,8 +879,8 @@ export const ChatPage: React.FC = () => {
                 )}
               </div>
               <div className="flex items-center gap-1.5 md:gap-2 truncate">
-                <div className="h-1 w-1 md:h-1.5 md:w-1.5 rounded-full bg-green-500 animate-pulse shrink-0"></div>
-                <p className="text-[8px] md:text-[10px] text-gray-500 font-bold uppercase tracking-tighter truncate">{activeChannel.users} آنلاین</p>
+                <div className="h-1 w-1 md:h-1.5 md:w-1.5 rounded-full bg-blue-500 shrink-0"></div>
+                <p className="text-[8px] md:text-[10px] text-gray-500 font-bold uppercase tracking-tighter truncate">{activeChannel.users.toLocaleString()} عضو</p>
               </div>
             </div>
           </div>
