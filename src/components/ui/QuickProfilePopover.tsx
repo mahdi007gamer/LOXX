@@ -93,7 +93,11 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
                isPLUS ? "p-[2px] bg-neon-blue" : ""
              )}>
                 <div className="h-full w-full rounded-[28px] bg-[#0d0d12] flex items-center justify-center text-5xl overflow-hidden relative">
-                  {user.senderAvatar || "👤"}
+                  {user.senderAvatar && user.senderAvatar.startsWith("http") ? (
+                    <img src={user.senderAvatar} alt={user.senderName} className="w-full h-full object-cover" />
+                  ) : (
+                    user.senderAvatar || "👤"
+                  )}
                   
                   {/* VIP Animated Aura */}
                   {isVIP && (

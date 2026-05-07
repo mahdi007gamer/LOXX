@@ -50,6 +50,8 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
     try {
       const res = await api.get(`/games/${gameId}`);
       const game = res.data.data;
+      if (!game) throw new Error("Game not found");
+      
       setSelectedGameData(game);
       setFormData(prev => ({
         ...prev,

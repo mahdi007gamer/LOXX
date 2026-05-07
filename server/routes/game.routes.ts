@@ -5,5 +5,6 @@ import { authenticate } from "../middleware/auth.middleware.js";
 const router = Router();
 
 router.get("/", GameController.getAllGames);
+router.get("/:id", GameController.getGameById);
 
 export default router;

@@ -36,9 +36,11 @@ interface MessageItemProps {
   onReaction: (msgId: string, emoji: string) => void;
   onSaveGif: (url: string) => void;
   onReply: (message: ChatMessage) => void;
+  activeChannelId: string;
+  onDelete: (msgId: string) => void;
 }
 
-const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGif, onReply }) => {
+const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGif, onReply, activeChannelId, onDelete }) => {
   const { openProfile } = useProfilePopover();
   const { user } = useAuth();
   const isAdmin = (user as any)?.role === 'ADMIN';
@@ -104,13 +106,13 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
           ) : (
             message.senderAvatar || (message.senderName ? message.senderName[0] : "?")
           )}
-          <div 
-            className={cn(
-              "absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-[#050507] z-[31] shadow-lg transition-colors duration-500", 
-            )} 
-            style={{ backgroundColor: message.isOnline === false ? "#9ca3af" : "#22c55e" }} 
-          />
         </div>
+        <div 
+          className={cn(
+            "absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-[#050507] z-[31] shadow-lg transition-colors duration-500", 
+          )} 
+          style={{ backgroundColor: (activeChannelId === 'news' || message.isOnline !== false) ? "#22c55e" : "#9ca3af" }} 
+        />
       </div>
 
       {/* Message Content Area */}
@@ -182,7 +184,7 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
               {(isAdmin || message.self) && (
                 <button 
                   className="h-6 w-6 md:h-7 md:w-7 flex items-center justify-center text-gray-400 hover:text-red-500 transition-colors rounded-lg hover:bg-white/5 relative z-10 shrink-0" 
-                  onClick={(e) => { e.stopPropagation(); deleteMessage(message.id); setShowActions(false); }}
+                  onClick={(e) => { e.stopPropagation(); onDelete(message.id); setShowActions(false); }}
                   title="حذف پیام"
                 >
                   <Trash size={14} />
@@ -569,6 +571,7 @@ export const ChatPage: React.FC = () => {
     localStorage.setItem("loxx-chat-theme", chatTheme);
   }, [chatTheme]);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const { friends, sendMessage: sendFriendMessage } = useFriends();
   const [isFriendsLoading, setIsFriendsLoading] = useState(false);
@@ -1254,6 +1257,8 @@ export const ChatPage: React.FC = () => {
               onReaction={handleReaction}
               onSaveGif={handleSaveGif}
               onReply={(m) => setReplyingTo(m)}
+              activeChannelId={activeChannelId}
+              onDelete={deleteMessage}
             />
           ))}
           
@@ -1308,78 +1313,83 @@ export const ChatPage: React.FC = () => {
         </AnimatePresence>
 
         {/* Input Area - Adjusted for mobile */}
-        <div className="p-2 md:p-8 bg-gradient-to-t from-dark-bg to-transparent relative z-30 flex flex-col items-center shrink-0 w-full overflow-hidden">
-          <div className="w-full max-w-4xl relative flex flex-col px-1 md:px-0">
-            {/* Reply Indicator - Discord Style */}
-            <AnimatePresence>
-              {replyingTo && (
-                <motion.div 
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 10 }}
-                  className="flex items-center justify-between px-4 py-2 bg-black/40 border border-white/5 rounded-2xl mb-2 text-xs backdrop-blur-xl"
-                >
-                  <div className="flex items-center gap-3 overflow-hidden">
-                    <Reply size={14} className="text-neon-blue shrink-0" />
-                    <span className="text-gray-500 font-bold whitespace-nowrap">در پاسخ به <span className="text-neon-blue">{replyingTo.senderName}</span>:</span>
-                    <span className="text-gray-300 truncate opacity-60 italic">{replyingTo.text}</span>
-                  </div>
-                  <button 
-                    onClick={() => setReplyingTo(null)}
-                    className="p-1 hover:bg-white/10 rounded-lg text-gray-500 transition-colors"
+        {activeChannelId === 'news' && !isAdmin ? (
+          <div className="p-8 pb-12 text-center opacity-50">
+             <p className="text-gray-500 font-bold text-sm tracking-tighter">فقط ادمین‌ها می‌توانند در این کانال محتوا منتشر کنند</p>
+          </div>
+        ) : (
+          <div className="p-2 md:p-8 bg-gradient-to-t from-dark-bg to-transparent relative z-30 flex flex-col items-center shrink-0 w-full overflow-hidden">
+            <div className="w-full max-w-4xl relative flex flex-col px-1 md:px-0">
+              {/* Reply Indicator - Discord Style */}
+              <AnimatePresence>
+                {replyingTo && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    className="flex items-center justify-between px-4 py-2 bg-black/40 border border-white/5 rounded-2xl mb-2 text-xs backdrop-blur-xl"
                   >
-                    <X size={14} />
-                  </button>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* GIF Picker Popover Removed */}
-
-          <div className="relative group flex flex-row-reverse">
-            <div className="absolute inset-0 bg-neon-blue/5 rounded-[24px] blur-2xl group-focus-within:bg-neon-blue/10 transition-all"></div>
-            <div className="relative flex flex-1 items-center p-2 rounded-[24px] border border-white/5 bg-black/40 backdrop-blur-2xl shadow-2xl focus-within:border-neon-blue/30 transition-all">
-              <div className="flex items-center gap-1 px-2 border-l border-white/5">
-                <button className="p-2 text-gray-500 hover:text-neon-blue hover:bg-neon-blue/5 rounded-xl transition-all">
-                  <Smile size={20} />
-                </button>
-                {activeChannelId === 'news' && (user as any)?.role === 'ADMIN' && (
-                  <button 
-                    onClick={() => fileInputRef.current?.click()}
-                    className="p-2 text-gray-500 hover:text-neon-blue hover:bg-neon-blue/5 rounded-xl transition-all"
-                  >
-                    <ImageIcon size={20} />
-                  </button>
+                    <div className="flex items-center gap-3 overflow-hidden">
+                      <Reply size={14} className="text-neon-blue shrink-0" />
+                      <span className="text-gray-500 font-bold whitespace-nowrap">در پاسخ به <span className="text-neon-blue">{replyingTo.senderName}</span>:</span>
+                      <span className="text-gray-300 truncate opacity-60 italic">{replyingTo.text}</span>
+                    </div>
+                    <button 
+                      onClick={() => setReplyingTo(null)}
+                      className="p-1 hover:bg-white/10 rounded-lg text-gray-500 transition-colors"
+                    >
+                      <X size={14} />
+                    </button>
+                  </motion.div>
                 )}
-              </div>
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => {
-                  setInput(e.target.value);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleSend();
-                }}
-                disabled={activeChannelId === 'news' && (user as any)?.role !== 'ADMIN'}
-                maxLength={300}
-                placeholder={activeChannelId === 'news' && (user as any)?.role !== 'ADMIN' ? "فقط ادمین‌ها می‌توانند در این کانال پیام ارسال کنند" : `پیام در ${activeChannel.name}...`}
-                className="flex-1 bg-transparent py-4 px-6 text-white text-sm focus:outline-none placeholder:text-gray-600 placeholder:font-bold text-right"
-              />
-              <div className="flex items-center gap-2 pl-2 border-r border-white/5">
-                 <GlowButton 
-                  variant="blue" 
-                  size="sm" 
-                  className="h-10 w-10 !rounded-2xl !p-0 shadow-lg shadow-neon-blue/20"
-                  onClick={() => handleSend()}
-                >
-                  <Send size={18} className="rotate-180" />
-                </GlowButton>
+              </AnimatePresence>
+  
+              {/* GIF Picker Popover Removed */}
+  
+            <div className="relative group flex flex-row-reverse">
+              <div className="absolute inset-0 bg-neon-blue/5 rounded-[24px] blur-2xl group-focus-within:bg-neon-blue/10 transition-all"></div>
+              <div className="relative flex flex-1 items-center p-2 rounded-[24px] border border-white/5 bg-black/40 backdrop-blur-2xl shadow-2xl focus-within:border-neon-blue/30 transition-all">
+                <div className="flex items-center gap-1 px-2 border-l border-white/5">
+                  <button className="p-2 text-gray-500 hover:text-neon-blue hover:bg-neon-blue/5 rounded-xl transition-all">
+                    <Smile size={20} />
+                  </button>
+                  {activeChannelId === 'news' && isAdmin && (
+                    <button 
+                      onClick={() => fileInputRef.current?.click()}
+                      className="p-2 text-gray-500 hover:text-neon-blue hover:bg-neon-blue/5 rounded-xl transition-all"
+                    >
+                      <ImageIcon size={20} />
+                    </button>
+                  )}
+                </div>
+                <input
+                  type="text"
+                  value={input}
+                  onChange={(e) => {
+                    setInput(e.target.value);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleSend();
+                  }}
+                  maxLength={300}
+                  placeholder={`پیام در ${activeChannel.name}...`}
+                  className="flex-1 bg-transparent py-4 px-6 text-white text-sm focus:outline-none placeholder:text-gray-600 placeholder:font-bold text-right"
+                />
+                <div className="flex items-center gap-2 pl-2 border-r border-white/5">
+                   <GlowButton 
+                    variant="blue" 
+                    size="sm" 
+                    className="h-10 w-10 !rounded-2xl !p-0 shadow-lg shadow-neon-blue/20"
+                    onClick={() => handleSend()}
+                  >
+                    <Send size={18} className="rotate-180" />
+                  </GlowButton>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+        )}
     </div>
 
       {/* Friends Sidebar - Mobile optimized */}

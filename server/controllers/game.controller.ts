@@ -36,4 +36,35 @@ export class GameController {
       res.status(500).json({ status: "error", message: "Failed to fetch games" });
     }
   }
+
+  static async getGameById(req: Request, res: Response) {
+    const { id } = req.params;
+    try {
+      const game = await prisma.game.findUnique({
+        where: { id }
+      }) as any;
+      
+      if (!game) return res.status(404).json({ status: "error", message: "Game not found" });
+      
+      const safeParse = (str: string, defaultVal: any) => {
+        if (!str) return defaultVal;
+        try { return JSON.parse(str); } catch (e) { return defaultVal; }
+      };
+      
+      const parsedGame = {
+        ...game,
+        genres: safeParse(game.genres, []),
+        regions: safeParse(game.regions, []),
+        metadata: safeParse(game.metadata, { features: [] })
+      };
+      
+      if (!parsedGame.metadata?.features) {
+        parsedGame.metadata = { ...parsedGame.metadata, features: [] };
+      }
+      
+      res.json({ status: "success", data: parsedGame });
+    } catch (error: any) {
+      res.status(500).json({ status: "error", message: error.message });
+    }
+  }
 }
