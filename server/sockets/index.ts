@@ -579,6 +579,7 @@ export function setupWebSockets(io: Server) {
 
       // Fetch history for channel
       try {
+        const totalUsers = await prisma.user.count();
         if (data.type === "channel") {
            const messages = await prisma.message.findMany({
              where: { channelId: data.id },
@@ -603,9 +604,9 @@ export function setupWebSockets(io: Server) {
               replyToId: msg.replyToId
            })).reverse();
            
-           if (ack) ack({ status: "ok", data: { messages: formatted } });
+           if (ack) ack({ status: "ok", data: { messages: formatted, memberCount: totalUsers } });
         } else {
-           if (ack) ack({ status: "ok", data: { messages: [] } });
+           if (ack) ack({ status: "ok", data: { messages: [], memberCount: totalUsers } });
         }
       } catch(e) {
          if (ack) ack({ status: "error" });
@@ -634,6 +635,16 @@ export function setupWebSockets(io: Server) {
       if (content.length > 300) {
         if (ack) ack({ status: "error", error: { code: "TOO_LONG", message: "طول پیام نمی‌تواند بیشتر از 300 کاراکتر باشد." } });
         return;
+      }
+
+      // Check for Admin only channels
+      const isAdminOnlyChannel = target.id === "news";
+      if (isAdminOnlyChannel) {
+         const requestingUser = await prisma.user.findUnique({ where: { id: userId } });
+         if (requestingUser?.role !== "ADMIN") {
+            if (ack) ack({ status: "error", error: { code: "PERMISSION_DENIED", message: "فقط ادمین‌ها می‌توانند در این کانال پیام ارسال کنند." } });
+            return;
+         }
       }
 
       // Profanity Filter
@@ -732,9 +743,22 @@ export function setupWebSockets(io: Server) {
             content: safeContent,
             senderId: userId,
             channelId: target.id, 
-            replyToId: replyToId ? parseInt(replyToId) : undefined
+            replyToId: replyToId ? (typeof replyToId === 'string' ? parseInt(replyToId) : replyToId) : undefined
+          },
+          include: {
+            replyTo: {
+              include: {
+                sender: true
+              }
+            }
           }
         });
+
+        const replyToData = msg.replyTo ? {
+          id: msg.replyTo.id.toString(),
+          user: msg.replyTo.sender.username,
+          text: msg.replyTo.content
+        } : undefined;
 
         chatNs.to(room).emit("chat.message", {
           id: msg.id.toString(),
@@ -750,7 +774,8 @@ export function setupWebSockets(io: Server) {
           targetId: target.id,
           content: safeContent,
           createdAt: msg.createdAt.getTime(),
-          replyToId: replyToId
+          replyToId: replyToId,
+          replyTo: replyToData
         });
 
         if (ack) ack({ status: "ok", data: { tempId, messageId: msg.id.toString(), createdAt: msg.createdAt.getTime() } });

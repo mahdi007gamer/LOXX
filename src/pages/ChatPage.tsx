@@ -103,7 +103,7 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
             message.senderAvatar || (message.senderName ? message.senderName[0] : "?")
           )}
         </div>
-        <div className={cn("absolute -bottom-1 h-3 w-3 rounded-full border-2 border-[#050507] z-20", message.self ? "-left-1" : "-right-1")} style={{ backgroundColor: message.isOnline === false ? "#6b7280" : "#22c55e" }} />
+        <div className={cn("absolute bottom-0.5 h-3 w-3 rounded-full border-2 border-[#050507] z-20 shadow-lg", message.self ? "left-0.5" : "right-0.5")} style={{ backgroundColor: message.isOnline === false ? "#9ca3af" : "#22c55e" }} />
       </div>
 
       {/* Message Content Area */}
@@ -160,8 +160,8 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
             
             {/* Action Buttons - Repositioned to prevent horizontal scroll */}
             <div className={cn(
-              "absolute flex items-center gap-1 px-1.5 py-1 rounded-xl bg-[#0f0f15]/95 border border-white/10 shadow-2xl z-[60] backdrop-blur-2xl whitespace-nowrap transition-all duration-200",
-              message.self ? "right-0 -top-8" : "left-0 -top-8",
+              "absolute flex items-center gap-1 px-1.5 py-1 rounded-xl bg-[#0f0f15]/95 border border-white/10 shadow-2xl z-[60] backdrop-blur-2xl whitespace-nowrap transition-all duration-200 min-w-max",
+              message.self ? "right-0 -top-10" : "left-0 -top-10",
               showActions ? "opacity-100 translate-y-0 visible" : "opacity-0 translate-y-2 invisible lg:group-hover/bubble-container:opacity-100 lg:group-hover/bubble-container:translate-y-0 lg:group-hover/bubble-container:visible"
             )}
             onClick={(e) => e.stopPropagation()}
@@ -237,7 +237,11 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
   
               <div className="px-4 py-2.5">
                 {/* Lobby Invite Card */}
-                {message.lobbyInvite ? (
+                {message.text.startsWith("[IMAGE]:") ? (
+                  <div className="mt-1 rounded-lg overflow-hidden border border-white/10 shadow-xl max-w-[280px]">
+                    <img src={message.text.split("[IMAGE]:")[1]} alt="Chat image" className="w-full h-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onClick={() => window.open(message.text.split("[IMAGE]:")[1], '_blank')} />
+                  </div>
+                ) : message.lobbyInvite ? (
                    <div className="space-y-3 py-1">
                      <p className="font-black text-neon-blue text-[9px] flex items-center gap-1.5 px-0 uppercase tracking-widest opacity-70">
                        <Zap size={10} fill="currentColor" />
@@ -528,9 +532,10 @@ export const ChatPage: React.FC = () => {
   const [activeChannelId, setActiveChannelId] = useState("general");
   const [messages, setMessages] = useState<Record<string, ChatMessage[]>>({});
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
+  const [memberCount, setMemberCount] = useState(15420);
+  const [typers, setTypers] = useState<Record<string, Record<string, string>>>({});
   const [input, setInput] = useState("");
   const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null);
-  const [isTyping, setIsTyping] = useState(false);
   const [showNewMessageButton, setShowNewMessageButton] = useState(false);
   const [showGifPicker, setShowGifPicker] = useState(false);
   const [savedGifs, setSavedGifs] = useState<string[]>([]);
@@ -561,8 +566,13 @@ export const ChatPage: React.FC = () => {
   useEffect(() => {
     // Join channel and fetch history when switched
     chatSocket.emit("chat.join", { type: "channel", id: activeChannelId }, (res: any) => {
-      if (res.status === "ok" && res.data?.messages) {
-        setMessages(prev => ({ ...prev, [activeChannelId]: res.data.messages.map((m: any) => formatIncomingMessage(m, user?.id)) }));
+      if (res.status === "ok" && res.data) {
+        if (res.data.messages) {
+          setMessages(prev => ({ ...prev, [activeChannelId]: res.data.messages.map((m: any) => formatIncomingMessage(m, user?.id)) }));
+        }
+        if (res.data.memberCount) {
+          setMemberCount(res.data.memberCount);
+        }
         setUnreadCounts(prev => ({ ...prev, [activeChannelId]: 0 }));
       }
     });
@@ -595,10 +605,34 @@ export const ChatPage: React.FC = () => {
     };
 
     chatSocket.on("chat.message", handleNewMessage);
+    
+    const handleTyping = (data: { targetId: string, userId: string, username: string, isTyping: boolean }) => {
+      setTypers(prev => {
+        const channelTypers = { ...(prev[data.targetId] || {}) };
+        if (data.isTyping) {
+          channelTypers[data.userId] = data.username;
+        } else {
+          delete channelTypers[data.userId];
+        }
+        return { ...prev, [data.targetId]: channelTypers };
+      });
+    };
+    chatSocket.on("chat.typing", handleTyping);
+
     return () => {
        chatSocket.off("chat.message", handleNewMessage);
+       chatSocket.off("chat.typing", handleTyping);
     };
   }, [activeChannelId, user?.id]);
+
+  useEffect(() => {
+    if (activeChannelId) {
+      chatSocket.emit("chat.typing", { 
+        target: { type: "channel", id: activeChannelId }, 
+        isTyping: input.length > 0 
+      });
+    }
+  }, [input, activeChannelId]);
 
   const formatIncomingMessage = (msg: any, currentUserId?: string): ChatMessage => {
      const badges: BadgeType[] = [];
@@ -616,7 +650,11 @@ export const ChatPage: React.FC = () => {
        timestamp: new Date(msg.createdAt).toLocaleTimeString("fa-IR", { hour: "2-digit", minute: "2-digit" }),
        isRead: true,
        self: msg.from.userId === currentUserId,
-       replyTo: msg.replyToId ? { id: msg.replyToId.toString(), user: "ناشناس", text: "پیام ریپلای شده..." } : undefined // Placeholder
+        replyTo: msg.replyTo ? { 
+           id: msg.replyTo.id, 
+           user: msg.replyTo.user || "ناشناس", 
+           text: msg.replyTo.text || "پیام ریپلای شده..." 
+        } : (msg.replyToId ? { id: msg.replyToId.toString(), user: "ناشناس", text: "پیام ریپلای شده..." } : undefined)
      };
   };
 
@@ -626,7 +664,7 @@ export const ChatPage: React.FC = () => {
       id: `game-${g.id}`,
       name: `چت ${g.title}`,
       type: "game" as const,
-      users: 1054, // Mock total users
+      users: 15420, // Total Loxx members as requested
       icon: g.image
     }));
 
@@ -773,10 +811,55 @@ export const ChatPage: React.FC = () => {
 
   const [activeFriendId, setActiveFriendId] = useState<string | null>(null);
   const { openProfile } = useProfilePopover();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileUpload = (file: File) => {
+    if (!file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const base64 = e.target?.result as string;
+      // In a real app, upload to S3/Firebase and get URL
+      // For now, we'll send it as part of the content or metadata
+      chatSocket.emit("chat.send", {
+        target: { type: "channel", id: activeChannelId },
+        content: `[IMAGE]:${base64}`,
+        tempId: `temp-${Date.now()}`
+      });
+    };
+    reader.readAsDataURL(file);
+  };
 
   return (
-    <div className="flex h-[calc(100vh-128px)] md:h-[calc(100vh-64px)] overflow-hidden bg-dark-bg rtl text-right relative overscroll-none" style={{ overscrollBehavior: 'none' }} onClick={() => setActiveFriendId(null)}>
+    <div 
+      className="flex h-[calc(100vh-128px)] md:h-[calc(100vh-64px)] overflow-hidden bg-dark-bg rtl text-right relative overscroll-none" 
+      style={{ overscrollBehavior: 'none' }} 
+      onClick={() => setActiveFriendId(null)}
+      onDragOver={(e) => {
+        if (activeChannelId === 'news' && (user as any)?.role === 'ADMIN') {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+      }}
+      onDrop={(e) => {
+        if (activeChannelId === 'news' && (user as any)?.role === 'ADMIN') {
+          e.preventDefault();
+          e.stopPropagation();
+          const file = e.dataTransfer.files?.[0];
+          if (file) handleFileUpload(file);
+        }
+      }}
+    >
       <Sidebar />
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        className="hidden" 
+        accept="image/*" 
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) handleFileUpload(file);
+        }}
+      />
       
       {/* Channels Sidebar */}
       <div className="hidden w-80 border-r border-white/5 bg-black/20 backdrop-blur-3xl lg:flex flex-col relative z-20 md:mr-64 mr-0">
@@ -890,7 +973,7 @@ export const ChatPage: React.FC = () => {
               </div>
               <div className="flex items-center gap-1.5 md:gap-2 truncate">
                 <div className="h-1 w-1 md:h-1.5 md:w-1.5 rounded-full bg-blue-500 shrink-0"></div>
-                <p className="text-[8px] md:text-[10px] text-gray-500 font-bold uppercase tracking-tighter truncate">{activeChannel.users.toLocaleString()} عضو</p>
+                <p className="text-[8px] md:text-[10px] text-gray-500 font-bold uppercase tracking-tighter truncate">{memberCount.toLocaleString()} عضو</p>
               </div>
             </div>
           </div>
@@ -1066,14 +1149,21 @@ export const ChatPage: React.FC = () => {
           ))}
           
           {/* Typing Indicator */}
-          {isTyping && (
-            <div className="flex items-center gap-3 mr-2 opacity-50 animate-in fade-in slide-in-from-bottom-2 shrink-0 pb-4">
+          {Object.keys(typers[activeChannelId] || {}).length > 0 && (
+            <div className="flex items-center gap-3 mr-2 opacity-70 animate-in fade-in slide-in-from-bottom-2 shrink-0 pb-4">
                <div className="flex gap-1">
-                 <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                 <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                 <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce"></div>
+                 <div className="w-1.5 h-1.5 bg-neon-blue rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                 <div className="w-1.5 h-1.5 bg-neon-blue rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                 <div className="w-1.5 h-1.5 bg-neon-blue rounded-full animate-bounce"></div>
                </div>
-               <span className="text-[10px] text-gray-500 font-bold">مازیار در حال نوشتن...</span>
+               <span className="text-[10px] text-gray-400 font-black">
+                  {(() => {
+                    const names = Object.values(typers[activeChannelId] || {});
+                    if (names.length === 1) return `${names[0]} در حال نوشتن...`;
+                    if (names.length === 2) return `${names[0]} و ${names[1]} در حال نوشتن...`;
+                    return `${names[0]}، ${names[1]} و ${names.length - 2} نفر دیگر در حال نوشتن...`;
+                  })()}
+               </span>
             </div>
           )}
           
@@ -1144,19 +1234,27 @@ export const ChatPage: React.FC = () => {
                 <button className="p-2 text-gray-500 hover:text-neon-blue hover:bg-neon-blue/5 rounded-xl transition-all">
                   <Smile size={20} />
                 </button>
+                {activeChannelId === 'news' && (user as any)?.role === 'ADMIN' && (
+                  <button 
+                    onClick={() => fileInputRef.current?.click()}
+                    className="p-2 text-gray-500 hover:text-neon-blue hover:bg-neon-blue/5 rounded-xl transition-all"
+                  >
+                    <ImageIcon size={20} />
+                  </button>
+                )}
               </div>
               <input
                 type="text"
                 value={input}
                 onChange={(e) => {
                   setInput(e.target.value);
-                  setIsTyping(e.target.value.length > 0);
                 }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") handleSend();
                 }}
+                disabled={activeChannelId === 'news' && (user as any)?.role !== 'ADMIN'}
                 maxLength={300}
-                placeholder={`پیام در ${activeChannel.name}...`}
+                placeholder={activeChannelId === 'news' && (user as any)?.role !== 'ADMIN' ? "فقط ادمین‌ها می‌توانند در این کانال پیام ارسال کنند" : `پیام در ${activeChannel.name}...`}
                 className="flex-1 bg-transparent py-4 px-6 text-white text-sm focus:outline-none placeholder:text-gray-600 placeholder:font-bold text-right"
               />
               <div className="flex items-center gap-2 pl-2 border-r border-white/5">
