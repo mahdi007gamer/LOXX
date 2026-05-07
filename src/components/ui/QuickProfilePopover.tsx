@@ -4,7 +4,7 @@ import { motion } from "motion/react";
 import { useFriends } from "../../context/FriendsContext";
 import { BadgeType, MembershipType } from "../../types";
 import { cn } from "../../lib/utils";
-import { Award, Star, Zap, Crown, User, Shield, Sparkles, CheckCircle2, Trophy, MessageCircle } from "lucide-react";
+import { Award, Star, Zap, Crown, User, Shield, Sparkles, X, Trophy, MessageCircle } from "lucide-react";
 
 export interface QuickProfileUser {
   senderName: string;
@@ -32,8 +32,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
 
   const handleMessage = () => {
     if (user.id) {
-      setActiveChatId(user.id);
-      chatTrigger();
+      openChat(user.id, user.senderName);
       onClose();
     }
   };
@@ -78,7 +77,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
           onClick={onClose}
           className="absolute top-4 left-4 h-8 w-8 rounded-full bg-black/40 text-white flex items-center justify-center hover:bg-black/60 transition-colors z-20 backdrop-blur-md border border-white/10"
          >
-           <CheckCircle2 size={16} className="rotate-45" />
+           <X size={16} />
          </button>
       </div>
 

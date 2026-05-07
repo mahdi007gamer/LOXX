@@ -572,6 +572,50 @@ export function setupWebSockets(io: Server) {
       });
     });
 
+    socket.on("chat.reaction", async (data: { messageId: string, emoji: string }) => {
+      try {
+        const messageId = parseInt(data.messageId);
+        if (isNaN(messageId)) return;
+
+        const message = await prisma.message.findUnique({
+          where: { id: messageId }
+        });
+        if (!message) return;
+
+        let reactions = message.reactions ? JSON.parse(message.reactions) : [];
+        const reactionIndex = reactions.findIndex((r: any) => r.emoji === data.emoji);
+
+        if (reactionIndex > -1) {
+          const userIndex = reactions[reactionIndex].users.indexOf(userId);
+          if (userIndex > -1) {
+            reactions[reactionIndex].users.splice(userIndex, 1);
+            reactions[reactionIndex].count--;
+          } else {
+            reactions[reactionIndex].users.push(userId);
+            reactions[reactionIndex].count++;
+          }
+          if (reactions[reactionIndex].count <= 0) {
+            reactions.splice(reactionIndex, 1);
+          }
+        } else {
+          reactions.push({ emoji: data.emoji, count: 1, users: [userId] });
+        }
+
+        await prisma.message.update({
+          where: { id: messageId },
+          data: { reactions: JSON.stringify(reactions) }
+        });
+
+        const room = message.channelId ? `channel:${message.channelId}` : message.lobbyId ? `lobby:${message.lobbyId}` : `user:${message.receiverId || message.senderId}`;
+        chatNs.to(room).emit("chat.reaction", { 
+           messageId: data.messageId, 
+           reactions 
+        });
+      } catch (err) {
+        console.error("Reaction error:", err);
+      }
+    });
+
     socket.on("chat.join", async (data: { type: "channel" | "lobby" | "user", id: string }, ack) => {
       const room = data.type === "lobby" ? `lobby:${data.id}` : data.type === "user" ? `user:${data.id}` : `channel:${data.id}`;
       socket.join(room);
@@ -595,13 +639,15 @@ export function setupWebSockets(io: Server) {
                 username: msg.sender.username,
                 membership: msg.sender.profile?.membershipType || "NONE",
                 level: msg.sender.profile?.level || 1,
-                avatar: msg.sender.profile?.avatarUrl
+                avatar: msg.sender.profile?.avatarUrl,
+                isOnline: userConnections.has(msg.senderId)
               },
               targetType: "channel",
               targetId: data.id,
               content: msg.content,
               createdAt: msg.createdAt.getTime(),
-              replyToId: msg.replyToId
+              replyToId: msg.replyToId,
+              reactions: msg.reactions ? JSON.parse(msg.reactions) : []
            })).reverse();
            
            if (ack) ack({ status: "ok", data: { messages: formatted, memberCount: totalUsers } });
@@ -630,6 +676,21 @@ export function setupWebSockets(io: Server) {
       }
       recentTimestamps.push(now);
       userRatings.set(userId, recentTimestamps);
+
+      const user = await prisma.user.findUnique({ 
+        where: { id: userId },
+        include: { profile: true }
+      });
+
+      if (!user) return;
+
+      // News channel admin check
+      if (target.type === "channel" && target.id === "news") {
+        if (user.role !== "ADMIN") {
+          if (ack) ack({ status: "error", error: { code: "FORBIDDEN", message: "فقط ادمین‌ها می‌توانند در این کانال پیام ارسال کنند." } });
+          return;
+        }
+      }
 
       // Max length
       if (content.length > 300) {

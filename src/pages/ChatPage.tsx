@@ -103,7 +103,13 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
             message.senderAvatar || (message.senderName ? message.senderName[0] : "?")
           )}
         </div>
-        <div className={cn("absolute bottom-0.5 h-3 w-3 rounded-full border-2 border-[#050507] z-20 shadow-lg", message.self ? "left-0.5" : "right-0.5")} style={{ backgroundColor: message.isOnline === false ? "#9ca3af" : "#22c55e" }} />
+        <div 
+          className={cn(
+            "absolute bottom-0 h-3.5 w-3.5 rounded-full border-2 border-[#050507] z-[31] shadow-lg transition-colors duration-500", 
+            message.self ? "-left-1" : "-right-1"
+          )} 
+          style={{ backgroundColor: message.isOnline === false ? "#9ca3af" : "#22c55e" }} 
+        />
       </div>
 
       {/* Message Content Area */}
@@ -619,9 +625,23 @@ export const ChatPage: React.FC = () => {
     };
     chatSocket.on("chat.typing", handleTyping);
 
+    const handleReactionUpdate = (data: { messageId: string, reactions: any[] }) => {
+      setMessages(prev => {
+        const newMessages = { ...prev };
+        Object.keys(newMessages).forEach(channelId => {
+          newMessages[channelId] = newMessages[channelId].map(m => 
+            m.id === data.messageId ? { ...m, reactions: data.reactions } : m
+          );
+        });
+        return newMessages;
+      });
+    };
+    chatSocket.on("chat.reaction", handleReactionUpdate);
+
     return () => {
        chatSocket.off("chat.message", handleNewMessage);
        chatSocket.off("chat.typing", handleTyping);
+       chatSocket.off("chat.reaction", handleReactionUpdate);
     };
   }, [activeChannelId, user?.id]);
 
@@ -639,20 +659,23 @@ export const ChatPage: React.FC = () => {
      if (msg.from.membership === "VIP") badges.push(BadgeType.VIP);
      if (msg.from.membership === "PLUS") badges.push(BadgeType.PLUS);
      
+     const isNewsAdmin = activeChannelId === 'news';
+     
      return {
        id: msg.id,
-       senderId: msg.from.userId,
-       senderName: msg.from.username,
-       senderAvatar: msg.from.avatar,
+       senderId: isNewsAdmin ? "loxx-system" : msg.from.userId,
+       senderName: isNewsAdmin ? "لوکس" : msg.from.username,
+       senderAvatar: isNewsAdmin ? "https://ais-dev-xfcgyo4yg6nboui4wqktll-122201759877.europe-west1.run.app/loxx_logo.png" : msg.from.avatar,
        senderLevel: msg.from.level,
-       senderBadges: badges,
+       senderBadges: isNewsAdmin ? [] : badges,
        text: msg.content,
+       isOnline: msg.from.isOnline,
        timestamp: new Date(msg.createdAt).toLocaleTimeString("fa-IR", { hour: "2-digit", minute: "2-digit" }),
        isRead: true,
        self: msg.from.userId === currentUserId,
         replyTo: msg.replyTo ? { 
            id: msg.replyTo.id, 
-           user: msg.replyTo.user || "ناشناس", 
+           user: isNewsAdmin ? "لوکس" : (msg.replyTo.user || "ناشناس"), 
            text: msg.replyTo.text || "پیام ریپلای شده..." 
         } : (msg.replyToId ? { id: msg.replyToId.toString(), user: "ناشناس", text: "پیام ریپلای شده..." } : undefined)
      };
@@ -734,6 +757,8 @@ export const ChatPage: React.FC = () => {
   };
 
   const handleReaction = (msgId: string, emoji: string) => {
+    chatSocket.emit("chat.reaction", { messageId: msgId, emoji });
+    
     setMessages(prev => {
       const channelMsgs = [...(prev[activeChannelId] || [])];
       const msgIndex = channelMsgs.findIndex(m => m.id === msgId);
