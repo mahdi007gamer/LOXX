@@ -754,7 +754,7 @@ export function setupWebSockets(io: Server) {
       }
 
       // Profanity Filter
-      const safeContent = filterProfanity(content);
+      const safeContent = isImage ? content : filterProfanity(content);
 
       console.log(`[CHAT] send target=${target.type}:${target.id} from=${userId} content="${safeContent}"`);
       

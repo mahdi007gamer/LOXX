@@ -646,8 +646,21 @@ export const ChatPage: React.FC = () => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  const { friends, chats, activeChatId, openChat, sendMessage: sendFriendMessage } = useFriends();
+  const { friends, chats, activeChatId, setActiveChatId, openChat, sendMessage: sendFriendMessage } = useFriends();
   const [isFriendsLoading, setIsFriendsLoading] = useState(false);
+
+  // Sync activeChatId with activeChannelId
+  useEffect(() => {
+    if (activeChatId) {
+      setActiveChannelId(""); // Clear active channel when DM is open
+    }
+  }, [activeChatId]);
+
+  useEffect(() => {
+    if (activeChannelId && activeChatId) {
+      setActiveChatId(null); // Clear DM when channel is selected
+    }
+  }, [activeChannelId, setActiveChatId]);
 
   useEffect(() => {
     if (showFriendsSidebar) {
@@ -830,13 +843,17 @@ export const ChatPage: React.FC = () => {
     }));
 
   const allChannels = [...INITIAL_CHANNELS, ...myGamesChannels];
-  const activeChannel = allChannels.find(c => c.id === activeChannelId) || INITIAL_CHANNELS[0];
+  const activeChannel = allChannels.find(c => c.id === activeChannelId) || (activeChatId ? { name: friends.find(f => f.id === activeChatId)?.displayName || "گفتگو", type: "dm", id: activeChatId } : (allChannels[0] || INITIAL_CHANNELS[0]));
+
+  const currentMessages = activeChatId 
+    ? (chats.find(c => c.friendId === activeChatId)?.messages || [])
+    : (messages[activeChannelId] || []);
 
   useEffect(() => {
     if (scrollRef.current && !showNewMessageButton) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages, activeChannelId, showNewMessageButton]);
+  }, [messages, chats, activeChannelId, activeChatId, showNewMessageButton]);
 
   const handleScroll = () => {
     if (!scrollRef.current) return;
@@ -848,6 +865,13 @@ export const ChatPage: React.FC = () => {
   const handleSend = () => {
     const messageText = input;
     if (!messageText.trim()) return;
+
+    if (activeChatId) {
+      sendFriendMessage(activeChatId, messageText);
+      setInput("");
+      setReplyingTo(null);
+      return;
+    }
 
     const tempId = `temp-${Date.now()}`;
     const newMsgObj: ChatMessage = {
@@ -966,7 +990,6 @@ export const ChatPage: React.FC = () => {
     }
   };
 
-  const [activeFriendId, setActiveFriendId] = useState<string | null>(null);
   const { openProfile } = useProfilePopover();
   const isAdmin = (user as any)?.role === 'ADMIN';
 
@@ -1020,7 +1043,6 @@ export const ChatPage: React.FC = () => {
     <div 
       className="flex h-[calc(100vh-128px)] md:h-[calc(100vh-64px)] overflow-hidden bg-dark-bg rtl text-right relative overscroll-none" 
       style={{ overscrollBehavior: 'none' }} 
-      onClick={() => setActiveFriendId(null)}
       onDragOver={(e) => {
         if (activeChannelId === 'news' && (user as any)?.role === 'ADMIN') {
           e.preventDefault();
@@ -1397,7 +1419,7 @@ export const ChatPage: React.FC = () => {
              <div className="h-px flex-1 bg-gradient-to-l from-transparent via-white/5 to-transparent"></div>
           </div>
 
-          {(messages[activeChannelId] || []).map((msg) => (
+          {currentMessages.map((msg) => (
             <MessageItem 
               key={msg.id} 
               message={msg} 
@@ -1596,12 +1618,13 @@ export const ChatPage: React.FC = () => {
                         transition={{ delay: i * 0.05 }}
                         onClick={(e) => {
                           e.stopPropagation();
-                          setActiveFriendId(activeFriendId === friend.id ? null : friend.id);
+                          openChat(friend.id, friend.displayName);
+                          setShowFriendsSidebar(false);
                         }}
                         className={cn(
                           "group relative flex items-center gap-3 p-3 rounded-2xl transition-all cursor-pointer",
-                          friend.status === "online" || friend.status === "in_game" ? "bg-white/5 border border-white/5 hover:border-neon-blue/20" : "bg-black/20 border-transparent grayscale opacity-50",
-                          activeFriendId === friend.id && "bg-white/10 border-white/20"
+                          friend.status === FriendStatus.ONLINE || friend.status === FriendStatus.IN_GAME ? "bg-white/5 border border-white/5 hover:border-neon-blue/20" : "bg-black/20 border-transparent grayscale opacity-50",
+                          activeChatId === friend.id && "bg-white/10 border-white/20"
                         )}
                       >
                         <div className="relative">
@@ -1614,8 +1637,8 @@ export const ChatPage: React.FC = () => {
                           </div>
                           <div className={cn(
                             "absolute -bottom-1 -right-1 h-3 w-3 rounded-full border-2 border-[#0d0d12]",
-                            friend.status === "online" ? "bg-green-500" :
-                            friend.status === "in_game" ? "bg-neon-purple shadow-[0_0_8px_rgba(160,32,240,0.8)]" :
+                            friend.status === FriendStatus.ONLINE ? "bg-green-500" :
+                            friend.status === FriendStatus.IN_GAME ? "bg-neon-purple shadow-[0_0_8px_rgba(160,32,240,0.8)]" :
                             "bg-gray-600"
                           )} />
                         </div>
@@ -1631,33 +1654,34 @@ export const ChatPage: React.FC = () => {
                         {/* Actions Overlay - Sticky for active friend */}
                         <div className={cn(
                            "absolute inset-0 bg-dark-bg/95 backdrop-blur-md flex items-center justify-center gap-2 rounded-2xl z-20 transition-all duration-300 px-2",
-                           (activeFriendId === friend.id || "opacity-0 pointer-events-none md:group-hover:opacity-100 md:group-hover:pointer-events-auto")
+                           (activeChatId === friend.id || "opacity-0 pointer-events-none md:group-hover:opacity-100 md:group-hover:pointer-events-auto")
                         )}>
                            <div className="flex items-center justify-center gap-3">
                              <button 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setActiveFriendId(null);
-                                sendFriendMessage(friend.id, "سلام!");
-                              }}
-                              className="h-9 w-9 rounded-xl bg-neon-blue/20 text-neon-blue hover:bg-neon-blue hover:text-dark-bg transition-all flex items-center justify-center shadow-lg shadow-neon-blue/10 border border-neon-blue/20"
-                              title="پیام"
+                               onClick={(e) => {
+                                 e.stopPropagation();
+                                 openChat(friend.id, friend.displayName);
+                                 setShowFriendsSidebar(false);
+                               }}
+                               className="h-9 w-9 rounded-xl bg-neon-blue/20 text-neon-blue hover:bg-neon-blue hover:text-dark-bg transition-all flex items-center justify-center shadow-lg shadow-neon-blue/10 border border-neon-blue/20"
+                               title="پیام"
                              >
                                <MessageSquare size={16} />
                              </button>
                              <button 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setActiveFriendId(null);
-                                openProfile({
-                                  senderName: friend.displayName,
-                                  senderAvatar: friend.avatar || "👤",
-                                  senderLevel: friend.level,
-                                  senderBadges: [] // Placeholder
-                                }, false);
-                              }}
-                              className="h-9 w-9 rounded-xl bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-all flex items-center justify-center border border-white/5"
-                              title="پروفایل"
+                               onClick={(e) => {
+                                 e.stopPropagation();
+                                 openProfile({
+                                   id: friend.id,
+                                   senderId: friend.id,
+                                   senderName: friend.displayName,
+                                   senderAvatar: friend.avatar || "👤",
+                                   senderLevel: friend.level,
+                                   senderBadges: [] 
+                                 }, false);
+                               }}
+                               className="h-9 w-9 rounded-xl bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-all flex items-center justify-center border border-white/5"
+                               title="پروفایل"
                              >
                                <User size={16} />
                              </button>
