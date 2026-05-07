@@ -107,6 +107,7 @@ export interface ChatMessage {
   senderId: string;
   senderName: string;
   senderAvatar?: string;
+  isOnline?: boolean;
   senderLevel: number;
   senderColor?: string; // Color based on level
   senderBadges?: BadgeType[];

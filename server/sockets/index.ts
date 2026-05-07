@@ -468,6 +468,7 @@ export function setupWebSockets(io: Server) {
 
         const msgPayload = {
           id: msg.id.toString(),
+          tempId,
           from: { 
             userId, 
             username: user?.username, 
@@ -559,6 +560,17 @@ export function setupWebSockets(io: Server) {
     if (!userId) return;
     socket.join(`user:${userId}`);
     trackUser(userId, socket.id);
+
+    socket.on("chat.typing", async (typingData: { target: { type: "channel" | "lobby" | "user", id: string }, isTyping: boolean }) => {
+      const typingRoom = typingData.target.type === "lobby" ? `lobby:${typingData.target.id}` : typingData.target.type === "user" ? `user:${typingData.target.id}` : `channel:${typingData.target.id}`;
+      const typingUser = await prisma.user.findUnique({ where: { id: userId } });
+      socket.to(typingRoom).emit("chat.typing", { 
+         targetId: typingData.target.id,
+         userId, 
+         username: typingUser?.username, 
+         isTyping: typingData.isTyping 
+      });
+    });
 
     socket.on("chat.join", async (data: { type: "channel" | "lobby" | "user", id: string }, ack) => {
       const room = data.type === "lobby" ? `lobby:${data.id}` : data.type === "user" ? `user:${data.id}` : `channel:${data.id}`;
@@ -652,6 +664,7 @@ export function setupWebSockets(io: Server) {
 
           const msgPayload = {
             id: msg.id.toString(),
+            tempId,
             from: { 
               userId, 
               username: user?.username, 
@@ -683,6 +696,7 @@ export function setupWebSockets(io: Server) {
 
           const msgPayload = {
             id: msg.id.toString(),
+            tempId,
             from: { 
               userId, 
               username: user?.username, 
@@ -724,6 +738,7 @@ export function setupWebSockets(io: Server) {
 
         chatNs.to(room).emit("chat.message", {
           id: msg.id.toString(),
+          tempId: tempId,
           from: { 
             userId, 
             username: user?.username, 

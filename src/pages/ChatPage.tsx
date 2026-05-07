@@ -92,14 +92,18 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
         }}
       >
         <div className={cn(
-          "h-9 w-9 md:h-11 md:w-11 rounded-xl flex items-center justify-center text-lg md:text-xl relative z-[10] transition-transform hover:scale-105 shadow-xl",
+          "h-9 w-9 md:h-11 md:w-11 rounded-xl flex items-center justify-center text-lg md:text-xl relative z-[10] transition-transform hover:scale-105 shadow-xl bg-cover bg-center overflow-hidden",
           message.self ? "bg-neon-pink text-white" : "bg-neon-blue text-white",
           isVIP && "border-2 border-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.4)]",
           isPLUS && "border-2 border-neon-blue shadow-[0_0_10px_rgba(0,229,255,0.3)]"
         )}>
-          {message.senderAvatar || (message.senderName ? message.senderName[0] : "?")}
+          {message.senderAvatar && message.senderAvatar.startsWith("http") ? (
+            <img src={message.senderAvatar} alt={message.senderName} className="w-full h-full object-cover" />
+          ) : (
+            message.senderAvatar || (message.senderName ? message.senderName[0] : "?")
+          )}
         </div>
-        <div className="absolute -bottom-1 -right-1 h-3.5 w-3.5 rounded-full bg-green-500 border-2 border-[#050507] z-20" />
+        <div className={cn("absolute -bottom-1 h-3 w-3 rounded-full border-2 border-[#050507] z-20", message.self ? "-left-1" : "-right-1")} style={{ backgroundColor: message.isOnline === false ? "#6b7280" : "#22c55e" }} />
       </div>
 
       {/* Message Content Area */}
@@ -157,7 +161,7 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
             {/* Action Buttons - Repositioned to prevent horizontal scroll */}
             <div className={cn(
               "absolute flex items-center gap-1 px-1.5 py-1 rounded-xl bg-[#0f0f15]/95 border border-white/10 shadow-2xl z-[60] backdrop-blur-2xl whitespace-nowrap transition-all duration-200",
-              message.self ? "left-0 -top-8" : "right-0 -top-8",
+              message.self ? "right-0 -top-8" : "left-0 -top-8",
               showActions ? "opacity-100 translate-y-0 visible" : "opacity-0 translate-y-2 invisible lg:group-hover/bubble-container:opacity-100 lg:group-hover/bubble-container:translate-y-0 lg:group-hover/bubble-container:visible"
             )}
             onClick={(e) => e.stopPropagation()}
@@ -572,6 +576,12 @@ export const ChatPage: React.FC = () => {
        setMessages(prev => {
          const channelMsgs = prev[channelId] || [];
          // Prevent duplicate messages
+         if (msg.tempId && channelMsgs.some(m => m.id === msg.tempId)) {
+           return {
+             ...prev,
+             [channelId]: channelMsgs.map(m => m.id === msg.tempId ? formatted : m)
+           };
+         }
          if (channelMsgs.some(m => m.id === formatted.id)) return prev;
          return {
            ...prev,
@@ -1035,7 +1045,7 @@ export const ChatPage: React.FC = () => {
         <div 
           ref={scrollRef}
           onScroll={handleScroll}
-          className="flex-1 overflow-y-auto px-2 md:px-8 py-2 md:py-4 space-y-2 md:space-y-4 scroll-smooth custom-scrollbar relative min-h-0 overflow-x-hidden flex flex-col no-scrollbar overscroll-contain"
+          className="flex-1 overflow-y-auto px-2 md:px-8 py-2 md:py-4 space-y-2 md:space-y-4 scroll-smooth custom-scrollbar relative min-h-0 flex flex-col no-scrollbar overscroll-contain"
           style={{ overscrollBehavior: 'contain' }}
         >
           {/* Date Separator */}
