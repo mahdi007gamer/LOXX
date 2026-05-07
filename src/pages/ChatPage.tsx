@@ -7,7 +7,7 @@ import { cn } from "../lib/utils";
 import { motion, AnimatePresence } from "motion/react";
 import { useGames } from "../context/GamesContext";
 import { useFriends } from "../context/FriendsContext";
-import { BadgeType, ChatMessage, Channel, MembershipType } from "../types";
+import { BadgeType, ChatMessage, Channel, MembershipType, FriendStatus } from "../types";
 
 import { useProfilePopover } from "../context/ProfilePopoverContext";
 import { useAuth } from "../context/AuthContext";
@@ -141,7 +141,7 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
                   senderAvatar: message.senderAvatar,
                   senderLevel: message.senderLevel,
                   senderBadges: message.senderBadges,
-                  id: message.id,
+                  id: message.senderId,
                   membership: isVIP ? MembershipType.VIP : isPLUS ? MembershipType.PLUS : MembershipType.NONE
                 }, message.self);
               }}
@@ -427,6 +427,53 @@ const ChannelButton: React.FC<ChannelButtonProps> = ({ channel, active, onClick,
   </button>
 );
 
+const DirectMessageButton: React.FC<{ 
+  displayName: string; 
+  avatar?: string; 
+  status: FriendStatus; 
+  active: boolean; 
+  onClick: () => void; 
+  unreadCount?: number 
+}> = ({ displayName, avatar, status, active, onClick, unreadCount }) => (
+  <button
+    onClick={onClick}
+    className={cn(
+      "group flex w-full items-center justify-between rounded-xl px-4 py-3 transition-all relative overflow-hidden",
+      active 
+        ? "bg-neon-blue/10 border border-neon-blue/20 shadow-[inset_0_0_20px_rgba(0,229,255,0.05)]" 
+        : "text-gray-500 hover:bg-white/5 hover:text-gray-200 border border-transparent"
+    )}
+  >
+    <div className="flex items-center gap-3 relative z-10 rtl:flex-row-reverse">
+       <div className="relative">
+         <div className="h-8 w-8 rounded-full bg-white/10 flex items-center justify-center text-[10px] overflow-hidden border border-white/5 group-hover:border-white/20 transition-colors">
+           {avatar ? <img src={avatar} alt="" className="h-full w-full object-cover" /> : "👤"}
+         </div>
+         <div className={cn(
+           "absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-[#0a0a0f]",
+           status === FriendStatus.ONLINE ? "bg-green-500" :
+           status === FriendStatus.IN_GAME ? "bg-neon-purple shadow-[0_0_10px_rgba(160,32,240,0.6)]" :
+           status === FriendStatus.IN_LOBBY ? "bg-neon-blue shadow-[0_0_10px_rgba(0,229,255,0.6)]" :
+           "bg-gray-500 shadow-[0_0_5px_rgba(0,0,0,0.5)]"
+         )}></div>
+       </div>
+       <span className={cn("text-[11px] font-black tracking-tight uppercase italic", active ? "text-white" : "text-gray-500")}>{displayName}</span>
+    </div>
+    <div className="flex items-center gap-2 relative z-10">
+      {unreadCount ? (
+        <motion.span 
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          className="bg-neon-pink text-white text-[9px] font-black px-1.5 py-0.5 rounded-full min-w-[18px] text-center shadow-[0_0_10px_rgba(255,0,127,0.4)]"
+        >
+          {unreadCount}
+        </motion.span>
+      ) : null}
+      {active && <div className="h-1.5 w-1.5 rounded-full bg-neon-blue shadow-[0_0_8px_rgba(0,229,255,0.8)]"></div>}
+    </div>
+  </button>
+);
+
 // --- Themes ---
 
 const CHAT_THEMES = {
@@ -599,7 +646,7 @@ export const ChatPage: React.FC = () => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  const { friends, sendMessage: sendFriendMessage } = useFriends();
+  const { friends, chats, activeChatId, openChat, sendMessage: sendFriendMessage } = useFriends();
   const [isFriendsLoading, setIsFriendsLoading] = useState(false);
 
   useEffect(() => {
@@ -753,7 +800,7 @@ export const ChatPage: React.FC = () => {
        id: msg.id,
        senderId: isNewsChannel ? "loxx-system" : msg.from.userId,
        senderName: isNewsChannel ? "لوکس" : msg.from.username,
-       senderAvatar: isNewsChannel ? "https://i.postimg.cc/qR7y176n/loxx-logo.png" : msg.from.avatar,
+       senderAvatar: isNewsChannel ? "/logo.png" : msg.from.avatar,
        senderLevel: msg.from.level,
        senderBadges: isNewsChannel ? [] : badges,
        text,
@@ -1091,6 +1138,42 @@ export const ChatPage: React.FC = () => {
               </div>
             </div>
           )}
+
+          {/* Direct Messages */}
+          <div className="px-4">
+            <h3 className="px-4 text-[10px] font-black text-gray-600 uppercase tracking-widest mb-3 flex items-center gap-2">
+              <span className="h-px flex-1 bg-white/5"></span>
+              پیام‌های مستقیم
+              <span className="h-px flex-1 bg-white/5"></span>
+            </h3>
+            <div className="space-y-1">
+              {chats.map((chat) => {
+                const friend = friends.find(f => f.id === chat.friendId);
+                // The chat might be with a non-friend (if we ever allow it), but here we usually have friends
+                const displayName = friend?.displayName || chat.tempDisplayName || "گیمر";
+                const avatar = friend?.avatar;
+                const status = friend?.status || FriendStatus.OFFLINE;
+
+                return (
+                  <DirectMessageButton
+                    key={chat.friendId}
+                    displayName={displayName}
+                    avatar={avatar}
+                    status={status}
+                    active={activeChatId === chat.friendId}
+                    unreadCount={chat.unreadCount}
+                    onClick={() => openChat(chat.friendId, displayName)}
+                  />
+                );
+              })}
+              {chats.length === 0 && (
+                <div className="py-8 text-center space-y-2 opacity-30">
+                  <MessageSquare size={24} className="mx-auto text-gray-600" />
+                  <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest italic">گفتگویی فعال نیست</p>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* User Quick Info Footer */}
