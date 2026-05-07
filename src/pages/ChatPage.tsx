@@ -96,23 +96,24 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
         }}
       >
         <div className={cn(
-          "h-9 w-9 md:h-11 md:w-11 rounded-xl flex items-center justify-center text-lg md:text-xl relative z-[10] transition-transform hover:scale-105 shadow-xl bg-cover bg-center overflow-hidden",
+          "h-9 w-9 md:h-11 md:w-11 rounded-xl flex items-center justify-center text-lg md:text-xl relative z-[10] transition-transform hover:scale-105 shadow-xl bg-cover bg-center overflow-visible",
           message.self ? "bg-neon-pink text-white" : "bg-neon-blue text-white",
           isVIP && "border-2 border-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.4)]",
           isPLUS && "border-2 border-neon-blue shadow-[0_0_10px_rgba(0,229,255,0.3)]"
         )}>
           {message.senderAvatar && message.senderAvatar.startsWith("http") ? (
-            <img src={message.senderAvatar} alt={message.senderName} className="w-full h-full object-cover" />
+            <img src={message.senderAvatar} alt={message.senderName} className="w-full h-full object-cover rounded-xl" />
           ) : (
             message.senderAvatar || (message.senderName ? message.senderName[0] : "?")
           )}
+          
+          <div 
+            className={cn(
+              "absolute -bottom-1 -right-1 h-3.5 w-3.5 rounded-full border-2 border-[#050507] z-[31] shadow-lg transition-colors duration-500", 
+            )} 
+            style={{ backgroundColor: (activeChannelId === 'news' || message.isOnline !== false) ? "#22c55e" : "#9ca3af" }} 
+          />
         </div>
-        <div 
-          className={cn(
-            "absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-[#050507] z-[31] shadow-lg transition-colors duration-500", 
-          )} 
-          style={{ backgroundColor: (activeChannelId === 'news' || message.isOnline !== false) ? "#22c55e" : "#9ca3af" }} 
-        />
       </div>
 
       {/* Message Content Area */}
@@ -341,7 +342,7 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
                   }}
                   className={cn(
                     "flex items-center gap-1 px-2 py-0.5 rounded-full border text-[9px] font-black transition-all hover:scale-110",
-                    r.users.includes("me") 
+                    r.users.includes(user?.id || "me") 
                       ? "bg-neon-blue/20 border-neon-blue/40 text-neon-blue shadow-[0_0_8px_rgba(0,229,255,0.2)]" 
                       : "bg-black/60 border-white/10 text-gray-400"
                   )}
@@ -688,13 +689,13 @@ export const ChatPage: React.FC = () => {
      if (msg.from.membership === "VIP") badges.push(BadgeType.VIP);
      if (msg.from.membership === "PLUS") badges.push(BadgeType.PLUS);
      
-     const isNewsChannel = activeChannelId === 'news';
+     const isNewsChannel = msg.targetId === 'news' || msg.channelId === 'news';
      
      return {
        id: msg.id,
        senderId: isNewsChannel ? "loxx-system" : msg.from.userId,
        senderName: isNewsChannel ? "لوکس" : msg.from.username,
-       senderAvatar: isNewsChannel ? "https://i.ibb.co/L8DR0S9/loxx-logo.png" : msg.from.avatar,
+       senderAvatar: isNewsChannel ? "https://i.ibb.co/89f2NnS/loxx-logo.png" : msg.from.avatar,
        senderLevel: msg.from.level,
        senderBadges: isNewsChannel ? [] : badges,
        text: msg.content,
@@ -887,16 +888,25 @@ export const ChatPage: React.FC = () => {
   const handleSendNewsPost = () => {
     if (!newsPostPreview) return;
     
+    // Switch to news channel if not already there
+    if (activeChannelId !== "news") {
+      setActiveChannelId("news");
+    }
+
     chatSocket.emit("chat.send", {
       target: { type: "channel", id: "news" },
       content: `${newsPostText}\n[IMAGE]:${newsPostPreview}`,
       tempId: `temp-${Date.now()}`
+    }, (res: any) => {
+      if (res.status === "ok") {
+        setShowImagePostModal(false);
+        setNewsPostFile(null);
+        setNewsPostPreview(null);
+        setNewsPostText("");
+      } else {
+        alert("خطا در ارسال خبر: " + res.error?.message);
+      }
     });
-    
-    setShowImagePostModal(false);
-    setNewsPostFile(null);
-    setNewsPostPreview(null);
-    setNewsPostText("");
   };
 
   const deleteMessage = (msgId: string) => {

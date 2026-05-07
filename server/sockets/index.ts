@@ -721,8 +721,11 @@ export function setupWebSockets(io: Server) {
       }
 
       // Max length
-      if (content.length > 300) {
-        if (ack) ack({ status: "error", error: { code: "TOO_LONG", message: "طول پیام نمی‌تواند بیشتر از 300 کاراکتر باشد." } });
+      const isImage = content.startsWith("[IMAGE]:");
+      const maxLength = (user.role === "ADMIN" || isImage) ? 1000000 : 300; 
+
+      if (content.length > maxLength) {
+        if (ack) ack({ status: "error", error: { code: "TOO_LONG", message: "طول پیام بیش از حد مجاز است." } });
         return;
       }
 

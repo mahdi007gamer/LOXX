@@ -22,7 +22,7 @@ interface QuickProfilePopoverProps {
 }
 
 export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClose, user, isSelf }) => {
-  const { addFriend, setActiveChatId, chatTrigger } = useFriends();
+  const { addFriend, setActiveChatId, chatTrigger, openChat } = useFriends();
   const [sentRequest, setSentRequest] = useState(false);
 
   const handleAddFriend = () => {
@@ -32,8 +32,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
 
   const handleMessage = () => {
     if (user.id) {
-      setActiveChatId(user.id);
-      chatTrigger();
+      openChat(user.id, user.senderName);
       onClose();
     }
   };
