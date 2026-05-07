@@ -158,6 +158,21 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setChats(prev => {
           const existingChat = prev.find(c => c.friendId === friendId);
           if (existingChat) {
+            // Check if this message was already added optimistically
+            const isOptimisticMatch = data.tempId && existingChat.messages.some(m => m.id === data.tempId);
+            
+            if (isOptimisticMatch) {
+              return prev.map(c => c.friendId === friendId 
+                ? { 
+                    ...c, 
+                    messages: c.messages.map(m => m.id === data.tempId ? chatMsg : m)
+                  } 
+                : c);
+            }
+
+            // Normal duplicate check
+            if (existingChat.messages.some(m => m.id === id)) return prev;
+
             return prev.map(c => c.friendId === friendId 
               ? { 
                   ...c, 
@@ -288,10 +303,29 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const sendMessage = (friendId: string, text: string) => {
+    const tempId = Math.random().toString(36).substr(2, 9);
+    
+    // Optimistic update
+    const optimisticMsg: ChatMessage = {
+      id: tempId,
+      senderId: user?.id || "",
+      senderName: user?.username || "شما",
+      senderLevel: 1,
+      self: true,
+      text: text,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      isRead: true
+    };
+
+    setChats(prev => prev.map(c => c.friendId === friendId 
+      ? { ...c, messages: [...c.messages, optimisticMsg] } 
+      : c
+    ));
+
     chatSocket.emit("chat.send", { 
       target: { type: "user", id: friendId }, 
       content: text,
-      tempId: Math.random().toString(36).substr(2, 9)
+      tempId
     });
   };
 

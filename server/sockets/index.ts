@@ -273,6 +273,7 @@ export function setupWebSockets(io: Server) {
             data: { 
               id: lobbyId,
               title: updatedLobby.title,
+              gameId: updatedLobby.gameId,
               gameTitle: updatedLobby.game?.title,
               maxPlayers: updatedLobby.maxPlayers,
               hostId: updatedLobby.hostId,
@@ -632,6 +633,12 @@ export function setupWebSockets(io: Server) {
 
         if (!canDelete) return;
 
+        if (message.channelId === "news") {
+          await prisma.message.delete({ where: { id: messageId } });
+          chatNs.to(`channel:${message.channelId}`).emit("chat.message_removed", { messageId: data.messageId });
+          return;
+        }
+
         await prisma.message.update({
           where: { id: messageId },
           data: { isDeleted: true, content: "این پیام حذف شده است." }
@@ -651,8 +658,15 @@ export function setupWebSockets(io: Server) {
 
       // Fetch history for channel
       try {
-        const totalUsers = await prisma.user.count();
+        let memberCount = await prisma.user.count();
         if (data.type === "channel") {
+           // If it's a game channel, count users who have this game in myGames
+           if (data.id !== "news" && data.id !== "general" && data.id !== "lfg") {
+             memberCount = await prisma.userGame.count({
+               where: { gameId: data.id }
+             });
+           }
+
            const messages = await prisma.message.findMany({
              where: { channelId: data.id },
              take: 50,
@@ -678,9 +692,9 @@ export function setupWebSockets(io: Server) {
               reactions: msg.reactions ? JSON.parse(msg.reactions) : []
            })).reverse();
            
-           if (ack) ack({ status: "ok", data: { messages: formatted, memberCount: totalUsers } });
+           if (ack) ack({ status: "ok", data: { messages: formatted, memberCount } });
         } else {
-           if (ack) ack({ status: "ok", data: { messages: [], memberCount: totalUsers } });
+           if (ack) ack({ status: "ok", data: { messages: [], memberCount } });
         }
       } catch(e) {
          if (ack) ack({ status: "error" });

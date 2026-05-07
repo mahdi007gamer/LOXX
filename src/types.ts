@@ -119,6 +119,7 @@ export interface ChatMessage {
   reactions?: Reaction[];
   mentions?: string[]; // userIds
   gif?: string; // URL
+  image?: string; // URL
   lobbyInvite?: {
     lobbyId: string;
     gameTitle: string;

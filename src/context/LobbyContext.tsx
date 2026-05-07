@@ -29,6 +29,7 @@ export interface ChatMessage {
 interface LobbyState {
   id: string | null;
   title?: string;
+  gameId: string | null;
   gameTitle: string;
   players: LobbyMember[];
   maxPlayers: number;
@@ -337,6 +338,7 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (ack?.status === "ok") {
         setLobby({
           ...ack.data,
+          gameId: ack.data.gameId || null,
           talkingUsers: []
         });
         

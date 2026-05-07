@@ -12,6 +12,7 @@ export const FriendChatOverlay = () => {
   const [chatDirection, setChatDirection] = useState<"up" | "down">("up");
 
   const containerRef = React.useRef<HTMLDivElement>(null);
+  const scrollRef = React.useRef<HTMLDivElement>(null);
   const activeChat = chats.find(c => c.friendId === activeChatId);
   const activeFriend = friends.find(f => f.id === activeChatId);
   const dragControls = useDragControls();
@@ -33,6 +34,12 @@ export const FriendChatOverlay = () => {
   useEffect(() => {
     if (activeChatId) markAsRead(activeChatId);
   }, [activeChatId, activeChat?.messages.length]);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [activeChat?.messages.length]);
 
   if (chats.length === 0) return null;
 
@@ -123,7 +130,8 @@ export const FriendChatOverlay = () => {
                      <p className="text-[10px] text-gray-400">گفتگو را شروع کنید</p>
                    </div>
                  )}
-               </div>
+                  <div ref={scrollRef} />
+             </div>
             </div>
 
             {/* Chat Input */}

@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { Sidebar } from "../components/layout/Sidebar";
 import { GlowButton } from "../components/ui/GlowButton";
 import { Send, Hash, Users, MoreVertical, Plus, Smile, Image as ImageIcon, Reply, Heart, ChevronDown, Award, Star, Zap, Crown, Play, Check, Menu, X, MessageSquare, User, Trophy, Palette, Trash } from "lucide-react";
-import { cn } from "@/src/lib/utils";
+import { cn } from "../lib/utils";
 import { motion, AnimatePresence } from "motion/react";
 import { useGames } from "../context/GamesContext";
 import { useFriends } from "../context/FriendsContext";
@@ -11,7 +11,9 @@ import { BadgeType, ChatMessage, Channel, MembershipType } from "../types";
 
 import { useProfilePopover } from "../context/ProfilePopoverContext";
 import { useAuth } from "../context/AuthContext";
+import { useLobby } from "../context/LobbyContext";
 import { chatSocket } from "../lib/socket";
+import { toast } from "react-hot-toast";
 
 // --- Sub-components ---
 
@@ -109,7 +111,7 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
           
           <div 
             className={cn(
-              "absolute -bottom-1 -right-1 h-3.5 w-3.5 rounded-full border-2 border-[#050507] z-[31] shadow-lg transition-colors duration-500", 
+              "absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-[#050507] z-[31] shadow-lg transition-colors duration-500", 
             )} 
             style={{ backgroundColor: (activeChannelId === 'news' || message.isOnline !== false) ? "#22c55e" : "#9ca3af" }} 
           />
@@ -212,7 +214,7 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
                 "relative rounded-2xl overflow-hidden shadow-2xl transition-all border w-fit max-w-full",
                 "rtl text-right break-words",
                 activeChannelId === 'news'
-                  ? "bg-[#0f1118] text-white border-neon-blue/30 rounded-xl"
+                  ? "bg-[#0b0c14] text-white border-white/5 shadow-none rounded-xl px-0"
                   : message.self 
                     ? "bg-[#140e1a] text-white border-neon-pink/20 rounded-tr-none" 
                     : "bg-white/5 text-gray-100 border-white/10 rounded-tl-none",
@@ -257,12 +259,33 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
               )}
   
               <div className="px-4 py-2.5">
-                {/* Lobby Invite Card */}
-                {message.text.startsWith("[IMAGE]:") ? (
-                  <div className="mt-1 rounded-lg overflow-hidden border border-white/10 shadow-xl max-w-[280px]">
-                    <img src={message.text.split("[IMAGE]:")[1]} alt="Chat image" className="w-full h-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onClick={() => window.open(message.text.split("[IMAGE]:")[1], '_blank')} />
+                {/* Image Handling - News channel shows image first */}
+                {activeChannelId === 'news' && message.image && (
+                  <div className="mb-3 rounded-lg overflow-hidden border border-white/10 shadow-xl max-w-full">
+                    <img src={message.image} alt="News image" className="w-full h-auto object-contain cursor-pointer" onClick={() => window.open(message.image, '_blank')} />
                   </div>
-                ) : message.lobbyInvite ? (
+                )}
+
+                {/* Text Handling */}
+                {message.text && (
+                  <p className="leading-relaxed text-[13px] font-medium text-gray-200 mb-2">
+                    {message.text.split(/(@\w+)/g).map((part, i) => (
+                      part.startsWith('@') ? (
+                        <span key={i} className="text-neon-blue font-black hover:underline cursor-pointer">{part}</span>
+                      ) : part
+                    ))}
+                  </p>
+                )}
+
+                {/* Regular Image (Non-news or second in news) */}
+                {activeChannelId !== 'news' && message.image && (
+                  <div className="mt-1 rounded-lg overflow-hidden border border-white/10 shadow-xl max-w-[280px]">
+                    <img src={message.image} alt="Chat image" className="w-full h-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onClick={() => window.open(message.image, '_blank')} />
+                  </div>
+                )}
+
+                {/* Lobby Invite Card */}
+                {message.lobbyInvite && (
                    <div className="space-y-3 py-1">
                      <p className="font-black text-neon-blue text-[9px] flex items-center gap-1.5 px-0 uppercase tracking-widest opacity-70">
                        <Zap size={10} fill="currentColor" />
@@ -298,7 +321,8 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
                        </div>
                      </div>
                    </div>
-                ) : (
+                )}
+                {false && (
                   <p className="leading-relaxed text-[13px] font-medium text-gray-200">
                     {message.text.split(/(@\w+)/g).map((part, i) => (
                       part.startsWith('@') ? (
@@ -550,6 +574,7 @@ const GIF_GALLERY = [
 export const ChatPage: React.FC = () => {
   const { allGames: games, myGames } = useGames();
   const { user } = useAuth();
+  const { lobby } = useLobby();
   const [activeChannelId, setActiveChannelId] = useState("general");
   const [messages, setMessages] = useState<Record<string, ChatMessage[]>>({});
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
@@ -667,11 +692,23 @@ export const ChatPage: React.FC = () => {
     };
     chatSocket.on("chat.delete", handleDelete);
 
+    const handleRemove = (data: { messageId: string }) => {
+      setMessages(prev => {
+        const newMessages = { ...prev };
+        Object.keys(newMessages).forEach(channelId => {
+          newMessages[channelId] = newMessages[channelId].filter(m => m.id !== data.messageId);
+        });
+        return newMessages;
+      });
+    };
+    chatSocket.on("chat.message_removed", handleRemove);
+
     return () => {
        chatSocket.off("chat.message", handleNewMessage);
        chatSocket.off("chat.typing", handleTyping);
        chatSocket.off("chat.reaction", handleReactionUpdate);
        chatSocket.off("chat.delete", handleDelete);
+       chatSocket.off("chat.message_removed", handleRemove);
     };
   }, [activeChannelId, user?.id]);
 
@@ -691,14 +728,37 @@ export const ChatPage: React.FC = () => {
      
      const isNewsChannel = msg.targetId === 'news' || msg.channelId === 'news';
      
+     let text = msg.content || "";
+     let image: string | undefined;
+     let lobbyInvite: any | undefined;
+
+     if (text.includes("[IMAGE]:")) {
+       const parts = text.split("[IMAGE]:");
+       text = parts[0].trim();
+       image = parts[1]?.split("\n")[0].trim();
+     }
+
+     if (text.includes("[LOBBY_INVITE]:")) {
+       const parts = text.split("[LOBBY_INVITE]:");
+       text = parts[0].trim();
+       try {
+         const inviteStr = parts[1]?.split("\n")[0].trim();
+         lobbyInvite = JSON.parse(inviteStr);
+       } catch (e) {
+         console.error("Failed to parse lobby invite", e);
+       }
+     }
+     
      return {
        id: msg.id,
        senderId: isNewsChannel ? "loxx-system" : msg.from.userId,
        senderName: isNewsChannel ? "لوکس" : msg.from.username,
-       senderAvatar: isNewsChannel ? "https://i.ibb.co/89f2NnS/loxx-logo.png" : msg.from.avatar,
+       senderAvatar: isNewsChannel ? "https://i.postimg.cc/qR7y176n/loxx-logo.png" : msg.from.avatar,
        senderLevel: msg.from.level,
        senderBadges: isNewsChannel ? [] : badges,
-       text: msg.content,
+       text,
+       image,
+       lobbyInvite: lobbyInvite || msg.lobbyInvite,
        isOnline: isNewsChannel ? true : msg.from.isOnline,
        timestamp: new Date(msg.createdAt).toLocaleTimeString("fa-IR", { hour: "2-digit", minute: "2-digit" }),
        isRead: true,
@@ -831,31 +891,25 @@ export const ChatPage: React.FC = () => {
   };
 
   const sendLobbyInvite = () => {
-     if (activeChannel.type !== 'game') return;
+     if (activeChannel.type !== 'game' || !lobby) return;
      
-     const newMessage: ChatMessage = {
-      id: Date.now().toString(),
-      senderId: "me",
-      senderName: "خودم",
-      senderLevel: Math.floor(userLvl),
-      senderBadges: [BadgeType.STREAMER],
-      text: "بیاین لابی، من منتظرم!",
-      timestamp: new Date().toLocaleTimeString("fa-IR", { hour: "2-digit", minute: "2-digit" }),
-      isRead: true,
-      self: true,
-      lobbyInvite: {
-        lobbyId: "LX-CUSTOM",
-        gameTitle: activeChannel.name.replace("چت ", ""),
-        region: "EUROPE",
-        slots: "1/5",
+     const inviteData = {
+        lobbyId: lobby.id!,
+        gameTitle: lobby.gameTitle,
+        region: lobby.region || lobby.selectedMaps || "IR",
+        slots: `${lobby.players.length}/${lobby.maxPlayers}`,
         rank: "ANY"
-      }
-    };
+     };
 
-    setMessages(prev => ({
-      ...prev,
-      [activeChannelId]: [...(prev[activeChannelId] || []), newMessage]
-    }));
+     const tempId = `temp-${Date.now()}`;
+     
+     chatSocket.emit("chat.send", {
+       target: { type: "channel", id: activeChannelId },
+       content: `بیاین لابی، من منتظرم!\n[LOBBY_INVITE]:${JSON.stringify(inviteData)}`,
+       tempId
+     });
+     
+     toast.success("دعوت‌نامه ارسال شد");
   };
 
   const scrollToBottom = () => {
@@ -1100,7 +1154,7 @@ export const ChatPage: React.FC = () => {
             </div>
           </div>
           <div className="flex items-center gap-1.5 md:gap-3">
-            {activeChannel.type === 'game' && (
+            {activeChannel.type === 'game' && lobby && lobby.gameId === activeChannelId.replace("game-", "") && !lobby.isPrivate && (
               <GlowButton 
                 variant="pink" 
                 size="sm" 
