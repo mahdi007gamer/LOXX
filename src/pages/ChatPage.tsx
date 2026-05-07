@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Sidebar } from "../components/layout/Sidebar";
 import { GlowButton } from "../components/ui/GlowButton";
-import { Send, Hash, Users, MoreVertical, Plus, Smile, Image as ImageIcon, Reply, Heart, ChevronDown, Award, Star, Zap, Crown, Play, Check, Menu, X, MessageSquare, User, Trophy, Palette } from "lucide-react";
+import { Send, Hash, Users, MoreVertical, Plus, Smile, Image as ImageIcon, Reply, Heart, ChevronDown, Award, Star, Zap, Crown, Play, Check, Menu, X, MessageSquare, User, Trophy, Palette, Trash } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import { motion, AnimatePresence } from "motion/react";
 import { useGames } from "../context/GamesContext";
@@ -40,6 +40,8 @@ interface MessageItemProps {
 
 const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGif, onReply }) => {
   const { openProfile } = useProfilePopover();
+  const { user } = useAuth();
+  const isAdmin = (user as any)?.role === 'ADMIN';
   const [showActions, setShowActions] = useState(false);
 
   // Level based colors
@@ -102,14 +104,13 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
           ) : (
             message.senderAvatar || (message.senderName ? message.senderName[0] : "?")
           )}
+          <div 
+            className={cn(
+              "absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-[#050507] z-[31] shadow-lg transition-colors duration-500", 
+            )} 
+            style={{ backgroundColor: message.isOnline === false ? "#9ca3af" : "#22c55e" }} 
+          />
         </div>
-        <div 
-          className={cn(
-            "absolute bottom-0 h-3.5 w-3.5 rounded-full border-2 border-[#050507] z-[31] shadow-lg transition-colors duration-500", 
-            message.self ? "-left-1" : "-right-1"
-          )} 
-          style={{ backgroundColor: message.isOnline === false ? "#9ca3af" : "#22c55e" }} 
-        />
       </div>
 
       {/* Message Content Area */}
@@ -178,6 +179,15 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
               >
                 <Reply size={14} />
               </button>
+              {(isAdmin || message.self) && (
+                <button 
+                  className="h-6 w-6 md:h-7 md:w-7 flex items-center justify-center text-gray-400 hover:text-red-500 transition-colors rounded-lg hover:bg-white/5 relative z-10 shrink-0" 
+                  onClick={(e) => { e.stopPropagation(); deleteMessage(message.id); setShowActions(false); }}
+                  title="حذف پیام"
+                >
+                  <Trash size={14} />
+                </button>
+              )}
               <div className="flex items-center gap-0.5 md:gap-1.5 border-r border-white/5 pr-1 md:pr-2 relative z-10 shrink-0">
                   {["🔥", "🎯", "👑", "❤️"].map(emoji => (
                     <button 
@@ -198,9 +208,11 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
               className={cn(
                 "relative rounded-2xl overflow-hidden shadow-2xl transition-all border w-fit max-w-full",
                 "rtl text-right break-words",
-                message.self 
-                  ? "bg-[#140e1a] text-white border-neon-pink/20 rounded-tr-none" 
-                  : "bg-white/5 text-gray-100 border-white/10 rounded-tl-none",
+                activeChannelId === 'news'
+                  ? "bg-[#0f1118] text-white border-neon-blue/30 rounded-xl"
+                  : message.self 
+                    ? "bg-[#140e1a] text-white border-neon-pink/20 rounded-tr-none" 
+                    : "bg-white/5 text-gray-100 border-white/10 rounded-tl-none",
                 isVIP && !message.self && "border-yellow-400/40 bg-gradient-to-br from-yellow-400/[0.12] to-transparent shadow-[0_0_40px_rgba(250,204,21,0.12)]",
                 isPLUS && !message.self && "border-neon-blue/40 bg-gradient-to-br from-neon-blue/[0.12] to-transparent shadow-[0_0_30px_rgba(0,229,255,0.12)]"
               )}
@@ -638,10 +650,24 @@ export const ChatPage: React.FC = () => {
     };
     chatSocket.on("chat.reaction", handleReactionUpdate);
 
+    const handleDelete = (data: { messageId: string }) => {
+      setMessages(prev => {
+        const newMessages = { ...prev };
+        Object.keys(newMessages).forEach(channelId => {
+          newMessages[channelId] = newMessages[channelId].map(m => 
+            m.id === data.messageId ? { ...m, isDeleted: true, text: "این پیام حذف شده است." } : m
+          );
+        });
+        return newMessages;
+      });
+    };
+    chatSocket.on("chat.delete", handleDelete);
+
     return () => {
        chatSocket.off("chat.message", handleNewMessage);
        chatSocket.off("chat.typing", handleTyping);
        chatSocket.off("chat.reaction", handleReactionUpdate);
+       chatSocket.off("chat.delete", handleDelete);
     };
   }, [activeChannelId, user?.id]);
 
@@ -659,23 +685,24 @@ export const ChatPage: React.FC = () => {
      if (msg.from.membership === "VIP") badges.push(BadgeType.VIP);
      if (msg.from.membership === "PLUS") badges.push(BadgeType.PLUS);
      
-     const isNewsAdmin = activeChannelId === 'news';
+     const isNewsChannel = activeChannelId === 'news';
      
      return {
        id: msg.id,
-       senderId: isNewsAdmin ? "loxx-system" : msg.from.userId,
-       senderName: isNewsAdmin ? "لوکس" : msg.from.username,
-       senderAvatar: isNewsAdmin ? "https://ais-dev-xfcgyo4yg6nboui4wqktll-122201759877.europe-west1.run.app/loxx_logo.png" : msg.from.avatar,
+       senderId: isNewsChannel ? "loxx-system" : msg.from.userId,
+       senderName: isNewsChannel ? "لوکس" : msg.from.username,
+       senderAvatar: isNewsChannel ? "https://i.ibb.co/L8DR0S9/loxx-logo.png" : msg.from.avatar,
        senderLevel: msg.from.level,
-       senderBadges: isNewsAdmin ? [] : badges,
+       senderBadges: isNewsChannel ? [] : badges,
        text: msg.content,
-       isOnline: msg.from.isOnline,
+       isOnline: isNewsChannel ? true : msg.from.isOnline,
        timestamp: new Date(msg.createdAt).toLocaleTimeString("fa-IR", { hour: "2-digit", minute: "2-digit" }),
        isRead: true,
        self: msg.from.userId === currentUserId,
-        replyTo: msg.replyTo ? { 
+       reactions: msg.reactions || [],
+       replyTo: msg.replyTo ? { 
            id: msg.replyTo.id, 
-           user: isNewsAdmin ? "لوکس" : (msg.replyTo.user || "ناشناس"), 
+           user: isNewsChannel ? "لوکس" : (msg.replyTo.user || "ناشناس"), 
            text: msg.replyTo.text || "پیام ریپلای شده..." 
         } : (msg.replyToId ? { id: msg.replyToId.toString(), user: "ناشناس", text: "پیام ریپلای شده..." } : undefined)
      };
@@ -836,22 +863,43 @@ export const ChatPage: React.FC = () => {
 
   const [activeFriendId, setActiveFriendId] = useState<string | null>(null);
   const { openProfile } = useProfilePopover();
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const isAdmin = (user as any)?.role === 'ADMIN';
+
+  const [showImagePostModal, setShowImagePostModal] = useState(false);
+  const [newsPostFile, setNewsPostFile] = useState<File | null>(null);
+  const [newsPostPreview, setNewsPostPreview] = useState<string | null>(null);
+  const [newsPostText, setNewsPostText] = useState("");
 
   const handleFileUpload = (file: File) => {
     if (!file.type.startsWith('image/')) return;
+    setNewsPostFile(file);
     const reader = new FileReader();
     reader.onload = (e) => {
-      const base64 = e.target?.result as string;
-      // In a real app, upload to S3/Firebase and get URL
-      // For now, we'll send it as part of the content or metadata
-      chatSocket.emit("chat.send", {
-        target: { type: "channel", id: activeChannelId },
-        content: `[IMAGE]:${base64}`,
-        tempId: `temp-${Date.now()}`
-      });
+      setNewsPostPreview(e.target?.result as string);
+      setShowImagePostModal(true);
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleSendNewsPost = () => {
+    if (!newsPostPreview) return;
+    
+    chatSocket.emit("chat.send", {
+      target: { type: "channel", id: "news" },
+      content: `${newsPostText}\n[IMAGE]:${newsPostPreview}`,
+      tempId: `temp-${Date.now()}`
+    });
+    
+    setShowImagePostModal(false);
+    setNewsPostFile(null);
+    setNewsPostPreview(null);
+    setNewsPostText("");
+  };
+
+  const deleteMessage = (msgId: string) => {
+    if (confirm("آیا از حذف این پیام اطمینان دارید؟")) {
+      chatSocket.emit("chat.delete", { messageId: msgId });
+    }
   };
 
   return (
@@ -883,8 +931,44 @@ export const ChatPage: React.FC = () => {
         onChange={(e) => {
           const file = e.target.files?.[0];
           if (file) handleFileUpload(file);
+          e.target.value = ""; // Reset
         }}
       />
+
+      <AnimatePresence>
+        {showImagePostModal && (
+          <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-[#0b0c10] border border-white/10 rounded-[32px] w-full max-w-[500px] overflow-hidden shadow-2xl p-6"
+            >
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-black text-white italic tracking-tighter">ارسال محتوا به اخبار</h3>
+                <button onClick={() => setShowImagePostModal(false)} className="text-gray-500 hover:text-white"><X size={24}/></button>
+              </div>
+              
+              <div className="rounded-2xl overflow-hidden border border-white/5 mb-6 aspect-video bg-black/40">
+                <img src={newsPostPreview || ""} alt="Preview" className="w-full h-full object-contain" />
+              </div>
+
+              <textarea
+                value={newsPostText}
+                onChange={(e) => setNewsPostText(e.target.value)}
+                placeholder="توضیحات خبر را اینجا بنویسید..."
+                className="w-full bg-white/5 border border-white/5 rounded-2xl p-4 outline-none focus:border-neon-blue/50 transition-all text-white font-medium text-sm resize-none mb-6"
+                rows={4}
+              />
+
+              <div className="flex gap-3">
+                 <GlowButton variant="blue" className="flex-1 font-black" onClick={handleSendNewsPost}>انتشار خبر</GlowButton>
+                 <button onClick={() => setShowImagePostModal(false)} className="px-6 py-3 rounded-2xl bg-white/5 text-gray-400 font-bold hover:bg-white/10 transition-colors">انصراف</button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
       
       {/* Channels Sidebar */}
       <div className="hidden w-80 border-r border-white/5 bg-black/20 backdrop-blur-3xl lg:flex flex-col relative z-20 md:mr-64 mr-0">

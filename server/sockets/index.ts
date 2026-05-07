@@ -616,6 +616,34 @@ export function setupWebSockets(io: Server) {
       }
     });
 
+    socket.on("chat.delete", async (data: { messageId: string }) => {
+      try {
+        const messageId = parseInt(data.messageId);
+        if (isNaN(messageId)) return;
+
+        const message = await prisma.message.findUnique({
+          where: { id: messageId }
+        });
+
+        if (!message) return;
+
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+        const canDelete = message.senderId === userId || user?.role === "ADMIN";
+
+        if (!canDelete) return;
+
+        await prisma.message.update({
+          where: { id: messageId },
+          data: { isDeleted: true, content: "این پیام حذف شده است." }
+        });
+
+        const room = message.channelId ? `channel:${message.channelId}` : message.lobbyId ? `lobby:${message.lobbyId}` : `user:${message.receiverId || message.senderId}`;
+        chatNs.to(room).emit("chat.delete", { messageId: data.messageId });
+      } catch (err) {
+        console.error("Delete error:", err);
+      }
+    });
+
     socket.on("chat.join", async (data: { type: "channel" | "lobby" | "user", id: string }, ack) => {
       const room = data.type === "lobby" ? `lobby:${data.id}` : data.type === "user" ? `user:${data.id}` : `channel:${data.id}`;
       socket.join(room);

@@ -48,7 +48,7 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
 
   const handleGameChange = async (gameId: string) => {
     try {
-      const res = await api.get(`/admin/games/${gameId}`);
+      const res = await api.get(`/games/${gameId}`);
       const game = res.data.data;
       setSelectedGameData(game);
       setFormData(prev => ({

@@ -4,7 +4,7 @@ import { motion } from "motion/react";
 import { useFriends } from "../../context/FriendsContext";
 import { BadgeType, MembershipType } from "../../types";
 import { cn } from "../../lib/utils";
-import { Award, Star, Zap, Crown, User, Shield, Sparkles, X, Trophy, MessageCircle } from "lucide-react";
+import { Award, Star, Zap, Crown, User, Shield, Sparkles, X, Trophy, MessageCircle, CheckCircle2 } from "lucide-react";
 
 export interface QuickProfileUser {
   senderName: string;
@@ -32,7 +32,8 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
 
   const handleMessage = () => {
     if (user.id) {
-      openChat(user.id, user.senderName);
+      setActiveChatId(user.id);
+      chatTrigger();
       onClose();
     }
   };
