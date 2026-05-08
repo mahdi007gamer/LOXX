@@ -156,13 +156,23 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
                   {isVIP && metadata?.frame && (
                     <>
                       {metadata.frame === "diamond" && (
-                        <div className="absolute inset-0 border-2 border-cyan-400/30 rounded-none transform rotate-45 scale-150 pointer-events-none" />
+                        <div className="absolute inset-0 border-2 border-cyan-400/30 rounded-none transform rotate-45 scale-150 pointer-events-none z-20" />
                       )}
                       {metadata.frame === "glitch" && (
                         <motion.div 
                           animate={{ opacity: [0, 1, 0], x: [-2, 2, -2] }}
                           transition={{ duration: 0.2, repeat: Infinity }}
-                          className="absolute inset-0 bg-neon-pink/10 mix-blend-screen pointer-events-none"
+                          className="absolute inset-0 bg-neon-pink/10 mix-blend-screen pointer-events-none z-20"
+                        />
+                      )}
+                      {metadata.frame === "shield" && (
+                        <div className="absolute inset-0 border-4 border-indigo-500/20 rounded-[28px] pointer-events-none z-20 shadow-[inset_0_0_15px_rgba(99,102,241,0.3)]" />
+                      )}
+                      {metadata.frame === "anime" && (
+                        <motion.div 
+                          animate={{ rotate: [0, 5, -5, 0] }}
+                          transition={{ duration: 4, repeat: Infinity }}
+                          className="absolute inset-0 border border-yellow-400/20 rounded-[28px] pointer-events-none z-20"
                         />
                       )}
                     </>

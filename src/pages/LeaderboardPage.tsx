@@ -12,6 +12,8 @@ import { cn } from "../lib/utils";
 import axios from "axios";
 import { rankingSocket } from "../lib/socket";
 import api from "../lib/api";
+import { useProfilePopover } from "../context/ProfilePopoverContext";
+import { MembershipType } from "../types";
 
 const SCORING_RULES = [
   { icon: <PlusCircle size={18} />, label: "ایجاد لابی", points: "+20 XP", detail: "یک بار در هر ساعت" },
@@ -33,6 +35,8 @@ export const LeaderboardPage = () => {
      level: 1,
      pointsToTop10: 0
   });
+
+  const { openProfile } = useProfilePopover();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -121,7 +125,16 @@ export const LeaderboardPage = () => {
              {podium[1] && (
                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="order-2 sm:order-1 relative z-10 w-full max-w-[280px]">
                   <NeonCard variant="blue" className="flex flex-col items-center p-6 text-center bg-[#0a0a0f]/80 backdrop-blur-xl border-white/5 hover:border-neon-blue/30 transition-all pt-12">
-                   <div className="h-28 w-28 rounded-full border-4 border-gray-400/20 bg-white/5 mb-4 flex items-center justify-center text-gray-400 relative group p-1 shrink-0">
+                   <div className="h-28 w-28 rounded-full border-4 border-gray-400/20 bg-white/5 mb-4 flex items-center justify-center text-gray-400 relative group p-1 shrink-0 cursor-pointer hover:scale-105 transition-all"
+                      onClick={() => openProfile({
+                        senderName: podium[1].username,
+                        senderAvatar: podium[1].avatar,
+                        senderLevel: podium[1].level || 1,
+                        id: podium[1].id,
+                        membership: podium[1].membership || MembershipType.NONE,
+                        vipMetadata: podium[1].vipMetadata
+                      }, false)}
+                    >
                       <div className="absolute -top-2 -right-2 h-10 w-10 rounded-2xl bg-gray-400/30 flex items-center justify-center text-gray-200 border border-white/20 shadow-[0_0_15px_rgba(255,255,255,0.1)] z-30 backdrop-blur-xl">
                          <Medal size={20} />
                       </div>
@@ -141,7 +154,16 @@ export const LeaderboardPage = () => {
                  <NeonCard variant="purple" className="flex flex-col items-center p-10 text-center relative border-yellow-400/40 bg-[#12051a]/90 shadow-[0_0_60px_rgba(250,204,21,0.2)] rounded-[40px] pt-16">
                    <div className="absolute -top-14 inset-x-0 mx-auto w-fit text-7xl drop-shadow-[0_15px_25px_rgba(250,204,21,0.5)] z-40">👑</div>
                    <div className="relative mb-8 flex items-center justify-center">
-                      <div className="h-36 w-36 rounded-full border-4 border-yellow-400/80 bg-dark-bg flex items-center justify-center text-yellow-400 shadow-[0_0_50px_rgba(250,204,21,0.4)] relative z-10 p-1">
+                      <div className="h-36 w-36 rounded-full border-4 border-yellow-400/80 bg-dark-bg flex items-center justify-center text-yellow-400 shadow-[0_0_50px_rgba(250,204,21,0.4)] relative z-10 p-1 cursor-pointer hover:scale-105 transition-all"
+                         onClick={() => openProfile({
+                           senderName: podium[0].username,
+                           senderAvatar: podium[0].avatar,
+                           senderLevel: podium[0].level || 1,
+                           id: podium[0].id,
+                           membership: podium[0].membership || MembershipType.NONE,
+                           vipMetadata: podium[0].vipMetadata
+                         }, false)}
+                       >
                          <div className="w-full h-full rounded-full bg-yellow-400/10 flex items-center justify-center border border-yellow-400/20 overflow-hidden">
                             {podium[0].avatar ? <img src={podium[0].avatar} alt={podium[0].username} className="w-full h-full object-cover" /> : <User size={80} />}
                          </div>
@@ -157,7 +179,16 @@ export const LeaderboardPage = () => {
              {podium[2] && (
                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="order-3 relative z-10 w-full max-w-[280px]">
                  <NeonCard variant="pink" className="flex flex-col items-center p-6 text-center bg-[#0a0a0f]/80 backdrop-blur-xl border-white/5 hover:border-neon-pink/30 transition-all pt-12">
-                   <div className="h-28 w-28 rounded-full border-4 border-orange-400/20 bg-white/5 mb-4 flex items-center justify-center text-orange-400 relative group p-1 shrink-0">
+                   <div className="h-28 w-28 rounded-full border-4 border-orange-400/20 bg-white/5 mb-4 flex items-center justify-center text-orange-400 relative group p-1 shrink-0 cursor-pointer hover:scale-105 transition-all"
+                      onClick={() => openProfile({
+                        senderName: podium[2].username,
+                        senderAvatar: podium[2].avatar,
+                        senderLevel: podium[2].level || 1,
+                        id: podium[2].id,
+                        membership: podium[2].membership || MembershipType.NONE,
+                        vipMetadata: podium[2].vipMetadata
+                      }, false)}
+                    >
                       <div className="absolute -top-2 -right-2 h-10 w-10 rounded-2xl bg-orange-400/30 flex items-center justify-center text-orange-200 border border-white/20 shadow-[0_0_15px_rgba(251,146,60,0.1)] z-30 backdrop-blur-xl">
                          <Medal size={20} />
                       </div>
@@ -181,7 +212,17 @@ export const LeaderboardPage = () => {
                       <div className="group flex items-center justify-between rounded-2xl border border-white/5 bg-white/[0.02] p-4 transition-all hover:bg-white/[0.05] hover:border-neon-blue/20">
                          <div className="flex items-center gap-4 md:gap-6 min-w-0">
                             <span className="w-6 text-center font-mono text-lg font-bold text-gray-700">#{player.rank}</span>
-                            <div className="h-10 w-10 md:h-12 md:w-12 rounded-xl bg-white/5 flex items-center justify-center text-gray-400 overflow-hidden">
+                             <div 
+                               className="h-10 w-10 md:h-12 md:w-12 rounded-xl bg-white/5 flex items-center justify-center text-gray-400 overflow-hidden cursor-pointer hover:ring-2 hover:ring-neon-blue/40 transition-all"
+                               onClick={() => openProfile({
+                                 senderName: player.username,
+                                 senderAvatar: player.avatar,
+                                 senderLevel: player.level || 1,
+                                 id: player.id,
+                                 membership: player.membership || MembershipType.NONE,
+                                 vipMetadata: player.vipMetadata
+                               }, false)}
+                             >
                               {player.avatar ? <img src={player.avatar} alt={player.username} className="w-full h-full object-cover" /> : <User size={24} />}
                             </div>
                             <h4 className="font-black text-white group-hover:text-neon-blue transition-colors truncate uppercase text-sm md:text-base italic">{player.username}</h4>

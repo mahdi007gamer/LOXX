@@ -34,6 +34,8 @@ import {
 } from "lucide-react";
 import { GlowButton } from "../components/ui/GlowButton";
 import { useFriends } from "../context/FriendsContext";
+import { useProfilePopover } from "../context/ProfilePopoverContext";
+import { MembershipType } from "../types";
 import { cn } from "@/src/lib/utils";
 
 interface Player {
@@ -77,6 +79,7 @@ export const LobbyRoomPage = () => {
   } = useLobby();
   const { user } = useAuth();
   const { openChat, addFriend } = useFriends();
+  const { openProfile } = useProfilePopover();
   
   const [copied, setCopied] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -549,7 +552,20 @@ export const LobbyRoomPage = () => {
                     }
                   }}
                   onInvite={() => setIsInviteModalOpen(true)}
-                  onProfile={(id) => setActiveProfileUserId(id)}
+                  onProfile={(id) => {
+                    const p = players.find(player => player.id === id);
+                    if (p && !p.id.startsWith("slot-")) {
+                      openProfile({
+                        senderName: p.name,
+                        senderAvatar: p.avatar,
+                        senderLevel: 1, // Lobby players might not have level in current interface
+                        id: p.id,
+                        membership: (p as any).membership || MembershipType.NONE,
+                        vipMetadata: (p as any).vipMetadata,
+                        bannerUrl: (p as any).bannerUrl
+                      }, p.id === user?.id);
+                    }
+                  }}
                   onDirectMessage={(id) => {
                     const p = players.find(player => player.id === id);
                     if (p && !p.id.startsWith("slot-")) {
@@ -1213,12 +1229,24 @@ const PlayerCard = ({
                   />
                 </svg>
 
-                <div className={cn(
-                  "h-10 w-10 sm:h-16 sm:w-16 md:h-20 md:w-20 rounded-[18px] md:rounded-[28px] flex items-center justify-center text-xl md:text-3xl relative z-10 transition-all duration-500 shadow-2xl",
-                  player.isReady ? "bg-white/10" : "bg-white/5",
-                  player.isSpeaking ? "scale-105" : ""
-                )}>
-                  <span className="relative z-10">{player.avatar}</span>
+                <div 
+                  className={cn(
+                    "h-10 w-10 sm:h-16 sm:w-16 md:h-20 md:w-20 rounded-[18px] md:rounded-[28px] flex items-center justify-center text-xl md:text-3xl relative z-10 transition-all duration-500 shadow-2xl cursor-pointer hover:scale-110 hover:ring-2 hover:ring-neon-blue/50",
+                    player.isReady ? "bg-white/10" : "bg-white/5",
+                    player.isSpeaking ? "scale-105" : ""
+                  )}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onProfile(player.id);
+                  }}
+                >
+                  <div className="relative z-10 h-full w-full flex items-center justify-center overflow-hidden rounded-[18px] md:rounded-[28px]">
+                    {player.avatar && (player.avatar.length > 5 || player.avatar.startsWith("/") || player.avatar.includes(".")) ? (
+                      <img src={player.avatar} alt={player.name} className="w-full h-full object-cover" />
+                    ) : (
+                      player.avatar || "👤"
+                    )}
+                  </div>
                   <div className="absolute inset-0 bg-gradient-to-tr from-black/20 to-transparent rounded-[18px] md:rounded-[28px]" />
                   
                   {/* Voice Glow Overlay */}

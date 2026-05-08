@@ -121,6 +121,8 @@ export interface ChatMessage {
   mentions?: string[]; // userIds
   gif?: string; // URL
   image?: string; // URL
+  bannerUrl?: string;
+  vipMetadata?: any;
   lobbyInvite?: {
     lobbyId: string;
     gameTitle: string;

@@ -29,6 +29,9 @@ import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
 
+import { useProfilePopover } from "../context/ProfilePopoverContext";
+import { MembershipType } from "../types";
+
 const StatusBadge = ({ status }: { status: FriendStatus }) => {
   const colors = {
     [FriendStatus.ONLINE]: "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]",
@@ -56,6 +59,7 @@ const FriendItem = ({
   key?: React.Key;
 }) => {
   const [showMobileActions, setShowMobileActions] = useState(false);
+  const { openProfile } = useProfilePopover();
 
   return (
     <motion.div 
@@ -76,15 +80,27 @@ const FriendItem = ({
     >
       <div className="flex items-center justify-between w-full">
         <div className="flex items-center gap-3">
-          <div className="relative">
-            <div className="h-12 w-12 rounded-full bg-white/10 overflow-hidden flex items-center justify-center">
+          <div className="relative group/avatar cursor-pointer" onClick={(e) => {
+            e.stopPropagation();
+            openProfile({
+              senderName: friend.displayName,
+              senderAvatar: friend.avatar,
+              senderLevel: friend.level,
+              id: friend.id,
+              // We might not have full metadata here, but we can pass basic info
+              membership: (friend as any).membership || MembershipType.NONE,
+              vipMetadata: (friend as any).vipMetadata,
+              bannerUrl: (friend as any).bannerUrl
+            }, false);
+          }}>
+            <div className="h-12 w-12 rounded-full bg-white/10 overflow-hidden flex items-center justify-center border border-white/5 group-hover/avatar:border-neon-blue/50 transition-all">
                {friend.avatar && (friend.avatar.length > 5 || friend.avatar.startsWith("/") || friend.avatar.includes(".")) ? (
                  <img src={friend.avatar} alt={friend.username} className="w-full h-full object-cover" />
                ) : (
                  <div className="h-full w-full flex items-center justify-center text-xl">{friend.avatar || "👤"}</div>
                )}
             </div>
-            <div className="absolute -bottom-0.5 -right-0.5 border-2 border-dark-bg rounded-full p-0.5 bg-dark-bg">
+            <div className="absolute -bottom-0.5 -right-0.5 border-2 border-dark-bg rounded-full p-0.5 bg-dark-bg z-10">
               <StatusBadge status={friend.status} />
             </div>
           </div>
@@ -253,6 +269,7 @@ export const FriendsPage = () => {
     openChat
   } = useFriends();
   const { user } = useAuth();
+  const { openProfile } = useProfilePopover();
 
   const [searchTerm, setSearchTerm] = useState("");
   const [userSearchTerm, setUserSearchTerm] = useState("");
@@ -381,18 +398,33 @@ export const FriendsPage = () => {
             {/* Right Column: User Search & Requests */}
             <div className="space-y-6 md:space-y-8 order-1 lg:order-2">
                {/* Mini Profile */}
-               <NeonCard variant="purple" className="p-4 relative overflow-hidden group">
-                 <div className="absolute top-0 right-0 h-24 w-24 -mr-12 -mt-12 rounded-full bg-neon-purple/10 blur-2xl group-hover:bg-neon-purple/20 transition-all duration-700" />
-                 <div className="relative flex items-center gap-4">
-                    <div className="h-14 w-14 md:h-16 md:w-16 rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center text-xl md:text-2xl shadow-2xl overflow-hidden">
-                      {user?.profile?.avatar && (user.profile.avatar.length > 5 || user.profile.avatar.startsWith("/") || user.profile.avatar.includes(".")) ? (
-                        <img src={user.profile.avatar} alt="avatar" className="w-full h-full object-cover" />
-                      ) : (
-                        user?.profile?.avatar || "👤"
-                      )}
-                    </div>
+                <NeonCard variant="purple" className="p-4 relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 h-24 w-24 -mr-12 -mt-12 rounded-full bg-neon-purple/10 blur-2xl group-hover:bg-neon-purple/20 transition-all duration-700" />
+                  <div className="relative flex items-center gap-4">
+                     <div 
+                       className="h-14 w-14 md:h-16 md:w-16 rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center text-xl md:text-2xl shadow-2xl overflow-hidden cursor-pointer hover:border-white/30 transition-all"
+                       onClick={() => {
+                         if (user) {
+                           openProfile({
+                             senderName: user.displayName || user.username,
+                             senderAvatar: user.avatarUrl,
+                             senderLevel: (user as any).level || 1,
+                             id: user.id,
+                             membership: user.membership || MembershipType.NONE,
+                             vipMetadata: user.vipMetadata,
+                             bannerUrl: (user as any).bannerUrl || user.avatarUrl
+                           }, true);
+                         }
+                       }}
+                     >
+                       {user?.avatarUrl && (user.avatarUrl.length > 5 || user.avatarUrl.startsWith("/") || user.avatarUrl.includes(".")) ? (
+                         <img src={user.avatarUrl} alt="avatar" className="w-full h-full object-cover" />
+                       ) : (
+                         user?.avatarUrl || "👤"
+                       )}
+                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-black text-white text-base md:text-lg truncate">{user?.profile?.displayName || user?.username}</h3>
+                      <h3 className="font-black text-white text-base md:text-lg truncate">{user?.displayName || user?.username}</h3>
                       <div className="flex items-center gap-2 mt-0.5">
                         <span className="text-[10px] md:text-xs text-gray-500 font-mono tracking-tighter truncate">@{user?.username}</span>
                         <button 
@@ -461,7 +493,20 @@ export const FriendsPage = () => {
                     <NeonCard key={req.id} variant={req.type === 'incoming' ? 'purple' : 'blue'} className="p-4">
                        <div className="flex items-center justify-between mb-4">
                          <div className="flex items-center gap-3">
-                           <div className="h-10 w-10 rounded-full bg-white/10 overflow-hidden flex items-center justify-center">
+                           <div 
+                             className="h-10 w-10 rounded-full bg-white/10 overflow-hidden flex items-center justify-center cursor-pointer hover:ring-2 hover:ring-white/20 transition-all"
+                             onClick={() => {
+                               openProfile({
+                                 senderName: req.displayName,
+                                 senderAvatar: req.avatar,
+                                 senderLevel: (req as any).level || 1,
+                                 id: req.id, // Assuming req.id or req.userId is the ID we need
+                                 membership: (req as any).membership || MembershipType.NONE,
+                                 vipMetadata: (req as any).vipMetadata,
+                                 bannerUrl: (req as any).bannerUrl
+                               }, false);
+                             }}
+                            >
                              {req.avatar && (req.avatar.length > 5 || req.avatar.startsWith("/") || req.avatar.includes(".")) ? (
                                <img src={req.avatar} alt={req.displayName} className="w-full h-full object-cover" />
                              ) : (

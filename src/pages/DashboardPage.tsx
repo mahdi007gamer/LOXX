@@ -31,6 +31,9 @@ import {
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
 
+import { useProfilePopover } from "../context/ProfilePopoverContext";
+import { MembershipType } from "../types";
+
 export const DashboardPage = () => {
   const [loading, setLoading] = useState(true);
   const [isLobbyModalOpen, setIsLobbyModalOpen] = useState(false);
@@ -55,6 +58,7 @@ export const DashboardPage = () => {
   const navigate = useNavigate();
   const { friends, openChat } = useFriends();
   const { user } = useAuth();
+  const { openProfile } = useProfilePopover();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -306,8 +310,19 @@ export const DashboardPage = () => {
                           className="group relative flex items-center justify-between rounded-xl p-2 transition-all hover:bg-white/5"
                         >
                           <div className="flex items-center gap-3">
-                            <div className="relative">
-                              <div className="h-10 w-10 rounded-full bg-white/10 flex items-center justify-center text-md overflow-hidden">
+                            <div 
+                              className="relative group/avatar cursor-pointer"
+                              onClick={() => openProfile({
+                                senderName: friend.displayName,
+                                senderAvatar: friend.avatar,
+                                senderLevel: friend.level || 1,
+                                id: friend.id,
+                                membership: (friend as any).membership || MembershipType.NONE,
+                                vipMetadata: (friend as any).vipMetadata,
+                                bannerUrl: (friend as any).bannerUrl
+                              }, false)}
+                            >
+                              <div className="h-10 w-10 rounded-full bg-white/10 flex items-center justify-center text-md overflow-hidden border border-white/5 group-hover/avatar:border-neon-blue/50 transition-all">
                                 {friend.avatar && (friend.avatar.length > 5 || friend.avatar.startsWith("/") || friend.avatar.includes(".")) ? (
                                   <img src={friend.avatar} alt={friend.username} className="w-full h-full object-cover" />
                                 ) : (
@@ -315,7 +330,7 @@ export const DashboardPage = () => {
                                 )}
                               </div>
                               <div className={cn(
-                                "absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-dark-card",
+                                "absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-dark-card z-10",
                                 friend.status === FriendStatus.ONLINE ? "bg-green-500" :
                                 friend.status === FriendStatus.IN_GAME ? "bg-neon-purple shadow-[0_0_8px_rgba(160,32,240,0.8)]" :
                                 friend.status === FriendStatus.IN_LOBBY ? "bg-neon-blue shadow-[0_0_8px_rgba(0,229,255,0.8)]" :

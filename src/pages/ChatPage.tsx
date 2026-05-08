@@ -726,6 +726,13 @@ export const ChatPage: React.FC = () => {
        image = parts[1]?.trim();
      }
 
+     let gif: string | undefined;
+     if (text.includes("[GIF]:")) {
+       const parts = text.split("[GIF]:");
+       text = parts[0].trim();
+       gif = parts[1]?.trim();
+     }
+
      if (text.includes("[LOBBY_INVITE]:")) {
        const parts = text.split("[LOBBY_INVITE]:");
        text = parts[0].trim();
@@ -748,6 +755,7 @@ export const ChatPage: React.FC = () => {
        senderBadges: isNewsChannel ? [] : badges,
        text,
        image,
+       gif,
        lobbyInvite: lobbyInvite || msg.lobbyInvite,
        isOnline: isNewsChannel ? true : msg.from.isOnline,
        timestamp: new Date(msg.createdAt).toLocaleTimeString("fa-IR", { hour: "2-digit", minute: "2-digit" }),
