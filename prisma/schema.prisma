@@ -35,6 +35,23 @@ model User {
   auditLogs       AuditLog[]
   userGames       UserGame[]
   hostedLobbies   Lobby[]      @relation("LobbyHost")
+  settings        UserSettings?
+}
+
+model UserSettings {
+  userId          String         @id
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Notification Settings
+  receiveFriendRequests Boolean    @default(true)
+  receiveLobbyInvites   Boolean    @default(true)
+  showMentionAlerts     Boolean    @default(true)
+  
+  // UI Settings
+  theme                 String     @default("dark") // dark, light, high-contrast
+  language              String     @default("fa")   // fa, en
+  showOnlineStatus     Boolean     @default(true)
+  reduceAnimations     Boolean     @default(false)
 }
 
 model Profile {

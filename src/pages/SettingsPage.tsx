@@ -32,6 +32,16 @@ export const SettingsPage = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   
+  const [settings, setSettings] = useState({
+    receiveFriendRequests: true,
+    receiveLobbyInvites: true,
+    showMentionAlerts: true,
+    theme: "dark",
+    language: "fa",
+    showOnlineStatus: true,
+    reduceAnimations: false
+  });
+
   const [formData, setFormData] = useState({
     displayName: "",
     bio: "",
@@ -47,7 +57,26 @@ export const SettingsPage = () => {
 
   useEffect(() => {
     fetchUserData();
+    fetchSettings();
   }, []);
+
+  const fetchSettings = async () => {
+    try {
+      const res = await api.get("/settings");
+      setSettings(res.data.data);
+    } catch (err) {
+      console.error("Failed to fetch settings", err);
+    }
+  };
+
+  const updateSetting = async (key: string, value: any) => {
+    setSettings(prev => ({ ...prev, [key]: value }));
+    try {
+      await api.patch("/settings", { [key]: value });
+    } catch (err) {
+      toast.error("خطا در بروزرسانی تنظیمات");
+    }
+  };
 
   const fetchUserData = async () => {
     try {
@@ -286,10 +315,9 @@ export const SettingsPage = () => {
         </div>
         <div className="divide-y divide-white/5">
           {[
-            { label: "پیام‌های شخصی (DM)", desc: "وقتی کسی برای شما پیام می‌فرستد", icon: MessageSquare },
-            { label: "دعوت به لابی", desc: "وقتی دوستانتان شما را به بازی دعوت می‌کنند", icon: User },
-            { label: "بروزرسانی رتبه‌بندی", desc: "تغییرات رتبه شما در جدول امتیازات", icon: Zap },
-            { label: "اعلان‌های سیستم", desc: "اخبار جدید، بروزرسانی‌ها و جوایز", icon: Bell },
+            { key: "receiveFriendRequests", label: "درخواست‌های دوستی", desc: "وقتی کسی برای شما درخواست دوستی می‌فرستد", icon: User },
+            { key: "receiveLobbyInvites", label: "دعوت به لابی", desc: "وقتی دوستانتان شما را به بازی دعوت می‌کنند", icon: User },
+            { key: "showMentionAlerts", label: "اعلان‌های منشن", desc: "وقتی کسی شما را در چت منشن می‌کند", icon: Bell },
           ].map((item, i) => (
             <div key={i} className="flex items-center justify-between p-6 hover:bg-white/5 transition-colors group">
                <div className="flex gap-4">
@@ -302,7 +330,12 @@ export const SettingsPage = () => {
                   </div>
                </div>
                <div className="relative inline-flex items-center cursor-pointer">
-                  <input type="checkbox" className="sr-only peer" defaultChecked={i < 2} />
+                  <input 
+                    type="checkbox" 
+                    className="sr-only peer" 
+                    checked={(settings as any)[item.key]} 
+                    onChange={(e) => updateSetting(item.key, e.target.checked)}
+                  />
                   <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-gray-500 peer-checked:after:bg-neon-blue after:border-gray-900 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-neon-blue/20"></div>
                </div>
             </div>
@@ -316,45 +349,61 @@ export const SettingsPage = () => {
     <div className="space-y-6">
       <NeonCard variant="blue" className="space-y-8">
         <div>
-          <h3 className="font-black text-white italic mb-1">تنظیمات چت</h3>
-          <p className="text-[10px] text-gray-500 font-bold uppercase mb-6 italic">نحوه نمایش چت و پیام‌ها</p>
+          <h3 className="font-black text-white italic mb-1">وضعیت و تم</h3>
+          <p className="text-[10px] text-gray-500 font-bold uppercase mb-6 italic">ظاهر برنامه خود را شخصی‌سازی کنید</p>
           <div className="space-y-4">
             <label className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/5 cursor-pointer hover:border-white/10">
                <div className="flex items-center gap-3">
-                 <MessageSquare size={16} className="text-gray-500" />
-                 <span className="text-xs font-black text-white italic">پیش‌نمایش پیام در اعلان‌ها</span>
+                 <Eye size={16} className="text-gray-500" />
+                 <span className="text-xs font-black text-white italic">نمایش وضعیت آنلایت</span>
                </div>
-               <input type="checkbox" defaultChecked className="accent-neon-blue" />
+               <input 
+                 type="checkbox" 
+                 checked={settings.showOnlineStatus} 
+                 onChange={(e) => updateSetting("showOnlineStatus", e.target.checked)}
+                 className="accent-neon-blue" 
+               />
             </label>
-            <label className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/5 cursor-pointer hover:border-white/10">
-               <div className="flex items-center gap-3">
-                 <Volume2 size={16} className="text-gray-500" />
-                 <span className="text-xs font-black text-white italic">صدای اعلان چت</span>
-               </div>
-               <input type="checkbox" defaultChecked className="accent-neon-blue" />
-            </label>
+            <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+                <div className="flex items-center gap-3 mb-4">
+                   <Monitor size={16} className="text-gray-500" />
+                   <span className="text-xs font-black text-white italic uppercase">تم برنامه</span>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                    {['dark', 'high-contrast'].map((t) => (
+                      <button 
+                        key={t}
+                        onClick={() => updateSetting("theme", t)}
+                        className={cn(
+                          "py-3 rounded-xl border font-black italic text-[11px] uppercase transition-all",
+                          settings.theme === t ? "bg-neon-blue/10 border-neon-blue text-neon-blue" : "bg-white/5 border-white/5 text-gray-500 hover:border-white/20"
+                        )}
+                      >
+                        {t === 'dark' ? 'حالت تاریک' : 'کنتراست بالا'}
+                      </button>
+                    ))}
+                </div>
+            </div>
           </div>
         </div>
 
         <hr className="border-white/5" />
 
         <div>
-          <h3 className="font-black text-white italic mb-1">جلوه‌های بصری</h3>
-          <p className="text-[10px] text-gray-500 font-bold uppercase mb-6 italic">بهینه‌سازی برای دستگاه‌های ضعیف‌تر</p>
+          <h3 className="font-black text-white italic mb-1">عملکرد</h3>
+          <p className="text-[10px] text-gray-500 font-bold uppercase mb-6 italic">بهینه‌سازی برای دستگاه‌های مختلف</p>
           <div className="space-y-4">
             <label className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/5 cursor-pointer hover:border-white/10">
                <div className="flex items-center gap-3">
                  <Zap size={16} className="text-gray-500" />
-                 <span className="text-xs font-black text-white italic">انیمیشن‌های رابط کاربری</span>
+                 <span className="text-xs font-black text-white italic">کاهش انیمیشن‌ها</span>
                </div>
-               <input type="checkbox" defaultChecked className="accent-neon-blue" />
-            </label>
-            <label className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/5 cursor-pointer hover:border-white/10">
-               <div className="flex items-center gap-3">
-                 <Eye size={16} className="text-gray-500" />
-                 <span className="text-xs font-black text-white italic">حالت استریمر (مخفی‌سازی اطلاعات حساس)</span>
-               </div>
-               <input type="checkbox" className="accent-neon-blue" />
+               <input 
+                 type="checkbox" 
+                 checked={settings.reduceAnimations} 
+                 onChange={(e) => updateSetting("reduceAnimations", e.target.checked)}
+                 className="accent-neon-blue" 
+               />
             </label>
           </div>
         </div>
@@ -370,30 +419,27 @@ export const SettingsPage = () => {
             <h4 className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-4 italic flex items-center gap-2">
               <Languages size={14} /> انتخاب زبان
             </h4>
-            <select className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-neon-blue/50 font-black italic">
-               <option className="bg-dark-bg">Persian / فارسی</option>
-               <option className="bg-dark-bg">English / انگلیسی</option>
-               <option className="bg-dark-bg">Arabic / عربی</option>
+            <select 
+              value={settings.language}
+              onChange={(e) => updateSetting("language", e.target.value)}
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-neon-blue/50 font-black italic"
+            >
+               <option value="fa" className="bg-dark-bg">Persian / فارسی</option>
+               <option value="en" className="bg-dark-bg">English / انگلیسی</option>
             </select>
           </div>
           <div>
             <h4 className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-4 italic flex items-center gap-2">
               <MapPin size={14} /> منطقه بازی (Server Region)
             </h4>
-            <select className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-neon-blue/50 font-black italic">
-               <option className="bg-dark-bg">Middle East (Tehran/Dubai)</option>
-               <option className="bg-dark-bg">Europe West (Frankfurt)</option>
-               <option className="bg-dark-bg">Europe North (Stockholm)</option>
-            </select>
-          </div>
-          <div>
-            <h4 className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-4 italic flex items-center gap-2">
-              <Clock size={14} /> منطقه زمانی
-            </h4>
-            <select className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-neon-blue/50 font-black italic">
-               <option className="bg-dark-bg">(GMT+03:30) Tehran</option>
-               <option className="bg-dark-bg">(GMT+01:00) Central Europe</option>
-               <option className="bg-dark-bg">(GMT+00:00) London</option>
+            <select 
+              value={formData.region}
+              onChange={(e) => setFormData(p => ({ ...p, region: e.target.value }))}
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-neon-blue/50 font-black italic"
+            >
+               <option value="IR" className="bg-dark-bg">Iran (Tehran)</option>
+               <option value="ME" className="bg-dark-bg">Middle East (Dubai)</option>
+               <option value="EU" className="bg-dark-bg">Europe West (Frankfurt)</option>
             </select>
           </div>
         </div>
