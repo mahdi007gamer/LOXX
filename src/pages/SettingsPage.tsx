@@ -319,7 +319,7 @@ export const SettingsPage = () => {
             { key: "receiveLobbyInvites", label: "دعوت به لابی", desc: "وقتی دوستانتان شما را به بازی دعوت می‌کنند", icon: User },
             { key: "showMentionAlerts", label: "اعلان‌های منشن", desc: "وقتی کسی شما را در چت منشن می‌کند", icon: Bell },
           ].map((item, i) => (
-            <div key={i} className="flex items-center justify-between p-6 hover:bg-white/5 transition-colors group">
+            <label key={i} className="flex items-center justify-between p-6 hover:bg-white/5 transition-colors group cursor-pointer border-b border-white/5 last:border-b-0">
                <div className="flex gap-4">
                   <div className="h-10 w-10 rounded-xl bg-white/5 flex items-center justify-center text-gray-500 group-hover:text-neon-blue transition-colors">
                     <item.icon size={18} />
@@ -329,7 +329,7 @@ export const SettingsPage = () => {
                     <p className="text-[10px] text-gray-500 font-bold italic uppercase">{item.desc}</p>
                   </div>
                </div>
-               <div className="relative inline-flex items-center cursor-pointer">
+               <div className="relative inline-flex items-center">
                   <input 
                     type="checkbox" 
                     className="sr-only peer" 
@@ -338,7 +338,7 @@ export const SettingsPage = () => {
                   />
                   <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-gray-500 peer-checked:after:bg-neon-blue after:border-gray-900 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-neon-blue/20"></div>
                </div>
-            </div>
+            </label>
           ))}
         </div>
       </NeonCard>
@@ -425,7 +425,6 @@ export const SettingsPage = () => {
               className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-neon-blue/50 font-black italic"
             >
                <option value="fa" className="bg-dark-bg">Persian / فارسی</option>
-               <option value="en" className="bg-dark-bg">English / انگلیسی</option>
             </select>
           </div>
           <div>

@@ -96,13 +96,13 @@ export const LobbiesPage = () => {
       <Sidebar />
       <main className="flex-1 px-4 py-8 md:mr-64 lg:px-8 pb-32 md:pb-8">
         <div className="container mx-auto max-w-6xl">
-          <header className="mb-10 flex flex-col items-center justify-between gap-8 md:flex-row md:mb-12">
+          <header className="mb-10 flex flex-col items-center justify-between gap-6 md:flex-row md:mb-12">
             <div className="text-center md:text-right w-full md:w-auto">
-              <h1 className="text-4xl md:text-5xl font-black text-white italic tracking-tighter">لابی‌های فعال</h1>
+              <h1 className="text-3xl md:text-5xl font-black text-white italic tracking-tighter">لابی‌های فعال</h1>
               <p className="mt-3 text-[11px] md:text-xs text-gray-500 font-bold uppercase tracking-[0.15em] leading-relaxed opacity-60">تیم خود را پیدا کنید و در کنار بقیه بازیکنان حرفه‌ای بازی کنید</p>
             </div>
             
-            <div className="flex flex-col w-full items-stretch sm:flex-row sm:items-center gap-4 md:w-auto">
+            <div className="flex flex-col w-full items-stretch sm:flex-row sm:items-center gap-3 sm:gap-4 md:w-auto">
                <div className="relative flex-1 sm:w-80">
                 <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-700" size={18} />
                 <input 
@@ -115,7 +115,7 @@ export const LobbiesPage = () => {
               </div>
               <GlowButton 
                 variant="blue" 
-                className="flex items-center justify-center gap-2 h-14 px-8 shrink-0 shadow-[0_0_30px_rgba(0,229,255,0.2)] rounded-2xl group" 
+                className="flex items-center justify-center gap-2 h-14 px-4 sm:px-8 shrink-0 shadow-[0_0_30px_rgba(0,229,255,0.2)] rounded-2xl group" 
                 onClick={() => setIsModalOpen(true)}
               >
                 <Plus size={20} className="group-hover:rotate-90 transition-transform" />
