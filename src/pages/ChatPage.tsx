@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Sidebar } from "../components/layout/Sidebar";
 import { GlowButton } from "../components/ui/GlowButton";
+import { LobbyInviteCard } from "../components/ui/LobbyInviteCard";
 import { Send, Hash, Users, MoreVertical, Plus, Smile, Image as ImageIcon, Reply, Heart, ChevronDown, Award, Star, Zap, Crown, Play, Check, Menu, X, MessageSquare, User, Trophy, Palette, Trash, MessageCircle } from "lucide-react";
 import { cn } from "../lib/utils";
 import { motion, AnimatePresence } from "motion/react";
@@ -286,41 +287,7 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
 
                 {/* Lobby Invite Card */}
                 {message.lobbyInvite && (
-                   <div className="space-y-3 py-1">
-                     <p className="font-black text-neon-blue text-[9px] flex items-center gap-1.5 px-0 uppercase tracking-widest opacity-70">
-                       <Zap size={10} fill="currentColor" />
-                       دعوت به لابی اختصاصی
-                     </p>
-                     
-                     <div className="group/lobby relative overflow-hidden rounded-xl bg-white/[0.03] border border-white/5 p-2.5 pr-4 shadow-xl backdrop-blur-xl flex items-center gap-3 transition-all hover:bg-white/[0.05] min-w-[260px]">
-                       <div className="absolute top-0 right-0 bottom-0 w-[2px] bg-neon-blue opacity-50"></div>
-                       <div className="h-9 w-9 shrink-0 rounded-lg bg-neon-blue/10 border border-neon-blue/20 flex items-center justify-center text-neon-blue group-hover:scale-105 transition-transform">
-                         <Play size={16} fill="currentColor" className="ml-0.5" />
-                       </div>
-                       <div className="flex-1 min-w-0">
-                         <h5 className="text-xs font-black text-white truncate">{message.lobbyInvite.gameTitle}</h5>
-                         <p className="text-[8px] text-gray-500 font-bold uppercase truncate">{message.lobbyInvite.region}</p>
-                       </div>
-                       <div className="shrink-0 flex items-center gap-1.5">
-                         <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-white/5 text-[9px] text-gray-400 font-bold uppercase border border-white/5">
-                           <Users size={10} className="text-neon-blue" />
-                           {message.lobbyInvite.slots}
-                         </div>
-                         <motion.div
-                           animate={{ 
-                             boxShadow: [
-                               "0 0 10px rgba(0, 229, 255, 0.2)",
-                               "0 0 25px rgba(0, 229, 255, 0.4)",
-                               "0 0 10px rgba(0, 229, 255, 0.2)"
-                             ] 
-                           }}
-                           transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                         >
-                           <GlowButton variant="blue" className="h-7 px-4 !rounded-lg font-black text-[10px]">ورود</GlowButton>
-                         </motion.div>
-                       </div>
-                     </div>
-                   </div>
+                  <LobbyInviteCard initialData={message.lobbyInvite} />
                 )}
                 {false && (
                   <p className="leading-relaxed text-[13px] font-medium text-gray-200">
