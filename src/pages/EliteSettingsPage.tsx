@@ -358,12 +358,21 @@ export const EliteSettingsPage = () => {
                           </div>
                        </div>
                     </div>
-                    <Input 
-                      placeholder="یا آدرس تصویر خود را وارد کنید..." 
-                      value={avatarUrl}
-                      onChange={(e) => setAvatarUrl(e.target.value)}
-                      className="text-[10px]"
-                    />
+                    <div className="flex gap-2">
+                       <Input 
+                         placeholder="یا آدرس تصویر خود را وارد کنید..." 
+                         value={avatarUrl}
+                         onChange={(e) => setAvatarUrl(e.target.value)}
+                         className="text-[10px]"
+                       />
+                       <button 
+                         onClick={() => avatarInputRef.current?.click()}
+                         className="px-4 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-colors shrink-0"
+                         title="آپلود فایل"
+                       >
+                         <Upload size={14} className="text-yellow-400" />
+                       </button>
+                    </div>
                   </div>
 
                   <div className="space-y-4">
@@ -391,12 +400,21 @@ export const EliteSettingsPage = () => {
                           </div>
                        </div>
                     </div>
-                    <Input 
-                      placeholder="یا آدرس بنر خود را وارد کنید..." 
-                      value={bannerUrl}
-                      onChange={(e) => setBannerUrl(e.target.value)}
-                      className="text-[10px]"
-                    />
+                    <div className="flex gap-2">
+                       <Input 
+                         placeholder="یا آدرس بنر خود را وارد کنید..." 
+                         value={bannerUrl}
+                         onChange={(e) => setBannerUrl(e.target.value)}
+                         className="text-[10px]"
+                       />
+                       <button 
+                         onClick={() => bannerInputRef.current?.click()}
+                         className="px-4 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-colors shrink-0"
+                         title="آپلود فایل"
+                       >
+                         <Upload size={14} className="text-yellow-400" />
+                       </button>
+                    </div>
                   </div>
                 </div>
               </NeonCard>
@@ -550,7 +568,7 @@ export const EliteSettingsPage = () => {
             </div>
 
             {/* Live Preview Sidebar */}
-            <div className="lg:col-span-5 sticky top-24">
+            <div className="lg:col-span-5 sticky top-24 self-start">
               <div className="space-y-6">
                 <div className="flex items-center justify-center gap-3 mb-6">
                   <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent to-white/10" />

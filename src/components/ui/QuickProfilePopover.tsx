@@ -13,6 +13,8 @@ export interface QuickProfileUser {
   senderBadges?: BadgeType[];
   membership?: MembershipType;
   id?: string;
+  bannerUrl?: string;
+  vipMetadata?: any;
 }
 
 interface QuickProfilePopoverProps {
@@ -40,21 +42,37 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
   const isVIP = user.membership === MembershipType.VIP;
   const isPLUS = user.membership === MembershipType.PLUS;
 
+  const metadata = typeof user.vipMetadata === 'string' ? JSON.parse(user.vipMetadata) : user.vipMetadata;
+  const bannerUrl = user.bannerUrl || "";
+
+  const getBackgroundStyle = () => {
+    if (!metadata || !metadata.colors) return {};
+    if (!metadata.colors.gradient?.enabled) {
+      return { backgroundColor: metadata.colors.bg };
+    }
+    const { color1, color2, type, angle } = metadata.colors.gradient;
+    if (type === "linear") return { background: `linear-gradient(${angle}deg, ${color1}, ${color2})` };
+    if (type === "radial") return { background: `radial-gradient(circle at center, ${color1}, ${color2})` };
+    return { background: `conic-gradient(from ${angle}deg, ${color1}, ${color2})` };
+  };
+
   return (
     <motion.div 
       initial={{ opacity: 0, scale: 0.9, y: 10 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.9, y: 10 }}
       className="w-72 bg-[#0a0a0f] rounded-[32px] border border-white/10 shadow-[0_30px_70px_rgba(0,0,0,0.9)] overflow-hidden cursor-default rtl text-right transition-all backdrop-blur-3xl px-0 relative z-[20002]"
+      style={metadata && metadata.colors ? { ...getBackgroundStyle(), borderColor: metadata.colors.accent + "40" } : {}}
       onClick={(e) => e.stopPropagation()}
     >
       {/* Dynamic Banner */}
       <div className={cn(
         "h-28 relative overflow-hidden",
-        isVIP ? "bg-gradient-to-br from-yellow-400 via-yellow-600 to-yellow-800" :
+        !bannerUrl && (isVIP ? "bg-gradient-to-br from-yellow-400 via-yellow-600 to-yellow-800" :
         isPLUS ? "bg-gradient-to-br from-neon-blue via-blue-600 to-indigo-800" :
-        "bg-gradient-to-l from-gray-800 to-gray-900"
+        "bg-gradient-to-l from-gray-800 to-gray-900")
       )}>
+         {bannerUrl && <img src={bannerUrl} alt="Banner" className="w-full h-full object-cover" />}
          {/* Banner Overlay Patterns */}
          <div className="absolute inset-0 bg-black/20"></div>
          {isVIP && (
@@ -86,17 +104,60 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
         <div className="flex items-start justify-between">
           {/* Avatar with Membership Rings */}
           <div className="relative -mt-12 mb-3 inline-block">
+             {/* VIP Aura Effects */}
+             {isVIP && metadata?.frame && (
+                <div className="absolute inset-0 z-0">
+                  {metadata.frame === "gold_aura" && (
+                    <motion.div 
+                      animate={{ scale: [1, 1.2, 1], rotate: 360 }}
+                      transition={{ duration: 10, repeat: Infinity }}
+                      className="absolute -inset-8 bg-[radial-gradient(circle,rgba(250,204,21,0.2)_0%,transparent_70%)]"
+                    />
+                  )}
+                  {metadata.frame === "lightning" && (
+                     <div className="absolute -inset-4 bg-blue-500/10 blur-xl animate-pulse" />
+                  )}
+                  {metadata.frame === "fire" && (
+                     <div className="absolute -inset-4 bg-red-500/10 blur-xl animate-pulse" />
+                  )}
+                  {metadata.frame === "neon_pulse" && (
+                    <motion.div 
+                      animate={{ opacity: [0.3, 0.6, 0.3] }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                      className="absolute -inset-6 border border-neon-blue/30 rounded-[40px] blur-sm"
+                    />
+                  )}
+                </div>
+             )}
+
              <div className={cn(
                "h-24 w-24 rounded-[32px] bg-[#0a0a0f] p-1.5 shadow-2xl relative z-10",
                isVIP ? "p-[2px] bg-gradient-to-tr from-yellow-400 to-yellow-200" :
                isPLUS ? "p-[2px] bg-neon-blue" : ""
              )}>
-                <div className="h-full w-full rounded-[28px] bg-[#0d0d12] flex items-center justify-center text-5xl overflow-hidden relative">
-                  {user.senderAvatar && user.senderAvatar.startsWith("http") ? (
-                    <img src={user.senderAvatar} alt={user.senderName} className="w-full h-full object-cover" />
+                  <div className="h-full w-full rounded-[28px] bg-[#0d0d12] flex items-center justify-center text-5xl overflow-hidden relative">
+                  {(user.senderAvatar && (user.senderAvatar.startsWith("http") || user.senderAvatar.startsWith("/") || user.senderAvatar.includes("."))) ? (
+                    <img src={user.senderAvatar} alt={user.senderName} className="w-full h-full object-cover relative z-10" />
                   ) : (
-                    user.senderAvatar || "👤"
+                    <span className="relative z-10">{user.senderAvatar || "👤"}</span>
                   )}
+                  
+                  {/* Internal Frame Overlay */}
+                  {isVIP && metadata?.frame && (
+                    <>
+                      {metadata.frame === "diamond" && (
+                        <div className="absolute inset-0 border-2 border-cyan-400/30 rounded-none transform rotate-45 scale-150 pointer-events-none" />
+                      )}
+                      {metadata.frame === "glitch" && (
+                        <motion.div 
+                          animate={{ opacity: [0, 1, 0], x: [-2, 2, -2] }}
+                          transition={{ duration: 0.2, repeat: Infinity }}
+                          className="absolute inset-0 bg-neon-pink/10 mix-blend-screen pointer-events-none"
+                        />
+                      )}
+                    </>
+                  )}
+              </div>
                   
                   {/* VIP Animated Aura */}
                   {isVIP && (
@@ -107,7 +168,6 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
                     />
                   )}
                 </div>
-             </div>
 
              {/* Online Status */}
              <div className="absolute top-1 right-1 h-5 w-5 bg-green-500 rounded-full border-4 border-[#0a0a0f] z-20 shadow-lg"></div>
@@ -149,7 +209,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
               <h4 className={cn(
                 "text-2xl font-black italic tracking-tighter uppercase",
                 isVIP ? "text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-200 drop-shadow-[0_0_10px_rgba(250,204,21,0.3)]" : "text-white"
-              )}>
+              )} style={metadata && metadata.colors && (isVIP || isPLUS) ? { color: metadata.colors.text } : {}}>
                 {user.senderName}
               </h4>
               <CheckCircle2 size={16} className="text-neon-blue" fill="currentColor" />

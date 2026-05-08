@@ -56,12 +56,22 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
   const isVIP = message.senderBadges?.includes(BadgeType.VIP);
   const isPLUS = message.senderBadges?.includes(BadgeType.PLUS);
   const isChamp = message.senderBadges?.includes(BadgeType.CHAMPION);
+  const metadata = typeof (message as any).vipMetadata === 'string' ? JSON.parse((message as any).vipMetadata) : (message as any).vipMetadata;
 
   const nameColorClass = isVIP ? "text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.5)]" :
                         isChamp ? "text-yellow-500" :
                         isPLUS ? "text-neon-blue" :
                         message.senderLevel > 40 ? "text-neon-blue shadow-[0_0_8px_rgba(0,229,255,0.3)]" : 
                         message.senderLevel > 20 ? "text-neon-pink" : "text-white/80";
+
+  const getBubbleStyle = () => {
+    if (!metadata || !metadata.chatStyle) return {};
+    return {
+      backgroundColor: metadata.chatStyle.bubbleColor || undefined,
+      color: metadata.chatStyle.textColor || undefined,
+      borderColor: metadata.chatStyle.bubbleColor ? `${metadata.chatStyle.bubbleColor}40` : undefined
+    };
+  };
 
   return (
     <div 
@@ -94,6 +104,8 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
           openProfile({
             senderName: message.senderName,
             senderAvatar: message.senderAvatar,
+            bannerUrl: (message as any).bannerUrl,
+            vipMetadata: (message as any).vipMetadata,
             senderLevel: message.senderLevel,
             senderBadges: message.senderBadges,
             id: message.senderId,
@@ -107,7 +119,7 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
           isVIP && "border-2 border-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.4)]",
           isPLUS && "border-2 border-neon-blue shadow-[0_0_10px_rgba(0,229,255,0.3)]"
         )}>
-          {message.senderAvatar && message.senderAvatar.startsWith("http") ? (
+          {(message.senderAvatar && (message.senderAvatar.startsWith("http") || message.senderAvatar.startsWith("/") || message.senderAvatar.includes("."))) ? (
             <img src={message.senderAvatar} alt={message.senderName} className="w-full h-full object-cover rounded-xl" />
           ) : (
             message.senderAvatar || (message.senderName ? message.senderName[0] : "?")
@@ -140,14 +152,16 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
               className={cn("text-[11px] font-black tracking-tight cursor-pointer hover:underline flex items-center gap-1", nameColorClass)}
               onClick={(e) => {
                 e.stopPropagation();
-                openProfile({
-                  senderName: message.senderName,
-                  senderAvatar: message.senderAvatar,
-                  senderLevel: message.senderLevel,
-                  senderBadges: message.senderBadges,
-                  id: message.senderId,
-                  membership: isVIP ? MembershipType.VIP : isPLUS ? MembershipType.PLUS : MembershipType.NONE
-                }, message.self);
+              openProfile({
+                senderName: message.senderName,
+                senderAvatar: message.senderAvatar,
+                bannerUrl: (message as any).bannerUrl,
+                vipMetadata: (message as any).vipMetadata,
+                senderLevel: message.senderLevel,
+                senderBadges: message.senderBadges,
+                id: message.senderId,
+                membership: isVIP ? MembershipType.VIP : isPLUS ? MembershipType.PLUS : MembershipType.NONE
+              }, message.self);
               }}
             >
               {message.senderName}
@@ -214,6 +228,7 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
             <motion.div 
               initial={{ opacity: 0, scale: 0.98, y: 5 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
+              style={getBubbleStyle()}
               className={cn(
                 "relative rounded-2xl overflow-hidden shadow-2xl transition-all border w-fit max-w-full",
                 "rtl text-right break-words",
@@ -727,6 +742,8 @@ export const ChatPage: React.FC = () => {
        senderId: isNewsChannel ? "loxx-system" : msg.from.userId,
        senderName: isNewsChannel ? "لوکس" : msg.from.username,
        senderAvatar: isNewsChannel ? "/logo.png" : msg.from.avatar,
+       bannerUrl: isNewsChannel ? undefined : msg.from.bannerUrl,
+       vipMetadata: isNewsChannel ? undefined : msg.from.vipMetadata,
        senderLevel: msg.from.level,
        senderBadges: isNewsChannel ? [] : badges,
        text,

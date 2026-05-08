@@ -137,6 +137,7 @@ export const SettingsPage = () => {
   };
 
   const tabs = [
+    ...(authUser?.membership === "VIP" ? [{ id: "elite" as any, icon: Crown, label: "Elite Settings" }] : []),
     { id: "profile", icon: User, label: "پروفایل عمومی" },
     { id: "security", icon: Shield, label: "امنیت" },
     { id: "notifications", icon: Bell, label: "اعلان‌ها" },
@@ -525,14 +526,44 @@ export const SettingsPage = () => {
                 ))}
              </div>
 
-             {/* Content Area */}
-             <div className="lg:col-span-3">
+              {/* Content Area */}
+              <div className="lg:col-span-3">
+                {activeTab === ("elite" as any) && (
+                   <div className="space-y-6">
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="relative group cursor-pointer"
+                        onClick={() => window.location.href = "/settings/elite"}
+                      >
+                        <div className="absolute -inset-1 bg-gradient-to-r from-yellow-400 via-orange-500 to-yellow-600 rounded-[32px] blur-xl opacity-40 group-hover:opacity-70 transition duration-1000" />
+                        <NeonCard variant="gold" className="relative p-10 overflow-hidden border-none bg-black/40 backdrop-blur-xl">
+                           <div className="absolute top-0 left-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
+                              <Crown size={200} />
+                           </div>
+                           <div className="flex flex-col md:flex-row items-center gap-8 relative z-10 text-center md:text-right">
+                              <div className="h-24 w-24 rounded-[32px] bg-yellow-400 text-dark-bg flex items-center justify-center shadow-[0_0_40px_rgba(250,204,21,0.4)] group-hover:scale-110 transition-transform duration-500">
+                                 <Crown size={48} fill="currentColor" />
+                              </div>
+                              <div className="flex-1">
+                                 <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter mb-2">داشبورد نخبگان (Elite Settings)</h2>
+                                 <p className="text-sm text-yellow-400/80 font-bold uppercase tracking-widest italic mb-6">کنترل کامل بر فریم‌ها، افکت‌ها و استایل‌های اختصاصی VIP</p>
+                                 <GlowButton variant="gold" className="px-12 h-12 text-xs font-black uppercase italic">باز کردن تنظیمات پیشرفته</GlowButton>
+                              </div>
+                              <div className="h-16 w-16 rounded-full border-2 border-yellow-400/30 flex items-center justify-center group-hover:bg-yellow-400/10 transition-all">
+                                 <ArrowRight className="text-yellow-400 -rotate-45 group-hover:rotate-0 transition-transform" />
+                              </div>
+                           </div>
+                        </NeonCard>
+                      </motion.div>
+                   </div>
+                )}
                 {activeTab === "profile" && renderProfile()}
                 {activeTab === "security" && renderSecurity()}
                 {activeTab === "notifications" && renderNotifications()}
                 {activeTab === "ui" && renderUI()}
                 {activeTab === "region" && renderRegion()}
-             </div>
+              </div>
           </div>
         </div>
       </main>

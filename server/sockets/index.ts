@@ -493,7 +493,11 @@ export function setupWebSockets(io: Server) {
           from: { 
             userId, 
             username: user?.username, 
-            membership: user?.profile?.membershipType || "NONE" 
+            membership: user?.profile?.membershipType || "NONE",
+            level: user?.profile?.level || 1,
+            avatar: user?.profile?.avatarUrl,
+            bannerUrl: user?.profile?.bannerUrl,
+            vipMetadata: user?.profile?.vipMetadata
           },
           targetType: "lobby",
           targetId: lobbyId,
@@ -707,6 +711,8 @@ export function setupWebSockets(io: Server) {
                 membership: msg.sender.profile?.membershipType || "NONE",
                 level: msg.sender.profile?.level || 1,
                 avatar: msg.sender.profile?.avatarUrl,
+                bannerUrl: msg.sender.profile?.bannerUrl,
+                vipMetadata: msg.sender.profile?.vipMetadata,
                 isOnline: userConnections.has(msg.senderId)
               },
               targetType: "channel",
@@ -907,7 +913,9 @@ export function setupWebSockets(io: Server) {
             username: user?.username, 
             membership: user?.profile?.membershipType || "NONE",
             level: user?.profile?.level || 1,
-            avatar: user?.profile?.avatarUrl
+            avatar: user?.profile?.avatarUrl,
+            bannerUrl: user?.profile?.bannerUrl,
+            vipMetadata: user?.profile?.vipMetadata
           },
           targetType: "channel",
           targetId: target.id,
