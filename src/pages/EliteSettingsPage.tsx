@@ -27,7 +27,8 @@ import {
   Upload,
   Layers,
   Settings2,
-  Lock
+  Lock,
+  Trophy
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { motion, AnimatePresence } from "motion/react";
