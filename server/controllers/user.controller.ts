@@ -38,6 +38,16 @@ export class UserController {
     }
   }
 
+  static async changePassword(req: AuthenticatedRequest, res: Response) {
+    try {
+      const { current_password, new_password } = req.body;
+      await UserService.changePassword(req.user!.userId, current_password, new_password);
+      res.json({ status: "success", message: "Password updated successfully" });
+    } catch (error: any) {
+      res.status(400).json({ status: "error", error: { code: "PASSWORD_CHANGE_FAILED", message: error.message } });
+    }
+  }
+
   static async getProfile(req: AuthenticatedRequest, res: Response) {
     try {
       const user = await UserService.getProfileByUsername(req.params.username);

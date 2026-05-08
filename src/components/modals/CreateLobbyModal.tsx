@@ -117,7 +117,7 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
         className="bg-[#0b0c10] border border-white/5 rounded-3xl w-full max-w-[1000px] overflow-hidden shadow-2xl flex max-h-[90vh] md:flex-row flex-col"
       >
         {/* Left Panel: Live Preview */}
-        <div className="w-full md:w-[350px] bg-[#111216] border-l border-white/5 p-6 flex flex-col shrink-0 relative overflow-y-auto">
+        <div className="hidden md:flex w-[350px] bg-[#111216] border-l border-white/5 p-6 flex-col shrink-0 relative overflow-y-auto">
           <div className="flex items-center gap-2 mb-6">
             <span className="h-2 w-2 rounded-full bg-neon-blue animate-pulse" />
             <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Live Preview</span>

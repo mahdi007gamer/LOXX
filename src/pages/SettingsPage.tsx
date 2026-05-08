@@ -1,8 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Sidebar } from "../components/layout/Sidebar";
 import { NeonCard } from "../components/ui/NeonCard";
 import { GlowButton } from "../components/ui/GlowButton";
 import { Input } from "../components/ui/Input";
+import api from "../lib/api";
+import { toast } from "react-hot-toast";
 import { 
   User, 
   Bell, 
@@ -27,6 +29,78 @@ type SettingsTab = "profile" | "security" | "notifications" | "ui" | "region";
 
 export const SettingsPage = () => {
   const [activeTab, setActiveTab] = useState<SettingsTab>("profile");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  
+  const [formData, setFormData] = useState({
+    displayName: "",
+    bio: "",
+    username: "",
+    discord: "",
+    twitter: "",
+    region: "Middle East",
+    language: "Persian",
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: ""
+  });
+
+  useEffect(() => {
+    fetchUserData();
+  }, []);
+
+  const fetchUserData = async () => {
+    try {
+      const res = await api.get("/auth/me");
+      const user = res.data.data;
+      setFormData(prev => ({
+        ...prev,
+        displayName: user.displayName || "",
+        bio: user.bio || "",
+        username: user.username || "",
+        region: user.region || "Middle East",
+      }));
+    } catch (err) {
+      toast.error("خطا در دریافت اطلاعات کاربر");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    setSaving(true);
+    try {
+      await api.patch("/user/profile", {
+        display_name: formData.displayName,
+        bio: formData.bio,
+        region: formData.region
+      });
+      toast.success("پروفایل با موفقیت بروزرسانی شد");
+    } catch (err: any) {
+      toast.error(err.response?.data?.error?.message || "خطا در بروزرسانی");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handlePasswordChange = async () => {
+    if (formData.newPassword !== formData.confirmPassword) {
+      return toast.error("رمز عبور جدید و تکرار آن مطابقت ندارند");
+    }
+    setSaving(true);
+    try {
+      await api.patch("/user/security/password", {
+        current_password: formData.currentPassword,
+        new_password: formData.newPassword
+      });
+      toast.success("رمز عبور با موفقیت تغییر کرد");
+      setFormData(prev => ({ ...prev, currentPassword: "", newPassword: "", confirmPassword: "" }));
+    } catch (err: any) {
+      toast.error(err.response?.data?.error?.message || "خطا در تغییر رمز عبور");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const tabs = [
     { id: "profile", icon: User, label: "پروفایل عمومی" },
@@ -63,13 +137,25 @@ export const SettingsPage = () => {
         <hr className="border-white/5" />
 
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-          <Input label="نام نمایشی" placeholder="Ali_Gamer_98" />
-          <Input label="آیدی یکتا (Handle)" placeholder="aligamer" />
+          <Input 
+             label="نام نمایشی" 
+             placeholder="Ali_Gamer_98" 
+             value={formData.displayName}
+             onChange={(e) => setFormData(p => ({ ...p, displayName: e.target.value }))}
+          />
+          <Input 
+             label="آیدی یکتا (Handle)" 
+             placeholder="aligamer" 
+             value={formData.username}
+             disabled
+          />
           <div className="sm:col-span-2">
             <label className="block px-1 text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2 italic">درباره شما (Bio)</label>
             <textarea 
               className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-gray-700 transition-all focus:border-neon-blue/50 focus:outline-none h-32 resize-none"
               placeholder="کمی در مورد خودتان، بازی‌هایی که دوست دارید و ... بنویسید"
+              value={formData.bio}
+              onChange={(e) => setFormData(p => ({ ...p, bio: e.target.value }))}
             />
           </div>
         </div>
@@ -79,14 +165,31 @@ export const SettingsPage = () => {
         <div>
           <h4 className="text-[10px] font-black text-neon-blue uppercase tracking-widest mb-6 italic">شبکه‌های اجتماعی</h4>
           <div className="space-y-4">
-            <Input label="دیسکورد" icon={<MessageSquare size={14} className="text-gray-600" />} placeholder="Gamer#1234" />
-            <Input label="توییتر (X)" icon={<Zap size={14} className="text-gray-600" />} placeholder="@gamer_handle" />
+            <Input 
+               label="دیسکورد" 
+               icon={<MessageSquare size={14} className="text-gray-600" />} 
+               placeholder="Gamer#1234" 
+               value={formData.discord}
+               onChange={(e) => setFormData(p => ({ ...p, discord: e.target.value }))}
+            />
+            <Input 
+               label="توییتر (X)" 
+               icon={<Zap size={14} className="text-gray-600" />} 
+               placeholder="@gamer_handle" 
+               value={formData.twitter}
+               onChange={(e) => setFormData(p => ({ ...p, twitter: e.target.value }))}
+            />
           </div>
         </div>
 
         <div className="flex justify-end pt-4 border-t border-white/5">
-          <GlowButton variant="blue" className="px-10 h-10 text-[11px] font-black uppercase italic">
-            ذخیره تغییرات پروفایل
+          <GlowButton 
+             variant="blue" 
+             className="px-10 h-10 text-[11px] font-black uppercase italic"
+             onClick={handleSaveProfile}
+             disabled={saving}
+          >
+            {saving ? "در حال ذخیره..." : "ذخیره تغییرات پروفایل"}
           </GlowButton>
         </div>
       </NeonCard>
@@ -100,9 +203,34 @@ export const SettingsPage = () => {
           <h3 className="font-black text-white italic mb-1">تغییر رمز عبور</h3>
           <p className="text-[10px] text-gray-500 font-bold uppercase mb-6 italic">برای امنیت بیشتر از رمزهای طولانی استفاده کنید</p>
           <div className="space-y-6 max-w-md">
-            <Input label="رمز عبور فعلی" type="password" />
-            <Input label="رمز عبور جدید" type="password" />
-            <Input label="تکرار رمز عبور جدید" type="password" />
+            <Input 
+               label="رمز عبور فعلی" 
+               type="password" 
+               value={formData.currentPassword}
+               onChange={(e) => setFormData(p => ({ ...p, currentPassword: e.target.value }))}
+            />
+            <Input 
+               label="رمز عبور جدید" 
+               type="password" 
+               value={formData.newPassword}
+               onChange={(e) => setFormData(p => ({ ...p, newPassword: e.target.value }))}
+            />
+            <Input 
+               label="تکرار رمز عبور جدید" 
+               type="password" 
+               value={formData.confirmPassword}
+               onChange={(e) => setFormData(p => ({ ...p, confirmPassword: e.target.value }))}
+            />
+          </div>
+          <div className="mt-6">
+            <GlowButton 
+               variant="purple" 
+               className="px-10 h-10 text-[11px] font-black uppercase italic"
+               onClick={handlePasswordChange}
+               disabled={saving}
+            >
+              {saving ? "در حال تغییر..." : "به‌روزرسانی رمز عبور"}
+            </GlowButton>
           </div>
         </div>
         

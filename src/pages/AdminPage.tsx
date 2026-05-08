@@ -15,15 +15,20 @@ export const AdminPage = () => {
   const [isGameModalOpen, setIsGameModalOpen] = useState(false);
   const [selectedGame, setSelectedGame] = useState<any | null>(null);
 
+  const [searchTerm, setSearchTerm] = useState("");
+
   useEffect(() => {
-    fetchData();
-  }, [activeTab]);
+    const timer = setTimeout(() => {
+      fetchData();
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [activeTab, searchTerm]);
 
   const fetchData = async () => {
     setLoading(true);
     try {
       if (activeTab === "users") {
-        const res = await api.get("/admin/users").catch(() => ({ data: { data: [] } }));
+        const res = await api.get(`/admin/users?search=${searchTerm}`).catch(() => ({ data: { data: [] } }));
         setUsers(res.data.data || []);
       } else {
         const res = await api.get("/games");
@@ -117,8 +122,20 @@ export const AdminPage = () => {
           </div>
 
           {activeTab === "users" ? (
-            <div className="glass rounded-[32px] overflow-hidden border border-white/5 shadow-2xl">
-              <table className="w-full text-right">
+            <div className="space-y-4">
+              <div className="relative">
+                <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
+                <input 
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="جستجو در نام کاربری یا ایمیل..."
+                  className="w-full bg-white/5 border border-white/5 rounded-2xl py-4 pr-12 text-sm text-white focus:outline-none focus:border-neon-blue/50 transition-all font-bold"
+                />
+              </div>
+
+              <div className="glass rounded-[32px] overflow-hidden border border-white/5 shadow-2xl">
+                <table className="w-full text-right">
                 <thead>
                   <tr className="bg-white/5 text-gray-500 text-[10px] font-black uppercase tracking-widest">
                     <th className="px-6 py-4">کاربر</th>
@@ -167,6 +184,7 @@ export const AdminPage = () => {
                 </tbody>
               </table>
             </div>
+           </div>
           ) : (
             <div className="space-y-6">
                <div className="flex justify-between items-center bg-white/5 p-6 rounded-[32px] border border-white/5">

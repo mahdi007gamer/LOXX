@@ -62,12 +62,17 @@ export const LobbiesPage = () => {
     fetchLobbies();
   };
 
-  const filteredLobbies = lobbies.filter(lobby => {
-    const matchesSearch = lobby.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                         lobby.game?.title.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesGame = activeFilter === "all" || lobby.gameId === activeFilter;
-    return matchesSearch && matchesGame;
-  });
+  const filteredLobbies = lobbies
+    .filter(lobby => {
+      const matchesSearch = lobby.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                           lobby.game?.title.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesGame = activeFilter === "all" || lobby.gameId === activeFilter;
+      return matchesSearch && matchesGame;
+    })
+    .sort((a, b) => {
+      if (a.isPrivate === b.isPrivate) return 0;
+      return a.isPrivate ? 1 : -1;
+    });
 
   return (
     <div className="flex min-h-[calc(100vh-64px)]">
@@ -129,7 +134,7 @@ export const LobbiesPage = () => {
           </div>
 
           {/* Lobbies Grid */}
-          <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:gap-6 md:gap-8 sm:grid-cols-2 xl:grid-cols-3">
             {loading ? (
               [1, 2, 3, 4, 5, 6].map(i => <CardSkeleton key={i} />)
             ) : filteredLobbies.length === 0 ? (
@@ -148,34 +153,36 @@ export const LobbiesPage = () => {
                 return (
                   <motion.div
                     key={lobby.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: i * 0.05 }}
                   >
                     <NeonCard 
                       className={cn(
-                        "group relative flex flex-col h-full overflow-hidden p-0 border-white/5 bg-[#0a0a0f] transition-all hover:border-neon-blue/20 cursor-pointer",
-                        lobby.isPrivate && "opacity-90"
+                        "group relative flex flex-col h-full overflow-hidden p-0 border-white/5 bg-[#0a0a0f] transition-all hover:border-neon-blue/20",
+                        lobby.isPrivate && "opacity-80 grayscale-[0.5]"
                       )}
-                      onClick={() => navigate(`/lobby/${lobby.id}`)}
+                      onClick={() => !lobby.isPrivate && navigate(`/lobby/${lobby.id}`)}
                     >
                       {/* Hover Overlay */}
-                      <div className="absolute inset-0 z-50 bg-[#0a0a0f]/40 backdrop-blur-[2px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none">
-                         <GlowButton 
-                           variant={lobby.isPrivate ? "purple" : "blue"} 
-                           className="px-8 h-12 scale-90 group-hover:scale-100 shadow-[0_0_40px_rgba(0,229,255,0.6)]"
-                         >
-                           {lobby.isPrivate ? "کد امنیتی" : "ورود به لابی"}
-                         </GlowButton>
-                      </div>
+                      {!lobby.isPrivate && (
+                        <div className="absolute inset-0 z-50 bg-[#0a0a0f]/40 backdrop-blur-[2px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none">
+                           <GlowButton 
+                             variant="blue" 
+                             className="px-8 h-12 scale-90 group-hover:scale-100 shadow-[0_0_40px_rgba(0,229,255,0.6)]"
+                           >
+                             ورود به لابی
+                           </GlowButton>
+                        </div>
+                      )}
 
                       {/* Game Banner */}
-                      <div className="relative h-40 w-full overflow-hidden shrink-0">
+                      <div className="relative h-44 w-full overflow-hidden shrink-0">
                         {lobby.isPrivate && (
-                          <div className="absolute inset-0 z-10 bg-black/50 backdrop-blur-[1px] flex items-center justify-center">
-                             <div className="flex flex-col items-center gap-2 text-white/50">
-                               <Lock size={28} />
-                               <span className="text-[9px] font-black uppercase tracking-[0.2em]">PRIVATE LOBBY</span>
+                          <div className="absolute inset-0 z-10 bg-black/60 backdrop-blur-[2px] flex items-center justify-center">
+                             <div className="flex flex-col items-center gap-2 text-white">
+                               <Lock size={32} className="text-neon-purple animate-pulse" />
+                               <span className="text-[10px] font-black uppercase tracking-[0.3em] text-neon-purple">PRIVATE SERVER</span>
                              </div>
                           </div>
                         )}
@@ -185,9 +192,9 @@ export const LobbiesPage = () => {
                           className="h-full w-full object-cover transition-transform duration-1000 group-hover:scale-110"
                           referrerPolicy="no-referrer"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0f] via-transparent to-transparent opacity-80" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0f] via-transparent to-transparent opacity-90" />
                         
-                        <div className="absolute top-4 right-4 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase backdrop-blur-md border border-white/10 bg-white/5 text-white">
+                        <div className="absolute top-4 right-4 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase backdrop-blur-md border border-white/10 bg-white/10 text-white">
                            <Clock size={12} className="text-neon-blue" />
                            <span>{new Date(lobby.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                         </div>
@@ -198,18 +205,18 @@ export const LobbiesPage = () => {
                         </div>
                       </div>
 
-                      <div className="p-6 pt-10 flex-1 flex flex-col">
+                      <div className="p-5 pt-10 flex-1 flex flex-col">
                         <div className="mb-4 flex items-center justify-between">
-                          <div className="rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-tight border truncate max-w-[150px] bg-white/5 text-gray-400 border-white/10 group-hover:border-neon-blue/20 group-hover:text-neon-blue transition-all">
+                          <div className="rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-tight border truncate max-w-[130px] bg-white/5 text-gray-500 border-white/10 group-hover:border-neon-blue/20 group-hover:text-neon-blue transition-all">
                             {lobby.game?.title}
                           </div>
                           <div className="flex items-center gap-2 text-white shrink-0">
                             <Users size={14} className="text-neon-blue" />
-                            <span className="text-xs font-black">{lobby.members?.length || 0} / {lobby.maxPlayers}</span>
+                            <span className="text-[11px] font-black">{lobby.members?.length || 0} / {lobby.maxPlayers}</span>
                           </div>
                         </div>
                         
-                        <h3 className="mb-4 text-xl font-black text-white line-clamp-1 group-hover:text-neon-blue transition-colors">
+                        <h3 className="mb-4 text-lg md:text-xl font-black text-white line-clamp-1 group-hover:text-neon-blue transition-colors">
                           {lobby.title}
                         </h3>
 
@@ -257,24 +264,31 @@ export const LobbiesPage = () => {
                               <div className="h-0.5 flex-1 bg-white/5" />
                            </div>
 
-                           <div className="flex items-center justify-between">
-                              <div className="flex -space-x-3">
+                           <div className="flex items-center justify-between gap-3">
+                              <div className="flex -space-x-2.5">
                                 {lobby.members?.slice(0, 4)?.map((m: any) => (
-                                   <div key={m.userId} className="h-8 w-8 rounded-full border-2 border-dark-bg bg-white/10 flex items-center justify-center overflow-hidden ring-1 ring-white/5">
+                                   <div key={m.userId} className="h-7 w-7 rounded-full border-2 border-dark-bg bg-white/10 flex items-center justify-center overflow-hidden ring-1 ring-white/5">
                                      {m.user?.profile?.avatarUrl ? <img src={m.user.profile.avatarUrl} alt="" className="w-full h-full object-cover" /> : <span className="text-[10px]">👤</span>}
                                    </div>
                                 ))}
                                 {lobby.members?.length > 4 && (
-                                   <div className="h-8 w-8 rounded-full border-2 border-dark-bg bg-white/5 flex items-center justify-center text-[9px] font-black text-gray-500">+{(lobby.members.length - 4)}</div>
+                                   <div className="h-7 w-7 rounded-full border-2 border-dark-bg bg-white/5 flex items-center justify-center text-[9px] font-black text-gray-500">+{(lobby.members.length - 4)}</div>
                                 )}
                               </div>
                               
                               <GlowButton 
                                 variant={lobby.isPrivate ? "purple" : "blue"} 
-                                className="h-10 px-6 !rounded-xl text-[10px] font-black uppercase italic tracking-wider transition-transform hover:scale-105 active:scale-95"
-                                onClick={() => navigate(`/lobby/${lobby.id}`)}
+                                className={cn(
+                                  "h-10 px-6 !rounded-xl text-[11px] font-black uppercase italic tracking-wider transition-all",
+                                  lobby.isPrivate ? "opacity-50 cursor-not-allowed grayscale" : "hover:scale-105 active:scale-95"
+                                )}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (!lobby.isPrivate) navigate(`/lobby/${lobby.id}`);
+                                }}
+                                disabled={lobby.isPrivate}
                               >
-                                {lobby.isPrivate ? "کد امنیتی" : "ورود به لابی"}
+                                {lobby.isPrivate ? "خصوصی" : "ورود"}
                               </GlowButton>
                            </div>
                         </div>

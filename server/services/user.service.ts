@@ -1,4 +1,5 @@
 import prisma from "../utils/prisma.ts";
+import argon2 from "argon2";
 
 export class UserService {
   static async getMe(userId: string) {
@@ -24,6 +25,20 @@ export class UserService {
         region: data.region,
         lastActivity: new Date()
       }
+    });
+  }
+
+  static async changePassword(userId: string, current: string, next: string) {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new Error("User not found");
+
+    const valid = await argon2.verify(user.passwordHash, current);
+    if (!valid) throw new Error("رمز عبور فعلی اشتباه است");
+
+    const hashedPassword = await argon2.hash(next);
+    return prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash: hashedPassword }
     });
   }
 

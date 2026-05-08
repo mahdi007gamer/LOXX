@@ -3,7 +3,17 @@ import prisma from "../utils/prisma.ts";
 
 export const getAllUsers = async (req: Request, res: Response) => {
   try {
+    const { search } = req.query;
+    
+    const whereClause = search ? {
+      OR: [
+        { username: { contains: String(search), mode: 'insensitive' } as any },
+        { email: { contains: String(search), mode: 'insensitive' } as any }
+      ]
+    } : {};
+
     const users = await prisma.user.findMany({
+      where: whereClause,
       select: {
         id: true,
         username: true,
