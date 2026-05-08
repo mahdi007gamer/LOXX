@@ -52,11 +52,14 @@ export interface Friend {
   username: string;
   displayName: string;
   avatar?: string;
+  avatarUrl?: string;
   status: FriendStatus;
   currentGame?: string;
   lastSeen?: string;
   level: number;
   membership?: MembershipType;
+  vipMetadata?: any;
+  bannerUrl?: string;
   isFavorite: boolean;
   isBlocked: boolean;
   isMuted: boolean;
@@ -68,9 +71,13 @@ export interface FriendRequest {
   username: string;
   displayName: string;
   avatar?: string;
+  avatarUrl?: string;
   level: number;
   type: "incoming" | "outgoing";
   timestamp: string;
+  membership?: MembershipType;
+  vipMetadata?: any;
+  bannerUrl?: string;
 }
 
 export enum BadgeType {
@@ -108,6 +115,7 @@ export interface ChatMessage {
   senderId: string;
   senderName: string;
   senderAvatar?: string;
+  avatarUrl?: string; // fallback
   isOnline?: boolean;
   senderLevel: number;
   senderColor?: string; // Color based on level

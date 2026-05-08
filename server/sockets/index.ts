@@ -258,11 +258,23 @@ export function setupWebSockets(io: Server) {
 
         socket.join(`lobby:${lobbyId}`);
         
-        const user = await prisma.user.findUnique({ where: { id: userId } });
+        const user = await prisma.user.findUnique({ 
+          where: { id: userId },
+          include: { profile: true } 
+        });
         
         // Broadcast joined event
         lobbyNs.to(`lobby:${lobbyId}`).emit("lobby.member_joined", {
-          user: { id: userId, username: user?.username, role: member.role },
+          user: { 
+            id: userId, 
+            username: user?.username, 
+            role: member.role,
+            avatarUrl: user?.profile?.avatarUrl,
+            bannerUrl: user?.profile?.bannerUrl,
+            level: user?.profile?.level || 1,
+            membership: user?.profile?.membershipType || "NONE",
+            vipMetadata: user?.profile?.vipMetadata ? JSON.parse(user.profile.vipMetadata.toString()) : undefined
+          },
           membersCount: lobby.members.length + 1
         });
 
@@ -301,7 +313,12 @@ export function setupWebSockets(io: Server) {
                 username: m.user.username,
                 role: m.role,
                 isReady: m.isReady,
-                micMuted: !m.micStatus
+                micMuted: !m.micStatus,
+                avatarUrl: m.user.profile?.avatarUrl,
+                bannerUrl: m.user.profile?.bannerUrl,
+                level: m.user.profile?.level || 1,
+                membership: m.user.profile?.membershipType || "NONE",
+                vipMetadata: m.user.profile?.vipMetadata ? JSON.parse(m.user.profile.vipMetadata.toString()) : undefined
               })) || [],
               messages: updatedLobby.messages?.map((m: any) => ({
                 id: m.id.toString(),

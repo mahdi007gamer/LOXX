@@ -42,6 +42,11 @@ interface Player {
   id: string;
   name: string;
   avatar: string;
+  avatarUrl?: string; // fallback
+  level?: number;
+  membership?: MembershipType;
+  vipMetadata?: any;
+  bannerUrl?: string;
   rank: string;
   isHost?: boolean;
   isReady: boolean;
@@ -56,6 +61,7 @@ interface Player {
 interface Message {
   id: string;
   user: string;
+  avatarUrl?: string;
   text: string;
   time: string;
   isSystem?: boolean;
@@ -154,6 +160,11 @@ export const LobbyRoomPage = () => {
       id: p.userId,
       name: p.username || "Guest Player",
       avatar: p.role === "HOST" ? "👑" : "👤",
+      avatarUrl: p.avatarUrl,
+      level: p.level,
+      membership: p.membership as MembershipType,
+      vipMetadata: p.vipMetadata,
+      bannerUrl: p.bannerUrl,
       rank: "Verified Gamer",
       isHost: p.role === "HOST",
       isReady: !!p.isReady,
@@ -331,6 +342,7 @@ export const LobbyRoomPage = () => {
         id: m.id,
         fromUserId: m.from?.userId,
         user: m.from?.username || "بازیکن",
+        avatarUrl: (m.from as any)?.avatar || (m.from as any)?.avatarUrl,
         text: m.content,
         time: m.createdAt ? new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "Recently"
       })) || [])
@@ -557,12 +569,12 @@ export const LobbyRoomPage = () => {
                     if (p && !p.id.startsWith("slot-")) {
                       openProfile({
                         senderName: p.name,
-                        senderAvatar: p.avatar,
-                        senderLevel: 1, // Lobby players might not have level in current interface
+                        senderAvatar: p.avatarUrl || p.avatar,
+                        senderLevel: p.level || 1,
                         id: p.id,
-                        membership: (p as any).membership || MembershipType.NONE,
-                        vipMetadata: (p as any).vipMetadata,
-                        bannerUrl: (p as any).bannerUrl
+                        membership: p.membership || MembershipType.NONE,
+                        vipMetadata: p.vipMetadata,
+                        bannerUrl: p.bannerUrl || p.avatarUrl
                       }, p.id === user?.id);
                     }
                   }}
@@ -1454,8 +1466,12 @@ const ChatPanel = ({ messages, players, inputMessage, setInputMessage, onSend, o
                 "flex items-start gap-3 max-w-[85%]",
                 isYou ? "flex-row" : "flex-row-reverse"
               )}>
-                <div className="h-8 w-8 rounded-xl bg-white/5 border border-white/10 flex-shrink-0 flex items-center justify-center text-lg mt-1 font-black uppercase">
-                   {isYou ? "ME" : msg.user.charAt(0)}
+                <div className="h-8 w-8 rounded-xl bg-white/5 border border-white/10 flex-shrink-0 flex items-center justify-center text-lg mt-1 font-black uppercase overflow-hidden">
+                   {msg.avatarUrl && (msg.avatarUrl.length > 5 || msg.avatarUrl.startsWith("/") || msg.avatarUrl.includes(".")) ? (
+                     <img src={msg.avatarUrl} alt="" className="w-full h-full object-cover" />
+                   ) : (
+                     isYou ? "ME" : msg.user.charAt(0)
+                   )}
                 </div>
                 <div className={cn("flex-1 space-y-1", isYou ? "text-right" : "text-left")}>
                   <div className={cn("flex items-center gap-3", isYou ? "flex-row" : "flex-row-reverse")}>

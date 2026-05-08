@@ -314,12 +314,12 @@ export const DashboardPage = () => {
                               className="relative group/avatar cursor-pointer"
                               onClick={() => openProfile({
                                 senderName: friend.displayName,
-                                senderAvatar: friend.avatar,
+                                senderAvatar: friend.avatar || friend.avatarUrl,
                                 senderLevel: friend.level || 1,
                                 id: friend.id,
-                                membership: (friend as any).membership || MembershipType.NONE,
-                                vipMetadata: (friend as any).vipMetadata,
-                                bannerUrl: (friend as any).bannerUrl
+                                membership: friend.membership || MembershipType.NONE,
+                                vipMetadata: friend.vipMetadata,
+                                bannerUrl: friend.bannerUrl || friend.avatarUrl
                               }, false)}
                             >
                               <div className="h-10 w-10 rounded-full bg-white/10 flex items-center justify-center text-md overflow-hidden border border-white/5 group-hover/avatar:border-neon-blue/50 transition-all">

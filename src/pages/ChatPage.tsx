@@ -103,13 +103,13 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
           e.stopPropagation();
           openProfile({
             senderName: message.senderName,
-            senderAvatar: message.senderAvatar,
-            bannerUrl: (message as any).bannerUrl,
+            senderAvatar: message.senderAvatar || message.avatarUrl,
+            bannerUrl: (message as any).bannerUrl || message.avatarUrl,
             vipMetadata: (message as any).vipMetadata,
             senderLevel: message.senderLevel,
             senderBadges: message.senderBadges,
             id: message.senderId,
-            membership: isVIP ? MembershipType.VIP : isPLUS ? MembershipType.PLUS : MembershipType.NONE
+            membership: (message as any).membership ? (message as any).membership : isVIP ? MembershipType.VIP : isPLUS ? MembershipType.PLUS : MembershipType.NONE
           }, message.self);
         }}
       >
@@ -119,10 +119,10 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
           isVIP && "border-2 border-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.4)]",
           isPLUS && "border-2 border-neon-blue shadow-[0_0_10px_rgba(0,229,255,0.3)]"
         )}>
-          {(message.senderAvatar && (message.senderAvatar.length > 5 || message.senderAvatar.startsWith("/") || message.senderAvatar.includes(".") || message.senderAvatar.includes("data:image"))) ? (
-            <img src={message.senderAvatar} alt={message.senderName} className="w-full h-full object-cover rounded-xl" />
+          {((message.senderAvatar || message.avatarUrl) && ((message.senderAvatar || message.avatarUrl)!.length > 5 || (message.senderAvatar || message.avatarUrl)!.startsWith("/") || (message.senderAvatar || message.avatarUrl)!.includes(".") || (message.senderAvatar || message.avatarUrl)!.includes("data:image"))) ? (
+            <img src={message.senderAvatar || message.avatarUrl} alt={message.senderName} className="w-full h-full object-cover rounded-xl" />
           ) : (
-            message.senderAvatar || (message.senderName ? message.senderName[0] : "?")
+            message.senderAvatar || message.avatarUrl || (message.senderName ? message.senderName[0] : "?")
           )}
           
           <div 

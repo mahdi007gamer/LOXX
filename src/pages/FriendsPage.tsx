@@ -84,13 +84,13 @@ const FriendItem = ({
             e.stopPropagation();
             openProfile({
               senderName: friend.displayName,
-              senderAvatar: friend.avatar,
+              senderAvatar: friend.avatarUrl || friend.avatar,
               senderLevel: friend.level,
               id: friend.id,
               // We might not have full metadata here, but we can pass basic info
               membership: (friend as any).membership || MembershipType.NONE,
               vipMetadata: (friend as any).vipMetadata,
-              bannerUrl: (friend as any).bannerUrl
+              bannerUrl: (friend as any).bannerUrl || (friend as any).avatarUrl || friend.avatar
             }, false);
           }}>
             <div className="h-12 w-12 rounded-full bg-white/10 overflow-hidden flex items-center justify-center border border-white/5 group-hover/avatar:border-neon-blue/50 transition-all">
@@ -498,12 +498,12 @@ export const FriendsPage = () => {
                              onClick={() => {
                                openProfile({
                                  senderName: req.displayName,
-                                 senderAvatar: req.avatar,
+                                 senderAvatar: req.avatarUrl || req.avatar,
                                  senderLevel: (req as any).level || 1,
                                  id: req.userId || req.id,
                                  membership: (req as any).membership || MembershipType.NONE,
                                  vipMetadata: (req as any).vipMetadata,
-                                 bannerUrl: (req as any).bannerUrl
+                                 bannerUrl: (req as any).bannerUrl || (req as any).avatarUrl || req.avatar
                                }, false);
                              }}
                             >

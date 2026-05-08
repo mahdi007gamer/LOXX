@@ -128,11 +128,12 @@ export const LeaderboardPage = () => {
                    <div className="h-28 w-28 rounded-full border-4 border-gray-400/20 bg-white/5 mb-4 flex items-center justify-center text-gray-400 relative group p-1 shrink-0 cursor-pointer hover:scale-105 transition-all"
                       onClick={() => openProfile({
                         senderName: podium[1].username,
-                        senderAvatar: podium[1].avatar,
+                        senderAvatar: podium[1].avatarUrl || podium[1].avatar,
                         senderLevel: podium[1].level || 1,
                         id: podium[1].id,
                         membership: podium[1].membership || MembershipType.NONE,
-                        vipMetadata: podium[1].vipMetadata
+                        vipMetadata: podium[1].vipMetadata,
+                        bannerUrl: podium[1].bannerUrl || podium[1].avatarUrl
                       }, false)}
                     >
                       <div className="absolute -top-2 -right-2 h-10 w-10 rounded-2xl bg-gray-400/30 flex items-center justify-center text-gray-200 border border-white/20 shadow-[0_0_15px_rgba(255,255,255,0.1)] z-30 backdrop-blur-xl">
@@ -157,11 +158,12 @@ export const LeaderboardPage = () => {
                       <div className="h-36 w-36 rounded-full border-4 border-yellow-400/80 bg-dark-bg flex items-center justify-center text-yellow-400 shadow-[0_0_50px_rgba(250,204,21,0.4)] relative z-10 p-1 cursor-pointer hover:scale-105 transition-all"
                          onClick={() => openProfile({
                            senderName: podium[0].username,
-                           senderAvatar: podium[0].avatar,
+                           senderAvatar: podium[0].avatarUrl || podium[0].avatar,
                            senderLevel: podium[0].level || 1,
                            id: podium[0].id,
                            membership: podium[0].membership || MembershipType.NONE,
-                           vipMetadata: podium[0].vipMetadata
+                           vipMetadata: podium[0].vipMetadata,
+                           bannerUrl: podium[0].bannerUrl || podium[0].avatarUrl
                          }, false)}
                        >
                          <div className="w-full h-full rounded-full bg-yellow-400/10 flex items-center justify-center border border-yellow-400/20 overflow-hidden">
@@ -182,11 +184,12 @@ export const LeaderboardPage = () => {
                    <div className="h-28 w-28 rounded-full border-4 border-orange-400/20 bg-white/5 mb-4 flex items-center justify-center text-orange-400 relative group p-1 shrink-0 cursor-pointer hover:scale-105 transition-all"
                       onClick={() => openProfile({
                         senderName: podium[2].username,
-                        senderAvatar: podium[2].avatar,
+                        senderAvatar: podium[2].avatarUrl || podium[2].avatar,
                         senderLevel: podium[2].level || 1,
                         id: podium[2].id,
                         membership: podium[2].membership || MembershipType.NONE,
-                        vipMetadata: podium[2].vipMetadata
+                        vipMetadata: podium[2].vipMetadata,
+                        bannerUrl: podium[2].bannerUrl || podium[2].avatarUrl
                       }, false)}
                     >
                       <div className="absolute -top-2 -right-2 h-10 w-10 rounded-2xl bg-orange-400/30 flex items-center justify-center text-orange-200 border border-white/20 shadow-[0_0_15px_rgba(251,146,60,0.1)] z-30 backdrop-blur-xl">
@@ -216,11 +219,12 @@ export const LeaderboardPage = () => {
                                className="h-10 w-10 md:h-12 md:w-12 rounded-xl bg-white/5 flex items-center justify-center text-gray-400 overflow-hidden cursor-pointer hover:ring-2 hover:ring-neon-blue/40 transition-all"
                                onClick={() => openProfile({
                                  senderName: player.username,
-                                 senderAvatar: player.avatar,
+                                 senderAvatar: player.avatarUrl || player.avatar,
                                  senderLevel: player.level || 1,
                                  id: player.id,
                                  membership: player.membership || MembershipType.NONE,
-                                 vipMetadata: player.vipMetadata
+                                 vipMetadata: player.vipMetadata,
+                                 bannerUrl: player.bannerUrl || player.avatarUrl
                                }, false)}
                              >
                               {player.avatar ? <img src={player.avatar} alt={player.username} className="w-full h-full object-cover" /> : <User size={24} />}

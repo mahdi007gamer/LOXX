@@ -117,7 +117,11 @@ export class RankingService {
       username: p.user.username,
       points: p.xp,
       level: p.level,
-      avatar: p.user.profile?.avatarUrl,
+      avatar: p.avatarUrl,
+      avatarUrl: p.avatarUrl,
+      bannerUrl: p.bannerUrl,
+      membership: p.membershipType,
+      vipMetadata: p.vipMetadata ? JSON.parse(p.vipMetadata.toString()) : undefined,
       trend: i < 3 ? "up" : i > 10 ? "down" : "stable"
     }));
 

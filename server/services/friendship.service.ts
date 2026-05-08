@@ -28,7 +28,12 @@ export class FriendshipService {
         status: isOnline ? "online" : "offline",
         activity: "Online",
         isFavorite: f.isFavorite,
-        isMuted: f.isMuted
+        isMuted: f.isMuted,
+        avatarUrl: friend.profile?.avatarUrl,
+        bannerUrl: friend.profile?.bannerUrl,
+        membership: friend.profile?.membershipType,
+        vipMetadata: friend.profile?.vipMetadata ? JSON.parse(friend.profile.vipMetadata.toString()) : undefined,
+        level: friend.profile?.level || 1
       };
     });
   }
@@ -80,7 +85,12 @@ export class FriendshipService {
         username: otherUser.username,
         displayName: otherUser.profile?.displayName || otherUser.username,
         type: isIncoming ? "incoming" : "outgoing",
-        createdAt: r.createdAt
+        createdAt: r.createdAt,
+        avatarUrl: otherUser.profile?.avatarUrl,
+        bannerUrl: otherUser.profile?.bannerUrl,
+        membership: otherUser.profile?.membershipType,
+        vipMetadata: otherUser.profile?.vipMetadata ? JSON.parse(otherUser.profile.vipMetadata.toString()) : undefined,
+        level: otherUser.profile?.level || 1
       };
     });
   }

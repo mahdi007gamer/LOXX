@@ -11,6 +11,11 @@ interface LobbyMember {
   role: "HOST" | "PLAYER";
   isReady: boolean;
   micMuted?: boolean;
+  avatarUrl?: string;
+  bannerUrl?: string;
+  level?: number;
+  membership?: string;
+  vipMetadata?: any;
 }
 
 export interface ChatMessage {
@@ -19,6 +24,10 @@ export interface ChatMessage {
     userId: string;
     username: string;
     membership: string;
+    avatarUrl?: string;
+    bannerUrl?: string;
+    level?: number;
+    vipMetadata?: any;
   };
   content: string;
   createdAt: number;
