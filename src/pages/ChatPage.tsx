@@ -746,7 +746,7 @@ export const ChatPage: React.FC = () => {
       id: `game-${g.id}`,
       name: `چت ${g.title}`,
       type: "game" as const,
-      users: 15420, // Total Loxx members as requested
+      users: parseInt(g.playerCount?.replace(/[^0-9]/g, '') || '0') || 15420,
       icon: g.image
     }));
 
@@ -754,6 +754,13 @@ export const ChatPage: React.FC = () => {
   const activeChannel = allChannels.find(c => c.id === activeChannelId) || allChannels[0] || INITIAL_CHANNELS[0];
 
   const currentMessages = messages[activeChannelId] || [];
+
+  // Update member count based on active channel
+  useEffect(() => {
+    if (activeChannel) {
+      setMemberCount(activeChannel.users);
+    }
+  }, [activeChannel]);
 
   useEffect(() => {
     if (scrollRef.current && !showNewMessageButton) {

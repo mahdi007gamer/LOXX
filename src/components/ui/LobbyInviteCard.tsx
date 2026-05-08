@@ -1,8 +1,8 @@
 import React, { useMemo } from 'react';
 import useSWR from 'swr';
 import { Play, Users, Zap } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { api } from '../../lib/api';
+import { motion } from 'motion/react';
+import api from '../../lib/api';
 import { cn } from '../../lib/utils';
 import { GlowButton } from './GlowButton';
 import { useLobby } from '../../context/LobbyContext';
@@ -23,7 +23,7 @@ export const LobbyInviteCard: React.FC<LobbyInviteCardProps> = ({ initialData })
 
   // Combine initial + live state
   const currentLobby = lobby || initialData;
-  const isFull = lobby ? lobby.members?.length >= lobby.maxPlayers : false;
+  const isFull = lobby ? (lobby.members?.length || lobby.players?.length) >= lobby.maxPlayers : false;
   const isClosed = error?.response?.status === 404; // Deleted lobby
   const isPlaying = lobby ? ['STARTING', 'IN_PROGRESS'].includes(lobby.status) : false;
   
@@ -52,7 +52,7 @@ export const LobbyInviteCard: React.FC<LobbyInviteCardProps> = ({ initialData })
     }
   };
 
-  const slotsText = lobby ? `${lobby.members.length}/${lobby.maxPlayers}` : initialData.slots;
+  const slotsText = lobby ? `${lobby.members?.length || lobby.players?.length}/${lobby.maxPlayers}` : initialData.slots;
   const gameTitle = lobby?.game?.title || initialData.gameTitle;
   const region = lobby?.region || initialData.region;
 
