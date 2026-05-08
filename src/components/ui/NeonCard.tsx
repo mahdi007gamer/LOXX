@@ -23,12 +23,16 @@ export const NeonCard = ({
     blue: "border-white/10 bg-[#0a0a0f]",
     pink: "border-white/10 bg-[#0a0a0f]",
     purple: "border-white/10 bg-[#0a0a0f]",
+    green: "border-white/10 bg-[#0a0a0f]",
+    red: "border-white/10 bg-[#0a0a0f]",
   };
 
   const glowColors = {
-    blue: "border-neon-blue/50 shadow-[0_4px_20px_rgba(0,0,0,0.4)]",
-    pink: "border-neon-pink/50 shadow-[0_4px_20px_rgba(0,0,0,0.4)]",
-    purple: "border-neon-purple/50 shadow-[0_4px_20px_rgba(0,0,0,0.4)]",
+    blue: "border-neon-blue/50 shadow-[0_4px_20px_rgba(0,186,255,0.1)]",
+    pink: "border-neon-pink/50 shadow-[0_4px_20px_rgba(255,46,155,0.1)]",
+    purple: "border-neon-purple/50 shadow-[0_4px_20px_rgba(182,31,255,0.1)]",
+    green: "border-green-500/50 shadow-[0_4px_20px_rgba(34,197,94,0.1)]",
+    red: "border-red-500/50 shadow-[0_4px_20px_rgba(239,68,68,0.1)]",
   };
 
   return (
@@ -55,7 +59,9 @@ export const NeonCard = ({
         isHovered ? "opacity-15" : "opacity-0",
         variant === "blue" && "bg-neon-blue",
         variant === "pink" && "bg-neon-pink",
-        variant === "purple" && "bg-neon-purple"
+        variant === "purple" && "bg-neon-purple",
+        variant === "green" && "bg-green-500",
+        variant === "red" && "bg-red-500"
       )} />
       
       {/* Top reflection line */}

@@ -272,7 +272,9 @@ export const PremiumPage = () => {
                      <div className="space-y-4 mb-10 relative z-10">
                         {PLAN_FEATURES.PLUS.map((feat, i) => (
                            <div key={i} className="flex gap-3 items-start">
-                              <div className="h-5 w-5 rounded-full bg-neon-blue/10 flex items-center justify-center text-neon-blue mt-0.5 shrink-0"><Check size={12} /></div>
+                              <div className="h-6 w-6 rounded-lg bg-neon-blue/10 flex items-center justify-center text-neon-blue mt-0.5 shrink-0">
+                                {feat.icon}
+                              </div>
                               <div>
                                 <p className="text-xs font-black text-white italic uppercase tracking-tight">{feat.label}</p>
                                 <p className="text-[9px] text-gray-500 font-bold">{feat.detail}</p>
@@ -303,7 +305,9 @@ export const PremiumPage = () => {
                      <div className="space-y-4 mb-10 relative z-10">
                         {PLAN_FEATURES.VIP.map((feat, i) => (
                            <div key={i} className="flex gap-3 items-start">
-                              <div className="h-5 w-5 rounded-full bg-yellow-400/10 flex items-center justify-center text-yellow-400 mt-0.5 shrink-0"><Check size={12} /></div>
+                              <div className="h-6 w-6 rounded-lg bg-yellow-400/10 flex items-center justify-center text-yellow-400 mt-0.5 shrink-0">
+                                {feat.icon}
+                              </div>
                               <div>
                                 <p className="text-xs font-black text-white italic uppercase tracking-tight">{feat.label}</p>
                                 <p className="text-[9px] text-gray-500 font-bold">{feat.detail}</p>
@@ -495,8 +499,8 @@ export const PremiumPage = () => {
                 <NeonCard 
                   variant={paymentStatus === "APPROVED" ? "green" : (pendingPayment.type === "VIP" ? "purple" : "blue")}
                   className={cn(
-                    "p-12 text-center relative overflow-hidden transition-colors duration-700",
-                    paymentStatus === "APPROVED" ? "bg-green-500/10 border-green-500/30" : "bg-dark-card/50"
+                    "p-12 text-center relative overflow-hidden transition-all duration-700",
+                    paymentStatus === "APPROVED" ? "bg-green-500/10 border-green-500/40 shadow-[0_0_80px_rgba(34,197,94,0.15)]" : "bg-dark-card/50"
                   )}
                 >
                   <div className={cn(
@@ -504,19 +508,22 @@ export const PremiumPage = () => {
                     paymentStatus === "APPROVED" ? "text-green-500" : "text-neon-blue"
                   )} />
                   
-                  <div className="relative mt-8 mb-8 flex justify-center">
+                  <div className="relative mt-16 mb-8 flex justify-center z-10">
                     <div className={cn(
-                      "h-24 w-24 rounded-[32px] bg-white/5 flex items-center justify-center relative",
+                      "h-24 w-24 rounded-[32px] bg-white/5 flex items-center justify-center relative shadow-2xl",
                     )}>
-                       {paymentStatus === "APPROVED" ? (
-                         <CheckCircle2 size={48} className="text-green-500 animate-bounce" />
+                    {paymentStatus === "APPROVED" ? (
+                         <div className="relative">
+                            <CheckCircle2 size={64} className="text-green-400 animate-bounce relative z-20" />
+                            <div className="absolute inset-0 bg-green-500/20 blur-2xl rounded-full animate-pulse" />
+                         </div>
                        ) : paymentStatus === "REJECTED" ? (
                          <AlertCircle size={48} className="text-red-500" />
                        ) : (
-                         <Clock size={48} className="text-neon-blue animate-pulse" />
+                         <Clock size={48} className="text-neon-blue animate-pulse z-20" />
                        )}
                        <div className={cn(
-                         "absolute inset-[-10px] rounded-[40px] border opacity-20 animate-ping",
+                         "absolute inset-[-15px] rounded-[40px] border opacity-20 animate-ping",
                          paymentStatus === "APPROVED" ? "border-green-500" : "border-neon-blue"
                        )} />
                     </div>
