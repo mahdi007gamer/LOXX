@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Sidebar } from "../components/layout/Sidebar";
 import { NeonCard } from "../components/ui/NeonCard";
@@ -6,6 +6,7 @@ import { GlowButton } from "../components/ui/GlowButton";
 import { CardSkeleton } from "../components/ui/Skeleton";
 import { Toast } from "../components/ui/Toast";
 import api from "../lib/api";
+import { io, Socket } from "socket.io-client";
 import { 
   Gamepad2, 
   Users, 
@@ -38,9 +39,10 @@ export const LobbiesPage = () => {
   const [lobbies, setLobbies] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
+  const socketRef = useRef<Socket | null>(null);
 
-  const fetchLobbies = async () => {
-    setLoading(true);
+  const fetchLobbies = async (showLoading = true) => {
+    if (showLoading) setLoading(true);
     try {
       const response = await api.get("/lobbies");
       if (response.data.status === "success") {
@@ -55,6 +57,21 @@ export const LobbiesPage = () => {
 
   useEffect(() => {
     fetchLobbies();
+
+    // Socket Setup for Real-time List
+    const token = localStorage.getItem("token");
+    const socket = io("/lobby", {
+       query: { token }
+    });
+    socketRef.current = socket;
+
+    socket.on("lobby.list_updated", () => {
+       fetchLobbies(false); // Refresh list without full skeleton loading
+    });
+
+    return () => {
+       socket.disconnect();
+    };
   }, []);
 
   const handleLobbyCreated = () => {
@@ -75,42 +92,46 @@ export const LobbiesPage = () => {
     });
 
   return (
-    <div className="flex min-h-[calc(100vh-64px)]">
+    <div className="flex min-h-[calc(100vh-64px)] overflow-x-hidden pt-16 md:pt-0">
       <Sidebar />
-      <main className="flex-1 px-4 py-6 md:py-8 md:mr-64 lg:px-8 pb-28 md:pb-8">
+      <main className="flex-1 px-4 py-8 md:mr-64 lg:px-8 pb-32 md:pb-8">
         <div className="container mx-auto max-w-6xl">
-          <header className="mb-4 flex flex-col items-center justify-between gap-3 md:flex-row md:mb-12">
-            <div className="text-right w-full">
-              <h1 className="text-2xl md:text-4xl font-black text-white">لابی‌های فعال</h1>
-              <p className="mt-0.5 text-[9px] md:text-base text-gray-500 font-bold uppercase tracking-widest leading-relaxed">تیم خود را پیدا کنید و در کنار بقیه بازیکنان حرفه‌ای بازی کنید</p>
+          <header className="mb-8 flex flex-col items-center justify-between gap-6 md:flex-row md:mb-12">
+            <div className="text-center md:text-right w-full md:w-auto">
+              <h1 className="text-3xl md:text-5xl font-black text-white italic tracking-tighter">لابی‌های فعال</h1>
+              <p className="mt-2 text-[10px] md:text-xs text-gray-500 font-bold uppercase tracking-[0.1em] leading-relaxed opacity-60">تیم خود را پیدا کنید و در کنار بقیه بازیکنان حرفه‌ای بازی کنید</p>
             </div>
             
-            <div className="flex w-full items-center gap-2 md:gap-3 md:w-auto overflow-hidden">
-               <div className="relative flex-1 md:w-64">
-                <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-700" size={14} />
+            <div className="flex flex-col sm:flex-row w-full items-center gap-3 sm:gap-4 md:w-auto">
+               <div className="relative w-full sm:w-80">
+                <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-700" size={16} />
                 <input 
                    type="text" 
                    value={searchTerm}
                    onChange={(e) => setSearchTerm(e.target.value)}
                    placeholder="جستجوی لابی یا بازی..."
-                   className="w-full rounded-xl border border-white/5 bg-white/5 py-1.5 md:py-2.5 pr-8 text-[10px] md:text-sm text-white focus:border-neon-blue/40 focus:outline-none transition-all placeholder:text-gray-700 font-bold"
+                   className="w-full rounded-2xl border border-white/5 bg-white/5 py-4 md:py-4 pr-11 text-sm text-white focus:border-neon-blue/40 focus:outline-none transition-all placeholder:text-gray-700 font-bold shadow-2xl"
                  />
               </div>
-              <GlowButton variant="blue" className="flex gap-1.5 h-10 md:h-12 px-4 md:px-8 shrink-0 shadow-[0_0_20px_rgba(0,229,255,0.2)]" onClick={() => setIsModalOpen(true)}>
-                <Plus size={16} />
-                <span className="text-[11px] md:text-sm font-black">ساخت لابی جدید</span>
+              <GlowButton 
+                variant="blue" 
+                className="w-full sm:w-auto flex gap-2 h-14 px-8 shrink-0 shadow-[0_0_30px_rgba(0,229,255,0.2)] rounded-2xl group" 
+                onClick={() => setIsModalOpen(true)}
+              >
+                <Plus size={20} className="group-hover:rotate-90 transition-transform" />
+                <span className="text-sm font-black uppercase italic">ساخت لابی جدید</span>
               </GlowButton>
             </div>
           </header>
 
           {/* Game Filters */}
-          <div className="mb-8 flex items-center gap-3 overflow-x-auto pb-4 scrollbar-none no-scrollbar">
+          <div className="mb-10 flex items-center gap-3 overflow-x-auto pb-4 scrollbar-none no-scrollbar snap-x snap-mandatory">
              <button 
                 onClick={() => setActiveFilter("all")}
                 className={cn(
-                  "whitespace-nowrap rounded-xl px-5 py-2 text-xs font-black transition-all",
+                  "whitespace-nowrap rounded-xl px-6 py-3 text-[11px] font-black transition-all snap-start",
                   activeFilter === "all" 
-                    ? "bg-neon-blue text-dark-bg shadow-[0_0_15px_rgba(0,229,255,0.3)]" 
+                    ? "bg-neon-blue text-dark-bg shadow-[0_0_20px_rgba(0,229,255,0.4)] scale-105" 
                     : "bg-white/5 text-gray-500 hover:text-white border border-white/5"
                 )}
              >
@@ -121,9 +142,9 @@ export const LobbiesPage = () => {
                   key={game.id} 
                   onClick={() => setActiveFilter(game.id)}
                   className={cn(
-                    "whitespace-nowrap rounded-xl border px-5 py-2 text-xs font-black transition-all flex items-center gap-2",
+                    "whitespace-nowrap rounded-xl border px-6 py-3 text-[11px] font-black transition-all flex items-center gap-2 snap-start",
                     activeFilter === game.id
-                      ? "bg-neon-blue/20 border-neon-blue text-neon-blue shadow-[0_0_15px_rgba(0,229,255,0.1)]"
+                      ? "bg-neon-blue/20 border-neon-blue text-neon-blue shadow-[0_0_15px_rgba(0,229,255,0.2)] scale-105"
                       : "border-white/5 bg-white/5 text-gray-500 hover:text-white"
                   )}
                 >
@@ -134,7 +155,7 @@ export const LobbiesPage = () => {
           </div>
 
           {/* Lobbies Grid */}
-          <div className="grid grid-cols-1 gap-4 sm:gap-6 md:gap-8 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
             {loading ? (
               [1, 2, 3, 4, 5, 6].map(i => <CardSkeleton key={i} />)
             ) : filteredLobbies.length === 0 ? (

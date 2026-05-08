@@ -1,11 +1,18 @@
 import { Response } from "express";
 import { LobbyService } from "../services/lobby.service.ts";
+import { RankingService } from "../services/ranking.service.ts";
 import { AuthenticatedRequest } from "../middleware/auth.middleware.ts";
+import { emitLobbyUpdate } from "../utils/socket.ts";
 
 export class LobbyController {
   static async create(req: AuthenticatedRequest, res: Response) {
     try {
       const lobby = await LobbyService.createLobby(req.user!.userId, req.body);
+      
+      // Award XP for creating lobby
+      await RankingService.addXP(req.user!.userId, 20, "LOBBY_CREATE");
+      
+      emitLobbyUpdate();
       res.status(201).json({ status: "success", data: lobby });
     } catch (error: any) {
       res.status(400).json({ status: "error", error: { code: "VALIDATION_FAILED", message: error.message } });
@@ -40,6 +47,11 @@ export class LobbyController {
   static async join(req: AuthenticatedRequest, res: Response) {
     try {
       await LobbyService.joinLobby(req.user!.userId, req.params.id, req.body.password);
+      
+      // Award XP for joining
+      await RankingService.addXP(req.user!.userId, 10, "LOBBY_JOIN");
+      
+      emitLobbyUpdate();
       res.json({ status: "success", message: "Joined lobby" });
     } catch (error: any) {
       const code = error.message === "Lobby full" ? "LOBBY_FULL" : "VALIDATION_FAILED";

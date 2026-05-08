@@ -5,5 +5,6 @@ import { authenticate } from "../middleware/auth.middleware.ts";
 const router = Router();
 
 router.get("/", authenticate, RankingController.getLeaderboard);
+router.get("/me", authenticate, RankingController.getUserRank);
 
 export default router;

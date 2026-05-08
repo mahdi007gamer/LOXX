@@ -1,6 +1,7 @@
 import { Server, Socket } from "socket.io";
 import { AuthService } from "../services/auth.service.ts";
 import { RankingService } from "../services/ranking.service.ts";
+import { emitLobbyUpdate } from "../utils/socket.ts";
 import prisma from "../utils/prisma.ts";
 
 interface AuthenticatedSocket extends Socket {
@@ -69,11 +70,13 @@ export function setupWebSockets(io: Server) {
           if (!remainingMembers.length || lobby.hostId === userId) {
             await prisma.lobby.delete({ where: { id: lobbyId } }).catch(() => {});
             lobbyNs.to(`lobby:${lobbyId}`).emit("lobby.closed", { lobbyId });
+            emitLobbyUpdate();
           } else {
             lobbyNs.to(`lobby:${lobbyId}`).emit("lobby.member_left", { 
               userId, 
               membersCount: remainingMembers.length
             });
+            emitLobbyUpdate();
           }
         }
       }
@@ -240,6 +243,11 @@ export function setupWebSockets(io: Server) {
           create: { lobbyId, userId, role: "PLAYER", isReady: false }
         });
 
+        // Award XP if first time join
+        if (!existingMemberRecord) {
+           await RankingService.addXP(userId, 10, "LOBBY_JOIN");
+        }
+
         // Increment total joined ONLY if it's a new join
         if (!existingMemberRecord) {
           await prisma.profile.update({
@@ -258,8 +266,13 @@ export function setupWebSockets(io: Server) {
           membersCount: lobby.members.length + 1
         });
 
-        // Award XP for joining
-        await RankingService.addXP(userId, 10, "LOBBY_JOIN");
+        emitLobbyUpdate();
+
+        // Check if lobby is now full
+        if (lobby.members.length + 1 === lobby.maxPlayers) {
+           // Award XP to host for full lobby
+           await RankingService.addXP(lobby.hostId, 150, "LOBBY_FULL");
+        }
 
         if (ack) {
           const updatedLobby = await getLobbyFullData(lobbyId) as any;
@@ -332,11 +345,13 @@ export function setupWebSockets(io: Server) {
         if (!remainingLobby || remainingLobby.hostId === userId || remainingLobby.members.length === 0) {
           await prisma.lobby.delete({ where: { id: lobbyId } }).catch(() => {});
           lobbyNs.to(`lobby:${lobbyId}`).emit("lobby.closed", { lobbyId });
+          emitLobbyUpdate();
         } else {
           lobbyNs.to(`lobby:${lobbyId}`).emit("lobby.member_left", { 
             userId, 
             membersCount: remainingLobby.members.length
           });
+          emitLobbyUpdate();
         }
 
         if (ack) ack({ status: "ok" });
@@ -400,6 +415,7 @@ export function setupWebSockets(io: Server) {
         });
         
         lobbyNs.to(`lobby:${lobbyId}`).emit("lobby.settings_updated", { lobbyId, isPrivate, micRequired });
+        emitLobbyUpdate();
         if (ack) ack({ status: "ok" });
       } catch (err) {
         if (ack) ack({ status: "error", error: { message: "Failed to update settings" } });
@@ -418,6 +434,10 @@ export function setupWebSockets(io: Server) {
         });
 
         lobbyNs.to(`lobby:${lobbyId}`).emit("lobby.status_changed", { status: "STARTING" });
+        emitLobbyUpdate();
+        
+        // Award XP for starting match
+        await RankingService.addXP(userId, 20, "MATCH_START");
       } catch (err) {}
     });
 
@@ -481,6 +501,9 @@ export function setupWebSockets(io: Server) {
           createdAt: msg.createdAt.getTime()
         };
         
+        // Award XP for chat message
+        await RankingService.addXP(userId, 10, "CHAT_MESSAGE");
+        
         console.log(`[LOBBY CHAT] ${user?.username} sent message to ${lobbyId}`);
         lobbyNs.to(`lobby:${lobbyId}`).emit("chat.message", msgPayload);
 
@@ -518,6 +541,7 @@ export function setupWebSockets(io: Server) {
         });
 
         lobbyNs.to(`lobby:${lobbyId}`).emit("lobby.status_changed", { status: "READY" });
+        emitLobbyUpdate();
       } catch (err) {}
     });
 
@@ -533,6 +557,7 @@ export function setupWebSockets(io: Server) {
         });
 
         lobbyNs.to(`lobby:${lobbyId}`).emit("lobby.status_changed", { status: "WAITING" });
+        emitLobbyUpdate();
       } catch (err) {}
     });
 

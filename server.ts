@@ -17,6 +17,7 @@ import gameRoutes from "./server/routes/game.routes.ts";
 import notificationRoutes from "./server/routes/notification.routes.ts";
 import adminRoutes from "./server/routes/admin.routes.ts";
 import { setupWebSockets } from "./server/sockets/index.ts";
+import { setIO } from "./server/utils/socket.ts";
 import prisma from "./server/utils/prisma.ts";
 import { errorHandler } from "./server/middleware/error.middleware.ts";
 
@@ -38,6 +39,7 @@ async function startServer() {
     }
   });
 
+  setIO(io);
   app.set("io", io);
 
   // Basic Middleware

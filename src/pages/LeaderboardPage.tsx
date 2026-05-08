@@ -5,35 +5,45 @@ import { GlowButton } from "../components/ui/GlowButton";
 import { 
   Trophy, Medal, Star, ArrowUp, User, Clock, 
   Crown, Zap, Flame, Target, MessageCircle, 
-  UserPlus, Info
+  UserPlus, Info, PlusCircle, Users, Gamepad2, Share2
 } from "lucide-react";
 import { motion } from "motion/react";
-import { cn } from "@/src/lib/utils";
+import { cn } from "../lib/utils";
 import axios from "axios";
 import { rankingSocket } from "../lib/socket";
+import api from "../lib/api";
 
 const SCORING_RULES = [
-  { icon: <Gamepad2 size={20} />, label: "Match Play", points: "+20 XP", detail: "Per match started" },
-  { icon: <Trophy size={20} />, label: "Victory", points: "+50 XP", detail: "Per match won" },
-  { icon: <Flame size={20} />, label: "Win Streak", points: "+10 XP", detail: "Bonus after 3 wins" },
+  { icon: <PlusCircle size={18} />, label: "ایجاد لابی", points: "+20 XP", detail: "یک بار در هر ساعت" },
+  { icon: <Users size={18} />, label: "تکمیل لابی", points: "+150 XP", detail: "یک بار در هر ۳۰ دقیقه" },
+  { icon: <Gamepad2 size={18} />, label: "شروع بازی", points: "+20 XP", detail: "یک بار در هر ساعت" },
+  { icon: <UserPlus size={18} />, label: "قبول دوستی", points: "+20 XP", detail: "حداکثر ۲ بار در ساعت" },
+  { icon: <MessageCircle size={18} />, label: "پیام گروهی", points: "+10 XP", detail: "حداکثر ۱۰ بار در ساعت" },
+  { icon: <Share2 size={18} />, label: "اشتراک‌گذاری", points: "+100 XP", detail: "یک بار در هر ساعت" },
 ];
 
-import { Gamepad2 } from "lucide-react";
-
 export const LeaderboardPage = () => {
-  const [timeLeftStr, setTimeLeftStr] = useState("2d 14h 05m");
+  const [timeLeftStr, setTimeLeftStr] = useState("0d 0h 0m");
   const [topUsers, setTopUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userRank, setUserRank] = useState({
+     rank: 0,
+     points: 0,
+     level: 1,
+     pointsToTop10: 0
+  });
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const token = localStorage.getItem("loxx_token");
-        const res = await axios.get("/api/v1/ranking", {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const res = await api.get("/ranking");
         setTopUsers(res.data.top_users || []);
         setTimeLeftStr(res.data.reset_in);
+
+        const rankRes = await api.get("/ranking/me");
+        if (rankRes.data.status === "success") {
+           setUserRank(rankRes.data.data);
+        }
       } catch (err) {
         console.error("Failed to fetch leaderboard", err);
       } finally {
@@ -49,19 +59,24 @@ export const LeaderboardPage = () => {
       setTimeLeftStr(data.reset_in);
     });
 
+    rankingSocket.on("ranking.tick_signal", () => {
+       fetchData();
+    });
+
     return () => {
       rankingSocket.off("ranking.tick");
+      rankingSocket.off("ranking.tick_signal");
     };
   }, []);
 
   if (loading) {
       return (
-          <div className="flex min-h-screen items-center justify-center bg-dark-bg text-neon-blue">
+          <div className="flex min-h-screen items-center justify-center bg-[#050507] text-neon-blue">
               <div className="flex flex-col items-center gap-4">
                   <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}>
                       <Zap size={48} />
                   </motion.div>
-                  <p className="font-black italic uppercase tracking-widest">Loading Leaderboard...</p>
+                  <p className="font-black italic uppercase tracking-widest text-xs">در حال بارگذاری لیست برترین‌ها...</p>
               </div>
           </div>
       );
@@ -80,7 +95,7 @@ export const LeaderboardPage = () => {
             <div className="text-center md:text-right">
               <div className="flex items-center justify-center md:justify-start gap-3 mb-2">
                 <div className="h-10 w-10 rounded-xl bg-neon-blue/20 flex items-center justify-center text-neon-blue shadow-[0_0_20px_rgba(0,229,255,0.2)]">
-                  <Trophy size={24} />
+                   <Trophy size={24} />
                 </div>
                 <h1 className="text-3xl md:text-5xl font-black text-white tracking-tighter italic uppercase">قهرمانان هفته لوکس</h1>
               </div>
@@ -111,7 +126,7 @@ export const LeaderboardPage = () => {
                          <Medal size={20} />
                       </div>
                       <div className="w-full h-full rounded-full bg-dark-bg flex items-center justify-center overflow-hidden border border-white/5">
-                        <User size={48} className="relative z-10 text-gray-500" />
+                        {podium[1].avatar ? <img src={podium[1].avatar} alt={podium[1].username} className="w-full h-full object-cover" /> : <User size={48} className="relative z-10 text-gray-500" />}
                       </div>
                    </div>
                    <h3 className="text-xl font-black text-white uppercase italic tracking-tight">{podium[1].username}</h3>
@@ -127,8 +142,8 @@ export const LeaderboardPage = () => {
                    <div className="absolute -top-14 inset-x-0 mx-auto w-fit text-7xl drop-shadow-[0_15px_25px_rgba(250,204,21,0.5)] z-40">👑</div>
                    <div className="relative mb-8 flex items-center justify-center">
                       <div className="h-36 w-36 rounded-full border-4 border-yellow-400/80 bg-dark-bg flex items-center justify-center text-yellow-400 shadow-[0_0_50px_rgba(250,204,21,0.4)] relative z-10 p-1">
-                         <div className="w-full h-full rounded-full bg-yellow-400/10 flex items-center justify-center border border-yellow-400/20">
-                            <User size={80} />
+                         <div className="w-full h-full rounded-full bg-yellow-400/10 flex items-center justify-center border border-yellow-400/20 overflow-hidden">
+                            {podium[0].avatar ? <img src={podium[0].avatar} alt={podium[0].username} className="w-full h-full object-cover" /> : <User size={80} />}
                          </div>
                       </div>
                    </div>
@@ -147,7 +162,7 @@ export const LeaderboardPage = () => {
                          <Medal size={20} />
                       </div>
                       <div className="w-full h-full rounded-full bg-dark-bg flex items-center justify-center overflow-hidden border border-white/5">
-                        <User size={48} className="relative z-10 text-gray-500" />
+                        {podium[2].avatar ? <img src={podium[2].avatar} alt={podium[2].username} className="w-full h-full object-cover" /> : <User size={48} className="relative z-10 text-gray-500" />}
                       </div>
                    </div>
                    <h3 className="text-xl font-black text-white uppercase italic tracking-tight">{podium[2].username}</h3>
@@ -165,8 +180,8 @@ export const LeaderboardPage = () => {
                    <div className="group flex items-center justify-between rounded-2xl border border-white/5 bg-white/[0.02] p-4 transition-all hover:bg-white/[0.05] hover:border-neon-blue/20">
                       <div className="flex items-center gap-4 md:gap-6 min-w-0">
                          <span className="w-6 text-center font-mono text-lg font-bold text-gray-700">#{player.rank}</span>
-                         <div className="h-10 w-10 md:h-12 md:w-12 rounded-xl bg-white/5 flex items-center justify-center text-gray-400">
-                           <User size={24} />
+                         <div className="h-10 w-10 md:h-12 md:w-12 rounded-xl bg-white/5 flex items-center justify-center text-gray-400 overflow-hidden">
+                           {player.avatar ? <img src={player.avatar} alt={player.username} className="w-full h-full object-cover" /> : <User size={24} />}
                          </div>
                          <h4 className="font-black text-white group-hover:text-neon-blue transition-colors truncate uppercase text-sm md:text-base italic">{player.username}</h4>
                       </div>
@@ -180,7 +195,7 @@ export const LeaderboardPage = () => {
                {!topUsers.length && <p className="text-gray-500 font-bold italic text-center p-8 bg-white/5 rounded-3xl border border-dashed border-white/10">قهرمانی هنوز ثبت نشده است...</p>}
 
                <GlowButton variant="blue" className="w-full py-4 text-xs font-black uppercase italic tracking-widest mt-8">
-                 نمایش ۵۰ نفر برتر
+                 نمایش کل لیست برترین ها
                </GlowButton>
             </div>
 
@@ -202,7 +217,7 @@ export const LeaderboardPage = () => {
                           <span className="text-xs font-black text-white uppercase italic">{rule.label}</span>
                           <span className="text-xs font-black text-neon-blue">{rule.points}</span>
                         </div>
-                        <p className="text-[10px] text-gray-600 font-bold">{rule.detail}</p>
+                        <p className="text-[10px] text-gray-600 font-bold leading-tight">{rule.detail}</p>
                       </div>
                     </div>
                   ))}
@@ -219,28 +234,28 @@ export const LeaderboardPage = () => {
                 </div>
               </div>
 
-              <div className="rounded-3xl bg-gradient-to-br from-neon-blue/20 to-neon-purple/20 border border-white/10 p-6 relative overflow-hidden">
-                 <div className="flex items-center justify-between relative z-10">
+              <div className="rounded-3xl bg-gradient-to-br from-neon-blue/20 to-neon-purple/20 border border-white/10 p-6 relative overflow-hidden shadow-2xl">
+                 <div className="flex items-center justify-between relative z-10 mb-4">
                     <div>
                        <p className="text-[10px] text-neon-blue font-black uppercase tracking-widest italic mb-1">وضعیت شما</p>
-                       <h3 className="text-white font-black italic text-xl">رتبه ۱۲# کل</h3>
+                       <h3 className="text-white font-black italic text-xl">رتبه #{userRank.rank || "---"} کل</h3>
                     </div>
                     <div className="text-right">
                        <p className="text-[10px] text-gray-400 font-black uppercase mb-1">امتیازات</p>
-                       <p className="text-white font-black italic text-xl">۴,۲۸۰</p>
+                       <p className="text-white font-black italic text-xl">{userRank.points.toLocaleString()}</p>
                     </div>
                  </div>
                  
-                 <div className="mt-4 h-2 w-full bg-white/5 rounded-full overflow-hidden relative z-10">
+                 <div className="h-2.5 w-full bg-white/5 rounded-full overflow-hidden relative z-10 p-px border border-white/5">
                     <motion.div 
                       initial={{ width: 0 }}
-                      animate={{ width: "65%" }}
-                      className="absolute inset-y-0 left-0 bg-neon-blue shadow-[0_0_10px_rgba(0,229,255,0.5)]"
+                      animate={{ width: `${Math.min(100, (userRank.points / (userRank.points + userRank.pointsToTop10)) * 100)}%` }}
+                      className="h-full bg-gradient-to-r from-neon-blue to-neon-purple shadow-[0_0_15px_rgba(0,229,255,0.5)] rounded-full"
                     />
                  </div>
-                 <div className="mt-2 flex items-center justify-between relative z-10">
-                   <p className="text-[9px] text-gray-500 font-bold">برای رسیدن به ۱۰ نفر برتر:</p>
-                   <p className="text-[10px] text-white font-black">۱۲۰ امتیاز نیاز است</p>
+                 <div className="mt-3 flex items-center justify-between relative z-10">
+                   <p className="text-[10px] text-gray-400 font-black italic uppercase tracking-tighter">برای رسیدن به ۱۰ نفر برتر:</p>
+                   <p className="text-[11px] text-white font-black italic tracking-tight">{userRank.pointsToTop10.toLocaleString()} امتیاز نیاز است</p>
                  </div>
               </div>
             </div>

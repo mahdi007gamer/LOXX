@@ -1,5 +1,6 @@
 import { Response } from "express";
 import { FriendshipService } from "../services/friendship.service.ts";
+import { RankingService } from "../services/ranking.service.ts";
 import { AuthenticatedRequest } from "../middleware/auth.middleware.ts";
 
 export class FriendshipController {
@@ -49,6 +50,11 @@ export class FriendshipController {
     try {
       const friendship = await FriendshipService.respondRequest(req.user!.userId, req.body.request_id, req.body.action);
       
+      // Award XP on Acceptance
+      if (req.body.action === "ACCEPTED") {
+          await RankingService.addXP(req.user!.userId, 20, "FRIEND_ACCEPTED");
+      }
+
       // Realtime emit
       const io = req.app.get("io");
       if (io && friendship) {

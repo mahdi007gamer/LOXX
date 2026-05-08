@@ -114,10 +114,10 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
       <motion.div 
         initial={{ opacity: 0, y: 20, scale: 0.95 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
-        className="bg-[#0b0c10] border border-white/5 rounded-3xl w-full max-w-[1000px] overflow-hidden shadow-2xl flex max-h-[90vh] md:flex-row flex-col"
+        className="bg-[#0b0c10] border border-white/5 rounded-3xl w-full max-w-[1000px] overflow-hidden shadow-2xl flex h-full md:h-auto md:max-h-[90vh] md:flex-row flex-col relative"
       >
-        {/* Left Panel: Live Preview */}
-        <div className="hidden md:flex w-[350px] bg-[#111216] border-l border-white/5 p-6 flex-col shrink-0 relative overflow-y-auto">
+        {/* Left Panel: Live Preview (Hidden on Mobile) */}
+        <div className="hidden lg:flex w-[350px] bg-[#111216] border-l border-white/5 p-6 flex-col shrink-0 relative overflow-y-auto">
           <div className="flex items-center gap-2 mb-6">
             <span className="h-2 w-2 rounded-full bg-neon-blue animate-pulse" />
             <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Live Preview</span>
@@ -215,26 +215,26 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
         </div>
 
         {/* Right Panel: Content */}
-        <div className="flex-1 flex flex-col max-h-[90vh] overflow-hidden relative">
-          <button onClick={onClose} className="absolute left-6 top-6 h-8 w-8 rounded-full bg-white/5 flex items-center justify-center text-gray-500 hover:text-white transition-all hover:bg-white/10 z-50">
+        <div className="flex-1 flex flex-col h-full md:max-h-[90vh] overflow-hidden relative">
+          <button onClick={onClose} className="absolute left-4 top-4 md:left-6 md:top-6 h-8 w-8 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:text-white transition-all hover:bg-white/10 z-50">
             <X size={16} />
           </button>
 
-          <div className="flex items-center justify-between p-8 pb-4">
-            <div>
-              <h2 className="text-3xl font-black text-white tracking-tighter">ایجاد لابی حرفه‌ای</h2>
-              <p className="text-gray-500 text-sm mt-1 font-bold">تیم رویایی خود را پیدا کنید</p>
+          <div className="flex items-center justify-between p-6 md:p-8 pb-4">
+            <div className="md:pr-0">
+              <h2 className="text-2xl md:text-3xl font-black text-white tracking-tighter">ایجاد لابی حرفه‌ای</h2>
+              <p className="text-gray-500 text-[11px] md:text-sm mt-1 font-bold">تیم رویایی خود را پیدا کنید</p>
             </div>
             
             {/* Step Indicators */}
             <div className="flex items-center gap-2 mt-4" dir="ltr">
                {[1, 2, 3].map(s => (
-                 <div key={s} className={`h-1.5 rounded-full transition-all duration-300 ${step === s ? "w-8 bg-neon-blue shadow-[0_0_10px_rgba(0,229,255,0.5)]" : step > s ? "w-3 bg-neon-blue/50" : "w-3 bg-white/10"}`} />
+                 <div key={s} className={`h-1.5 rounded-full transition-all duration-300 ${step === s ? "w-6 md:w-8 bg-neon-blue shadow-[0_0_10px_rgba(0,229,255,0.5)]" : step > s ? "w-2.5 md:w-3 bg-neon-blue/50" : "w-2.5 md:w-3 bg-white/10"}`} />
                ))}
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-8 pt-4 custom-scrollbar">
+          <div className="flex-1 overflow-y-auto p-6 md:p-8 pt-4 custom-scrollbar">
             <AnimatePresence mode="wait">
               {step === 1 && (
                 <motion.div key="step1" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="space-y-6">
@@ -411,7 +411,7 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
             </AnimatePresence>
           </div>
 
-          <div className="p-8 pt-4 flex items-center justify-between shrink-0">
+          <div className="p-6 md:p-8 pt-4 flex items-center justify-between shrink-0 bg-[#0b0c10] border-t border-white/5">
              {step > 1 ? (
                <button onClick={() => setStep(s => s - 1)} className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors text-sm font-bold">
                  <ChevronLeft size={16} /> مرحله قبل
@@ -421,11 +421,11 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
              )}
 
              {step < 3 ? (
-               <GlowButton onClick={() => setStep(s => s + 1)} className="px-8 flex flex-row-reverse items-center justify-center gap-2 h-12" variant="blue">
+               <GlowButton onClick={() => setStep(s => s + 1)} className="px-6 md:px-8 flex flex-row-reverse items-center justify-center gap-2 h-12" variant="blue">
                  مرحله بعد <ChevronLeft size={18} />
                </GlowButton>
              ) : (
-               <GlowButton onClick={handleSubmit} disabled={loading} className="px-8 h-12" variant="blue">
+               <GlowButton onClick={handleSubmit} disabled={loading} className="px-6 md:px-8 h-12" variant="blue">
                  {loading ? "در حال پردازش..." : "تایید و ساخت نهایی"}
                </GlowButton>
              )}

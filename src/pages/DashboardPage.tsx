@@ -34,19 +34,12 @@ export const DashboardPage = () => {
   const [loading, setLoading] = useState(true);
   const [isLobbyModalOpen, setIsLobbyModalOpen] = useState(false);
   const [isFriendsExpanded, setIsFriendsExpanded] = useState(false);
-  const [suggestedLobbies, setSuggestedLobbies] = useState([]);
-  const [stats, setStats] = useState({
-    joinedAt: new Date().toISOString(),
-    lobbiesCount: 0,
-    friendsCount: 0,
-    gamesCount: 0,
-    xp: 0,
+  const [userRank, setUserRank] = useState({
+    rank: 0,
+    points: 0,
     level: 1,
-    unreadNotifications: 0
+    pointsToTop10: 0
   });
-  const navigate = useNavigate();
-  const { friends, removeFriend, openChat } = useFriends();
-  const { user } = useAuth();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -58,6 +51,11 @@ export const DashboardPage = () => {
         const statsRes = await api.get("/user/me/stats");
         if (statsRes.data.status === "success") {
           setStats(statsRes.data.data);
+        }
+
+        const rankRes = await api.get("/ranking/me");
+        if (rankRes.data.status === "success") {
+           setUserRank(rankRes.data.data);
         }
       } catch (err) {
         console.error("Failed to fetch dashboard data", err);
@@ -73,6 +71,8 @@ export const DashboardPage = () => {
   const memberDays = stats.joinedAt 
     ? Math.floor((new Date().getTime() - new Date(stats.joinedAt).getTime()) / (1000 * 3600 * 24))
     : 0;
+
+  const isTop10 = userRank.rank > 0 && userRank.rank <= 10;
 
   return (
     <div className="flex min-h-[calc(100vh-64px)]">
@@ -139,56 +139,80 @@ export const DashboardPage = () => {
               transition={{ delay: 0.4 }}
               className="relative"
             >
-              <div className="h-full rounded-2xl bg-gradient-to-br from-[#1a1129] to-[#0a0f1c] border border-white/10 p-6 flex flex-col justify-between overflow-hidden group">
+              <div className={cn(
+                "h-full rounded-[32px] border transition-all duration-500 p-6 flex flex-col justify-between overflow-hidden group",
+                isTop10 
+                  ? "bg-gradient-to-br from-[#12051a] via-[#1a1129] to-[#0a0f1c] border-yellow-400/30 shadow-[0_0_40px_rgba(250,204,21,0.1)]" 
+                  : "bg-gradient-to-br from-[#1a1129] to-[#0a0f1c] border-white/10"
+              )}>
                  {/* Background Accent */}
-                 <div className="absolute -top-10 -right-10 h-32 w-32 bg-neon-purple/20 rounded-full blur-[40px] group-hover:bg-neon-blue/20 transition-all" />
+                 <div className={cn(
+                    "absolute -top-10 -right-10 h-40 w-40 rounded-full blur-[60px] opacity-40 group-hover:opacity-60 transition-all duration-700",
+                    isTop10 ? "bg-yellow-400" : "bg-neon-purple"
+                 )} />
                  
                  <div className="relative z-10">
                     <div className="flex items-center justify-between mb-4">
-                       <span className="text-[10px] text-gray-500 font-black uppercase tracking-widest italic">قهرمانان هفته</span>
-                       <Crown className="text-yellow-400 animate-pulse" size={16} />
+                       <span className="text-[10px] text-gray-500 font-black uppercase tracking-widest italic">رتبه و سطح کاربری</span>
+                       {isTop10 ? <Crown className="text-yellow-400 animate-bounce" size={18} /> : <Zap className="text-neon-blue" size={16} />}
                     </div>
                     
                     <div className="flex items-center gap-4">
-                       <div className="h-16 w-16 rounded-full border-2 border-neon-blue p-1 flex items-center justify-center bg-white/5 relative">
-                          <Trophy className="text-neon-blue" size={32} />
-                          <div className="absolute -bottom-1 -right-1 h-6 w-6 rounded-full bg-white text-dark-bg border-2 border-dark-bg flex items-center justify-center text-[10px] font-black italic text-right" dir="ltr">
-                             #{stats.level > 5 ? "Top 100" : "New"}
+                       <div className={cn(
+                          "h-20 w-20 rounded-2xl p-1 flex items-center justify-center relative transition-all duration-500",
+                          isTop10 ? "bg-yellow-400 shadow-[0_0_30px_rgba(250,204,21,0.4)] rotate-3" : "bg-white/5 border border-white/10"
+                       )}>
+                          {isTop10 ? <Trophy className="text-dark-bg" size={40} /> : <Medal className="text-neon-blue" size={32} />}
+                          <div className="absolute -bottom-2 -right-2 h-8 w-8 rounded-lg bg-white text-dark-bg border-4 border-dark-bg flex items-center justify-center text-[11px] font-black italic shadow-xl">
+                             #{userRank.rank || "..."}
                           </div>
                        </div>
                        <div>
-                          <p className="text-[10px] text-gray-500 font-bold uppercase mb-0.5">رتبه شما در این هفته</p>
-                          <h4 className="text-xl font-black text-white uppercase italic">سطح {stats.level}</h4>
+                          <p className="text-[10px] text-gray-500 font-bold uppercase mb-0.5 tracking-tighter">پیشرفت قهرمان</p>
+                          <h4 className={cn(
+                            "text-2xl font-black italic uppercase tracking-tighter",
+                            isTop10 ? "text-yellow-400 drop-shadow-[0_0_10px_rgba(250,204,21,0.5)]" : "text-white"
+                          )}>سطح {userRank.level}</h4>
                           <div className="flex items-center gap-1.5 mt-1 font-bold">
-                             <div className="flex items-center gap-1 text-[10px] text-neon-blue">
-                                <Zap size={10} />
-                                <span>امتیاز (XP)</span>
+                             <div className={cn("flex items-center gap-1 text-[10px]", isTop10 ? "text-yellow-400" : "text-neon-blue")}>
+                                <Zap size={10} fill="currentColor" />
+                                <span>{userRank.points.toLocaleString()} امتیاز</span>
                              </div>
-                             <div className="h-3 w-[1px] bg-white/10" />
-                             <span className="text-[10px] text-gray-500">{stats.xp} امتیاز</span>
                           </div>
                        </div>
                     </div>
 
-                    <div className="mt-6 space-y-2">
-                       <div className="flex items-center justify-between text-[9px] font-black uppercase italic tracking-tighter">
-                          <span className="text-gray-500">پیشرفت برای ۱۰ نفر برتر</span>
-                          <span className="text-white">۶۵٪</span>
+                    <div className="mt-8 space-y-3">
+                       <div className="flex items-center justify-between text-[10px] font-black uppercase italic tracking-tighter">
+                          <span className="text-gray-500">{isTop10 ? "شما جزو برترین‌ها هستید!" : "رسیدن به ۱۰ نفر برتر"}</span>
+                          <span className={cn(isTop10 ? "text-yellow-400" : "text-white")}>{isTop10 ? "Top Tier" : "Progress"}</span>
                        </div>
-                       <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                          <motion.div 
-                             initial={{ width: 0 }}
-                             animate={{ width: "65%" }}
-                             className="h-full bg-gradient-to-r from-neon-blue to-neon-purple"
-                          />
-                       </div>
-                       <p className="text-[9px] text-gray-600 font-bold uppercase italic font-black">فقط ۱۲۰ امتیاز تا رسیدن به ۱۰ نفر برتر!</p>
+                       {!isTop10 && (
+                          <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden border border-white/5 p-px">
+                            <motion.div 
+                               initial={{ width: 0 }}
+                               animate={{ width: `${Math.min(100, (userRank.points / (userRank.points + userRank.pointsToTop10)) * 100)}%` }}
+                               className="h-full rounded-full bg-gradient-to-r from-neon-blue via-neon-purple to-neon-pink shadow-[0_0_10px_rgba(0,229,255,0.3)]"
+                            />
+                          </div>
+                       )}
+                       <p className={cn(
+                          "text-[10px] font-black uppercase italic tracking-widest animate-pulse",
+                          isTop10 ? "text-yellow-400" : "text-gray-500"
+                        )}>
+                         {isTop10 ? "✨ تبریک! شما در لیست ۱۰ نفر برتر هستید ✨" : `فقط ${userRank.pointsToTop10.toLocaleString()} امتیاز تا ۱۰ نفر برتر!`}
+                       </p>
                     </div>
                  </div>
 
-                 <button className="mt-4 w-full py-2.5 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center gap-2 group/btn hover:bg-neon-blue/10 hover:border-neon-blue/30 transition-all text-[10px] font-black text-white uppercase italic tracking-widest relative z-10">
-                    مشاهده رتبه‌بندی <ArrowRight size={14} className="group-hover/btn:translate-x-1 transition-transform" />
-                 </button>
+                 <GlowButton 
+                    variant={isTop10 ? "pink" : "blue"} 
+                    className="mt-6 w-full h-12 rounded-2xl group/btn"
+                    onClick={() => navigate("/leaderboard")}
+                 >
+                    <span className="text-[11px] font-black uppercase italic tracking-widest">مشاهده رتبه‌بندی جهانی</span> 
+                    <ArrowRight size={16} className="mr-2 group-hover/btn:translate-x-1 transition-transform" />
+                 </GlowButton>
               </div>
             </motion.div>
           </div>
