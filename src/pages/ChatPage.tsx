@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Sidebar } from "../components/layout/Sidebar";
 import { GlowButton } from "../components/ui/GlowButton";
-import { Send, Hash, Users, MoreVertical, Plus, Smile, Image as ImageIcon, Reply, Heart, ChevronDown, Award, Star, Zap, Crown, Play, Check, Menu, X, MessageSquare, User, Trophy, Palette, Trash } from "lucide-react";
+import { Send, Hash, Users, MoreVertical, Plus, Smile, Image as ImageIcon, Reply, Heart, ChevronDown, Award, Star, Zap, Crown, Play, Check, Menu, X, MessageSquare, User, Trophy, Palette, Trash, MessageCircle } from "lucide-react";
 import { cn } from "../lib/utils";
 import { motion, AnimatePresence } from "motion/react";
 import { useGames } from "../context/GamesContext";
@@ -427,53 +427,6 @@ const ChannelButton: React.FC<ChannelButtonProps> = ({ channel, active, onClick,
   </button>
 );
 
-const DirectMessageButton: React.FC<{ 
-  displayName: string; 
-  avatar?: string; 
-  status: FriendStatus; 
-  active: boolean; 
-  onClick: () => void; 
-  unreadCount?: number 
-}> = ({ displayName, avatar, status, active, onClick, unreadCount }) => (
-  <button
-    onClick={onClick}
-    className={cn(
-      "group flex w-full items-center justify-between rounded-xl px-4 py-3 transition-all relative overflow-hidden",
-      active 
-        ? "bg-neon-blue/10 border border-neon-blue/20 shadow-[inset_0_0_20px_rgba(0,229,255,0.05)]" 
-        : "text-gray-500 hover:bg-white/5 hover:text-gray-200 border border-transparent"
-    )}
-  >
-    <div className="flex items-center gap-3 relative z-10 rtl:flex-row-reverse">
-       <div className="relative">
-         <div className="h-8 w-8 rounded-full bg-white/10 flex items-center justify-center text-[10px] overflow-hidden border border-white/5 group-hover:border-white/20 transition-colors">
-           {avatar ? <img src={avatar} alt="" className="h-full w-full object-cover" /> : "👤"}
-         </div>
-         <div className={cn(
-           "absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-[#0a0a0f]",
-           status === FriendStatus.ONLINE ? "bg-green-500" :
-           status === FriendStatus.IN_GAME ? "bg-neon-purple shadow-[0_0_10px_rgba(160,32,240,0.6)]" :
-           status === FriendStatus.IN_LOBBY ? "bg-neon-blue shadow-[0_0_10px_rgba(0,229,255,0.6)]" :
-           "bg-gray-500 shadow-[0_0_5px_rgba(0,0,0,0.5)]"
-         )}></div>
-       </div>
-       <span className={cn("text-[11px] font-black tracking-tight uppercase italic", active ? "text-white" : "text-gray-500")}>{displayName}</span>
-    </div>
-    <div className="flex items-center gap-2 relative z-10">
-      {unreadCount ? (
-        <motion.span 
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          className="bg-neon-pink text-white text-[9px] font-black px-1.5 py-0.5 rounded-full min-w-[18px] text-center shadow-[0_0_10px_rgba(255,0,127,0.4)]"
-        >
-          {unreadCount}
-        </motion.span>
-      ) : null}
-      {active && <div className="h-1.5 w-1.5 rounded-full bg-neon-blue shadow-[0_0_8px_rgba(0,229,255,0.8)]"></div>}
-    </div>
-  </button>
-);
-
 // --- Themes ---
 
 const CHAT_THEMES = {
@@ -646,21 +599,8 @@ export const ChatPage: React.FC = () => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  const { friends, chats, activeChatId, setActiveChatId, openChat, sendMessage: sendFriendMessage } = useFriends();
+  const { friends, chats, activeChatId, openChat, sendMessage: sendFriendMessage } = useFriends();
   const [isFriendsLoading, setIsFriendsLoading] = useState(false);
-
-  // Sync activeChatId with activeChannelId
-  useEffect(() => {
-    if (activeChatId) {
-      setActiveChannelId(""); // Clear active channel when DM is open
-    }
-  }, [activeChatId]);
-
-  useEffect(() => {
-    if (activeChannelId && activeChatId) {
-      setActiveChatId(null); // Clear DM when channel is selected
-    }
-  }, [activeChannelId, setActiveChatId]);
 
   useEffect(() => {
     if (showFriendsSidebar) {
@@ -843,17 +783,15 @@ export const ChatPage: React.FC = () => {
     }));
 
   const allChannels = [...INITIAL_CHANNELS, ...myGamesChannels];
-  const activeChannel = allChannels.find(c => c.id === activeChannelId) || (activeChatId ? { name: friends.find(f => f.id === activeChatId)?.displayName || "گفتگو", type: "dm", id: activeChatId } : (allChannels[0] || INITIAL_CHANNELS[0]));
+  const activeChannel = allChannels.find(c => c.id === activeChannelId) || allChannels[0] || INITIAL_CHANNELS[0];
 
-  const currentMessages = activeChatId 
-    ? (chats.find(c => c.friendId === activeChatId)?.messages || [])
-    : (messages[activeChannelId] || []);
+  const currentMessages = messages[activeChannelId] || [];
 
   useEffect(() => {
     if (scrollRef.current && !showNewMessageButton) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages, chats, activeChannelId, activeChatId, showNewMessageButton]);
+  }, [messages, activeChannelId, showNewMessageButton]);
 
   const handleScroll = () => {
     if (!scrollRef.current) return;
@@ -865,13 +803,6 @@ export const ChatPage: React.FC = () => {
   const handleSend = () => {
     const messageText = input;
     if (!messageText.trim()) return;
-
-    if (activeChatId) {
-      sendFriendMessage(activeChatId, messageText);
-      setInput("");
-      setReplyingTo(null);
-      return;
-    }
 
     const tempId = `temp-${Date.now()}`;
     const newMsgObj: ChatMessage = {
@@ -1161,37 +1092,46 @@ export const ChatPage: React.FC = () => {
             </div>
           )}
 
-          {/* Direct Messages */}
+          {/* Friends List (triggers floating window) */}
           <div className="px-4">
             <h3 className="px-4 text-[10px] font-black text-gray-600 uppercase tracking-widest mb-3 flex items-center gap-2">
               <span className="h-px flex-1 bg-white/5"></span>
-              پیام‌های مستقیم
+              دوستان ری‌اکتیو
               <span className="h-px flex-1 bg-white/5"></span>
             </h3>
             <div className="space-y-1">
-              {chats.map((chat) => {
-                const friend = friends.find(f => f.id === chat.friendId);
-                // The chat might be with a non-friend (if we ever allow it), but here we usually have friends
-                const displayName = friend?.displayName || chat.tempDisplayName || "گیمر";
-                const avatar = friend?.avatar;
-                const status = friend?.status || FriendStatus.OFFLINE;
-
-                return (
-                  <DirectMessageButton
-                    key={chat.friendId}
-                    displayName={displayName}
-                    avatar={avatar}
-                    status={status}
-                    active={activeChatId === chat.friendId}
-                    unreadCount={chat.unreadCount}
-                    onClick={() => openChat(chat.friendId, displayName)}
-                  />
-                );
-              })}
-              {chats.length === 0 && (
+              {friends.slice(0, 10).map((friend) => (
+                <button
+                  key={friend.id}
+                  onClick={() => openChat(friend.id, friend.displayName)}
+                  className="w-full group flex items-center justify-between p-2 rounded-xl hover:bg-white/5 transition-all text-right"
+                  dir="rtl"
+                >
+                   <div className="flex items-center gap-3">
+                     <div className="relative">
+                        <div className="h-8 w-8 rounded-full bg-white/10 flex items-center justify-center text-xs overflow-hidden">
+                           {friend.avatar ? <img src={friend.avatar} alt="" className="h-full w-full" /> : <User size={14} />}
+                        </div>
+                        <div className={cn(
+                          "absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-[#0d0d12]",
+                          friend.status === FriendStatus.ONLINE ? "bg-green-500" :
+                          friend.status === FriendStatus.IN_GAME ? "bg-neon-purple shadow-[0_0_8px_rgba(160,32,240,0.8)]" : 
+                          friend.status === FriendStatus.IN_LOBBY ? "bg-neon-blue shadow-[0_0_8px_rgba(0,229,255,0.8)]" :
+                          "bg-gray-600"
+                        )} />
+                     </div>
+                     <div className="flex flex-col items-start">
+                        <span className="text-[11px] font-bold text-gray-400 group-hover:text-white transition-colors">{friend.displayName}</span>
+                        <span className="text-[8px] text-gray-600 font-medium">LVL {friend.level}</span>
+                     </div>
+                   </div>
+                   <MessageCircle size={14} className="text-gray-600 group-hover:text-neon-blue transition-all transform scale-0 group-hover:scale-100" />
+                </button>
+              ))}
+              {friends.length === 0 && (
                 <div className="py-8 text-center space-y-2 opacity-30">
-                  <MessageSquare size={24} className="mx-auto text-gray-600" />
-                  <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest italic">گفتگویی فعال نیست</p>
+                  <User size={24} className="mx-auto text-gray-600" />
+                  <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest italic">لیست دوستان خالی است</p>
                 </div>
               )}
             </div>
