@@ -307,8 +307,12 @@ export const DashboardPage = () => {
                         >
                           <div className="flex items-center gap-3">
                             <div className="relative">
-                              <div className="h-10 w-10 rounded-full bg-white/10 flex items-center justify-center text-md">
-                                {friend.avatar ? <img src={friend.avatar} alt={friend.username} /> : "👤"}
+                              <div className="h-10 w-10 rounded-full bg-white/10 flex items-center justify-center text-md overflow-hidden">
+                                {friend.avatar && (friend.avatar.length > 5 || friend.avatar.startsWith("/") || friend.avatar.includes(".")) ? (
+                                  <img src={friend.avatar} alt={friend.username} className="w-full h-full object-cover" />
+                                ) : (
+                                  friend.avatar || "👤"
+                                )}
                               </div>
                               <div className={cn(
                                 "absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-dark-card",

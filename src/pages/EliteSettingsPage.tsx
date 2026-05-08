@@ -32,7 +32,7 @@ import {
 import { cn } from "../lib/utils";
 import { motion, AnimatePresence } from "motion/react";
 
-type FrameType = "none" | "lightning" | "glitch" | "fire" | "anime" | "neon" | "cyber" | "cosmic" | "shield";
+type FrameType = "none" | "lightning" | "glitch" | "fire" | "anime" | "neon_pulse" | "cyber" | "cosmic" | "shield" | "gold_aura" | "diamond";
 type GradientType = "linear" | "radial" | "conic";
 
 interface VIPMetadata {
@@ -162,10 +162,12 @@ export const EliteSettingsPage = () => {
 
   const frames: { id: FrameType; label: string; icon: any; color: string; disabled?: boolean }[] = [
     { id: "none", label: "بدون فریم", icon: User, color: "gray" },
+    { id: "gold_aura", label: "هاله طلایی", icon: Crown, color: "yellow" },
+    { id: "diamond", label: "دیاموند", icon: Trophy, color: "blue" },
     { id: "lightning", label: "رعد و برق", icon: Zap, color: "blue" },
     { id: "glitch", label: "گلیچ", icon: Monitor, color: "pink" },
     { id: "fire", label: "آتشین", icon: Flame, color: "orange" },
-    { id: "neon", label: "نئون پالز", icon: CircleDashed, color: "cyan" },
+    { id: "neon_pulse", label: "نئون پالز", icon: CircleDashed, color: "cyan" },
     { id: "anime", label: "انیمه‌ای", icon: Sparkles, color: "purple", disabled: true },
     { id: "cyber", label: "سایبر کور", icon: Cpu, color: "green", disabled: true },
     { id: "cosmic", label: "کازمیک رینگ", icon: Orbit, color: "indigo", disabled: true },
@@ -240,7 +242,7 @@ export const EliteSettingsPage = () => {
             className="absolute inset-0 z-0 border-[3px] border-pink-500 rounded-[2.5rem] shadow-[inset_0_0_20px_rgba(236,72,153,0.5),0_0_15px_rgba(236,72,153,0.5)]"
           />
         );
-      case "neon":
+      case "neon_pulse":
         return (
           <motion.div 
             animate={{ 
@@ -253,6 +255,30 @@ export const EliteSettingsPage = () => {
             }}
             transition={{ repeat: Infinity, duration: 1.5 }}
             className="absolute inset-0 z-0 border-[3px] border-cyan-400 rounded-[2.5rem]"
+          />
+        );
+      case "gold_aura":
+        return (
+          <motion.div 
+            animate={{ scale: [1, 1.1, 1], rotate: 360 }}
+            transition={{ duration: 10, repeat: Infinity }}
+            className="absolute -inset-8 z-0 bg-[radial-gradient(circle,rgba(250,204,21,0.2)_0%,transparent_70%)] rounded-full pointer-events-none"
+          />
+        );
+      case "diamond":
+        return (
+          <div className="absolute inset-0 z-0 border-2 border-cyan-400/30 rounded-none transform rotate-45 scale-150 pointer-events-none" />
+        );
+      case "cyber":
+        return (
+          <div className="absolute inset-0 z-0 border-2 border-green-500/20 rounded-[2.5rem] animate-pulse shadow-[0_0_20px_rgba(34,197,94,0.3)] pointer-events-none" />
+        );
+      case "cosmic":
+        return (
+          <motion.div 
+            animate={{ rotate: 360 }}
+            transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+            className="absolute -inset-10 z-0 border-t-2 border-indigo-500/40 rounded-full pointer-events-none"
           />
         );
       default:

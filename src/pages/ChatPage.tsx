@@ -119,7 +119,7 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
           isVIP && "border-2 border-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.4)]",
           isPLUS && "border-2 border-neon-blue shadow-[0_0_10px_rgba(0,229,255,0.3)]"
         )}>
-          {(message.senderAvatar && (message.senderAvatar.startsWith("http") || message.senderAvatar.startsWith("/") || message.senderAvatar.includes("."))) ? (
+          {(message.senderAvatar && (message.senderAvatar.length > 5 || message.senderAvatar.startsWith("/") || message.senderAvatar.includes(".") || message.senderAvatar.includes("data:image"))) ? (
             <img src={message.senderAvatar} alt={message.senderName} className="w-full h-full object-cover rounded-xl" />
           ) : (
             message.senderAvatar || (message.senderName ? message.senderName[0] : "?")

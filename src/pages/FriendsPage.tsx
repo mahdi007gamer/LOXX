@@ -77,8 +77,12 @@ const FriendItem = ({
       <div className="flex items-center justify-between w-full">
         <div className="flex items-center gap-3">
           <div className="relative">
-            <div className="h-12 w-12 rounded-full bg-white/10 overflow-hidden">
-               {friend.avatar ? <img src={friend.avatar} alt={friend.username} /> : <div className="h-full w-full flex items-center justify-center text-xl">👤</div>}
+            <div className="h-12 w-12 rounded-full bg-white/10 overflow-hidden flex items-center justify-center">
+               {friend.avatar && (friend.avatar.length > 5 || friend.avatar.startsWith("/") || friend.avatar.includes(".")) ? (
+                 <img src={friend.avatar} alt={friend.username} className="w-full h-full object-cover" />
+               ) : (
+                 <div className="h-full w-full flex items-center justify-center text-xl">{friend.avatar || "👤"}</div>
+               )}
             </div>
             <div className="absolute -bottom-0.5 -right-0.5 border-2 border-dark-bg rounded-full p-0.5 bg-dark-bg">
               <StatusBadge status={friend.status} />
@@ -381,7 +385,11 @@ export const FriendsPage = () => {
                  <div className="absolute top-0 right-0 h-24 w-24 -mr-12 -mt-12 rounded-full bg-neon-purple/10 blur-2xl group-hover:bg-neon-purple/20 transition-all duration-700" />
                  <div className="relative flex items-center gap-4">
                     <div className="h-14 w-14 md:h-16 md:w-16 rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center text-xl md:text-2xl shadow-2xl overflow-hidden">
-                      {user?.profile?.avatar ? <img src={user.profile.avatar} alt="avatar" className="w-full h-full object-cover" /> : "👤"}
+                      {user?.profile?.avatar && (user.profile.avatar.length > 5 || user.profile.avatar.startsWith("/") || user.profile.avatar.includes(".")) ? (
+                        <img src={user.profile.avatar} alt="avatar" className="w-full h-full object-cover" />
+                      ) : (
+                        user?.profile?.avatar || "👤"
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <h3 className="font-black text-white text-base md:text-lg truncate">{user?.profile?.displayName || user?.username}</h3>
@@ -453,7 +461,13 @@ export const FriendsPage = () => {
                     <NeonCard key={req.id} variant={req.type === 'incoming' ? 'purple' : 'blue'} className="p-4">
                        <div className="flex items-center justify-between mb-4">
                          <div className="flex items-center gap-3">
-                           <div className="h-10 w-10 rounded-full bg-white/10" />
+                           <div className="h-10 w-10 rounded-full bg-white/10 overflow-hidden flex items-center justify-center">
+                             {req.avatar && (req.avatar.length > 5 || req.avatar.startsWith("/") || req.avatar.includes(".")) ? (
+                               <img src={req.avatar} alt={req.displayName} className="w-full h-full object-cover" />
+                             ) : (
+                               <span className="text-lg">{req.avatar || "👤"}</span>
+                             )}
+                           </div>
                            <div>
                              <p className="text-xs font-bold text-white">{req.displayName}</p>
                              <p className="text-[10px] text-gray-500">{req.type === 'incoming' ? "درخواست دوستی" : "در انتظار تایید"}</p>

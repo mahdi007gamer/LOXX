@@ -127,6 +127,16 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
                       className="absolute -inset-6 border border-neon-blue/30 rounded-[40px] blur-sm"
                     />
                   )}
+                  {metadata.frame === "cyber" && (
+                    <div className="absolute -inset-4 border-2 border-green-500/20 rounded-[36px] animate-pulse shadow-[0_0_20px_rgba(34,197,94,0.3)]" />
+                  )}
+                  {metadata.frame === "cosmic" && (
+                    <motion.div 
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+                      className="absolute -inset-10 border-t-2 border-indigo-500/40 rounded-full"
+                    />
+                  )}
                 </div>
              )}
 
@@ -136,7 +146,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
                isPLUS ? "p-[2px] bg-neon-blue" : ""
              )}>
                   <div className="h-full w-full rounded-[28px] bg-[#0d0d12] flex items-center justify-center text-5xl overflow-hidden relative">
-                  {(user.senderAvatar && (user.senderAvatar.startsWith("http") || user.senderAvatar.startsWith("/") || user.senderAvatar.includes("."))) ? (
+                  {(user.senderAvatar && (user.senderAvatar.length > 5 || user.senderAvatar.startsWith("/") || user.senderAvatar.includes(".") || user.senderAvatar.includes("data:image"))) ? (
                     <img src={user.senderAvatar} alt={user.senderName} className="w-full h-full object-cover relative z-10" />
                   ) : (
                     <span className="relative z-10">{user.senderAvatar || "👤"}</span>
