@@ -2,18 +2,26 @@ import React, { useState, useEffect } from "react";
 import { Sidebar } from "../components/layout/Sidebar";
 import { NeonCard } from "../components/ui/NeonCard";
 import { GlowButton } from "../components/ui/GlowButton";
-import { Users, Shield, Plus, Trash2, Edit2, Search, X, Gamepad, Globe, ShieldAlert } from "lucide-react";
+import { 
+  Users, Shield, Plus, Trash2, Edit2, Search, X, 
+  Gamepad, Globe, ShieldAlert, CreditCard, 
+  Check, XCircle, Eye, Clock, AlertCircle
+} from "lucide-react";
 import api from "../lib/api";
 import { toast } from "react-hot-toast";
 import { GameAdminModal } from "../components/modals/GameAdminModal";
+import { motion, AnimatePresence } from "motion/react";
+import { cn } from "../lib/utils";
 
 export const AdminPage = () => {
-  const [activeTab, setActiveTab] = useState<"users" | "games">("users");
+  const [activeTab, setActiveTab] = useState<"users" | "games" | "payments">("users");
   const [users, setUsers] = useState<any[]>([]);
   const [games, setGames] = useState<any[]>([]);
+  const [payments, setPayments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isGameModalOpen, setIsGameModalOpen] = useState(false);
   const [selectedGame, setSelectedGame] = useState<any | null>(null);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -30,14 +38,41 @@ export const AdminPage = () => {
       if (activeTab === "users") {
         const res = await api.get(`/admin/users?search=${searchTerm}`).catch(() => ({ data: { data: [] } }));
         setUsers(res.data.data || []);
-      } else {
+      } else if (activeTab === "games") {
         const res = await api.get("/games");
         setGames(res.data.data || []);
+      } else if (activeTab === "payments") {
+        const res = await api.get("/payments/admin/pending");
+        setPayments(res.data.data || []);
       }
     } catch (err) {
       toast.error("خطا در بارگذاری داده‌ها");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleApprovePayment = async (id: string) => {
+    if (!confirm("آیا از تایید این تراکنش اطمینان دارید؟")) return;
+    try {
+      await api.post("/payments/admin/approve", { paymentId: id });
+      toast.success("تراکنش با موفقیت تایید و اشتراک فعال شد");
+      fetchData();
+    } catch (err) {
+      toast.error("خطا در تایید تراکنش");
+    }
+  };
+
+  const handleRejectPayment = async (id: string) => {
+    const reason = prompt("علت رد تراکنش را بنویسید (اختیاری):");
+    if (reason === null) return;
+    
+    try {
+      await api.post("/payments/admin/reject", { paymentId: id, reason });
+      toast.success("تراکنش رد شد");
+      fetchData();
+    } catch (err) {
+      toast.error("خطا در رد تراکنش");
     }
   };
 
@@ -119,6 +154,15 @@ export const AdminPage = () => {
               دیتابیس بازی‌ها
               {activeTab === "games" && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-neon-blue shadow-[0_0_15px_#00E5FF]" />}
             </button>
+            <button
+               onClick={() => setActiveTab("payments")}
+               className={`pb-4 px-6 text-sm font-black uppercase tracking-widest transition-all relative ${
+                 activeTab === "payments" ? "text-neon-blue" : "text-gray-500 hover:text-gray-300"
+               }`}
+             >
+               تراکنش‌های بانکی
+               {activeTab === "payments" && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-neon-blue shadow-[0_0_15px_#00E5FF]" />}
+            </button>
           </div>
 
           {activeTab === "users" ? (
@@ -185,7 +229,7 @@ export const AdminPage = () => {
               </table>
             </div>
            </div>
-          ) : (
+          ) : activeTab === "games" ? (
             <div className="space-y-6">
                <div className="flex justify-between items-center bg-white/5 p-6 rounded-[32px] border border-white/5">
                   <div>
@@ -239,6 +283,113 @@ export const AdminPage = () => {
                 ))}
                </div>
             </div>
+          ) : (
+             <div className="space-y-6">
+                <div className="flex justify-between items-center bg-white/5 p-6 rounded-[32px] border border-white/5">
+                   <div>
+                     <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter">درخواست‌های تایید تراکنش</h2>
+                     <p className="text-gray-500 text-sm font-bold">بررسی رسیدهای بانکی و فعال‌سازی اشتراک کاربران</p>
+                   </div>
+                   <div className="flex items-center gap-4">
+                      <div className="h-10 w-10 rounded-2xl bg-yellow-400/10 flex items-center justify-center text-yellow-400 animate-pulse border border-yellow-400/20">
+                         <Clock size={20} />
+                      </div>
+                      <span className="text-white font-black italic">{payments.length} مورد معلق</span>
+                   </div>
+                </div>
+
+                <div className="glass rounded-[32px] overflow-hidden border border-white/5 shadow-2xl">
+                   {payments.length === 0 ? (
+                      <div className="p-20 text-center text-gray-500 uppercase font-black italic tracking-widest text-xs opacity-50">
+                         تراکنش معلقی وجود ندارد
+                      </div>
+                   ) : (
+                      <table className="w-full text-right font-bold">
+                         <thead>
+                           <tr className="bg-white/5 text-gray-500 text-[10px] font-black uppercase tracking-widest italic border-b border-white/5">
+                             <th className="px-6 py-5">کاربر</th>
+                             <th className="px-6 py-5">طرح انتخابی</th>
+                             <th className="px-6 py-5">تاریخ ثبت</th>
+                             <th className="px-6 py-5">رسید پرداخت</th>
+                             <th className="px-6 py-5">عملیات</th>
+                           </tr>
+                         </thead>
+                         <tbody className="divide-y divide-white/5">
+                            {payments.map(req => (
+                               <tr key={req.id} className="hover:bg-white/5 transition-colors">
+                                  <td className="px-6 py-4">
+                                     <div className="flex flex-col">
+                                        <span className="text-white font-black italic">{req.user.username}</span>
+                                        <span className="text-[10px] text-gray-500">{req.user.email}</span>
+                                     </div>
+                                  </td>
+                                  <td className="px-6 py-4">
+                                     <span className={cn(
+                                        "px-3 py-1 rounded-full text-[10px] font-black uppercase italic tracking-widest border",
+                                        req.type === "VIP" ? "bg-yellow-400/10 text-yellow-400 border-yellow-400/20" : "bg-neon-blue/10 text-neon-blue border-neon-blue/20"
+                                     )}>
+                                        {req.type}
+                                     </span>
+                                  </td>
+                                  <td className="px-6 py-4 text-xs text-gray-400 italic">
+                                     {new Date(req.createdAt).toLocaleString('fa-IR')}
+                                  </td>
+                                  <td className="px-6 py-4">
+                                     <button 
+                                        onClick={() => setPreviewImage(req.receiptImageUrl)}
+                                        className="h-10 w-20 rounded-xl bg-white/5 overflow-hidden border border-white/10 hover:border-neon-blue transition-all group"
+                                     >
+                                        <img src={req.receiptImageUrl} className="h-full w-full object-cover opacity-50 group-hover:opacity-100 transition-opacity" />
+                                     </button>
+                                  </td>
+                                  <td className="px-6 py-4">
+                                     <div className="flex gap-2">
+                                        <button 
+                                          onClick={() => handleApprovePayment(req.id)}
+                                          className="h-10 w-10 rounded-xl bg-green-500/10 text-green-500 hover:bg-green-500 hover:text-white transition-all flex items-center justify-center border border-green-500/20"
+                                          title="تایید تراکنش"
+                                        >
+                                           <Check size={18} />
+                                        </button>
+                                        <button 
+                                          onClick={() => handleRejectPayment(req.id)}
+                                          className="h-10 w-10 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all flex items-center justify-center border border-red-500/20"
+                                          title="رد تراکنش"
+                                        >
+                                           <X size={18} />
+                                        </button>
+                                     </div>
+                                  </td>
+                               </tr>
+                            ))}
+                         </tbody>
+                      </table>
+                   )}
+                </div>
+                
+                <AnimatePresence>
+                   {previewImage && (
+                      <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={() => setPreviewImage(null)}
+                        className="fixed inset-0 z-50 flex items-center justify-center p-8 bg-black/90 backdrop-blur-xl cursor-zoom-out"
+                      >
+                         <motion.img 
+                           initial={{ scale: 0.9, rotateY: -10 }}
+                           animate={{ scale: 1, rotateY: 0 }}
+                           exit={{ scale: 0.9 }}
+                           src={previewImage}
+                           className="max-w-full max-h-full rounded-3xl shadow-2xl border border-white/20"
+                         />
+                         <button className="absolute top-8 right-8 text-white/60 hover:text-white transition-colors">
+                            <X size={32} />
+                         </button>
+                      </motion.div>
+                   )}
+                </AnimatePresence>
+             </div>
           )}
         </div>
       </div>

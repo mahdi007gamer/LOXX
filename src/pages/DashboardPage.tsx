@@ -221,10 +221,10 @@ export const DashboardPage = () => {
                  </div>
 
                  <GlowButton 
-                    variant={isTop10 ? "blue" : "blue"} 
+                    variant={isTop10 ? "gold" : "blue"} 
                     className={cn(
                       "mt-6 w-full h-12 rounded-2xl group/btn",
-                      isTop10 && "bg-yellow-400 text-dark-bg hover:bg-yellow-500 border-yellow-300 shadow-[0_0_20px_rgba(250,204,21,0.3)]"
+                      isTop10 && "shadow-[0_0_20px_rgba(250,204,21,0.3)]"
                     )}
                     onClick={() => navigate("/ranking")}
                  >
@@ -256,22 +256,22 @@ export const DashboardPage = () => {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: i * 0.1 }}
                     >
-                      <NeonCard variant="blue" className="flex items-center justify-between p-4" hover={true}>
+                      <NeonCard variant="blue" className="flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-4" hover={true}>
                         <div className="flex items-center gap-4">
-                          <div className="h-12 w-12 rounded bg-neon-blue/10 flex items-center justify-center text-neon-blue text-xl font-bold">
+                          <div className="h-12 w-12 rounded bg-neon-blue/10 flex items-center justify-center text-neon-blue text-xl font-bold shrink-0">
                             {item.game?.title?.[0] || "🎮"}
                           </div>
-                          <div>
-                            <h4 className="font-bold text-white">{item.title}</h4>
-                            <p className="text-xs text-gray-400">{item.game?.title} • {item.region}</p>
+                          <div className="min-w-0">
+                            <h4 className="font-bold text-white truncate">{item.title}</h4>
+                            <p className="text-xs text-gray-400 truncate">{item.game?.title} • {item.region}</p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-6">
-                          <div className="text-left">
-                            <p className="text-xs text-gray-400">ظرفیت</p>
+                        <div className="flex items-center justify-between sm:justify-start gap-6 border-t border-white/5 pt-3 sm:border-0 sm:pt-0">
+                          <div className="text-right sm:text-left">
+                            <p className="text-[10px] text-gray-500 uppercase font-black tracking-tighter">ظرفیت</p>
                             <p className="font-bold text-neon-blue">{item.members?.length || 0}/{item.maxPlayers}</p>
                           </div>
-                          <GlowButton variant="blue" size="sm" onClick={() => navigate(`/lobby/${item.id}`)}>عضویت</GlowButton>
+                          <GlowButton variant="blue" size="sm" className="h-9 px-6" onClick={() => navigate(`/lobby/${item.id}`)}>عضویت</GlowButton>
                         </div>
                       </NeonCard>
                     </motion.div>

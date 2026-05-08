@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { NeonCard } from "../components/ui/NeonCard";
 import { Input } from "../components/ui/Input";
 import { GlowButton } from "../components/ui/GlowButton";
-import { Gamepad2, Mail, Lock, User, ArrowRight, Loader2 } from "lucide-react";
+import { Gamepad2, Mail, Lock, User, ArrowRight, Loader2, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import api from "../lib/api";
@@ -15,7 +15,8 @@ export const AuthPage = () => {
   const [formData, setFormData] = useState({
     username: "",
     email: "",
-    password: ""
+    password: "",
+    referralCode: ""
   });
 
   const navigate = useNavigate();
@@ -49,7 +50,8 @@ export const AuthPage = () => {
         await api.post("/auth/register", {
           username: formData.username,
           email: formData.email,
-          password: formData.password
+          password: formData.password,
+          referralCode: formData.referralCode || undefined
         });
         
         toast.success("ثبت‌نام با موفقیت انجام شد. وارد شوید.");
@@ -113,6 +115,14 @@ export const AuthPage = () => {
                         onChange={handleInputChange}
                         icon={<User size={18} />} 
                         required={!isLogin}
+                      />
+                      <Input 
+                        label="کد معرف (اختیاری)" 
+                        placeholder="کد دعوت خود را وارد کنید" 
+                        name="referralCode"
+                        value={formData.referralCode}
+                        onChange={handleInputChange}
+                        icon={<Users size={18} />} 
                       />
                     </motion.div>
                   )}

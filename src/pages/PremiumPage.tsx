@@ -1,17 +1,26 @@
-import React from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Sidebar } from "../components/layout/Sidebar";
 import { NeonCard } from "../components/ui/NeonCard";
 import { GlowButton } from "../components/ui/GlowButton";
 import { 
   Check, Crown, Zap, Star, Shield, 
   MessageSquare, Users, Image, Sparkles, 
-  ArrowRight, Layout
+  ArrowRight, Layout, CreditCard, Upload, 
+  X, AlertCircle, Clock, CheckCircle2, 
+  Copy, ExternalLink, RefreshCw
 } from "lucide-react";
-import { motion } from "motion/react";
-import { cn } from "@/src/lib/utils";
+import { motion, AnimatePresence } from "motion/react";
+import { cn } from "../lib/utils";
+import axios from "axios";
+import { useAuth } from "../context/AuthContext";
+import { toast } from "react-hot-toast";
+import { BankCard } from "../components/premium/BankCard";
+
+type Step = "SELECT" | "PREVIEW" | "PAYMENT" | "STATUS";
+type PlanType = "PLUS" | "VIP";
 
 const PLAN_FEATURES = {
-  plus: [
+  PLUS: [
     { icon: <Image size={18} />, label: "Animated Avatar (GIF)", detail: "استفاده از گیف برای عکس پروفایل" },
     { icon: <Layout size={18} />, label: "Mini Profile Banner", detail: "بنر اختصاصی برای مینی پروفایل" },
     { icon: <MessageSquare size={18} />, label: "Exclusive Stickers", detail: "استکیرهای متحرک و خاص در چت" },
@@ -20,7 +29,7 @@ const PLAN_FEATURES = {
     { icon: <Zap size={18} />, label: "Priority Lobbies", detail: "اولویت نمایش لابی در لیست" },
     { icon: <Shield size={18} />, label: "LOXX Plus Badge", detail: "نشان مخصوص پلاس کنار نام کاربر" },
   ],
-  vip: [
+  VIP: [
     { icon: <Crown size={18} />, label: "Golden Animated Ring", detail: "حلقه طلایی متحرک دور پروفایل" },
     { icon: <Star size={18} />, label: "VIP Profile Banner", detail: "بنر اختصاصی و گیف در پروفایل" },
     { icon: <MessageSquare size={18} />, label: "Message Effects", detail: "افکت نوری هنگام ارسال پیام" },
@@ -31,168 +40,458 @@ const PLAN_FEATURES = {
   ]
 };
 
+const PLAN_DATA = {
+  PLUS: {
+    name: "LOXX Plus",
+    price: "199,000",
+    color: "blue",
+    tagline: "تجربه ارتقا یافته",
+    theme: "from-neon-blue/20 to-transparent"
+  },
+  VIP: {
+    name: "LOXX VIP",
+    price: "399,000",
+    color: "purple",
+    tagline: "سطح نخبگان لوکس",
+    theme: "from-neon-purple/20 to-transparent"
+  }
+};
+
 export const PremiumPage = () => {
+  const { user } = useAuth();
+  const [step, setStep] = useState<Step>("SELECT");
+  const [selectedPlan, setSelectedPlan] = useState<PlanType | null>(null);
+  const [pendingPayment, setPendingPayment] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    fetchPaymentStatus();
+  }, []);
+
+  const fetchPaymentStatus = async () => {
+    try {
+      const { data } = await axios.get("/api/v1/payments/status");
+      if (data.status === "success" && data.data && data.data.status === "PENDING") {
+        setPendingPayment(data.data);
+        setStep("STATUS");
+      }
+    } catch (err) {
+      console.error("Failed to fetch payment status", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSelectPlan = (plan: PlanType) => {
+    setSelectedPlan(plan);
+    setStep("PREVIEW");
+  };
+
+  const handleCancelPayment = async () => {
+    if (!confirm("آیا از لغو درخواست پرداخت اطمینان دارید؟")) return;
+    
+    try {
+      setSubmitting(true);
+      await axios.post("/api/v1/payments/cancel");
+      setPendingPayment(null);
+      setStep("SELECT");
+      toast.success("درخواست با موفقیت لغو شد");
+    } catch (err) {
+      toast.error("خطا در لغو درخواست");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 3 * 1024 * 1024) {
+        toast.error("حجم فایل نباید بیشتر از ۳ مگابایت باشد");
+        return;
+      }
+      setReceiptFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setReceiptPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSubmitPayment = async () => {
+    if (!receiptFile || !selectedPlan) {
+      toast.error("لطفاً تصویر رسید را بارگذاری کنید");
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      // In a real app we'd upload to S3/Cloudinary. 
+      // Here we'll send base64 to a mock upload route or just simulate.
+      // We'll simulate by sending the base64 preview (not recommended for production but works here).
+      const response = await axios.post("/api/v1/payments/create", {
+        type: selectedPlan,
+        receiptImageUrl: receiptPreview
+      });
+
+      if (response.data.status === "success") {
+        setPendingPayment(response.data.data);
+        setStep("STATUS");
+        toast.success("رسید با موفقیت ثبت شد");
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "خطا در ثبت رسید");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen bg-[#050507] items-center justify-center">
+        <RefreshCw className="animate-spin text-neon-blue" size={32} />
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-[calc(100vh-64px)] bg-[#050507]">
       <Sidebar />
       <main className="flex-1 px-4 py-8 md:mr-64 lg:px-8 pb-32 md:pb-8">
         <div className="container mx-auto max-w-6xl">
-          <header className="mb-16 text-center">
-             <motion.div
-               initial={{ opacity: 0, scale: 0.9 }}
-               animate={{ opacity: 1, scale: 1 }}
-               className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-neon-purple/20 border border-neon-purple/30 text-neon-purple text-[10px] font-black uppercase tracking-widest mb-6 italic"
-             >
-               <Sparkles size={14} className="animate-pulse" />
-               تجربه نسل جدید گیمینگ
-             </motion.div>
-             <h1 className="text-4xl md:text-7xl font-black text-white italic uppercase tracking-tighter mb-4">ارتقای سطح کاربری</h1>
-             <p className="text-gray-500 max-w-2xl mx-auto font-bold">برای حمایت از لوکس و باز کردن قابلیت‌های استثنایی، یکی از اشتراک‌های ویژه را انتخاب کنید.</p>
-          </header>
+          <AnimatePresence mode="wait">
+            {step === "SELECT" && (
+              <motion.div
+                key="select"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+              >
+                <header className="mb-16 text-center">
+                   <motion.div
+                     initial={{ opacity: 0, scale: 0.9 }}
+                     animate={{ opacity: 1, scale: 1 }}
+                     className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-neon-purple/20 border border-neon-purple/30 text-neon-purple text-[10px] font-black uppercase tracking-widest mb-6 italic"
+                   >
+                     <Sparkles size={14} className="animate-pulse" />
+                     تجربه نسل جدید گیمینگ
+                   </motion.div>
+                   <h1 className="text-4xl md:text-7xl font-black text-white italic uppercase tracking-tighter mb-4">ارتقای سطح کاربری</h1>
+                   <p className="text-gray-500 max-w-2xl mx-auto font-bold">برای حمایت از لوکس و باز کردن قابلیت‌های استثنایی، یکی از اشتراک‌های ویژه را انتخاب کنید.</p>
+                </header>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 items-start mb-20">
-            {/* LOXX PLUS */}
-            <motion.div
-              initial={{ opacity: 0, x: -30 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.1 }}
-            >
-              <NeonCard variant="blue" className="p-8 md:p-12 bg-dark-card/50 backdrop-blur-2xl border-white/5 relative overflow-hidden group">
-                 <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-all">
-                    <Zap size={200} className="rotate-12" />
-                 </div>
-                 
-                 <div className="flex items-center justify-between mb-8 relative z-10">
-                    <div>
-                       <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter">LOXX PLUS</h2>
-                       <p className="text-neon-blue font-bold uppercase text-xs tracking-widest">تجربه ارتقا یافته</p>
-                    </div>
-                    <div className="text-right">
-                       <span className="text-3xl font-black text-white italic">۴.۹۹$</span>
-                       <span className="text-gray-500 text-xs font-bold block italic uppercase">ماهانه</span>
-                    </div>
-                 </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 items-start mb-20">
+                  {/* PLUS CARD */}
+                  <NeonCard variant="blue" className="p-8 md:p-12 bg-dark-card/50 backdrop-blur-2xl border-white/5 relative overflow-hidden group">
+                     <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-all">
+                        <Zap size={200} className="rotate-12" />
+                     </div>
+                     <div className="flex items-center justify-between mb-8 relative z-10">
+                        <div>
+                           <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter">LOXX PLUS</h2>
+                           <p className="text-neon-blue font-bold uppercase text-xs tracking-widest">تجربه ارتقا یافته</p>
+                        </div>
+                        <div className="text-right">
+                           <span className="text-2xl font-black text-white italic">۱۹۹,۰۰۰</span>
+                           <span className="text-gray-500 text-[10px] font-bold block italic uppercase">تومان / ماه</span>
+                        </div>
+                     </div>
+                     <div className="space-y-4 mb-10 relative z-10">
+                        {PLAN_FEATURES.PLUS.map((feat, i) => (
+                           <div key={i} className="flex gap-3 items-center">
+                              <div className="h-5 w-5 rounded-full bg-neon-blue/10 flex items-center justify-center text-neon-blue"><Check size={12} /></div>
+                              <span className="text-xs font-black text-white italic uppercase tracking-tight">{feat.label}</span>
+                           </div>
+                        ))}
+                     </div>
+                     <GlowButton onClick={() => handleSelectPlan("PLUS")} variant="blue" className="w-full py-5 text-sm font-black uppercase italic tracking-widest">
+                        دریافت پلاس <ArrowRight size={18} className="mr-2 inline" />
+                     </GlowButton>
+                  </NeonCard>
 
-                 <div className="space-y-4 mb-10 relative z-10">
-                    {PLAN_FEATURES.plus.map((feature, i) => (
-                      <div key={i} className="flex gap-4 items-start">
-                         <div className="h-6 w-6 shrink-0 rounded-full bg-neon-blue/10 flex items-center justify-center text-neon-blue">
-                            <Check size={14} />
+                  {/* VIP CARD */}
+                  <NeonCard variant="purple" className="p-8 md:p-12 bg-[#12051a]/50 backdrop-blur-2xl border-yellow-400/20 relative overflow-hidden group">
+                     <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-all">
+                        <Crown size={200} className="rotate-12" />
+                     </div>
+                     <div className="flex items-center justify-between mb-8 relative z-10">
+                        <div>
+                           <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter">LOXX VIP</h2>
+                           <p className="text-yellow-400 font-bold uppercase text-xs tracking-widest">سطح نخبگان لوکس</p>
+                        </div>
+                        <div className="text-right">
+                           <span className="text-2xl font-black text-white italic">۳۹۹,۰۰۰</span>
+                           <span className="text-gray-500 text-[10px] font-bold block italic uppercase">تومان / ماه</span>
+                        </div>
+                     </div>
+                     <div className="space-y-4 mb-10 relative z-10">
+                        {PLAN_FEATURES.VIP.map((feat, i) => (
+                           <div key={i} className="flex gap-3 items-center">
+                              <div className="h-5 w-5 rounded-full bg-yellow-400/10 flex items-center justify-center text-yellow-400"><Check size={12} /></div>
+                              <span className="text-xs font-black text-white italic uppercase tracking-tight">{feat.label}</span>
+                           </div>
+                        ))}
+                     </div>
+                     <GlowButton onClick={() => handleSelectPlan("VIP")} variant="pink" className="w-full py-5 text-sm font-black uppercase italic tracking-widest bg-gradient-to-r from-neon-purple to-neon-pink">
+                        دریافت VIP <Crown size={18} className="mr-2 inline" />
+                     </GlowButton>
+                  </NeonCard>
+                </div>
+              </motion.div>
+            )}
+
+            {step === "PREVIEW" && selectedPlan && (
+              <motion.div
+                key="preview"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 1.05 }}
+                className="max-w-4xl mx-auto"
+              >
+                <button onClick={() => setStep("SELECT")} className="mb-8 flex items-center gap-2 text-gray-500 hover:text-white transition-colors font-bold uppercase text-xs italic">
+                  <X size={16} /> بازگشت به انتخاب طرح
+                </button>
+                
+                <NeonCard 
+                  variant={PLAN_DATA[selectedPlan].color as any} 
+                  className={cn("p-8 md:p-16 relative overflow-hidden", PLAN_DATA[selectedPlan].theme)}
+                >
+                  <div className="text-center mb-12">
+                    <h2 className="text-4xl md:text-6xl font-black text-white italic uppercase tracking-tighter mb-4">
+                      {PLAN_DATA[selectedPlan].name}
+                    </h2>
+                    <p className={cn("font-bold uppercase tracking-widest italic animate-pulse", 
+                      selectedPlan === "VIP" ? "text-yellow-400" : "text-neon-blue"
+                    )}>
+                      {selectedPlan === "PLUS" ? "شما در حال خرید نسخه ارتقا یافته هستید" : "شما در حال خرید نسخه نخبگان هستید"}
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-16">
+                     {PLAN_FEATURES[selectedPlan].map((feat, i) => (
+                        <div key={i} className="flex gap-4 p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-white/10 transition-all">
+                           <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center shrink-0", 
+                              selectedPlan === "VIP" ? "bg-yellow-400/20 text-yellow-400" : "bg-neon-blue/20 text-neon-blue"
+                           )}>
+                              {feat.icon}
+                           </div>
+                           <div>
+                              <h4 className="text-white font-black italic uppercase text-sm">{feat.label}</h4>
+                              <p className="text-[10px] text-gray-500 font-bold">{feat.detail}</p>
+                           </div>
+                        </div>
+                     ))}
+                  </div>
+
+                  <GlowButton 
+                    onClick={() => setStep("PAYMENT")}
+                    variant={selectedPlan === "VIP" ? "pink" : "blue"} 
+                    className="w-full py-6 text-lg font-black italic uppercase tracking-widest"
+                  >
+                    ادامه به مرحله پرداخت <CreditCard size={20} className="mr-2 inline" />
+                  </GlowButton>
+                </NeonCard>
+              </motion.div>
+            )}
+
+            {step === "PAYMENT" && selectedPlan && (
+              <motion.div
+                key="payment"
+                initial={{ opacity: 0, x: 50 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -50 }}
+                className="max-w-4xl mx-auto"
+              >
+                <button onClick={() => setStep("PREVIEW")} className="mb-8 flex items-center gap-2 text-gray-500 hover:text-white transition-colors font-bold uppercase text-xs italic">
+                  <X size={16} /> بازگشت به پیش‌نمایش
+                </button>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                   <div className="space-y-8">
+                      <div className="text-right">
+                         <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter mb-2">اطلاعات پرداخت</h2>
+                         <p className="text-gray-500 font-bold text-sm italic">لطفاً مبلغ را کارت‌به‌کارت کنید و تصویر رسید را بارگذاری نمایید.</p>
+                      </div>
+
+                      <BankCard 
+                        cardNumber="6063 7311 8109 6737"
+                        cardHolder="احمدی مهدی دلال زاده"
+                      />
+
+                      <div className="p-6 rounded-3xl bg-white/[0.03] border border-white/5 space-y-4">
+                         <div className="flex justify-between items-center">
+                            <span className="text-gray-500 font-bold uppercase text-[10px]">مبلغ قابل پرداخت</span>
+                            <span className="text-white font-black text-xl italic tracking-tighter">{PLAN_DATA[selectedPlan].price} تومان</span>
                          </div>
-                         <div>
-                            <p className="text-sm font-black text-white italic uppercase tracking-tight">{feature.label}</p>
-                            <p className="text-[10px] text-gray-500 font-bold">{feature.detail}</p>
+                         <div className="flex justify-between items-center">
+                            <span className="text-gray-500 font-bold uppercase text-[10px]">شماره کارت</span>
+                            <div className="flex items-center gap-2">
+                               <button onClick={() => { navigator.clipboard.writeText("6063731181096737"); toast.success("شماره کارت کپی شد"); }} className="text-neon-blue hover:text-white transition-colors"><Copy size={14}/></button>
+                               <span className="text-white font-mono font-bold tracking-widest">6063 7311 8109 6737</span>
+                            </div>
                          </div>
                       </div>
-                    ))}
-                 </div>
+                   </div>
 
-                 <GlowButton variant="blue" className="w-full py-5 text-sm font-black uppercase italic tracking-widest relative z-10">
-                    دریافت پلاس <ArrowRight size={18} className="mr-2 inline" />
-                 </GlowButton>
-                 
-                 <div className="mt-6 flex items-center justify-center gap-6 relative z-10">
-                    <div className="flex items-center gap-2">
-                       <div className="h-6 w-6 rounded-full border-2 border-neon-blue shadow-[0_0_10px_rgba(0,229,255,0.5)]" />
-                       <span className="text-[10px] text-gray-400 font-bold uppercase">Blue Ring</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                       <span className="text-[10px] text-neon-blue font-black uppercase italic tracking-widest">PLUS BADGE</span>
-                    </div>
-                 </div>
-              </NeonCard>
-            </motion.div>
-
-            {/* LOXX VIP */}
-            <motion.div
-              initial={{ opacity: 0, x: 30 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.2 }}
-            >
-              <NeonCard variant="purple" className="p-8 md:p-12 bg-[#12051a]/50 backdrop-blur-2xl border-yellow-400/20 relative overflow-hidden group shadow-[0_0_60px_rgba(168,85,247,0.1)]">
-                 <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-all">
-                    <Crown size={200} className="rotate-12" />
-                 </div>
-                 
-                 <div className="flex items-center justify-between mb-8 relative z-10">
-                    <div>
-                       <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter">LOXX VIP</h2>
-                       <p className="text-yellow-400 font-bold uppercase text-xs tracking-widest">سطح نخبگان لوکس</p>
-                    </div>
-                    <div className="text-right">
-                       <span className="text-3xl font-black text-white italic">۹.۹۹$</span>
-                       <span className="text-gray-500 text-xs font-bold block italic uppercase">ماهانه</span>
-                    </div>
-                 </div>
-
-                 <div className="space-y-4 mb-10 relative z-10">
-                    {PLAN_FEATURES.vip.map((feature, i) => (
-                      <div key={i} className="flex gap-4 items-start">
-                         <div className="h-6 w-6 shrink-0 rounded-full bg-yellow-400/10 flex items-center justify-center text-yellow-400">
-                            <Check size={14} />
-                         </div>
-                         <div>
-                            <p className="text-sm font-black text-white italic uppercase tracking-tight">{feature.label}</p>
-                            <p className="text-[10px] text-gray-500 font-bold">{feature.detail}</p>
-                         </div>
+                   <div className="space-y-6">
+                      <h4 className="text-white font-black italic uppercase tracking-tight">آپلود تصویر رسید</h4>
+                      
+                      <div 
+                        onClick={() => fileInputRef.current?.click()}
+                        className={cn(
+                          "relative aspect-square rounded-[40px] border-2 border-dashed transition-all cursor-pointer flex flex-col items-center justify-center gap-4 overflow-hidden group",
+                          receiptPreview ? "border-neon-blue/40" : "border-white/10 hover:border-white/20 hover:bg-white/[0.02]"
+                        )}
+                      >
+                        {receiptPreview ? (
+                          <>
+                            <img src={receiptPreview} className="w-full h-full object-cover" />
+                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                              <p className="text-white font-black italic uppercase text-xs">تغییر تصویر</p>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="h-16 w-16 rounded-3xl bg-white/5 flex items-center justify-center text-gray-500 group-hover:text-neon-blue transition-colors">
+                               <Upload size={32} />
+                            </div>
+                            <div className="text-center">
+                               <p className="text-white font-black italic uppercase text-sm">انتخاب عکس رسید</p>
+                               <p className="text-[10px] text-gray-500 font-bold mt-1 uppercase tracking-widest">Maximum size 3MB</p>
+                            </div>
+                          </>
+                        )}
+                        <input 
+                           type="file" 
+                           ref={fileInputRef} 
+                           onChange={handleFileChange} 
+                           accept="image/*" 
+                           className="hidden" 
+                        />
                       </div>
-                    ))}
-                 </div>
 
-                 <GlowButton variant="pink" className="w-full py-5 text-sm font-black uppercase italic tracking-widest relative z-10 bg-gradient-to-r from-neon-purple to-neon-pink">
-                    دریافت VIP <Crown size={18} className="mr-2 inline" />
-                 </GlowButton>
+                      <GlowButton 
+                        onClick={handleSubmitPayment}
+                        disabled={!receiptFile || submitting}
+                        variant="blue" 
+                        className="w-full py-5 text-sm font-black italic uppercase tracking-widest"
+                      >
+                        {submitting ? "در حال ارسال..." : "ارسال برای تایید"} <Check size={18} className="mr-2 inline" />
+                      </GlowButton>
+                      
+                      <p className="text-[9px] text-gray-600 font-bold uppercase text-center leading-relaxed">
+                        با زدن دکمه ارسال، شما تایید می‌کنید که مبلغ را به درستی واریز کرده‌اید. فعال‌سازی بین ۱ تا ۱۵ دقیقه زمان می‌برد.
+                      </p>
+                   </div>
+                </div>
+              </motion.div>
+            )}
 
-                 <div className="mt-6 flex items-center justify-center gap-6 relative z-10">
-                    <motion.div 
-                      animate={{ boxShadow: ["0 0 10px rgba(250,204,21,0.3)", "0 0 25px rgba(250,204,21,0.6)", "0 0 10px rgba(250,204,21,0.3)"] }}
-                      transition={{ duration: 2, repeat: Infinity }}
-                      className="flex items-center gap-2"
-                    >
-                       <div className="h-6 w-6 rounded-full border-2 border-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.5)]" />
-                       <span className="text-[10px] text-yellow-400 font-bold uppercase">Gold Ring</span>
-                    </motion.div>
-                    <div className="flex items-center gap-2">
-                       <span className="text-[10px] text-yellow-400 font-black uppercase italic tracking-widest">GOLD CROWN BADGE</span>
-                    </div>
-                 </div>
-              </NeonCard>
+            {step === "STATUS" && pendingPayment && (
+              <motion.div
+                key="status"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="max-w-2xl mx-auto"
+              >
+                <NeonCard 
+                  variant={pendingPayment.type === "VIP" ? "purple" : "blue"}
+                  className="p-12 text-center relative overflow-hidden"
+                >
+                  <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-neon-blue to-transparent animate-shimmer" />
+                  
+                  <div className="h-20 w-20 rounded-[30px] bg-white/5 flex items-center justify-center mx-auto mb-8 relative">
+                     <Clock size={40} className="text-neon-blue animate-pulse" />
+                     <div className="absolute inset-0 rounded-[30px] border border-neon-blue/20 animate-ping" />
+                  </div>
+
+                  <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter mb-4">در انتظار تأیید</h2>
+                  <p className="text-gray-500 font-bold text-sm mb-8 leading-relaxed">
+                    رسید شما با موفقیت دریافت شد و در صف بررسی قرار گرفت. <br />
+                    تا دقایقی دیگر اشتراک <span className="text-white italic">{pendingPayment.type}</span> شما فعال خواهد شد.
+                  </p>
+
+                  <div className="flex flex-col gap-4">
+                     <div className="p-4 rounded-2xl bg-white/5 border border-white/5 flex justify-between items-center text-right">
+                        <div>
+                           <p className="text-[10px] text-gray-500 font-bold uppercase italic">تاریخ ثبت</p>
+                           <p className="text-white font-black italic text-sm">{new Date(pendingPayment.createdAt).toLocaleString('fa-IR')}</p>
+                        </div>
+                        <div>
+                           <p className="text-[10px] text-gray-500 font-bold uppercase italic">کد پیگیری</p>
+                           <p className="text-white font-black italic text-sm">#{pendingPayment.id.slice(0, 8).toUpperCase()}</p>
+                        </div>
+                     </div>
+
+                     <GlowButton 
+                       onClick={handleCancelPayment}
+                       disabled={submitting}
+                       className="w-full py-4 text-xs font-black italic uppercase tracking-widest bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500/20"
+                     >
+                       {submitting ? "در حال لغو..." : "لغو درخواست پرداخت"} <X size={16} className="mr-2 inline" />
+                     </GlowButton>
+                  </div>
+                </NeonCard>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Referral Section (Always show at bottom of SELECT step) */}
+          {step === "SELECT" && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              className="mt-20 text-center p-12 rounded-[40px] bg-gradient-to-b from-white/[0.03] to-transparent border border-white/5 relative overflow-hidden"
+            >
+               <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(0,229,255,0.05),transparent_70%)]" />
+               <h3 className="text-2xl font-black text-white italic uppercase tracking-tighter mb-4 relative z-10">برنامه معرفی دوستان</h3>
+               <p className="text-gray-500 max-w-sm mx-auto font-bold mb-8 relative z-10">
+                  اگر کسی با کد معرفی شما ثبت نام کند، ۳ روز اکانت PLUS رایگان دریافت می‌کنید.
+               </p>
+               <div className="flex flex-col items-center gap-4 relative z-10">
+                  <div className="flex bg-white/5 p-2 rounded-2xl border border-white/5 items-center gap-4 pl-4">
+                     <span className="text-xs font-mono font-bold text-gray-400">کد شما:</span>
+                     <span className="text-neon-blue font-black italic">{user?.username}</span>
+                     <button 
+                        onClick={() => { navigator.clipboard.writeText(user?.username || ""); toast.success("کد کپی شد"); }}
+                        className="p-2 hover:bg-white/10 rounded-xl transition-colors text-white"
+                     >
+                        <Copy size={16} />
+                     </button>
+                  </div>
+                  <p className="text-[10px] text-gray-500 font-bold uppercase animate-bounce">برای کپی کردن کد کلیک کنید</p>
+               </div>
             </motion.div>
-          </div>
+          )}
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-20">
+          <div className="mt-20 grid grid-cols-1 md:grid-cols-3 gap-6">
              <div className="p-6 rounded-3xl bg-white/[0.03] border border-white/5 backdrop-blur-xl text-center">
                 <div className="h-12 w-12 rounded-2xl bg-neon-blue/10 flex items-center justify-center text-neon-blue mx-auto mb-4">
                   <Shield size={24} />
                 </div>
                 <h4 className="text-white font-black uppercase italic mb-2">پرداخت امن</h4>
-                <p className="text-[10px] text-gray-500 font-bold uppercase leading-relaxed">تمام تراکنش‌ها رمزنگاری شده و امن هستند.</p>
+                <p className="text-[10px] text-gray-500 font-bold uppercase leading-relaxed">تراکنش‌ها توسط ادمین تایید و بررسی می‌شوند.</p>
              </div>
              <div className="p-6 rounded-3xl bg-white/[0.03] border border-white/5 backdrop-blur-xl text-center">
                 <div className="h-12 w-12 rounded-2xl bg-neon-pink/10 flex items-center justify-center text-neon-pink mx-auto mb-4">
-                  <Sparkles size={24} />
+                  <Clock size={24} />
                 </div>
-                <h4 className="text-white font-black uppercase italic mb-2">فعال‌سازی آنی</h4>
-                <p className="text-[10px] text-gray-500 font-bold uppercase leading-relaxed">اشتراک شما بلافاصله پس از خرید فعال خواهد شد.</p>
+                <h4 className="text-white font-black uppercase italic mb-2">تایید سریع</h4>
+                <p className="text-[10px] text-gray-500 font-bold uppercase leading-relaxed">فعال‌سازی اشتراک در کمتر از ۱۵ دقیقه.</p>
              </div>
              <div className="p-6 rounded-3xl bg-white/[0.03] border border-white/5 backdrop-blur-xl text-center">
                 <div className="h-12 w-12 rounded-2xl bg-neon-purple/10 flex items-center justify-center text-neon-purple mx-auto mb-4">
                   <Users size={24} />
                 </div>
-                <h4 className="text-white font-black uppercase italic mb-2">حمایت از لوکس</h4>
-                <p className="text-[10px] text-gray-500 font-bold uppercase leading-relaxed">با خرید اشتراک به رشد پلتفرم کمک می‌کنید.</p>
+                <h4 className="text-white font-black uppercase italic mb-2">حمایت از پلتفرم</h4>
+                <p className="text-[10px] text-gray-500 font-bold uppercase leading-relaxed">با خرید پلاس به توسعه لوکس کمک می‌کنید.</p>
              </div>
-          </div>
-          
-          <div className="text-center p-12 rounded-[40px] bg-gradient-to-b from-white/[0.03] to-transparent border border-white/5 relative overflow-hidden">
-             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(0,229,255,0.05),transparent_70%)]" />
-             <h3 className="text-2xl font-black text-white italic uppercase tracking-tighter mb-4 relative z-10">برنامه معرفی دوستان</h3>
-             <p className="text-gray-500 max-w-sm mx-auto font-bold mb-8 relative z-10">
-                اگر کسی با لینک دعوت شما ثبت نام کند، هر دوی شما ۳ روز اکانت PLUS رایگان دریافت می‌کنید.
-             </p>
-             <GlowButton variant="blue" className="px-10 py-4 text-xs font-black uppercase italic tracking-widest relative z-10">
-                ایجاد لینک دعوت
-             </GlowButton>
           </div>
         </div>
       </main>

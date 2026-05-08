@@ -36,6 +36,9 @@ model User {
   userGames       UserGame[]
   hostedLobbies   Lobby[]      @relation("LobbyHost")
   settings        UserSettings?
+  invitesSent     Referral[]   @relation("Inviter")
+  invitationReceived Referral?   @relation("Invitee")
+  paymentRequests PaymentRequest[]
 }
 
 model UserSettings {
@@ -210,11 +213,37 @@ model XPLog {
 model Subscription {
   id              String         @id @default(uuid())
   userId          String
-  user            User           @relation(fields: [userId], references: [id])
-  tier            String         // NONE, PLUS, VIP
-  startDate       DateTime       @default(now())
-  endDate         DateTime
-  autoRenew       Boolean        @default(true)
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type            String         // PLUS, VIP
+  expiresAt       DateTime
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@index([userId])
+}
+
+model PaymentRequest {
+  id              String         @id @default(uuid())
+  userId          String
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type            String         // PLUS, VIP
+  amount          Int
+  status          String         @default("PENDING") // PENDING, APPROVED, REJECTED
+  receiptImageUrl String
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@index([userId, status])
+}
+
+model Referral {
+  id              String         @id @default(uuid())
+  inviterId       String         // The user who invited
+  inviter         User           @relation("Inviter", fields: [inviterId], references: [id])
+  inviteeId       String         @unique // The new user
+  invitee         User           @relation("Invitee", fields: [inviteeId], references: [id])
+  referralCode    String
+  createdAt       DateTime       @default(now())
 }
 
 model AuditLog {

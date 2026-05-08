@@ -176,7 +176,7 @@ export const LeaderboardPage = () => {
             <div className="lg:col-span-2 space-y-4">
                <h2 className="text-xl font-black text-white uppercase italic tracking-tighter mb-6">لیست برترین‌ها</h2>
                {topUsers.length > 3 ? (
-                 topUsers.slice(3, showAll ? 10 : 8).map((player, i) => (
+                 topUsers.slice(3, showAll ? 10 : 5).map((player, i) => (
                     <motion.div key={i} initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.05 }}>
                       <div className="group flex items-center justify-between rounded-2xl border border-white/5 bg-white/[0.02] p-4 transition-all hover:bg-white/[0.05] hover:border-neon-blue/20">
                          <div className="flex items-center gap-4 md:gap-6 min-w-0">
@@ -197,7 +197,7 @@ export const LeaderboardPage = () => {
                  !loading && <p className="text-gray-500 font-bold italic text-center p-8 bg-white/5 rounded-3xl border border-dashed border-white/10">قهرمان دیگری در لیست نیست...</p>
                )}
 
-               {topUsers.length > 8 && !showAll && (
+               {topUsers.length > 5 && !showAll && (
                  <GlowButton 
                     variant="blue" 
                     className="w-full py-4 text-xs font-black uppercase italic tracking-widest mt-8"

@@ -34,9 +34,10 @@ export class SettingsService {
       }
     }
 
-    return prisma.userSettings.update({
+    return prisma.userSettings.upsert({
       where: { userId },
-      data: filteredData
+      create: { userId, ...filteredData },
+      update: filteredData
     });
   }
 }

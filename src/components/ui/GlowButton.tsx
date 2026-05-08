@@ -3,7 +3,7 @@ import { motion } from "motion/react";
 import { cn } from "@/src/lib/utils";
 
 interface GlowButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "blue" | "pink" | "purple" | "secondary";
+  variant?: "blue" | "pink" | "purple" | "secondary" | "gold";
   size?: "sm" | "md" | "lg";
   glow?: boolean;
   loading?: boolean;
@@ -15,7 +15,8 @@ export const GlowButton = React.forwardRef<HTMLButtonElement, GlowButtonProps>(
       blue: "bg-neon-blue text-dark-bg border-transparent shadow-[0_8px_32px_0_rgba(0,229,255,0.25)] hover:bg-neon-blue/90 hover:shadow-[0_12px_40px_0_rgba(0,229,255,0.35)]",
       pink: "bg-neon-pink text-dark-bg border-transparent shadow-[0_8px_32px_0_rgba(255,0,153,0.25)] hover:bg-neon-pink/90 hover:shadow-[0_12px_40px_0_rgba(255,0,153,0.35)]",
       purple: "bg-neon-purple text-dark-bg border-transparent shadow-[0_8px_32px_0_rgba(160,32,240,0.25)] hover:bg-neon-purple/90 hover:shadow-[0_12px_40px_0_rgba(160,32,240,0.35)]",
-      secondary: "bg-white/5 text-white hover:bg-white/10 border-transparent shadow-none"
+      secondary: "bg-white/5 text-white hover:bg-white/10 border-transparent shadow-none",
+      gold: "bg-yellow-400 text-dark-bg border-transparent shadow-[0_8px_32px_0_rgba(250,204,21,0.25)] hover:bg-yellow-500 hover:shadow-[0_12px_40px_0_rgba(250,204,21,0.35)]"
     };
 
     const sizes = {

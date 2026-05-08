@@ -17,6 +17,7 @@ import gameRoutes from "./server/routes/game.routes.ts";
 import notificationRoutes from "./server/routes/notification.routes.ts";
 import adminRoutes from "./server/routes/admin.routes.ts";
 import settingsRoutes from "./server/routes/settings.routes.ts";
+import paymentRoutes from "./server/routes/payment.routes.ts";
 import { setupWebSockets } from "./server/sockets/index.ts";
 import { setIO } from "./server/utils/socket.ts";
 import prisma from "./server/utils/prisma.ts";
@@ -67,6 +68,7 @@ async function startServer() {
   app.use("/api/v1/notifications", notificationRoutes);
   app.use("/api/v1/admin", adminRoutes);
   app.use("/api/v1/settings", settingsRoutes);
+  app.use("/api/v1/payments", paymentRoutes);
   
   app.get("/api/health", (req, res) => {
     res.json({ status: "ok", message: "LOXX Backend is running in Persian mode (UTF-8)" });
