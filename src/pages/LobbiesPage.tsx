@@ -102,8 +102,8 @@ export const LobbiesPage = () => {
               <p className="mt-3 text-[11px] md:text-xs text-gray-500 font-bold uppercase tracking-[0.15em] leading-relaxed opacity-60">تیم خود را پیدا کنید و در کنار بقیه بازیکنان حرفه‌ای بازی کنید</p>
             </div>
             
-            <div className="flex flex-col w-full items-stretch sm:flex-row sm:items-center gap-3 sm:gap-4 md:w-auto">
-               <div className="relative flex-1 sm:w-80">
+            <div className="flex flex-col w-full items-stretch sm:flex-row sm:items-center gap-4 md:w-auto overflow-hidden">
+               <div className="relative flex-1 min-w-0">
                 <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-700" size={18} />
                 <input 
                    type="text" 
@@ -115,7 +115,7 @@ export const LobbiesPage = () => {
               </div>
               <GlowButton 
                 variant="blue" 
-                className="flex items-center justify-center gap-2 h-14 px-4 sm:px-8 shrink-0 shadow-[0_0_30px_rgba(0,229,255,0.2)] rounded-2xl group" 
+                className="flex items-center justify-center gap-2 h-14 px-4 sm:px-8 shrink-0 shadow-[0_0_30px_rgba(0,229,255,0.2)] rounded-2xl group whitespace-nowrap" 
                 onClick={() => setIsModalOpen(true)}
               >
                 <Plus size={20} className="group-hover:rotate-90 transition-transform" />

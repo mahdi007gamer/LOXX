@@ -355,7 +355,7 @@ export const SettingsPage = () => {
             <label className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/5 cursor-pointer hover:border-white/10">
                <div className="flex items-center gap-3">
                  <Eye size={16} className="text-gray-500" />
-                 <span className="text-xs font-black text-white italic">نمایش وضعیت آنلایت</span>
+                 <span className="text-xs font-black text-white italic">نمایش وضعیت آنلاین</span>
                </div>
                <input 
                  type="checkbox" 
