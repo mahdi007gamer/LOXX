@@ -94,10 +94,10 @@ const FriendItem = ({
             }, false);
           }}>
             <div className="h-12 w-12 rounded-full bg-white/10 overflow-hidden flex items-center justify-center border border-white/5 group-hover/avatar:border-neon-blue/50 transition-all">
-               {friend.avatar && (friend.avatar.length > 5 || friend.avatar.startsWith("/") || friend.avatar.includes(".")) ? (
-                 <img src={friend.avatar} alt={friend.username} className="w-full h-full object-cover" />
+               {((friend.avatar || (friend as any).avatarUrl) && ((friend.avatar || (friend as any).avatarUrl).length > 5 || (friend.avatar || (friend as any).avatarUrl).startsWith("/") || (friend.avatar || (friend as any).avatarUrl).includes("."))) ? (
+                 <img src={friend.avatar || (friend as any).avatarUrl} alt={friend.username} className="w-full h-full object-cover" />
                ) : (
-                 <div className="h-full w-full flex items-center justify-center text-xl">{friend.avatar || "👤"}</div>
+                 <div className="h-full w-full flex items-center justify-center text-xl">{friend.avatar || (friend as any).avatarUrl || "👤"}</div>
                )}
             </div>
             <div className="absolute -bottom-0.5 -right-0.5 border-2 border-dark-bg rounded-full p-0.5 bg-dark-bg z-10">
@@ -500,17 +500,17 @@ export const FriendsPage = () => {
                                  senderName: req.displayName,
                                  senderAvatar: req.avatar,
                                  senderLevel: (req as any).level || 1,
-                                 id: req.id, // Assuming req.id or req.userId is the ID we need
+                                 id: req.userId || req.id,
                                  membership: (req as any).membership || MembershipType.NONE,
                                  vipMetadata: (req as any).vipMetadata,
                                  bannerUrl: (req as any).bannerUrl
                                }, false);
                              }}
                             >
-                             {req.avatar && (req.avatar.length > 5 || req.avatar.startsWith("/") || req.avatar.includes(".")) ? (
-                               <img src={req.avatar} alt={req.displayName} className="w-full h-full object-cover" />
+                             {((req.avatar || (req as any).avatarUrl) && ((req.avatar || (req as any).avatarUrl).length > 5 || (req.avatar || (req as any).avatarUrl).startsWith("/") || (req.avatar || (req as any).avatarUrl).includes("."))) ? (
+                               <img src={req.avatar || (req as any).avatarUrl} alt={req.displayName} className="w-full h-full object-cover" />
                              ) : (
-                               <span className="text-lg">{req.avatar || "👤"}</span>
+                               <span className="text-lg">{req.avatar || (req as any).avatarUrl || "👤"}</span>
                              )}
                            </div>
                            <div>

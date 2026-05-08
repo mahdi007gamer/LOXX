@@ -614,7 +614,13 @@ export const ChatPage: React.FC = () => {
 
   useEffect(() => {
     const handleNewMessage = (msg: any) => {
-       const channelId = msg.targetId;
+       const isSelf = msg.from.userId === user?.id;
+       const channelId = msg.targetType === "channel" 
+         ? (msg.targetId || msg.channelId) 
+         : (isSelf ? msg.targetId : msg.from.userId);
+         
+       if (!channelId) return;
+
        const formatted = formatIncomingMessage(msg, user?.id);
        
        setMessages(prev => {
@@ -748,7 +754,7 @@ export const ChatPage: React.FC = () => {
        id: msg.id,
        senderId: isNewsChannel ? "loxx-system" : msg.from.userId,
        senderName: isNewsChannel ? "لوکس" : msg.from.username,
-       senderAvatar: isNewsChannel ? "/logo.png" : msg.from.avatar,
+       senderAvatar: isNewsChannel ? "/logo.png" : (msg.from.avatar || (msg.from as any).avatarUrl),
        bannerUrl: isNewsChannel ? undefined : msg.from.bannerUrl,
        vipMetadata: isNewsChannel ? undefined : msg.from.vipMetadata,
        senderLevel: msg.from.level,
@@ -781,7 +787,16 @@ export const ChatPage: React.FC = () => {
     }));
 
   const allChannels = [...INITIAL_CHANNELS, ...myGamesChannels];
-  const activeChannel = allChannels.find(c => c.id === activeChannelId) || allChannels[0] || INITIAL_CHANNELS[0];
+  const friendChat = chats.find(c => c.friendId === activeChannelId);
+  const friend = friends.find(f => f.id === activeChannelId);
+  
+  const activeChannel = allChannels.find(c => c.id === activeChannelId) || 
+    (friendChat || friend ? { 
+      id: activeChannelId, 
+      name: friend?.displayName || friendChat?.tempDisplayName || "گفتگو", 
+      type: 'dm',
+      icon: friend?.avatar || "👤"
+    } : allChannels[0] || INITIAL_CHANNELS[0]);
 
   const currentMessages = messages[activeChannelId] || [];
 
@@ -1223,7 +1238,11 @@ export const ChatPage: React.FC = () => {
                     <div className="flex items-center gap-3">
                       <div className="relative">
                         <div className="h-9 w-9 rounded-full bg-white/10 flex items-center justify-center text-xs overflow-hidden border border-white/5 group-hover:border-white/20 transition-colors">
-                           {avatar ? <img src={avatar} alt="" className="h-full w-full object-cover" /> : <User size={16} className="text-gray-500" />}
+                           {avatar && (avatar.length > 5 || avatar.startsWith("/") || avatar.includes(".")) ? (
+                             <img src={avatar} alt="" className="h-full w-full object-cover" />
+                           ) : (
+                             <span className="text-sm">{avatar || (displayName?.[0] || "👤")}</span>
+                           )}
                         </div>
                         <div className={cn(
                           "absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-[#0d0d12]",
@@ -1280,7 +1299,11 @@ export const ChatPage: React.FC = () => {
                    <div className="flex items-center gap-3">
                      <div className="relative">
                         <div className="h-8 w-8 rounded-full bg-white/10 flex items-center justify-center text-xs overflow-hidden">
-                           {friend.avatar ? <img src={friend.avatar} alt="" className="h-full w-full" /> : <User size={14} />}
+                           {friend.avatar && (friend.avatar.length > 5 || friend.avatar.startsWith("/") || friend.avatar.includes(".")) ? (
+                             <img src={friend.avatar} alt="" className="h-full w-full" />
+                           ) : (
+                             <span className="text-[10px]">{friend.avatar || "👤"}</span>
+                           )}
                         </div>
                         <div className={cn(
                           "absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-[#0d0d12]",
@@ -1310,13 +1333,32 @@ export const ChatPage: React.FC = () => {
 
         {/* User Quick Info Footer */}
         <div className="p-4 bg-white/5 border-t border-white/5">
-          <div className="flex items-center gap-3 p-2 rounded-xl bg-black/40 border border-white/5">
+          <div 
+            className="flex items-center gap-3 p-2 rounded-xl bg-black/40 border border-white/5 cursor-pointer hover:bg-white/5 transition-colors"
+            onClick={() => {
+              if (user) {
+                openProfile({
+                  senderName: user.displayName || user.username,
+                  senderAvatar: user.avatarUrl,
+                  senderLevel: (user as any).level || 1,
+                  id: user.id,
+                  membership: user.membership || MembershipType.NONE,
+                  vipMetadata: user.vipMetadata,
+                  bannerUrl: (user as any).bannerUrl || user.avatarUrl
+                }, true);
+              }
+            }}
+          >
             <div className="h-10 w-10 rounded-lg bg-neon-blue/20 border border-neon-blue/30 flex items-center justify-center relative overflow-hidden">
-              <span className="text-xl">👤</span>
+              {user?.avatarUrl && (user.avatarUrl.length > 5 || user.avatarUrl.startsWith("/") || user.avatarUrl.includes(".")) ? (
+                <img src={user.avatarUrl} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-xl">{user?.avatarUrl || "👤"}</span>
+              )}
               <div className="absolute bottom-0 right-0 h-2.5 w-2.5 bg-green-500 rounded-full border-2 border-black"></div>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-bold text-white truncate">خودم</p>
+              <p className="text-xs font-bold text-white truncate">{user?.displayName || user?.username}</p>
               <div className="flex items-center gap-1">
                 <span className="text-[9px] text-neon-blue font-bold">LVL {Math.floor(userLvl)}</span>
                 <div className="h-1 flex-1 bg-white/10 rounded-full overflow-hidden">
@@ -1351,6 +1393,12 @@ export const ChatPage: React.FC = () => {
             <div className="h-7 w-7 md:h-10 md:w-10 flex items-center justify-center rounded-xl bg-neon-blue/10 border border-neon-blue/20 text-neon-blue shadow-[0_0_15px_rgba(0,229,255,0.1)] overflow-hidden shrink-0">
               {activeChannel.type === 'game' ? (
                 <img src={activeChannel.icon} alt="" className="h-full w-full object-cover opacity-80" />
+              ) : activeChannel.type === 'dm' ? (
+                activeChannel.icon && (activeChannel.icon.length > 5 || activeChannel.icon.startsWith("/") || activeChannel.icon.includes(".")) ? (
+                  <img src={activeChannel.icon} alt="" className="h-full w-full object-cover" />
+                ) : (
+                   <span className="text-lg">{activeChannel.icon || "👤"}</span>
+                )
               ) : (
                 <Hash size={16} />
               )}

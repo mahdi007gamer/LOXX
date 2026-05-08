@@ -323,10 +323,10 @@ export const DashboardPage = () => {
                               }, false)}
                             >
                               <div className="h-10 w-10 rounded-full bg-white/10 flex items-center justify-center text-md overflow-hidden border border-white/5 group-hover/avatar:border-neon-blue/50 transition-all">
-                                {friend.avatar && (friend.avatar.length > 5 || friend.avatar.startsWith("/") || friend.avatar.includes(".")) ? (
-                                  <img src={friend.avatar} alt={friend.username} className="w-full h-full object-cover" />
+                                {((friend.avatar || (friend as any).avatarUrl) && ((friend.avatar || (friend as any).avatarUrl).length > 5 || (friend.avatar || (friend as any).avatarUrl).startsWith("/") || (friend.avatar || (friend as any).avatarUrl).includes("."))) ? (
+                                  <img src={friend.avatar || (friend as any).avatarUrl} alt={friend.username} className="w-full h-full object-cover" />
                                 ) : (
-                                  friend.avatar || "👤"
+                                  <span className="text-sm">{friend.avatar || (friend as any).avatarUrl || "👤"}</span>
                                 )}
                               </div>
                               <div className={cn(
