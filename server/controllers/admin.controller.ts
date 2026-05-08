@@ -7,8 +7,8 @@ export const getAllUsers = async (req: Request, res: Response) => {
     
     const whereClause = search ? {
       OR: [
-        { username: { contains: String(search), mode: 'insensitive' } as any },
-        { email: { contains: String(search), mode: 'insensitive' } as any }
+        { username: { contains: String(search) } as any },
+        { email: { contains: String(search) } as any }
       ]
     } : {};
 

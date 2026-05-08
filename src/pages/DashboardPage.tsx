@@ -221,12 +221,18 @@ export const DashboardPage = () => {
                  </div>
 
                  <GlowButton 
-                    variant={isTop10 ? "pink" : "blue"} 
-                    className="mt-6 w-full h-12 rounded-2xl group/btn"
-                    onClick={() => navigate("/leaderboard")}
+                    variant={isTop10 ? "blue" : "blue"} 
+                    className={cn(
+                      "mt-6 w-full h-12 rounded-2xl group/btn",
+                      isTop10 && "bg-yellow-400 text-dark-bg hover:bg-yellow-500 border-yellow-300 shadow-[0_0_20px_rgba(250,204,21,0.3)]"
+                    )}
+                    onClick={() => navigate("/ranking")}
                  >
-                    <span className="text-[11px] font-black uppercase italic tracking-widest">مشاهده رتبه‌بندی جهانی</span> 
-                    <ArrowRight size={16} className="mr-2 group-hover/btn:translate-x-1 transition-transform" />
+                    <span className={cn(
+                      "text-[11px] font-black uppercase italic tracking-widest",
+                      isTop10 ? "text-dark-bg" : "text-white"
+                    )}>مشاهده رتبه‌بندی جهانی</span> 
+                    <ArrowRight size={16} className={cn("mr-2 group-hover/btn:translate-x-1 transition-transform", isTop10 ? "text-dark-bg" : "text-white")} />
                  </GlowButton>
               </div>
             </motion.div>

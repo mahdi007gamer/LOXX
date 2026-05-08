@@ -25,6 +25,7 @@ const SCORING_RULES = [
 export const LeaderboardPage = () => {
   const [timeLeftStr, setTimeLeftStr] = useState("0d 0h 0m");
   const [topUsers, setTopUsers] = useState<any[]>([]);
+  const [showAll, setShowAll] = useState(false);
   const [loading, setLoading] = useState(true);
   const [userRank, setUserRank] = useState({
      rank: 0,
@@ -84,7 +85,6 @@ export const LeaderboardPage = () => {
 
   // Split top users for podium
   const podium = topUsers.slice(0, 3);
-  const remaining = topUsers.slice(3, 10); // Show top 10
 
   return (
     <div className="flex min-h-[calc(100vh-64px)] bg-[#050507]">
@@ -175,28 +175,34 @@ export const LeaderboardPage = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-4">
                <h2 className="text-xl font-black text-white uppercase italic tracking-tighter mb-6">لیست برترین‌ها</h2>
-               {remaining.map((player, i) => (
-                 <motion.div key={i} initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.05 }}>
-                   <div className="group flex items-center justify-between rounded-2xl border border-white/5 bg-white/[0.02] p-4 transition-all hover:bg-white/[0.05] hover:border-neon-blue/20">
-                      <div className="flex items-center gap-4 md:gap-6 min-w-0">
-                         <span className="w-6 text-center font-mono text-lg font-bold text-gray-700">#{player.rank}</span>
-                         <div className="h-10 w-10 md:h-12 md:w-12 rounded-xl bg-white/5 flex items-center justify-center text-gray-400 overflow-hidden">
-                           {player.avatar ? <img src={player.avatar} alt={player.username} className="w-full h-full object-cover" /> : <User size={24} />}
-                         </div>
-                         <h4 className="font-black text-white group-hover:text-neon-blue transition-colors truncate uppercase text-sm md:text-base italic">{player.username}</h4>
-                      </div>
-                      <div className="text-left">
-                         <p className="text-[9px] text-gray-500 uppercase font-black italic mb-0.5">امتیازات</p>
-                         <p className="font-black text-lg md:text-xl text-white italic tracking-tighter">{player.points.toLocaleString()}</p>
-                      </div>
-                   </div>
-                 </motion.div>
+               {topUsers.slice(3, showAll ? 10 : 8).map((player, i) => (
+                  <motion.div key={i} initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.05 }}>
+                    <div className="group flex items-center justify-between rounded-2xl border border-white/5 bg-white/[0.02] p-4 transition-all hover:bg-white/[0.05] hover:border-neon-blue/20">
+                       <div className="flex items-center gap-4 md:gap-6 min-w-0">
+                          <span className="w-6 text-center font-mono text-lg font-bold text-gray-700">#{player.rank}</span>
+                          <div className="h-10 w-10 md:h-12 md:w-12 rounded-xl bg-white/5 flex items-center justify-center text-gray-400 overflow-hidden">
+                            {player.avatar ? <img src={player.avatar} alt={player.username} className="w-full h-full object-cover" /> : <User size={24} />}
+                          </div>
+                          <h4 className="font-black text-white group-hover:text-neon-blue transition-colors truncate uppercase text-sm md:text-base italic">{player.username}</h4>
+                       </div>
+                       <div className="text-left">
+                          <p className="text-[9px] text-gray-500 uppercase font-black italic mb-0.5">امتیازات</p>
+                          <p className="font-black text-lg md:text-xl text-white italic tracking-tighter">{player.points.toLocaleString()}</p>
+                       </div>
+                    </div>
+                  </motion.div>
                ))}
                {!topUsers.length && <p className="text-gray-500 font-bold italic text-center p-8 bg-white/5 rounded-3xl border border-dashed border-white/10">قهرمانی هنوز ثبت نشده است...</p>}
 
-               <GlowButton variant="blue" className="w-full py-4 text-xs font-black uppercase italic tracking-widest mt-8">
-                 نمایش کل لیست برترین ها
-               </GlowButton>
+               {topUsers.length > 8 && !showAll && (
+                 <GlowButton 
+                    variant="blue" 
+                    className="w-full py-4 text-xs font-black uppercase italic tracking-widest mt-8"
+                    onClick={() => setShowAll(true)}
+                 >
+                   نمایش کل لیست برترین ها
+                 </GlowButton>
+               )}
             </div>
 
             <div className="space-y-6">
