@@ -23,6 +23,7 @@ import {
   UserPlus,
   UserMinus,
   Crown,
+  Medal,
   ChevronRight,
   Zap,
   Flame,
