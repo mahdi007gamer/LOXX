@@ -23,7 +23,8 @@ import {
   Mic,
   MessageSquare,
   Lock,
-  Target
+  Target,
+  Crown
 } from "lucide-react";
 import { motion } from "motion/react";
 import { cn } from "../lib/utils";
@@ -171,6 +172,8 @@ export const LobbiesPage = () => {
                 let meta: any = {};
                 try { meta = typeof lobby.metadata === 'string' ? JSON.parse(lobby.metadata || "{}") : (lobby.metadata || {}); } catch(e){}
                 
+                const isVipLobby = lobby.host?.profile?.membershipType === 'VIP';
+
                 return (
                   <motion.div
                     key={lobby.id}
@@ -181,16 +184,28 @@ export const LobbiesPage = () => {
                     <NeonCard 
                       className={cn(
                         "group relative flex flex-col h-full overflow-hidden p-0 border-white/5 bg-[#0a0a0f] transition-all hover:border-neon-blue/20",
-                        lobby.isPrivate && "opacity-80 grayscale-[0.5]"
+                        lobby.isPrivate && "opacity-80 grayscale-[0.5]",
+                        isVipLobby && "border-yellow-400/40 bg-[#0d0d12] shadow-[0_0_30px_rgba(250,204,21,0.05)] hover:border-yellow-400/60"
                       )}
                       onClick={() => !lobby.isPrivate && navigate(`/lobby/${lobby.id}`)}
                     >
+                      {/* VIP Badge */}
+                      {isVipLobby && (
+                        <div className="absolute top-4 left-4 z-30 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest bg-yellow-400 text-dark-bg shadow-lg shadow-yellow-400/20 italic">
+                          <Crown size={12} fill="currentColor" />
+                          <span>Elite Lobby</span>
+                        </div>
+                      )}
+
                       {/* Hover Overlay */}
                       {!lobby.isPrivate && (
                         <div className="absolute inset-0 z-50 bg-[#0a0a0f]/40 backdrop-blur-[2px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none">
                            <GlowButton 
-                             variant="blue" 
-                             className="px-8 h-12 scale-90 group-hover:scale-100 shadow-[0_0_40px_rgba(0,229,255,0.6)]"
+                             variant={isVipLobby ? "yellow" : "blue"} 
+                             className={cn(
+                               "px-8 h-12 scale-90 group-hover:scale-100 shadow-[0_0_40px_rgba(0,229,255,0.6)]",
+                               isVipLobby && "shadow-[0_0_40px_rgba(250,204,21,0.6)]"
+                             )}
                            >
                              ورود به لابی
                            </GlowButton>

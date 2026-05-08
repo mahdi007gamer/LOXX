@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Sidebar } from "../components/layout/Sidebar";
+import { NeonCard } from "../components/ui/NeonCard";
 import { GlowButton } from "../components/ui/GlowButton";
+import { Input } from "../components/ui/Input";
 import { LobbyInviteCard } from "../components/ui/LobbyInviteCard";
 import { Send, Hash, Users, MoreVertical, Plus, Smile, Image as ImageIcon, Reply, Heart, ChevronDown, Award, Star, Zap, Crown, Play, Check, Menu, X, MessageSquare, User, Trophy, Palette, Trash, MessageCircle } from "lucide-react";
 import { cn } from "../lib/utils";
@@ -559,6 +561,7 @@ export const ChatPage: React.FC = () => {
   const [showChannelMenu, setShowChannelMenu] = useState(false);
   const [chatTheme, setChatTheme] = useState<keyof typeof CHAT_THEMES>((localStorage.getItem("loxx-chat-theme") as any) || "aura");
   const [showThemeMenu, setShowThemeMenu] = useState(false);
+  const [showVipGroupModal, setShowVipGroupModal] = useState(false);
   const [userLvl, setUserLvl] = useState(42);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -1027,15 +1030,98 @@ export const ChatPage: React.FC = () => {
           </div>
         )}
       </AnimatePresence>
+
+      <AnimatePresence>
+        {showVipGroupModal && (
+          <div className="fixed inset-0 z-[1100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-[#0d0d12] border border-yellow-400/20 rounded-[40px] w-full max-w-[500px] overflow-hidden shadow-[0_0_50px_rgba(250,204,21,0.1)] p-8"
+            >
+              <div className="flex justify-between items-center mb-8">
+                <div className="flex items-center gap-3">
+                  <div className="h-12 w-12 rounded-2xl bg-yellow-400/10 flex items-center justify-center text-yellow-400">
+                    <Crown size={24} />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-black text-white italic tracking-tighter">ایجاد گروه نخبگان</h3>
+                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">VIP Group System</p>
+                  </div>
+                </div>
+                <button onClick={() => setShowVipGroupModal(false)} className="h-10 w-10 flex items-center justify-center rounded-full bg-white/5 text-gray-500 hover:text-white transition-colors">
+                  <X size={20}/>
+                </button>
+              </div>
+              
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2 italic px-2">نام گروه</label>
+                  <Input placeholder="نام گروه رویایی خود را بنویسید..." />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2 italic px-2">دعوت اعضا (حداکثر ۱۰ نفر)</label>
+                  <div className="space-y-2 max-h-48 overflow-y-auto custom-scrollbar pr-2">
+                    {friends.filter(f => f.status !== FriendStatus.OFFLINE).map(friend => (
+                      <div key={friend.id} className="flex items-center justify-between p-3 rounded-2xl bg-white/5 border border-white/5 hover:border-yellow-400/20 transition-all">
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-xl bg-white/10 overflow-hidden border border-white/10">
+                            {friend.avatar ? <img src={friend.avatar} className="w-full h-full object-cover" /> : <User size={20} className="m-auto text-gray-600" />}
+                          </div>
+                          <span className="text-sm font-bold text-white">{friend.displayName}</span>
+                        </div>
+                        <input type="checkbox" className="w-5 h-5 rounded-lg accent-yellow-400 bg-white/5 border-white/10" />
+                      </div>
+                    ))}
+                    {friends.length === 0 && (
+                      <p className="text-center text-xs text-gray-600 italic py-4">هیچ دوستی برای دعوت در دسترس نیست</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="pt-4 flex gap-4">
+                   <GlowButton 
+                    variant="yellow" 
+                    className="flex-1 h-14 font-black italic uppercase text-xs"
+                    onClick={() => {
+                      toast.success("گروه VIP با موفقیت ایجاد شد");
+                      setShowVipGroupModal(false);
+                    }}
+                   >
+                    تاسیس گروه نخبگان
+                   </GlowButton>
+                   <button 
+                    onClick={() => setShowVipGroupModal(false)} 
+                    className="px-8 h-14 rounded-2xl bg-white/5 text-gray-400 font-black italic text-xs hover:bg-white/10 transition-colors uppercase"
+                   >
+                    انصراف
+                   </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
       
       {/* Channels Sidebar */}
       <div className="hidden w-80 border-r border-white/5 bg-black/20 backdrop-blur-3xl lg:flex flex-col relative z-20 md:mr-64 mr-0">
         <div className="p-6 border-b border-white/5">
           <div className="flex items-center justify-between mb-2">
             <h2 className="text-xl font-black text-white tracking-widest uppercase">کانال‌ها</h2>
-            <button className="p-2 rounded-xl bg-white/5 text-neon-blue hover:scale-110 transition-all border border-white/5 shadow-inner">
-              <Plus size={18} />
-            </button>
+            {user?.membership === "VIP" && (
+              <button 
+                title="ایجاد گروه VIP"
+                onClick={() => setShowVipGroupModal(true)}
+                className="group p-2 rounded-xl bg-yellow-400/10 text-yellow-400 hover:bg-yellow-400 hover:text-dark-bg transition-all border border-yellow-400/20 shadow-[0_0_15px_rgba(250,204,21,0.1)] hover:shadow-[0_0_20px_rgba(250,204,21,0.3)] relative"
+              >
+                <Plus size={18} />
+                <div className="absolute -top-1 -right-1">
+                  <Crown size={10} className="fill-yellow-400" />
+                </div>
+              </button>
+            )}
           </div>
           <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Global Comms Network</p>
         </div>

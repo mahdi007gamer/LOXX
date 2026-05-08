@@ -23,6 +23,9 @@ export class UserService {
         displayName: data.display_name,
         bio: data.bio,
         region: data.region,
+        avatarUrl: data.avatarUrl,
+        bannerUrl: data.bannerUrl,
+        vipMetadata: data.vipMetadata,
         lastActivity: new Date()
       }
     });

@@ -1,5 +1,35 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
-import { Friend, FriendStatus, FriendRequest, FriendChat, ChatMessage } from "../types";
+import { Friend, FriendStatus, FriendRequest, FriendChat, ChatMessage, MembershipType } from "../types";
+
+// ... (inside fetchFriends or wherever friends are set)
+
+const sortFriends = (friendsList: Friend[]) => {
+  return [...friendsList].sort((a, b) => {
+    // 1. Status Priority (In Lobby > In Game > Online > Offline)
+    const statusOrder = {
+      [FriendStatus.IN_LOBBY]: 0,
+      [FriendStatus.IN_GAME]: 1,
+      [FriendStatus.ONLINE]: 2,
+      [FriendStatus.OFFLINE]: 3,
+    };
+    const statusDiff = statusOrder[a.status] - statusOrder[b.status];
+    if (statusDiff !== 0) return statusDiff;
+
+    // 2. Membership Priority (VIP > PLUS > NONE)
+    const membershipOrder = {
+      [MembershipType.VIP]: 0,
+      [MembershipType.PLUS]: 1,
+      [MembershipType.NONE]: 2,
+    };
+    const aMem = a.membership || MembershipType.NONE;
+    const bMem = b.membership || MembershipType.NONE;
+    const memDiff = membershipOrder[aMem] - membershipOrder[bMem];
+    if (memDiff !== 0) return memDiff;
+
+    // 3. Alphabetical
+    return a.username.localeCompare(b.username);
+  });
+};
 import api from "../lib/api";
 import { presenceSocket, chatSocket, notifySocket } from "../lib/socket";
 import { useAuth } from "./AuthContext";
@@ -56,16 +86,18 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
         if (pendingPresenceSnapshot.current) {
           const snapshot = pendingPresenceSnapshot.current;
           pendingPresenceSnapshot.current = null;
-          return fetchedFriends.map((f: Friend) => {
+          const updated = fetchedFriends.map((f: Friend) => {
             const statusData = snapshot.find(u => u.userId === f.id);
             return { 
               ...f, 
               status: statusData ? (statusData.status as FriendStatus) : FriendStatus.OFFLINE 
             };
           });
+          return sortFriends(updated);
         }
         // Default all to offline if no snapshot yet (will be updated by realtime events)
-        return fetchedFriends.map((f: Friend) => ({ ...f, status: FriendStatus.OFFLINE }));
+        const initial = fetchedFriends.map((f: Friend) => ({ ...f, status: FriendStatus.OFFLINE }));
+        return sortFriends(initial);
       });
     } catch (error) {
       console.error("Failed to fetch friends:", error);
@@ -106,11 +138,12 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
             pendingPresenceSnapshot.current = data.users;
             return prev;
           }
-          return prev.map(f => {
+          const updated = prev.map(f => {
             const statusData = data.users.find(u => u.userId === f.id);
             const status = (statusData ? statusData.status : "offline") as FriendStatus;
             return { ...f, status };
           });
+          return sortFriends(updated);
         });
       });
 
@@ -121,11 +154,12 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
           const friend = prev.find(f => f.id === data.userId);
           if (friend) friendName = friend.displayName || friend.username;
           
-          return prev.map(f => f.id === data.userId ? { 
+          const updated = prev.map(f => f.id === data.userId ? { 
             ...f, 
             status: data.status as FriendStatus,
             currentGame: data.activity 
           } : f);
+          return sortFriends(updated);
         });
 
         if (friendName && data.status === "online") {

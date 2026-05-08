@@ -56,6 +56,7 @@ export interface Friend {
   currentGame?: string;
   lastSeen?: string;
   level: number;
+  membership?: MembershipType;
   isFavorite: boolean;
   isBlocked: boolean;
   isMuted: boolean;

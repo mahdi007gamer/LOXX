@@ -20,6 +20,8 @@ export class UserController {
           membership: user.profile?.membershipType,
           region: user.profile?.region,
           avatarUrl: user.profile?.avatarUrl,
+          bannerUrl: user.profile?.bannerUrl,
+          vipMetadata: user.profile?.vipMetadata,
           email: user.email,
           role: user.role
         }

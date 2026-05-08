@@ -4,10 +4,11 @@ import { NeonCard } from "../components/ui/NeonCard";
 import { GlowButton } from "../components/ui/GlowButton";
 import { 
   Check, Crown, Zap, Star, Shield, 
-  MessageSquare, Users, Image, Sparkles, 
+  MessageSquare, Users, Image as ImageIcon, Sparkles, 
   ArrowRight, Layout, CreditCard, Upload, 
   X, AlertCircle, Clock, CheckCircle2, 
-  Copy, ExternalLink, RefreshCw
+  Copy, ExternalLink, RefreshCw,
+  MessageCircle, Award
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
@@ -23,7 +24,7 @@ type PlanType = "PLUS" | "VIP";
 
 const PLAN_FEATURES = {
   PLUS: [
-    { icon: <Image size={18} />, label: "Animated Avatar (GIF)", detail: "استفاده از گیف برای عکس پروفایل" },
+    { icon: <ImageIcon size={18} />, label: "Animated Avatar (GIF)", detail: "استفاده از گیف برای عکس پروفایل" },
     { icon: <Layout size={18} />, label: "Mini Profile Banner", detail: "بنر اختصاصی برای مینی پروفایل" },
     { icon: <MessageSquare size={18} />, label: "Exclusive Stickers", detail: "استکیرهای متحرک و خاص در چت" },
     { icon: <Sparkles size={18} />, label: "Special Reactions", detail: "ریاکشن‌های نئونی روی پیام‌ها" },
@@ -32,13 +33,13 @@ const PLAN_FEATURES = {
     { icon: <Shield size={18} />, label: "LOXX Plus Badge", detail: "نشان مخصوص پلاس کنار نام کاربر" },
   ],
   VIP: [
-    { icon: <Crown size={18} />, label: "Golden Animated Ring", detail: "حلقه طلایی متحرک دور پروفایل" },
-    { icon: <Star size={18} />, label: "VIP Profile Banner", detail: "بنر اختصاصی و گیف در پروفایل" },
-    { icon: <MessageSquare size={18} />, label: "Message Effects", detail: "افکت نوری هنگام ارسال پیام" },
-    { icon: <Sparkles size={18} />, label: "Gradient Username", detail: "نام کاربری با رنگ‌های گرادینت" },
-    { icon: <Shield size={18} />, label: "VIP Crown Badge", detail: "نشان تاج طلایی VIP" },
-    { icon: <Users size={18} />, label: "VIP Only Lobbies", detail: "قابلیت ساخت لابی‌های اختصاصی VIP" },
-    { icon: <Crown size={18} />, label: "All Plus features", detail: "شامل تمام امکانات نسخه پلاس" },
+    { icon: <Shield size={18} />, label: "Elite Settings", detail: "دسترسی به تنظیمات نخبگان و شخصی‌سازی مینی‌پروفایل" },
+    { icon: <Zap size={18} />, label: "Double XP Capacity", detail: "دو برابر شدن ظرفیت دریافت XP روزانه" },
+    { icon: <MessageCircle size={18} />, label: "VIP Chat Groups", detail: "سیستم گروه‌های چت اختصاصی با مدیریت کامل" },
+    { icon: <Award size={18} />, label: "Social Priority", detail: "اولویت نمایش در لیست دوستان و جستجو" },
+    { icon: <Crown size={18} />, label: "Elite Lobbies", detail: "تم طلایی و کارت‌های ویژه در لابی‌ها" },
+    { icon: <ImageIcon size={18} />, label: "Animated Profile", detail: "پشتیبانی از GIF برای آواتار و بنر پروفایل" },
+    { icon: <Sparkles size={18} />, label: "All Plus features", detail: "شامل تمام امکانات نسخه پلاس" },
   ]
 };
 
@@ -262,7 +263,7 @@ export const PremiumPage = () => {
                    <h1 className="text-4xl md:text-7xl font-black text-white italic uppercase tracking-tighter mb-4">ارتقای سطح کاربری</h1>
                    <p className="text-gray-500 max-w-2xl mx-auto font-bold">
                      برای حمایت از لوکس و باز کردن قابلیت‌های استثنایی، یکی از اشتراک‌های ویژه را انتخاب کنید. <br/>
-                     <span className="text-[10px] text-neon-blue font-black italic uppercase tracking-[0.2em] mt-2 block opacity-70">Premium Gaming Experience</span>
+                     <span className="text-[10px] text-neon-blue font-black italic uppercase tracking-[0.3em] mt-3 block opacity-60">Elevate Your Loxx Experience</span>
                    </p>
                 </header>
 
@@ -290,13 +291,13 @@ export const PremiumPage = () => {
                              whileInView={{ opacity: 1, x: 0 }}
                              viewport={{ once: true }}
                              transition={{ delay: i * 0.05 }}
-                             className="flex gap-4 items-center group"
+                             className="flex gap-4 items-center group/item hover:translate-x-1 transition-transform"
                            >
-                              <div className="h-9 w-9 rounded-xl bg-neon-blue/10 flex items-center justify-center text-neon-blue shrink-0 transition-all group-hover:scale-110 group-hover:rotate-3 group-hover:bg-neon-blue/20">
+                              <div className="h-10 w-10 rounded-xl bg-neon-blue/10 flex items-center justify-center text-neon-blue shrink-0 transition-all group-hover/item:scale-110 group-hover/item:rotate-6 group-hover/item:bg-neon-blue/20 shadow-neon-blue/0 group-hover/item:shadow-neon-blue/20 shadow-lg">
                                 {feat.icon}
                               </div>
                               <div className="flex flex-col">
-                                <p className="text-[11px] font-black text-white italic uppercase tracking-tight leading-none mb-1 group-hover:text-neon-blue transition-colors">{feat.label}</p>
+                                <p className="text-[12px] font-black text-white italic uppercase tracking-tight leading-none mb-1 group-hover/item:text-neon-blue transition-colors">{feat.label}</p>
                                 <p className="text-[10px] text-gray-500 font-bold italic leading-none">{feat.detail}</p>
                               </div>
                            </motion.div>
@@ -330,13 +331,13 @@ export const PremiumPage = () => {
                              whileInView={{ opacity: 1, x: 0 }}
                              viewport={{ once: true }}
                              transition={{ delay: i * 0.05 }}
-                             className="flex gap-4 items-center group"
+                             className="flex gap-4 items-center group/item hover:translate-x-1 transition-transform"
                            >
-                              <div className="h-9 w-9 rounded-xl bg-yellow-400/10 flex items-center justify-center text-yellow-400 shrink-0 transition-all group-hover:scale-110 group-hover:rotate-3 group-hover:bg-yellow-400/20">
+                              <div className="h-10 w-10 rounded-xl bg-yellow-400/10 flex items-center justify-center text-yellow-400 shrink-0 transition-all group-hover/item:scale-110 group-hover/item:rotate-6 group-hover/item:bg-yellow-400/20 shadow-yellow-400/0 group-hover/item:shadow-yellow-400/20 shadow-lg">
                                 {feat.icon}
                               </div>
                               <div className="flex flex-col">
-                                <p className="text-[11px] font-black text-white italic uppercase tracking-tight leading-none mb-1 group-hover:text-yellow-400 transition-colors">{feat.label}</p>
+                                <p className="text-[12px] font-black text-white italic uppercase tracking-tight leading-none mb-1 group-hover/item:text-yellow-400 transition-colors">{feat.label}</p>
                                 <p className="text-[10px] text-gray-500 font-bold italic leading-none">{feat.detail}</p>
                               </div>
                            </motion.div>

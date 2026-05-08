@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { cn } from "@/src/lib/utils";
 
 interface NeonCardProps extends React.HTMLAttributes<HTMLDivElement> {
-  variant?: "blue" | "pink" | "purple" | "green" | "red";
+  variant?: "blue" | "pink" | "purple" | "green" | "red" | "gold";
   hover?: boolean;
   children?: React.ReactNode;
   className?: string;
@@ -25,6 +25,7 @@ export const NeonCard = ({
     purple: "border-white/10 bg-[#0a0a0f]",
     green: "border-white/10 bg-[#0a0a0f]",
     red: "border-white/10 bg-[#0a0a0f]",
+    gold: "border-yellow-400/20 bg-[#0a0a0f]",
   };
 
   const glowColors = {
@@ -33,6 +34,7 @@ export const NeonCard = ({
     purple: "border-neon-purple/50 shadow-[0_4px_20px_rgba(182,31,255,0.1)]",
     green: "border-green-500/50 shadow-[0_4px_20px_rgba(34,197,94,0.1)]",
     red: "border-red-500/50 shadow-[0_4px_20px_rgba(239,68,68,0.1)]",
+    gold: "border-yellow-400/50 shadow-[0_4px_20px_rgba(250,204,21,0.15)]",
   };
 
   return (
@@ -61,7 +63,8 @@ export const NeonCard = ({
         variant === "pink" && "bg-neon-pink",
         variant === "purple" && "bg-neon-purple",
         variant === "green" && "bg-green-500",
-        variant === "red" && "bg-red-500"
+        variant === "red" && "bg-red-500",
+        variant === "gold" && "bg-yellow-400"
       )} />
       
       {/* Top reflection line */}

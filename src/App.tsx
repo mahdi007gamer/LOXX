@@ -27,6 +27,7 @@ import { SettingsPage } from "./pages/SettingsPage";
 import { FriendsPage } from "./pages/FriendsPage";
 import { GamesPage } from "./pages/GamesPage";
 import { MyGamesPage } from "./pages/MyGamesPage";
+import { EliteSettingsPage } from "./pages/EliteSettingsPage";
 import { NotificationHandler } from "./components/NotificationHandler";
 import { cn } from "./lib/utils";
 import NotFoundPage from "./pages/NotFoundPage";
@@ -75,6 +76,7 @@ const AppContent = () => {
           <Route path="/friends" element={<ProtectedRoute><FriendsPage /></ProtectedRoute>} />
           <Route path="/games" element={<ProtectedRoute><GamesPage /></ProtectedRoute>} />
           <Route path="/my-games" element={<ProtectedRoute><MyGamesPage /></ProtectedRoute>} />
+          <Route path="/settings/elite" element={<ProtectedRoute><EliteSettingsPage /></ProtectedRoute>} />
           <Route path="/admin" element={<ProtectedRoute adminOnly={true}><AdminPage /></ProtectedRoute>} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>

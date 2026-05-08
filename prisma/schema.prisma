@@ -70,6 +70,7 @@ model Profile {
   region          String         @default("IR")   // IR, TR, EU, ME
   lastActivity    DateTime       @default(now())
   totalLobbiesJoined Int          @default(0)
+  vipMetadata     String?        // JSON string for Elite Settings (frames, effects, etc)
 }
 
 model Friendship {
