@@ -18,6 +18,7 @@ import notificationRoutes from "./server/routes/notification.routes.ts";
 import adminRoutes from "./server/routes/admin.routes.ts";
 import settingsRoutes from "./server/routes/settings.routes.ts";
 import paymentRoutes from "./server/routes/payment.routes.ts";
+import uploadRoutes from "./server/routes/upload.routes.ts";
 import { setupWebSockets } from "./server/sockets/index.ts";
 import { setIO } from "./server/utils/socket.ts";
 import prisma from "./server/utils/prisma.ts";
@@ -56,6 +57,9 @@ async function startServer() {
     contentSecurityPolicy: false, // For development with Vite
   }));
 
+  // Serve uploads directory
+  app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
+
   // API Routes (to be implemented)
   app.use("/api/v1/auth", authRoutes);
   app.use("/api/v1/user", userRoutes);
@@ -69,6 +73,7 @@ async function startServer() {
   app.use("/api/v1/admin", adminRoutes);
   app.use("/api/v1/settings", settingsRoutes);
   app.use("/api/v1/payments", paymentRoutes);
+  app.use("/api/v1/upload", uploadRoutes);
   
   app.get("/api/health", (req, res) => {
     res.json({ status: "ok", message: "LOXX Backend is running in Persian mode (UTF-8)" });

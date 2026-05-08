@@ -146,6 +146,36 @@ export const SettingsPage = () => {
 
   const renderProfile = () => (
     <div className="space-y-6">
+      {authUser?.membership === "VIP" && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="relative group cursor-pointer mb-8"
+          onClick={() => window.location.href = "/settings/elite"}
+        >
+          <div className="absolute -inset-0.5 bg-gradient-to-r from-yellow-400 via-orange-500 to-yellow-600 rounded-3xl blur opacity-30 group-hover:opacity-100 transition duration-1000 group-hover:duration-200" />
+          <NeonCard variant="gold" className="relative transition-transform group-hover:scale-[1.01] overflow-hidden">
+             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                <Crown size={120} />
+             </div>
+            <div className="flex items-center justify-between relative z-10">
+              <div className="flex items-center gap-6">
+                <div className="h-16 w-16 rounded-[20px] bg-yellow-400/20 flex items-center justify-center text-yellow-400 shadow-xl shadow-yellow-400/10 transition-transform group-hover:rotate-6">
+                  <Crown size={32} />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black text-white italic uppercase tracking-tight">تنظیمات نخبگان (Elite Settings)</h3>
+                  <p className="text-[10px] text-yellow-400/70 font-bold uppercase tracking-[0.2em] mt-1">شخصی‌سازی پیشرفته مینی‌پروفایل، فریم‌ها و افکت‌های VIP</p>
+                </div>
+              </div>
+              <div className="h-12 w-12 rounded-full border border-yellow-400/30 flex items-center justify-center group-hover:bg-yellow-400/10 transition-all">
+                <ArrowRight className="text-yellow-400 -rotate-45 group-hover:rotate-0 transition-transform" />
+              </div>
+            </div>
+          </NeonCard>
+        </motion.div>
+      )}
+
       <NeonCard variant="blue" className="space-y-8">
         <div className="flex items-center gap-6">
           <div className="group relative">
@@ -227,36 +257,6 @@ export const SettingsPage = () => {
           </GlowButton>
         </div>
       </NeonCard>
-
-      {authUser?.membership === "VIP" && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="relative group cursor-pointer mt-8"
-          onClick={() => window.location.href = "/settings/elite"}
-        >
-          <div className="absolute -inset-0.5 bg-gradient-to-r from-yellow-400 via-orange-500 to-yellow-600 rounded-3xl blur opacity-30 group-hover:opacity-100 transition duration-1000 group-hover:duration-200" />
-          <NeonCard variant="gold" className="relative transition-transform group-hover:scale-[1.01] overflow-hidden">
-             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                <Crown size={120} />
-             </div>
-            <div className="flex items-center justify-between relative z-10">
-              <div className="flex items-center gap-6">
-                <div className="h-16 w-16 rounded-[20px] bg-yellow-400/20 flex items-center justify-center text-yellow-400 shadow-xl shadow-yellow-400/10 transition-transform group-hover:rotate-6">
-                  <Crown size={32} />
-                </div>
-                <div>
-                  <h3 className="text-xl font-black text-white italic uppercase tracking-tight">تنظیمات نخبگان (Elite Settings)</h3>
-                  <p className="text-[10px] text-yellow-400/70 font-bold uppercase tracking-[0.2em] mt-1">شخصی‌سازی پیشرفته مینی‌پروفایل، فریم‌ها و افکت‌های VIP</p>
-                </div>
-              </div>
-              <div className="h-12 w-12 rounded-full border border-yellow-400/30 flex items-center justify-center group-hover:bg-yellow-400/10 transition-all">
-                <ArrowRight className="text-yellow-400 -rotate-45 group-hover:rotate-0 transition-transform" />
-              </div>
-            </div>
-          </NeonCard>
-        </motion.div>
-      )}
     </div>
   );
 
