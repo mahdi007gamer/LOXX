@@ -34,12 +34,26 @@ export const DashboardPage = () => {
   const [loading, setLoading] = useState(true);
   const [isLobbyModalOpen, setIsLobbyModalOpen] = useState(false);
   const [isFriendsExpanded, setIsFriendsExpanded] = useState(false);
+  const [suggestedLobbies, setSuggestedLobbies] = useState([]);
+  const [stats, setStats] = useState({
+    joinedAt: new Date().toISOString(),
+    lobbiesCount: 0,
+    friendsCount: 0,
+    gamesCount: 0,
+    xp: 0,
+    level: 1,
+    unreadNotifications: 0
+  });
   const [userRank, setUserRank] = useState({
     rank: 0,
     points: 0,
     level: 1,
     pointsToTop10: 0
   });
+
+  const navigate = useNavigate();
+  const { friends, openChat } = useFriends();
+  const { user } = useAuth();
 
   useEffect(() => {
     const fetchData = async () => {
