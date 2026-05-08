@@ -25,6 +25,18 @@ export class LobbyController {
     }
   }
 
+  static async getById(req: AuthenticatedRequest, res: Response) {
+    try {
+      const lobby = await LobbyService.getLobbyById(req.params.id);
+      if (!lobby) {
+        return res.status(404).json({ status: "error", error: { code: "NOT_FOUND", message: "Lobby not found" } });
+      }
+      res.json({ status: "success", data: lobby });
+    } catch (error: any) {
+      res.status(500).json({ status: "error", error: { code: "INTERNAL_ERROR", message: error.message } });
+    }
+  }
+
   static async join(req: AuthenticatedRequest, res: Response) {
     try {
       await LobbyService.joinLobby(req.user!.userId, req.params.id, req.body.password);
