@@ -577,7 +577,9 @@ export const ChatPage: React.FC = () => {
   const [chatTheme, setChatTheme] = useState<keyof typeof CHAT_THEMES>((localStorage.getItem("loxx-chat-theme") as any) || "aura");
   const [showThemeMenu, setShowThemeMenu] = useState(false);
   const [showVipGroupModal, setShowVipGroupModal] = useState(false);
+  const [vipGroupName, setVipGroupName] = useState("");
   const [userLvl, setUserLvl] = useState(42);
+  const [eliteGroups, setEliteGroups] = useState<any[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -596,6 +598,28 @@ export const ChatPage: React.FC = () => {
       return () => clearTimeout(timer);
     }
   }, [showFriendsSidebar]);
+
+  // Load Elite Groups
+  const loadEliteGroups = async () => {
+    try {
+      const res = await api.get("/elite");
+      if (res.data.data) {
+        setEliteGroups(res.data.data.map((c: any) => ({
+          id: c.id,
+          name: c.title,
+          type: "elite",
+          users: c.members.length,
+          icon: "👑"
+        })));
+      }
+    } catch(err) {
+      console.error("Failed to load elite groups", err);
+    }
+  };
+
+  useEffect(() => {
+    loadEliteGroups();
+  }, []);
 
   useEffect(() => {
     // Join channel and fetch history when switched
@@ -786,7 +810,7 @@ export const ChatPage: React.FC = () => {
       icon: g.image
     }));
 
-  const allChannels = [...INITIAL_CHANNELS, ...myGamesChannels];
+  const allChannels = [...INITIAL_CHANNELS, ...myGamesChannels, ...eliteGroups];
   const friendChat = chats.find(c => c.friendId === activeChannelId);
   const friend = friends.find(f => f.id === activeChannelId);
   
@@ -1098,36 +1122,27 @@ export const ChatPage: React.FC = () => {
               <div className="space-y-6">
                 <div>
                   <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2 italic px-2">نام گروه</label>
-                  <Input placeholder="نام گروه رویایی خود را بنویسید..." />
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2 italic px-2">دعوت اعضا (حداکثر ۱۰ نفر)</label>
-                  <div className="space-y-2 max-h-48 overflow-y-auto custom-scrollbar pr-2">
-                    {friends.filter(f => f.status !== FriendStatus.OFFLINE).map(friend => (
-                      <div key={friend.id} className="flex items-center justify-between p-3 rounded-2xl bg-white/5 border border-white/5 hover:border-yellow-400/20 transition-all">
-                        <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-xl bg-white/10 overflow-hidden border border-white/10">
-                            {friend.avatar ? <img src={friend.avatar} className="w-full h-full object-cover" /> : <User size={20} className="m-auto text-gray-600" />}
-                          </div>
-                          <span className="text-sm font-bold text-white">{friend.displayName}</span>
-                        </div>
-                        <input type="checkbox" className="w-5 h-5 rounded-lg accent-yellow-400 bg-white/5 border-white/10" />
-                      </div>
-                    ))}
-                    {friends.length === 0 && (
-                      <p className="text-center text-xs text-gray-600 italic py-4">هیچ دوستی برای دعوت در دسترس نیست</p>
-                    )}
-                  </div>
+                  <Input 
+                    placeholder="نام گروه رویایی خود را بنویسید..." 
+                    value={vipGroupName}
+                    onChange={(e) => setVipGroupName(e.target.value)}
+                  />
                 </div>
 
                 <div className="pt-4 flex gap-4">
                    <GlowButton 
                     variant="yellow" 
                     className="flex-1 h-14 font-black italic uppercase text-xs"
-                    onClick={() => {
-                      toast.success("گروه VIP با موفقیت ایجاد شد");
-                      setShowVipGroupModal(false);
+                    onClick={async () => {
+                      if (!vipGroupName.trim()) { toast.error("نام گروه الزامی است"); return; }
+                      try {
+                        await api.post("/elite", { title: vipGroupName });
+                        toast.success("گروه VIP با موفقیت ایجاد شد");
+                        loadEliteGroups();
+                        setShowVipGroupModal(false);
+                      } catch (err: any) {
+                        toast.error(err.response?.data?.error?.message || "خطا در ایجاد گروه");
+                      }
                     }}
                    >
                     تاسیس گروه نخبگان
@@ -1186,6 +1201,28 @@ export const ChatPage: React.FC = () => {
               ))}
             </div>
           </div>
+
+          {/* Elite Groups */}
+          {eliteGroups.length > 0 && (
+            <div className="px-4">
+              <h3 className="px-4 text-[10px] font-black text-yellow-500/50 uppercase tracking-widest mb-3 flex items-center gap-2">
+                <span className="h-px flex-1 bg-yellow-500/10"></span>
+                گروه‌های نخبگان
+                <span className="h-px flex-1 bg-yellow-500/10"></span>
+              </h3>
+              <div className="space-y-1">
+                {eliteGroups.map((channel) => (
+                  <ChannelButton 
+                    key={channel.id}
+                    channel={channel}
+                    active={activeChannelId === channel.id}
+                    unreadCount={unreadCounts[channel.id]}
+                    onClick={() => setActiveChannelId(channel.id)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Game Specific Channels */}
           {myGamesChannels.length > 0 && (
@@ -1399,6 +1436,8 @@ export const ChatPage: React.FC = () => {
                 ) : (
                    <span className="text-lg">{activeChannel.icon || "👤"}</span>
                 )
+              ) : activeChannel.type === 'elite' ? (
+                 <Crown size={20} className="text-yellow-400" />
               ) : (
                 <Hash size={16} />
               )}
@@ -1408,6 +1447,9 @@ export const ChatPage: React.FC = () => {
                 <h3 className="font-black text-white text-[10px] md:text-base tracking-widest truncate">{activeChannel.name}</h3>
                 {activeChannel.type === 'game' && (
                   <span className="hidden xs:inline-block px-1.5 py-0.5 rounded bg-neon-blue/10 text-[8px] text-neon-blue font-black border border-neon-blue/20 uppercase tracking-tighter">Game Room</span>
+                )}
+                {activeChannel.type === 'elite' && (
+                  <span className="hidden xs:inline-block px-1.5 py-0.5 rounded bg-yellow-400/10 text-[8px] text-yellow-400 font-black border border-yellow-400/20 uppercase tracking-tighter">ELITE VIP</span>
                 )}
               </div>
               <div className="flex items-center gap-1.5 md:gap-2 truncate">
@@ -1562,6 +1604,27 @@ export const ChatPage: React.FC = () => {
                       ))}
                     </div>
                   </div>
+
+                  {/* Elite Groups */}
+                  {eliteGroups.length > 0 && (
+                    <div>
+                      <h3 className="text-[10px] font-black text-yellow-500/50 uppercase tracking-widest mb-3 text-right">گروه‌های نخبگان</h3>
+                      <div className="space-y-1">
+                        {eliteGroups.map((channel) => (
+                          <ChannelButton 
+                            key={channel.id}
+                            channel={channel}
+                            active={activeChannelId === channel.id}
+                            unreadCount={unreadCounts[channel.id]}
+                            onClick={() => {
+                              setActiveChannelId(channel.id);
+                              setShowChannelMenu(false);
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Game Specific Channels */}
                   {myGamesChannels.length > 0 && (

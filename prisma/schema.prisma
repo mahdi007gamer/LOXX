@@ -35,6 +35,8 @@ model User {
   auditLogs       AuditLog[]
   userGames       UserGame[]
   hostedLobbies   Lobby[]      @relation("LobbyHost")
+  ownedChannels   Channel[]    @relation("OwnedChannels")
+  channelMemberships ChannelMember[]
   settings        UserSettings?
   invitesSent     Referral[]   @relation("Inviter")
   invitationReceived Referral?   @relation("Invitee")
@@ -110,7 +112,22 @@ model Channel {
   title           String   // Persian: "Global", "News", "LFG"
   gameId          String?
   game            Game?    @relation(fields: [gameId], references: [id])
+  type            String   @default("PUBLIC") // PUBLIC, ELITE, NEWS
+  ownerId         String?
+  owner           User?    @relation("OwnedChannels", fields: [ownerId], references: [id])
+  members         ChannelMember[]
   messages        Message[]
+}
+
+model ChannelMember {
+  channelId       String
+  channel         Channel  @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role            String   @default("MEMBER") // OWNER, MEMBER
+  joinedAt        DateTime @default(now())
+
+  @@id([channelId, userId])
 }
 
 model Message {

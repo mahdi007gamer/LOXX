@@ -51,8 +51,7 @@ export const SettingsPage = () => {
     displayName: "",
     bio: "",
     username: "",
-    discord: "",
-    twitter: "",
+    avatarUrl: "",
     region: "Middle East",
     language: "Persian",
     currentPassword: "",
@@ -92,6 +91,7 @@ export const SettingsPage = () => {
         displayName: user.displayName || "",
         bio: user.bio || "",
         username: user.username || "",
+        avatarUrl: user.profile?.avatarUrl || user.avatarUrl || "",
         region: user.region || "Middle East",
       }));
     } catch (err) {
@@ -107,7 +107,8 @@ export const SettingsPage = () => {
       await api.patch("/user/profile", {
         display_name: formData.displayName,
         bio: formData.bio,
-        region: formData.region
+        region: formData.region,
+        avatarUrl: formData.avatarUrl
       });
       toast.success("پروفایل با موفقیت بروزرسانی شد");
     } catch (err: any) {
@@ -180,21 +181,27 @@ export const SettingsPage = () => {
       <NeonCard variant="blue" className="space-y-8">
         <div className="flex items-center gap-6">
           <div className="group relative">
-            <div className="h-24 w-24 rounded-2xl bg-white/5 border border-white/10 overflow-hidden">
-              <div className="flex h-full w-full items-center justify-center text-neon-blue">
-                <User size={40} />
-              </div>
+            <div className="h-24 w-24 rounded-[32px] bg-white/5 border border-white/10 overflow-hidden flex items-center justify-center">
+              {formData.avatarUrl ? (
+                <img src={formData.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-neon-blue">
+                  <User size={40} />
+                </div>
+              )}
             </div>
-            <button className="absolute -bottom-2 -left-2 rounded-lg bg-neon-blue p-1.5 text-dark-bg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity">
-              <Camera size={14} />
-            </button>
           </div>
-          <div>
+          <div className="flex-1">
             <h3 className="font-black text-white italic">تصویر پروفایل</h3>
-            <p className="text-[10px] text-gray-500 font-bold uppercase mt-1">فرمت‌های JPG، PNG یا GIF. حداکثر ۲ مگابایت.</p>
-            <div className="mt-3 flex gap-3">
-              <GlowButton variant="blue" size="sm" className="text-[10px] font-black uppercase italic h-8">تغییر آواتار</GlowButton>
-              <button className="text-[10px] text-gray-600 font-black uppercase italic hover:text-neon-pink transition-colors">حذف تصویر</button>
+            <p className="text-[10px] text-gray-500 font-bold uppercase mt-1 mb-3">لینک تصویر خود را وارد کنید.</p>
+            <Input 
+              label="لینک تصویر (آدرس آنلاین)"
+              placeholder="https://example.com/avatar.png"
+              value={formData.avatarUrl}
+              onChange={(e) => setFormData(p => ({ ...p, avatarUrl: e.target.value }))}
+            />
+            <div className="mt-2 text-right">
+              <button onClick={() => setFormData(p => ({ ...p, avatarUrl: "" }))} className="text-[10px] text-gray-600 font-black uppercase italic hover:text-neon-pink transition-colors">حذف تصویر</button>
             </div>
           </div>
         </div>
@@ -221,28 +228,6 @@ export const SettingsPage = () => {
               placeholder="کمی در مورد خودتان، بازی‌هایی که دوست دارید و ... بنویسید"
               value={formData.bio}
               onChange={(e) => setFormData(p => ({ ...p, bio: e.target.value }))}
-            />
-          </div>
-        </div>
-
-        <hr className="border-white/5" />
-
-        <div>
-          <h4 className="text-[10px] font-black text-neon-blue uppercase tracking-widest mb-6 italic">شبکه‌های اجتماعی</h4>
-          <div className="space-y-4">
-            <Input 
-               label="دیسکورد" 
-               icon={<MessageSquare size={14} className="text-gray-600" />} 
-               placeholder="Gamer#1234" 
-               value={formData.discord}
-               onChange={(e) => setFormData(p => ({ ...p, discord: e.target.value }))}
-            />
-            <Input 
-               label="توییتر (X)" 
-               icon={<Zap size={14} className="text-gray-600" />} 
-               placeholder="@gamer_handle" 
-               value={formData.twitter}
-               onChange={(e) => setFormData(p => ({ ...p, twitter: e.target.value }))}
             />
           </div>
         </div>

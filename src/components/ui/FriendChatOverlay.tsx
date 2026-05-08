@@ -72,7 +72,7 @@ export const FriendChatOverlay = () => {
             >
               <div className="flex items-center gap-3 text-right" dir="rtl">
                 <div className="h-8 w-8 rounded-full bg-white/10 flex items-center justify-center text-sm overflow-hidden">
-                  {activeFriend?.avatar ? <img src={activeFriend.avatar} alt="" className="h-full w-full rounded-full" /> : "👤"}
+                  {((activeFriend?.avatar || (activeFriend as any)?.avatarUrl) && ((activeFriend?.avatar || (activeFriend as any)?.avatarUrl)!.length > 5 || (activeFriend?.avatar || (activeFriend as any)?.avatarUrl)!.startsWith("/") || (activeFriend?.avatar || (activeFriend as any)?.avatarUrl)!.includes(".") || (activeFriend?.avatar || (activeFriend as any)?.avatarUrl)!.includes("data:image"))) ? <img src={activeFriend?.avatar || (activeFriend as any)?.avatarUrl} alt="" className="h-full w-full object-cover rounded-full" /> : <span className="text-[10px]">{activeFriend?.avatar || (activeFriend as any)?.avatarUrl || "👤"}</span>}
                 </div>
                 <div>
                   <p className="text-xs font-bold text-white">{activeFriend?.displayName || activeChat?.tempDisplayName || (activeChatId === "1" ? "شما" : "کاربر")}</p>

@@ -19,6 +19,7 @@ import adminRoutes from "./server/routes/admin.routes.ts";
 import settingsRoutes from "./server/routes/settings.routes.ts";
 import paymentRoutes from "./server/routes/payment.routes.ts";
 import uploadRoutes from "./server/routes/upload.routes.ts";
+import eliteRoutes from "./server/routes/elite.routes.ts";
 import { setupWebSockets } from "./server/sockets/index.ts";
 import { setIO } from "./server/utils/socket.ts";
 import prisma from "./server/utils/prisma.ts";
@@ -74,12 +75,33 @@ async function startServer() {
   app.use("/api/v1/settings", settingsRoutes);
   app.use("/api/v1/payments", paymentRoutes);
   app.use("/api/v1/upload", uploadRoutes);
+  app.use("/api/v1/elite", eliteRoutes);
   
   app.get("/api/health", (req, res) => {
     res.json({ status: "ok", message: "LOXX Backend is running in Persian mode (UTF-8)" });
   });
 
   app.use(errorHandler);
+
+  // Elite messages cleanup job (every 12 hours)
+  setInterval(async () => {
+    try {
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      await prisma.message.deleteMany({
+        where: {
+          channel: {
+            type: "ELITE"
+          },
+          createdAt: {
+            lt: sevenDaysAgo
+          }
+        }
+      });
+      console.log("[CRON] Cleaned up older Elite group messages");
+    } catch(err) {
+      console.error("[CRON] Elite cleanup error", err);
+    }
+  }, 12 * 60 * 60 * 1000);
 
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {

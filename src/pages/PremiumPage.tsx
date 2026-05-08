@@ -319,7 +319,7 @@ export const PremiumPage = () => {
                            <p className="text-yellow-400 font-bold uppercase text-xs tracking-widest">سطح نخبگان لوکس</p>
                         </div>
                         <div className="text-right">
-                           <span className="text-2xl font-black text-white italic">۳۹۹,۰۰۰</span>
+                           <span className="text-2xl font-black text-white italic">۵۹۹,۰۰۰</span>
                            <span className="text-gray-500 text-[10px] font-bold block italic uppercase">تومان / ماه</span>
                         </div>
                      </div>

@@ -9,6 +9,7 @@ import { Award, Star, Zap, Crown, User, Shield, Sparkles, X, Trophy, MessageCirc
 export interface QuickProfileUser {
   senderName: string;
   senderAvatar?: string;
+  avatarUrl?: string; // fallback
   senderLevel: number;
   senderBadges?: BadgeType[];
   membership?: MembershipType;
@@ -146,10 +147,10 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
                isPLUS ? "p-[2px] bg-neon-blue" : ""
              )}>
                   <div className="h-full w-full rounded-[28px] bg-[#0d0d12] flex items-center justify-center text-5xl overflow-hidden relative">
-                  {(user.senderAvatar && (user.senderAvatar.length > 5 || user.senderAvatar.startsWith("/") || user.senderAvatar.includes(".") || user.senderAvatar.includes("data:image"))) ? (
-                    <img src={user.senderAvatar} alt={user.senderName} className="w-full h-full object-cover relative z-10" />
+                  {((user.senderAvatar || user.avatarUrl) && ((user.senderAvatar || user.avatarUrl)!.length > 5 || (user.senderAvatar || user.avatarUrl)!.startsWith("/") || (user.senderAvatar || user.avatarUrl)!.includes(".") || (user.senderAvatar || user.avatarUrl)!.includes("data:image"))) ? (
+                    <img src={user.senderAvatar || user.avatarUrl} alt={user.senderName} className="w-full h-full object-cover relative z-10" />
                   ) : (
-                    <span className="relative z-10">{user.senderAvatar || "👤"}</span>
+                    <span className="relative z-10">{user.senderAvatar || user.avatarUrl || "👤"}</span>
                   )}
                   
                   {/* Internal Frame Overlay */}
