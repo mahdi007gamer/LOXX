@@ -271,15 +271,22 @@ export const PremiumPage = () => {
                      </div>
                      <div className="space-y-4 mb-10 relative z-10">
                         {PLAN_FEATURES.PLUS.map((feat, i) => (
-                           <div key={i} className="flex gap-3 items-start">
-                              <div className="h-6 w-6 rounded-lg bg-neon-blue/10 flex items-center justify-center text-neon-blue mt-0.5 shrink-0">
+                           <motion.div 
+                             key={i} 
+                             initial={{ opacity: 0, x: -10 }}
+                             whileInView={{ opacity: 1, x: 0 }}
+                             viewport={{ once: true }}
+                             transition={{ delay: i * 0.05 }}
+                             className="flex gap-3 items-start group"
+                           >
+                              <div className="h-6 w-6 rounded-lg bg-neon-blue/10 flex items-center justify-center text-neon-blue mt-0.5 shrink-0 transition-transform group-hover:scale-110">
                                 {feat.icon}
                               </div>
                               <div>
                                 <p className="text-xs font-black text-white italic uppercase tracking-tight">{feat.label}</p>
-                                <p className="text-[9px] text-gray-500 font-bold">{feat.detail}</p>
+                                <p className="text-[9px] text-gray-400 font-bold italic leading-none mt-0.5">{feat.detail}</p>
                               </div>
-                           </div>
+                           </motion.div>
                         ))}
                      </div>
                      <GlowButton onClick={() => handleSelectPlan("PLUS")} variant="blue" className="w-full py-5 text-sm font-black uppercase italic tracking-widest">
@@ -304,15 +311,22 @@ export const PremiumPage = () => {
                      </div>
                      <div className="space-y-4 mb-10 relative z-10">
                         {PLAN_FEATURES.VIP.map((feat, i) => (
-                           <div key={i} className="flex gap-3 items-start">
-                              <div className="h-6 w-6 rounded-lg bg-yellow-400/10 flex items-center justify-center text-yellow-400 mt-0.5 shrink-0">
+                           <motion.div 
+                             key={i} 
+                             initial={{ opacity: 0, x: -10 }}
+                             whileInView={{ opacity: 1, x: 0 }}
+                             viewport={{ once: true }}
+                             transition={{ delay: i * 0.05 }}
+                             className="flex gap-3 items-start group"
+                           >
+                              <div className="h-6 w-6 rounded-lg bg-yellow-400/10 flex items-center justify-center text-yellow-400 mt-0.5 shrink-0 transition-transform group-hover:scale-110">
                                 {feat.icon}
                               </div>
                               <div>
                                 <p className="text-xs font-black text-white italic uppercase tracking-tight">{feat.label}</p>
-                                <p className="text-[9px] text-gray-500 font-bold">{feat.detail}</p>
+                                <p className="text-[9px] text-gray-400 font-bold italic leading-none mt-0.5">{feat.detail}</p>
                               </div>
-                           </div>
+                           </motion.div>
                         ))}
                      </div>
                      <GlowButton onClick={() => handleSelectPlan("VIP")} variant="pink" className="w-full py-5 text-sm font-black uppercase italic tracking-widest bg-gradient-to-r from-neon-purple to-neon-pink">
@@ -508,23 +522,26 @@ export const PremiumPage = () => {
                     paymentStatus === "APPROVED" ? "text-green-500" : "text-neon-blue"
                   )} />
                   
-                  <div className="relative mt-16 mb-8 flex justify-center z-10">
+                  <div className="relative mt-12 mb-12 flex justify-center z-10">
                     <div className={cn(
-                      "h-24 w-24 rounded-[32px] bg-white/5 flex items-center justify-center relative shadow-2xl",
+                      "h-28 w-28 rounded-[36px] bg-white/5 flex items-center justify-center relative shadow-2xl",
                     )}>
                     {paymentStatus === "APPROVED" ? (
-                         <div className="relative">
-                            <CheckCircle2 size={64} className="text-green-400 animate-bounce relative z-20" />
-                            <div className="absolute inset-0 bg-green-500/20 blur-2xl rounded-full animate-pulse" />
+                         <div className="relative z-20">
+                            <CheckCircle2 size={72} className="text-green-400 animate-bounce relative z-20" />
+                            <div className="absolute inset-0 bg-green-500/20 blur-3xl rounded-full animate-pulse -z-10" />
                          </div>
                        ) : paymentStatus === "REJECTED" ? (
-                         <AlertCircle size={48} className="text-red-500" />
+                         <AlertCircle size={64} className="text-red-500 z-20" />
                        ) : (
-                         <Clock size={48} className="text-neon-blue animate-pulse z-20" />
+                         <Clock size={64} className="text-neon-blue animate-pulse z-20" />
                        )}
                        <div className={cn(
-                         "absolute inset-[-15px] rounded-[40px] border opacity-20 animate-ping",
+                         "absolute inset-[-20px] rounded-[48px] border opacity-20 animate-ping z-0",
                          paymentStatus === "APPROVED" ? "border-green-500" : "border-neon-blue"
+                       )} />
+                       <div className={cn(
+                         "absolute inset-0 rounded-[36px] border border-white/10 z-10",
                        )} />
                     </div>
                   </div>
