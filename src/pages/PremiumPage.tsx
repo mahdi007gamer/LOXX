@@ -125,29 +125,39 @@ export const PremiumPage = () => {
   };
 
   const handleSuccessEffect = () => {
+    // Center blast
     confetti({
       particleCount: 150,
       spread: 70,
       origin: { y: 0.6 },
-      colors: ["#22c55e", "#4ade80", "#16a34a"]
+      colors: ["#22c55e", "#4ade80", "#16a34a", "#ffffff"]
     });
-    // Secondary blast
-    setTimeout(() => {
+    
+    // Side cannons for "Cooler" effect
+    const duration = 3 * 1000;
+    const end = Date.now() + duration;
+
+    const frame = () => {
       confetti({
-        particleCount: 100,
+        particleCount: 2,
         angle: 60,
         spread: 55,
         origin: { x: 0 },
         colors: ["#22c55e", "#4ade80"]
       });
       confetti({
-        particleCount: 100,
+        particleCount: 2,
         angle: 120,
         spread: 55,
         origin: { x: 1 },
         colors: ["#22c55e", "#4ade80"]
       });
-    }, 250);
+
+      if (Date.now() < end) {
+        requestAnimationFrame(frame);
+      }
+    };
+    frame();
   };
 
   const handleSelectPlan = (plan: PlanType) => {
@@ -250,7 +260,10 @@ export const PremiumPage = () => {
                      تجربه نسل جدید گیمینگ
                    </motion.div>
                    <h1 className="text-4xl md:text-7xl font-black text-white italic uppercase tracking-tighter mb-4">ارتقای سطح کاربری</h1>
-                   <p className="text-gray-500 max-w-2xl mx-auto font-bold">برای حمایت از لوکس و باز کردن قابلیت‌های استثنایی، یکی از اشتراک‌های ویژه را انتخاب کنید.</p>
+                   <p className="text-gray-500 max-w-2xl mx-auto font-bold">
+                     برای حمایت از لوکس و باز کردن قابلیت‌های استثنایی، یکی از اشتراک‌های ویژه را انتخاب کنید. <br/>
+                     <span className="text-[10px] text-neon-blue font-black italic uppercase tracking-[0.2em] mt-2 block opacity-70">Premium Gaming Experience</span>
+                   </p>
                 </header>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 items-start mb-20">
@@ -277,14 +290,14 @@ export const PremiumPage = () => {
                              whileInView={{ opacity: 1, x: 0 }}
                              viewport={{ once: true }}
                              transition={{ delay: i * 0.05 }}
-                             className="flex gap-3 items-start group"
+                             className="flex gap-4 items-center group"
                            >
-                              <div className="h-6 w-6 rounded-lg bg-neon-blue/10 flex items-center justify-center text-neon-blue mt-0.5 shrink-0 transition-transform group-hover:scale-110">
+                              <div className="h-9 w-9 rounded-xl bg-neon-blue/10 flex items-center justify-center text-neon-blue shrink-0 transition-all group-hover:scale-110 group-hover:rotate-3 group-hover:bg-neon-blue/20">
                                 {feat.icon}
                               </div>
-                              <div>
-                                <p className="text-xs font-black text-white italic uppercase tracking-tight">{feat.label}</p>
-                                <p className="text-[9px] text-gray-400 font-bold italic leading-none mt-0.5">{feat.detail}</p>
+                              <div className="flex flex-col">
+                                <p className="text-[11px] font-black text-white italic uppercase tracking-tight leading-none mb-1 group-hover:text-neon-blue transition-colors">{feat.label}</p>
+                                <p className="text-[10px] text-gray-500 font-bold italic leading-none">{feat.detail}</p>
                               </div>
                            </motion.div>
                         ))}
@@ -317,14 +330,14 @@ export const PremiumPage = () => {
                              whileInView={{ opacity: 1, x: 0 }}
                              viewport={{ once: true }}
                              transition={{ delay: i * 0.05 }}
-                             className="flex gap-3 items-start group"
+                             className="flex gap-4 items-center group"
                            >
-                              <div className="h-6 w-6 rounded-lg bg-yellow-400/10 flex items-center justify-center text-yellow-400 mt-0.5 shrink-0 transition-transform group-hover:scale-110">
+                              <div className="h-9 w-9 rounded-xl bg-yellow-400/10 flex items-center justify-center text-yellow-400 shrink-0 transition-all group-hover:scale-110 group-hover:rotate-3 group-hover:bg-yellow-400/20">
                                 {feat.icon}
                               </div>
-                              <div>
-                                <p className="text-xs font-black text-white italic uppercase tracking-tight">{feat.label}</p>
-                                <p className="text-[9px] text-gray-400 font-bold italic leading-none mt-0.5">{feat.detail}</p>
+                              <div className="flex flex-col">
+                                <p className="text-[11px] font-black text-white italic uppercase tracking-tight leading-none mb-1 group-hover:text-yellow-400 transition-colors">{feat.label}</p>
+                                <p className="text-[10px] text-gray-500 font-bold italic leading-none">{feat.detail}</p>
                               </div>
                            </motion.div>
                         ))}
@@ -376,23 +389,24 @@ export const PremiumPage = () => {
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-16 relative z-10">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-16 relative z-10">
                      {PLAN_FEATURES[selectedPlan].map((feat, i) => (
                         <motion.div 
                           key={i} 
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: i * 0.05 }}
-                          className="flex gap-4 p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-white/10 transition-all group"
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ delay: i * 0.03 }}
+                          className="flex gap-5 p-5 rounded-3xl bg-white/5 border border-white/5 hover:border-white/20 transition-all group relative overflow-hidden"
                         >
-                           <div className={cn("h-12 w-12 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-110", 
-                              selectedPlan === "VIP" ? "bg-yellow-400/20 text-yellow-400" : "bg-neon-blue/20 text-neon-blue"
+                           <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                           <div className={cn("h-14 w-14 rounded-2xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-110 group-hover:rotate-3 shadow-lg relative z-10", 
+                              selectedPlan === "VIP" ? "bg-yellow-400/20 text-yellow-400 shadow-yellow-400/10" : "bg-neon-blue/20 text-neon-blue shadow-neon-blue/10"
                            )}>
-                              {feat.icon}
+                              {React.cloneElement(feat.icon as React.ReactElement, { size: 24 })}
                            </div>
-                           <div>
-                              <h4 className="text-white font-black italic uppercase text-sm">{feat.label}</h4>
-                              <p className="text-[10px] text-gray-400 font-bold italic">{feat.detail}</p>
+                           <div className="relative z-10">
+                              <h4 className="text-white font-black italic uppercase text-base tracking-tight mb-0.5">{feat.label}</h4>
+                              <p className="text-xs text-gray-400 font-bold italic leading-tight">{feat.detail}</p>
                            </div>
                         </motion.div>
                      ))}
@@ -505,48 +519,56 @@ export const PremiumPage = () => {
             {step === "STATUS" && pendingPayment && (
               <motion.div
                 key="status"
-                initial={{ opacity: 0, scale: 0.95 }}
+                initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 1.05 }}
+                exit={{ opacity: 0, scale: 1.1 }}
                 className="max-w-2xl mx-auto"
               >
                 <NeonCard 
                   variant={paymentStatus === "APPROVED" ? "green" : (pendingPayment.type === "VIP" ? "purple" : "blue")}
                   className={cn(
-                    "p-12 text-center relative overflow-hidden transition-all duration-700",
-                    paymentStatus === "APPROVED" ? "bg-green-500/10 border-green-500/40 shadow-[0_0_80px_rgba(34,197,94,0.15)]" : "bg-dark-card/50"
+                    "p-12 text-center relative overflow-hidden transition-all duration-1000",
+                    paymentStatus === "APPROVED" ? "bg-green-500/10 border-green-500/40 shadow-[0_0_100px_rgba(34,197,94,0.2)]" : "bg-dark-card/50"
                   )}
                 >
+                  {/* The neon bar at top */}
                   <div className={cn(
-                    "absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-current to-transparent animate-shimmer",
-                    paymentStatus === "APPROVED" ? "text-green-500" : "text-neon-blue"
+                    "absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-transparent via-current to-transparent animate-shimmer z-50",
+                    paymentStatus === "APPROVED" ? "text-green-500 shadow-[0_0_15px_rgba(34,197,94,1)]" : "text-neon-blue shadow-[0_0_15px_rgba(0,229,255,0.5)]"
                   )} />
                   
-                  <div className="relative mt-12 mb-12 flex justify-center z-10">
+                  {/* Adjusted icon positioning: more margin-top and higher z-index */}
+                  <div className="relative mt-20 mb-10 flex justify-center z-40">
                     <div className={cn(
-                      "h-28 w-28 rounded-[36px] bg-white/5 flex items-center justify-center relative shadow-2xl",
+                      "h-32 w-32 rounded-[40px] bg-white/5 flex items-center justify-center relative shadow-2xl backdrop-blur-xl border border-white/10",
                     )}>
-                    {paymentStatus === "APPROVED" ? (
-                         <div className="relative z-20">
-                            <CheckCircle2 size={72} className="text-green-400 animate-bounce relative z-20" />
-                            <div className="absolute inset-0 bg-green-500/20 blur-3xl rounded-full animate-pulse -z-10" />
+                       {paymentStatus === "APPROVED" ? (
+                         <div className="relative z-50">
+                            <CheckCircle2 size={72} className="text-green-400 animate-bounce" />
+                            <div className="absolute inset-0 bg-green-500/30 blur-3xl rounded-full scale-150 -z-10" />
                          </div>
                        ) : paymentStatus === "REJECTED" ? (
-                         <AlertCircle size={64} className="text-red-500 z-20" />
+                         <AlertCircle size={72} className="text-red-500 z-50" />
                        ) : (
-                         <Clock size={64} className="text-neon-blue animate-pulse z-20" />
+                         <Clock size={72} className="text-neon-blue animate-pulse z-50" />
                        )}
+                       
+                       {/* Animated Pings */}
                        <div className={cn(
-                         "absolute inset-[-20px] rounded-[48px] border opacity-20 animate-ping z-0",
+                         "absolute inset-[-20px] rounded-[50px] border-2 opacity-20 animate-ping z-0",
                          paymentStatus === "APPROVED" ? "border-green-500" : "border-neon-blue"
                        )} />
                        <div className={cn(
-                         "absolute inset-0 rounded-[36px] border border-white/10 z-10",
+                         "absolute inset-[-40px] rounded-[60px] border opacity-10 animate-pulse z-0",
+                         paymentStatus === "APPROVED" ? "border-green-500" : "border-neon-blue"
                        )} />
                     </div>
                   </div>
 
-                  <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter mb-4">
+                  <h2 className={cn(
+                    "text-4xl font-black italic uppercase tracking-tighter mb-4 transition-colors duration-500",
+                    paymentStatus === "APPROVED" ? "text-green-400" : "text-white"
+                  )}>
                     {paymentStatus === "APPROVED" ? "تبریک! اشتراک فعال شد" : 
                      paymentStatus === "REJECTED" ? "خطا در تایید تراکنش" : 
                      "در انتظار تأیید"}
