@@ -28,29 +28,29 @@ export const BankCard: React.FC<BankCardProps> = ({ cardNumber, cardHolder }) =>
             <p className="text-[10px] font-black uppercase opacity-60 tracking-widest italic">Bank Account</p>
             <h3 className="font-black italic text-lg tracking-tighter">LOXX PREMIUM</h3>
           </div>
-          <Wifi className="rotate-90 opacity-40" />
+          <Wifi className="rotate-90 opacity-40 shrink-0" />
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-6">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-9 bg-yellow-500/20 rounded-lg border border-yellow-500/30 relative overflow-hidden">
+            <div className="w-12 h-9 bg-yellow-500/20 rounded-lg border border-yellow-500/30 relative overflow-hidden shrink-0">
                <div className="absolute inset-0 bg-gradient-to-br from-yellow-400/20 to-transparent" />
                <div className="grid grid-cols-3 h-full opacity-20">
                   <div className="border-r border-yellow-500" />
                   <div className="border-r border-yellow-500" />
                </div>
             </div>
-            <p className="text-xl md:text-2xl font-mono tracking-[0.2em] font-bold text-shadow-glow">
+            <p className="text-lg md:text-2xl font-mono tracking-[0.15em] font-bold text-shadow-glow truncate">
               {cardNumber}
             </p>
           </div>
 
           <div className="flex justify-between items-end">
-            <div>
+            <div className="min-w-0 pr-4">
               <p className="text-[8px] font-black uppercase opacity-60 tracking-widest italic">Card Holder</p>
-              <p className="font-black italic text-sm md:text-base uppercase tracking-tight">{cardHolder}</p>
+              <p className="font-black italic text-xs md:text-base uppercase tracking-tight truncate">مهدی دلال زاده احمدی</p>
             </div>
-            <div className="h-10 w-10 md:h-12 md:w-12 bg-white/10 rounded-full flex items-center justify-center border border-white/20">
+            <div className="h-10 w-10 md:h-12 md:w-12 bg-white/10 rounded-full flex items-center justify-center border border-white/20 shrink-0">
                <CreditCard size={20} className="text-white/60" />
             </div>
           </div>

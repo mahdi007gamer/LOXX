@@ -9,12 +9,14 @@ import {
   X, AlertCircle, Clock, CheckCircle2, 
   Copy, ExternalLink, RefreshCw
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
 import api from "../lib/api";
 import { useAuth } from "../context/AuthContext";
 import { toast } from "react-hot-toast";
 import { BankCard } from "../components/premium/BankCard";
+import confetti from "canvas-confetti";
 
 type Step = "SELECT" | "PREVIEW" | "PAYMENT" | "STATUS";
 type PlanType = "PLUS" | "VIP";
@@ -59,31 +61,93 @@ const PLAN_DATA = {
 
 export const PremiumPage = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [step, setStep] = useState<Step>("SELECT");
   const [selectedPlan, setSelectedPlan] = useState<PlanType | null>(null);
   const [pendingPayment, setPendingPayment] = useState<any>(null);
+  const [paymentStatus, setPaymentStatus] = useState<"PENDING" | "APPROVED" | "REJECTED" | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     fetchPaymentStatus();
+    return () => {
+      if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
+    };
   }, []);
 
   const fetchPaymentStatus = async () => {
     try {
       const { data } = await api.get("/payments/status");
-      if (data.status === "success" && data.data && data.data.status === "PENDING") {
+      if (data.status === "success" && data.data) {
         setPendingPayment(data.data);
-        setStep("STATUS");
+        setPaymentStatus(data.data.status);
+        
+        if (data.data.status === "PENDING") {
+          setStep("STATUS");
+          startPolling();
+        }
       }
     } catch (err) {
       console.error("Failed to fetch payment status", err);
     } finally {
       setLoading(false);
     }
+  };
+
+  const startPolling = () => {
+    if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
+    pollingIntervalRef.current = setInterval(async () => {
+      try {
+        const { data } = await api.get("/payments/status");
+        if (data.status === "success" && data.data) {
+          if (data.data.status !== paymentStatus) {
+            setPaymentStatus(data.data.status);
+            if (data.data.status === "APPROVED") {
+              handleSuccessEffect();
+              setPendingPayment(data.data);
+              clearInterval(pollingIntervalRef.current!);
+            } else if (data.data.status === "REJECTED") {
+              toast.error("پرداخت شما تایید نشد. لطفاً مجدداً تلاش کنید.");
+              setPendingPayment(data.data);
+              clearInterval(pollingIntervalRef.current!);
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Polling error", err);
+      }
+    }, 5000);
+  };
+
+  const handleSuccessEffect = () => {
+    confetti({
+      particleCount: 150,
+      spread: 70,
+      origin: { y: 0.6 },
+      colors: ["#22c55e", "#4ade80", "#16a34a"]
+    });
+    // Secondary blast
+    setTimeout(() => {
+      confetti({
+        particleCount: 100,
+        angle: 60,
+        spread: 55,
+        origin: { x: 0 },
+        colors: ["#22c55e", "#4ade80"]
+      });
+      confetti({
+        particleCount: 100,
+        angle: 120,
+        spread: 55,
+        origin: { x: 1 },
+        colors: ["#22c55e", "#4ade80"]
+      });
+    }, 250);
   };
 
   const handleSelectPlan = (plan: PlanType) => {
@@ -97,7 +161,9 @@ export const PremiumPage = () => {
     try {
       setSubmitting(true);
       await api.post("/payments/cancel");
+      if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
       setPendingPayment(null);
+      setPaymentStatus(null);
       setStep("SELECT");
       toast.success("درخواست با موفقیت لغو شد");
     } catch (err) {
@@ -141,7 +207,9 @@ export const PremiumPage = () => {
 
       if (response.data.status === "success") {
         setPendingPayment(response.data.data);
+        setPaymentStatus("PENDING");
         setStep("STATUS");
+        startPolling();
         toast.success("رسید با موفقیت ثبت شد");
       }
     } catch (err: any) {
@@ -203,9 +271,12 @@ export const PremiumPage = () => {
                      </div>
                      <div className="space-y-4 mb-10 relative z-10">
                         {PLAN_FEATURES.PLUS.map((feat, i) => (
-                           <div key={i} className="flex gap-3 items-center">
-                              <div className="h-5 w-5 rounded-full bg-neon-blue/10 flex items-center justify-center text-neon-blue"><Check size={12} /></div>
-                              <span className="text-xs font-black text-white italic uppercase tracking-tight">{feat.label}</span>
+                           <div key={i} className="flex gap-3 items-start">
+                              <div className="h-5 w-5 rounded-full bg-neon-blue/10 flex items-center justify-center text-neon-blue mt-0.5 shrink-0"><Check size={12} /></div>
+                              <div>
+                                <p className="text-xs font-black text-white italic uppercase tracking-tight">{feat.label}</p>
+                                <p className="text-[9px] text-gray-500 font-bold">{feat.detail}</p>
+                              </div>
                            </div>
                         ))}
                      </div>
@@ -231,9 +302,12 @@ export const PremiumPage = () => {
                      </div>
                      <div className="space-y-4 mb-10 relative z-10">
                         {PLAN_FEATURES.VIP.map((feat, i) => (
-                           <div key={i} className="flex gap-3 items-center">
-                              <div className="h-5 w-5 rounded-full bg-yellow-400/10 flex items-center justify-center text-yellow-400"><Check size={12} /></div>
-                              <span className="text-xs font-black text-white italic uppercase tracking-tight">{feat.label}</span>
+                           <div key={i} className="flex gap-3 items-start">
+                              <div className="h-5 w-5 rounded-full bg-yellow-400/10 flex items-center justify-center text-yellow-400 mt-0.5 shrink-0"><Check size={12} /></div>
+                              <div>
+                                <p className="text-xs font-black text-white italic uppercase tracking-tight">{feat.label}</p>
+                                <p className="text-[9px] text-gray-500 font-bold">{feat.detail}</p>
+                              </div>
                            </div>
                         ))}
                      </div>
@@ -245,7 +319,7 @@ export const PremiumPage = () => {
               </motion.div>
             )}
 
-            {step === "PREVIEW" && selectedPlan && (
+            {step === "PREVIEW" && selectedPlan && !pendingPayment && (
               <motion.div
                 key="preview"
                 initial={{ opacity: 0, scale: 0.95 }}
@@ -261,7 +335,19 @@ export const PremiumPage = () => {
                   variant={PLAN_DATA[selectedPlan].color as any} 
                   className={cn("p-8 md:p-16 relative overflow-hidden", PLAN_DATA[selectedPlan].theme)}
                 >
-                  <div className="text-center mb-12">
+                  {/* Backdrop flair */}
+                  <div className="absolute -top-24 -right-24 w-64 h-64 bg-current opacity-5 rounded-full blur-3xl" />
+                  <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-current opacity-5 rounded-full blur-3xl" />
+
+                  <div className="text-center mb-12 relative z-10">
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: "spring", damping: 12 }}
+                      className="inline-flex h-20 w-20 items-center justify-center rounded-3xl bg-white/5 border border-white/10 mb-6 text-white"
+                    >
+                      {selectedPlan === "VIP" ? <Crown size={40} className="text-yellow-400" /> : <Zap size={40} className="text-neon-blue" />}
+                    </motion.div>
                     <h2 className="text-4xl md:text-6xl font-black text-white italic uppercase tracking-tighter mb-4">
                       {PLAN_DATA[selectedPlan].name}
                     </h2>
@@ -272,26 +358,32 @@ export const PremiumPage = () => {
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-16">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-16 relative z-10">
                      {PLAN_FEATURES[selectedPlan].map((feat, i) => (
-                        <div key={i} className="flex gap-4 p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-white/10 transition-all">
-                           <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center shrink-0", 
+                        <motion.div 
+                          key={i} 
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: i * 0.05 }}
+                          className="flex gap-4 p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-white/10 transition-all group"
+                        >
+                           <div className={cn("h-12 w-12 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-110", 
                               selectedPlan === "VIP" ? "bg-yellow-400/20 text-yellow-400" : "bg-neon-blue/20 text-neon-blue"
                            )}>
                               {feat.icon}
                            </div>
                            <div>
                               <h4 className="text-white font-black italic uppercase text-sm">{feat.label}</h4>
-                              <p className="text-[10px] text-gray-500 font-bold">{feat.detail}</p>
+                              <p className="text-[10px] text-gray-400 font-bold italic">{feat.detail}</p>
                            </div>
-                        </div>
+                        </motion.div>
                      ))}
                   </div>
 
                   <GlowButton 
                     onClick={() => setStep("PAYMENT")}
-                    variant={selectedPlan === "VIP" ? "pink" : "blue"} 
-                    className="w-full py-6 text-lg font-black italic uppercase tracking-widest"
+                    variant={selectedPlan === "VIP" ? "gold" : "blue"} 
+                    className="w-full py-6 text-lg font-black italic uppercase tracking-widest relative z-10"
                   >
                     ادامه به مرحله پرداخت <CreditCard size={20} className="mr-2 inline" />
                   </GlowButton>
@@ -320,7 +412,7 @@ export const PremiumPage = () => {
 
                       <BankCard 
                         cardNumber="6063 7311 8109 6737"
-                        cardHolder="احمدی مهدی دلال زاده"
+                        cardHolder="مهدی دلال زاده احمدی"
                       />
 
                       <div className="p-6 rounded-3xl bg-white/[0.03] border border-white/5 space-y-4">
@@ -397,27 +489,53 @@ export const PremiumPage = () => {
                 key="status"
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 1.05 }}
                 className="max-w-2xl mx-auto"
               >
                 <NeonCard 
-                  variant={pendingPayment.type === "VIP" ? "purple" : "blue"}
-                  className="p-12 text-center relative overflow-hidden"
+                  variant={paymentStatus === "APPROVED" ? "green" : (pendingPayment.type === "VIP" ? "purple" : "blue")}
+                  className={cn(
+                    "p-12 text-center relative overflow-hidden transition-colors duration-700",
+                    paymentStatus === "APPROVED" ? "bg-green-500/10 border-green-500/30" : "bg-dark-card/50"
+                  )}
                 >
-                  <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-neon-blue to-transparent animate-shimmer" />
+                  <div className={cn(
+                    "absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-current to-transparent animate-shimmer",
+                    paymentStatus === "APPROVED" ? "text-green-500" : "text-neon-blue"
+                  )} />
                   
-                  <div className="h-20 w-20 rounded-[30px] bg-white/5 flex items-center justify-center mx-auto mb-8 relative">
-                     <Clock size={40} className="text-neon-blue animate-pulse" />
-                     <div className="absolute inset-0 rounded-[30px] border border-neon-blue/20 animate-ping" />
+                  <div className="relative mt-8 mb-8 flex justify-center">
+                    <div className={cn(
+                      "h-24 w-24 rounded-[32px] bg-white/5 flex items-center justify-center relative",
+                    )}>
+                       {paymentStatus === "APPROVED" ? (
+                         <CheckCircle2 size={48} className="text-green-500 animate-bounce" />
+                       ) : paymentStatus === "REJECTED" ? (
+                         <AlertCircle size={48} className="text-red-500" />
+                       ) : (
+                         <Clock size={48} className="text-neon-blue animate-pulse" />
+                       )}
+                       <div className={cn(
+                         "absolute inset-[-10px] rounded-[40px] border opacity-20 animate-ping",
+                         paymentStatus === "APPROVED" ? "border-green-500" : "border-neon-blue"
+                       )} />
+                    </div>
                   </div>
 
-                  <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter mb-4">در انتظار تأیید</h2>
-                  <p className="text-gray-500 font-bold text-sm mb-8 leading-relaxed">
-                    رسید شما با موفقیت دریافت شد و در صف بررسی قرار گرفت. <br />
-                    تا دقایقی دیگر اشتراک <span className="text-white italic">{pendingPayment.type}</span> شما فعال خواهد شد.
+                  <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter mb-4">
+                    {paymentStatus === "APPROVED" ? "تبریک! اشتراک فعال شد" : 
+                     paymentStatus === "REJECTED" ? "خطا در تایید تراکنش" : 
+                     "در انتظار تأیید"}
+                  </h2>
+                  
+                  <p className="text-gray-400 font-bold text-sm mb-8 leading-relaxed max-w-sm mx-auto">
+                    {paymentStatus === "APPROVED" ? "پرداخت شما تایید شد و تمامی امکانات ویژه برای شما باز شده است. از تجربه لوکس لذت ببرید!" : 
+                     paymentStatus === "REJECTED" ? "متاسفانه رسید شما مورد تایید قرار نگرفت. ممکن است تصویر ناخوانا باشد یا تراکنش ثبت نشده باشد." :
+                     "رسید شما با موفقیت دریافت شد و در صف بررسی قرار گرفت. تا دقایقی دیگر اشتراک شما فعال خواهد شد."}
                   </p>
 
                   <div className="flex flex-col gap-4">
-                     <div className="p-4 rounded-2xl bg-white/5 border border-white/5 flex justify-between items-center text-right">
+                     <div className="p-4 rounded-3xl bg-white/5 border border-white/5 flex justify-between items-center text-right">
                         <div>
                            <p className="text-[10px] text-gray-500 font-bold uppercase italic">تاریخ ثبت</p>
                            <p className="text-white font-black italic text-sm">{new Date(pendingPayment.createdAt).toLocaleString('fa-IR')}</p>
@@ -428,47 +546,28 @@ export const PremiumPage = () => {
                         </div>
                      </div>
 
-                     <GlowButton 
-                       onClick={handleCancelPayment}
-                       disabled={submitting}
-                       className="w-full py-4 text-xs font-black italic uppercase tracking-widest bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500/20"
-                     >
-                       {submitting ? "در حال لغو..." : "لغو درخواست پرداخت"} <X size={16} className="mr-2 inline" />
-                     </GlowButton>
+                     {paymentStatus === "APPROVED" ? (
+                        <GlowButton variant="blue" onClick={() => navigate("/")} className="w-full py-5">
+                          ورود به پنل کاربری <ArrowRight size={18} className="mr-2 inline" />
+                        </GlowButton>
+                     ) : paymentStatus === "REJECTED" ? (
+                        <GlowButton onClick={() => setStep("SELECT")} variant="secondary" className="w-full py-5">
+                          تلاش دوباره <RefreshCw size={18} className="mr-2 inline" />
+                        </GlowButton>
+                     ) : (
+                        <GlowButton 
+                          onClick={handleCancelPayment}
+                          disabled={submitting}
+                          className="w-full py-4 text-xs font-black italic uppercase tracking-widest bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500/20"
+                        >
+                          {submitting ? "در حال لغو..." : "لغو درخواست پرداخت"} <X size={16} className="mr-2 inline" />
+                        </GlowButton>
+                     )}
                   </div>
                 </NeonCard>
               </motion.div>
             )}
           </AnimatePresence>
-
-          {/* Referral Section (Always show at bottom of SELECT step) */}
-          {step === "SELECT" && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
-              className="mt-20 text-center p-12 rounded-[40px] bg-gradient-to-b from-white/[0.03] to-transparent border border-white/5 relative overflow-hidden"
-            >
-               <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(0,229,255,0.05),transparent_70%)]" />
-               <h3 className="text-2xl font-black text-white italic uppercase tracking-tighter mb-4 relative z-10">برنامه معرفی دوستان</h3>
-               <p className="text-gray-500 max-w-sm mx-auto font-bold mb-8 relative z-10">
-                  اگر کسی با کد معرفی شما ثبت نام کند، ۳ روز اکانت PLUS رایگان دریافت می‌کنید.
-               </p>
-               <div className="flex flex-col items-center gap-4 relative z-10">
-                  <div className="flex bg-white/5 p-2 rounded-2xl border border-white/5 items-center gap-4 pl-4">
-                     <span className="text-xs font-mono font-bold text-gray-400">کد شما:</span>
-                     <span className="text-neon-blue font-black italic">{user?.username}</span>
-                     <button 
-                        onClick={() => { navigator.clipboard.writeText(user?.username || ""); toast.success("کد کپی شد"); }}
-                        className="p-2 hover:bg-white/10 rounded-xl transition-colors text-white"
-                     >
-                        <Copy size={16} />
-                     </button>
-                  </div>
-                  <p className="text-[10px] text-gray-500 font-bold uppercase animate-bounce">برای کپی کردن کد کلیک کنید</p>
-               </div>
-            </motion.div>
-          )}
 
           <div className="mt-20 grid grid-cols-1 md:grid-cols-3 gap-6">
              <div className="p-6 rounded-3xl bg-white/[0.03] border border-white/5 backdrop-blur-xl text-center">
