@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
-import axios from "axios";
+import api from "../lib/api";
 import { useAuth } from "../context/AuthContext";
 import { toast } from "react-hot-toast";
 import { BankCard } from "../components/premium/BankCard";
@@ -74,7 +74,7 @@ export const PremiumPage = () => {
 
   const fetchPaymentStatus = async () => {
     try {
-      const { data } = await axios.get("/api/v1/payments/status");
+      const { data } = await api.get("/payments/status");
       if (data.status === "success" && data.data && data.data.status === "PENDING") {
         setPendingPayment(data.data);
         setStep("STATUS");
@@ -96,7 +96,7 @@ export const PremiumPage = () => {
     
     try {
       setSubmitting(true);
-      await axios.post("/api/v1/payments/cancel");
+      await api.post("/payments/cancel");
       setPendingPayment(null);
       setStep("SELECT");
       toast.success("درخواست با موفقیت لغو شد");
@@ -134,7 +134,7 @@ export const PremiumPage = () => {
       // In a real app we'd upload to S3/Cloudinary. 
       // Here we'll send base64 to a mock upload route or just simulate.
       // We'll simulate by sending the base64 preview (not recommended for production but works here).
-      const response = await axios.post("/api/v1/payments/create", {
+      const response = await api.post("/payments/create", {
         type: selectedPlan,
         receiptImageUrl: receiptPreview
       });
