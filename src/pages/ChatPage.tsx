@@ -15,6 +15,7 @@ import { useAuth } from "../context/AuthContext";
 import { useLobby } from "../context/LobbyContext";
 import { chatSocket } from "../lib/socket";
 import { toast } from "react-hot-toast";
+import api from "../lib/api";
 
 // --- Sub-components ---
 
@@ -546,6 +547,7 @@ export const ChatPage: React.FC = () => {
   const [messages, setMessages] = useState<Record<string, ChatMessage[]>>({});
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
   const [memberCount, setMemberCount] = useState(15420);
+  const [gameMembers, setGameMembers] = useState<any[]>([]);
   const [typers, setTypers] = useState<Record<string, Record<string, string>>>({});
   const [input, setInput] = useState("");
   const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null);
@@ -746,7 +748,7 @@ export const ChatPage: React.FC = () => {
       id: `game-${g.id}`,
       name: `چت ${g.title}`,
       type: "game" as const,
-      users: parseInt(g.playerCount?.replace(/[^0-9]/g, '') || '0') || 15420,
+      users: (g as any).memberCount || parseInt(g.playerCount?.replace(/[^0-9]/g, '') || '0') || 15420,
       icon: g.image
     }));
 
@@ -758,7 +760,21 @@ export const ChatPage: React.FC = () => {
   // Update member count based on active channel
   useEffect(() => {
     if (activeChannel) {
-      setMemberCount(activeChannel.users);
+      if (activeChannel.type === 'game') {
+        const gameId = activeChannel.id.replace("game-", "");
+        api.get(`/games/${gameId}`).then(res => {
+          if (res.data.status === "success") {
+            setMemberCount(res.data.data.memberCount);
+            setGameMembers(res.data.data.members || []);
+          }
+        }).catch(() => {
+          setMemberCount(activeChannel.users);
+          setGameMembers([]);
+        });
+      } else {
+        setMemberCount(activeChannel.users);
+        setGameMembers([]);
+      }
     }
   }, [activeChannel]);
 
@@ -1238,6 +1254,32 @@ export const ChatPage: React.FC = () => {
               <div className="flex items-center gap-1.5 md:gap-2 truncate">
                 <div className="h-1 w-1 md:h-1.5 md:w-1.5 rounded-full bg-blue-500 shrink-0"></div>
                 <p className="text-[8px] md:text-[10px] text-gray-500 font-bold uppercase tracking-tighter truncate">{memberCount.toLocaleString()} عضو</p>
+                {gameMembers.length > 0 && (
+                  <div className="hidden sm:flex items-center -space-x-2 mr-2">
+                    {gameMembers.slice(0, 4).map((member, i) => (
+                      <div 
+                        key={member.id} 
+                        className="h-6 w-6 rounded-full border-2 border-[#0a0a0f] overflow-hidden bg-white/5 cursor-pointer hover:translate-y-[-2px] transition-transform"
+                        title={member.username}
+                        onClick={() => openProfile({
+                          id: member.id,
+                          senderId: member.id,
+                          senderName: member.username,
+                          senderAvatar: member.avatar || "👤",
+                          senderLevel: member.level,
+                          senderBadges: []
+                        }, false)}
+                      >
+                        {member.avatar ? <img src={member.avatar} alt="" className="h-full w-full object-cover" /> : <div className="h-full w-full flex items-center justify-center text-[10px] text-gray-400 font-bold">{member.username[0]}</div>}
+                      </div>
+                    ))}
+                    {gameMembers.length > 4 && (
+                      <div className="h-6 w-6 rounded-full border-2 border-[#0a0a0f] bg-white/5 flex items-center justify-center text-[8px] text-gray-400 font-bold">
+                        +{gameMembers.length - 4}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>
