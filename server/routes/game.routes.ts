@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { GameController } from "../controllers/game.controller.js";
-import { authenticate } from "../middleware/auth.middleware.js";
+import { GameController } from "../controllers/game.controller.ts";
+import { authenticate } from "../middleware/auth.middleware.ts";
 
 const router = Router();
 

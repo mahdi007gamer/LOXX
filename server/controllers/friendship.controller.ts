@@ -1,6 +1,6 @@
 import { Response } from "express";
-import { FriendshipService } from "../services/friendship.service.js";
-import { AuthenticatedRequest } from "../middleware/auth.middleware.js";
+import { FriendshipService } from "../services/friendship.service.ts";
+import { AuthenticatedRequest } from "../middleware/auth.middleware.ts";
 
 export class FriendshipController {
   static async listFriends(req: AuthenticatedRequest, res: Response) {

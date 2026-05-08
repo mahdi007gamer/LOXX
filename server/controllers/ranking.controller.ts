@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { RankingService } from "../services/ranking.service.js";
+import { RankingService } from "../services/ranking.service.ts";
 
 export class RankingController {
   static async getLeaderboard(req: Request, res: Response) {

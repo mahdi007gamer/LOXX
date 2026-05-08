@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { LobbyController } from "../controllers/lobby.controller.js";
-import { authenticate } from "../middleware/auth.middleware.js";
+import { LobbyController } from "../controllers/lobby.controller.ts";
+import { authenticate } from "../middleware/auth.middleware.ts";
 
 const router = Router();
 

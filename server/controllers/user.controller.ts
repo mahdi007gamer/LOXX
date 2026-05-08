@@ -1,6 +1,6 @@
 import { Response } from "express";
-import { UserService } from "../services/user.service.js";
-import { AuthenticatedRequest } from "../middleware/auth.middleware.js";
+import { UserService } from "../services/user.service.ts";
+import { AuthenticatedRequest } from "../middleware/auth.middleware.ts";
 
 export class UserController {
   static async getMe(req: AuthenticatedRequest, res: Response) {

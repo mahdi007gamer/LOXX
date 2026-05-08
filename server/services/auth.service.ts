@@ -1,7 +1,7 @@
 import argon2 from "argon2";
 import jwt from "jsonwebtoken";
-import prisma from "../utils/prisma.js";
-import { RegisterDTO, LoginDTO } from "../types/auth.js";
+import prisma from "../utils/prisma.ts";
+import { RegisterDTO, LoginDTO } from "../types/auth.ts";
 
 const JWT_SECRET = process.env.JWT_SECRET || "secret";
 const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET || "refresh_secret";

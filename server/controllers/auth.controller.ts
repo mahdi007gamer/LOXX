@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
-import { AuthService } from "../services/auth.service.js";
-import prisma from "../utils/prisma.js";
+import { AuthService } from "../services/auth.service.ts";
+import prisma from "../utils/prisma.ts";
 
 export class AuthController {
   static async register(req: Request, res: Response) {

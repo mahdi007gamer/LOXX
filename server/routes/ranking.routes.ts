@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { RankingController } from "../controllers/ranking.controller.js";
-import { authenticate } from "../middleware/auth.middleware.js";
+import { RankingController } from "../controllers/ranking.controller.ts";
+import { authenticate } from "../middleware/auth.middleware.ts";
 
 const router = Router();
 

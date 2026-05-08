@@ -1,4 +1,4 @@
-import prisma from "../utils/prisma.js";
+import prisma from "../utils/prisma.ts";
 
 export class LobbyService {
   static async createLobby(userId: string, data: any) {

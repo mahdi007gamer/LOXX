@@ -1,4 +1,4 @@
-import prisma from "../utils/prisma.js";
+import prisma from "../utils/prisma.ts";
 
 export class NotificationService {
   static async createNotification(userId: string, type: string, data: any, senderId?: string) {

@@ -1,6 +1,6 @@
 import { Response } from "express";
-import { LobbyService } from "../services/lobby.service.js";
-import { AuthenticatedRequest } from "../middleware/auth.middleware.js";
+import { LobbyService } from "../services/lobby.service.ts";
+import { AuthenticatedRequest } from "../middleware/auth.middleware.ts";
 
 export class LobbyController {
   static async create(req: AuthenticatedRequest, res: Response) {

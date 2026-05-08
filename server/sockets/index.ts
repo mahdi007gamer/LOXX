@@ -1,7 +1,7 @@
 import { Server, Socket } from "socket.io";
-import { AuthService } from "../services/auth.service.js";
-import { RankingService } from "../services/ranking.service.js";
-import prisma from "../utils/prisma.js";
+import { AuthService } from "../services/auth.service.ts";
+import { RankingService } from "../services/ranking.service.ts";
+import prisma from "../utils/prisma.ts";
 
 interface AuthenticatedSocket extends Socket {
   userId?: string;

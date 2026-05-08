@@ -8,17 +8,17 @@ import cors from "cors";
 import helmet from "helmet";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
-import authRoutes from "./server/routes/auth.routes.js";
-import userRoutes from "./server/routes/user.routes.js";
-import friendshipRoutes from "./server/routes/friendship.routes.js";
-import lobbyRoutes from "./server/routes/lobby.routes.js";
-import rankingRoutes from "./server/routes/ranking.routes.js";
-import gameRoutes from "./server/routes/game.routes.js";
-import notificationRoutes from "./server/routes/notification.routes.js";
-import adminRoutes from "./server/routes/admin.routes.js";
-import { setupWebSockets } from "./server/sockets/index.js";
-import prisma from "./server/utils/prisma.js";
-import { errorHandler } from "./server/middleware/error.middleware.js";
+import authRoutes from "./server/routes/auth.routes.ts";
+import userRoutes from "./server/routes/user.routes.ts";
+import friendshipRoutes from "./server/routes/friendship.routes.ts";
+import lobbyRoutes from "./server/routes/lobby.routes.ts";
+import rankingRoutes from "./server/routes/ranking.routes.ts";
+import gameRoutes from "./server/routes/game.routes.ts";
+import notificationRoutes from "./server/routes/notification.routes.ts";
+import adminRoutes from "./server/routes/admin.routes.ts";
+import { setupWebSockets } from "./server/sockets/index.ts";
+import prisma from "./server/utils/prisma.ts";
+import { errorHandler } from "./server/middleware/error.middleware.ts";
 
 dotenv.config();
 

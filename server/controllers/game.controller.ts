@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import prisma from "../utils/prisma.js";
+import prisma from "../utils/prisma.ts";
 
 export class GameController {
   static async getAllGames(req: Request, res: Response) {

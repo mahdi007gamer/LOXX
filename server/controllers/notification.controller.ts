@@ -1,6 +1,6 @@
 import { Response } from "express";
-import { NotificationService } from "../services/notification.service.js";
-import { AuthenticatedRequest } from "../middleware/auth.middleware.js";
+import { NotificationService } from "../services/notification.service.ts";
+import { AuthenticatedRequest } from "../middleware/auth.middleware.ts";
 
 export class NotificationController {
   static async list(req: AuthenticatedRequest, res: Response) {

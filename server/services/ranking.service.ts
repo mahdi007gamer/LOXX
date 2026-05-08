@@ -1,4 +1,4 @@
-import prisma from "../utils/prisma.js";
+import prisma from "../utils/prisma.ts";
 
 export class RankingService {
   static async addXP(userId: string, amount: number, source: string) {
