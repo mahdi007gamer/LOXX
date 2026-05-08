@@ -107,6 +107,36 @@ async function main() {
   });
 
   console.log("Users and Profiles seeded.");
+  
+  // Create Mahdi as VIP user
+  const mahdiPw = await argon2.hash("m1m2m3");
+  await prisma.user.upsert({
+    where: { username: "mahdi" },
+    update: {},
+    create: {
+      username: "mahdi",
+      email: "10mahdi10mahdi10@gmail.com",
+      passwordHash: mahdiPw,
+      role: "USER",
+      profile: {
+        create: {
+          displayName: "Mahdi VIP",
+          membershipType: "VIP",
+          xp: 15000,
+          level: 15,
+          region: "Tehran",
+          avatarUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=Mahdi",
+          bannerUrl: "https://images.alphacoders.com/132/1328491.jpeg",
+          vipMetadata: JSON.stringify({
+            crownType: "GOLD",
+            glowColor: "#FFD700"
+          })
+        }
+      }
+    }
+  });
+
+  console.log("Mahdi VIP user seeded.");
 }
 
 main()

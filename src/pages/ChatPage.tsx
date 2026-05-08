@@ -795,7 +795,7 @@ export const ChatPage: React.FC = () => {
       id: activeChannelId, 
       name: friend?.displayName || friendChat?.tempDisplayName || "گفتگو", 
       type: 'dm',
-      icon: friend?.avatar || "👤"
+      icon: friend?.avatar || (friend as any)?.avatarUrl || "👤"
     } : allChannels[0] || INITIAL_CHANNELS[0]);
 
   const currentMessages = messages[activeChannelId] || [];
@@ -1238,10 +1238,10 @@ export const ChatPage: React.FC = () => {
                     <div className="flex items-center gap-3">
                       <div className="relative">
                         <div className="h-9 w-9 rounded-full bg-white/10 flex items-center justify-center text-xs overflow-hidden border border-white/5 group-hover:border-white/20 transition-colors">
-                           {avatar && (avatar.length > 5 || avatar.startsWith("/") || avatar.includes(".")) ? (
-                             <img src={avatar} alt="" className="h-full w-full object-cover" />
+                           {(avatar || (friend as any)?.avatarUrl) && ((avatar || (friend as any)?.avatarUrl).length > 5 || (avatar || (friend as any)?.avatarUrl).startsWith("/") || (avatar || (friend as any)?.avatarUrl).includes(".")) ? (
+                             <img src={avatar || (friend as any)?.avatarUrl} alt="" className="h-full w-full object-cover" />
                            ) : (
-                             <span className="text-sm">{avatar || (displayName?.[0] || "👤")}</span>
+                             <span className="text-sm">{avatar || (friend as any)?.avatarUrl || (displayName?.[0] || "👤")}</span>
                            )}
                         </div>
                         <div className={cn(
@@ -1299,10 +1299,10 @@ export const ChatPage: React.FC = () => {
                    <div className="flex items-center gap-3">
                      <div className="relative">
                         <div className="h-8 w-8 rounded-full bg-white/10 flex items-center justify-center text-xs overflow-hidden">
-                           {friend.avatar && (friend.avatar.length > 5 || friend.avatar.startsWith("/") || friend.avatar.includes(".")) ? (
-                             <img src={friend.avatar} alt="" className="h-full w-full" />
+                           {(friend.avatar || (friend as any).avatarUrl) && ((friend.avatar || (friend as any).avatarUrl).length > 5 || (friend.avatar || (friend as any).avatarUrl).startsWith("/") || (friend.avatar || (friend as any).avatarUrl).includes(".")) ? (
+                             <img src={friend.avatar || (friend as any).avatarUrl} alt="" className="h-full w-full" />
                            ) : (
-                             <span className="text-[10px]">{friend.avatar || "👤"}</span>
+                             <span className="text-[10px]">{friend.avatar || (friend as any).avatarUrl || "👤"}</span>
                            )}
                         </div>
                         <div className={cn(
