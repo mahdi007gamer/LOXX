@@ -1093,15 +1093,83 @@ export const ChatPage: React.FC = () => {
             </div>
           )}
 
-          {/* Friends List (triggers floating window) */}
+          {/* Recent Chats Section */}
           <div className="px-4">
             <h3 className="px-4 text-[10px] font-black text-gray-600 uppercase tracking-widest mb-3 flex items-center gap-2">
               <span className="h-px flex-1 bg-white/5"></span>
-              دوستان ری‌اکتیو
+              گفتگوهای اخیر
+              <span className="h-px flex-1 bg-white/5"></span>
+            </h3>
+            <div className="space-y-1 mb-6">
+              {chats.map((chat) => {
+                const friend = friends.find(f => f.id === chat.friendId);
+                const displayName = friend?.displayName || chat.tempDisplayName || "گیمر";
+                const avatar = friend?.avatar;
+                const status = friend?.status || FriendStatus.OFFLINE;
+
+                return (
+                  <button
+                    key={chat.friendId}
+                    onClick={() => openChat(chat.friendId, displayName)}
+                    className={cn(
+                      "w-full group flex items-center justify-between p-2.5 rounded-2xl transition-all text-right border border-transparent",
+                      activeChatId === chat.friendId 
+                        ? "bg-neon-blue/10 border-neon-blue/20 shadow-[0_0_20px_rgba(0,229,255,0.05)]" 
+                        : "hover:bg-white/5"
+                    )}
+                    dir="rtl"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="relative">
+                        <div className="h-9 w-9 rounded-full bg-white/10 flex items-center justify-center text-xs overflow-hidden border border-white/5 group-hover:border-white/20 transition-colors">
+                           {avatar ? <img src={avatar} alt="" className="h-full w-full object-cover" /> : <User size={16} className="text-gray-500" />}
+                        </div>
+                        <div className={cn(
+                          "absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-[#0d0d12]",
+                          status === FriendStatus.ONLINE ? "bg-green-500" :
+                          status === FriendStatus.IN_GAME ? "bg-neon-purple shadow-[0_0_8px_rgba(160,32,240,0.8)]" : 
+                          status === FriendStatus.IN_LOBBY ? "bg-neon-blue shadow-[0_0_8px_rgba(0,229,255,0.8)]" :
+                          "bg-gray-600"
+                        )} />
+                      </div>
+                      <div className="flex flex-col items-start overflow-hidden text-right">
+                        <span className={cn(
+                          "text-xs font-bold transition-colors truncate w-32",
+                          activeChatId === chat.friendId ? "text-neon-blue" : "text-gray-300 group-hover:text-white"
+                        )}>
+                          {displayName}
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          {chat.messages.length > 0 ? (
+                            <span className="text-[10px] text-gray-500 truncate w-24">
+                              {chat.messages[chat.messages.length - 1].text}
+                            </span>
+                          ) : (
+                            <span className="text-[9px] text-gray-600 italic tracking-tight">بدون پیام</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    {chat.unreadCount > 0 && (
+                      <div className="h-5 min-w-[20px] px-1.5 rounded-full bg-neon-pink text-white text-[10px] font-black flex items-center justify-center shadow-lg shadow-neon-pink/20">
+                        {chat.unreadCount}
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+              {chats.length === 0 && (
+                <p className="text-[9px] text-gray-700 text-center py-2 italic font-medium opacity-50">هیچ گفتگوی اخیری یافت نشد</p>
+              )}
+            </div>
+
+            <h3 className="px-4 text-[10px] font-black text-gray-600 uppercase tracking-widest mb-3 flex items-center gap-2 pt-2 border-t border-white/5">
+              <span className="h-px flex-1 bg-white/5"></span>
+              دوستان آنلاین
               <span className="h-px flex-1 bg-white/5"></span>
             </h3>
             <div className="space-y-1">
-              {friends.slice(0, 10).map((friend) => (
+              {friends.filter(f => f.status !== FriendStatus.OFFLINE).slice(0, 10).map((friend) => (
                 <button
                   key={friend.id}
                   onClick={() => openChat(friend.id, friend.displayName)}

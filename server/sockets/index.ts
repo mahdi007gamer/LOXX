@@ -734,9 +734,9 @@ export function setupWebSockets(io: Server) {
         }
       }
 
-      // Max length
-      const isImage = content.startsWith("[IMAGE]:");
-      const maxLength = (user.role === "ADMIN" || isImage) ? 1000000 : 300; 
+      // Max length and image detection
+      const isImageMessage = content.includes("[IMAGE]:");
+      const maxLength = (user.role === "ADMIN" || isImageMessage) ? 1000000 : 300; 
 
       if (content.length > maxLength) {
         if (ack) ack({ status: "error", error: { code: "TOO_LONG", message: "طول پیام بیش از حد مجاز است." } });
@@ -754,7 +754,15 @@ export function setupWebSockets(io: Server) {
       }
 
       // Profanity Filter
-      const safeContent = isImage ? content : filterProfanity(content);
+      let safeContent;
+      if (isImageMessage) {
+        const parts = content.split("[IMAGE]:");
+        const filteredText = filterProfanity(parts[0]);
+        // Reconstruct with the untainted image data
+        safeContent = filteredText + "[IMAGE]:" + parts.slice(1).join("[IMAGE]:");
+      } else {
+        safeContent = filterProfanity(content);
+      }
 
       console.log(`[CHAT] send target=${target.type}:${target.id} from=${userId} content="${safeContent}"`);
       
