@@ -92,7 +92,7 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
             senderAvatar: message.senderAvatar,
             senderLevel: message.senderLevel,
             senderBadges: message.senderBadges,
-            id: message.id,
+            id: message.senderId,
             membership: isVIP ? MembershipType.VIP : isPLUS ? MembershipType.PLUS : MembershipType.NONE
           }, message.self);
         }}
@@ -735,7 +735,8 @@ export const ChatPage: React.FC = () => {
      if (text.includes("[IMAGE]:")) {
        const parts = text.split("[IMAGE]:");
        text = parts[0].trim();
-       image = parts[1]?.split("\n")[0].trim();
+       // Take everything after [IMAGE]: as the image data, ignoring line breaks
+       image = parts[1]?.trim();
      }
 
      if (text.includes("[LOBBY_INVITE]:")) {
