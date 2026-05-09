@@ -218,7 +218,7 @@ export const SettingsPage = () => {
                         const res = await api.post("/upload", data, {
                           headers: { "Content-Type": "multipart/form-data" }
                         });
-                        if (res.data.status === "success" && res.data.data.url) {
+                        if (res.data.url) {
                           setFormData(p => ({ ...p, avatarUrl: res.data.url }));
                           toast.success("تصویر با موفقیت آپلود شد");
                         } else {

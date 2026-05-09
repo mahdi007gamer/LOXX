@@ -253,33 +253,45 @@ export const DashboardPage = () => {
                 {loading ? (
                   <ListSkeleton />
                 ) : (
-                  suggestedLobbies.map((item: any, i) => (
+                  suggestedLobbies.map((item: any, i) => {
+                    const isVipLobby = item.host?.profile?.membershipType === 'VIP';
+                    return (
                     <motion.div
                       key={item.id}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: i * 0.1 }}
                     >
-                      <NeonCard variant="blue" className="flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-4" hover={true}>
+                      <NeonCard variant={isVipLobby ? "purple" : "blue"} className={cn("flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-4 relative overflow-hidden", isVipLobby && "border-yellow-400/40 shadow-[0_0_20px_rgba(250,204,21,0.1)]")} hover={true}>
+                        {isVipLobby && (
+                          <div className="absolute top-0 right-0 h-10 w-10 bg-yellow-400/10 rounded-bl-3xl flex items-start justify-end p-2 border-b border-l border-yellow-400/20 shadow-[-5px_5px_15px_rgba(250,204,21,0.05)]">
+                            <Crown size={12} className="text-yellow-400" />
+                          </div>
+                        )}
                         <div className="flex items-center gap-4">
-                          <div className="h-12 w-12 rounded bg-neon-blue/10 flex items-center justify-center text-neon-blue text-xl font-bold shrink-0">
+                          <div className={cn("h-12 w-12 rounded flex items-center justify-center text-xl font-bold shrink-0", isVipLobby ? "bg-yellow-400/10 text-yellow-400 border border-yellow-400/20" : "bg-neon-blue/10 text-neon-blue")}>
                             {item.game?.title?.[0] || "🎮"}
                           </div>
-                          <div className="min-w-0">
-                            <h4 className="font-bold text-white truncate">{item.title}</h4>
-                            <p className="text-xs text-gray-400 truncate">{item.game?.title} • {item.region}</p>
+                          <div className="min-w-0 pr-2">
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-bold text-white truncate">{item.title}</h4>
+                              {isVipLobby && <span className="px-2 py-0.5 rounded-full bg-yellow-400/20 text-yellow-400 text-[8px] font-black uppercase italic border border-yellow-400/40">ELITE</span>}
+                            </div>
+                            <p className="text-xs text-gray-400 truncate mt-1">{item.game?.title} • {item.region}</p>
                           </div>
                         </div>
                         <div className="flex items-center justify-between sm:justify-start gap-6 border-t border-white/5 pt-3 sm:border-0 sm:pt-0">
-                          <div className="text-right sm:text-left">
-                            <p className="text-[10px] text-gray-500 uppercase font-black tracking-tighter">ظرفیت</p>
-                            <p className="font-bold text-neon-blue">{item.members?.length || 0}/{item.maxPlayers}</p>
+                          <div className="text-right sm:text-left z-10 w-full sm:w-auto flex items-center sm:block justify-between">
+                            <div className="sm:mb-1">
+                              <p className="text-[10px] text-gray-500 uppercase font-black tracking-tighter inline-block sm:block ml-2 sm:ml-0">ظرفیت</p>
+                              <p className={cn("font-bold inline-block sm:block text-sm sm:text-base", isVipLobby ? "text-yellow-400" : "text-neon-blue")}>{item.members?.length || 0}/{item.maxPlayers}</p>
+                            </div>
+                            <GlowButton variant={isVipLobby ? "gold" : "blue"} size="sm" className="h-9 px-6 sm:ml-0" onClick={() => navigate(`/lobby/${item.id}`)}>عضویت</GlowButton>
                           </div>
-                          <GlowButton variant="blue" size="sm" className="h-9 px-6" onClick={() => navigate(`/lobby/${item.id}`)}>عضویت</GlowButton>
                         </div>
                       </NeonCard>
                     </motion.div>
-                  ))
+                  )})
                 )}
                 {!loading && suggestedLobbies.length === 0 && (
                   <div className="text-center py-8 text-gray-500 italic">لابی فعالی پیدا نشد.</div>

@@ -204,6 +204,9 @@ export const LobbyRoomPage = () => {
   const isMicMuted = !!(lobby?.players?.find(p => p.userId === user?.id) as any)?.micMuted;
   const isHost = lobby?.hostId === user?.id;
   
+  const hostPlayer = lobby?.players?.find((p: any) => p.userId === lobby?.hostId);
+  const isVipLobby = hostPlayer?.membership === "VIP";
+  
   const isStarting = lobby?.status === "STARTING";
   const isMatchStarted = lobby?.status === "IN_PROGRESS";
   
@@ -417,10 +420,24 @@ export const LobbyRoomPage = () => {
     <div className="h-[calc(100vh-64px)] bg-[#050508] text-white p-2 md:p-6 lg:p-8 flex flex-col gap-4 md:gap-6 relative overflow-hidden font-sans" dir="rtl">
       {/* Background Elements */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(0,229,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,229,255,0.03)_1px,transparent_1px)] bg-[length:60px_60px]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(0,229,255,0.1)_0%,transparent_50%)]" />
-        <div className="absolute top-[20%] left-[10%] h-96 w-96 bg-neon-blue/5 rounded-full blur-[120px]" />
-        <div className="absolute bottom-[20%] right-[10%] h-96 w-96 bg-neon-pink/5 rounded-full blur-[120px]" />
+        <div className={cn(
+          "absolute inset-0 bg-[length:60px_60px]",
+          isVipLobby ? "bg-[linear-gradient(rgba(250,204,21,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(250,204,21,0.03)_1px,transparent_1px)]" 
+                     : "bg-[linear-gradient(rgba(0,229,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,229,255,0.03)_1px,transparent_1px)]"
+        )} />
+        <div className={cn(
+          "absolute inset-0",
+          isVipLobby ? "bg-[radial-gradient(circle_at_50%_0%,rgba(250,204,21,0.1)_0%,transparent_50%)]"
+                     : "bg-[radial-gradient(circle_at_50%_0%,rgba(0,229,255,0.1)_0%,transparent_50%)]"
+        )} />
+        <div className={cn(
+          "absolute top-[20%] left-[10%] h-96 w-96 rounded-full blur-[120px]",
+          isVipLobby ? "bg-yellow-400/5" : "bg-neon-blue/5"
+        )} />
+        <div className={cn(
+          "absolute bottom-[20%] right-[10%] h-96 w-96 rounded-full blur-[120px]",
+          isVipLobby ? "bg-yellow-600/5" : "bg-neon-pink/5"
+        )} />
       </div>
 
       {/* Achievement Pulse Overlay */}
@@ -436,9 +453,9 @@ export const LobbyRoomPage = () => {
                <motion.div 
                  animate={{ scale: [1, 1.1, 1], opacity: [0.3, 0.6, 0.3] }}
                  transition={{ duration: 2, repeat: Infinity }}
-                 className="absolute inset-0 bg-neon-blue rounded-full blur-3xl" 
+                 className={cn("absolute inset-0 rounded-full blur-3xl", isVipLobby ? "bg-yellow-400" : "bg-neon-blue")} 
                />
-               <h2 className="text-5xl md:text-7xl font-black text-white tracking-widest uppercase text-center relative z-10 drop-shadow-[0_0_20px_rgba(0,229,255,0.8)] px-10">
+               <h2 className={cn("text-5xl md:text-7xl font-black text-white tracking-widest uppercase text-center relative z-10 px-10", isVipLobby ? "drop-shadow-[0_0_20px_rgba(250,204,21,0.8)]" : "drop-shadow-[0_0_20px_rgba(0,229,255,0.8)]")}>
                  ALL PLAYERS READY
                </h2>
             </div>
@@ -463,10 +480,13 @@ export const LobbyRoomPage = () => {
              <ChevronLeft size={18} className="md:size-5 rotate-180" />
            </button>
            
-           <div className="h-10 w-10 md:h-14 md:w-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0 overflow-hidden">
+           <div className={cn(
+             "h-10 w-10 md:h-14 md:w-14 rounded-2xl flex items-center justify-center shrink-0 overflow-hidden border",
+             isVipLobby ? "bg-[#0d0d12] border-yellow-400/30 shadow-[0_0_15px_rgba(250,204,21,0.2)]" : "bg-white/5 border-white/10"
+           )}>
               {lobby?.game?.iconUrl ? (
                 <img src={lobby.game.iconUrl} className="w-full h-full object-contain" />
-              ) : <Gamepad2 className="text-neon-blue" size={24} />}
+              ) : <Gamepad2 className={isVipLobby ? "text-yellow-400" : "text-neon-blue"} size={24} />}
            </div>
            
            <div className="min-w-0 flex-1">
@@ -474,13 +494,20 @@ export const LobbyRoomPage = () => {
                <h1 className="text-sm md:text-3xl font-black tracking-tight text-white truncate max-w-[150px] md:max-w-none">
                  {lobby ? (lobby.title || "Elite Lobby") : "در حال بارگذاری..."}
                </h1>
-               <div className="px-1.5 md:px-3 py-0.5 md:py-1 rounded-full bg-neon-blue/10 border border-neon-blue/20 text-[7px] md:text-[10px] font-black text-neon-blue uppercase tracking-tighter shrink-0">
+               <div className={cn(
+                 "px-1.5 md:px-3 py-0.5 md:py-1 rounded-full border text-[7px] md:text-[10px] font-black uppercase tracking-tighter shrink-0",
+                 isVipLobby ? "bg-yellow-400/10 border-yellow-400/20 text-yellow-400" : "bg-neon-blue/10 border-neon-blue/20 text-neon-blue"
+               )}>
                  ME
                </div>
              </div>
              <div className="flex items-center gap-3 md:gap-5 text-[9px] md:text-[11px] text-gray-500 font-black uppercase tracking-widest">
-               <span className="flex items-center gap-1 md:gap-1.5 font-bold"><Users size={12} className="text-neon-blue shrink-0 md:size-[14px]" /> {players.filter(p => !p.id.startsWith("slot-")).length} / {lobby?.maxPlayers || 5}</span>
-               <span className="flex items-center gap-1 md:gap-1.5"><Trophy size={11} md:size={13} className="text-neon-pink shrink-0" /> حرفه‌ای</span>
+               <span className="flex items-center gap-1 md:gap-1.5 font-bold"><Users size={12} className={cn("shrink-0 md:size-[14px]", isVipLobby ? "text-yellow-400" : "text-neon-blue")} /> {players.filter(p => !p.id.startsWith("slot-")).length} / {lobby?.maxPlayers || 5}</span>
+               {isVipLobby ? (
+                 <span className="flex items-center gap-1 md:gap-1.5"><Crown size={11} md:size={13} className="text-yellow-400 shrink-0" /> Elite Room</span>
+               ) : (
+                 <span className="flex items-center gap-1 md:gap-1.5"><Trophy size={11} md:size={13} className="text-neon-pink shrink-0" /> حرفه‌ای</span>
+               )}
              </div>
            </div>
         </div>
@@ -552,7 +579,8 @@ export const LobbyRoomPage = () => {
               {players.map((player) => (
                 <PlayerCard 
                   key={player.id} 
-                  player={player} 
+                  player={player}
+                  isVipLobby={isVipLobby}
                   isSelected={selectedPlayer === player.id}
                   onSelect={() => setSelectedPlayer(selectedPlayer === player.id ? null : player.id)}
                   onVolumeChange={(val) => handlePlayerVolume(player.id, val)}
@@ -1088,10 +1116,13 @@ const MatchInfoPanel = ({ isStarting, isMatchStarted, countdown, players, lobby,
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            className="bg-neon-blue/20 border border-neon-blue/40 rounded-[28px] p-6 flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden shadow-[0_20px_50px_rgba(0,229,255,0.1)]"
+            className={cn(
+              "rounded-[28px] p-6 flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden",
+              isVipLobby ? "bg-yellow-400/20 border border-yellow-400/40 shadow-[0_20px_50px_rgba(250,204,21,0.1)]" : "bg-neon-blue/20 border border-neon-blue/40 shadow-[0_20px_50px_rgba(0,229,255,0.1)]"
+            )}
           >
             <div className="flex items-center gap-4">
-               <div className="h-12 w-12 rounded-full border-4 border-neon-blue border-t-white animate-spin" />
+               <div className={cn("h-12 w-12 rounded-full border-4 border-t-white animate-spin", isVipLobby ? "border-yellow-400" : "border-neon-blue")} />
                <div>
                   <h3 className="text-xl font-black text-white">در حال شروع بازی...</h3>
                   <p className="text-xs text-neon-blue font-bold">بچه‌ها آماده باشید، سرور در حال پیکربندی است.</p>
@@ -1115,9 +1146,9 @@ const MatchInfoPanel = ({ isStarting, isMatchStarted, countdown, players, lobby,
             className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 bg-white/5 py-5 rounded-[28px] border border-white/5"
           >
             <div className="flex items-center gap-4">
-               <div className="relative">
-                 <div className="h-3 w-3 rounded-full bg-neon-blue animate-pulse" />
-                 <div className="absolute inset-0 h-3 w-3 rounded-full bg-neon-blue/50 animate-ping" />
+             <div className="relative">
+                 <div className={cn("h-3 w-3 rounded-full animate-pulse", isVipLobby ? "bg-yellow-400" : "bg-neon-blue")} />
+                 <div className={cn("absolute inset-0 h-3 w-3 rounded-full animate-ping", isVipLobby ? "bg-yellow-400/50" : "bg-neon-blue/50")} />
                </div>
                <span className="text-xs font-black uppercase text-gray-400 tracking-widest">
                  {readyCount === activePlayers.length ? "همه بازیکنان آماده هستند!" : `در انتظار بازیکنان... (${readyCount}/${activePlayers.length})`}
@@ -1180,6 +1211,7 @@ const PlayerCard = ({
   onBan?: (id: string) => void;
   isHostView?: boolean;
   disabled?: boolean;
+  isVipLobby?: boolean;
   key?: any;
 }) => {
   const isSlot = player.name === "Empty Slot";
@@ -1197,7 +1229,8 @@ const PlayerCard = ({
       className={cn(
         "relative p-3 md:p-6 rounded-[24px] md:rounded-[32px] border transition-all duration-300 backdrop-blur-md cursor-pointer group h-full flex flex-col justify-between min-w-0 min-h-[220px] md:min-h-[360px] w-full",
         isSlot ? "border-dashed border-white/10 bg-transparent opacity-40 hover:opacity-100" : "bg-[#0a0a0f] border-white/10 shadow-2xl overflow-hidden",
-        player.isReady && !isSlot && "scale-[1.02] ring-1 ring-neon-blue/40 border-neon-blue/30 shadow-[0_20px_40px_-5px_rgba(0,229,255,0.15)]",
+        player.isReady && !isSlot && (isVipLobby ? "scale-[1.02] ring-1 ring-yellow-400/40 border-yellow-400/30 shadow-[0_20px_40px_-5px_rgba(250,204,21,0.15)] bg-gradient-to-b from-[#0a0a0f] to-yellow-900/10" : "scale-[1.02] ring-1 ring-neon-blue/40 border-neon-blue/30 shadow-[0_20px_40px_-5px_rgba(0,229,255,0.15)]"),
+        isVipLobby && !isSlot && "border-yellow-400/20 hover:border-yellow-400/40 shadow-[0_0_20px_rgba(250,204,21,0.05)] bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] bg-blend-soft-light",
         player.isSpeaking && "ring-2 ring-green-500/50 shadow-[0_0_30px_rgba(34,197,94,0.1)]"
       )}
     >
@@ -1233,7 +1266,7 @@ const PlayerCard = ({
                     fill="none" 
                     stroke="currentColor" 
                     strokeWidth="3" 
-                    className="text-neon-blue"
+                    className={isVipLobby ? "text-yellow-400" : "text-neon-blue"}
                     style={{ strokeDasharray: "290" }}
                     initial={{ strokeDashoffset: 290 }}
                     animate={{ strokeDashoffset: 290 - (290 * (player.activity || 0)) / 100 }}
@@ -1243,7 +1276,8 @@ const PlayerCard = ({
 
                 <div 
                   className={cn(
-                    "h-10 w-10 sm:h-16 sm:w-16 md:h-20 md:w-20 rounded-[18px] md:rounded-[28px] flex items-center justify-center text-xl md:text-3xl relative z-10 transition-all duration-500 shadow-2xl cursor-pointer hover:scale-110 hover:ring-2 hover:ring-neon-blue/50",
+                    "h-10 w-10 sm:h-16 sm:w-16 md:h-20 md:w-20 rounded-[18px] md:rounded-[28px] flex items-center justify-center text-xl md:text-3xl relative z-10 transition-all duration-500 shadow-2xl cursor-pointer hover:scale-110 hover:ring-2",
+                    isVipLobby ? "hover:ring-yellow-400/50" : "hover:ring-neon-blue/50",
                     player.isReady ? "bg-white/10" : "bg-white/5",
                     player.isSpeaking ? "scale-105" : ""
                   )}
@@ -1277,7 +1311,10 @@ const PlayerCard = ({
                     <motion.div 
                       initial={{ scale: 0, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
-                      className="absolute -bottom-1 -left-1 md:-bottom-2 md:-left-2 h-6 w-6 md:h-8 md:w-8 rounded-lg md:rounded-2xl bg-neon-blue border-2 md:border-4 border-[#0a0a0f] flex items-center justify-center shadow-lg z-20"
+                      className={cn(
+                        "absolute -bottom-1 -left-1 md:-bottom-2 md:-left-2 h-6 w-6 md:h-8 md:w-8 rounded-lg md:rounded-2xl border-2 md:border-4 border-[#0a0a0f] flex items-center justify-center shadow-lg z-20",
+                        isVipLobby ? "bg-yellow-400" : "bg-neon-blue"
+                      )}
                     >
                       <Check size={10} className="md:size-[14px] text-dark-bg" />
                     </motion.div>
@@ -1327,7 +1364,7 @@ const PlayerCard = ({
                   value={player.volume} 
                   onChange={(e) => onVolumeChange(parseInt(e.target.value))}
                   onClick={(e) => e.stopPropagation()}
-                  className="w-full h-1 bg-white/5 rounded-lg appearance-none cursor-pointer accent-neon-blue"
+                  className={cn("w-full h-1 bg-white/5 rounded-lg appearance-none cursor-pointer", isVipLobby ? "accent-yellow-400" : "accent-neon-blue")}
                 />
              </div>
 
@@ -1361,7 +1398,12 @@ const PlayerCard = ({
           </div>
 
           {player.isHost && (
-            <div className="absolute top-8 left-8 h-8 w-8 rounded-2xl bg-neon-pink/10 border border-neon-pink/20 flex items-center justify-center text-neon-pink shadow-[0_0_15px_rgba(255,69,143,0.2)]">
+            <div className={cn(
+              "absolute top-8 left-8 h-8 w-8 rounded-2xl border flex items-center justify-center shadow-lg",
+              isVipLobby 
+                ? "bg-yellow-400/10 border-yellow-400/20 text-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.2)]"
+                : "bg-neon-pink/10 border-neon-pink/20 text-neon-pink shadow-[0_0_15px_rgba(255,69,143,0.2)]"
+            )}>
                <Crown size={14} />
             </div>
           )}
@@ -1456,8 +1498,11 @@ const ChatPanel = ({ messages, players, inputMessage, setInputMessage, onSend, o
             msg.isSystem ? "items-center my-4" : isYou ? "items-start" : "items-end"
           )}>
             {msg.isSystem ? (
-              <div className="relative w-full flex items-center justify-center p-3 rounded-2xl border border-neon-blue/10 bg-neon-blue/[0.02]">
-                 <span className="text-[10px] font-black text-neon-blue uppercase tracking-widest text-center px-4">
+              <div className={cn(
+                "relative w-full flex items-center justify-center p-3 rounded-2xl border", 
+                isVipLobby ? "border-yellow-400/20 bg-yellow-400/[0.02]" : "border-neon-blue/10 bg-neon-blue/[0.02]"
+              )}>
+                 <span className={cn("text-[10px] font-black uppercase tracking-widest text-center px-4", isVipLobby ? "text-yellow-400" : "text-neon-blue")}>
                   {msg.text}
                  </span>
               </div>
@@ -1505,7 +1550,10 @@ const ChatPanel = ({ messages, players, inputMessage, setInputMessage, onSend, o
           />
           <button 
             type="submit"
-            className="h-10 w-10 flex-shrink-0 flex items-center justify-center rounded-xl bg-neon-blue text-dark-bg hover:bg-neon-blue/90 transition-colors shadow-lg shadow-neon-blue/20"
+            className={cn(
+              "h-10 w-10 flex-shrink-0 flex items-center justify-center rounded-xl text-dark-bg transition-colors shadow-lg",
+              isVipLobby ? "bg-yellow-400 hover:bg-yellow-400/90 shadow-yellow-400/20" : "bg-neon-blue hover:bg-neon-blue/90 shadow-neon-blue/20"
+            )}
           >
             <Send size={18} className="translate-y-[1px] translate-x-[1px]" />
           </button>

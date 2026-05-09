@@ -183,9 +183,10 @@ export const LobbiesPage = () => {
                   >
                     <NeonCard 
                       className={cn(
-                        "group relative flex flex-col h-full overflow-hidden p-0 border-white/5 bg-[#0a0a0f] transition-all hover:border-neon-blue/20",
+                        "group relative flex flex-col h-full overflow-hidden p-0 bg-[#0a0a0f] transition-all",
+                        isVipLobby ? "border-yellow-400/20 hover:border-yellow-400/60 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] bg-blend-soft-light" : "border-white/5 hover:border-neon-blue/20",
                         lobby.isPrivate && "opacity-80 grayscale-[0.5]",
-                        isVipLobby && "border-yellow-400/40 bg-[#0d0d12] shadow-[0_0_30px_rgba(250,204,21,0.05)] hover:border-yellow-400/60"
+                        isVipLobby && "bg-[#0d0d12] shadow-[0_0_30px_rgba(250,204,21,0.05)]"
                       )}
                       onClick={() => !lobby.isPrivate && navigate(`/lobby/${lobby.id}`)}
                     >
@@ -201,10 +202,10 @@ export const LobbiesPage = () => {
                       {!lobby.isPrivate && (
                         <div className="absolute inset-0 z-50 bg-[#0a0a0f]/40 backdrop-blur-[2px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none">
                            <GlowButton 
-                             variant={isVipLobby ? "yellow" : "blue"} 
+                             variant={isVipLobby ? "gold" : "blue"} 
                              className={cn(
-                               "px-8 h-12 scale-90 group-hover:scale-100 shadow-[0_0_40px_rgba(0,229,255,0.6)]",
-                               isVipLobby && "shadow-[0_0_40px_rgba(250,204,21,0.6)]"
+                               "px-8 h-12 scale-90 group-hover:scale-100",
+                               isVipLobby ? "shadow-[0_0_40px_rgba(250,204,21,0.6)]" : "shadow-[0_0_40px_rgba(0,229,255,0.6)]"
                              )}
                            >
                              ورود به لابی
@@ -230,29 +231,29 @@ export const LobbiesPage = () => {
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0f] via-transparent to-transparent opacity-90" />
                         
-                        <div className="absolute top-4 right-4 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase backdrop-blur-md border border-white/10 bg-white/10 text-white">
-                           <Clock size={12} className="text-neon-blue" />
+                        <div className={cn("absolute top-4 right-4 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase backdrop-blur-md border", isVipLobby ? "border-yellow-400/30 bg-yellow-400/10 text-yellow-400" : "border-white/10 bg-white/10 text-white")}>
+                           <Clock size={12} className={isVipLobby ? "text-yellow-400" : "text-neon-blue"} />
                            <span>{new Date(lobby.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                         </div>
 
                         {/* Game Icon Overlay */}
-                        <div className="absolute -bottom-5 left-5 h-12 w-12 flex items-center justify-center rounded-xl bg-[#0a0a0f] border border-white/10 shadow-2xl z-20 text-white overflow-hidden">
+                        <div className={cn("absolute -bottom-5 left-5 h-12 w-12 flex items-center justify-center rounded-xl border shadow-2xl z-20 text-white overflow-hidden", isVipLobby ? "bg-[#18181b] border-yellow-400/30 shadow-yellow-400/10" : "bg-[#0a0a0f] border-white/10")}>
                           {lobby.game?.iconUrl ? <img src={lobby.game.iconUrl} className="w-8 h-8 object-contain" /> : (lobby.game?.title?.[0] || "🎮")}
                         </div>
                       </div>
 
                       <div className="p-5 pt-10 flex-1 flex flex-col">
                         <div className="mb-4 flex items-center justify-between">
-                          <div className="rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-tight border truncate max-w-[130px] bg-white/5 text-gray-500 border-white/10 group-hover:border-neon-blue/20 group-hover:text-neon-blue transition-all">
+                          <div className={cn("rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-tight border truncate max-w-[130px] transition-all", isVipLobby ? "bg-yellow-400/5 text-yellow-500/80 border-yellow-400/20 group-hover:border-yellow-400/50 group-hover:text-yellow-400" : "bg-white/5 text-gray-500 border-white/10 group-hover:border-neon-blue/20 group-hover:text-neon-blue")}>
                             {lobby.game?.title}
                           </div>
                           <div className="flex items-center gap-2 text-white shrink-0">
-                            <Users size={14} className="text-neon-blue" />
+                            <Users size={14} className={isVipLobby ? "text-yellow-400" : "text-neon-blue"} />
                             <span className="text-[11px] font-black">{lobby.members?.length || 0} / {lobby.maxPlayers}</span>
                           </div>
                         </div>
                         
-                        <h3 className="mb-4 text-lg md:text-xl font-black text-white line-clamp-1 group-hover:text-neon-blue transition-colors">
+                        <h3 className={cn("mb-4 text-lg md:text-xl font-black text-white line-clamp-1 transition-colors", isVipLobby ? "group-hover:text-yellow-400" : "group-hover:text-neon-blue")}>
                           {lobby.title}
                         </h3>
 
