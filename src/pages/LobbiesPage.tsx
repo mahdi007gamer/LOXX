@@ -94,60 +94,61 @@ export const LobbiesPage = () => {
   return (
     <div className="flex min-h-screen bg-[#0a0a0f] overflow-x-hidden">
       <Sidebar />
-      <main className="flex-1 w-full md:mr-64 relative pb-32 md:pb-8">
+      <main className="flex-1 w-full md:mr-64 relative pb-24 md:pb-8">
         <div className="px-4 py-8 md:px-8 lg:px-12 max-w-7xl mx-auto">
-          <header className="mb-8 flex flex-col items-center text-center md:text-right md:items-end gap-6 md:flex-row md:justify-between md:mb-12">
-            <div>
-              <h1 className="text-3xl md:text-6xl font-black text-white italic tracking-tighter uppercase leading-none">
+          {/* Mobile Header: More compact but powerful */}
+          <header className="mb-6 flex flex-col items-center md:items-start gap-5 md:flex-row md:justify-between md:mb-12">
+            <div className="text-center md:text-right">
+              <h1 className="text-2xl md:text-6xl font-black text-white italic tracking-tighter uppercase leading-tight">
                 لابی‌های <span className="text-neon-blue">فعال</span>
               </h1>
-              <p className="mt-2 text-[10px] md:text-xs text-gray-500 font-bold uppercase tracking-[0.2em] opacity-80 italic">LOXX • Pro Players Hub</p>
+              <p className="mt-1 text-[9px] md:text-xs text-neon-blue/40 font-black uppercase tracking-[0.2em] italic">LOXX PROFESSIONAL LOBBIES</p>
             </div>
             
-            <div className="flex flex-col w-full sm:flex-row items-stretch sm:items-center gap-4 md:w-auto">
-               <div className="relative flex-1 sm:w-64 lg:w-80 h-12">
-                <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600" size={16} />
+            <div className="flex flex-col w-full sm:flex-row items-stretch sm:items-center gap-3 md:w-auto">
+               <div className="relative flex-1 sm:w-64 lg:w-80 h-11 md:h-12">
+                <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600" size={14} />
                 <input 
                    type="text" 
                    value={searchTerm}
                    onChange={(e) => setSearchTerm(e.target.value)}
-                   placeholder="جستجوی لابی یا بازی..."
-                   className="w-full h-full rounded-2xl border border-white/5 bg-white/5 pr-12 pl-4 text-xs text-white focus:border-neon-blue/40 focus:bg-white/10 focus:outline-none transition-all placeholder:text-gray-700 font-bold"
+                   placeholder="جستجوی لابی..."
+                   className="w-full h-full rounded-xl border border-white/5 bg-white/5 pr-11 pl-4 text-xs text-white focus:border-neon-blue/40 focus:bg-white/10 focus:outline-none transition-all placeholder:text-gray-700 font-bold"
                  />
               </div>
               <GlowButton 
                 variant="blue" 
-                className="flex items-center justify-center gap-2 h-12 px-8 rounded-2xl group transition-all active:scale-95 shadow-xl" 
+                className="flex items-center justify-center gap-2 h-11 px-6 rounded-xl group transition-all active:scale-95 shadow-lg border-none" 
                 onClick={() => setIsModalOpen(true)}
               >
-                <Plus size={18} className="group-hover:rotate-90 transition-transform" />
-                <span className="text-[12px] font-black uppercase italic tracking-widest">ساخت لابی جدید</span>
+                <Plus size={16} className="group-hover:rotate-90 transition-transform" />
+                <span className="text-[10px] md:text-[12px] font-black uppercase italic tracking-wider">ساخت لابی جدید</span>
               </GlowButton>
             </div>
           </header>
 
-          {/* Game Filters - Modern Style */}
-          <div className="mb-10">
-            <div className="flex items-center justify-between mb-4 px-1">
+          {/* Game Filters - Better padding and mask for mobile */}
+          <div className="mb-8 relative">
+            <div className="flex items-center justify-between mb-3 px-1">
                <div className="flex items-center gap-2">
-                 <Filter size={14} className="text-neon-blue" />
-                 <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">فیلتر بازی‌ها</span>
+                 <Filter size={12} className="text-neon-blue" />
+                 <span className="text-[9px] font-black text-white/30 uppercase tracking-[0.2em]">فیلتر بر اساس بازی</span>
                </div>
                {activeFilter !== 'all' && (
-                 <button onClick={() => setActiveFilter('all')} className="text-[10px] font-bold text-gray-500 hover:text-white transition-colors">پاکسازی</button>
+                 <button onClick={() => setActiveFilter('all')} className="text-[9px] font-bold text-neon-blue hover:text-white transition-colors uppercase tracking-widest">CLEAR ALL</button>
                )}
             </div>
-            <div className="-mx-4 px-4 md:mx-0 md:px-0 flex items-center gap-3 overflow-x-auto pb-4 scrollbar-none snap-x snap-mandatory">
+            <div className="flex items-center gap-2 overflow-x-auto pb-4 scrollbar-none snap-x snap-mandatory mask-fade-edges">
                <button 
                   onClick={() => setActiveFilter("all")}
                   className={cn(
-                    "whitespace-nowrap rounded-xl px-6 py-3 text-[11px] font-black uppercase transition-all snap-start border flex items-center gap-2",
+                    "whitespace-nowrap rounded-lg px-5 py-2.5 text-[9px] md:text-[11px] font-black uppercase transition-all snap-start border flex items-center gap-2",
                     activeFilter === "all" 
-                      ? "bg-neon-blue border-neon-blue text-dark-bg shadow-[0_0_20px_rgba(0,229,255,0.3)]" 
+                      ? "bg-neon-blue border-neon-blue text-dark-bg shadow-[0_0_15px_rgba(0,229,255,0.3)]" 
                       : "bg-white/5 text-gray-500 border-white/5 hover:border-white/10 hover:text-white"
                   )}
                >
-                 <Globe size={14} />
+                 <Globe size={12} />
                  همه لابی‌ها
                </button>
                {games?.map((game) => (
@@ -155,37 +156,37 @@ export const LobbiesPage = () => {
                     key={game.id} 
                     onClick={() => setActiveFilter(game.id)}
                     className={cn(
-                      "whitespace-nowrap rounded-xl border px-5 py-3 text-[11px] font-black uppercase transition-all flex items-center gap-3 snap-start",
+                      "whitespace-nowrap rounded-lg border px-4 py-2.5 text-[9px] md:text-[11px] font-black uppercase transition-all flex items-center gap-2 snap-start",
                       activeFilter === game.id
-                        ? "bg-neon-blue/10 border-neon-blue text-neon-blue shadow-[0_0_20px_rgba(0,229,255,0.1)]"
+                        ? "bg-neon-blue/10 border-neon-blue text-neon-blue shadow-[0_0_15px_rgba(0,229,255,0.1)]"
                         : "border-white/5 bg-white/5 text-gray-500 hover:border-white/10 hover:text-white"
                     )}
                   >
-                    {game.iconUrl && <img src={game.iconUrl} className="w-4 h-4 object-contain grayscale group-hover:grayscale-0 transition-all" alt="" />}
+                    {game.iconUrl && <img src={game.iconUrl} className="w-3.5 h-3.5 md:w-4 md:h-4 object-contain grayscale brightness-150 group-hover:grayscale-0 transition-all" alt="" />}
                     {game.title}
                   </button>
                ))}
             </div>
           </div>
 
-          {/* Lobbies Grid - Column for mobile, better spacing */}
-          <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
+          {/* Lobbies Grid */}
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
             {loading ? (
               [1, 2, 3].map(i => <CardSkeleton key={i} />)
             ) : filteredLobbies.length === 0 ? (
-              <div className="col-span-full py-32 flex flex-col items-center text-center animate-in fade-in zoom-in duration-500">
-                 <div className="relative mb-8">
-                    <div className="absolute inset-0 bg-neon-blue/20 blur-3xl rounded-full" />
-                    <div className="relative z-10 flex h-28 w-28 items-center justify-center rounded-[32px] bg-white/5 border border-white/10 text-gray-600 backdrop-blur-xl">
-                       <Gamepad2 size={56} className="text-gray-700" />
+              <div className="col-span-full py-16 md:py-32 flex flex-col items-center text-center animate-in fade-in zoom-in duration-500">
+                 <div className="relative mb-6 md:mb-8">
+                    <div className="absolute inset-0 bg-neon-blue/10 blur-3xl rounded-full" />
+                    <div className="relative z-10 flex h-20 w-20 md:h-28 md:w-28 items-center justify-center rounded-[24px] md:rounded-[32px] bg-white/5 border border-white/10 text-gray-600 backdrop-blur-xl">
+                       <Gamepad2 size={36} className="md:size-14 text-white/10" />
                     </div>
                  </div>
-                 <h3 className="text-2xl md:text-3xl font-black text-white italic uppercase tracking-tighter mb-3">لابی فعالی یافت نشد</h3>
-                 <p className="text-gray-500 font-bold max-w-sm mx-auto leading-relaxed">
-                    در حال حاضر هیچ لابی فعالی با این مشخصات وجود ندارد. اولین لابی تیم‌یابی را شما بسازید!
+                 <h3 className="text-xl md:text-3xl font-black text-white italic uppercase tracking-tighter mb-2 md:mb-3">لابی فعالی یافت نشد</h3>
+                 <p className="text-[10px] md:text-xs text-gray-500 font-bold max-w-[240px] md:max-w-sm mx-auto leading-relaxed">
+                    در حال حاضر هیچ لابی فعالی با این مشخصات وجود ندارد. شما می‌توانید اولین لابی را بسازید.
                  </p>
-                 <GlowButton variant="blue" className="mt-8 h-12 px-10 rounded-2xl font-black" onClick={() => setIsModalOpen(true)}>
-                    <Plus size={18} className="ml-2" /> ساخت اولین لابی
+                 <GlowButton variant="blue" className="mt-6 md:mt-8 h-10 md:h-12 px-8 rounded-xl font-black text-[10px] md:text-xs" onClick={() => setIsModalOpen(true)}>
+                    <Plus size={16} className="ml-2" /> ساخت لابی جدید
                  </GlowButton>
               </div>
             ) : (
