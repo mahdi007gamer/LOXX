@@ -105,7 +105,7 @@ export const DashboardPage = () => {
       <main className="flex-1 px-4 py-8 md:mr-64 lg:px-8 pb-24 md:pb-8">
         <div className="container mx-auto max-w-6xl">
           {/* VIP/PROMO BANNER FOR NON-MEMBERS */}
-          {(currentMembership === "NONE" || currentMembership === "FREE") && (
+          {currentMembership !== "VIP" && currentMembership !== "PLUS" && (
             <motion.div 
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -234,19 +234,21 @@ export const DashboardPage = () => {
                             {currentMembership === "VIP" ? <Crown size={54} /> : currentMembership === "PLUS" ? <Zap size={54} /> : <User size={54} />}
                          </div>
                          <div>
-                            <p className="text-[10px] text-gray-500 font-black uppercase tracking-[0.2em] mb-1 italic">اطلاعات سطح کاربری</p>
+                            <p className="text-[10px] text-gray-500 font-black uppercase tracking-[0.2em] mb-1 italic">
+                              {currentMembership === "VIP" || currentMembership === "PLUS" ? "وضعیت اشتراک فعال" : "اطلاعات سطح کاربری"}
+                            </p>
                             <h2 className={cn(
                               "text-4xl font-black italic tracking-tighter uppercase leading-none",
                               currentMembership === "VIP" ? "text-yellow-400 text-shadow-glow" :
                               currentMembership === "PLUS" ? "text-neon-blue text-shadow-glow" :
                               "text-white"
                             )}>
-                               {currentMembership === "VIP" ? "عضویت ویژه الیت (VIP)" : currentMembership === "PLUS" ? "عضویت طلایی پلاس" : "اشتراک سطح عادی"}
+                               {currentMembership === "VIP" ? "عضویت ویژه الیت (VIP)" : currentMembership === "PLUS" ? "عضویت طلایی پلاس" : "اشتراک سطح عادی (FREE)"}
                             </h2>
                             <p className="text-[11px] text-gray-400 font-bold italic mt-2">
-                               {currentMembership === "VIP" ? `عضو ویژه (Elite) فعال تا ${new Date(expiryDate).toLocaleDateString('fa-IR')}` : 
-                                currentMembership === "PLUS" ? `عضو پلاس فعال تا ${new Date(expiryDate).toLocaleDateString('fa-IR')}` :
-                                "برای باز کردن پتانسیل کامل خود، اشتراک خود را ارتقا دهید"}
+                               {currentMembership === "VIP" ? `باقیمانده اشتراک الیت: ${daysLeft} روز (تا ${new Date(expiryDate).toLocaleDateString('fa-IR')})` : 
+                                currentMembership === "PLUS" ? `باقیمانده اشتراک پلاس: ${daysLeft} روز (تا ${new Date(expiryDate).toLocaleDateString('fa-IR')})` :
+                                "شما در حال حاضر از طرح رایگان استفاده می‌کنید. برای دسترسی به امکانات ویژه ارتقا دهید."}
                             </p>
                          </div>
                       </div>

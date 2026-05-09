@@ -122,20 +122,20 @@ export class BadgeService {
     ];
 
     const USER_BADGES = [
-      { name: "Smoker", iconUrl: "/badges/smoker.png", category: "USER" },
-      { name: "Sniper", iconUrl: "/badges/sniper.png", category: "USER" },
-      { name: "Rifel", iconUrl: "/badges/rifel.png", category: "USER" },
-      { name: "Faghir", iconUrl: "/badges/faghir.png", category: "USER" },
-      { name: "Feshari", iconUrl: "/badges/feshari.png", category: "USER" },
-      { name: "BCool", iconUrl: "/badges/bcool.png", category: "USER" },
-      { name: "Ferferi", iconUrl: "/badges/ferferi.png", category: "USER" },
-      { name: "SuperLag", iconUrl: "/badges/superlag.png", category: "USER" },
-      { name: "Jooje", iconUrl: "/badges/jooje.png", category: "USER" },
-      { name: "Noob", iconUrl: "/badges/noob.png", category: "USER" },
-      { name: "Weed", iconUrl: "/badges/weed.png", category: "USER" },
-      { name: "Falaj", iconUrl: "/badges/falaj.png", category: "USER" },
-      { name: "Systemy", iconUrl: "/badges/systemy.png", category: "USER" },
-      { name: "Mobile Gamer", iconUrl: "/badges/mobile.png", category: "USER" },
+      { name: "Smoker", iconUrl: "/badges/smoker.png", category: "STANDARD" },
+      { name: "Sniper", iconUrl: "/badges/sniper.png", category: "STANDARD" },
+      { name: "Rifel", iconUrl: "/badges/rifel.png", category: "STANDARD" },
+      { name: "Faghir", iconUrl: "/badges/faghir.png", category: "STANDARD" },
+      { name: "Feshari", iconUrl: "/badges/feshari.png", category: "STANDARD" },
+      { name: "BCool", iconUrl: "/badges/bcool.png", category: "STANDARD" },
+      { name: "Ferferi", iconUrl: "/badges/ferferi.png", category: "STANDARD" },
+      { name: "SuperLag", iconUrl: "/badges/superlag.png", category: "STANDARD" },
+      { name: "Jooje", iconUrl: "/badges/jooje.png", category: "STANDARD" },
+      { name: "Noob", iconUrl: "/badges/noob.png", category: "STANDARD" },
+      { name: "Weed", iconUrl: "/badges/weed.png", category: "STANDARD" },
+      { name: "Falaj", iconUrl: "/badges/falaj.png", category: "STANDARD" },
+      { name: "Systemy", iconUrl: "/badges/systemy.png", category: "STANDARD" },
+      { name: "Mobile Gamer", iconUrl: "/badges/mobile.png", category: "STANDARD" },
     ];
 
     const SPECIAL_BADGES = [

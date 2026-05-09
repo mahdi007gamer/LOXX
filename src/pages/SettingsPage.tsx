@@ -31,7 +31,7 @@ import {
 import { cn } from "../lib/utils";
 import { motion, AnimatePresence } from "motion/react";
 
-type SettingsTab = "profile" | "security" | "notifications" | "ui" | "region";
+type SettingsTab = "profile" | "security" | "notifications" | "ui" | "region" | "badges" | "elite";
 
 export const SettingsPage = () => {
   const { user: authUser } = useAuth();
@@ -225,13 +225,13 @@ export const SettingsPage = () => {
 
     const isVip = authUser?.membership === "VIP" || authUser?.membership === "PLUS";
     const tabs = [
-    ...(isVip ? [{ id: "elite" as any, icon: Crown, label: "Elite Settings" }] : []),
-    { id: "profile", icon: User, label: "پروفایل عمومی" },
-    { id: "badges" as any, icon: Award, label: "نشان‌ها" },
-    { id: "security", icon: Shield, label: "امنیت" },
-    { id: "notifications", icon: Bell, label: "اعلان‌ها" },
-    { id: "ui", icon: Monitor, label: "رابط کاربری" },
-    { id: "region", icon: Globe, label: "زبان و منطقه" },
+    ...(isVip ? [{ id: "elite" as const, icon: Crown, label: "Elite Settings" }] : []),
+    { id: "profile" as const, icon: User, label: "پروفایل عمومی" },
+    { id: "badges" as const, icon: Award, label: "نشان‌ها" },
+    { id: "security" as const, icon: Shield, label: "امنیت" },
+    { id: "notifications" as const, icon: Bell, label: "اعلان‌ها" },
+    { id: "ui" as const, icon: Monitor, label: "رابط کاربری" },
+    { id: "region" as const, icon: Globe, label: "زبان و منطقه" },
   ] as const;
 
   const renderProfile = () => (
@@ -879,7 +879,7 @@ export const SettingsPage = () => {
 
               {/* Content Area */}
               <div className="lg:col-span-3">
-                {activeTab === ("elite" as any) && (
+                {activeTab === "elite" && (
                    <div className="space-y-6">
                       <motion.div
                         initial={{ opacity: 0, scale: 0.95 }}
@@ -910,7 +910,7 @@ export const SettingsPage = () => {
                    </div>
                 )}
                 {activeTab === "profile" && renderProfile()}
-                {activeTab === ("badges" as any) && renderBadges()}
+                {activeTab === "badges" && renderBadges()}
                 {activeTab === "security" && renderSecurity()}
                 {activeTab === "notifications" && renderNotifications()}
                 {activeTab === "ui" && renderUI()}

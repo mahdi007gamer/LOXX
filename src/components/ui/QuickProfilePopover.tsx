@@ -291,15 +291,27 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
           </div>
 
           {/* Dynamic Badges */}
-          <div className="flex flex-wrap gap-2.5">
-            {pinnedBadges.map((ub, i) => (
-              <div key={i} title={ub.name} className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 group hover:border-neon-blue/30 transition-all">
+          <div className="flex flex-wrap gap-2.5 max-h-[100px] overflow-y-auto no-scrollbar">
+            {user.senderBadges?.map((ub, i) => (
+              <div 
+                key={i} 
+                title={ub.name} 
+                className={cn(
+                  "flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all border",
+                  ub.isPinned 
+                    ? "bg-neon-blue/10 border-neon-blue shadow-[0_0_10px_rgba(0,229,255,0.2)]" 
+                    : "bg-white/5 border-white/10 opacity-70 hover:opacity-100"
+                )}
+              >
                 <img src={ub.iconUrl} alt={ub.name} className="h-4 w-4 object-contain" />
-                <span className="text-[10px] font-black text-gray-400 uppercase italic group-hover:text-white transition-colors">{ub.name}</span>
+                <span className={cn(
+                  "text-[10px] font-black uppercase italic",
+                  ub.isPinned ? "text-white" : "text-gray-500"
+                )}>{ub.name}</span>
               </div>
             ))}
-            {!pinnedBadges.length && !loading && (
-              <p className="text-[10px] text-gray-500 italic">بدون نشان‌های پین شده</p>
+            {!user.senderBadges?.length && !loading && (
+              <p className="text-[10px] text-gray-500 italic">بدون نشان‌های کسب شده</p>
             )}
           </div>
 
