@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Sidebar } from "../components/layout/Sidebar";
 import { NeonCard } from "../components/ui/NeonCard";
 import { GlowButton } from "../components/ui/GlowButton";
+import * as Icons from "lucide-react";
 import { 
   Users, Shield, Plus, Trash2, Edit2, Search, X, 
   Gamepad, Globe, ShieldAlert, CreditCard, 
@@ -322,20 +323,30 @@ export const AdminPage = () => {
                   </GlowButton>
                </div>
 
-               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {genres.map(genre => (
-                    <NeonCard key={genre.id} className="p-4 flex items-center justify-between group">
-                       <span className="font-black text-white italic">{genre.name}</span>
-                       <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button onClick={() => { setSelectedGenre(genre); setIsGenreModalOpen(true); }} className="text-gray-500 hover:text-neon-blue transition-colors">
-                             <Edit2 size={14} />
-                          </button>
-                          <button onClick={() => deleteGenre(genre.id)} className="text-gray-500 hover:text-red-500 transition-colors">
-                             <Trash2 size={14} />
-                          </button>
-                       </div>
-                    </NeonCard>
-                  ))}
+               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                  {genres.map(genre => {
+                    const IconComponent = (Icons as any)[genre.icon || "Gamepad2"] || Icons.Gamepad2;
+                    return (
+                      <div key={genre.id} className="relative group">
+                        <div className="absolute inset-0 bg-neon-blue/5 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <div className="relative bg-white/5 border border-white/5 rounded-2xl p-4 flex flex-col items-center gap-3 transition-all group-hover:border-neon-blue/30 group-hover:bg-white/10">
+                           <div className="h-10 w-10 rounded-xl bg-white/5 flex items-center justify-center text-neon-blue group-hover:scale-110 transition-transform">
+                              <IconComponent size={20} />
+                           </div>
+                           <span className="font-black text-white italic text-[11px] uppercase tracking-tighter">{genre.name}</span>
+                           
+                           <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button onClick={() => { setSelectedGenre(genre); setIsGenreModalOpen(true); }} className="p-1.5 rounded-lg bg-black/40 text-gray-400 hover:text-neon-blue transition-colors">
+                                 <Edit2 size={12} />
+                              </button>
+                              <button onClick={() => deleteGenre(genre.id)} className="p-1.5 rounded-lg bg-black/40 text-gray-400 hover:text-red-500 transition-colors">
+                                 <Trash2 size={12} />
+                              </button>
+                           </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                </div>
                {genres.length === 0 && (
                  <div className="p-20 text-center text-gray-500 uppercase font-black italic tracking-widest text-xs opacity-50">

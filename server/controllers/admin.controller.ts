@@ -105,6 +105,22 @@ export const getGameById = async (req: Request, res: Response) => {
       parsedGame.metadata = { features: [] };
     }
     
+    // Migration: If metadata has modes/maps but they aren't in features, add them
+    const metadata = parsedGame.metadata;
+    if (metadata) {
+      const features = metadata.features || [];
+      const hasMode = features.some((f: any) => f.name === 'Mode' || f.name === 'حالت بازی');
+      const hasMap = features.some((f: any) => f.name === 'Map' || f.name === 'نقشه');
+
+      if (!hasMode && metadata.modes && Array.isArray(metadata.modes)) {
+        features.push({ name: 'Mode', options: metadata.modes });
+      }
+      if (!hasMap && metadata.maps && Array.isArray(metadata.maps)) {
+        features.push({ name: 'Map', options: metadata.maps });
+      }
+      parsedGame.metadata.features = features;
+    }
+    
     res.json({ status: "success", data: parsedGame });
   } catch (error: any) {
     res.status(500).json({ status: "error", message: error.message });

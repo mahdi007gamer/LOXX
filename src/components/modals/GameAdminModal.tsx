@@ -22,6 +22,7 @@ interface GameData {
   regions: string[];
   metadata: {
     features: GameFeature[];
+    [key: string]: any;
   };
 }
 
@@ -76,11 +77,15 @@ export const GameAdminModal = ({
 
   useEffect(() => {
     if (game) {
+      const metadata = game.metadata || { features: [] };
+      const features = Array.isArray(metadata.features) ? metadata.features : [];
+
       setFormData({
         ...game,
-        metadata: (game.metadata && typeof game.metadata === 'object' && (game.metadata as any).features) 
-          ? game.metadata 
-          : { ...game.metadata, features: (game.metadata as any)?.features || [] },
+        metadata: {
+          ...metadata,
+          features
+        },
         genres: Array.isArray(game.genres) ? game.genres : [],
         regions: Array.isArray(game.regions) ? game.regions : []
       });

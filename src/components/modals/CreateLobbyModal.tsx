@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { X, Users, Globe, Mic, Lock, ChevronRight, ChevronLeft, Gamepad, Sparkles, AlertCircle, Check, Settings2 } from "lucide-react";
+import { X, Users, Globe, Mic, Lock, ChevronRight, ChevronLeft, Gamepad, Sparkles, AlertCircle, Check, Settings2, Map as MapIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { GlowButton } from "../ui/GlowButton";
 import { useGames } from "../../context/GamesContext";
@@ -263,83 +263,44 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
                     </div>
                   </div>
 
-                  {selectedGameData?.metadata?.modes && (
-                    <div className="space-y-3">
-                      <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest block text-right">حالت بازی (Mode)</label>
-                      <div className="flex flex-wrap gap-2 justify-end text-right">
-                        {selectedGameData.metadata.modes.map((opt: string) => (
-                          <button
-                            key={opt}
-                            type="button"
-                            onClick={() => setFormData({
-                               ...formData, 
-                               mode: opt,
-                               metadata: { ...formData.metadata, Mode: opt }
-                            })}
-                            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
-                              formData.mode === opt 
-                                ? "bg-transparent border border-neon-blue text-neon-blue shadow-[inset_0_0_15px_rgba(0,229,255,0.2)]" 
-                                : "bg-white/5 text-gray-400 hover:bg-white/10 border border-transparent"
-                            }`}
-                          >
-                            {opt}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                  {/* Rendering Dynamic Features */}
+                  {selectedGameData?.metadata?.features?.map((feature: any) => {
+                    const isMode = feature.name === 'Mode' || feature.name === 'حالت بازی';
+                    const isMap = feature.name === 'Map' || feature.name === 'نقشه';
 
-                  {selectedGameData?.metadata?.maps && (
-                    <div className="space-y-3">
-                      <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest block text-right">نقشه (Map)</label>
-                      <div className="flex flex-wrap gap-2 justify-end text-right">
-                        {selectedGameData.metadata.maps.map((opt: string) => (
-                          <button
-                            key={opt}
-                            type="button"
-                            onClick={() => setFormData({
-                               ...formData, 
-                               selectedMaps: opt,
-                               metadata: { ...formData.metadata, Map: opt }
-                            })}
-                            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
-                              formData.selectedMaps === opt 
-                                ? "bg-transparent border border-neon-blue text-neon-blue shadow-[inset_0_0_15px_rgba(0,229,255,0.2)]" 
-                                : "bg-white/5 text-gray-400 hover:bg-white/10 border border-transparent"
-                            }`}
-                          >
-                            {opt}
-                          </button>
-                        ))}
+                    return (
+                      <div key={feature.name} className="space-y-3">
+                        <div className="flex items-center gap-2 justify-end mb-2">
+                           <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">{feature.name}</span>
+                           {isMode ? <Gamepad size={14} className="text-neon-blue" /> : isMap ? <MapIcon size={14} className="text-neon-pink" /> : <Settings2 size={14} className="text-gray-600" />}
+                        </div>
+                        <div className="flex flex-wrap gap-2 justify-end text-right">
+                          {feature.options.map((opt: string) => (
+                            <button
+                              key={opt}
+                              type="button"
+                              onClick={() => {
+                                const newMetadata = { ...formData.metadata, [feature.name]: opt };
+                                setFormData({
+                                   ...formData, 
+                                   mode: isMode ? opt : formData.mode,
+                                   selectedMaps: isMap ? opt : formData.selectedMaps,
+                                   metadata: newMetadata
+                                });
+                              }}
+                              className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all border ${
+                                formData.metadata[feature.name] === opt 
+                                  ? "bg-transparent border-neon-blue text-neon-blue shadow-[inset_0_0_15px_rgba(0,229,255,0.2)]" 
+                                  : "bg-white/5 text-gray-400 hover:bg-white/10 border-transparent"
+                              }`}
+                            >
+                              {opt}
+                            </button>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  )}
-
-                  {/* Rendering Dynamic Features (Mapped loosely to game modes / maps if available in game metadata) */}
-                  {selectedGameData?.metadata?.features?.map((feature: any, index: number) => (
-                    <div key={feature.name} className="space-y-3">
-                      <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest block text-right">{feature.name}</label>
-                      <div className="flex flex-wrap gap-2 justify-end text-right">
-                        {feature.options.map((opt: string) => (
-                          <button
-                            key={opt}
-                            type="button"
-                            onClick={() => setFormData({
-                               ...formData, 
-                               metadata: { ...formData.metadata, [feature.name]: opt }
-                            })}
-                            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
-                              formData.metadata[feature.name] === opt 
-                                ? "bg-transparent border border-neon-blue text-neon-blue shadow-[inset_0_0_15px_rgba(0,229,255,0.2)]" 
-                                : "bg-white/5 text-gray-400 hover:bg-white/10 border border-transparent"
-                            }`}
-                          >
-                            {opt}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </motion.div>
               )}
 

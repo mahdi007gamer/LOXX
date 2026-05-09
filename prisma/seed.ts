@@ -8,6 +8,33 @@ async function main() {
 
   const hashedPw = await argon2.hash("password123");
 
+  const genres = [
+    { name: "FPS", icon: "Target" },
+    { name: "MOBA", icon: "Swords" },
+    { name: "Battle Royale", icon: "Trophy" },
+    { name: "Sports", icon: "Activity" },
+    { name: "Mafia (Deduction)", icon: "Users" },
+    { name: "Board & Party", icon: "Dices" },
+    { name: "Strategy (RTS)", icon: "Network" },
+    { name: "RPG", icon: "Sword" },
+    { name: "Sandbox", icon: "Box" },
+    { name: "Simulator", icon: "Cpu" },
+    { name: "Racing", icon: "Car" },
+    { name: "Horror", icon: "Ghost" },
+    { name: "Fighting", icon: "Mic2" },
+    { name: "Card Game", icon: "Layers" },
+    { name: "Music", icon: "Music" }
+  ];
+
+  console.log("Seeding genres...");
+  for (const g of genres) {
+    await (prisma as any).genre.upsert({
+      where: { name: g.name },
+      update: { icon: g.icon },
+      create: { name: g.name, icon: g.icon },
+    });
+  }
+
   const games = [
     {
       title: "Counter-Strike 2",
@@ -70,7 +97,7 @@ async function main() {
         slug: "mafia", 
         description: "A game of psychological deduction", 
         imageUrl: "https://images.alphacoders.com/101/1018599.jpg", 
-        genre: "Board/Party", 
+        genre: "Mafia (Deduction)", 
         developer: "Community", 
         platform: "Online/Voice", 
         modes: ["Classic (10 Player)", "Godfather (12 Player)", "Turbo (Voice)", "Advanced (15 Player)"], 

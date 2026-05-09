@@ -85,8 +85,19 @@ export class GameController {
         }))
       };
       
-      if (!parsedGame.metadata?.features) {
-        parsedGame.metadata = { ...parsedGame.metadata, features: [] };
+      // Unified metadata migration
+      if (parsedGame.metadata) {
+        const features = parsedGame.metadata.features || [];
+        const hasMode = features.some((f: any) => f.name === 'Mode' || f.name === 'حالت بازی');
+        const hasMap = features.some((f: any) => f.name === 'Map' || f.name === 'نقشه');
+
+        if (!hasMode && parsedGame.metadata.modes && Array.isArray(parsedGame.metadata.modes)) {
+          features.push({ name: 'Mode', options: parsedGame.metadata.modes });
+        }
+        if (!hasMap && parsedGame.metadata.maps && Array.isArray(parsedGame.metadata.maps)) {
+          features.push({ name: 'Map', options: parsedGame.metadata.maps });
+        }
+        parsedGame.metadata.features = features;
       }
       
       res.json({ status: "success", data: parsedGame });
