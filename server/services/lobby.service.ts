@@ -54,8 +54,11 @@ export class LobbyService {
       include: {
         _count: { select: { members: true } },
         game: true,
+        host: {
+          include: { profile: true }
+        },
         members: {
-          include: { user: { select: { username: true } } }
+          include: { user: { include: { profile: true } } }
         }
       },
       orderBy: { createdAt: "desc" }

@@ -302,11 +302,14 @@ export const LobbiesPage = () => {
 
                            <div className="flex items-center justify-between gap-3">
                               <div className="flex -space-x-2.5">
-                                {lobby.members?.slice(0, 4)?.map((m: any) => (
-                                   <div key={m.userId} className="h-7 w-7 rounded-full border-2 border-dark-bg bg-white/10 flex items-center justify-center overflow-hidden ring-1 ring-white/5">
-                                     {m.user?.profile?.avatarUrl ? <img src={m.user.profile.avatarUrl} alt="" className="w-full h-full object-cover" /> : <span className="text-[10px]">👤</span>}
-                                   </div>
-                                ))}
+                                {lobby.members?.slice(0, 4)?.map((m: any) => {
+                                   const avatar = m.user?.profile?.avatarUrl || m.user?.avatarUrl;
+                                   return (
+                                     <div key={m.userId} className="h-7 w-7 rounded-full border-2 border-dark-bg bg-white/10 flex items-center justify-center overflow-hidden ring-1 ring-white/5">
+                                       {avatar && (avatar.length > 5 || avatar.startsWith("/") || avatar.includes(".")) ? <img src={avatar} alt="" className="w-full h-full object-cover" /> : <span className="text-[10px]">{avatar || "👤"}</span>}
+                                     </div>
+                                   );
+                                })}
                                 {lobby.members?.length > 4 && (
                                    <div className="h-7 w-7 rounded-full border-2 border-dark-bg bg-white/5 flex items-center justify-center text-[9px] font-black text-gray-500">+{(lobby.members.length - 4)}</div>
                                 )}

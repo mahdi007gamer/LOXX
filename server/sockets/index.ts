@@ -269,8 +269,8 @@ export function setupWebSockets(io: Server) {
             id: userId, 
             username: user?.username, 
             role: member.role,
-            avatarUrl: user?.profile?.avatarUrl,
-            bannerUrl: user?.profile?.bannerUrl,
+            avatarUrl: user?.profile?.avatarUrl || (user as any)?.avatarUrl,
+            bannerUrl: user?.profile?.bannerUrl || (user as any)?.avatarUrl,
             level: user?.profile?.level || 1,
             membership: user?.profile?.membershipType || "NONE",
             vipMetadata: user?.profile?.vipMetadata ? JSON.parse(user.profile.vipMetadata.toString()) : undefined
@@ -314,8 +314,8 @@ export function setupWebSockets(io: Server) {
                 role: m.role,
                 isReady: m.isReady,
                 micMuted: !m.micStatus,
-                avatarUrl: m.user.profile?.avatarUrl,
-                bannerUrl: m.user.profile?.bannerUrl,
+                avatarUrl: m.user.profile?.avatarUrl || (m.user as any).avatarUrl,
+                bannerUrl: m.user.profile?.bannerUrl || (m.user as any).avatarUrl,
                 level: m.user.profile?.level || 1,
                 membership: m.user.profile?.membershipType || "NONE",
                 vipMetadata: m.user.profile?.vipMetadata ? JSON.parse(m.user.profile.vipMetadata.toString()) : undefined

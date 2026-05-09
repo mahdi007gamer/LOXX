@@ -193,13 +193,49 @@ export const SettingsPage = () => {
           </div>
           <div className="flex-1">
             <h3 className="font-black text-white italic">تصویر پروفایل</h3>
-            <p className="text-[10px] text-gray-500 font-bold uppercase mt-1 mb-3">لینک تصویر خود را وارد کنید.</p>
-            <Input 
-              label="لینک تصویر (آدرس آنلاین)"
-              placeholder="https://example.com/avatar.png"
-              value={formData.avatarUrl}
-              onChange={(e) => setFormData(p => ({ ...p, avatarUrl: e.target.value }))}
-            />
+            <p className="text-[10px] text-gray-500 font-bold uppercase mt-1 mb-3">تصویر خود را آپلود کنید یا لینک آن را وارد کنید.</p>
+            <div className="flex flex-col sm:flex-row gap-4 items-end">
+              <div className="flex-1 w-full">
+                <Input 
+                  label="لینک تصویر (آدرس آنلاین)"
+                  placeholder="https://example.com/avatar.png"
+                  value={formData.avatarUrl}
+                  onChange={(e) => setFormData(p => ({ ...p, avatarUrl: e.target.value }))}
+                />
+              </div>
+              <div className="flex-none">
+                <input 
+                  type="file" 
+                  accept="image/png, image/jpeg, image/webp" 
+                  className="hidden" 
+                  id="avatar-upload"
+                  onChange={async (e) => {
+                    if (e.target.files && e.target.files[0]) {
+                      const file = e.target.files[0];
+                      const data = new FormData();
+                      data.append("file", file);
+                      try {
+                        const res = await api.post("/upload", data, {
+                          headers: { "Content-Type": "multipart/form-data" }
+                        });
+                        if (res.data.status === "success" && res.data.data.url) {
+                          setFormData(p => ({ ...p, avatarUrl: res.data.url }));
+                          toast.success("تصویر با موفقیت آپلود شد");
+                        } else {
+                          toast.error("خطا در دریافت تصویر آپلود شده");
+                        }
+                      } catch (err: any) {
+                        toast.error(err.response?.data?.error?.message || "خطا در آپلود تصویر");
+                      }
+                    }
+                  }}
+                />
+                <label htmlFor="avatar-upload" className="h-[46px] px-6 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-xs font-black italic cursor-pointer hover:bg-white/10 hover:border-neon-blue/30 transition-all text-white shrink-0">
+                  <Camera size={16} className="ml-2" />
+                  آپلود تصویر
+                </label>
+              </div>
+            </div>
             <div className="mt-2 text-right">
               <button onClick={() => setFormData(p => ({ ...p, avatarUrl: "" }))} className="text-[10px] text-gray-600 font-black uppercase italic hover:text-neon-pink transition-colors">حذف تصویر</button>
             </div>
