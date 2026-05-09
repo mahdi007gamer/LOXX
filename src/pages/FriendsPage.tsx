@@ -1,10 +1,12 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Sidebar } from "../components/layout/Sidebar";
 import { NeonCard } from "../components/ui/NeonCard";
 import { GlowButton } from "../components/ui/GlowButton";
 import { useFriends } from "../context/FriendsContext";
 import { useAuth } from "../context/AuthContext";
 import { Friend, FriendStatus, FriendRequest } from "../types";
+import api from "../lib/api";
+import { notifySocket } from "../lib/socket";
 import { 
   Search, 
   UserPlus, 
