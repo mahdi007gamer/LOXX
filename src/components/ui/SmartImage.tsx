@@ -20,41 +20,36 @@ export const SmartImage: React.FC<SmartImageProps> = ({
   ...props 
 }) => {
   const [error, setError] = useState(false);
-  const [frozenUrl, setFrozenUrl] = useState<string | null>(null);
-  const imgRef = useRef<HTMLImageElement>(null);
+  const [isFrozen, setIsFrozen] = useState(false);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     if (!src) return;
     
-    // Check if it's a GIF
-    const isGif = src.toLowerCase().split('?')[0].endsWith('.gif');
+    const isGif = src.toLowerCase().includes('.gif') || src.includes('data:image/gif');
     
     if (isGif && !isVipEnabled) {
       const img = new Image();
-      // Set crossOrigin BEFORE src
       img.crossOrigin = "anonymous";
       img.src = src;
       
       img.onload = () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = img.width;
-        canvas.height = img.height;
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          ctx.drawImage(img, 0, 0);
-          try {
-            setFrozenUrl(canvas.toDataURL('image/png'));
-          } catch (e) {
-            console.warn("CORS error freezing GIF:", e);
-            // Fallback: If it's a GIF and we can't freeze it due to CORS,
-            // we at least try to append a cache-buster or just use original
-            setFrozenUrl(src);
+        if (canvasRef.current) {
+          const ctx = canvasRef.current.getContext('2d');
+          if (ctx) {
+            canvasRef.current.width = img.width;
+            canvasRef.current.height = img.height;
+            ctx.drawImage(img, 0, 0);
+            setIsFrozen(true);
           }
         }
       };
-      img.onerror = () => setError(true);
+      img.onerror = () => {
+        setError(true);
+        setIsFrozen(false);
+      };
     } else {
-      setFrozenUrl(src);
+      setIsFrozen(false);
     }
   }, [src, isVipEnabled]);
 
@@ -66,12 +61,31 @@ export const SmartImage: React.FC<SmartImageProps> = ({
     );
   }
 
+  if (isVipEnabled) {
+    return (
+      <img 
+        src={src} 
+        alt={alt} 
+        className={className} 
+        {...props} 
+      />
+    );
+  }
+
   return (
-    <img 
-      src={frozenUrl || src} 
-      alt={alt} 
-      className={className} 
-      {...props} 
-    />
+    <div className={cn("relative overflow-hidden group/freeze flex items-center justify-center", className)}>
+      <canvas 
+        ref={canvasRef} 
+        className={cn("w-full h-full object-cover", !isFrozen && "hidden")} 
+      />
+      {!isFrozen && (
+        <img 
+          src={src} 
+          alt={alt} 
+          className="w-full h-full object-cover" 
+          {...props}
+        />
+      )}
+    </div>
   );
 };

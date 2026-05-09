@@ -63,14 +63,14 @@ export const BadgeAdminModal = ({ isOpen, onClose, badge, onSuccess }: BadgeAdmi
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const formData = new FormData();
-    formData.append("file", file);
+    const uploadData = new FormData();
+    uploadData.append("file", file);
 
     try {
-      toast.loading("در حال آپلود نشان...");
-      const res = await api.post("/upload", formData);
+      const loadingToast = toast.loading("در حال آپلود نشان...");
+      const res = await api.post("/upload", uploadData);
       setFormData(prev => ({ ...prev, iconUrl: res.data.url }));
-      toast.dismiss();
+      toast.dismiss(loadingToast);
       toast.success("نشان آپلود شد");
     } catch (err) {
       toast.dismiss();

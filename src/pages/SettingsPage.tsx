@@ -201,8 +201,9 @@ export const SettingsPage = () => {
     }
   };
 
-  const tabs = [
-    ...(authUser?.membership === "VIP" ? [{ id: "elite" as any, icon: Crown, label: "Elite Settings" }] : []),
+    const isVip = authUser?.membership === "VIP" || authUser?.membership === "PLUS";
+    const tabs = [
+    ...(isVip ? [{ id: "elite" as any, icon: Crown, label: "Elite Settings" }] : []),
     { id: "profile", icon: User, label: "پروفایل عمومی" },
     { id: "badges" as any, icon: Award, label: "نشان‌ها" },
     { id: "security", icon: Shield, label: "امنیت" },
@@ -213,7 +214,7 @@ export const SettingsPage = () => {
 
   const renderProfile = () => (
     <div className="space-y-6">
-      {authUser?.membership === "VIP" && (
+      {isVip && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

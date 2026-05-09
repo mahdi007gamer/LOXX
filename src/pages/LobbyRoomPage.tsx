@@ -773,7 +773,7 @@ export const LobbyRoomPage = () => {
                        <div className="h-10 w-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden shrink-0">
                          <SmartImage 
                            src={friend.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${friend.username}`}
-                           isVipEnabled={false}
+                           isVipEnabled={friend.membership === MembershipType.VIP || friend.membership === MembershipType.PLUS}
                            className="w-full h-full object-cover"
                            alt={friend.username}
                          />
@@ -811,7 +811,7 @@ export const LobbyRoomPage = () => {
                     return (
                       <SmartImage 
                          src={p?.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p?.name}`}
-                         isVipEnabled={p?.membership === MembershipType.VIP}
+                         isVipEnabled={p?.membership === MembershipType.VIP || p?.membership === MembershipType.PLUS}
                          className="w-full h-full object-cover"
                          alt={p?.name || "Player"}
                       />
@@ -1312,7 +1312,7 @@ const PlayerCard = ({
                   <div className="relative z-10 h-full w-full flex items-center justify-center overflow-hidden rounded-[18px] md:rounded-[28px]">
                     <SmartImage 
                       src={player.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${player.name}`}
-                      isVipEnabled={player.membership === MembershipType.VIP}
+                      isVipEnabled={player.membership === MembershipType.VIP || player.membership === MembershipType.PLUS}
                       className="w-full h-full object-cover"
                       alt={player.name}
                     />
@@ -1518,7 +1518,7 @@ const ChatPanel = ({ messages, players, inputMessage, setInputMessage, onSend, o
         {filteredMessages.map((msg, index) => {
           const isYou = msg.fromUserId === currentUserId && currentUserId !== undefined;
           const sender = players.find(p => p.id === msg.fromUserId);
-          const isVip = sender?.membership === MembershipType.VIP;
+          const isAnimated = sender?.membership === MembershipType.VIP || sender?.membership === MembershipType.PLUS;
           
           return (
           <div key={`${msg.id}-${index}`} className={cn(
@@ -1536,13 +1536,13 @@ const ChatPanel = ({ messages, players, inputMessage, setInputMessage, onSend, o
               </div>
             ) : (
               <div className={cn(
-                "flex items-start gap-3 max-w-[85%]",
+                "flex items-start gap-3 max-w-[95%] sm:max-w-[85%]",
                 isYou ? "flex-row" : "flex-row-reverse"
               )}>
                 <div className="h-8 w-8 rounded-xl bg-white/5 border border-white/10 flex-shrink-0 flex items-center justify-center text-lg mt-1 font-black uppercase overflow-hidden">
                    <SmartImage 
                      src={msg.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${msg.user}`}
-                     isVipEnabled={isVip}
+                     isVipEnabled={isAnimated}
                      className="w-full h-full object-cover"
                      alt={msg.user}
                    />

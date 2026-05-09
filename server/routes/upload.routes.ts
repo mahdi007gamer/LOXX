@@ -31,14 +31,14 @@ const upload = multer({
     fileSize: 5 * 1024 * 1024 // 5MB limit
   },
   fileFilter: (req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png|gif|webp/;
+    const allowedTypes = /jpeg|jpg|png|gif|webp|svg/;
     const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = allowedTypes.test(file.mimetype);
+    const mimetype = allowedTypes.test(file.mimetype) || file.mimetype === "image/svg+xml";
 
     if (extname && mimetype) {
       return cb(null, true);
     }
-    cb(new Error("فقط تصاویر (jpg, png, gif, webp) مجاز هستند"));
+    cb(new Error("فقط تصاویر (jpg, png, gif, webp, svg) مجاز هستند"));
   }
 });
 

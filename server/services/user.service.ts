@@ -28,19 +28,7 @@ export class UserService {
     if (!user) return null;
 
     // Check for expired subscription
-    let currentMembership = user.profile?.membershipType || "NONE";
-    let expiresAt = user.subscriptions[0]?.expiresAt || null;
-
-    if (currentMembership !== "NONE" && expiresAt) {
-      if (new Date(expiresAt) < new Date()) {
-        // Expired! Downgrade the profile
-        await prisma.profile.update({
-          where: { userId: user.id },
-          data: { membershipType: "NONE" }
-        });
-        currentMembership = "NONE";
-      }
-    }
+    const membership = await this.checkAndFixMembership(user.id, user.profile?.membershipType || "NONE", user.subscriptions[0]?.expiresAt || null);
 
     const friendsCount = (user._count.sentFriendReq || 0) + (user._count.recvFriendReq || 0);
     const lobbiesJoined = user._count.lobbyMembers || 0;
@@ -51,7 +39,7 @@ export class UserService {
       ...user,
       profile: {
         ...user.profile,
-        membershipType: currentMembership
+        membershipType: membership.type
       },
       badges: user.badges.map(ub => ({
         ...ub.badge,
@@ -63,9 +51,26 @@ export class UserService {
         lobbiesJoined,
         lobbiesCreated,
         daysSinceJoin,
-        membershipExpiresAt: expiresAt
+        membershipExpiresAt: membership.expiresAt
       }
     };
+  }
+
+  private static async checkAndFixMembership(userId: string, currentType: string, expiresAt: Date | null) {
+    if (currentType !== "NONE" && expiresAt) {
+      if (new Date(expiresAt) < new Date()) {
+        await prisma.profile.update({
+          where: { userId },
+          data: { 
+            membershipType: "NONE",
+            // Optionally clear vipMetadata if you want to be strict, 
+            // but usually we keep it for when they renew.
+          }
+        });
+        return { type: "NONE", expiresAt };
+      }
+    }
+    return { type: currentType, expiresAt };
   }
 
   static async getProfileByUsername(username: string) {
@@ -75,6 +80,10 @@ export class UserService {
         profile: true,
         badges: {
           include: { badge: true }
+        },
+        subscriptions: {
+          orderBy: { expiresAt: "desc" },
+          take: 1
         },
         _count: {
           select: {
@@ -89,6 +98,9 @@ export class UserService {
 
     if (!user) return null;
 
+    // Check expiry for others viewing this profile too
+    const membership = await this.checkAndFixMembership(user.id, user.profile?.membershipType || "NONE", user.subscriptions[0]?.expiresAt || null);
+
     const friendsCount = (user._count.sentFriendReq || 0) + (user._count.recvFriendReq || 0);
     const lobbiesJoined = user._count.lobbyMembers || 0;
     const lobbiesCreated = user._count.hostedLobbies || 0;
@@ -96,6 +108,10 @@ export class UserService {
 
     return {
       ...user,
+      profile: {
+        ...user.profile,
+        membershipType: membership.type
+      },
       badges: user.badges.map(ub => ({
         ...ub.badge,
         isPinned: ub.isPinned,

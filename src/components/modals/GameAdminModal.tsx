@@ -66,9 +66,11 @@ export const GameAdminModal = ({
   const [activeTab, setActiveTab] = useState<"info" | "features" | "regions">("info");
 
   useEffect(() => {
-    fetchGenres();
-    fetchBadges();
-  }, []);
+    if (isOpen) {
+      fetchGenres();
+      fetchBadges();
+    }
+  }, [isOpen]);
 
   const fetchGenres = async () => {
     try {
@@ -81,8 +83,8 @@ export const GameAdminModal = ({
 
   const fetchBadges = async () => {
     try {
-      const res = await api.get("/admin/badges");
-      setDbBadges(res.data.data?.items || []);
+      const res = await api.get("/badges");
+      setDbBadges(res.data.data || []);
     } catch (err) {
       console.error("Error fetching badges:", err);
     }

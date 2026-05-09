@@ -127,7 +127,7 @@ export const Navbar = () => {
                     <div className="h-full w-full rounded-[10px] bg-dark-bg flex items-center justify-center overflow-hidden">
                        <SmartImage 
                          src={user.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`} 
-                         isVipEnabled={isVIP}
+                         isVipEnabled={isVIP || isPLUS}
                          className="h-full w-full object-cover" 
                          alt={user.username} 
                        />
@@ -213,7 +213,7 @@ export const Navbar = () => {
                         <div className="h-full w-full rounded-[15px] bg-[#050507] flex items-center justify-center overflow-hidden">
                           <SmartImage 
                             src={user.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`} 
-                            isVipEnabled={isVIP}
+                            isVipEnabled={isVIP || isPLUS}
                             className="h-full w-full object-cover" 
                             alt={user.username} 
                           />

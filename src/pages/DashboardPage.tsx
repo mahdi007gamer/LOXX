@@ -244,17 +244,17 @@ export const DashboardPage = () => {
                                {currentMembership === "VIP" ? "LOXX ELITE (VIP)" : currentMembership === "PLUS" ? "LOXX PLUS" : "طرح عادی (FREE)"}
                             </h2>
                             <p className="text-[11px] text-gray-400 font-bold italic mt-2">
-                               {currentMembership === "VIP" ? `اعتبار اشتراک نخبگان شما تا ${daysLeft} روز دیگر فعال است.` : 
-                                currentMembership === "PLUS" ? `اشتراک پلاس شما تا ${daysLeft} روز دیگر فعال است.` :
+                               {currentMembership === "VIP" ? `اعتبار شما تا ${new Date(expiryDate).toLocaleDateString('fa-IR')} فعال است.` : 
+                                currentMembership === "PLUS" ? `اعتبار شما تا ${new Date(expiryDate).toLocaleDateString('fa-IR')} فعال است.` :
                                 "برای باز کردن پتانسیل کامل خود، اشتراک خود را ارتقا دهید"}
                             </p>
                          </div>
                       </div>
 
-                      {currentMembership !== "NONE" && (
+                      {currentMembership !== "NONE" && currentMembership !== "FREE" ? (
                          <div className="flex items-center gap-10 bg-white/[0.02] backdrop-blur-md p-8 rounded-[40px] border border-white/5 min-w-[280px]">
                             <div className="text-center">
-                               <p className="text-[10px] text-gray-500 font-black uppercase tracking-[0.2em] mb-2 italic">اعتبار باقیمانده</p>
+                               <p className="text-[10px] text-gray-500 font-black uppercase tracking-[0.2em] mb-2 italic">باقیمانده</p>
                                <div className="flex items-baseline justify-center gap-1">
                                   <p className={cn(
                                     "text-5xl font-black italic tracking-tighter leading-none",
@@ -271,13 +271,11 @@ export const DashboardPage = () => {
                                  className="h-12 w-full text-[10px] font-black uppercase italic !rounded-2xl"
                                  onClick={() => navigate("/premium")}
                                >
-                                  تمدید فوری
+                                  {daysLeft < 3 ? "تمدید فوری" : "جزئیات اشتراک"}
                                </GlowButton>
                             </div>
                          </div>
-                      )}
-
-                      {currentMembership === "NONE" && (
+                      ) : (
                          <GlowButton 
                             variant="purple" 
                             className="h-16 px-16 text-sm font-black uppercase italic !rounded-[24px]"
@@ -483,7 +481,7 @@ export const DashboardPage = () => {
                               <div className="h-10 w-10 rounded-full bg-white/10 flex items-center justify-center text-md overflow-hidden border border-white/5 group-hover/avatar:border-neon-blue/50 transition-all">
                                 <SmartImage 
                                   src={friend.avatar || (friend as any).avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${friend.username}`} 
-                                  isVipEnabled={friend.membership === MembershipType.VIP}
+                                  isVipEnabled={friend.membership === MembershipType.VIP || friend.membership === MembershipType.PLUS}
                                   className="w-full h-full object-cover" 
                                   alt={friend.username} 
                                 />
