@@ -10,9 +10,12 @@ import { NotificationCenter } from "../ui/NotificationCenter";
 const menuItems = [
   { icon: LayoutDashboard, label: "داشبورد", path: "/dashboard" },
   { icon: Gamepad2, label: "بازی‌ها", path: "/games" },
+  { icon: Target, label: "بازی‌های من", path: "/my-games" },
   { icon: Users, label: "لابی‌ها", path: "/lobbies" },
+  { icon: User, label: "دوستان", path: "/friends" },
   { icon: MessageSquare, label: "چت سراسری", path: "/chat" },
-  { icon: Trophy, label: "رتبه‌بندی", path: "/leaderboard" },
+  { icon: Trophy, label: "رتبه‌بندی", path: "/ranking" },
+  { icon: Shield, label: "اشتراک ویژه", path: "/premium" },
   { icon: Settings, label: "تنظیمات", path: "/settings" },
 ];
 

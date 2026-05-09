@@ -263,6 +263,58 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
                     </div>
                   </div>
 
+                  {selectedGameData?.metadata?.modes && (
+                    <div className="space-y-3">
+                      <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest block text-right">حالت بازی (Mode)</label>
+                      <div className="flex flex-wrap gap-2 justify-end text-right">
+                        {selectedGameData.metadata.modes.map((opt: string) => (
+                          <button
+                            key={opt}
+                            type="button"
+                            onClick={() => setFormData({
+                               ...formData, 
+                               mode: opt,
+                               metadata: { ...formData.metadata, Mode: opt }
+                            })}
+                            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                              formData.mode === opt 
+                                ? "bg-transparent border border-neon-blue text-neon-blue shadow-[inset_0_0_15px_rgba(0,229,255,0.2)]" 
+                                : "bg-white/5 text-gray-400 hover:bg-white/10 border border-transparent"
+                            }`}
+                          >
+                            {opt}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedGameData?.metadata?.maps && (
+                    <div className="space-y-3">
+                      <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest block text-right">نقشه (Map)</label>
+                      <div className="flex flex-wrap gap-2 justify-end text-right">
+                        {selectedGameData.metadata.maps.map((opt: string) => (
+                          <button
+                            key={opt}
+                            type="button"
+                            onClick={() => setFormData({
+                               ...formData, 
+                               selectedMaps: opt,
+                               metadata: { ...formData.metadata, Map: opt }
+                            })}
+                            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                              formData.selectedMaps === opt 
+                                ? "bg-transparent border border-neon-blue text-neon-blue shadow-[inset_0_0_15px_rgba(0,229,255,0.2)]" 
+                                : "bg-white/5 text-gray-400 hover:bg-white/10 border border-transparent"
+                            }`}
+                          >
+                            {opt}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Rendering Dynamic Features (Mapped loosely to game modes / maps if available in game metadata) */}
                   {selectedGameData?.metadata?.features?.map((feature: any, index: number) => (
                     <div key={feature.name} className="space-y-3">

@@ -1398,7 +1398,7 @@ export const ChatPage: React.FC = () => {
               </div>
               
               <div className="rounded-2xl overflow-hidden border border-white/5 mb-6 aspect-video bg-black/40">
-                <img src={newsPostPreview || ""} alt="Preview" className="w-full h-full object-contain" />
+                {newsPostPreview && <img src={newsPostPreview} alt="Preview" className="w-full h-full object-contain" />}
               </div>
 
               <textarea

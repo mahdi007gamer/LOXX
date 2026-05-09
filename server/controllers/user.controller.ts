@@ -119,6 +119,7 @@ export class UserController {
       });
       res.json({ status: "success", data: devices });
     } catch (error: any) {
+      console.error("Error in getDevices:", error);
       res.status(500).json({ status: "error", error: { message: error.message } });
     }
   }

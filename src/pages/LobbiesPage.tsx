@@ -102,7 +102,7 @@ export const LobbiesPage = () => {
               <p className="mt-3 text-[11px] md:text-xs text-gray-500 font-bold uppercase tracking-[0.15em] leading-relaxed opacity-60">تیم خود را پیدا کنید و در کنار بقیه بازیکنان حرفه‌ای بازی کنید</p>
             </div>
             
-            <div className="flex flex-col w-full items-stretch sm:flex-row sm:items-center gap-4 md:w-auto overflow-hidden">
+            <div className="flex flex-col w-full items-stretch sm:flex-row sm:items-center gap-4 md:w-auto">
                <div className="relative flex-1 min-w-0">
                 <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-700" size={18} />
                 <input 
@@ -125,7 +125,7 @@ export const LobbiesPage = () => {
           </header>
 
           {/* Game Filters */}
-          <div className="-mx-4 px-4 sm:mx-0 sm:px-0 mb-10 flex items-center gap-3 overflow-x-auto pb-4 scrollbar-none no-scrollbar snap-x snap-mandatory">
+          <div className="-mx-4 px-4 sm:mx-0 sm:px-0 mb-10 flex items-center gap-3 overflow-x-auto pb-4 scrollbar-none snap-x snap-mandatory">
              <button 
                 onClick={() => setActiveFilter("all")}
                 className={cn(
