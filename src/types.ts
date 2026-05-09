@@ -80,16 +80,26 @@ export interface FriendRequest {
   bannerUrl?: string;
 }
 
+export interface Badge {
+  id: string;
+  name: string;
+  iconUrl: string;
+  category: "STANDARD" | "GAME" | "SPECIAL";
+  isSpecial: boolean;
+  isPinned?: boolean;
+  earnedAt?: string;
+}
+
 export enum BadgeType {
-  STREAMER = "streamer",
-  PRO = "pro",
-  LOBBY_MASTER = "lobby_master",
-  VIP = "vip",
-  FOUNDER = "founder",
-  CHAMPION = "champion",
-  PLUS = "plus",
-  TOP_PLAYER = "top_player",
-  EARLY_USER = "early_user"
+  STREAMER = "Streamer",
+  PRO = "Pro Player",
+  LOBBY_MASTER = "Lobby Master",
+  VIP = "VIP",
+  FOUNDER = "Founder",
+  CHAMPION = "Champion",
+  PLUS = "Plus",
+  TOP_PLAYER = "Top Player",
+  EARLY_USER = "Early User"
 }
 
 export enum MembershipType {

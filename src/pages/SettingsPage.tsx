@@ -24,7 +24,9 @@ import {
   Clock,
   Heart,
   Crown,
-  ArrowRight
+  ArrowRight,
+  Award,
+  Plus
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { motion, AnimatePresence } from "motion/react";
@@ -66,12 +68,45 @@ export const SettingsPage = () => {
   });
 
   const [devices, setDevices] = useState<any[]>([]);
+  const [userBadges, setUserBadges] = useState<any[]>([]);
 
   useEffect(() => {
     fetchUserData();
     fetchSettings();
     fetchDevices();
+    fetchUserBadges();
   }, []);
+
+  const fetchUserBadges = async () => {
+    try {
+      const res = await api.get("/auth/me");
+      setUserBadges(res.data.data.badges || []);
+    } catch(err) {}
+  };
+
+  const handleToggleBadgePin = async (badgeId: string) => {
+    const badge = userBadges.find(b => b.id === badgeId);
+    if (!badge) return;
+
+    const pinnedCount = userBadges.filter(b => b.isPinned).length;
+    if (!badge.isPinned && pinnedCount >= 5) {
+      toast.error("حداکثر می‌توانید ۵ نشان را پین کنید");
+      return;
+    }
+
+    try {
+      await api.patch("/user/profile", {
+        badge_pins: {
+          badgeId,
+          isPinned: !badge.isPinned
+        }
+      });
+      setUserBadges(prev => prev.map(b => b.id === badgeId ? { ...b, isPinned: !b.isPinned } : b));
+      toast.success(badge.isPinned ? "نشان از پین خارج شد" : "نشان با موفقیت پین شد");
+    } catch (err: any) {
+      toast.error(err.response?.data?.error?.message || "خطا در بروزرسانی پین");
+    }
+  };
 
   const fetchDevices = async () => {
     try {
@@ -169,6 +204,7 @@ export const SettingsPage = () => {
   const tabs = [
     ...(authUser?.membership === "VIP" ? [{ id: "elite" as any, icon: Crown, label: "Elite Settings" }] : []),
     { id: "profile", icon: User, label: "پروفایل عمومی" },
+    { id: "badges" as any, icon: Award, label: "نشان‌ها" },
     { id: "security", icon: Shield, label: "امنیت" },
     { id: "notifications", icon: Bell, label: "اعلان‌ها" },
     { id: "ui", icon: Monitor, label: "رابط کاربری" },
@@ -413,6 +449,63 @@ export const SettingsPage = () => {
       setSaving(false);
     }
   };
+
+  const renderBadges = () => (
+    <div className="space-y-6">
+      <NeonCard variant="purple">
+         <div className="flex items-center justify-between mb-8">
+            <div>
+               <h3 className="text-xl font-black text-white italic uppercase tracking-tighter">نشان‌های من</h3>
+               <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1 italic">نشان‌هایی که برای نمایش در مینی‌-پروفایل پین می‌کنید (حداکثر ۵ عدد)</p>
+            </div>
+            <div className="px-4 py-2 rounded-xl bg-neon-blue/10 border border-neon-blue/20">
+               <span className="text-xs font-black text-neon-blue italic">{userBadges.filter(b => b.isPinned).length} / 5 پین شده</span>
+            </div>
+         </div>
+
+         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            {userBadges.map((badge) => (
+              <motion.div
+                key={badge.id}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => handleToggleBadgePin(badge.id)}
+                className={cn(
+                  "relative aspect-square rounded-[24px] border-2 flex flex-col items-center justify-center p-4 cursor-pointer transition-all duration-300 group",
+                  badge.isPinned 
+                    ? "bg-neon-blue/10 border-neon-blue shadow-[0_0_20px_rgba(0,229,255,0.1)]" 
+                    : "bg-white/5 border-white/5 hover:border-white/10"
+                )}
+              >
+                  <img src={badge.iconUrl} alt={badge.name} className="w-12 h-12 object-contain mb-2" />
+                  <span className="text-[10px] font-black text-white uppercase tracking-tighter text-center line-clamp-1">{badge.name}</span>
+                  
+                  {badge.isPinned && (
+                    <div className="absolute top-2 right-2 h-5 w-5 rounded-full bg-neon-blue flex items-center justify-center text-dark-bg">
+                       <Plus size={12} className="rotate-45" />
+                    </div>
+                  )}
+                  
+                  <div className={cn(
+                     "absolute inset-0 rounded-[22px] flex items-center justify-center bg-dark-bg/80 opacity-0 group-hover:opacity-100 transition-opacity",
+                     badge.isPinned ? "bg-red-500/20" : "bg-neon-blue/20"
+                  )}>
+                     <span className="text-[10px] font-black text-white uppercase italic">
+                        {badge.isPinned ? "برداشتن پین" : "پین کردن"}
+                     </span>
+                  </div>
+              </motion.div>
+            ))}
+            {userBadges.length === 0 && (
+               <div className="col-span-full py-20 text-center flex flex-col items-center gap-4 opacity-30">
+                  <Award size={48} />
+                  <p className="text-xs font-black italic uppercase tracking-widest">هنوز هیچ نشانی کسب نکرده‌اید</p>
+               </div>
+            )}
+         </div>
+      </NeonCard>
+    </div>
+  );
 
   const renderSecurity = () => (
     <div className="space-y-6">
@@ -753,6 +846,7 @@ export const SettingsPage = () => {
                    </div>
                 )}
                 {activeTab === "profile" && renderProfile()}
+                {activeTab === ("badges" as any) && renderBadges()}
                 {activeTab === "security" && renderSecurity()}
                 {activeTab === "notifications" && renderNotifications()}
                 {activeTab === "ui" && renderUI()}

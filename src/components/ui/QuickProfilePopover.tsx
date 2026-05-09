@@ -13,7 +13,7 @@ export interface QuickProfileUser {
   senderAvatar?: string;
   avatarUrl?: string; // fallback
   senderLevel: number;
-  senderBadges?: BadgeType[];
+  senderBadges?: any[]; // Dynamic badges
   membership?: MembershipType;
   id?: string;
   bannerUrl?: string;
@@ -55,7 +55,8 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
           membership: data.membership,
           senderLevel: data.level || initialUser.senderLevel,
           stats: data.stats,
-          vipMetadata: data.vipMetadata
+          vipMetadata: data.vipMetadata,
+          senderBadges: data.badges || []
         });
       } catch (error) {
         console.error("Failed to fetch profile stats", error);
@@ -97,6 +98,9 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
     if (type === "radial") return { background: `radial-gradient(circle at center, ${color1}, ${color2})` };
     return { background: `conic-gradient(from ${angle}deg, ${color1}, ${color2})` };
   };
+
+  const pinnedBadges = user.senderBadges?.filter(b => b.isPinned) || [];
+  const specialBadges = user.senderBadges?.filter(b => b.isSpecial) || [];
 
   return (
     <motion.div 
@@ -201,7 +205,12 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
                 : {}}>
                 {user.senderName}
               </h4>
-              <CheckCircle2 size={24} className="text-neon-blue" fill="currentColor" />
+              <div className="flex items-center gap-0.5">
+                {specialBadges.map(badge => (
+                  <img key={badge.id} src={badge.iconUrl} alt={badge.name} title={badge.name} className="h-6 w-6 object-contain" />
+                ))}
+                {!specialBadges.length && <CheckCircle2 size={24} className="text-neon-blue" fill="currentColor" />}
+              </div>
             </div>
             <div className="flex items-center gap-2 mt-1">
                {isVIP ? (
@@ -281,13 +290,17 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
             </div>
           </div>
 
-          {/* Badges */}
+          {/* Dynamic Badges */}
           <div className="flex flex-wrap gap-2.5">
-            {user.senderBadges?.map((badge, i) => (
-              <BadgeIcon key={i} type={badge} />
+            {pinnedBadges.map((ub, i) => (
+              <div key={i} title={ub.name} className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 group hover:border-neon-blue/30 transition-all">
+                <img src={ub.iconUrl} alt={ub.name} className="h-4 w-4 object-contain" />
+                <span className="text-[10px] font-black text-gray-400 uppercase italic group-hover:text-white transition-colors">{ub.name}</span>
+              </div>
             ))}
-            {isVIP && <BadgeIcon type={BadgeType.VIP} />}
-            {isPLUS && <BadgeIcon type={BadgeType.PLUS} />}
+            {!pinnedBadges.length && !loading && (
+              <p className="text-[10px] text-gray-500 italic">بدون نشان‌های پین شده</p>
+            )}
           </div>
 
           {/* Actions */}

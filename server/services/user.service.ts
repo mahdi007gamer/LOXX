@@ -7,6 +7,9 @@ export class UserService {
       where: { id: userId },
       include: {
         profile: true,
+        badges: {
+          include: { badge: true }
+        },
         subscriptions: {
           orderBy: { expiresAt: "desc" },
           take: 1
@@ -50,6 +53,11 @@ export class UserService {
         ...user.profile,
         membershipType: currentMembership
       },
+      badges: user.badges.map(ub => ({
+        ...ub.badge,
+        isPinned: ub.isPinned,
+        earnedAt: ub.earnedAt
+      })),
       stats: {
         friendsCount,
         lobbiesJoined,
@@ -65,6 +73,9 @@ export class UserService {
       where: { username },
       include: {
         profile: true,
+        badges: {
+          include: { badge: true }
+        },
         _count: {
           select: {
             hostedLobbies: true,
@@ -85,6 +96,11 @@ export class UserService {
 
     return {
       ...user,
+      badges: user.badges.map(ub => ({
+        ...ub.badge,
+        isPinned: ub.isPinned,
+        earnedAt: ub.earnedAt
+      })),
       stats: {
         friendsCount,
         lobbiesJoined,
@@ -95,6 +111,24 @@ export class UserService {
   }
 
   static async updateProfile(userId: string, data: any) {
+    if (data.pinnedBadges) {
+      await prisma.userBadge.updateMany({
+        where: { userId },
+        data: { isPinned: false }
+      });
+      await prisma.userBadge.updateMany({
+        where: { userId, badgeId: { in: data.pinnedBadges } },
+        data: { isPinned: true }
+      });
+    }
+
+    if (data.badge_pins) {
+      const { badgeId, isPinned } = data.badge_pins;
+      await prisma.userBadge.update({
+        where: { userId_badgeId: { userId, badgeId } },
+        data: { isPinned }
+      });
+    }
     return prisma.profile.update({
       where: { userId },
       data: {
@@ -161,6 +195,9 @@ export class UserService {
   }
 
   static async toggleGame(userId: string, gameId: string) {
+    const game = await prisma.game.findUnique({ where: { id: gameId } });
+    if (!game) throw new Error("Game not found");
+
     const existing = await prisma.userGame.findUnique({
       where: { userId_gameId: { userId, gameId } }
     });
@@ -174,6 +211,18 @@ export class UserService {
       await prisma.userGame.create({
         data: { userId, gameId }
       });
+
+      if (game.badgeId) {
+        const badgeExists = await prisma.userBadge.findUnique({
+          where: { userId_badgeId: { userId, badgeId: game.badgeId } }
+        });
+        if (!badgeExists) {
+          await prisma.userBadge.create({
+            data: { userId, badgeId: game.badgeId }
+          });
+        }
+      }
+
       return { added: true };
     }
   }

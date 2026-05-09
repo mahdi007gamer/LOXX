@@ -18,6 +18,7 @@ interface GameData {
   title: string;
   iconUrl: string;
   bannerUrl: string;
+  badgeId?: string; // New field
   genres: string[];
   regions: string[];
   metadata: {
@@ -54,16 +55,19 @@ export const GameAdminModal = ({
     title: "",
     iconUrl: "",
     bannerUrl: "",
+    badgeId: "",
     genres: [],
     regions: [],
     metadata: { features: [] }
   });
   const [dbGenres, setDbGenres] = useState<any[]>([]);
+  const [dbBadges, setDbBadges] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<"info" | "features" | "regions">("info");
 
   useEffect(() => {
     fetchGenres();
+    fetchBadges();
   }, []);
 
   const fetchGenres = async () => {
@@ -72,6 +76,15 @@ export const GameAdminModal = ({
       setDbGenres(res.data.data || []);
     } catch (err) {
       console.error("Error fetching genres:", err);
+    }
+  };
+
+  const fetchBadges = async () => {
+    try {
+      const res = await api.get("/admin/badges");
+      setDbBadges(res.data.data?.items || []);
+    } catch (err) {
+      console.error("Error fetching badges:", err);
     }
   };
 
@@ -86,6 +99,7 @@ export const GameAdminModal = ({
           ...metadata,
           features
         },
+        badgeId: game.badgeId || "",
         genres: Array.isArray(game.genres) ? game.genres : [],
         regions: Array.isArray(game.regions) ? game.regions : []
       });
@@ -94,6 +108,7 @@ export const GameAdminModal = ({
         title: "",
         iconUrl: "",
         bannerUrl: "",
+        badgeId: "",
         genres: [],
         regions: [],
         metadata: { features: [] }
@@ -267,8 +282,24 @@ export const GameAdminModal = ({
                   <p className="text-[10px] text-gray-500 mt-2">فرمت پیشنهادی PNG یا SVG با ابعاد حداقل 256x256</p>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-3">بنر بازی (16:9)</label>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-3">نشان مخصوص بازی (بج)</label>
+                    <select 
+                      value={formData.badgeId}
+                      onChange={e => setFormData({...formData, badgeId: e.target.value})}
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 outline-none focus:border-neon-blue transition-all text-white font-bold"
+                    >
+                      <option value="">بدون نشان مخصوص</option>
+                      {dbBadges.map(badge => (
+                        <option key={badge.id} value={badge.id}>{badge.name}</option>
+                      ))}
+                    </select>
+                    <p className="text-[10px] text-gray-500 mt-2">این نشان به کاربرانی که بازی را به لیست خود اضافه کنند اهدا می‌شود.</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-3">بنر بازی (16:9)</label>
                   <div className="relative group">
                     <div className="h-32 w-full rounded-[28px] bg-white/5 border-2 border-dashed border-white/10 flex flex-col items-center justify-center overflow-hidden transition-all group-hover:border-neon-blue/50">
                       {formData.bannerUrl ? (
@@ -291,6 +322,7 @@ export const GameAdminModal = ({
                 </div>
               </div>
             </div>
+          </div>
           )}
 
           {activeTab === "features" && (

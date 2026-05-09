@@ -26,7 +26,8 @@ export class UserController {
           email: user.email,
           role: user.role,
           twoFactorEnabled: user.twoFactorEnabled,
-          stats: user.stats
+          stats: user.stats,
+          badges: user.badges
         }
       });
     } catch (error: any) {
@@ -69,7 +70,9 @@ export class UserController {
           membership: user.profile?.membershipType,
           avatarUrl: user.profile?.avatarUrl,
           bannerUrl: user.profile?.bannerUrl,
-          stats: user.stats
+          stats: user.stats,
+          badges: user.badges,
+          vipMetadata: user.profile?.vipMetadata
         }
       });
     } catch (error: any) {

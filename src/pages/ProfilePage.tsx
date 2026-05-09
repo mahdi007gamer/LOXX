@@ -285,16 +285,32 @@ export const ProfilePage = () => {
                   <Award size={20} className="text-neon-purple" />
                   <span>سطح و افتخارات</span>
                 </h3>
-                <div className="space-y-4">
+                <div className="space-y-6">
                    <div className="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/5">
                       <p className="text-[10px] text-gray-500 font-black uppercase italic">سطح کاربری (Level)</p>
                       <p className="text-xl font-black text-neon-blue italic">Lv. {profileData?.level || 1}</p>
                    </div>
-                   <div className="flex flex-wrap gap-3">
-                      {/* Badge display */}
-                      <div className="h-10 w-10 rounded-xl bg-neon-blue/10 flex items-center justify-center text-neon-blue" title="Pro Player"><Award size={20} /></div>
-                      <div className="h-10 w-10 rounded-xl bg-yellow-400/10 flex items-center justify-center text-yellow-400" title="MVP"><Star size={20} /></div>
-                      <div className="h-10 w-10 rounded-xl bg-neon-pink/10 flex items-center justify-center text-neon-pink" title="Streamer"><Sparkles size={20} /></div>
+                   
+                   <div className="space-y-3">
+                      <p className="text-[10px] text-gray-500 font-black uppercase italic mr-2">نشان‌های کسب شده</p>
+                      <div className="flex flex-wrap gap-2">
+                        {profileData?.badges?.map((badge: any) => (
+                          <div 
+                            key={badge.id} 
+                            title={badge.name} 
+                            className={cn(
+                              "h-12 w-12 rounded-2xl bg-white/5 border flex items-center justify-center p-2 transition-all hover:scale-110",
+                              badge.isPinned ? "border-neon-blue shadow-[0_0_10px_rgba(0,229,255,0.2)]" : "border-white/5"
+                            )}
+                          >
+                            <img src={badge.iconUrl} alt={badge.name} className="h-full w-full object-contain" />
+                          </div>
+                        ))}
+                        {(!profileData?.badges || profileData.badges.length === 0) && (
+                          <p className="text-[10px] text-gray-600 italic">هنوز نشانی کسب نکرده‌اید</p>
+                        )}
+                      </div>
+                      <p className="text-[9px] text-gray-600 italic mt-2">* نشان‌های دور آبی در مینی‌پروفایل شما نمایش داده می‌شوند.</p>
                    </div>
                 </div>
               </NeonCard>
