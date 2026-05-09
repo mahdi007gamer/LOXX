@@ -154,7 +154,14 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }
     });
 
-    lobbySocket.on("lobby.member_left", (data: { userId: string, membersCount: number }) => {
+    lobbySocket.on("lobby.member_left", (data: { userId: string, membersCount: number, reason?: string }) => {
+      if (data.userId === userRef.current?.id && (data.reason === "kicked" || data.reason === "banned")) {
+        setLobby(null);
+        toast.error(data.reason === "kicked" ? "از لابی اخراج شدید" : "شما از این لابی مسدود شدید", { id: 'kick-ban' });
+        window.location.href = "/lobbies";
+        return;
+      }
+      
       setLobby(prev => {
         if (!prev) return null;
         return {

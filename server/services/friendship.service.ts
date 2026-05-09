@@ -216,6 +216,28 @@ export class FriendshipService {
     });
   }
 
+  static async getFriendActivities(userId: string) {
+    const friendships = await prisma.friendship.findMany({
+      where: {
+        OR: [
+          { requesterId: userId, status: "ACCEPTED" },
+          { targetId: userId, status: "ACCEPTED" }
+        ]
+      }
+    });
+
+    const friendIds = friendships.map(f => f.requesterId === userId ? f.targetId : f.requesterId);
+
+    const activities = await prisma.activity.findMany({
+      where: { userId: { in: friendIds } },
+      include: { user: { select: { id: true, username: true, profile: true } } },
+      orderBy: { createdAt: 'desc' },
+      take: 20
+    });
+
+    return activities;
+  }
+
   static async removeFriend(userId: string, targetId: string) {
     return prisma.friendship.deleteMany({
       where: {

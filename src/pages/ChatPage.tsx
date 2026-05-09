@@ -391,6 +391,12 @@ const ChannelButton: React.FC<ChannelButtonProps> = ({ channel, active, onClick,
           <img src={channel.icon} alt="" className="h-5 w-5 rounded-md object-cover grayscale group-hover:grayscale-0 transition-all opacity-60 group-hover:opacity-100" />
           <div className={cn("absolute -bottom-0.5 -left-0.5 h-2 w-2 rounded-full border-2 border-black", active ? "bg-neon-blue" : "bg-gray-700")}></div>
         </div>
+      ) : channel.type === "elite" ? (
+         (channel as any).avatarUrl ? (
+           <img src={(channel as any).avatarUrl} alt="" className="h-5 w-5 rounded-full object-cover" />
+         ) : (
+           <Crown size={16} className={active ? "text-yellow-400" : "text-gray-500"} />
+         )
       ) : (
         <Hash size={18} className={active ? "text-neon-blue" : "text-gray-600 group-hover:text-gray-400"} />
       )}
@@ -562,6 +568,7 @@ export const ChatPage: React.FC = () => {
   const [activeChannelId, setActiveChannelId] = useState("general");
   const [messages, setMessages] = useState<Record<string, ChatMessage[]>>({});
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
+  const [channelUsers, setChannelUsers] = useState<Record<string, number>>({});
   const [memberCount, setMemberCount] = useState(0);
   const [gameMembers, setGameMembers] = useState<any[]>([]);
   const [typers, setTypers] = useState<Record<string, Record<string, string>>>({});
@@ -583,9 +590,9 @@ export const ChatPage: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const allowedTypes = ['image/jpeg', 'image/png'];
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
     if (!allowedTypes.includes(file.type)) {
-      toast.error("فقط فایل‌های JPG و PNG مجاز هستند");
+      toast.error("فقط فایل‌های JPG، PNG، GIF و WEBP مجاز هستند");
       return;
     }
 
@@ -744,8 +751,9 @@ export const ChatPage: React.FC = () => {
         if (res.data.messages) {
           setMessages(prev => ({ ...prev, [activeChannelId]: res.data.messages.map((m: any) => formatIncomingMessage(m, user?.id)) }));
         }
-        if (res.data.memberCount) {
+        if (res.data.memberCount !== undefined) {
           setMemberCount(res.data.memberCount);
+          setChannelUsers(prev => ({ ...prev, [activeChannelId]: res.data.memberCount }));
         }
         setUnreadCounts(prev => ({ ...prev, [activeChannelId]: 0 }));
       }
@@ -948,14 +956,15 @@ export const ChatPage: React.FC = () => {
         api.get(`/games/${gameId}`).then(res => {
           if (res.data.status === "success") {
             setMemberCount(res.data.data.memberCount);
+            setChannelUsers(prev => ({ ...prev, [activeChannel.id]: res.data.data.memberCount }));
             setGameMembers(res.data.data.members || []);
           }
         }).catch(() => {
-          setMemberCount(activeChannel.users);
+          setMemberCount(channelUsers[activeChannel.id] ?? activeChannel.users);
           setGameMembers([]);
         });
       } else {
-        setMemberCount(activeChannel.users);
+        setMemberCount(channelUsers[activeChannel.id] ?? activeChannel.users);
         setGameMembers([]);
       }
     }
@@ -1204,7 +1213,7 @@ export const ChatPage: React.FC = () => {
                     <div className="h-12 w-12 rounded-xl bg-white/5 border border-white/10 overflow-hidden flex items-center justify-center shrink-0">
                       {eliteSettingsData.avatarUrl ? <img src={eliteSettingsData.avatarUrl} alt="" className="h-full w-full object-cover" /> : <Users size={20} className="text-gray-500" />}
                     </div>
-                    <input type="file" accept="image/png, image/jpeg" onChange={handleGroupAvatarUpload} className="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-neon-blue/10 file:text-neon-blue hover:file:bg-neon-blue/20 cursor-pointer" />
+                    <input type="file" accept="image/png, image/jpeg, image/gif, image/webp" onChange={handleGroupAvatarUpload} className="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-neon-blue/10 file:text-neon-blue hover:file:bg-neon-blue/20 cursor-pointer" />
                   </div>
                 </div>
                 
@@ -1502,7 +1511,7 @@ export const ChatPage: React.FC = () => {
               {INITIAL_CHANNELS.map((channel) => (
                 <ChannelButton 
                   key={channel.id}
-                  channel={channel}
+                  channel={{ ...channel, users: channelUsers[channel.id] ?? channel.users }}
                   active={activeChannelId === channel.id}
                   unreadCount={unreadCounts[channel.id]}
                   onClick={() => setActiveChannelId(channel.id)}
@@ -1523,7 +1532,7 @@ export const ChatPage: React.FC = () => {
                 {eliteGroups.map((channel) => (
                   <ChannelButton 
                     key={channel.id}
-                    channel={channel}
+                    channel={{ ...channel, users: channelUsers[channel.id] ?? channel.users }}
                     active={activeChannelId === channel.id}
                     unreadCount={unreadCounts[channel.id]}
                     onClick={() => setActiveChannelId(channel.id)}
@@ -1545,7 +1554,7 @@ export const ChatPage: React.FC = () => {
                 {myGamesChannels.map((channel) => (
                   <ChannelButton 
                     key={channel.id}
-                    channel={channel}
+                    channel={{ ...channel, users: channelUsers[channel.id] ?? channel.users }}
                     active={activeChannelId === channel.id}
                     unreadCount={unreadCounts[channel.id]}
                     onClick={() => setActiveChannelId(channel.id)}
@@ -1712,7 +1721,11 @@ export const ChatPage: React.FC = () => {
                    <span className="text-lg">{activeChannel.icon || "👤"}</span>
                 )
               ) : activeChannel.type === 'elite' ? (
-                 <Crown size={20} className="text-yellow-400" />
+                 (activeChannel as any).avatarUrl ? (
+                   <img src={(activeChannel as any).avatarUrl} alt="" className="h-full w-full object-cover" />
+                 ) : (
+                   <Crown size={20} className="text-yellow-400" />
+                 )
               ) : (
                 <Hash size={16} />
               )}
@@ -1884,7 +1897,7 @@ export const ChatPage: React.FC = () => {
                       {INITIAL_CHANNELS.map((channel) => (
                         <ChannelButton 
                           key={channel.id}
-                          channel={channel}
+                          channel={{ ...channel, users: channelUsers[channel.id] ?? channel.users }}
                           active={activeChannelId === channel.id}
                           unreadCount={unreadCounts[channel.id]}
                           onClick={() => {
@@ -1904,7 +1917,7 @@ export const ChatPage: React.FC = () => {
                         {eliteGroups.map((channel) => (
                           <ChannelButton 
                             key={channel.id}
-                            channel={channel}
+                            channel={{ ...channel, users: channelUsers[channel.id] ?? channel.users }}
                             active={activeChannelId === channel.id}
                             unreadCount={unreadCounts[channel.id]}
                             onClick={() => {
@@ -1925,7 +1938,7 @@ export const ChatPage: React.FC = () => {
                         {myGamesChannels.map((channel) => (
                           <ChannelButton 
                             key={channel.id}
-                            channel={channel}
+                            channel={{ ...channel, users: channelUsers[channel.id] ?? channel.users }}
                             active={activeChannelId === channel.id}
                             unreadCount={unreadCounts[channel.id]}
                             onClick={() => {

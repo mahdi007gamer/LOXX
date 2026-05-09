@@ -439,6 +439,64 @@ export function setupWebSockets(io: Server) {
       }
     });
 
+    socket.on("lobby.kick", async (data: { lobbyId: string, targetUserId: string }, ack) => {
+      const { lobbyId, targetUserId } = data;
+      try {
+        const lobby = await prisma.lobby.findUnique({ where: { id: lobbyId } });
+        if (lobby?.hostId !== userId) {
+          if (ack) ack({ status: "error", error: { message: "Only host can kick" } });
+          return;
+        }
+        await prisma.lobbyMember.delete({
+          where: { lobbyId_userId: { lobbyId, userId: targetUserId } }
+        });
+        
+        lobbyNs.to(`lobby:${lobbyId}`).emit("lobby.member_left", { userId: targetUserId, reason: "kicked" });
+        
+        // Disconnect the target user from the room
+        const targetConnections = userConnections.get(targetUserId);
+        if (targetConnections) {
+          targetConnections.forEach(socketId => {
+            const s = lobbyNs.sockets.get(socketId);
+            if (s) s.leave(`lobby:${lobbyId}`);
+          });
+        }
+        emitLobbyUpdate();
+        if (ack) ack({ status: "ok" });
+      } catch (err) {
+        if (ack) ack({ status: "error", error: { message: "Failed to kick player" } });
+      }
+    });
+
+    socket.on("lobby.ban", async (data: { lobbyId: string, targetUserId: string }, ack) => {
+      const { lobbyId, targetUserId } = data;
+      try {
+        const lobby = await prisma.lobby.findUnique({ where: { id: lobbyId } });
+        if (lobby?.hostId !== userId) {
+          if (ack) ack({ status: "error", error: { message: "Only host can ban" } });
+          return;
+        }
+        await prisma.lobbyMember.delete({
+          where: { lobbyId_userId: { lobbyId, userId: targetUserId } }
+        });
+        
+        lobbyNs.to(`lobby:${lobbyId}`).emit("lobby.member_left", { userId: targetUserId, reason: "banned" });
+        
+        // Disconnect the target user
+        const targetConnections = userConnections.get(targetUserId);
+        if (targetConnections) {
+          targetConnections.forEach(socketId => {
+            const s = lobbyNs.sockets.get(socketId);
+            if (s) s.leave(`lobby:${lobbyId}`);
+          });
+        }
+        emitLobbyUpdate();
+        if (ack) ack({ status: "ok" });
+      } catch (err) {
+        if (ack) ack({ status: "error", error: { message: "Failed to ban player" } });
+      }
+    });
+
     socket.on("lobby.start", async (data: { lobbyId: string }) => {
       const { lobbyId } = data;
       try {

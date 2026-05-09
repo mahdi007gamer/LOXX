@@ -30,8 +30,8 @@ export const NotificationCenter = () => {
   const fetchNotifications = async () => {
     try {
       const res = await api.get("/notifications");
-      setNotifications(res.data.notifications || []);
-      setUnreadCount(res.data.notifications?.filter((n: any) => !n.isRead).length || 0);
+      setNotifications(res.data.data?.items || []);
+      setUnreadCount(res.data.data?.items?.filter((n: any) => !n.isRead).length || 0);
     } catch (e) {
       console.error(e);
     }
@@ -40,7 +40,23 @@ export const NotificationCenter = () => {
   useEffect(() => {
     fetchNotifications();
     const interval = setInterval(fetchNotifications, 30 * 1000);
-    return () => clearInterval(interval);
+
+    const handleNewNotification = (data: any) => {
+      // Refresh notifications when a new one comes in to keep it perfectly synced
+      // Or we could optimistically update
+      fetchNotifications();
+    };
+
+    import("../../lib/socket").then(({ notifySocket }) => {
+      notifySocket.on("notification", handleNewNotification);
+    });
+
+    return () => {
+      clearInterval(interval);
+      import("../../lib/socket").then(({ notifySocket }) => {
+        notifySocket.off("notification", handleNewNotification);
+      });
+    };
   }, []);
 
   const markAsRead = async (id?: string) => {

@@ -38,6 +38,7 @@ model User {
   ownedChannels   Channel[]    @relation("OwnedChannels")
   channelMemberships ChannelMember[]
   settings        UserSettings?
+  activities      Activity[]
   invitesSent     Referral[]   @relation("Inviter")
   invitationReceived Referral?   @relation("Invitee")
   paymentRequests PaymentRequest[]
@@ -275,4 +276,15 @@ model AuditLog {
   ipAddress       String?
   metadata        String?
   createdAt       DateTime @default(now())
+}
+
+model Activity {
+  id              String   @id @default(uuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type            String   // e.g. LOBBY_JOIN, LEVEL_UP
+  data            String?  // JSON
+  createdAt       DateTime @default(now())
+
+  @@index([userId, createdAt])
 }

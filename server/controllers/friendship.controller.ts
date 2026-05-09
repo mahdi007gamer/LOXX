@@ -104,6 +104,15 @@ export class FriendshipController {
     }
   }
 
+  static async getFriendActivities(req: AuthenticatedRequest, res: Response) {
+    try {
+      const activities = await FriendshipService.getFriendActivities(req.user!.userId);
+      res.json({ status: "success", data: activities });
+    } catch (error: any) {
+      res.status(500).json({ status: "error", error: { code: "INTERNAL_ERROR", message: error.message } });
+    }
+  }
+
   static async removeFriend(req: AuthenticatedRequest, res: Response) {
     try {
       await FriendshipService.removeFriend(req.user!.userId, req.params.id);

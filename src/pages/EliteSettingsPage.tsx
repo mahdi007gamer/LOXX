@@ -119,9 +119,9 @@ export const EliteSettingsPage = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const allowedTypes = ['image/jpeg', 'image/png'];
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
     if (!allowedTypes.includes(file.type)) {
-      toast.error("فقط فایل‌های JPG و PNG مجاز هستند");
+      toast.error("فقط فایل‌های JPG، PNG، GIF و WEBP مجاز هستند");
       return;
     }
 
@@ -320,8 +320,8 @@ export const EliteSettingsPage = () => {
   return (
     <div className="flex min-h-[calc(100vh-64px)] pb-20 md:pb-0">
       <Sidebar />
-      <input type="file" ref={avatarInputRef} className="hidden" accept="image/png, image/jpeg" onChange={(e) => handleFileUpload(e, 'avatar')} />
-      <input type="file" ref={bannerInputRef} className="hidden" accept="image/png, image/jpeg" onChange={(e) => handleFileUpload(e, 'banner')} />
+      <input type="file" ref={avatarInputRef} className="hidden" accept="image/png, image/jpeg, image/gif, image/webp" onChange={(e) => handleFileUpload(e, 'avatar')} />
+      <input type="file" ref={bannerInputRef} className="hidden" accept="image/png, image/jpeg, image/gif, image/webp" onChange={(e) => handleFileUpload(e, 'banner')} />
       
       <main className="flex-1 px-4 py-8 md:mr-64 lg:px-8">
         <div className="container mx-auto max-w-6xl">
@@ -394,7 +394,7 @@ export const EliteSettingsPage = () => {
                   </div>
 
                   <div className="space-y-4">
-                    <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest italic">بنر پروفایل (JPG, PNG)</label>
+                    <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest italic">بنر پروفایل (JPG, PNG, GIF, WEBP)</label>
                     <div className="relative group">
                        <div className="h-40 w-full rounded-2xl bg-white/5 border border-white/10 overflow-hidden flex items-center justify-center group-hover:border-yellow-400/50 transition-colors">
                           {bannerUrl ? (

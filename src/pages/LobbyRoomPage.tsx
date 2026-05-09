@@ -1292,10 +1292,10 @@ const PlayerCard = ({
                   }}
                 >
                   <div className="relative z-10 h-full w-full flex items-center justify-center overflow-hidden rounded-[18px] md:rounded-[28px]">
-                    {(player.avatar || (player as any).avatarUrl) && ((player.avatar || (player as any).avatarUrl).length > 5 || (player.avatar || (player as any).avatarUrl).startsWith("/") || (player.avatar || (player as any).avatarUrl).includes(".")) ? (
-                      <img src={player.avatar || (player as any).avatarUrl} alt={player.name} className="w-full h-full object-cover" />
+                    {(player as any).avatarUrl && ((player as any).avatarUrl.length > 5 || (player as any).avatarUrl.startsWith("/") || (player as any).avatarUrl.includes(".")) ? (
+                      <img src={(player as any).avatarUrl} alt={player.name} className="w-full h-full object-cover" />
                     ) : (
-                      <span className="text-xl md:text-3xl">{player.avatar || (player as any).avatarUrl || "👤"}</span>
+                      <span className="text-xl md:text-3xl">{player.avatar || "👤"}</span>
                     )}
                   </div>
                   <div className="absolute inset-0 bg-gradient-to-tr from-black/20 to-transparent rounded-[18px] md:rounded-[28px]" />

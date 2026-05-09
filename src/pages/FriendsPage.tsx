@@ -293,6 +293,41 @@ export const FriendsPage = () => {
 
   const getScore = (f: any) => f.membership === 'VIP' ? 2 : f.membership === 'PLUS' ? 1 : 0;
 
+  const [activities, setActivities] = useState<any[]>([]);
+
+  // Format activity action helper
+  const getActivityText = (act: any) => {
+    switch (act.type) {
+      case 'LEVEL_UP':
+        const levelData = act.data ? JSON.parse(act.data) : { level: 'جدید' };
+        return `سطح خود را به ${levelData.level} ارتقا داد`;
+      case 'LOBBY_JOIN':
+        const lobbyData = act.data ? JSON.parse(act.data) : { title: 'یک لابی' };
+        return `به لابی ${lobbyData.title} پیوست`;
+      case 'NEW_FRIEND':
+        return `دوست جدید پیدا کرد`;
+      default:
+        return 'فعالیتی انجام داد';
+    }
+  };
+
+  useEffect(() => {
+    api.get("/friendships/activities").then(res => {
+      if (res.data.status === "success") {
+        setActivities(res.data.data);
+      }
+    });
+
+    const handleFriendActivity = (data: any) => {
+      setActivities(prev => [data, ...prev].slice(0, 20));
+    };
+
+    notifySocket.on("friends.activity", handleFriendActivity);
+    return () => {
+      notifySocket.off("friends.activity", handleFriendActivity);
+    };
+  }, []);
+
   const filteredFriends = useMemo(() => {
     return friends.filter(f => 
       f.username.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -454,12 +489,12 @@ export const FriendsPage = () => {
                       <div className="flex items-center gap-3 mt-2">
                          <div className="flex flex-col">
                            <span className="text-[8px] md:text-[10px] text-gray-600 uppercase font-bold">سطح</span>
-                           <span className="text-xs md:text-sm font-black text-neon-purple">{user?.ranking?.level || 1}</span>
+                           <span className="text-xs md:text-sm font-black text-neon-purple">{(user as any)?.level || 1}</span>
                          </div>
                          <div className="w-px h-6 bg-white/5" />
                          <div className="flex flex-col">
                            <span className="text-[8px] md:text-[10px] text-gray-600 uppercase font-bold">امتیاز</span>
-                           <span className="text-xs md:text-sm font-black text-neon-blue">{user?.ranking?.rp || 0}</span>
+                           <span className="text-xs md:text-sm font-black text-neon-blue">{(user as any)?.xp || 0}</span>
                          </div>
                       </div>
                     </div>
@@ -559,18 +594,17 @@ export const FriendsPage = () => {
                <div className="space-y-4">
                   <h3 className="text-lg font-bold text-white">فعالیت‌های اخیر</h3>
                   <div className="space-y-3">
-                    {[
-                      { user: "Ali_Gamer", action: "به لابی CS2 پیوست", time: "۲ دقیقه پیش" },
-                      { user: "Sina_King", action: "سطح خود را به ۲۴ ارتقا داد", time: "۱ ساعت پیش" },
-                    ].map((act, i) => (
-                      <div key={i} className="flex gap-3 text-xs border-r-2 border-neon-blue/30 pr-3">
+                    {activities.length > 0 ? activities.map((act) => (
+                      <div key={act.id} className="flex gap-3 text-xs border-r-2 border-neon-blue/30 pr-3">
                         <div className="flex-1">
-                          <span className="font-bold text-white">{act.user}</span>
-                          <span className="text-gray-400 mx-1">{act.action}</span>
-                          <p className="text-[9px] text-gray-600">{act.time}</p>
+                          <span className="font-bold text-white">{act.user?.username || act.user?.profile?.displayName || "ناشناس"}</span>
+                          <span className="text-gray-400 mx-1">{getActivityText(act)}</span>
+                          <p className="text-[9px] text-gray-600">{new Date(act.createdAt).toLocaleTimeString('fa-IR')} - {new Date(act.createdAt).toLocaleDateString('fa-IR')}</p>
                         </div>
                       </div>
-                    ))}
+                    )) : (
+                      <div className="text-xs text-gray-500 py-4">فعالیتی وجود ندارد</div>
+                    )}
                   </div>
                </div>
             </div>
