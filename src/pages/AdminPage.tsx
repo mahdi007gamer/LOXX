@@ -15,6 +15,7 @@ import { GenreAdminModal } from "../components/modals/GenreAdminModal";
 import { UserEditModal } from "../components/modals/UserEditModal";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
+import { SmartImage } from "../components/ui/SmartImage";
 
 export const AdminPage = () => {
   const [activeTab, setActiveTab] = useState<"users" | "games" | "payments" | "genres">("users");
@@ -205,7 +206,12 @@ export const AdminPage = () => {
                    >
                      <div className="flex items-center gap-4 mb-6">
                         <div className="h-16 w-16 rounded-2xl overflow-hidden border border-white/10 shrink-0 bg-gray-900">
-                           <img src={user.profile?.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`} className="h-full w-full object-cover" alt="avatar" />
+                           <SmartImage 
+                              src={user.profile?.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`} 
+                              isVipEnabled={user.profile?.membershipType !== "NONE"}
+                              className="h-full w-full object-cover" 
+                              alt="avatar" 
+                            />
                         </div>
                         <div className="flex-1 min-w-0">
                            <h3 className="text-white font-black italic truncate">{user.username}</h3>

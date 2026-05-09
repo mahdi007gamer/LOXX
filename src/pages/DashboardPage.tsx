@@ -123,7 +123,7 @@ export const DashboardPage = () => {
                        <div className="text-right">
                           <h3 className="text-lg md:text-xl font-black text-white italic uppercase tracking-tighter mb-1">LOXX PLUS</h3>
                           <p className="text-[10px] text-gray-400 font-bold italic uppercase tracking-widest">نشان اختصاصی و استیکرهای متحرک</p>
-                          <div className="mt-2 text-[8px] text-neon-blue font-black uppercase tracking-[0.2em] animate-pulse">فشار بده و ارتقا بدب</div>
+                          <div className="mt-2 text-[8px] text-neon-blue font-black uppercase tracking-[0.2em] animate-pulse">کلیک کنید و ارتقا دهید</div>
                        </div>
                     </div>
                     {/* VIP PROMO */}

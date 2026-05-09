@@ -484,7 +484,7 @@ export const PremiumPage = () => {
                                     toast.success("شماره کارت کپی شد");
                                   }}
                                 >
-                                   <Icons.Copy size={18} className="text-neon-blue group-hover/copy:scale-110 transition-transform" />
+                                   <Copy size={18} className="text-neon-blue group-hover/copy:scale-110 transition-transform" />
                                    <span className="text-white font-mono font-black tracking-[0.15em] text-sm md:text-base">6063-7311-8109-6737</span>
                                 </div>
                              </div>
