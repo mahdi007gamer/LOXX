@@ -27,6 +27,7 @@ import {
   ChevronRight,
   Zap,
   Flame,
+  User,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
@@ -110,46 +111,38 @@ export const DashboardPage = () => {
               className="mb-10 cursor-pointer group relative"
               onClick={() => navigate("/premium")}
             >
-              <div className="relative min-h-[140px] md:h-36 w-full rounded-[48px] overflow-hidden bg-gradient-to-r from-[#0d0d12] via-[#1a0b3a] to-[#0d0d12] border border-white/10 group-hover:border-neon-purple/50 transition-all duration-500 shadow-[0_40px_100px_-20px_rgba(168,85,247,0.2)]">
+              <div className="relative min-h-[160px] md:h-40 w-full rounded-[48px] overflow-hidden bg-[#0d0d12] border border-white/10 group-hover:border-neon-purple/50 transition-all duration-700 shadow-[0_40px_100px_-20px_rgba(168,85,247,0.2)]">
                  <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10" />
                  
-                 <div className="absolute inset-0 flex flex-col md:flex-row items-center justify-between px-10 md:px-16 py-6 md:py-0 gap-6">
-                   <div className="flex flex-col md:flex-row items-center gap-6 text-center md:text-right">
-                      <div className="relative">
-                        <div className="h-16 w-16 rounded-[24px] bg-neon-purple/20 flex items-center justify-center text-neon-purple border border-neon-purple/30 group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
-                           <Crown size={36} />
-                        </div>
-                        <div className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-neon-blue flex items-center justify-center text-[10px] font-black italic border-2 border-[#1a0b3a] shadow-lg animate-bounce">
-                           !
-                        </div>
-                      </div>
-                      <div>
-                         <h2 className="text-2xl md:text-3xl font-black text-white italic uppercase tracking-tighter leading-none mb-2">تجربه لوکس واقعی را باز کنید</h2>
-                         <div className="flex flex-wrap items-center justify-center md:justify-start gap-4">
-                            <span className="flex items-center gap-1.5 text-[9px] md:text-[10px] text-gray-300 font-black uppercase tracking-widest italic bg-white/5 px-2 py-1 rounded-lg">
-                               <Zap size={10} className="text-neon-blue" /> اشتراک PLUS: محدودیت کمتر
-                            </span>
-                            <span className="flex items-center gap-1.5 text-[9px] md:text-[10px] text-yellow-400 font-black uppercase tracking-widest italic bg-yellow-400/10 px-2 py-1 rounded-lg border border-yellow-400/20">
-                               <Crown size={10} /> اشتراک VIP: امکانات نامحدود
-                            </span>
-                         </div>
-                      </div>
-                   </div>
-                   
-                   <div className="flex items-center gap-6">
-                      <div className="hidden lg:block text-right">
-                         <p className="text-[9px] text-gray-500 font-black uppercase tracking-widest italic mb-1">همین حالا شروع کنید</p>
-                         <p className="text-xl font-black text-white italic tracking-tighter">ارتقای سطح گیمینگ</p>
-                      </div>
-                      <GlowButton variant="purple" className="h-14 px-10 !rounded-2xl font-black italic text-xs uppercase group-hover:scale-105 transition-transform">
-                         مشاهده پلن‌ها
-                      </GlowButton>
-                   </div>
+                 <div className="absolute inset-0 flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x md:divide-x-reverse divide-white/5 rtl:divide-x-reverse">
+                    {/* PLUS PROMO */}
+                    <div className="flex-1 p-6 md:p-8 flex items-center gap-6 group/plus bg-gradient-to-br from-neon-blue/5 to-transparent hover:from-neon-blue/10 transition-all duration-500">
+                       <div className="h-16 w-16 rounded-[24px] bg-neon-blue/10 flex items-center justify-center text-neon-blue border border-neon-blue/20 group-hover/plus:scale-110 group-hover/plus:rotate-6 transition-all duration-500">
+                          <Zap size={32} />
+                       </div>
+                       <div className="text-right">
+                          <h3 className="text-lg md:text-xl font-black text-white italic uppercase tracking-tighter mb-1">LOXX PLUS</h3>
+                          <p className="text-[10px] text-gray-400 font-bold italic uppercase tracking-widest">نشان اختصاصی و استیکرهای متحرک</p>
+                          <div className="mt-2 text-[8px] text-neon-blue font-black uppercase tracking-[0.2em] animate-pulse">فشار بده و ارتقا بدب</div>
+                       </div>
+                    </div>
+                    {/* VIP PROMO */}
+                    <div className="flex-1 p-6 md:p-8 flex items-center gap-6 group/vip bg-gradient-to-bl from-yellow-400/5 to-transparent hover:from-yellow-400/10 transition-all duration-500">
+                       <div className="h-16 w-16 rounded-[24px] bg-yellow-400/10 flex items-center justify-center text-yellow-400 border border-yellow-400/20 group-hover/vip:scale-110 group-hover/vip:-rotate-6 transition-all duration-500">
+                          <Crown size={32} />
+                       </div>
+                       <div className="text-right">
+                          <h3 className="text-lg md:text-xl font-black text-white italic uppercase tracking-tighter mb-1">LOXX VIP</h3>
+                          <p className="text-[10px] text-gray-400 font-bold italic uppercase tracking-widest">پروفایل و بنر متحرک GIF + تم طلایی</p>
+                          <div className="mt-2 text-[8px] text-yellow-400 font-black uppercase tracking-[0.2em] animate-pulse">تجربه نخبگان گیمینگ</div>
+                       </div>
+                    </div>
                  </div>
 
-                 {/* Decorative Light Effects */}
-                 <div className="absolute top-0 right-0 h-full w-1/4 bg-gradient-to-l from-neon-purple/30 to-transparent blur-3xl opacity-50" />
-                 <div className="absolute bottom-0 left-0 h-full w-1/4 bg-gradient-to-r from-neon-blue/20 to-transparent blur-3xl opacity-50" />
+                 {/* Center Badge */}
+                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 hidden md:flex h-12 w-12 rounded-full bg-[#0d0d12] border border-white/20 items-center justify-center text-white z-20 shadow-2xl">
+                    <Star size={20} className="text-neon-purple animate-spin-slow" />
+                 </div>
               </div>
             </motion.div>
           )}
@@ -214,59 +207,70 @@ export const DashboardPage = () => {
                 className="col-span-full mt-2"
               >
                 <div className={cn(
-                  "p-8 rounded-[40px] border transition-all duration-700 relative overflow-hidden group",
+                  "p-8 rounded-[48px] border transition-all duration-700 relative overflow-hidden group",
                   currentMembership === "VIP" 
-                    ? "bg-gradient-to-br from-[#12051a] to-[#2a0b45] border-yellow-400/30 shadow-[0_0_30px_rgba(250,204,21,0.1)]" 
+                    ? "bg-[#0d0d12] border-yellow-400/20 shadow-[0_40px_100px_-20px_rgba(250,204,21,0.15)]" 
                     : currentMembership === "PLUS"
-                    ? "bg-gradient-to-br from-[#0a101f] to-[#0c2a4d] border-neon-blue/30 shadow-[0_0_30px_rgba(0,229,255,0.1)]"
-                    : "bg-[#101018] border-white/5"
+                    ? "bg-[#0d0d12] border-neon-blue/20 shadow-[0_40px_100px_-20px_rgba(0,229,255,0.15)]"
+                    : "bg-[#0d0d12] border-white/5"
                 )}>
+                   {/* Background Effects */}
+                   {currentMembership === "VIP" && (
+                     <div className="absolute inset-0 bg-gradient-to-br from-yellow-400/5 via-transparent to-transparent opacity-50" />
+                   )}
+                   {currentMembership === "PLUS" && (
+                     <div className="absolute inset-0 bg-gradient-to-br from-neon-blue/5 via-transparent to-transparent opacity-50" />
+                   )}
+                   
                    <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
                       <div className="flex items-center gap-6 text-center md:text-right">
                          <div className={cn(
-                           "h-20 w-20 rounded-3xl flex items-center justify-center border-2 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-6",
-                           currentMembership === "VIP" ? "bg-yellow-400/10 border-yellow-400/40 text-yellow-400 shadow-[0_0_20px_#facc1522]" :
-                           currentMembership === "PLUS" ? "bg-neon-blue/10 border-neon-blue/40 text-neon-blue shadow-[0_0_20px_#00e5ff22]" :
-                           "bg-white/5 border-white/10 text-gray-600"
+                           "h-24 w-24 rounded-[32px] flex items-center justify-center border-2 transition-all duration-700 group-hover:scale-110 group-hover:rotate-6",
+                           currentMembership === "VIP" ? "bg-yellow-400/10 border-yellow-400/40 text-yellow-400 shadow-[0_0_30px_rgba(250,204,21,0.3)]" :
+                           currentMembership === "PLUS" ? "bg-neon-blue/10 border-neon-blue/40 text-neon-blue shadow-[0_0_30px_rgba(0,229,255,0.3)]" :
+                           "bg-white/5 border-white/10 text-gray-700"
                          )}>
-                            {currentMembership === "VIP" ? <Crown size={44} /> : currentMembership === "PLUS" ? <Zap size={44} /> : <User size={44} />}
+                            {currentMembership === "VIP" ? <Crown size={54} /> : currentMembership === "PLUS" ? <Zap size={54} /> : <User size={54} />}
                          </div>
                          <div>
-                            <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest mb-1 italic">وضعیت اشتراک شما</p>
+                            <p className="text-[10px] text-gray-500 font-black uppercase tracking-[0.2em] mb-1 italic">اطلاعات سطح کاربری</p>
                             <h2 className={cn(
-                              "text-3xl font-black italic tracking-tighter uppercase",
-                              currentMembership === "VIP" ? "text-yellow-400" :
-                              currentMembership === "PLUS" ? "text-neon-blue" :
+                              "text-4xl font-black italic tracking-tighter uppercase leading-none",
+                              currentMembership === "VIP" ? "text-yellow-400 text-shadow-glow" :
+                              currentMembership === "PLUS" ? "text-neon-blue text-shadow-glow" :
                               "text-white"
                             )}>
-                               {currentMembership === "VIP" ? "کاربر ویژه (VIP)" : currentMembership === "PLUS" ? "کاربر پلاس (PLUS)" : "طرح عادی"}
+                               {currentMembership === "VIP" ? "LOXX ELITE (VIP)" : currentMembership === "PLUS" ? "LOXX PLUS" : "طرح عادی (FREE)"}
                             </h2>
-                            <p className="text-[10px] text-gray-400 font-bold italic mt-1">
-                               {currentMembership === "NONE" 
-                                 ? "برای دسترسی به امکانات ویژه، اشتراک خود را ارتقا دهید" 
-                                 : "شما در حال حاضر از تمامی مزایای سطح خود بهره‌مند هستید"}
+                            <p className="text-[11px] text-gray-400 font-bold italic mt-2">
+                               {currentMembership === "VIP" ? "شما دسترسی کامل به تمامی امکانات نخبگان لوکس دارید" : 
+                                currentMembership === "PLUS" ? "شما از امکانات ارتقا یافته پلاس بهره‌مند هستید" :
+                                "برای باز کردن پتانسیل کامل خود، اشتراک خود را ارتقا دهید"}
                             </p>
                          </div>
                       </div>
 
                       {currentMembership !== "NONE" && (
-                         <div className="flex items-center gap-8 bg-black/20 p-6 rounded-[32px] border border-white/5">
+                         <div className="flex items-center gap-10 bg-white/[0.02] backdrop-blur-md p-8 rounded-[40px] border border-white/5 min-w-[280px]">
                             <div className="text-center">
-                               <p className="text-[8px] text-gray-500 font-black uppercase tracking-[0.2em] mb-1 italic">روزهای باقیمانده</p>
-                               <p className={cn(
-                                 "text-4xl font-black italic tracking-tighter leading-none",
-                                 daysLeft < 5 ? "text-red-500 animate-pulse" : "text-white"
-                               )}>{daysLeft}</p>
+                               <p className="text-[10px] text-gray-500 font-black uppercase tracking-[0.2em] mb-2 italic">اعتبار باقیمانده</p>
+                               <div className="flex items-baseline justify-center gap-1">
+                                  <p className={cn(
+                                    "text-5xl font-black italic tracking-tighter leading-none",
+                                    daysLeft < 5 ? "text-red-500 animate-pulse" : "text-white"
+                                  )}>{daysLeft}</p>
+                                  <span className="text-gray-500 font-black text-xs italic">روز</span>
+                                </div>
                             </div>
-                            <div className="h-12 w-px bg-white/10" />
-                            <div className="min-w-[120px]">
+                            <div className="h-16 w-px bg-white/10" />
+                            <div className="flex-1">
                                <GlowButton 
-                                 variant={currentMembership === "VIP" ? "gold" : "blue"} 
+                                 variant={currentMembership === "VIP" ? "blue" : "purple"} 
                                  size="sm" 
-                                 className="h-11 w-full text-[10px] font-black uppercase italic"
+                                 className="h-12 w-full text-[10px] font-black uppercase italic !rounded-2xl"
                                  onClick={() => navigate("/premium")}
                                >
-                                  تمدید اشتراک
+                                  تمدید فوری
                                </GlowButton>
                             </div>
                          </div>
@@ -275,18 +279,19 @@ export const DashboardPage = () => {
                       {currentMembership === "NONE" && (
                          <GlowButton 
                             variant="purple" 
-                            className="h-14 px-12 text-xs font-black uppercase italic"
+                            className="h-16 px-16 text-sm font-black uppercase italic !rounded-[24px]"
                             onClick={() => navigate("/premium")}
                          >
-                            خرید اشتراک ویژه
+                            خرید اشتراک
                          </GlowButton>
                       )}
                    </div>
                    
-                   {/* Background Decorations */}
-                   {currentMembership !== "NONE" && (
-                     <div className="absolute top-0 right-0 h-full w-1/3 bg-gradient-to-l from-white/5 to-transparent skew-x-12 transform translate-x-20" />
-                   )}
+                   {/* Decorative corner light */}
+                   <div className={cn(
+                     "absolute -bottom-20 -right-20 h-40 w-40 rounded-full blur-[80px] opacity-30",
+                     currentMembership === "VIP" ? "bg-yellow-400" : currentMembership === "PLUS" ? "bg-neon-blue" : "bg-neon-purple"
+                   )} />
                 </div>
               </motion.div>
             </div>

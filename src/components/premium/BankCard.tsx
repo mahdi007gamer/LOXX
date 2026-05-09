@@ -12,10 +12,10 @@ export const BankCard: React.FC<BankCardProps> = ({ cardNumber, cardHolder }) =>
     <motion.div 
       initial={{ rotateY: -20, opacity: 0 }}
       animate={{ rotateY: 0, opacity: 1 }}
-      className="relative w-full aspect-[1.6/1] rounded-[32px] p-6 md:p-8 overflow-hidden group perspective-1000 shadow-2xl"
+      className="relative w-full aspect-[1.6/1] rounded-[40px] p-6 md:p-8 overflow-hidden group perspective-1000 shadow-2xl"
     >
       {/* Glass Background */}
-      <div className="absolute inset-0 bg-white/10 backdrop-blur-2xl border border-white/20 rounded-3xl" />
+      <div className="absolute inset-0 bg-white/10 backdrop-blur-2xl border border-white/20 rounded-[40px]" />
       
       {/* Decorative Glows */}
       <div className="absolute -top-20 -right-20 w-40 h-40 bg-neon-blue/20 rounded-full blur-[60px] animate-pulse" />
@@ -48,7 +48,7 @@ export const BankCard: React.FC<BankCardProps> = ({ cardNumber, cardHolder }) =>
           <div className="flex justify-between items-end">
             <div className="min-w-0 pr-4">
               <p className="text-[8px] font-black uppercase opacity-60 tracking-widest italic">Card Holder</p>
-              <p className="font-black italic text-xs md:text-base uppercase tracking-tight truncate">مهدی دلال زاده احمدی</p>
+              <p className="font-black italic text-xs md:text-base uppercase tracking-tight truncate">{cardHolder}</p>
             </div>
             <div className="h-10 w-10 md:h-12 md:w-12 bg-white/10 rounded-full flex items-center justify-center border border-white/20 shrink-0">
                <CreditCard size={20} className="text-white/60" />
