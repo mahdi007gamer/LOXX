@@ -6,6 +6,7 @@ import { BadgeType, MembershipType } from "../../types";
 import { cn } from "../../lib/utils";
 import { Award, Star, Zap, Crown, User, Shield, Sparkles, X, Trophy, MessageCircle, CheckCircle2 } from "lucide-react";
 import api from "../../lib/api";
+import { SmartImage } from "./SmartImage";
 
 export interface QuickProfileUser {
   senderName: string;
@@ -113,7 +114,14 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
         isPLUS ? "bg-gradient-to-br from-neon-blue via-blue-600 to-indigo-800" :
         "bg-gradient-to-l from-gray-800 to-gray-900")
       )}>
-         {bannerUrl && <img src={bannerUrl} alt="Banner" className="w-full h-full object-cover" />}
+         {bannerUrl && (
+           <SmartImage 
+             src={bannerUrl} 
+             isVipEnabled={isVIP || isPLUS} 
+             alt="Banner" 
+             className="w-full h-full object-cover" 
+           />
+         )}
          <div className="absolute inset-0 bg-black/40"></div>
          {isVIP && (
            <motion.div 
@@ -141,7 +149,12 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
              )}>
                   <div className="h-full w-full rounded-[34px] bg-[#0d0d12] flex items-center justify-center text-6xl overflow-hidden relative">
                   {(user.senderAvatar || user.avatarUrl) ? (
-                    <img src={user.senderAvatar || user.avatarUrl} alt={user.senderName} className="w-full h-full object-cover relative z-10" />
+                    <SmartImage 
+                       src={user.senderAvatar || user.avatarUrl} 
+                       isVipEnabled={isVIP || isPLUS} 
+                       alt={user.senderName} 
+                       className="w-full h-full object-cover relative z-10" 
+                    />
                   ) : (
                     <div className="h-full w-full flex items-center justify-center bg-white/5 text-gray-700">
                       <User size={64} />

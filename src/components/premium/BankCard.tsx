@@ -12,7 +12,7 @@ export const BankCard: React.FC<BankCardProps> = ({ cardNumber, cardHolder }) =>
     <motion.div 
       initial={{ rotateY: -20, opacity: 0 }}
       animate={{ rotateY: 0, opacity: 1 }}
-      className="relative w-full max-w-sm aspect-[1.6/1] rounded-3xl p-8 overflow-hidden group perspective-1000"
+      className="relative w-full aspect-[1.6/1] rounded-[32px] p-6 md:p-8 overflow-hidden group perspective-1000 shadow-2xl"
     >
       {/* Glass Background */}
       <div className="absolute inset-0 bg-white/10 backdrop-blur-2xl border border-white/20 rounded-3xl" />

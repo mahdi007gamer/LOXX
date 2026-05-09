@@ -7,6 +7,10 @@ export class UserService {
       where: { id: userId },
       include: {
         profile: true,
+        subscriptions: {
+          orderBy: { expiresAt: "desc" },
+          take: 1
+        },
         _count: {
           select: {
             hostedLobbies: true,
@@ -20,6 +24,21 @@ export class UserService {
 
     if (!user) return null;
 
+    // Check for expired subscription
+    let currentMembership = user.profile?.membershipType || "NONE";
+    let expiresAt = user.subscriptions[0]?.expiresAt || null;
+
+    if (currentMembership !== "NONE" && expiresAt) {
+      if (new Date(expiresAt) < new Date()) {
+        // Expired! Downgrade the profile
+        await prisma.profile.update({
+          where: { userId: user.id },
+          data: { membershipType: "NONE" }
+        });
+        currentMembership = "NONE";
+      }
+    }
+
     const friendsCount = (user._count.sentFriendReq || 0) + (user._count.recvFriendReq || 0);
     const lobbiesJoined = user._count.lobbyMembers || 0;
     const lobbiesCreated = user._count.hostedLobbies || 0;
@@ -27,11 +46,16 @@ export class UserService {
 
     return {
       ...user,
+      profile: {
+        ...user.profile,
+        membershipType: currentMembership
+      },
       stats: {
         friendsCount,
         lobbiesJoined,
         lobbiesCreated,
-        daysSinceJoin
+        daysSinceJoin,
+        membershipExpiresAt: expiresAt
       }
     };
   }
@@ -105,6 +129,10 @@ export class UserService {
       select: {
         createdAt: true,
         profile: true,
+        subscriptions: {
+          orderBy: { expiresAt: "desc" },
+          take: 1
+        },
         _count: {
           select: {
             sentFriendReq: { where: { status: "ACCEPTED" } },
@@ -118,15 +146,17 @@ export class UserService {
     });
 
     const friendsCount = (user?._count.sentFriendReq || 0) + (user?._count.recvFriendReq || 0);
+    const expiresAt = user?.subscriptions[0]?.expiresAt || null;
 
     return {
       joinedAt: user?.createdAt,
-      lobbiesCount: user?.profile?.totalLobbiesJoined || 0,
+      lobbiesCount: user?._count.lobbyMembers || 0,
       friendsCount,
       gamesCount: user?._count.userGames || 0,
       xp: user?.profile?.xp || 0,
       level: user?.profile?.level || 1,
-      unreadNotifications: user?._count.notifications || 0
+      unreadNotifications: user?._count.notifications || 0,
+      membershipExpiresAt: expiresAt
     };
   }
 

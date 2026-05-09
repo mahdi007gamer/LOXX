@@ -28,6 +28,7 @@ import {
 import { cn } from "../lib/utils";
 import { QuickProfilePopover } from "../components/ui/QuickProfilePopover";
 import { BadgeType, MembershipType } from "../types";
+import { SmartImage } from "../components/ui/SmartImage";
 
 export const ProfilePage = () => {
   const { user, setUser } = useAuth();
@@ -152,7 +153,12 @@ export const ProfilePage = () => {
             {/* Banner Area */}
             <div className="h-64 w-full relative group">
                {profileData?.bannerUrl ? (
-                 <img src={profileData.bannerUrl} alt="Banner" className="w-full h-full object-cover" />
+                 <SmartImage 
+                    src={profileData.bannerUrl} 
+                    isVipEnabled={isVip || isPlus} 
+                    alt="Banner" 
+                    className="w-full h-full object-cover" 
+                 />
                ) : (
                  <div className={cn(
                    "w-full h-full bg-gradient-to-br transition-all duration-700",
@@ -181,7 +187,12 @@ export const ProfilePage = () => {
                   )}>
                     <div className="h-full w-full rounded-[42px] bg-[#0d0d12] flex items-center justify-center overflow-hidden">
                       {profileData?.avatarUrl ? (
-                        <img src={profileData.avatarUrl} alt={profileData.username} className="h-full w-full object-cover" />
+                        <SmartImage 
+                           src={profileData.avatarUrl} 
+                           isVipEnabled={isVip || isPlus} 
+                           alt={profileData.username} 
+                           className="h-full w-full object-cover" 
+                        />
                       ) : (
                         <User size={64} className="text-gray-700" />
                       )}
@@ -250,25 +261,21 @@ export const ProfilePage = () => {
                   <span>آمار لوکس</span>
                 </h3>
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="rounded-[24px] bg-white/5 p-5 text-center group hover:border-neon-blue/30 border border-transparent transition-all">
-                    <p className="text-[9px] text-gray-600 font-black uppercase mb-1 tracking-widest">دوستان</p>
-                    <p className="text-2xl font-black text-white italic tracking-tighter">{profileData?.stats?.friendsCount || 0}</p>
+                  <div className="rounded-[24px] bg-white/5 p-5 text-center group hover:border-gray-500/30 border border-transparent transition-all">
+                    <p className="text-[9px] text-gray-500 font-black uppercase mb-1 tracking-widest">روز عضویت</p>
+                    <p className="text-2xl font-black text-white italic tracking-tighter">{profileData?.stats?.daysSinceJoin || 0}</p>
                   </div>
                   <div className="rounded-[24px] bg-white/5 p-5 text-center group hover:border-neon-pink/30 border border-transparent transition-all">
-                    <p className="text-[9px] text-gray-600 font-black uppercase mb-1 tracking-widest">لابی‌ها</p>
+                    <p className="text-[9px] text-gray-500 font-black uppercase mb-1 tracking-widest">لابی‌های شرکت کرده</p>
                     <p className="text-2xl font-black text-white italic tracking-tighter">{profileData?.stats?.lobbiesJoined || 0}</p>
                   </div>
+                  <div className="rounded-[24px] bg-white/5 p-5 text-center group hover:border-neon-blue/30 border border-transparent transition-all">
+                    <p className="text-[9px] text-gray-500 font-black uppercase mb-1 tracking-widest">تعداد دوستان</p>
+                    <p className="text-2xl font-black text-white italic tracking-tighter">{profileData?.stats?.friendsCount || 0}</p>
+                  </div>
                   <div className="rounded-[24px] bg-white/5 p-5 text-center group hover:border-neon-purple/30 border border-transparent transition-all">
-                    <p className="text-[9px] text-gray-600 font-black uppercase mb-1 tracking-widest">میزبانی</p>
+                    <p className="text-[9px] text-gray-500 font-black uppercase mb-1 tracking-widest">لابی‌های ساخته شده</p>
                     <p className="text-2xl font-black text-white italic tracking-tighter">{profileData?.stats?.lobbiesCreated || 0}</p>
-                  </div>
-                  <div className="rounded-[24px] bg-white/5 p-5 text-center group hover:border-yellow-400/30 border border-transparent transition-all">
-                    <p className="text-[9px] text-gray-600 font-black uppercase mb-1 tracking-widest">Level</p>
-                    <p className="text-2xl font-black text-white italic tracking-tighter">{profileData?.level || 1}</p> 
-                  </div>
-                  <div className="rounded-[24px] bg-white/5 p-5 text-center group hover:border-neon-green/30 border border-transparent transition-all">
-                    <p className="text-[9px] text-gray-600 font-black uppercase mb-1 tracking-widest">عضویت</p>
-                    <p className="text-2xl font-black text-white italic tracking-tighter">{profileData?.stats?.daysSinceJoin || 0} روز</p> 
                   </div>
                 </div>
               </NeonCard>
@@ -276,13 +283,19 @@ export const ProfilePage = () => {
               <NeonCard variant="purple" className="p-8">
                  <h3 className="flex items-center gap-3 font-black text-white italic uppercase tracking-tighter text-xl mb-6">
                   <Award size={20} className="text-neon-purple" />
-                  <span>نشان‌ها (Badges)</span>
+                  <span>سطح و افتخارات</span>
                 </h3>
-                <div className="flex flex-wrap gap-3">
-                   {/* Badge display */}
-                   <div className="h-10 w-10 rounded-xl bg-neon-blue/10 flex items-center justify-center text-neon-blue" title="Pro Player"><Award size={20} /></div>
-                   <div className="h-10 w-10 rounded-xl bg-yellow-400/10 flex items-center justify-center text-yellow-400" title="MVP"><Star size={20} /></div>
-                   <div className="h-10 w-10 rounded-xl bg-neon-pink/10 flex items-center justify-center text-neon-pink" title="Streamer"><Sparkles size={20} /></div>
+                <div className="space-y-4">
+                   <div className="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/5">
+                      <p className="text-[10px] text-gray-500 font-black uppercase italic">سطح کاربری (Level)</p>
+                      <p className="text-xl font-black text-neon-blue italic">Lv. {profileData?.level || 1}</p>
+                   </div>
+                   <div className="flex flex-wrap gap-3">
+                      {/* Badge display */}
+                      <div className="h-10 w-10 rounded-xl bg-neon-blue/10 flex items-center justify-center text-neon-blue" title="Pro Player"><Award size={20} /></div>
+                      <div className="h-10 w-10 rounded-xl bg-yellow-400/10 flex items-center justify-center text-yellow-400" title="MVP"><Star size={20} /></div>
+                      <div className="h-10 w-10 rounded-xl bg-neon-pink/10 flex items-center justify-center text-neon-pink" title="Streamer"><Sparkles size={20} /></div>
+                   </div>
                 </div>
               </NeonCard>
             </div>

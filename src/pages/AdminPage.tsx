@@ -12,6 +12,7 @@ import api from "../lib/api";
 import { toast } from "react-hot-toast";
 import { GameAdminModal } from "../components/modals/GameAdminModal";
 import { GenreAdminModal } from "../components/modals/GenreAdminModal";
+import { UserEditModal } from "../components/modals/UserEditModal";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
 
@@ -24,8 +25,10 @@ export const AdminPage = () => {
   const [loading, setLoading] = useState(true);
   const [isGameModalOpen, setIsGameModalOpen] = useState(false);
   const [isGenreModalOpen, setIsGenreModalOpen] = useState(false);
+  const [isUserModalOpen, setIsUserModalOpen] = useState(false);
   const [selectedGame, setSelectedGame] = useState<any | null>(null);
   const [selectedGenre, setSelectedGenre] = useState<any | null>(null);
+  const [selectedUser, setSelectedUser] = useState<any | null>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -95,27 +98,6 @@ export const AdminPage = () => {
     }
   };
 
-  const deleteUser = async (id: string) => {
-    if (!window.confirm("آیا از حذف این کاربر اطمینان دارید؟")) return;
-    try {
-      await api.delete(`/admin/users/${id}`);
-      toast.success("کاربر با موفقیت حذف شد");
-      setUsers(prev => prev.filter(u => u.id !== id));
-    } catch (err) {
-      toast.error("خطا در حذف کاربر");
-    }
-  };
-
-  const updateRole = async (id: string, role: string) => {
-    try {
-      await api.patch(`/admin/users/${id}/role`, { role });
-      toast.success("نقش بروزرسانی شد");
-      fetchData();
-    } catch {
-      toast.error("خطا در بروزرسانی");
-    }
-  };
-
   const handleEditGame = async (id: string) => {
     try {
       const res = await api.get(`/admin/games/${id}`);
@@ -148,9 +130,9 @@ export const AdminPage = () => {
                 <div className="h-10 w-10 rounded-2xl bg-neon-blue/10 flex items-center justify-center text-neon-blue border border-neon-blue/20">
                   <Shield size={24} />
                 </div>
-                <h1 className="text-4xl font-black text-white tracking-tighter">پنل مدیریت پیشرفته</h1>
+                <h1 className="text-4xl font-black text-white tracking-tighter italic">پنل مدیریت</h1>
               </div>
-              <p className="text-gray-400 font-bold">پلتفرم مدیریت جامع بازی‌ها و اعضای لوکس</p>
+              <p className="text-gray-400 font-bold uppercase text-[10px] tracking-widest italic opacity-60">Advanced Authority Controls</p>
             </div>
           </header>
 
@@ -170,7 +152,7 @@ export const AdminPage = () => {
                 activeTab === "games" ? "text-neon-blue" : "text-gray-500 hover:text-gray-300"
               }`}
             >
-              دیتابیس بازی‌ها
+              کتابخانه بازی‌ها
               {activeTab === "games" && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-neon-blue shadow-[0_0_15px_#00E5FF]" />}
             </button>
              <button
@@ -179,7 +161,7 @@ export const AdminPage = () => {
                   activeTab === "payments" ? "text-neon-blue" : "text-gray-500 hover:text-gray-300"
                 }`}
               >
-                تراکنش‌های بانکی
+                تراکنش‌های معلق
                 {activeTab === "payments" && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-neon-blue shadow-[0_0_15px_#00E5FF]" />}
              </button>
              <button
@@ -194,69 +176,88 @@ export const AdminPage = () => {
           </div>
 
           {activeTab === "users" ? (
-            <div className="space-y-4">
-              <div className="relative">
-                <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
-                <input 
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="جستجو در نام کاربری یا ایمیل..."
-                  className="w-full bg-white/5 border border-white/5 rounded-2xl py-4 pr-12 text-sm text-white focus:outline-none focus:border-neon-blue/50 transition-all font-bold"
-                />
+            <div className="space-y-6">
+              <div className="flex flex-col md:flex-row gap-4 items-center">
+                <div className="relative flex-1">
+                  <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
+                  <input 
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="جستجو در نام کاربری یا ایمیل..."
+                    className="w-full bg-white/5 border border-white/5 rounded-2xl py-4 pr-12 text-sm text-white focus:outline-none focus:border-neon-blue/50 transition-all font-bold"
+                  />
+                </div>
+                <div className="px-6 py-2 rounded-2xl bg-white/5 border border-white/5 flex items-center gap-3">
+                   <Users size={16} className="text-neon-blue" />
+                   <span className="text-white font-black italic">{users.length} <span className="text-[10px] text-gray-500 uppercase">کاربر</span></span>
+                </div>
               </div>
 
-              <div className="glass rounded-[32px] overflow-hidden border border-white/5 shadow-2xl">
-                <table className="w-full text-right">
-                <thead>
-                  <tr className="bg-white/5 text-gray-500 text-[10px] font-black uppercase tracking-widest">
-                    <th className="px-6 py-4">کاربر</th>
-                    <th className="px-6 py-4">ایمیل</th>
-                    <th className="px-6 py-4">نقش و اشتراک</th>
-                    <th className="px-6 py-4">عملیات</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/5">
-                  {users.map((user) => (
-                    <tr key={user.id} className="hover:bg-white/5 transition-all">
-                      <td className="px-6 py-4 font-bold">{user.username}</td>
-                      <td className="px-6 py-4 text-sm text-gray-400">{user.email}</td>
-                      <td className="px-6 py-4 flex gap-2">
-                         <select 
-                          className="bg-white/5 border border-white/10 rounded px-2 py-1 text-xs text-white outline-none focus:border-neon-blue" 
-                          value={user.role} 
-                          onChange={e => updateRole(user.id, e.target.value)}
-                         >
-                           <option value="USER" className="bg-dark-card">کاربر عادی</option>
-                           <option value="ADMIN" className="bg-dark-card">مدیر ارشد</option>
-                         </select>
-                         <select 
-                          className="bg-white/5 border border-white/10 rounded px-2 py-1 text-xs text-white outline-none focus:border-neon-pink" 
-                          value={user.profile?.membershipType || "NONE"} 
-                          onChange={async (e) => {
-                             try {
-                               await api.patch(`/admin/users/${user.id}/membership`, { membershipType: e.target.value });
-                               toast.success("اشتراک کاربر بروزرسانی شد");
-                               fetchData();
-                             } catch {
-                               toast.error("خطا در بروزرسانی");
-                             }
-                          }}
-                         >
-                           <option value="NONE" className="bg-dark-card">معمولی</option>
-                           <option value="PLUS" className="bg-dark-card">کاربر PLUS</option>
-                           <option value="VIP" className="bg-dark-card">کاربر VIP</option>
-                         </select>
-                      </td>
-                      <td className="px-6 py-4">
-                         <button onClick={() => deleteUser(user.id)} className="text-red-500 hover:text-red-400"><Trash2 size={16} /></button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                 {users.map(user => (
+                   <motion.div 
+                     key={user.id} 
+                     layout
+                     initial={{ opacity: 0, y: 20 }}
+                     animate={{ opacity: 1, y: 0 }}
+                     className="bg-[#0a0a0f] border border-white/5 rounded-[32px] p-6 hover:border-white/10 transition-all group relative overflow-hidden"
+                   >
+                     <div className="flex items-center gap-4 mb-6">
+                        <div className="h-16 w-16 rounded-2xl overflow-hidden border border-white/10 shrink-0 bg-gray-900">
+                           <img src={user.profile?.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`} className="h-full w-full object-cover" alt="avatar" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                           <h3 className="text-white font-black italic truncate">{user.username}</h3>
+                           <p className="text-[10px] text-gray-500 font-bold italic truncate uppercase">{user.email}</p>
+                        </div>
+                     </div>
+
+                     <div className="flex items-center justify-between mb-6">
+                        <div className="flex flex-col gap-1">
+                           <span className="text-[9px] text-gray-600 font-black uppercase tracking-widest">وضعیت عضویت</span>
+                           <span className={cn(
+                             "text-[10px] font-black uppercase italic px-3 py-1 rounded-full border w-fit",
+                             user.profile?.membershipType === "VIP" ? "bg-yellow-400/10 text-yellow-400 border-yellow-400/20 shadow-[0_0_10px_#facc1522]" : 
+                             user.profile?.membershipType === "PLUS" ? "bg-neon-blue/10 text-neon-blue border-neon-blue/20 shadow-[0_0_10px_#00e5ff22]" : 
+                             "bg-white/5 text-gray-500 border-white/5"
+                           )}>
+                              {user.profile?.membershipType || "NONE"}
+                           </span>
+                        </div>
+                        <div className="flex flex-col gap-1 items-end">
+                           <span className="text-[9px] text-gray-600 font-black uppercase tracking-widest">نقش</span>
+                           <span className={cn(
+                             "text-[10px] font-black uppercase italic px-3 py-1 rounded-full border w-fit",
+                             user.role === "ADMIN" ? "bg-red-500/10 text-red-500 border-red-500/20" : "bg-white/5 text-gray-500 border-white/5"
+                           )}>
+                              {user.role}
+                           </span>
+                        </div>
+                     </div>
+
+                     <GlowButton 
+                       variant="secondary" 
+                       className="w-full h-12 text-[10px] font-black uppercase italic tracking-widest"
+                       onClick={() => { setSelectedUser(user); setIsUserModalOpen(true); }}
+                     >
+                       <Edit2 size={14} className="ml-2" /> مدیریت و ویرایش
+                     </GlowButton>
+                     
+                     <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-10 transition-opacity pointer-events-none">
+                        <Shield size={80} />
+                     </div>
+                   </motion.div>
+                 ))}
+              </div>
+              
+              {users.length === 0 && !loading && (
+                <div className="py-20 text-center opacity-30">
+                   <Search size={64} className="mx-auto mb-4 text-gray-500" />
+                   <p className="font-black italic uppercase tracking-widest">هیچ کاربری یافت نشد</p>
+                </div>
+              )}
             </div>
-           </div>
           ) : activeTab === "games" ? (
             <div className="space-y-6">
                <div className="flex justify-between items-center bg-white/5 p-6 rounded-[32px] border border-white/5">
@@ -323,9 +324,9 @@ export const AdminPage = () => {
                   </div>
                   <div className="flex flex-wrap justify-center gap-3 relative z-10">
                     <GlowButton 
-                      variant="purple" 
+                      variant="blue" 
                       size="sm" 
-                      className="px-6 h-12 text-[10px] font-black uppercase italic border-neon-purple/30 bg-neon-purple/5"
+                      className="px-6 h-12 text-[10px] font-black uppercase italic !rounded-2xl gap-2"
                       onClick={async () => {
                         if (!confirm("آیا مایل به افزودن ژانرهای پیش‌فرض هستید؟ (ژانرهای تکراری اضافه نخواهند شد)")) return;
                         try {
@@ -337,13 +338,15 @@ export const AdminPage = () => {
                         }
                       }}
                     >
-                      <Icons.Database size={16} className="ml-2" /> افزودن ژانرهای پیش‌فرض
+                      <Icons.Sparkles size={16} /> <span>افزودن موارد پیش‌فرض</span>
                     </GlowButton>
                     <GlowButton 
-                      className="px-8 h-12 text-[10px] font-black uppercase italic"
+                      variant="purple"
+                      size="sm"
+                      className="px-8 h-12 text-[10px] font-black uppercase italic !rounded-2xl gap-2"
                       onClick={() => { setSelectedGenre(null); setIsGenreModalOpen(true); }}
                     >
-                      <Plus size={20} className="ml-2" /> افزودن ژانر جدید
+                      <Plus size={16} /> <span>ایجاد ژانر جدید</span>
                     </GlowButton>
                   </div>
                </div>
@@ -520,6 +523,13 @@ export const AdminPage = () => {
         isOpen={isGenreModalOpen}
         onClose={() => setIsGenreModalOpen(false)}
         genre={selectedGenre}
+        onSuccess={fetchData}
+      />
+
+      <UserEditModal
+        isOpen={isUserModalOpen}
+        onClose={() => setIsUserModalOpen(false)}
+        user={selectedUser}
         onSuccess={fetchData}
       />
     </div>

@@ -92,12 +92,68 @@ export const DashboardPage = () => {
     : 0;
 
   const isTop10 = userRank.rank > 0 && userRank.rank <= 10;
+  
+  const currentMembership = user?.profile?.membershipType || "NONE";
+  const expiryDate = (stats as any).membershipExpiresAt;
+  const daysLeft = expiryDate ? Math.max(0, Math.ceil((new Date(expiryDate).getTime() - new Date().getTime()) / (1000 * 3600 * 24))) : 0;
 
   return (
     <div className="flex min-h-[calc(100vh-64px)]">
       <Sidebar />
       <main className="flex-1 px-4 py-8 md:mr-64 lg:px-8 pb-24 md:pb-8">
         <div className="container mx-auto max-w-6xl">
+          {/* VIP/PROMO BANNER FOR NON-MEMBERS */}
+          {currentMembership === "NONE" && (
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="mb-10 cursor-pointer group relative"
+              onClick={() => navigate("/premium")}
+            >
+              <div className="relative min-h-[140px] md:h-36 w-full rounded-[48px] overflow-hidden bg-gradient-to-r from-[#0d0d12] via-[#1a0b3a] to-[#0d0d12] border border-white/10 group-hover:border-neon-purple/50 transition-all duration-500 shadow-[0_40px_100px_-20px_rgba(168,85,247,0.2)]">
+                 <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10" />
+                 
+                 <div className="absolute inset-0 flex flex-col md:flex-row items-center justify-between px-10 md:px-16 py-6 md:py-0 gap-6">
+                   <div className="flex flex-col md:flex-row items-center gap-6 text-center md:text-right">
+                      <div className="relative">
+                        <div className="h-16 w-16 rounded-[24px] bg-neon-purple/20 flex items-center justify-center text-neon-purple border border-neon-purple/30 group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
+                           <Crown size={36} />
+                        </div>
+                        <div className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-neon-blue flex items-center justify-center text-[10px] font-black italic border-2 border-[#1a0b3a] shadow-lg animate-bounce">
+                           !
+                        </div>
+                      </div>
+                      <div>
+                         <h2 className="text-2xl md:text-3xl font-black text-white italic uppercase tracking-tighter leading-none mb-2">تجربه لوکس واقعی را باز کنید</h2>
+                         <div className="flex flex-wrap items-center justify-center md:justify-start gap-4">
+                            <span className="flex items-center gap-1.5 text-[9px] md:text-[10px] text-gray-300 font-black uppercase tracking-widest italic bg-white/5 px-2 py-1 rounded-lg">
+                               <Zap size={10} className="text-neon-blue" /> اشتراک PLUS: محدودیت کمتر
+                            </span>
+                            <span className="flex items-center gap-1.5 text-[9px] md:text-[10px] text-yellow-400 font-black uppercase tracking-widest italic bg-yellow-400/10 px-2 py-1 rounded-lg border border-yellow-400/20">
+                               <Crown size={10} /> اشتراک VIP: امکانات نامحدود
+                            </span>
+                         </div>
+                      </div>
+                   </div>
+                   
+                   <div className="flex items-center gap-6">
+                      <div className="hidden lg:block text-right">
+                         <p className="text-[9px] text-gray-500 font-black uppercase tracking-widest italic mb-1">همین حالا شروع کنید</p>
+                         <p className="text-xl font-black text-white italic tracking-tighter">ارتقای سطح گیمینگ</p>
+                      </div>
+                      <GlowButton variant="purple" className="h-14 px-10 !rounded-2xl font-black italic text-xs uppercase group-hover:scale-105 transition-transform">
+                         مشاهده پلن‌ها
+                      </GlowButton>
+                   </div>
+                 </div>
+
+                 {/* Decorative Light Effects */}
+                 <div className="absolute top-0 right-0 h-full w-1/4 bg-gradient-to-l from-neon-purple/30 to-transparent blur-3xl opacity-50" />
+                 <div className="absolute bottom-0 left-0 h-full w-1/4 bg-gradient-to-r from-neon-blue/20 to-transparent blur-3xl opacity-50" />
+              </div>
+            </motion.div>
+          )}
+
           <header className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-center md:mb-10">
             <motion.div
               initial={{ opacity: 0, x: 20 }}
@@ -149,6 +205,90 @@ export const DashboardPage = () => {
                   </NeonCard>
                 </motion.div>
               ))}
+
+              {/* MEMBERSHIP STATUS CARD */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.5 }}
+                className="col-span-full mt-2"
+              >
+                <div className={cn(
+                  "p-8 rounded-[40px] border transition-all duration-700 relative overflow-hidden group",
+                  currentMembership === "VIP" 
+                    ? "bg-gradient-to-br from-[#12051a] to-[#2a0b45] border-yellow-400/30 shadow-[0_0_30px_rgba(250,204,21,0.1)]" 
+                    : currentMembership === "PLUS"
+                    ? "bg-gradient-to-br from-[#0a101f] to-[#0c2a4d] border-neon-blue/30 shadow-[0_0_30px_rgba(0,229,255,0.1)]"
+                    : "bg-[#101018] border-white/5"
+                )}>
+                   <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
+                      <div className="flex items-center gap-6 text-center md:text-right">
+                         <div className={cn(
+                           "h-20 w-20 rounded-3xl flex items-center justify-center border-2 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-6",
+                           currentMembership === "VIP" ? "bg-yellow-400/10 border-yellow-400/40 text-yellow-400 shadow-[0_0_20px_#facc1522]" :
+                           currentMembership === "PLUS" ? "bg-neon-blue/10 border-neon-blue/40 text-neon-blue shadow-[0_0_20px_#00e5ff22]" :
+                           "bg-white/5 border-white/10 text-gray-600"
+                         )}>
+                            {currentMembership === "VIP" ? <Crown size={44} /> : currentMembership === "PLUS" ? <Zap size={44} /> : <User size={44} />}
+                         </div>
+                         <div>
+                            <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest mb-1 italic">وضعیت اشتراک شما</p>
+                            <h2 className={cn(
+                              "text-3xl font-black italic tracking-tighter uppercase",
+                              currentMembership === "VIP" ? "text-yellow-400" :
+                              currentMembership === "PLUS" ? "text-neon-blue" :
+                              "text-white"
+                            )}>
+                               {currentMembership === "VIP" ? "کاربر ویژه (VIP)" : currentMembership === "PLUS" ? "کاربر پلاس (PLUS)" : "طرح عادی"}
+                            </h2>
+                            <p className="text-[10px] text-gray-400 font-bold italic mt-1">
+                               {currentMembership === "NONE" 
+                                 ? "برای دسترسی به امکانات ویژه، اشتراک خود را ارتقا دهید" 
+                                 : "شما در حال حاضر از تمامی مزایای سطح خود بهره‌مند هستید"}
+                            </p>
+                         </div>
+                      </div>
+
+                      {currentMembership !== "NONE" && (
+                         <div className="flex items-center gap-8 bg-black/20 p-6 rounded-[32px] border border-white/5">
+                            <div className="text-center">
+                               <p className="text-[8px] text-gray-500 font-black uppercase tracking-[0.2em] mb-1 italic">روزهای باقیمانده</p>
+                               <p className={cn(
+                                 "text-4xl font-black italic tracking-tighter leading-none",
+                                 daysLeft < 5 ? "text-red-500 animate-pulse" : "text-white"
+                               )}>{daysLeft}</p>
+                            </div>
+                            <div className="h-12 w-px bg-white/10" />
+                            <div className="min-w-[120px]">
+                               <GlowButton 
+                                 variant={currentMembership === "VIP" ? "gold" : "blue"} 
+                                 size="sm" 
+                                 className="h-11 w-full text-[10px] font-black uppercase italic"
+                                 onClick={() => navigate("/premium")}
+                               >
+                                  تمدید اشتراک
+                               </GlowButton>
+                            </div>
+                         </div>
+                      )}
+
+                      {currentMembership === "NONE" && (
+                         <GlowButton 
+                            variant="purple" 
+                            className="h-14 px-12 text-xs font-black uppercase italic"
+                            onClick={() => navigate("/premium")}
+                         >
+                            خرید اشتراک ویژه
+                         </GlowButton>
+                      )}
+                   </div>
+                   
+                   {/* Background Decorations */}
+                   {currentMembership !== "NONE" && (
+                     <div className="absolute top-0 right-0 h-full w-1/3 bg-gradient-to-l from-white/5 to-transparent skew-x-12 transform translate-x-20" />
+                   )}
+                </div>
+              </motion.div>
             </div>
 
             {/* Your Rank Widget */}

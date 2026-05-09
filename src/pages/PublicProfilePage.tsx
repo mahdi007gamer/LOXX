@@ -20,6 +20,7 @@ import { GlowButton } from "../components/ui/GlowButton";
 import { toast } from "react-hot-toast";
 import { cn } from "../lib/utils";
 import { BadgeType, MembershipType } from "../types";
+import { SmartImage } from "../components/ui/SmartImage";
 
 export const PublicProfilePage = () => {
   const { username } = useParams<{ username: string }>();
@@ -84,7 +85,12 @@ export const PublicProfilePage = () => {
             {/* Banner Area */}
             <div className="h-64 w-full relative">
                {profile.bannerUrl ? (
-                 <img src={profile.bannerUrl} alt="Banner" className="w-full h-full object-cover" />
+                 <SmartImage 
+                   src={profile.bannerUrl} 
+                   isVipEnabled={isVip || isPlus} 
+                   alt="Banner" 
+                   className="w-full h-full object-cover" 
+                 />
                ) : (
                  <div className={cn(
                    "w-full h-full bg-gradient-to-br",
@@ -107,7 +113,12 @@ export const PublicProfilePage = () => {
                   )}>
                     <div className="h-full w-full rounded-[42px] bg-[#0d0d12] flex items-center justify-center overflow-hidden">
                       {profile.avatarUrl ? (
-                        <img src={profile.avatarUrl} alt={profile.username} className="h-full w-full object-cover" />
+                        <SmartImage 
+                          src={profile.avatarUrl} 
+                          isVipEnabled={isVip || isPlus} 
+                          alt={profile.username} 
+                          className="h-full w-full object-cover" 
+                        />
                       ) : (
                         <User size={64} className="text-gray-700" />
                       )}

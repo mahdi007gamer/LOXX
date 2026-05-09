@@ -4,7 +4,7 @@ export class PaymentService {
   static async createPaymentRequest(userId: string, type: "PLUS" | "VIP", receiptImageUrl: string) {
     const amounts = {
       PLUS: 199000,
-      VIP: 399000
+      VIP: 599000
     };
 
     const existing = await prisma.paymentRequest.findFirst({

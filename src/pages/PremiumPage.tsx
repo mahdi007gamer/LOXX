@@ -53,7 +53,7 @@ const PLAN_DATA = {
   },
   VIP: {
     name: "LOXX VIP",
-    price: "399,000",
+    price: "599,000",
     color: "purple",
     tagline: "سطح نخبگان لوکس",
     theme: "from-neon-purple/20 to-transparent"
@@ -436,30 +436,60 @@ export const PremiumPage = () => {
                   <X size={16} /> بازگشت به پیش‌نمایش
                 </button>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-                   <div className="space-y-8">
-                      <div className="text-right">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center justify-center">
+                   <div className="space-y-8 flex flex-col items-center lg:items-end w-full">
+                      <div className="text-center lg:text-right w-full">
                          <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter mb-2">اطلاعات پرداخت</h2>
                          <p className="text-gray-500 font-bold text-sm italic">لطفاً مبلغ را کارت‌به‌کارت کنید و تصویر رسید را بارگذاری نمایید.</p>
                       </div>
 
-                      <BankCard 
-                        cardNumber="6063 7311 8109 6737"
-                        cardHolder="مهدی دلال زاده احمدی"
-                      />
+                      <div className="w-full max-w-md space-y-6">
+                        <BankCard 
+                          cardNumber="6063-7311-8109-6737"
+                          cardHolder="مهدی دلال زاده احمدی"
+                        />
 
-                      <div className="p-6 rounded-3xl bg-white/[0.03] border border-white/5 space-y-4">
-                         <div className="flex justify-between items-center">
-                            <span className="text-gray-500 font-bold uppercase text-[10px]">مبلغ قابل پرداخت</span>
-                            <span className="text-white font-black text-xl italic tracking-tighter">{PLAN_DATA[selectedPlan].price} تومان</span>
-                         </div>
-                         <div className="flex justify-between items-center">
-                            <span className="text-gray-500 font-bold uppercase text-[10px]">شماره کارت</span>
-                            <div className="flex items-center gap-2">
-                               <button onClick={() => { navigator.clipboard.writeText("6063731181096737"); toast.success("شماره کارت کپی شد"); }} className="text-neon-blue hover:text-white transition-colors"><Copy size={14}/></button>
-                               <span className="text-white font-mono font-bold tracking-widest">6063 7311 8109 6737</span>
-                            </div>
-                         </div>
+                        <div className="p-8 rounded-[40px] bg-white/[0.03] border border-white/5 space-y-5 shadow-2xl backdrop-blur-md">
+                           <div className="flex justify-between items-center">
+                              <span className="text-gray-500 font-black uppercase text-[10px] italic tracking-widest leading-none">نوع اشتراک</span>
+                              <span className={cn(
+                                "text-[10px] font-black px-4 py-1.5 rounded-full uppercase italic",
+                                selectedPlan === "VIP" 
+                                  ? "bg-yellow-400 text-dark-bg" 
+                                  : "bg-neon-blue text-dark-bg"
+                              )}>
+                                 {selectedPlan === "VIP" ? "LOXX ELITE (VIP)" : "LOXX PLUS"}
+                              </span>
+                           </div>
+                           <div className="flex justify-between items-center">
+                              <span className="text-gray-500 font-black uppercase text-[10px] italic tracking-widest">مبلغ نهایی</span>
+                              <div className="flex flex-col items-end">
+                                <span className={cn(
+                                  "font-black text-2xl italic tracking-tighter",
+                                  selectedPlan === "VIP" ? "text-yellow-400" : "text-neon-blue"
+                                )}>
+                                  {PLAN_DATA[selectedPlan].price} <span className="text-[10px]">تومان</span>
+                                </span>
+                                <span className="text-[9px] text-neon-green font-bold animate-pulse mt-1">تخفیف لایف‌تایم محاسبه شد</span>
+                              </div>
+                           </div>
+                           
+                           <div className="pt-5 border-t border-white/5 space-y-3">
+                             <div className="flex flex-col gap-2">
+                                <p className="text-[10px] text-gray-400 font-black uppercase italic tracking-widest text-right">کپی شماره کارت سریع:</p>
+                                <div 
+                                  className="flex items-center justify-between bg-white/5 p-4 rounded-2xl border border-white/5 cursor-pointer hover:bg-white/10 group/copy transition-all"
+                                  onClick={() => {
+                                    navigator.clipboard.writeText("6063731181096737");
+                                    toast.success("شماره کارت کپی شد");
+                                  }}
+                                >
+                                   <Icons.Copy size={18} className="text-neon-blue group-hover/copy:scale-110 transition-transform" />
+                                   <span className="text-white font-mono font-black tracking-[0.15em] text-sm md:text-base">6063-7311-8109-6737</span>
+                                </div>
+                             </div>
+                           </div>
+                        </div>
                       </div>
                    </div>
 

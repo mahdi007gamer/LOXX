@@ -23,8 +23,16 @@ export const getAllUsers = async (req: Request, res: Response) => {
         profile: {
           select: {
             avatarUrl: true,
-            membershipType: true
+            bannerUrl: true,
+            displayName: true,
+            membershipType: true,
+            bio: true,
+            level: true
           }
+        },
+        subscriptions: {
+          orderBy: { expiresAt: "desc" },
+          take: 1
         }
       }
     });
@@ -63,14 +71,59 @@ export const updateUserRole = async (req: Request, res: Response) => {
 
 export const updateUserMembership = async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { membershipType } = req.body; // NONE, PLUS, VIP
+  const { membershipType, days } = req.body; // NONE, PLUS, VIP, and days (number)
   try {
-    const profile = await prisma.profile.update({
+    const user = await prisma.user.findUnique({ where: { id } });
+    if (!user) return res.status(404).json({ status: "error", message: "User not found" });
+
+    // 1. Update Profile
+    await prisma.profile.update({
       where: { userId: id },
-      data: { membershipType },
-      select: { userId: true, membershipType: true }
+      data: { membershipType }
     });
-    res.json({ status: "success", data: profile });
+
+    // 2. Handle Subscription if it's not NONE
+    if (membershipType !== "NONE" && days > 0) {
+      const now = new Date();
+      const expiresAt = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
+
+      const existingSub = await prisma.subscription.findFirst({
+        where: { userId: id }
+      });
+
+      if (existingSub) {
+        // If they have an active sub, extend it. Otherwise start fresh
+        let newExpiresAt = existingSub.expiresAt > now 
+          ? new Date(existingSub.expiresAt.getTime() + days * 24 * 60 * 60 * 1000) 
+          : expiresAt;
+
+        await prisma.subscription.update({
+          where: { id: existingSub.id },
+          data: {
+            type: membershipType,
+            expiresAt: newExpiresAt
+          }
+        });
+      } else {
+        await prisma.subscription.create({
+          data: {
+            userId: id,
+            type: membershipType,
+            expiresAt: expiresAt
+          }
+        });
+      }
+    } else if (membershipType === "NONE") {
+      // If setting to NONE, we could either delete active sub or just let it expire.
+      // For immediate effect as requested by user ("I manually made him regular"),
+      // we should probably clear or expire the sub.
+      await prisma.subscription.updateMany({
+        where: { userId: id, expiresAt: { gt: new Date() } },
+        data: { expiresAt: new Date() }
+      });
+    }
+
+    res.json({ status: "success", message: "Membership updated successfully" });
   } catch (error: any) {
     res.status(500).json({ status: "error", message: error.message });
   }
