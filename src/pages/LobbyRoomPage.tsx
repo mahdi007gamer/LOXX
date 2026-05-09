@@ -33,6 +33,7 @@ import {
   Gamepad2
 } from "lucide-react";
 import { GlowButton } from "../components/ui/GlowButton";
+import { SmartImage } from "../components/ui/SmartImage";
 import { useFriends } from "../context/FriendsContext";
 import { useProfilePopover } from "../context/ProfilePopoverContext";
 import { MembershipType } from "../types";
@@ -770,7 +771,12 @@ export const LobbyRoomPage = () => {
                  <div key={i} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl hover:bg-white/10 transition-colors group">
                     <div className="flex items-center gap-3">
                        <div className="h-10 w-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden shrink-0">
-                         {friend.avatarUrl ? <img src={friend.avatarUrl} alt="" className="w-full h-full object-cover" /> : <span className="text-xl">👤</span>}
+                         <SmartImage 
+                           src={friend.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${friend.username}`}
+                           isVipEnabled={false}
+                           className="w-full h-full object-cover"
+                           alt={friend.username}
+                         />
                        </div>
                        <div>
                           <p className="text-sm font-black text-white">{friend.username}</p>
@@ -799,8 +805,18 @@ export const LobbyRoomPage = () => {
         {activeProfileUserId && (
           <Modal title="پروفایل بازیکن" onClose={() => setActiveProfileUserId(null)}>
             <div className="flex flex-col items-center gap-6 py-4">
-               <div className="h-32 w-32 rounded-[40px] bg-white/5 border border-white/10 flex items-center justify-center text-6xl shadow-2xl">
-                 {players.find(p => p.id === activeProfileUserId)?.avatar || "👤"}
+               <div className="h-32 w-32 rounded-[40px] bg-white/5 border border-white/10 flex items-center justify-center shadow-2xl overflow-hidden">
+                  {(() => {
+                    const p = players.find(p => p.id === activeProfileUserId);
+                    return (
+                      <SmartImage 
+                         src={p?.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p?.name}`}
+                         isVipEnabled={p?.membership === MembershipType.VIP}
+                         className="w-full h-full object-cover"
+                         alt={p?.name || "Player"}
+                      />
+                    );
+                  })()}
                </div>
                <div className="text-center">
                  <h3 className="text-2xl font-black text-white">{players.find(p => p.id === activeProfileUserId)?.name}</h3>
@@ -1294,11 +1310,12 @@ const PlayerCard = ({
                   }}
                 >
                   <div className="relative z-10 h-full w-full flex items-center justify-center overflow-hidden rounded-[18px] md:rounded-[28px]">
-                    {(player as any).avatarUrl && ((player as any).avatarUrl.length > 5 || (player as any).avatarUrl.startsWith("/") || (player as any).avatarUrl.includes(".")) ? (
-                      <img src={(player as any).avatarUrl} alt={player.name} className="w-full h-full object-cover" />
-                    ) : (
-                      <span className="text-xl md:text-3xl">{player.avatar || "👤"}</span>
-                    )}
+                    <SmartImage 
+                      src={player.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${player.name}`}
+                      isVipEnabled={player.membership === MembershipType.VIP}
+                      className="w-full h-full object-cover"
+                      alt={player.name}
+                    />
                   </div>
                   <div className="absolute inset-0 bg-gradient-to-tr from-black/20 to-transparent rounded-[18px] md:rounded-[28px]" />
                   
@@ -1500,6 +1517,9 @@ const ChatPanel = ({ messages, players, inputMessage, setInputMessage, onSend, o
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
         {filteredMessages.map((msg, index) => {
           const isYou = msg.fromUserId === currentUserId && currentUserId !== undefined;
+          const sender = players.find(p => p.id === msg.fromUserId);
+          const isVip = sender?.membership === MembershipType.VIP;
+          
           return (
           <div key={`${msg.id}-${index}`} className={cn(
             "group flex flex-col gap-1.5", 
@@ -1520,11 +1540,12 @@ const ChatPanel = ({ messages, players, inputMessage, setInputMessage, onSend, o
                 isYou ? "flex-row" : "flex-row-reverse"
               )}>
                 <div className="h-8 w-8 rounded-xl bg-white/5 border border-white/10 flex-shrink-0 flex items-center justify-center text-lg mt-1 font-black uppercase overflow-hidden">
-                   {msg.avatarUrl && (msg.avatarUrl.length > 5 || msg.avatarUrl.startsWith("/") || msg.avatarUrl.includes(".")) ? (
-                     <img src={msg.avatarUrl} alt="" className="w-full h-full object-cover" />
-                   ) : (
-                     isYou ? "ME" : msg.user.charAt(0)
-                   )}
+                   <SmartImage 
+                     src={msg.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${msg.user}`}
+                     isVipEnabled={isVip}
+                     className="w-full h-full object-cover"
+                     alt={msg.user}
+                   />
                 </div>
                 <div className={cn("flex-1 space-y-1", isYou ? "text-right" : "text-left")}>
                   <div className={cn("flex items-center gap-3", isYou ? "flex-row" : "flex-row-reverse")}>

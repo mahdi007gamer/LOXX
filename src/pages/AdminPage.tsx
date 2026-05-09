@@ -12,23 +12,27 @@ import api from "../lib/api";
 import { toast } from "react-hot-toast";
 import { GameAdminModal } from "../components/modals/GameAdminModal";
 import { GenreAdminModal } from "../components/modals/GenreAdminModal";
+import { BadgeAdminModal } from "../components/modals/BadgeAdminModal";
 import { UserEditModal } from "../components/modals/UserEditModal";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
 import { SmartImage } from "../components/ui/SmartImage";
 
 export const AdminPage = () => {
-  const [activeTab, setActiveTab] = useState<"users" | "games" | "payments" | "genres">("users");
+  const [activeTab, setActiveTab] = useState<"users" | "games" | "payments" | "genres" | "badges">("users");
   const [users, setUsers] = useState<any[]>([]);
   const [games, setGames] = useState<any[]>([]);
   const [payments, setPayments] = useState<any[]>([]);
   const [genres, setGenres] = useState<any[]>([]);
+  const [badges, setBadges] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isGameModalOpen, setIsGameModalOpen] = useState(false);
   const [isGenreModalOpen, setIsGenreModalOpen] = useState(false);
+  const [isBadgeModalOpen, setIsBadgeModalOpen] = useState(false);
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
   const [selectedGame, setSelectedGame] = useState<any | null>(null);
   const [selectedGenre, setSelectedGenre] = useState<any | null>(null);
+  const [selectedBadge, setSelectedBadge] = useState<any | null>(null);
   const [selectedUser, setSelectedUser] = useState<any | null>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
 
@@ -56,6 +60,9 @@ export const AdminPage = () => {
       } else if (activeTab === "genres") {
         const res = await api.get("/admin/genres");
         setGenres(res.data.data || []);
+      } else if (activeTab === "badges") {
+        const res = await api.get("/badges");
+        setBadges(res.data.data || []);
       }
     } catch (err) {
       toast.error("خطا در بارگذاری داده‌ها");
@@ -174,6 +181,15 @@ export const AdminPage = () => {
                ژانرها
                {activeTab === "genres" && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-neon-blue shadow-[0_0_15px_#00E5FF]" />}
              </button>
+             <button
+               onClick={() => setActiveTab("badges")}
+               className={`pb-4 px-6 text-sm font-black uppercase tracking-widest transition-all relative ${
+                 activeTab === "badges" ? "text-neon-blue" : "text-gray-500 hover:text-gray-300"
+               }`}
+             >
+               نشان‌ها
+               {activeTab === "badges" && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-neon-blue shadow-[0_0_15px_#00E5FF]" />}
+             </button>
           </div>
 
           {activeTab === "users" ? (
@@ -208,7 +224,7 @@ export const AdminPage = () => {
                         <div className="h-16 w-16 rounded-2xl overflow-hidden border border-white/10 shrink-0 bg-gray-900">
                            <SmartImage 
                               src={user.profile?.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`} 
-                              isVipEnabled={user.profile?.membershipType !== "NONE"}
+                              isVipEnabled={user.profile?.membershipType === "VIP"}
                               className="h-full w-full object-cover" 
                               alt="avatar" 
                             />
@@ -407,6 +423,78 @@ export const AdminPage = () => {
                  </motion.div>
                )}
             </div>
+          ) : activeTab === "badges" ? (
+            <div className="space-y-8">
+               <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-[#0d0d12] p-8 rounded-[40px] border border-white/5 shadow-2xl relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                     <Icons.Award size={120} />
+                  </div>
+                  <div className="text-center md:text-right relative z-10">
+                    <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter mb-1">مدیریت نشان‌ها (Badges)</h2>
+                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.2em] italic">نشان‌های بازی، عمومی و ویژه را مدیریت کنید</p>
+                  </div>
+                  <GlowButton 
+                    variant="purple"
+                    size="sm"
+                    className="px-8 h-12 text-[10px] font-black uppercase italic !rounded-2xl gap-2 relative z-10"
+                    onClick={() => { setSelectedBadge(null); setIsBadgeModalOpen(true); }}
+                  >
+                    <Plus size={16} /> <span>ایجاد نشان جدید</span>
+                  </GlowButton>
+               </div>
+
+               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
+                  {badges.map(badge => (
+                    <motion.div 
+                      key={badge.id} 
+                      whileHover={{ scale: 1.05 }}
+                      className="relative group bg-[#0d0d12] border border-white/5 rounded-[32px] p-6 flex flex-col items-center text-center transition-all hover:border-white/20"
+                    >
+                       <div className="h-16 w-16 mb-4 relative flex items-center justify-center">
+                          <img src={badge.iconUrl} className="h-full w-full object-contain" alt={badge.name} />
+                          {badge.isSpecial && (
+                            <div className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-yellow-400 flex items-center justify-center text-black border-2 border-[#0d0d12]">
+                               <Icons.Shield size={12} fill="currentColor" />
+                            </div>
+                          )}
+                       </div>
+                       <h4 className="font-black text-white italic text-xs uppercase tracking-tighter mb-1 line-clamp-1">{badge.name}</h4>
+                       <span className={cn(
+                         "text-[8px] font-black uppercase tracking-widest italic px-2 py-0.5 rounded-full border",
+                         badge.category === "SPECIAL" ? "bg-yellow-400/10 text-yellow-400 border-yellow-400/20" :
+                         badge.category === "GAME" ? "bg-neon-blue/10 text-neon-blue border-neon-blue/20" :
+                         "bg-white/5 text-gray-500 border-white/5"
+                       )}>
+                          {badge.category}
+                       </span>
+
+                       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm rounded-[32px] flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button 
+                            onClick={() => { setSelectedBadge(badge); setIsBadgeModalOpen(true); }}
+                            className="h-10 w-10 rounded-xl bg-white/10 text-white hover:text-neon-purple transition-colors flex items-center justify-center"
+                          >
+                             <Edit2 size={18} />
+                          </button>
+                          <button 
+                            onClick={async () => {
+                              if (!confirm("آیا از حذف این نشان اطمینان دارید؟")) return;
+                              try {
+                                await api.delete(`/badges/${badge.id}`);
+                                toast.success("نشان حذف شد");
+                                fetchData();
+                              } catch {
+                                toast.error("خطا در حذف نشان");
+                              }
+                            }}
+                            className="h-10 w-10 rounded-xl bg-white/10 text-white hover:text-red-500 transition-colors flex items-center justify-center"
+                          >
+                             <Trash2 size={18} />
+                          </button>
+                       </div>
+                    </motion.div>
+                  ))}
+               </div>
+            </div>
           ) : (
              <div className="space-y-6">
                 <div className="flex justify-between items-center bg-white/5 p-6 rounded-[32px] border border-white/5">
@@ -529,6 +617,13 @@ export const AdminPage = () => {
         isOpen={isGenreModalOpen}
         onClose={() => setIsGenreModalOpen(false)}
         genre={selectedGenre}
+        onSuccess={fetchData}
+      />
+
+      <BadgeAdminModal
+        isOpen={isBadgeModalOpen}
+        onClose={() => setIsBadgeModalOpen(false)}
+        badge={selectedBadge}
         onSuccess={fetchData}
       />
 

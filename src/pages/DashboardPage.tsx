@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
+import { SmartImage } from "../components/ui/SmartImage";
 
 import { useProfilePopover } from "../context/ProfilePopoverContext";
 import { MembershipType } from "../types";
@@ -243,8 +244,8 @@ export const DashboardPage = () => {
                                {currentMembership === "VIP" ? "LOXX ELITE (VIP)" : currentMembership === "PLUS" ? "LOXX PLUS" : "طرح عادی (FREE)"}
                             </h2>
                             <p className="text-[11px] text-gray-400 font-bold italic mt-2">
-                               {currentMembership === "VIP" ? "شما دسترسی کامل به تمامی امکانات نخبگان لوکس دارید" : 
-                                currentMembership === "PLUS" ? "شما از امکانات ارتقا یافته پلاس بهره‌مند هستید" :
+                               {currentMembership === "VIP" ? `اعتبار اشتراک نخبگان شما تا ${daysLeft} روز دیگر فعال است.` : 
+                                currentMembership === "PLUS" ? `اشتراک پلاس شما تا ${daysLeft} روز دیگر فعال است.` :
                                 "برای باز کردن پتانسیل کامل خود، اشتراک خود را ارتقا دهید"}
                             </p>
                          </div>
@@ -480,11 +481,12 @@ export const DashboardPage = () => {
                               }, false)}
                             >
                               <div className="h-10 w-10 rounded-full bg-white/10 flex items-center justify-center text-md overflow-hidden border border-white/5 group-hover/avatar:border-neon-blue/50 transition-all">
-                                {((friend.avatar || (friend as any).avatarUrl) && ((friend.avatar || (friend as any).avatarUrl).length > 5 || (friend.avatar || (friend as any).avatarUrl).startsWith("/") || (friend.avatar || (friend as any).avatarUrl).includes("."))) ? (
-                                  <img src={friend.avatar || (friend as any).avatarUrl} alt={friend.username} className="w-full h-full object-cover" />
-                                ) : (
-                                  <span className="text-sm">{friend.avatar || (friend as any).avatarUrl || "👤"}</span>
-                                )}
+                                <SmartImage 
+                                  src={friend.avatar || (friend as any).avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${friend.username}`} 
+                                  isVipEnabled={friend.membership === MembershipType.VIP}
+                                  className="w-full h-full object-cover" 
+                                  alt={friend.username} 
+                                />
                               </div>
                               <div className={cn(
                                 "absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-dark-card z-10",

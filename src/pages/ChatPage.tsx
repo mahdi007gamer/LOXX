@@ -5,6 +5,7 @@ import { NeonCard } from "../components/ui/NeonCard";
 import { GlowButton } from "../components/ui/GlowButton";
 import { Input } from "../components/ui/Input";
 import { LobbyInviteCard } from "../components/ui/LobbyInviteCard";
+import { SmartImage } from "../components/ui/SmartImage";
 import { Send, Hash, Users, MoreVertical, Plus, Smile, Image as ImageIcon, Reply, Heart, ChevronDown, Award, Star, Zap, Crown, Play, Check, Menu, X, MessageSquare, User, Trophy, Palette, Trash, MessageCircle, Search, UserPlus as UserPlusIcon, Settings } from "lucide-react";
 import { cn } from "../lib/utils";
 import { motion, AnimatePresence } from "motion/react";
@@ -119,11 +120,12 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
           isVIP && "border-2 border-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.4)]",
           isPLUS && "border-2 border-neon-blue shadow-[0_0_10px_rgba(0,229,255,0.3)]"
         )}>
-          {((message.senderAvatar || message.avatarUrl) && ((message.senderAvatar || message.avatarUrl)!.length > 5 || (message.senderAvatar || message.avatarUrl)!.startsWith("/") || (message.senderAvatar || message.avatarUrl)!.includes(".") || (message.senderAvatar || message.avatarUrl)!.includes("data:image"))) ? (
-            <img src={message.senderAvatar || message.avatarUrl} alt={message.senderName} className="w-full h-full object-cover rounded-xl" />
-          ) : (
-            message.senderAvatar || message.avatarUrl || (message.senderName ? message.senderName[0] : "?")
-          )}
+          <SmartImage 
+            src={message.senderAvatar || message.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${message.senderName}`}
+            isVipEnabled={isVIP}
+            className="w-full h-full object-cover rounded-xl"
+            alt={message.senderName}
+          />
           
           <div 
             className={cn(

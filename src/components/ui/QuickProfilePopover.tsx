@@ -117,7 +117,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
          {bannerUrl && (
            <SmartImage 
              src={bannerUrl} 
-             isVipEnabled={isVIP || isPLUS} 
+             isVipEnabled={isVIP} 
              alt="Banner" 
              className="w-full h-full object-cover" 
            />
@@ -151,7 +151,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
                   {(user.senderAvatar || user.avatarUrl) ? (
                     <SmartImage 
                        src={user.senderAvatar || user.avatarUrl} 
-                       isVipEnabled={isVIP || isPLUS} 
+                       isVipEnabled={isVIP} 
                        alt={user.senderName} 
                        className="w-full h-full object-cover relative z-10" 
                     />

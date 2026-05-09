@@ -155,7 +155,7 @@ export const ProfilePage = () => {
                {profileData?.bannerUrl ? (
                  <SmartImage 
                     src={profileData.bannerUrl} 
-                    isVipEnabled={isVip || isPlus} 
+                    isVipEnabled={isVip} 
                     alt="Banner" 
                     className="w-full h-full object-cover" 
                  />
@@ -189,7 +189,7 @@ export const ProfilePage = () => {
                       {profileData?.avatarUrl ? (
                         <SmartImage 
                            src={profileData.avatarUrl} 
-                           isVipEnabled={isVip || isPlus} 
+                           isVipEnabled={isVip} 
                            alt={profileData.username} 
                            className="h-full w-full object-cover" 
                         />

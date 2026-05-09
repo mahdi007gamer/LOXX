@@ -14,6 +14,7 @@ import { rankingSocket } from "../lib/socket";
 import api from "../lib/api";
 import { useProfilePopover } from "../context/ProfilePopoverContext";
 import { MembershipType } from "../types";
+import { SmartImage } from "../components/ui/SmartImage";
 
 const SCORING_RULES = [
   { icon: <PlusCircle size={18} />, label: "ایجاد لابی", points: "+20 XP", detail: "یک بار در هر ساعت" },
@@ -140,7 +141,12 @@ export const LeaderboardPage = () => {
                          <Medal size={20} />
                       </div>
                       <div className="w-full h-full rounded-full bg-dark-bg flex items-center justify-center overflow-hidden border border-white/5">
-                        {podium[1].avatar ? <img src={podium[1].avatar} alt={podium[1].username} className="w-full h-full object-cover" /> : <User size={48} className="relative z-10 text-gray-500" />}
+                        <SmartImage 
+                          src={podium[1].avatarUrl || podium[1].avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${podium[1].username}`}
+                          isVipEnabled={podium[1].membership === MembershipType.VIP || podium[1].membership === "VIP"}
+                          className="w-full h-full object-cover"
+                          alt={podium[1].username}
+                        />
                       </div>
                    </div>
                    <h3 className="text-xl font-black text-white uppercase italic tracking-tight">{podium[1].username}</h3>
@@ -167,7 +173,12 @@ export const LeaderboardPage = () => {
                          }, false)}
                        >
                          <div className="w-full h-full rounded-full bg-yellow-400/10 flex items-center justify-center border border-yellow-400/20 overflow-hidden">
-                            {podium[0].avatar ? <img src={podium[0].avatar} alt={podium[0].username} className="w-full h-full object-cover" /> : <User size={80} />}
+                            <SmartImage 
+                              src={podium[0].avatarUrl || podium[0].avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${podium[0].username}`}
+                              isVipEnabled={podium[0].membership === MembershipType.VIP || podium[0].membership === "VIP"}
+                              className="w-full h-full object-cover"
+                              alt={podium[0].username}
+                            />
                          </div>
                       </div>
                    </div>
@@ -196,7 +207,12 @@ export const LeaderboardPage = () => {
                          <Medal size={20} />
                       </div>
                       <div className="w-full h-full rounded-full bg-dark-bg flex items-center justify-center overflow-hidden border border-white/5">
-                        {podium[2].avatar ? <img src={podium[2].avatar} alt={podium[2].username} className="w-full h-full object-cover" /> : <User size={48} className="relative z-10 text-gray-500" />}
+                        <SmartImage 
+                          src={podium[2].avatarUrl || podium[2].avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${podium[2].username}`}
+                          isVipEnabled={podium[2].membership === MembershipType.VIP || podium[2].membership === "VIP"}
+                          className="w-full h-full object-cover"
+                          alt={podium[2].username}
+                        />
                       </div>
                    </div>
                    <h3 className="text-xl font-black text-white uppercase italic tracking-tight">{podium[2].username}</h3>
@@ -227,7 +243,12 @@ export const LeaderboardPage = () => {
                                  bannerUrl: player.bannerUrl || player.avatarUrl
                                }, false)}
                              >
-                              {player.avatar ? <img src={player.avatar} alt={player.username} className="w-full h-full object-cover" /> : <User size={24} />}
+                               <SmartImage 
+                                 src={player.avatarUrl || player.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${player.username}`}
+                                 isVipEnabled={player.membership === MembershipType.VIP || player.membership === "VIP"}
+                                 className="w-full h-full object-cover"
+                                 alt={player.username}
+                               />
                             </div>
                             <h4 className="font-black text-white group-hover:text-neon-blue transition-colors truncate uppercase text-sm md:text-base italic">{player.username}</h4>
                          </div>

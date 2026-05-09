@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { Gamepad2, User, Bell, Menu, X, LayoutDashboard, Target, Users, MessageSquare, Trophy, Settings, Shield, LogOut, Zap, Crown } from "lucide-react";
 import { GlowButton } from "../ui/GlowButton";
+import { SmartImage } from "../ui/SmartImage";
 import { motion, AnimatePresence, useScroll, useMotionValueEvent } from "motion/react";
 import { cn } from "@/src/lib/utils";
 import { useAuth } from "../../context/AuthContext";
@@ -124,7 +125,12 @@ export const Navbar = () => {
                     )}
                   >
                     <div className="h-full w-full rounded-[10px] bg-dark-bg flex items-center justify-center overflow-hidden">
-                       {user.avatarUrl ? <img src={user.avatarUrl} alt="" className="h-full w-full object-cover" /> : <User size={18} className="text-gray-400" />}
+                       <SmartImage 
+                         src={user.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`} 
+                         isVipEnabled={isVIP}
+                         className="h-full w-full object-cover" 
+                         alt={user.username} 
+                       />
                     </div>
                   </div>
                </div>
@@ -205,11 +211,12 @@ export const Navbar = () => {
                         isPLUS ? "bg-neon-blue" : "bg-white/10"
                       )}>
                         <div className="h-full w-full rounded-[15px] bg-[#050507] flex items-center justify-center overflow-hidden">
-                          {user.avatarUrl ? (
-                            <img src={user.avatarUrl} alt="" className="h-full w-full object-cover" />
-                          ) : (
-                            <User size={22} className="text-gray-600" />
-                          )}
+                          <SmartImage 
+                            src={user.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`} 
+                            isVipEnabled={isVIP}
+                            className="h-full w-full object-cover" 
+                            alt={user.username} 
+                          />
                         </div>
                       </div>
                       <div className="flex-1 min-w-0 text-right">

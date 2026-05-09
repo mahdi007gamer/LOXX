@@ -20,6 +20,7 @@ import settingsRoutes from "./server/routes/settings.routes.ts";
 import paymentRoutes from "./server/routes/payment.routes.ts";
 import uploadRoutes from "./server/routes/upload.routes.ts";
 import eliteRoutes from "./server/routes/elite.routes.ts";
+import badgeRoutes from "./server/routes/badge.routes.ts";
 import { setupWebSockets } from "./server/sockets/index.ts";
 import { setIO } from "./server/utils/socket.ts";
 import prisma from "./server/utils/prisma.ts";
@@ -76,6 +77,7 @@ async function startServer() {
   app.use("/api/v1/payments", paymentRoutes);
   app.use("/api/v1/upload", uploadRoutes);
   app.use("/api/v1/elite", eliteRoutes);
+  app.use("/api/v1/badges", badgeRoutes);
   
   app.get("/api/health", (req, res) => {
     res.json({ status: "ok", message: "LOXX Backend is running in Persian mode (UTF-8)" });

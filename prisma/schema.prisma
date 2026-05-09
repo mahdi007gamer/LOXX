@@ -35,6 +35,7 @@ model User {
   subscriptions   Subscription[]
   auditLogs       AuditLog[]
   userGames       UserGame[]
+  badges          UserBadge[]
   hostedLobbies   Lobby[]      @relation("LobbyHost")
   ownedChannels   Channel[]    @relation("OwnedChannels")
   channelMemberships ChannelMember[]
@@ -107,8 +108,34 @@ model Game {
   lobbies         Lobby[]
   channels        Channel[]
   userGames       UserGame[]
+  badgeId         String?
+  badge           Badge?   @relation(fields: [badgeId], references: [id])
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+}
+
+model Badge {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  iconUrl     String   
+  isSpecial   Boolean  @default(false) 
+  category    String   @default("STANDARD") // STANDARD, GAME, SPECIAL
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users       UserBadge[]
+  games       Game[]
+}
+
+model UserBadge {
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badgeId   String
+  badge     Badge    @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+  isPinned  Boolean  @default(false)
+  earnedAt  DateTime @default(now())
+
+  @@id([userId, badgeId])
 }
 
 model Genre {
