@@ -11,7 +11,8 @@ export class GameController {
               lobbies: true,
               userGames: true
             }
-          }
+          },
+          badge: true
         }
       });
 
@@ -47,6 +48,7 @@ export class GameController {
       const game = await prisma.game.findUnique({
         where: { id },
         include: {
+          badge: true,
           _count: {
             select: { userGames: true }
           },

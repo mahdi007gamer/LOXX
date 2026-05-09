@@ -105,7 +105,7 @@ export const DashboardPage = () => {
       <main className="flex-1 px-4 py-8 md:mr-64 lg:px-8 pb-24 md:pb-8">
         <div className="container mx-auto max-w-6xl">
           {/* VIP/PROMO BANNER FOR NON-MEMBERS */}
-          {currentMembership === "NONE" && (
+          {(currentMembership === "NONE" || currentMembership === "FREE") && (
             <motion.div 
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -241,11 +241,11 @@ export const DashboardPage = () => {
                               currentMembership === "PLUS" ? "text-neon-blue text-shadow-glow" :
                               "text-white"
                             )}>
-                               {currentMembership === "VIP" ? "LOXX ELITE (VIP)" : currentMembership === "PLUS" ? "LOXX PLUS" : "طرح عادی (FREE)"}
+                               {currentMembership === "VIP" ? "عضویت ویژه الیت (VIP)" : currentMembership === "PLUS" ? "عضویت طلایی پلاس" : "اشتراک سطح عادی"}
                             </h2>
                             <p className="text-[11px] text-gray-400 font-bold italic mt-2">
-                               {currentMembership === "VIP" ? `اعتبار شما تا ${new Date(expiryDate).toLocaleDateString('fa-IR')} فعال است.` : 
-                                currentMembership === "PLUS" ? `اعتبار شما تا ${new Date(expiryDate).toLocaleDateString('fa-IR')} فعال است.` :
+                               {currentMembership === "VIP" ? `عضو ویژه (Elite) فعال تا ${new Date(expiryDate).toLocaleDateString('fa-IR')}` : 
+                                currentMembership === "PLUS" ? `عضو پلاس فعال تا ${new Date(expiryDate).toLocaleDateString('fa-IR')}` :
                                 "برای باز کردن پتانسیل کامل خود، اشتراک خود را ارتقا دهید"}
                             </p>
                          </div>
@@ -254,7 +254,7 @@ export const DashboardPage = () => {
                       {currentMembership !== "NONE" && currentMembership !== "FREE" ? (
                          <div className="flex items-center gap-10 bg-white/[0.02] backdrop-blur-md p-8 rounded-[40px] border border-white/5 min-w-[280px]">
                             <div className="text-center">
-                               <p className="text-[10px] text-gray-500 font-black uppercase tracking-[0.2em] mb-2 italic">باقیمانده</p>
+                               <p className="text-[10px] text-gray-500 font-black uppercase tracking-[0.2em] mb-2 italic">باقیمانده اشتراک</p>
                                <div className="flex items-baseline justify-center gap-1">
                                   <p className={cn(
                                     "text-5xl font-black italic tracking-tighter leading-none",
@@ -271,7 +271,7 @@ export const DashboardPage = () => {
                                  className="h-12 w-full text-[10px] font-black uppercase italic !rounded-2xl"
                                  onClick={() => navigate("/premium")}
                                >
-                                  {daysLeft < 3 ? "تمدید فوری" : "جزئیات اشتراک"}
+                                  {daysLeft < 7 ? "تمدید لایسنس" : "مدیریت اشتراک"}
                                </GlowButton>
                             </div>
                          </div>
@@ -281,7 +281,7 @@ export const DashboardPage = () => {
                             className="h-16 px-16 text-sm font-black uppercase italic !rounded-[24px]"
                             onClick={() => navigate("/premium")}
                          >
-                            خرید اشتراک
+                            ارتقای حساب کاربری
                          </GlowButton>
                       )}
                    </div>

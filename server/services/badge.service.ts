@@ -79,4 +79,40 @@ export class BadgeService {
       include: { badge: true }
     });
   }
+
+  static async seedDefaultBadges() {
+    const STANDARD_BADGES = [
+      { name: "Rainbow Six Siege", iconUrl: "/badges/r6.png", category: "GAME" },
+      { name: "CS2 Pro", iconUrl: "/badges/cs2.png", category: "GAME" },
+      { name: "Valorant Radiant", iconUrl: "/badges/valorant.png", category: "GAME" },
+      { name: "Dota 2 Immortal", iconUrl: "/badges/dota2.png", category: "GAME" },
+      { name: "LoL Challenger", iconUrl: "/badges/lol.png", category: "GAME" },
+    ];
+
+    const USER_CHOICE_BADGES = [
+      { name: "Elite Sniper", iconUrl: "/badges/sniper.png", category: "USER" },
+      { name: "Support Hero", iconUrl: "/badges/support.png", category: "USER" },
+      { name: "Tactical Mind", iconUrl: "/badges/tactical.png", category: "USER" },
+      { name: "entry Fragger", iconUrl: "/badges/entry.png", category: "USER" },
+    ];
+
+    const SPECIAL_BADGES = [
+      { name: "LOXX Founder", iconUrl: "/badges/founder.png", category: "SPECIAL", isSpecial: true },
+      { name: "Beta Tester", iconUrl: "/badges/beta.png", category: "SPECIAL", isSpecial: true },
+      { name: "Top Contributor", iconUrl: "/badges/top.png", category: "SPECIAL", isSpecial: true },
+      { name: "Streamer Partner", iconUrl: "/badges/streamer.png", category: "SPECIAL", isSpecial: true },
+    ];
+
+    const allBadges = [...STANDARD_BADGES, ...USER_CHOICE_BADGES, ...SPECIAL_BADGES];
+
+    for (const badgeData of allBadges) {
+      await (prisma.badge as any).upsert({
+        where: { name: badgeData.name },
+        update: badgeData,
+        create: badgeData,
+      });
+    }
+
+    return { count: allBadges.length };
+  }
 }

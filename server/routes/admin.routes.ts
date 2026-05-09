@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { authenticate, authorizeAdmin } from "../middleware/auth.middleware.ts";
 import * as adminController from "../controllers/admin.controller.ts";
+import { BadgeController } from "../controllers/badge.controller.ts";
 
 const router = Router();
 
@@ -22,5 +23,8 @@ router.post("/genres", adminController.createGenre);
 router.patch("/genres/:id", adminController.updateGenre);
 router.post("/genres/seed-default", adminController.seedGenres);
 router.delete("/genres/:id", adminController.deleteGenre);
+
+// Badges
+router.post("/badges/seed-default", BadgeController.seedDefaultBadges);
 
 export default router;

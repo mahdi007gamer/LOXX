@@ -91,4 +91,13 @@ export class BadgeController {
       res.status(500).json({ status: "error", message: error.message });
     }
   }
+
+  static async seedDefaultBadges(req: Request, res: Response) {
+    try {
+      const result = await BadgeService.seedDefaultBadges();
+      res.json({ status: "success", data: result });
+    } catch (error: any) {
+      res.status(500).json({ status: "error", message: error.message });
+    }
+  }
 }

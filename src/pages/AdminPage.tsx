@@ -303,6 +303,11 @@ export const AdminPage = () => {
                           {game.iconUrl && <img src={game.iconUrl} className="h-full w-full rounded-xl object-cover" alt="icon" />}
                         </div>
                         <h3 className="font-black text-xl text-white drop-shadow-lg">{game.title}</h3>
+                        {game.badge && (
+                          <div className="h-6 w-6 ml-2" title={game.badge.name}>
+                            <img src={game.badge.iconUrl} className="h-full w-full object-contain filter drop-shadow-[0_0_5px_rgba(0,229,255,0.5)]" alt="badge" />
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="p-5 flex flex-col gap-4">
@@ -433,14 +438,33 @@ export const AdminPage = () => {
                     <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter mb-1">مدیریت نشان‌ها (Badges)</h2>
                     <p className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.2em] italic">نشان‌های بازی، عمومی و ویژه را مدیریت کنید</p>
                   </div>
-                  <GlowButton 
-                    variant="purple"
-                    size="sm"
-                    className="px-8 h-12 text-[10px] font-black uppercase italic !rounded-2xl gap-2 relative z-10"
-                    onClick={() => { setSelectedBadge(null); setIsBadgeModalOpen(true); }}
-                  >
-                    <Plus size={16} /> <span>ایجاد نشان جدید</span>
-                  </GlowButton>
+                  <div className="flex flex-wrap justify-center gap-3 relative z-10">
+                    <GlowButton 
+                      variant="blue" 
+                      size="sm" 
+                      className="px-6 h-12 text-[10px] font-black uppercase italic !rounded-2xl gap-2"
+                      onClick={async () => {
+                        if (!confirm("آیا مایل به افزودن نشان‌های پیش‌فرض هستید؟")) return;
+                        try {
+                          await api.post("/admin/badges/seed-default");
+                          toast.success("نشان‌های پیش‌فرض با موفقیت افزوده شدند");
+                          fetchData();
+                        } catch {
+                          toast.error("خطا در افزودن نشان‌ها");
+                        }
+                      }}
+                    >
+                      <Icons.Sparkles size={16} /> <span>افزودن موارد پیش‌فرض</span>
+                    </GlowButton>
+                    <GlowButton 
+                      variant="purple"
+                      size="sm"
+                      className="px-8 h-12 text-[10px] font-black uppercase italic !rounded-2xl gap-2 relative z-10"
+                      onClick={() => { setSelectedBadge(null); setIsBadgeModalOpen(true); }}
+                    >
+                      <Plus size={16} /> <span>ایجاد نشان جدید</span>
+                    </GlowButton>
+                  </div>
                </div>
 
                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
