@@ -145,26 +145,25 @@ export const Navbar = () => {
 
               {/* Scrollable Links */}
               <div className="flex-1 overflow-y-auto p-4 space-y-1">
-                {menuItems.map((item) => (
-                  <NavLink
-                    key={item.path}
-                    to={item.path}
-                    onClick={() => setIsMenuOpen(false)}
-                    className={({ isActive }) => cn(
-                      "flex items-center gap-4 rounded-xl px-4 py-3.5 transition-all group",
-                      isActive 
-                        ? "bg-neon-blue/10 text-neon-blue" 
-                        : "text-gray-400 hover:bg-white/5 hover:text-white"
-                    )}
-                  >
-                    {({ isActive }) => (
-                      <>
-                        <item.icon size={20} className={cn(isActive && "drop-shadow-[0_0_8px_rgba(0,229,255,0.5)]")} />
-                        <span className="text-base font-bold italic uppercase tracking-tight">{item.label}</span>
-                      </>
-                    )}
-                  </NavLink>
-                ))}
+                {menuItems.map((item) => {
+                  const isActive = location.pathname === item.path;
+                  return (
+                    <NavLink
+                      key={item.path}
+                      to={item.path}
+                      onClick={() => setIsMenuOpen(false)}
+                      className={cn(
+                        "flex items-center gap-4 rounded-xl px-4 py-3.5 transition-all group",
+                        isActive 
+                          ? "bg-neon-blue/10 text-neon-blue" 
+                          : "text-gray-400 hover:bg-white/5 hover:text-white"
+                      )}
+                    >
+                      <item.icon size={20} className={cn(isActive && "drop-shadow-[0_0_8px_rgba(0,229,255,0.5)]")} />
+                      <span className="text-base font-bold italic uppercase tracking-tight">{item.label}</span>
+                    </NavLink>
+                  );
+                })}
               </div>
 
               {/* Profile & Logout fixed at bottom */}
