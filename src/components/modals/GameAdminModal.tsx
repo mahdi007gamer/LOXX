@@ -57,14 +57,30 @@ export const GameAdminModal = ({
     regions: [],
     metadata: { features: [] }
   });
+  const [dbGenres, setDbGenres] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<"info" | "features" | "regions">("info");
+
+  useEffect(() => {
+    fetchGenres();
+  }, []);
+
+  const fetchGenres = async () => {
+    try {
+      const res = await api.get("/admin/genres");
+      setDbGenres(res.data.data || []);
+    } catch (err) {
+      console.error("Error fetching genres:", err);
+    }
+  };
 
   useEffect(() => {
     if (game) {
       setFormData({
         ...game,
-        metadata: game.metadata?.features ? game.metadata : { features: [] },
+        metadata: (game.metadata && typeof game.metadata === 'object' && (game.metadata as any).features) 
+          ? game.metadata 
+          : { ...game.metadata, features: (game.metadata as any)?.features || [] },
         genres: Array.isArray(game.genres) ? game.genres : [],
         regions: Array.isArray(game.regions) ? game.regions : []
       });
@@ -368,20 +384,25 @@ export const GameAdminModal = ({
               <div>
                 <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-4">انتخاب ژانرها (چند انتخابی)</label>
                 <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-                  {COMMON_GENRES.map(genre => (
+                  {dbGenres.map(genre => (
                     <button
-                      key={genre}
-                      onClick={() => toggleGenre(genre)}
+                      key={genre.id}
+                      onClick={() => toggleGenre(genre.name)}
                       className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${
-                        formData.genres.includes(genre)
+                        formData.genres.includes(genre.name)
                           ? "bg-neon-pink/10 border-neon-pink/50 text-neon-pink shadow-[0_0_15px_rgba(255,69,143,0.1)]"
                           : "bg-white/5 border-white/10 text-gray-500 hover:border-white/20"
                       }`}
                     >
-                      <span className="text-xs font-bold">{genre}</span>
-                      {formData.genres.includes(genre) && <Check size={14} />}
+                      <span className="text-xs font-bold">{genre.name}</span>
+                      {formData.genres.includes(genre.name) && <Check size={14} />}
                     </button>
                   ))}
+                  {dbGenres.length === 0 && (
+                    <div className="col-span-full py-4 text-center text-gray-500 text-xs italic">
+                      ژانری در دیتابیس یافت نشد. ابتدا از بخش ژانرها اضافه کنید.
+                    </div>
+                  )}
                 </div>
               </div>
 

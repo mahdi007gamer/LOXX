@@ -98,7 +98,10 @@ export const getGameById = async (req: Request, res: Response) => {
       metadata: safeParse(game.metadata, { features: [] })
     };
     
-    if (!parsedGame.metadata?.features) {
+    // Ensure metadata has features without overwriting other potential fields
+    if (typeof parsedGame.metadata === 'object' && parsedGame.metadata !== null && !parsedGame.metadata.features) {
+      parsedGame.metadata.features = [];
+    } else if (typeof parsedGame.metadata !== 'object' || parsedGame.metadata === null) {
       parsedGame.metadata = { features: [] };
     }
     
@@ -155,6 +158,56 @@ export const deleteGame = async (req: Request, res: Response) => {
       where: { id }
     });
     res.json({ status: "success", message: "Game deleted successfully" });
+  } catch (error: any) {
+    res.status(500).json({ status: "error", message: error.message });
+  }
+};
+
+// Genre Management
+export const getAllGenres = async (req: Request, res: Response) => {
+  try {
+    const genres = await (prisma as any).genre.findMany({
+      orderBy: { name: 'asc' }
+    });
+    res.json({ status: "success", data: genres });
+  } catch (error: any) {
+    res.status(500).json({ status: "error", message: error.message });
+  }
+};
+
+export const createGenre = async (req: Request, res: Response) => {
+  const { name, icon } = req.body;
+  try {
+    const genre = await (prisma as any).genre.create({
+      data: { name, icon }
+    });
+    res.json({ status: "success", data: genre });
+  } catch (error: any) {
+    res.status(500).json({ status: "error", message: error.message });
+  }
+};
+
+export const updateGenre = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { name, icon } = req.body;
+  try {
+    const genre = await (prisma as any).genre.update({
+      where: { id },
+      data: { name, icon }
+    });
+    res.json({ status: "success", data: genre });
+  } catch (error: any) {
+    res.status(500).json({ status: "error", message: error.message });
+  }
+};
+
+export const deleteGenre = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  try {
+    await (prisma as any).genre.delete({
+      where: { id }
+    });
+    res.json({ status: "success", message: "Genre deleted successfully" });
   } catch (error: any) {
     res.status(500).json({ status: "error", message: error.message });
   }

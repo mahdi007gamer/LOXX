@@ -101,7 +101,7 @@ model Game {
   title           String   @unique // Persian
   iconUrl         String?
   bannerUrl       String?
-  genres          String?  // JSON array: ["FPS", "MOBA", etc]
+  genres          String?  // JSON array of strings (names) or IDs
   regions         String?  // JSON array: ["IR", "EU", etc]
   metadata        String?  // JSON string: { features: [{ name: "Mode", options: [] }] }
   lobbies         Lobby[]
@@ -109,6 +109,14 @@ model Game {
   userGames       UserGame[]
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+}
+
+model Genre {
+  id        String   @id @default(uuid())
+  name      String   @unique // e.g. "FPS", "RPG"
+  icon      String?  // Optional icon name or URL
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Channel {

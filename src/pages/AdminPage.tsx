@@ -10,17 +10,21 @@ import {
 import api from "../lib/api";
 import { toast } from "react-hot-toast";
 import { GameAdminModal } from "../components/modals/GameAdminModal";
+import { GenreAdminModal } from "../components/modals/GenreAdminModal";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
 
 export const AdminPage = () => {
-  const [activeTab, setActiveTab] = useState<"users" | "games" | "payments">("users");
+  const [activeTab, setActiveTab] = useState<"users" | "games" | "payments" | "genres">("users");
   const [users, setUsers] = useState<any[]>([]);
   const [games, setGames] = useState<any[]>([]);
   const [payments, setPayments] = useState<any[]>([]);
+  const [genres, setGenres] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isGameModalOpen, setIsGameModalOpen] = useState(false);
+  const [isGenreModalOpen, setIsGenreModalOpen] = useState(false);
   const [selectedGame, setSelectedGame] = useState<any | null>(null);
+  const [selectedGenre, setSelectedGenre] = useState<any | null>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -44,11 +48,25 @@ export const AdminPage = () => {
       } else if (activeTab === "payments") {
         const res = await api.get("/payments/admin/pending");
         setPayments(res.data.data || []);
+      } else if (activeTab === "genres") {
+        const res = await api.get("/admin/genres");
+        setGenres(res.data.data || []);
       }
     } catch (err) {
       toast.error("خطا در بارگذاری داده‌ها");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const deleteGenre = async (id: string) => {
+    if (!window.confirm("آیا از حذف این ژانر اطمینان دارید؟")) return;
+    try {
+      await api.delete(`/admin/genres/${id}`);
+      toast.success("ژانر با موفقیت حذف شد");
+      fetchData();
+    } catch (err) {
+      toast.error("خطا در حذف ژانر");
     }
   };
 
@@ -154,15 +172,24 @@ export const AdminPage = () => {
               دیتابیس بازی‌ها
               {activeTab === "games" && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-neon-blue shadow-[0_0_15px_#00E5FF]" />}
             </button>
-            <button
-               onClick={() => setActiveTab("payments")}
+             <button
+                onClick={() => setActiveTab("payments")}
+                className={`pb-4 px-6 text-sm font-black uppercase tracking-widest transition-all relative ${
+                  activeTab === "payments" ? "text-neon-blue" : "text-gray-500 hover:text-gray-300"
+                }`}
+              >
+                تراکنش‌های بانکی
+                {activeTab === "payments" && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-neon-blue shadow-[0_0_15px_#00E5FF]" />}
+             </button>
+             <button
+               onClick={() => setActiveTab("genres")}
                className={`pb-4 px-6 text-sm font-black uppercase tracking-widest transition-all relative ${
-                 activeTab === "payments" ? "text-neon-blue" : "text-gray-500 hover:text-gray-300"
+                 activeTab === "genres" ? "text-neon-blue" : "text-gray-500 hover:text-gray-300"
                }`}
              >
-               تراکنش‌های بانکی
-               {activeTab === "payments" && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-neon-blue shadow-[0_0_15px_#00E5FF]" />}
-            </button>
+               ژانرها
+               {activeTab === "genres" && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-neon-blue shadow-[0_0_15px_#00E5FF]" />}
+             </button>
           </div>
 
           {activeTab === "users" ? (
@@ -283,6 +310,39 @@ export const AdminPage = () => {
                 ))}
                </div>
             </div>
+          ) : activeTab === "genres" ? (
+            <div className="space-y-6">
+               <div className="flex justify-between items-center bg-white/5 p-6 rounded-[32px] border border-white/5">
+                  <div>
+                    <h2 className="text-2xl font-black text-white">مدیریت ژانرها</h2>
+                    <p className="text-gray-500 text-sm italic font-bold">افزودن و ویرایش دسته‌بندی‌های بازی</p>
+                  </div>
+                  <GlowButton onClick={() => { setSelectedGenre(null); setIsGenreModalOpen(true); }}>
+                    <Plus size={20} className="ml-2" /> افزودن ژانر جدید
+                  </GlowButton>
+               </div>
+
+               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {genres.map(genre => (
+                    <NeonCard key={genre.id} className="p-4 flex items-center justify-between group">
+                       <span className="font-black text-white italic">{genre.name}</span>
+                       <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button onClick={() => { setSelectedGenre(genre); setIsGenreModalOpen(true); }} className="text-gray-500 hover:text-neon-blue transition-colors">
+                             <Edit2 size={14} />
+                          </button>
+                          <button onClick={() => deleteGenre(genre.id)} className="text-gray-500 hover:text-red-500 transition-colors">
+                             <Trash2 size={14} />
+                          </button>
+                       </div>
+                    </NeonCard>
+                  ))}
+               </div>
+               {genres.length === 0 && (
+                 <div className="p-20 text-center text-gray-500 uppercase font-black italic tracking-widest text-xs opacity-50">
+                    ژانری یافت نشد
+                 </div>
+               )}
+            </div>
           ) : (
              <div className="space-y-6">
                 <div className="flex justify-between items-center bg-white/5 p-6 rounded-[32px] border border-white/5">
@@ -398,6 +458,13 @@ export const AdminPage = () => {
         isOpen={isGameModalOpen} 
         onClose={() => setIsGameModalOpen(false)} 
         game={selectedGame}
+        onSuccess={fetchData}
+      />
+
+      <GenreAdminModal
+        isOpen={isGenreModalOpen}
+        onClose={() => setIsGenreModalOpen(false)}
+        genre={selectedGenre}
         onSuccess={fetchData}
       />
     </div>

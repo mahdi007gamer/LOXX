@@ -16,4 +16,10 @@ router.patch("/games/:id", adminController.updateGame);
 router.get("/games/:id", adminController.getGameById);
 router.delete("/games/:id", adminController.deleteGame);
 
+// Genres
+router.get("/genres", adminController.getAllGenres);
+router.post("/genres", adminController.createGenre);
+router.patch("/genres/:id", adminController.updateGenre);
+router.delete("/genres/:id", adminController.deleteGenre);
+
 export default router;
