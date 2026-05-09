@@ -577,6 +577,10 @@ export const ChatPage: React.FC = () => {
   const [chatTheme, setChatTheme] = useState<keyof typeof CHAT_THEMES>((localStorage.getItem("loxx-chat-theme") as any) || "aura");
   const [showThemeMenu, setShowThemeMenu] = useState(false);
   const [showVipGroupModal, setShowVipGroupModal] = useState(false);
+  const [showEliteSettingsModal, setShowEliteSettingsModal] = useState(false);
+  const [eliteSettingsData, setEliteSettingsData] = useState({ title: "", avatarUrl: "" });
+  const [showEliteInviteModal, setShowEliteInviteModal] = useState(false);
+  const [inviteUsername, setInviteUsername] = useState("");
   const [vipGroupName, setVipGroupName] = useState("");
   const [userLvl, setUserLvl] = useState(42);
   const [eliteGroups, setEliteGroups] = useState<any[]>([]);
@@ -609,11 +613,79 @@ export const ChatPage: React.FC = () => {
           name: c.title,
           type: "elite",
           users: c.members.length,
-          icon: "👑"
+          icon: "👑",
+          avatarUrl: c.avatarUrl,
+          ownerId: c.ownerId,
+          rawMembers: c.members
         })));
       }
     } catch(err) {
       console.error("Failed to load elite groups", err);
+    }
+  };
+
+  const handleUpdateEliteGroup = async () => {
+    if (!eliteSettingsData.title.trim()) {
+       toast.error("نام گروه نمی‌تواند خالی باشد");
+       return;
+    }
+    try {
+      await api.put(`/elite/${activeChannelId}`, eliteSettingsData);
+      toast.success("تنظیمات گروه با موفقیت به‌روز شد");
+      loadEliteGroups();
+      setShowEliteSettingsModal(false);
+    } catch (err: any) {
+      toast.error(err.response?.data?.error?.message || "خطا در به‌روزرسانی گروه");
+    }
+  };
+
+  const handleDeleteEliteGroup = async () => {
+    if (!confirm("آیا از حذف کامل این گروه اطمینان دارید؟")) return;
+    try {
+      await api.delete(`/elite/${activeChannelId}`);
+      toast.success("گروه با موفقیت حذف شد");
+      setShowEliteSettingsModal(false);
+      setActiveChannelId("global");
+      loadEliteGroups();
+    } catch (err: any) {
+      toast.error(err.response?.data?.error?.message || "خطا در حذف گروه");
+    }
+  };
+
+  const handleRemoveEliteMember = async (memberId: string) => {
+    if (!confirm("آیا از اخراج این کاربر اطمینان دارید؟")) return;
+    try {
+      await api.delete("/elite/members", { data: { groupId: activeChannelId, memberId } });
+      toast.success("کاربر از گروه اخراج شد");
+      loadEliteGroups();
+    } catch (err: any) {
+      toast.error(err.response?.data?.error?.message || "خطا در اخراج کاربر");
+    }
+  };
+
+  const handleInviteToEliteGroup = async () => {
+    if (!inviteUsername.trim()) {
+      toast.error("نام کاربری را وارد کنید");
+      return;
+    }
+    try {
+      await api.post("/elite/members/invite", { groupId: activeChannelId, username: inviteUsername });
+      toast.success("دعوتنامه با موفقیت ارسال شد");
+      setInviteUsername("");
+      setShowEliteInviteModal(false);
+    } catch (err: any) {
+       toast.error(err.response?.data?.error?.message || "خطا در ارسال دعوتنامه");
+    }
+  };
+
+  const handleLeaveEliteGroup = async () => {
+    try {
+      await api.post("/elite/members/leave", { groupId: activeChannelId });
+      toast.success("با موفقیت از گروه خارج شدید");
+      loadEliteGroups();
+      setActiveChannelId("general");
+    } catch(err: any) {
+      toast.error(err.response?.data?.error?.message || "خطا در خروج از گروه");
     }
   };
 
@@ -1061,6 +1133,99 @@ export const ChatPage: React.FC = () => {
       />
 
       <AnimatePresence>
+        {showEliteSettingsModal && activeChannel.type === 'elite' && (
+          <div className="fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-[#0b0c10] border border-white/10 rounded-[32px] w-full max-w-md overflow-hidden shadow-2xl p-6"
+            >
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-black text-white italic tracking-tighter">تنظیمات گروه نخبگان</h3>
+                <button onClick={() => setShowEliteSettingsModal(false)} className="text-gray-500 hover:text-white"><X size={24}/></button>
+              </div>
+              <div className="space-y-4 mb-6">
+                <div>
+                  <label className="text-xs font-bold text-gray-400 mb-2 block">نام گروه</label>
+                  <Input 
+                    value={eliteSettingsData.title}
+                    onChange={(e) => setEliteSettingsData(p => ({ ...p, title: e.target.value }))}
+                    placeholder="نام جدید گروه"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-gray-400 mb-2 block">آدرس عکس پروفایل (اختیاری)</label>
+                  <Input 
+                    value={eliteSettingsData.avatarUrl}
+                    onChange={(e) => setEliteSettingsData(p => ({ ...p, avatarUrl: e.target.value }))}
+                    placeholder="https://..."
+                    dir="ltr"
+                  />
+                </div>
+                
+                {/* Members List */}
+                <div className="pt-4 border-t border-white/5">
+                  <label className="text-xs font-bold text-gray-400 mb-3 block">مدیریت اعضا</label>
+                  <div className="max-h-32 overflow-y-auto space-y-2 custom-scrollbar">
+                    {((activeChannel as any).rawMembers || []).map((m: any) => (
+                      <div key={m.userId} className="flex items-center justify-between p-2 rounded-lg bg-white/5">
+                         <span className="text-xs font-medium text-white">{m.user?.username || 'Unknown'}</span>
+                         {m.userId !== user?.id && (
+                           <button onClick={() => handleRemoveEliteMember(m.userId)} className="text-xs text-red-500 hover:text-red-400 font-bold px-2">
+                             اخراج
+                           </button>
+                         )}
+                         {m.userId === user?.id && <span className="text-[10px] text-gray-500 px-2">مدیر</span>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+              </div>
+              <div className="flex gap-3 mb-4">
+                 <GlowButton variant="yellow" className="flex-1 font-black" onClick={handleUpdateEliteGroup}>ذخیره تغییرات</GlowButton>
+                 <button onClick={() => setShowEliteSettingsModal(false)} className="px-6 py-3 rounded-2xl bg-white/5 text-gray-400 font-bold hover:bg-white/10 transition-colors">انصراف</button>
+              </div>
+              <div className="pt-4 border-t border-red-500/10">
+                 <button onClick={handleDeleteEliteGroup} className="w-full py-3 rounded-xl bg-red-500/10 text-red-500 font-bold hover:bg-red-500/20 transition-colors">حذف کامل گروه</button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+        
+        {showEliteInviteModal && activeChannel.type === 'elite' && (
+          <div className="fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-[#0b0c10] border border-white/10 rounded-[32px] w-full max-w-sm overflow-hidden shadow-2xl p-6"
+            >
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-black text-white italic tracking-tighter">دعوت دوستان به گروه</h3>
+                <button onClick={() => setShowEliteInviteModal(false)} className="text-gray-500 hover:text-white"><X size={24}/></button>
+              </div>
+              <div className="space-y-4 mb-6">
+                <div>
+                  <label className="text-xs font-bold text-gray-400 mb-2 block">نام کاربری دوستتان</label>
+                  <Input 
+                    value={inviteUsername}
+                    onChange={(e) => setInviteUsername(e.target.value)}
+                    placeholder="username"
+                    dir="ltr"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-3">
+                 <GlowButton variant="pink" className="flex-1 font-black" onClick={handleInviteToEliteGroup}>ارسال دعوتنامه</GlowButton>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
         {showImagePostModal && (
           <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
             <motion.div 
@@ -1335,11 +1500,25 @@ export const ChatPage: React.FC = () => {
                 >
                    <div className="flex items-center gap-3">
                      <div className="relative">
-                        <div className="h-8 w-8 rounded-full bg-white/10 flex items-center justify-center text-xs overflow-hidden">
+                        <div 
+                          className={cn("h-8 w-8 rounded-full flex items-center justify-center text-xs overflow-hidden cursor-pointer", (friend as any).membership === 'VIP' ? "bg-yellow-400/10 border border-yellow-400/30" : "bg-white/10")}
+                          onClick={(e) => {
+                             e.stopPropagation();
+                             openProfile({
+                               senderName: friend.displayName,
+                               senderAvatar: friend.avatar || (friend as any).avatarUrl,
+                               senderLevel: friend.level,
+                               id: friend.id,
+                               membership: (friend as any).membership,
+                               vipMetadata: (friend as any).vipMetadata,
+                               bannerUrl: (friend as any).bannerUrl
+                             }, false);
+                          }}
+                        >
                            {(friend.avatar || (friend as any).avatarUrl) && ((friend.avatar || (friend as any).avatarUrl).length > 5 || (friend.avatar || (friend as any).avatarUrl).startsWith("/") || (friend.avatar || (friend as any).avatarUrl).includes(".")) ? (
-                             <img src={friend.avatar || (friend as any).avatarUrl} alt="" className="h-full w-full" />
+                             <img src={friend.avatar || (friend as any).avatarUrl} alt="" className="h-full w-full object-cover" />
                            ) : (
-                             <span className="text-[10px]">{friend.avatar || (friend as any).avatarUrl || "👤"}</span>
+                             <span className="text-[10px] text-gray-300">{friend.avatar || (friend as any).avatarUrl || "👤"}</span>
                            )}
                         </div>
                         <div className={cn(
@@ -1485,6 +1664,23 @@ export const ChatPage: React.FC = () => {
             </div>
           </div>
           <div className="flex items-center gap-1.5 md:gap-3">
+            {activeChannel.type === 'elite' && (
+              <div className="flex items-center gap-1 md:gap-2">
+                 {((activeChannel as any).ownerId === user?.id) ? (
+                   <>
+                     <GlowButton onClick={() => setShowEliteInviteModal(true)} variant="pink" size="sm" className="hidden sm:flex h-8 px-3 text-[10px] font-black uppercase">دعوت دوستان</GlowButton>
+                     <button title="دعوت دوستان" onClick={() => setShowEliteInviteModal(true)} className="sm:hidden p-1.5 rounded-lg bg-neon-pink/10 text-neon-pink hover:bg-neon-pink/20 transition-colors">
+                        <Users size={16} />
+                     </button>
+                     <button title="تنظیمات گروه" onClick={() => { setEliteSettingsData({ title: activeChannel.name, avatarUrl: (activeChannel as any).avatarUrl || "" }); setShowEliteSettingsModal(true); }} className="p-1.5 rounded-lg bg-white/5 text-gray-400 hover:text-white transition-colors">
+                        <MoreVertical size={16} />
+                     </button>
+                   </>
+                 ) : (
+                   <button onClick={handleLeaveEliteGroup} className="h-8 px-2 md:px-3 rounded-lg bg-red-500/10 text-red-500 text-[10px] font-black hover:bg-red-500/20 transition-colors uppercase border border-red-500/20">خروج</button>
+                 )}
+              </div>
+            )}
             {activeChannel.type === 'game' && lobby && lobby.gameId === activeChannelId.replace("game-", "") && !lobby.isPrivate && (
               <GlowButton 
                 variant="pink" 
@@ -1875,12 +2071,14 @@ export const ChatPage: React.FC = () => {
                         )}
                       >
                         <div className="relative">
-                          <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center shadow-lg overflow-hidden group-hover:scale-105 transition-transform">
-                            {friend.avatar ? (
-                              <img src={friend.avatar} alt="" className="h-full w-full object-cover" />
-                            ) : (
-                              <span className="text-xl">👤</span>
-                            )}
+                          <div 
+                            className={cn("h-10 w-10 rounded-xl flex items-center justify-center shadow-lg overflow-hidden group-hover:scale-105 transition-transform", (friend as any).membership === 'VIP' ? "bg-yellow-400/10 border border-yellow-400/30" : "bg-white/10")}
+                          >
+                             {(friend.avatar || (friend as any).avatarUrl) && ((friend.avatar || (friend as any).avatarUrl).length > 5 || (friend.avatar || (friend as any).avatarUrl).startsWith("/") || (friend.avatar || (friend as any).avatarUrl).includes(".")) ? (
+                               <img src={friend.avatar || (friend as any).avatarUrl} alt="" className="h-full w-full object-cover" />
+                             ) : (
+                               <span className="text-[10px] text-gray-300">{friend.avatar || (friend as any).avatarUrl || "👤"}</span>
+                             )}
                           </div>
                           <div className={cn(
                             "absolute -bottom-1 -right-1 h-3 w-3 rounded-full border-2 border-[#0d0d12]",

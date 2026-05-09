@@ -571,6 +571,7 @@ export const LobbyRoomPage = () => {
             lobby={lobby}
             onCancel={handleCancelMatch}
             onReopen={handleReopenLobby}
+            isVipLobby={isVipLobby}
           />
 
           {/* Players Grid - Drastically improved for mobile */}
@@ -636,6 +637,7 @@ export const LobbyRoomPage = () => {
              setInputMessage={setInputMessage} 
              onSend={handleSendMessage}
              currentUserId={user?.id}
+             isVipLobby={isVipLobby}
            />
         </div>
       </div>
@@ -709,6 +711,7 @@ export const LobbyRoomPage = () => {
                   setInputMessage={setInputMessage} 
                   onSend={handleSendMessage} 
                   onClose={() => setIsChatOpen(false)}
+                  isVipLobby={isVipLobby}
                 />
               </div>
             </motion.div>
@@ -1065,14 +1068,15 @@ const ControlButton = ({ icon, active = false, onClick, className }: { icon: Rea
   </button>
 );
 
-const MatchInfoPanel = ({ isStarting, isMatchStarted, countdown, players, lobby, onCancel, onReopen }: { 
+const MatchInfoPanel = ({ isStarting, isMatchStarted, countdown, players, lobby, onCancel, onReopen, isVipLobby }: { 
   isStarting: boolean, 
   isMatchStarted: boolean,
   countdown: number, 
   players: Player[],
   lobby: any,
   onCancel: () => void,
-  onReopen: () => void
+  onReopen: () => void,
+  isVipLobby?: boolean
 }) => {
   const activePlayers = players.filter(p => !p.id.startsWith("slot-"));
   const readyCount = activePlayers.filter(p => p.isReady).length;
@@ -1196,7 +1200,8 @@ const PlayerCard = ({
   onKick,
   onBan,
   isHostView,
-  disabled 
+  disabled,
+  isVipLobby
 }: { 
   player: Player, 
   isSelected: boolean,
@@ -1455,14 +1460,15 @@ const PingChart = ({ ping }: { ping: number }) => {
   );
 };
 
-const ChatPanel = ({ messages, players, inputMessage, setInputMessage, onSend, onClose, currentUserId }: { 
+const ChatPanel = ({ messages, players, inputMessage, setInputMessage, onSend, onClose, currentUserId, isVipLobby }: { 
   messages: Message[], 
   players: Player[],
   inputMessage: string, 
   setInputMessage: (v: string) => void,
   onSend: (e: React.FormEvent) => void,
   onClose?: () => void,
-  currentUserId?: string
+  currentUserId?: string,
+  isVipLobby?: boolean
 }) => {
   const filteredMessages = messages.filter(msg => !msg.toUserId || msg.isSystem);
   const scrollRef = useRef<HTMLDivElement>(null);

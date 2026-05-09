@@ -282,22 +282,36 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const acceptRequest = async (requestId: string) => {
     try {
-      await api.post("/friends/respond", { request_id: requestId, action: "ACCEPTED" });
-      toast.success("درخواست دوستی پذیرفته شد");
+      const existingReq = requests.find((r: any) => r.id === requestId);
+      if (existingReq?.reqType === "elite_invite") {
+         await api.post("/elite/members/accept", { notificationId: requestId });
+         toast.success("شما با موفقیت به گروه پیوستید");
+      } else {
+         await api.post("/friends/respond", { request_id: requestId, action: "ACCEPTED" });
+         toast.success("درخواست دوستی پذیرفته شد");
+         fetchFriends();
+      }
       fetchRequests();
-      fetchFriends();
-    } catch (error) {
-      toast.error("خطا در پذیرش درخواست");
+    } catch (error: any) {
+      toast.error(error.response?.data?.error?.message || "خطا در پذیرش درخواست");
     }
   };
 
   const declineRequest = async (requestId: string) => {
     try {
-      await api.post("/friends/respond", { request_id: requestId, action: "DECLINED" });
+      const existingReq = requests.find((r: any) => r.id === requestId);
+      if (existingReq?.reqType === "elite_invite") {
+         // Optionally add a decline URL, or just let them delete notification. 
+         // Assuming we can simply delete the notification. Let's add an endpoint for it.
+         // Actually, if we just let it be, they can't remove it. We'll add a decline via api.delete(`/notification/${requestId}`)
+         await api.delete(`/notifications/${requestId}`);
+      } else {
+         await api.post("/friends/respond", { request_id: requestId, action: "DECLINED" });
+      }
       toast.success("درخواست رد شد");
       fetchRequests();
-    } catch (error) {
-      toast.error("خطا در رد درخواست");
+    } catch (error: any) {
+      toast.error(error.response?.data?.error?.message || "خطا در رد درخواست");
     }
   };
 

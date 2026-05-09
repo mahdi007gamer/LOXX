@@ -6,5 +6,6 @@ const router = Router();
 
 router.get("/", authenticate, NotificationController.list);
 router.post("/read", authenticate, NotificationController.markRead);
+router.delete("/:id", authenticate, NotificationController.delete);
 
 export default router;

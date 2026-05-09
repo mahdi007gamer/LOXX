@@ -20,4 +20,19 @@ export class NotificationController {
       res.status(400).json({ status: "error", error: { code: "VALIDATION_FAILED", message: error.message } });
     }
   }
+
+  static async delete(req: AuthenticatedRequest, res: Response) {
+    try {
+      const { id } = req.params;
+      const { userId } = req.user!;
+      const prisma = require("../utils/prisma").default;
+      const notification = await prisma.notification.findUnique({ where: { id } });
+      if (notification && notification.userId === userId) {
+         await prisma.notification.delete({ where: { id } });
+      }
+      res.json({ status: "success", message: "Deleted" });
+    } catch (error: any) {
+      res.status(400).json({ status: "error", error: { code: "VALIDATION_FAILED", message: error.message } });
+    }
+  }
 }

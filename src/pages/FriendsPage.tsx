@@ -515,7 +515,7 @@ export const FriendsPage = () => {
                            </div>
                            <div>
                              <p className="text-xs font-bold text-white">{req.displayName}</p>
-                             <p className="text-[10px] text-gray-500">{req.type === 'incoming' ? "درخواست دوستی" : "در انتظار تایید"}</p>
+                             <p className="text-[10px] text-gray-500">{(req as any).reqType === 'elite_invite' ? "دعوت به گروه نخبگان" : req.type === 'incoming' ? "درخواست دوستی" : "در انتظار تایید"}</p>
                            </div>
                          </div>
                          <p className="text-[9px] text-gray-600">{req.timestamp}</p>

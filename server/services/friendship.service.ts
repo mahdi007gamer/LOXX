@@ -63,7 +63,7 @@ export class FriendshipService {
   }
 
   static async getRequests(userId: string) {
-    const requests = await prisma.friendship.findMany({
+    const friendRequests = await prisma.friendship.findMany({
       where: {
         OR: [
           { targetId: userId, status: "PENDING" },
@@ -76,7 +76,17 @@ export class FriendshipService {
       }
     });
 
-    return requests.map(r => {
+    const eliteInvites = await prisma.notification.findMany({
+      where: {
+        userId,
+        type: "ELITE_INVITE"
+      },
+      include: {
+        user: { include: { profile: true } }
+      }
+    });
+
+    const formattedFriendReqs = friendRequests.map(r => {
       const isIncoming = r.targetId === userId;
       const otherUser = isIncoming ? r.requester : r.target;
       return {
@@ -84,6 +94,7 @@ export class FriendshipService {
         userId: otherUser.id,
         username: otherUser.username,
         displayName: otherUser.profile?.displayName || otherUser.username,
+        reqType: "friend",
         type: isIncoming ? "incoming" : "outgoing",
         createdAt: r.createdAt,
         avatarUrl: otherUser.profile?.avatarUrl,
@@ -93,6 +104,27 @@ export class FriendshipService {
         level: otherUser.profile?.level || 1
       };
     });
+
+    const formattedEliteReqs = eliteInvites.map(n => {
+      const parsedData = JSON.parse(n.data || "{}");
+      return {
+        id: n.id,
+        userId: "elite-group",
+        username: "Elite Group",
+        displayName: parsedData.groupName || "گروه نخبگان",
+        reqType: "elite_invite", // Important to distinguish
+        type: "incoming",
+        createdAt: n.createdAt,
+        avatarUrl: parsedData.avatarUrl || "",
+        bannerUrl: undefined,
+        membership: "VIP",
+        vipMetadata: undefined,
+        level: 1,
+        channelId: n.referenceId
+      };
+    });
+
+    return [...formattedFriendReqs, ...formattedEliteReqs].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }
 
   static async sendRequestByUsername(requesterId: string, username: string) {

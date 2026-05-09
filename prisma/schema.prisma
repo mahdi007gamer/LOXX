@@ -115,6 +115,8 @@ model Channel {
   type            String   @default("PUBLIC") // PUBLIC, ELITE, NEWS
   ownerId         String?
   owner           User?    @relation("OwnedChannels", fields: [ownerId], references: [id])
+  avatarUrl       String?
+  metadata        String?
   members         ChannelMember[]
   messages        Message[]
 }
