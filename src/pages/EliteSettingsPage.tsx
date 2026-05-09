@@ -391,6 +391,7 @@ export const EliteSettingsPage = () => {
                           </div>
                        </div>
                     </div>
+                  </div>
 
                   <div className="space-y-4">
                     <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest italic">بنر پروفایل (JPG, PNG)</label>

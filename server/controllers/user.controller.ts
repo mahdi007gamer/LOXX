@@ -91,6 +91,15 @@ export class UserController {
     }
   }
 
+  static async getTotalUserCount(req: AuthenticatedRequest, res: Response) {
+    try {
+      const count = await UserService.getTotalCount();
+      res.json({ status: "success", data: { count } });
+    } catch (error: any) {
+      res.status(500).json({ status: "error", error: { code: "INTERNAL_ERROR", message: error.message } });
+    }
+  }
+
   static async toggleGame(req: AuthenticatedRequest, res: Response) {
     try {
       const { gameId } = req.body;

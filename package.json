@@ -26,6 +26,7 @@
     "clsx": "^2.1.1",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
+    "date-fns-jalali": "^4.1.0-0",
     "dotenv": "^17.2.3",
     "express": "^4.21.2",
     "express-rate-limit": "^8.4.1",

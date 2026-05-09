@@ -94,6 +94,10 @@ export class UserService {
     }
   }
 
+  static async getTotalCount() {
+    return prisma.user.count();
+  }
+
   static async getMyGames(userId: string) {
     return prisma.userGame.findMany({
       where: { userId },
