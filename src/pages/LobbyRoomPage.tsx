@@ -769,7 +769,9 @@ export const LobbyRoomPage = () => {
                {friends.length > 0 ? friends.map((friend, i) => (
                  <div key={i} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl hover:bg-white/10 transition-colors group">
                     <div className="flex items-center gap-3">
-                       <div className="h-10 w-10 rounded-xl bg-neon-blue/20 flex items-center justify-center text-xl">👤</div>
+                       <div className="h-10 w-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden shrink-0">
+                         {friend.avatarUrl ? <img src={friend.avatarUrl} alt="" className="w-full h-full object-cover" /> : <span className="text-xl">👤</span>}
+                       </div>
                        <div>
                           <p className="text-sm font-black text-white">{friend.username}</p>
                           <p className="text-[10px] text-gray-500 uppercase">{friend.status} • {friend.activity}</p>

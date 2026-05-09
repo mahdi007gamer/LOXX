@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
-import { Gamepad2, User, Bell, Menu, X, LayoutDashboard, Target, Users, MessageSquare, Trophy, Settings, Shield } from "lucide-react";
+import { Gamepad2, User, Bell, Menu, X, LayoutDashboard, Target, Users, MessageSquare, Trophy, Settings, Shield, LogOut } from "lucide-react";
 import { GlowButton } from "../ui/GlowButton";
 import { motion, AnimatePresence, useScroll, useMotionValueEvent } from "motion/react";
 import { cn } from "@/src/lib/utils";
@@ -151,17 +151,35 @@ export const Navbar = () => {
               </div>
 
               <div className="absolute bottom-10 left-6 right-6">
-                <Link to="/profile" onClick={() => setIsMenuOpen(false)}>
-                  <div className="flex items-center gap-4 rounded-2xl bg-white/5 p-4 border border-white/10">
-                    <div className="h-12 w-12 rounded-full bg-neon-purple/20 flex items-center justify-center text-neon-purple">
-                      <User size={24} />
-                    </div>
-                    <div>
-                      <p className="font-bold text-white uppercase">Ali_Gamer</p>
-                      <p className="text-xs text-gray-500">LEVEL 42</p>
-                    </div>
+                {user ? (
+                  <div className="flex flex-col gap-2">
+                    <Link to="/profile" onClick={() => setIsMenuOpen(false)}>
+                      <div className="flex items-center gap-4 rounded-2xl bg-white/5 p-4 border border-white/10">
+                        <div className="h-12 w-12 rounded-full overflow-hidden bg-neon-purple/20 flex items-center justify-center text-neon-purple shrink-0">
+                          {user.avatar ? (
+                            <img src={user.avatar} alt="" className="h-full w-full object-cover" />
+                          ) : (
+                            <User size={24} />
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1 text-right">
+                          <p className="font-bold text-white uppercase text-sm truncate">{user.displayName || user.username}</p>
+                          <p className="text-[10px] text-gray-400 font-black tracking-widest truncate">{user.membership || "MEMBER"}</p>
+                        </div>
+                      </div>
+                    </Link>
+                    <button onClick={logout} className="flex items-center justify-center gap-2 rounded-2xl bg-red-500/10 hover:bg-red-500/20 text-red-500 p-4 border border-red-500/20 transition-colors w-full font-bold">
+                      <LogOut size={18} />
+                      خروج از حساب
+                    </button>
                   </div>
-                </Link>
+                ) : (
+                  <Link to="/auth" onClick={() => setIsMenuOpen(false)}>
+                    <GlowButton variant="purple" className="w-full">
+                      ورود / ثبت‌نام
+                    </GlowButton>
+                  </Link>
+                )}
               </div>
             </motion.div>
           </>

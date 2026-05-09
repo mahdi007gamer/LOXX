@@ -634,6 +634,7 @@ export const ChatPage: React.FC = () => {
   const [selectedInvitees, setSelectedInvitees] = useState<string[]>([]);
   const [vipGroupName, setVipGroupName] = useState("");
   const [eliteGroups, setEliteGroups] = useState<any[]>([]);
+  const [proGroups, setProGroups] = useState<any[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -658,19 +659,27 @@ export const ChatPage: React.FC = () => {
     try {
       const res = await api.get("/elite");
       if (res.data.data) {
-        setEliteGroups(res.data.data.map((c: any) => ({
-          id: c.id,
-          name: c.title,
-          type: "elite",
-          users: c.members.length,
-          icon: "👑",
-          avatarUrl: c.avatarUrl,
-          ownerId: c.ownerId,
-          rawMembers: c.members
-        })));
+        const elite = [];
+        const pro = [];
+        for (const c of res.data.data) {
+          const mapped = {
+            id: c.id,
+            name: c.title,
+            type: c.type === "PRO" ? "pro" : "elite",
+            users: c.members.length,
+            icon: c.type === "PRO" ? "🏆" : "👑",
+            avatarUrl: c.avatarUrl,
+            ownerId: c.ownerId,
+            rawMembers: c.members
+          };
+          if (c.type === "PRO") pro.push(mapped);
+          else elite.push(mapped);
+        }
+        setEliteGroups(elite);
+        setProGroups(pro);
       }
     } catch(err) {
-      console.error("Failed to load elite groups", err);
+      console.error("Failed to load groups", err);
     }
   };
 
@@ -934,7 +943,7 @@ export const ChatPage: React.FC = () => {
       icon: g.image
     }));
 
-  const allChannels = [...INITIAL_CHANNELS, ...myGamesChannels, ...eliteGroups];
+  const allChannels = [...INITIAL_CHANNELS, ...myGamesChannels, ...eliteGroups, ...proGroups];
   const friendChat = chats.find(c => c.friendId === activeChannelId);
   const friend = friends.find(f => f.id === activeChannelId);
   
@@ -963,6 +972,10 @@ export const ChatPage: React.FC = () => {
           setMemberCount(channelUsers[activeChannel.id] ?? activeChannel.users);
           setGameMembers([]);
         });
+      } else if (activeChannel.type === 'elite' || activeChannel.type === 'pro') {
+        setMemberCount((activeChannel as any).rawMembers?.length || activeChannel.users);
+        setChannelUsers(prev => ({ ...prev, [activeChannel.id]: (activeChannel as any).rawMembers?.length || activeChannel.users }));
+        setGameMembers((activeChannel as any).rawMembers || []);
       } else {
         setMemberCount(channelUsers[activeChannel.id] ?? activeChannel.users);
         setGameMembers([]);
@@ -1542,6 +1555,28 @@ export const ChatPage: React.FC = () => {
             </div>
           )}
 
+          {/* Pro Groups */}
+          {proGroups.length > 0 && (
+            <div className="px-4">
+              <h3 className="px-4 text-[10px] font-black text-neon-blue/50 uppercase tracking-widest mb-3 flex items-center gap-2">
+                <span className="h-px flex-1 bg-neon-blue/10"></span>
+                گروه‌های حرفه‌ای
+                <span className="h-px flex-1 bg-neon-blue/10"></span>
+              </h3>
+              <div className="space-y-1">
+                {proGroups.map((channel) => (
+                  <ChannelButton 
+                    key={channel.id}
+                    channel={{ ...channel, users: channelUsers[channel.id] ?? channel.users }}
+                    active={activeChannelId === channel.id}
+                    unreadCount={unreadCounts[channel.id]}
+                    onClick={() => setActiveChannelId(channel.id)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Game Specific Channels */}
           {myGamesChannels.length > 0 && (
             <div className="px-4">
@@ -1726,6 +1761,12 @@ export const ChatPage: React.FC = () => {
                  ) : (
                    <Crown size={20} className="text-yellow-400" />
                  )
+              ) : activeChannel.type === 'pro' ? (
+                 (activeChannel as any).avatarUrl ? (
+                   <img src={(activeChannel as any).avatarUrl} alt="" className="h-full w-full object-cover" />
+                 ) : (
+                   <Trophy size={20} className="text-neon-blue" />
+                 )
               ) : (
                 <Hash size={16} />
               )}
@@ -1738,6 +1779,9 @@ export const ChatPage: React.FC = () => {
                 )}
                 {activeChannel.type === 'elite' && (
                   <span className="hidden xs:inline-block px-1.5 py-0.5 rounded bg-yellow-400/10 text-[8px] text-yellow-400 font-black border border-yellow-400/20 uppercase tracking-tighter">ELITE VIP</span>
+                )}
+                {activeChannel.type === 'pro' && (
+                  <span className="hidden xs:inline-block px-1.5 py-0.5 rounded bg-neon-blue/10 text-[8px] text-neon-blue font-black border border-neon-blue/20 uppercase tracking-tighter">PRO</span>
                 )}
               </div>
               <div className="flex items-center gap-1.5 md:gap-2 truncate">
@@ -1773,16 +1817,16 @@ export const ChatPage: React.FC = () => {
             </div>
           </div>
           <div className="flex items-center gap-1.5 md:gap-3">
-            {activeChannel.type === 'elite' && (
+            {(activeChannel.type === 'elite' || activeChannel.type === 'pro') && (
               <div className="flex items-center gap-1 md:gap-2">
                  {((activeChannel as any).ownerId === user?.id) ? (
                    <>
                      <GlowButton onClick={() => setShowEliteInviteModal(true)} variant="pink" size="sm" className="hidden sm:flex h-8 px-3 text-[10px] font-black uppercase">دعوت دوستان</GlowButton>
                      <button title="دعوت دوستان" onClick={() => setShowEliteInviteModal(true)} className="sm:hidden p-1.5 rounded-lg bg-neon-pink/10 text-neon-pink hover:bg-neon-pink/20 transition-colors">
-                        <Users size={16} />
+                        <UserPlus size={16} />
                      </button>
                      <button title="تنظیمات گروه" onClick={() => { setEliteSettingsData({ title: activeChannel.name, avatarUrl: (activeChannel as any).avatarUrl || "" }); setShowEliteSettingsModal(true); }} className="p-1.5 rounded-lg bg-white/5 text-gray-400 hover:text-white transition-colors">
-                        <MoreVertical size={16} />
+                        <Settings size={16} />
                      </button>
                    </>
                  ) : (
@@ -1915,6 +1959,27 @@ export const ChatPage: React.FC = () => {
                       <h3 className="text-[10px] font-black text-yellow-500/50 uppercase tracking-widest mb-3 text-right">گروه‌های نخبگان</h3>
                       <div className="space-y-1">
                         {eliteGroups.map((channel) => (
+                          <ChannelButton 
+                            key={channel.id}
+                            channel={{ ...channel, users: channelUsers[channel.id] ?? channel.users }}
+                            active={activeChannelId === channel.id}
+                            unreadCount={unreadCounts[channel.id]}
+                            onClick={() => {
+                              setActiveChannelId(channel.id);
+                              setShowChannelMenu(false);
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Pro Groups */}
+                  {proGroups.length > 0 && (
+                    <div>
+                      <h3 className="text-[10px] font-black text-neon-blue/50 uppercase tracking-widest mb-3 text-right">گروه‌های حرفه‌ای</h3>
+                      <div className="space-y-1">
+                        {proGroups.map((channel) => (
                           <ChannelButton 
                             key={channel.id}
                             channel={{ ...channel, users: channelUsers[channel.id] ?? channel.users }}

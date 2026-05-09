@@ -20,19 +20,21 @@ export class EliteGroupController {
       }
 
       const groupCount = await prisma.channel.count({
-        where: { ownerId: userId, type: "ELITE" }
+        where: { ownerId: userId, type: { in: ["ELITE", "PRO"] } }
       });
 
       if (groupCount >= 1) {
         return res.status(400).json({ status: "error", error: { message: "شما فقط می‌توانید یک گروه بسازید" } });
       }
 
+      const channelType = membership === "VIP" ? "ELITE" : "PRO";
+
       const channel = await prisma.channel.create({
         data: {
           title,
-          type: "ELITE",
+          type: channelType,
           ownerId: userId,
-          inviteCode: membership === "VIP" ? Math.random().toString(36).substring(2, 10) : null,
+          inviteCode: true ? Math.random().toString(36).substring(2, 10) : null,
           members: {
             create: {
               userId,
@@ -224,7 +226,7 @@ export class EliteGroupController {
       const userId = req.user!.userId;
       const channels = await prisma.channel.findMany({
         where: {
-          type: "ELITE",
+          type: { in: ["ELITE", "PRO"] },
           members: { some: { userId } }
         },
         include: {

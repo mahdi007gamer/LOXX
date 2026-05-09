@@ -125,7 +125,7 @@ export const LobbiesPage = () => {
           </header>
 
           {/* Game Filters */}
-          <div className="mb-10 flex items-center gap-3 overflow-x-auto pb-4 scrollbar-none no-scrollbar snap-x snap-mandatory">
+          <div className="-mx-4 px-4 sm:mx-0 sm:px-0 mb-10 flex items-center gap-3 overflow-x-auto pb-4 scrollbar-none no-scrollbar snap-x snap-mandatory">
              <button 
                 onClick={() => setActiveFilter("all")}
                 className={cn(

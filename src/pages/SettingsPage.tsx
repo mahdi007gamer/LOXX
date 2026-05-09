@@ -27,7 +27,7 @@ import {
   ArrowRight
 } from "lucide-react";
 import { cn } from "../lib/utils";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 
 type SettingsTab = "profile" | "security" | "notifications" | "ui" | "region";
 
@@ -36,6 +36,11 @@ export const SettingsPage = () => {
   const [activeTab, setActiveTab] = useState<SettingsTab>("profile");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
+  const [showTwoFactorModal, setShowTwoFactorModal] = useState(false);
+  const [twoFactorCode, setTwoFactorCode] = useState("");
+  const [setupStep, setSetupStep] = useState<"initial" | "verifying">("initial");
   
   const [settings, setSettings] = useState({
     receiveFriendRequests: true,
@@ -59,10 +64,30 @@ export const SettingsPage = () => {
     confirmPassword: ""
   });
 
+  const [devices, setDevices] = useState<any[]>([]);
+
   useEffect(() => {
     fetchUserData();
     fetchSettings();
+    fetchDevices();
   }, []);
+
+  const fetchDevices = async () => {
+    try {
+      const res = await api.get("/user/me/devices");
+      setDevices(res.data.data);
+    } catch(err) {}
+  };
+
+  const handleRevokeDevice = async (id: string) => {
+    try {
+      await api.delete(`/user/me/devices/${id}`);
+      setDevices(prev => prev.filter(d => d.id !== id));
+      toast.success("دستگاه با موفقیت حذف شد");
+    } catch(err) {
+      toast.error("خطا در حذف دستگاه");
+    }
+  };
 
   const fetchSettings = async () => {
     try {
@@ -94,6 +119,7 @@ export const SettingsPage = () => {
         avatarUrl: user.profile?.avatarUrl || user.avatarUrl || "",
         region: user.region || "Middle East",
       }));
+      setTwoFactorEnabled(user.twoFactorEnabled || false);
     } catch (err) {
       toast.error("خطا در دریافت اطلاعات کاربر");
     } finally {
@@ -283,6 +309,49 @@ export const SettingsPage = () => {
     </div>
   );
 
+  const handleEnable2FA = async () => {
+    try {
+      setSaving(true);
+      const res = await api.post("/user/me/2fa/setup");
+      toast.success(res.data.message);
+      setSetupStep("verifying");
+      setShowTwoFactorModal(true);
+    } catch (err: any) {
+      toast.error(err.response?.data?.error?.message || "خطا در برقراری ارتباط");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleVerify2FA = async () => {
+    try {
+      setSaving(true);
+      const res = await api.post("/user/me/2fa/verify", { code: twoFactorCode });
+      toast.success(res.data.message);
+      setTwoFactorEnabled(true);
+      setShowTwoFactorModal(false);
+      setTwoFactorCode("");
+      setSetupStep("initial");
+    } catch (err: any) {
+      toast.error(err.response?.data?.error?.message || "کد اشتباه است");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDisable2FA = async () => {
+    try {
+      setSaving(true);
+      const res = await api.post("/user/me/2fa/disable");
+      toast.success(res.data.message);
+      setTwoFactorEnabled(false);
+    } catch (err: any) {
+      toast.error(err.response?.data?.error?.message || "خطا");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const renderSecurity = () => (
     <div className="space-y-6">
       <NeonCard variant="purple" className="space-y-8">
@@ -324,22 +393,62 @@ export const SettingsPage = () => {
         <hr className="border-white/5" />
 
         <div>
-          <h3 className="font-black text-white italic mb-1 flex items-center gap-2">
-            تایید دو مرحله‌ای <span className="text-[8px] bg-green-500/10 text-green-500 px-1.5 py-0.5 rounded uppercase not-italic">غیرفعال</span>
-          </h3>
-          <p className="text-[10px] text-gray-500 font-bold uppercase mb-4 italic">یک لایه امنیتی اضافی به حساب خود اضافه کنید</p>
-          <GlowButton variant="blue" size="sm" className="text-[10px] font-black uppercase italic h-9 px-6 border-none">فعال‌سازی 2FA</GlowButton>
+           <div className="flex items-center justify-between mb-4">
+             <div>
+               <h3 className="font-black text-white italic mb-1 flex items-center gap-2">
+                 تایید دو مرحله‌ای پیامکی 
+                 {twoFactorEnabled ? (
+                   <span className="text-[10px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded uppercase not-italic">فعال</span>
+                 ) : (
+                   <span className="text-[10px] bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded uppercase not-italic">غیرفعال</span>
+                 )}
+               </h3>
+               <p className="text-[10px] text-gray-500 font-bold uppercase italic">یک لایه امنیتی اضافی به حساب خود اضافه کنید</p>
+             </div>
+             {twoFactorEnabled ? (
+               <GlowButton variant="purple" size="sm" className="text-[10px] font-black uppercase italic px-6 border-none bg-red-500/10 text-red-500 hover:bg-red-500/20 hover:text-red-400 shadow-none" onClick={handleDisable2FA} disabled={saving}>غیرفعال‌سازی 2FA</GlowButton>
+             ) : (
+               <GlowButton variant="blue" size="sm" className="text-[10px] font-black uppercase italic px-6 border-none" onClick={handleEnable2FA} disabled={saving}>فعال‌سازی 2FA</GlowButton>
+             )}
+           </div>
         </div>
+
+        {/* 2FA Modal */}
+        <AnimatePresence>
+          {showTwoFactorModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+               <motion.div 
+                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                 className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                 onClick={() => { setShowTwoFactorModal(false); setSetupStep("initial"); }}
+               />
+               <motion.div 
+                 initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
+                 className="relative w-full max-w-sm rounded-[24px] bg-[#0a0a0f] border border-white/10 p-6 shadow-2xl"
+               >
+                 <h3 className="text-xl font-black text-white italic mb-2">تایید شماره موبایل</h3>
+                 <p className="text-xs text-gray-500 font-bold mb-6 italic">کد تایید پیامک شده را وارد کنید (۱۲۳۴۵)</p>
+                 <Input 
+                   label="کد تایید"
+                   placeholder="مثلا 12345"
+                   value={twoFactorCode}
+                   onChange={(e) => setTwoFactorCode(e.target.value)}
+                 />
+                 <div className="mt-6 flex justify-end gap-3">
+                   <button onClick={() => { setShowTwoFactorModal(false); setSetupStep("initial"); }} className="px-4 text-xs font-black text-gray-500 hover:text-white uppercase">انصراف</button>
+                   <GlowButton variant="blue" className="px-8 text-xs font-black uppercase blur-none shadow-none" onClick={handleVerify2FA} disabled={saving || twoFactorCode.length < 5}>ثبت و فعالسازی</GlowButton>
+                 </div>
+               </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
 
         <hr className="border-white/5" />
 
         <div>
           <h3 className="font-black text-white italic mb-4">دستگاه‌های متصل</h3>
           <div className="space-y-3">
-             {[
-               { device: "Windows Desktop", location: "Tehran, Iran", current: true },
-               { device: "iPhone 13", location: "Karaj, Iran", current: false }
-             ].map((session, i) => (
+             {devices.map((session, i) => (
                <div key={i} className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/5 group hover:border-white/10 transition-all">
                   <div className="flex items-center gap-4">
                     <div className="h-10 w-10 rounded-lg bg-white/5 flex items-center justify-center text-gray-400 group-hover:text-neon-blue transition-colors">
@@ -347,17 +456,18 @@ export const SettingsPage = () => {
                     </div>
                     <div>
                       <h4 className="text-xs font-black text-white italic flex items-center gap-2">
-                        {session.device}
-                        {session.current && <span className="text-[8px] text-neon-blue uppercase">فعلی</span>}
+                        {session.deviceName}
+                        {i === 0 && <span className="text-[8px] text-neon-blue uppercase">اخیر</span>}
                       </h4>
-                      <p className="text-[10px] text-gray-500 font-bold">{session.location}</p>
+                      <p className="text-[10px] text-gray-500 font-bold">{session.ipAddress}</p>
                     </div>
                   </div>
-                  {!session.current && (
-                    <button className="text-[10px] font-black text-neon-pink uppercase italic opacity-0 group-hover:opacity-100 transition-opacity">خروج</button>
-                  )}
+                  <button onClick={() => handleRevokeDevice(session.id)} className="text-[10px] font-black text-neon-pink uppercase italic opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">خروج</button>
                </div>
              ))}
+             {devices.length === 0 && (
+               <p className="text-[10px] text-gray-500 font-bold uppercase">در حال بارگذاری...</p>
+             )}
           </div>
         </div>
       </NeonCard>

@@ -19,6 +19,7 @@ model User {
   passwordHash    String
   role            String    @default("USER") // USER, ADMIN
   isVerified      Boolean   @default(false)
+  twoFactorEnabled Boolean  @default(false)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
@@ -42,6 +43,8 @@ model User {
   invitesSent     Referral[]   @relation("Inviter")
   invitationReceived Referral?   @relation("Invitee")
   paymentRequests PaymentRequest[]
+  lobbyBans       LobbyBan[]
+  devices         ConnectedDevice[]
 }
 
 model UserSettings {
@@ -183,6 +186,7 @@ model Lobby {
 
   members         LobbyMember[]
   messages        Message[]
+  bans            LobbyBan[]
 
   @@index([hostId])
 }
@@ -287,4 +291,26 @@ model Activity {
   createdAt       DateTime @default(now())
 
   @@index([userId, createdAt])
+}
+
+model LobbyBan {
+  lobbyId String
+  userId  String
+  lobby   Lobby @relation(fields: [lobbyId], references: [id], onDelete: Cascade)
+  user    User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([lobbyId, userId])
+}
+
+model ConnectedDevice {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deviceName String
+  os        String
+  browser   String
+  ipAddress String
+  lastActive DateTime @default(now())
+  createdAt DateTime @default(now())
 }

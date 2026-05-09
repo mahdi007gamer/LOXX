@@ -229,8 +229,12 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
             <div className="flex items-center gap-2">
               <h4 className={cn(
                 "text-2xl font-black italic tracking-tighter uppercase",
-                isVIP ? "text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-200 drop-shadow-[0_0_10px_rgba(250,204,21,0.3)]" : "text-white"
-              )} style={metadata && metadata.colors && (isVIP || isPLUS) ? { color: metadata.colors.text } : {}}>
+                isVIP && !metadata?.colors?.textGradient ? "text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-200 drop-shadow-[0_0_10px_rgba(250,204,21,0.3)]" : "text-white"
+              )} style={metadata && metadata.colors && (isVIP || isPLUS) ? 
+                (metadata.colors.textGradient 
+                  ? { backgroundImage: `linear-gradient(to right, ${metadata.colors.text}, ${metadata.colors.textGradient})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }
+                  : { color: metadata.colors.text }) 
+                : {}}>
                 {user.senderName}
               </h4>
               <CheckCircle2 size={16} className="text-neon-blue" fill="currentColor" />

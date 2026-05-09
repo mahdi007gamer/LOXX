@@ -480,6 +480,11 @@ export function setupWebSockets(io: Server) {
           where: { lobbyId_userId: { lobbyId, userId: targetUserId } }
         });
         
+        // Add user to the ban list for this lobby
+        await prisma.lobbyBan.create({
+          data: { lobbyId, userId: targetUserId }
+        }).catch(() => {});
+        
         lobbyNs.to(`lobby:${lobbyId}`).emit("lobby.member_left", { userId: targetUserId, reason: "banned" });
         
         // Disconnect the target user
@@ -526,6 +531,13 @@ export function setupWebSockets(io: Server) {
          const fromUser = await prisma.user.findUnique({ where: { id: userId } });
          
          if (lobby && fromUser) {
+             if (lobby.hostId === userId) {
+                // If it's the host inviting, delete any ban for this user
+                await prisma.lobbyBan.deleteMany({
+                   where: { lobbyId: lobbyId, userId: targetUserId }
+                });
+             }
+
              const payload = {
                 lobbyId,
                 fromId: userId,

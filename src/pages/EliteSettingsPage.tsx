@@ -551,10 +551,17 @@ export const EliteSettingsPage = () => {
                         </div>
                       </div>
                       <div className="space-y-3">
-                        <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2 italic">رنگ متن‌ها</label>
+                        <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2 italic">رنگ متن (شروع)</label>
                         <div className="flex gap-3 items-center p-3 rounded-xl bg-white/5 border border-white/5">
                           <input type="color" value={metadata.colors.text} onChange={(e) => setMetadata({ ...metadata, colors: { ...metadata.colors, text: e.target.value } })} className="w-10 h-10 rounded-lg overflow-hidden cursor-pointer" />
                           <span className="text-[10px] font-mono text-gray-400 uppercase">{metadata.colors.text}</span>
+                        </div>
+                      </div>
+                      <div className="space-y-3">
+                        <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2 italic">رنگ متن (پایان - گرادینت)</label>
+                        <div className="flex gap-3 items-center p-3 rounded-xl bg-white/5 border border-white/5">
+                          <input type="color" value={metadata.colors.textGradient || metadata.colors.text} onChange={(e) => setMetadata({ ...metadata, colors: { ...metadata.colors, textGradient: e.target.value } })} className="w-10 h-10 rounded-lg overflow-hidden cursor-pointer" />
+                          <span className="text-[10px] font-mono text-gray-400 uppercase">{metadata.colors.textGradient || "None"}</span>
                         </div>
                       </div>
                       <div className="space-y-3">
@@ -653,7 +660,11 @@ export const EliteSettingsPage = () => {
                       <div className="space-y-4">
                          <div>
                             <div className="flex items-center gap-2">
-                               <h4 className="text-2xl font-black italic tracking-tighter uppercase text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-200 drop-shadow-[0_0_10px_rgba(250,204,21,0.3)]">
+                               <h4 className={cn("text-2xl font-black italic tracking-tighter uppercase", !metadata?.colors?.textGradient ? "text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-200 drop-shadow-[0_0_10px_rgba(250,204,21,0.3)]" : "text-white")} 
+                                 style={metadata.colors.textGradient 
+                                   ? { backgroundImage: `linear-gradient(to right, ${metadata.colors.text}, ${metadata.colors.textGradient})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }
+                                   : { color: metadata.colors.text }}
+                               >
                                  {user?.displayName || "Loxx Gamer"}
                                </h4>
                                <ShieldCheck size={16} className="text-neon-blue" fill="currentColor" />

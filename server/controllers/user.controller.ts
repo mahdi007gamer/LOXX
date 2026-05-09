@@ -23,7 +23,8 @@ export class UserController {
           bannerUrl: user.profile?.bannerUrl,
           vipMetadata: user.profile?.vipMetadata,
           email: user.email,
-          role: user.role
+          role: user.role,
+          twoFactorEnabled: user.twoFactorEnabled
         }
       });
     } catch (error: any) {
@@ -107,6 +108,70 @@ export class UserController {
       res.json({ status: "success", data: result });
     } catch (error: any) {
       res.status(500).json({ status: "error", error: { code: "INTERNAL_ERROR", message: error.message } });
+    }
+  }
+
+  static async getDevices(req: AuthenticatedRequest, res: Response) {
+    try {
+      const devices = await prisma.connectedDevice.findMany({
+        where: { userId: req.user!.userId },
+        orderBy: { lastActive: "desc" }
+      });
+      res.json({ status: "success", data: devices });
+    } catch (error: any) {
+      res.status(500).json({ status: "error", error: { message: error.message } });
+    }
+  }
+
+  static async revokeDevice(req: AuthenticatedRequest, res: Response) {
+    try {
+      const { id } = req.params;
+      await prisma.connectedDevice.deleteMany({
+        where: { id, userId: req.user!.userId }
+      });
+      res.json({ status: "success", message: "Device revoked successfully" });
+    } catch (error: any) {
+      res.status(500).json({ status: "error", error: { message: error.message } });
+    }
+  }
+
+  static async setup2FA(req: AuthenticatedRequest, res: Response) {
+    try {
+      // In a real application, send an SMS with a random code
+      // For demo purposes, we will return a success message mimicking SMS sent
+      res.json({ status: "success", message: "کد تایید به شماره شما پیامک شد (برای دمو ۱۲۳۴۵ را وارد کنید)" });
+    } catch (error: any) {
+      res.status(500).json({ status: "error", error: { message: error.message } });
+    }
+  }
+
+  static async verify2FA(req: AuthenticatedRequest, res: Response) {
+    try {
+      const { code } = req.body;
+      if (code !== "12345") {
+        return res.status(400).json({ status: "error", error: { message: "کد تایید وارد شده اشتباه است" } });
+      }
+
+      await prisma.user.update({
+        where: { id: req.user!.userId },
+        data: { twoFactorEnabled: true }
+      });
+
+      res.json({ status: "success", message: "تایید دو مرحله‌ای با موفقیت فعال شد" });
+    } catch (error: any) {
+      res.status(500).json({ status: "error", error: { message: error.message } });
+    }
+  }
+
+  static async disable2FA(req: AuthenticatedRequest, res: Response) {
+    try {
+      await prisma.user.update({
+        where: { id: req.user!.userId },
+        data: { twoFactorEnabled: false }
+      });
+      res.json({ status: "success", message: "تایید دو مرحله‌ای غیرفعال شد" });
+    } catch (error: any) {
+      res.status(500).json({ status: "error", error: { message: error.message } });
     }
   }
 }

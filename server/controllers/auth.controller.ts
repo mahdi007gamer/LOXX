@@ -20,6 +20,31 @@ export class AuthController {
     try {
       const { user, accessToken, refreshToken } = await AuthService.login(req.body);
       
+      // Store connected device
+      const userAgent = req.headers["user-agent"] || "Unknown Browser";
+      // Basic logic to parse OS and Browser (or just store raw for now)
+      let os = "Desktop";
+      if (userAgent.includes("Windows")) os = "Windows";
+      else if (userAgent.includes("Mac OS")) os = "macOS";
+      else if (userAgent.includes("Linux")) os = "Linux";
+      else if (userAgent.includes("Android")) os = "Android";
+      else if (userAgent.includes("iOS") || userAgent.includes("iPhone")) os = "iOS";
+
+      let browser = "Web Browser";
+      if (userAgent.includes("Chrome")) browser = "Chrome";
+      else if (userAgent.includes("Firefox")) browser = "Firefox";
+      else if (userAgent.includes("Safari") && !userAgent.includes("Chrome")) browser = "Safari";
+
+      await prisma.connectedDevice.create({
+        data: {
+          userId: user.id,
+          deviceName: `${os} (${browser})`,
+          os,
+          browser,
+          ipAddress: req.ip || req.connection?.remoteAddress || "Unknown"
+        }
+      });
+
       // Set refresh token in HttpOnly cookie
       res.cookie("refresh_token", refreshToken, {
         httpOnly: true,

@@ -84,12 +84,14 @@ export class LobbyService {
   static async joinLobby(userId: string, lobbyId: string, password?: string) {
     const lobby = await prisma.lobby.findUnique({
       where: { id: lobbyId },
-      include: { members: true }
+      include: { members: true, bans: true }
     });
 
     if (!lobby) throw new Error("RESOURCE_NOT_FOUND");
     if (lobby.password && lobby.password !== password) throw new Error("INVALID_PASSWORD");
     if (lobby.members.length >= lobby.maxPlayers) throw new Error("LOBBY_FULL");
+    const isBanned = lobby.bans.some(b => b.userId === userId);
+    if (isBanned) throw new Error("You are banned from this lobby.");
 
     // Check if already a member
     const existing = await prisma.lobbyMember.findUnique({
