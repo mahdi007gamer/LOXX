@@ -312,46 +312,90 @@ export const AdminPage = () => {
                </div>
             </div>
           ) : activeTab === "genres" ? (
-            <div className="space-y-6">
-               <div className="flex justify-between items-center bg-white/5 p-6 rounded-[32px] border border-white/5">
-                  <div>
-                    <h2 className="text-2xl font-black text-white">مدیریت ژانرها</h2>
-                    <p className="text-gray-500 text-sm italic font-bold">افزودن و ویرایش دسته‌بندی‌های بازی</p>
+            <div className="space-y-8">
+               <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-[#0d0d12] p-8 rounded-[40px] border border-white/5 shadow-2xl relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                     <Icons.Gamepad2 size={120} />
                   </div>
-                  <GlowButton onClick={() => { setSelectedGenre(null); setIsGenreModalOpen(true); }}>
-                    <Plus size={20} className="ml-2" /> افزودن ژانر جدید
-                  </GlowButton>
+                  <div className="text-center md:text-right relative z-10">
+                    <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter mb-1">مدیریت ژانرهای بازی</h2>
+                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.2em] italic">دسته‌بندی‌های موضوعی و المان‌های بصری بازی‌ها را شخصی‌سازی کنید</p>
+                  </div>
+                  <div className="flex flex-wrap justify-center gap-3 relative z-10">
+                    <GlowButton 
+                      variant="purple" 
+                      size="sm" 
+                      className="px-6 h-12 text-[10px] font-black uppercase italic border-neon-purple/30 bg-neon-purple/5"
+                      onClick={async () => {
+                        if (!confirm("آیا مایل به افزودن ژانرهای پیش‌فرض هستید؟ (ژانرهای تکراری اضافه نخواهند شد)")) return;
+                        try {
+                          await api.post("/admin/genres/seed-default");
+                          toast.success("ژانرهای پیش‌فرض با موفقیت افزوده شدند");
+                          fetchData();
+                        } catch {
+                          toast.error("خطا در افزودن ژانرها");
+                        }
+                      }}
+                    >
+                      <Icons.Database size={16} className="ml-2" /> افزودن ژانرهای پیش‌فرض
+                    </GlowButton>
+                    <GlowButton 
+                      className="px-8 h-12 text-[10px] font-black uppercase italic"
+                      onClick={() => { setSelectedGenre(null); setIsGenreModalOpen(true); }}
+                    >
+                      <Plus size={20} className="ml-2" /> افزودن ژانر جدید
+                    </GlowButton>
+                  </div>
                </div>
 
-               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
                   {genres.map(genre => {
                     const IconComponent = (Icons as any)[genre.icon || "Gamepad2"] || Icons.Gamepad2;
                     return (
-                      <div key={genre.id} className="relative group">
-                        <div className="absolute inset-0 bg-neon-blue/5 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
-                        <div className="relative bg-white/5 border border-white/5 rounded-2xl p-4 flex flex-col items-center gap-3 transition-all group-hover:border-neon-blue/30 group-hover:bg-white/10">
-                           <div className="h-10 w-10 rounded-xl bg-white/5 flex items-center justify-center text-neon-blue group-hover:scale-110 transition-transform">
-                              <IconComponent size={20} />
+                      <motion.div 
+                        key={genre.id} 
+                        whileHover={{ scale: 1.02, y: -5 }}
+                        className="relative group h-full"
+                      >
+                        <div className="absolute -inset-0.5 bg-gradient-to-br from-neon-blue/20 to-neon-purple/20 rounded-[32px] blur opacity-0 group-hover:opacity-100 transition duration-500" />
+                        <div className="relative h-full bg-[#0d0d12] border border-white/5 rounded-[32px] p-6 flex flex-col items-center text-center transition-all group-hover:border-neon-blue/40 group-hover:bg-[#12121a]">
+                           <div className="h-16 w-16 rounded-2xl bg-white/5 flex items-center justify-center text-neon-blue group-hover:scale-110 group-hover:rotate-6 transition-all duration-500 shadow-xl border border-white/5 group-hover:border-neon-blue/20 mb-4">
+                              <IconComponent size={32} />
                            </div>
-                           <span className="font-black text-white italic text-[11px] uppercase tracking-tighter">{genre.name}</span>
+                           <h4 className="font-black text-white italic text-base uppercase tracking-tighter mb-1 line-clamp-1">{genre.name}</h4>
+                           <span className="text-[9px] text-gray-500 font-bold uppercase tracking-widest italic">{genre.slug}</span>
                            
-                           <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button onClick={() => { setSelectedGenre(genre); setIsGenreModalOpen(true); }} className="p-1.5 rounded-lg bg-black/40 text-gray-400 hover:text-neon-blue transition-colors">
-                                 <Edit2 size={12} />
+                           <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button 
+                                onClick={() => { setSelectedGenre(genre); setIsGenreModalOpen(true); }} 
+                                className="h-8 w-8 rounded-lg bg-black/40 text-gray-400 hover:text-neon-blue transition-colors flex items-center justify-center border border-white/5"
+                              >
+                                 <Edit2 size={14} />
                               </button>
-                              <button onClick={() => deleteGenre(genre.id)} className="p-1.5 rounded-lg bg-black/40 text-gray-400 hover:text-red-500 transition-colors">
-                                 <Trash2 size={12} />
+                              <button 
+                                onClick={() => deleteGenre(genre.id)} 
+                                className="h-8 w-8 rounded-lg bg-black/40 text-gray-400 hover:text-red-500 transition-colors flex items-center justify-center border border-white/5"
+                              >
+                                 <Trash2 size={14} />
                               </button>
                            </div>
                         </div>
-                      </div>
+                      </motion.div>
                     );
                   })}
                </div>
                {genres.length === 0 && (
-                 <div className="p-20 text-center text-gray-500 uppercase font-black italic tracking-widest text-xs opacity-50">
-                    ژانری یافت نشد
-                 </div>
+                 <motion.div 
+                   initial={{ opacity: 0 }}
+                   animate={{ opacity: 1 }}
+                   className="py-32 flex flex-col items-center justify-center text-center opacity-40 group"
+                 >
+                    <div className="h-24 w-24 rounded-[40px] bg-white/5 border border-white/5 flex items-center justify-center text-gray-700 mb-6 group-hover:scale-110 transition-transform">
+                       <Icons.Ghost size={64} />
+                    </div>
+                    <h3 className="text-xl font-black text-white italic uppercase tracking-[0.2em]">ژانری یافت نشد</h3>
+                    <p className="text-[10px] text-gray-600 font-bold uppercase mt-2 italic tracking-widest">برای شروع، روی "افزودن ژانرهای پیش‌فرض" کلیک کنید</p>
+                 </motion.div>
                )}
             </div>
           ) : (

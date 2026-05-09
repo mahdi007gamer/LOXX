@@ -20,6 +20,7 @@ router.delete("/games/:id", adminController.deleteGame);
 router.get("/genres", adminController.getAllGenres);
 router.post("/genres", adminController.createGenre);
 router.patch("/genres/:id", adminController.updateGenre);
+router.post("/genres/seed-default", adminController.seedGenres);
 router.delete("/genres/:id", adminController.deleteGenre);
 
 export default router;

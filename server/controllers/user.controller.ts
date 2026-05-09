@@ -6,7 +6,7 @@ import prisma from "../utils/prisma.ts";
 export class UserController {
   static async getMe(req: AuthenticatedRequest, res: Response) {
     try {
-      const user = await UserService.getMe(req.user!.userId);
+      const user: any = await UserService.getMe(req.user!.userId);
       if (!user) return res.status(401).json({ status: "error", error: { code: "UNAUTHORIZED", message: "User not found" } });
 
       res.json({
@@ -25,7 +25,8 @@ export class UserController {
           vipMetadata: user.profile?.vipMetadata,
           email: user.email,
           role: user.role,
-          twoFactorEnabled: user.twoFactorEnabled
+          twoFactorEnabled: user.twoFactorEnabled,
+          stats: user.stats
         }
       });
     } catch (error: any) {
@@ -54,7 +55,7 @@ export class UserController {
 
   static async getProfile(req: AuthenticatedRequest, res: Response) {
     try {
-      const user = await UserService.getProfileByUsername(req.params.username);
+      const user: any = await UserService.getProfileByUsername(req.params.username);
       if (!user) return res.status(404).json({ status: "error", error: { code: "RESOURCE_NOT_FOUND", message: "User not found" } });
 
       res.json({
@@ -67,7 +68,8 @@ export class UserController {
           level: user.profile?.level,
           membership: user.profile?.membershipType,
           avatarUrl: user.profile?.avatarUrl,
-          bannerUrl: user.profile?.bannerUrl
+          bannerUrl: user.profile?.bannerUrl,
+          stats: user.stats
         }
       });
     } catch (error: any) {

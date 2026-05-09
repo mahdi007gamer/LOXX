@@ -3,17 +3,71 @@ import argon2 from "argon2";
 
 export class UserService {
   static async getMe(userId: string) {
-    return prisma.user.findUnique({
+    const user = await prisma.user.findUnique({
       where: { id: userId },
-      include: { profile: true }
+      include: {
+        profile: true,
+        _count: {
+          select: {
+            hostedLobbies: true,
+            lobbyMembers: true,
+            sentFriendReq: { where: { status: "ACCEPTED" } },
+            recvFriendReq: { where: { status: "ACCEPTED" } }
+          }
+        }
+      }
     });
+
+    if (!user) return null;
+
+    const friendsCount = (user._count.sentFriendReq || 0) + (user._count.recvFriendReq || 0);
+    const lobbiesJoined = user._count.lobbyMembers || 0;
+    const lobbiesCreated = user._count.hostedLobbies || 0;
+    const daysSinceJoin = Math.floor((new Date().getTime() - new Date(user.createdAt).getTime()) / (1000 * 60 * 60 * 24));
+
+    return {
+      ...user,
+      stats: {
+        friendsCount,
+        lobbiesJoined,
+        lobbiesCreated,
+        daysSinceJoin
+      }
+    };
   }
 
   static async getProfileByUsername(username: string) {
-    return prisma.user.findUnique({
+    const user = await prisma.user.findUnique({
       where: { username },
-      include: { profile: true }
+      include: {
+        profile: true,
+        _count: {
+          select: {
+            hostedLobbies: true,
+            lobbyMembers: true,
+            sentFriendReq: { where: { status: "ACCEPTED" } },
+            recvFriendReq: { where: { status: "ACCEPTED" } }
+          }
+        }
+      }
     });
+
+    if (!user) return null;
+
+    const friendsCount = (user._count.sentFriendReq || 0) + (user._count.recvFriendReq || 0);
+    const lobbiesJoined = user._count.lobbyMembers || 0;
+    const lobbiesCreated = user._count.hostedLobbies || 0;
+    const daysSinceJoin = Math.floor((new Date().getTime() - new Date(user.createdAt).getTime()) / (1000 * 60 * 60 * 24));
+
+    return {
+      ...user,
+      stats: {
+        friendsCount,
+        lobbiesJoined,
+        lobbiesCreated,
+        daysSinceJoin
+      }
+    };
   }
 
   static async updateProfile(userId: string, data: any) {

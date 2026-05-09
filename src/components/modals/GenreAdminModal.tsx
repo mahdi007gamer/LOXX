@@ -15,7 +15,8 @@ interface GenreData {
 const AVAILABLE_ICONS = [
   "Target", "Swords", "Trophy", "Activity", "Users", "Dices", "Network", 
   "Sword", "Box", "Cpu", "Car", "Ghost", "Mic2", "Layers", "Music", 
-  "Gamepad2", "Zap", "Shield", "Skull", "Flame"
+  "Gamepad2", "Zap", "Shield", "Skull", "Flame", "Ghost", "Bomb", 
+  "Crosshair", "Heart", "Star", "Compass", "Map", "ShieldAlert", "Tension"
 ];
 
 export const GenreAdminModal = ({ 

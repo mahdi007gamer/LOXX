@@ -42,8 +42,26 @@ const upload = multer({
   }
 });
 
+const bannerUpload = multer({
+  storage,
+  limits: {
+    fileSize: 1 * 1024 * 1024 // 1MB limit for banners as requested
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+
+    if (extname && mimetype) {
+      return cb(null, true);
+    }
+    cb(new Error("فقط تصاویر jpg و png مجاز هستند (حداکثر ۱ مگابایت)"));
+  }
+});
+
 const router = Router();
 
 router.post("/", authenticate, upload.single("file"), UploadController.uploadFile);
+router.post("/banner", authenticate, bannerUpload.single("file"), UploadController.uploadFile);
 
 export default router;

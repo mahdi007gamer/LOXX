@@ -108,16 +108,31 @@ export const getGameById = async (req: Request, res: Response) => {
     // Migration: If metadata has modes/maps but they aren't in features, add them
     const metadata = parsedGame.metadata;
     if (metadata) {
-      const features = metadata.features || [];
-      const hasMode = features.some((f: any) => f.name === 'Mode' || f.name === 'حالت بازی');
-      const hasMap = features.some((f: any) => f.name === 'Map' || f.name === 'نقشه');
+      const features = Array.isArray(metadata.features) ? metadata.features : [];
+      
+      const findFeature = (name: string) => features.find((f: any) => 
+        f.name.toLowerCase().includes(name.toLowerCase()) || 
+        name.toLowerCase().includes(f.name.toLowerCase())
+      );
+
+      const hasMode = findFeature('Mode') || findFeature('حالت بازی');
+      const hasMap = findFeature('Map') || findFeature('نقشه');
+      const hasSide = findFeature('Side');
+      const hasLevel = findFeature('Level');
 
       if (!hasMode && metadata.modes && Array.isArray(metadata.modes)) {
-        features.push({ name: 'Mode', options: metadata.modes });
+        features.push({ name: 'حالت بازی (Mode)', options: metadata.modes });
       }
       if (!hasMap && metadata.maps && Array.isArray(metadata.maps)) {
-        features.push({ name: 'Map', options: metadata.maps });
+        features.push({ name: 'نقشه (Map)', options: metadata.maps });
       }
+      if (!hasSide && metadata.sides && Array.isArray(metadata.sides)) {
+        features.push({ name: 'Side', options: metadata.sides });
+      }
+      if (!hasLevel && metadata.levels && Array.isArray(metadata.levels)) {
+        features.push({ name: 'Level', options: metadata.levels });
+      }
+      
       parsedGame.metadata.features = features;
     }
     
@@ -212,6 +227,43 @@ export const updateGenre = async (req: Request, res: Response) => {
       data: { name, icon }
     });
     res.json({ status: "success", data: genre });
+  } catch (error: any) {
+    res.status(500).json({ status: "error", message: error.message });
+  }
+};
+
+export const seedGenres = async (req: Request, res: Response) => {
+  const defaultGenres = [
+    { name: "شلیک اول شخص (FPS)", icon: "Target" },
+    { name: "نقش‌آفرینی (RPG)", icon: "Swords" },
+    { name: "استراتژی (Strategy)", icon: "Cpu" },
+    { name: "ورزشی (Sports)", icon: "Trophy" },
+    { name: "مسابقه‌ای (Racing)", icon: "Car" },
+    { name: "ترسناک (Horror)", icon: "Ghost" },
+    { name: "بقا (Survival)", icon: "Flame" },
+    { name: "مافیا (Mafia)", icon: "ShieldAlert" },
+    { name: "بتل رویال (Battle Royale)", icon: "Skull" },
+    { name: "تاکتیکی (Tactical)", icon: "Shield" },
+    { name: "شبیه سازی (Simulation)", icon: "Box" },
+    { name: "مبارزه‌ای (Fighting)", icon: "Zap" },
+    { name: "ماجراجویی (Adventure)", icon: "Compass" },
+    { name: "پازل و فکری", icon: "Dices" },
+    { name: "میدان نبرد آنلاین (MOBA)", icon: "Swords" }
+  ];
+
+  try {
+    const results = [];
+    for (const g of defaultGenres) {
+      // Check if exists
+      const existing = await (prisma as any).genre.findFirst({
+        where: { name: g.name }
+      });
+      if (!existing) {
+        const created = await (prisma as any).genre.create({ data: g });
+        results.push(created);
+      }
+    }
+    res.json({ status: "success", message: `Generated ${results.length} new genres`, data: results });
   } catch (error: any) {
     res.status(500).json({ status: "error", message: error.message });
   }

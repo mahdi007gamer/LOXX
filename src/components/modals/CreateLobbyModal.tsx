@@ -265,14 +265,25 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
 
                   {/* Rendering Dynamic Features */}
                   {selectedGameData?.metadata?.features?.map((feature: any) => {
-                    const isMode = feature.name === 'Mode' || feature.name === 'حالت بازی';
-                    const isMap = feature.name === 'Map' || feature.name === 'نقشه';
+                    const featName = feature.name.toLowerCase();
+                    const isMode = featName.includes('mode') || featName.includes('حالت');
+                    const isMap = featName.includes('map') || featName.includes('نقشه');
+                    const isSide = featName.includes('side') || featName.includes('تیم');
+                    const isLevel = featName.includes('level') || featName.includes('سطح');
+
+                    let Icon: any = Settings2;
+                    let iconColor = "text-gray-600";
+                    
+                    if (isMode) { Icon = Gamepad; iconColor = "text-neon-blue"; }
+                    else if (isMap) { Icon = MapIcon; iconColor = "text-neon-pink"; }
+                    else if (isSide) { Icon = Users; iconColor = "text-yellow-400"; }
+                    else if (isLevel) { Icon = Sparkles; iconColor = "text-green-400"; }
 
                     return (
                       <div key={feature.name} className="space-y-3">
                         <div className="flex items-center gap-2 justify-end mb-2">
                            <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">{feature.name}</span>
-                           {isMode ? <Gamepad size={14} className="text-neon-blue" /> : isMap ? <MapIcon size={14} className="text-neon-pink" /> : <Settings2 size={14} className="text-gray-600" />}
+                           <Icon size={14} className={iconColor} />
                         </div>
                         <div className="flex flex-wrap gap-2 justify-end text-right">
                           {feature.options.map((opt: string) => (

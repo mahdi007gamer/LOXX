@@ -57,6 +57,7 @@ export const SettingsPage = () => {
     bio: "",
     username: "",
     avatarUrl: "",
+    bannerUrl: "",
     region: "Middle East",
     language: "Persian",
     currentPassword: "",
@@ -117,6 +118,7 @@ export const SettingsPage = () => {
         bio: user.bio || "",
         username: user.username || "",
         avatarUrl: user.profile?.avatarUrl || user.avatarUrl || "",
+        bannerUrl: user.profile?.bannerUrl || user.bannerUrl || "",
         region: user.region || "Middle East",
       }));
       setTwoFactorEnabled(user.twoFactorEnabled || false);
@@ -134,7 +136,8 @@ export const SettingsPage = () => {
         display_name: formData.displayName,
         bio: formData.bio,
         region: formData.region,
-        avatarUrl: formData.avatarUrl
+        avatarUrl: formData.avatarUrl,
+        bannerUrl: formData.bannerUrl
       });
       toast.success("پروفایل با موفقیت بروزرسانی شد");
     } catch (err: any) {
@@ -265,6 +268,65 @@ export const SettingsPage = () => {
             </div>
             <div className="mt-2 text-right">
               <button onClick={() => setFormData(p => ({ ...p, avatarUrl: "" }))} className="text-[10px] text-gray-600 font-black uppercase italic hover:text-neon-pink transition-colors">حذف تصویر</button>
+            </div>
+          </div>
+        </div>
+
+        <hr className="border-white/5" />
+
+        <div className="flex items-center gap-6">
+          <div className="flex-1">
+            <h3 className="font-black text-white italic">تصویر کاور (بنر)</h3>
+            <p className="text-[10px] text-gray-500 font-bold uppercase mt-1 mb-3">تصویر بنر پروفایل خود را آپلود کنید (حداکثر ۱ مگابایت، فقط JPG و PNG).</p>
+            <div className="flex flex-col sm:flex-row gap-4 items-end">
+              <div className="flex-none">
+                <input 
+                  type="file" 
+                  accept="image/png, image/jpeg" 
+                  className="hidden" 
+                  id="banner-upload"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    
+                    const allowedTypes = ['image/jpeg', 'image/png'];
+                    if (!allowedTypes.includes(file.type)) {
+                      toast.error("فقط فایل‌های JPG و PNG مجاز هستند");
+                      return;
+                    }
+                    if (file.size > 1 * 1024 * 1024) {
+                      toast.error("حجم فایل نباید بیشتر از ۱ مگابایت باشد");
+                      return;
+                    }
+                    
+                    const data = new FormData();
+                    data.append("file", file);
+                    try {
+                      const res = await api.post("/upload/banner", data, {
+                        headers: { "Content-Type": "multipart/form-data" }
+                      });
+                      if (res.data.url) {
+                        setFormData(p => ({ ...p, bannerUrl: res.data.url }));
+                        toast.success("بنر با موفقیت آپلود شد");
+                      }
+                    } catch (err: any) {
+                      toast.error(err.response?.data?.error?.message || "خطا در آپلود بنر");
+                    }
+                  }}
+                />
+                <label htmlFor="banner-upload" className="h-[46px] px-6 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-xs font-black italic cursor-pointer hover:bg-white/10 hover:border-neon-blue/30 transition-all text-white shrink-0">
+                  <Camera size={16} className="ml-2" />
+                  آپلود بنر
+                </label>
+              </div>
+            </div>
+            {formData.bannerUrl && (
+              <div className="mt-4 rounded-xl overflow-hidden border border-white/10 h-24 w-full">
+                 <img src={formData.bannerUrl} alt="Banner Preview" className="w-full h-full object-cover" />
+              </div>
+            )}
+            <div className="mt-2 text-right">
+              <button onClick={() => setFormData(p => ({ ...p, bannerUrl: "" }))} className="text-[10px] text-gray-600 font-black uppercase italic hover:text-neon-pink transition-colors">حذف بنر</button>
             </div>
           </div>
         </div>
