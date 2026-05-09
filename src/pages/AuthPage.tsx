@@ -24,7 +24,13 @@ export const AuthPage = () => {
 
   React.useEffect(() => {
     if (user) {
-      navigate("/dashboard");
+      const code = localStorage.getItem("pending_invite_code");
+      if (code) {
+        localStorage.removeItem("pending_invite_code");
+        navigate("/invite/" + code);
+      } else {
+        navigate("/dashboard");
+      }
     }
   }, [user, navigate]);
 
@@ -45,7 +51,13 @@ export const AuthPage = () => {
         
         login(response.data.token, response.data.user);
         toast.success("خوش آمدید!");
-        navigate("/dashboard");
+        const code = localStorage.getItem("pending_invite_code");
+        if (code) {
+          localStorage.removeItem("pending_invite_code");
+          navigate("/invite/" + code);
+        } else {
+          navigate("/dashboard");
+        }
       } else {
         await api.post("/auth/register", {
           username: formData.username,

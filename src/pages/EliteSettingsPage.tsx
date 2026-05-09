@@ -74,7 +74,7 @@ export const EliteSettingsPage = () => {
     frameColor: "#00e5ff",
     effectType: "none",
     colors: {
-      bg: "rgba(13, 13, 20, 0.9)",
+      bg: "#0d0d14",
       text: "#ffffff",
       accent: "#00e5ff",
       gradient: {

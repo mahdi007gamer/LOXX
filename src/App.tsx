@@ -25,6 +25,7 @@ import { LeaderboardPage } from "./pages/LeaderboardPage";
 import { PremiumPage } from "./pages/PremiumPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { FriendsPage } from "./pages/FriendsPage";
+import { InviteRedirectPage } from "./pages/InviteRedirectPage";
 import { GamesPage } from "./pages/GamesPage";
 import { MyGamesPage } from "./pages/MyGamesPage";
 import { EliteSettingsPage } from "./pages/EliteSettingsPage";
@@ -74,6 +75,7 @@ const AppContent = () => {
           <Route path="/premium" element={<ProtectedRoute><PremiumPage /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
           <Route path="/friends" element={<ProtectedRoute><FriendsPage /></ProtectedRoute>} />
+          <Route path="/invite/:code" element={<InviteRedirectPage />} />
           <Route path="/games" element={<ProtectedRoute><GamesPage /></ProtectedRoute>} />
           <Route path="/my-games" element={<ProtectedRoute><MyGamesPage /></ProtectedRoute>} />
           <Route path="/settings/elite" element={<ProtectedRoute><EliteSettingsPage /></ProtectedRoute>} />
