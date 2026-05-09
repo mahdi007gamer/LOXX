@@ -19,7 +19,6 @@ import { Shield } from "lucide-react";
 const menuItems = [
   { icon: LayoutDashboard, label: "داشبورد", path: "/dashboard" },
   { icon: Gamepad2, label: "بازی‌ها", path: "/games" },
-  { icon: Heart, label: "بازی‌های من", path: "/my-games" },
   { icon: Users, label: "لابی‌ها", path: "/lobbies" },
   { icon: Users, label: "دوستان", path: "/friends" },
   { icon: MessageSquare, label: "چت سراسری", path: "/chat" },

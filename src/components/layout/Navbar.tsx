@@ -151,41 +151,49 @@ export const Navbar = () => {
                     to={item.path}
                     onClick={() => setIsMenuOpen(false)}
                     className={({ isActive }) => cn(
-                      "flex items-center gap-4 rounded-xl px-4 py-3.5 transition-all",
+                      "flex items-center gap-4 rounded-xl px-4 py-3.5 transition-all group",
                       isActive 
                         ? "bg-neon-blue/10 text-neon-blue" 
                         : "text-gray-400 hover:bg-white/5 hover:text-white"
                     )}
                   >
-                    <item.icon size={20} className={cn(isActive && "drop-shadow-[0_0_8px_rgba(0,229,255,0.5)]")} />
-                    <span className="text-base font-bold italic uppercase tracking-tight">{item.label}</span>
+                    {({ isActive }) => (
+                      <>
+                        <item.icon size={20} className={cn(isActive && "drop-shadow-[0_0_8px_rgba(0,229,255,0.5)]")} />
+                        <span className="text-base font-bold italic uppercase tracking-tight">{item.label}</span>
+                      </>
+                    )}
                   </NavLink>
                 ))}
               </div>
 
               {/* Profile & Logout fixed at bottom */}
-              <div className="p-6 border-t border-white/5 bg-black/20">
+              <div className="p-5 border-t border-white/5 bg-black/40 mt-auto">
                 {user ? (
-                  <div className="flex flex-col gap-3">
-                    <Link to="/profile" onClick={() => setIsMenuOpen(false)}>
-                      <div className="flex items-center gap-3 rounded-2xl bg-white/5 p-3 border border-white/10 hover:bg-white/10 transition-all">
-                        <div className="h-10 w-10 rounded-full overflow-hidden bg-neon-purple/20 flex items-center justify-center text-neon-purple shrink-0 border border-white/10">
-                          {user.avatarUrl ? (
-                            <img src={user.avatarUrl} alt="" className="h-full w-full object-cover" />
-                          ) : (
-                            <User size={20} />
+                  <div className="space-y-3">
+                    <Link 
+                      to="/profile" 
+                      onClick={() => setIsMenuOpen(false)}
+                      className="flex items-center gap-3 rounded-xl bg-white/5 p-3 border border-white/10 hover:bg-white/10 transition-all group"
+                    >
+                      <div className="h-11 w-11 rounded-full overflow-hidden bg-neon-purple/20 flex items-center justify-center text-neon-purple shrink-0 border border-white/10 group-hover:border-neon-purple/50 transition-colors">
+                        {user.avatarUrl ? (
+                          <img src={user.avatarUrl} alt="" className="h-full w-full object-cover" />
+                        ) : (
+                          <User size={22} />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0 text-right">
+                        <p className="font-bold text-white uppercase text-xs truncate italic tracking-tighter mb-0.5">
+                          {user.displayName || user.username}
+                        </p>
+                        <div className="flex items-center justify-end gap-1.5 opacity-80">
+                          <span className="text-[9px] text-neon-blue font-black tracking-widest uppercase">
+                            {user.role === 'ADMIN' ? 'مدیر سیستم' : (user.membership || "کاربر عادی")}
+                          </span>
+                          {(user.role === 'ADMIN' || user.membership === 'VIP') && (
+                            <Shield size={10} className="text-neon-blue animate-pulse" />
                           )}
-                        </div>
-                        <div className="min-w-0 flex-1 text-right">
-                          <p className="font-bold text-white uppercase text-xs truncate italic tracking-tighter">
-                            {user.displayName || user.username}
-                          </p>
-                          <div className="flex items-center justify-end gap-1">
-                            <span className="text-[8px] text-neon-blue font-black tracking-widest truncate uppercase">
-                              {user.role === 'ADMIN' ? 'ADMIN' : (user.membership || "MEMBER")}
-                            </span>
-                            {user.role === 'ADMIN' && <Shield size={10} className="text-neon-blue" />}
-                          </div>
                         </div>
                       </div>
                     </Link>
@@ -194,7 +202,7 @@ export const Navbar = () => {
                         logout();
                         setIsMenuOpen(false);
                       }} 
-                      className="flex items-center justify-center gap-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-500 py-3 border border-red-500/20 transition-all w-full font-black text-xs uppercase italic tracking-widest"
+                      className="flex items-center justify-center gap-2.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-500 py-3.5 border border-red-500/10 hover:border-red-500/30 transition-all w-full font-black text-xs uppercase italic tracking-widest"
                     >
                       <LogOut size={16} />
                       خروج از حساب
@@ -202,7 +210,7 @@ export const Navbar = () => {
                   </div>
                 ) : (
                   <Link to="/auth" onClick={() => setIsMenuOpen(false)}>
-                    <GlowButton variant="purple" className="w-full text-xs font-black uppercase italic h-12 shadow-none border-none blur-none">
+                    <GlowButton variant="purple" className="w-full text-xs font-black uppercase italic h-12 shadow-none border-none">
                       ورود / ثبت‌نام
                     </GlowButton>
                   </Link>

@@ -1,6 +1,7 @@
 import { Response } from "express";
 import { UserService } from "../services/user.service.ts";
 import { AuthenticatedRequest } from "../middleware/auth.middleware.ts";
+import prisma from "../utils/prisma.ts";
 
 export class UserController {
   static async getMe(req: AuthenticatedRequest, res: Response) {

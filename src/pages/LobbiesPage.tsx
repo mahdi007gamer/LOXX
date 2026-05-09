@@ -96,13 +96,13 @@ export const LobbiesPage = () => {
       <Sidebar />
       <main className="flex-1 px-4 py-8 md:mr-64 lg:px-8 pb-32 md:pb-8">
         <div className="container mx-auto max-w-6xl">
-          <header className="mb-6 flex flex-col items-start gap-5 md:flex-row md:items-center md:justify-between md:mb-12">
-            <div className="text-right w-full md:w-auto">
+          <header className="mb-6 flex flex-col items-stretch gap-4 md:flex-row md:items-center md:justify-between md:mb-12">
+            <div className="text-right">
               <h1 className="text-2xl md:text-5xl font-black text-white italic tracking-tighter uppercase">لابی‌های فعال</h1>
-              <p className="mt-1 text-[9px] md:text-xs text-gray-500 font-bold uppercase tracking-[0.1em] opacity-80 italic">پلتفرم تخصصی تیم‌یابی گیمرها</p>
+              <p className="mt-1 text-[10px] md:text-xs text-gray-500 font-bold uppercase tracking-[0.1em] opacity-80 italic">پلتفرم تخصصی تیم‌یابی گیمرها</p>
             </div>
             
-            <div className="flex flex-col w-full items-stretch md:flex-row md:items-center gap-2.5 md:w-auto">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center md:w-auto">
                <div className="relative flex-1 md:w-64 lg:w-80">
                 <Search className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-600" size={14} />
                 <input 
@@ -115,7 +115,7 @@ export const LobbiesPage = () => {
               </div>
               <GlowButton 
                 variant="blue" 
-                className="flex items-center justify-center gap-2 h-11 px-6 shrink-0 rounded-xl group transition-all active:scale-95" 
+                className="flex items-center justify-center gap-2 h-11 px-6 rounded-xl group transition-all active:scale-95 shadow-lg" 
                 onClick={() => setIsModalOpen(true)}
               >
                 <Plus size={16} className="group-hover:rotate-90 transition-transform" />
@@ -215,12 +215,12 @@ export const LobbiesPage = () => {
                       )}
 
                       {/* Game Banner */}
-                      <div className="relative h-44 w-full overflow-hidden shrink-0">
+                      <div className="relative h-40 md:h-44 w-full overflow-hidden shrink-0">
                         {lobby.isPrivate && (
                           <div className="absolute inset-0 z-10 bg-black/60 backdrop-blur-[2px] flex items-center justify-center">
                              <div className="flex flex-col items-center gap-2 text-white">
-                               <Lock size={32} className="text-neon-purple animate-pulse" />
-                               <span className="text-[10px] font-black uppercase tracking-[0.3em] text-neon-purple">PRIVATE SERVER</span>
+                               <Lock size={28} className="text-neon-purple animate-pulse" />
+                               <span className="text-[9px] font-black uppercase tracking-[0.3em] text-neon-purple">PRIVATE</span>
                              </div>
                           </div>
                         )}
@@ -230,22 +230,22 @@ export const LobbiesPage = () => {
                           className="h-full w-full object-cover transition-transform duration-1000 group-hover:scale-110"
                           referrerPolicy="no-referrer"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0f] via-transparent to-transparent opacity-90" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0f] via-[#0a0a0f]/20 to-transparent" />
                         
-                        <div className={cn("absolute top-4 right-4 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase backdrop-blur-md border", isVipLobby ? "border-yellow-400/30 bg-yellow-400/10 text-yellow-400" : "border-white/10 bg-white/10 text-white")}>
-                           <Clock size={12} className={isVipLobby ? "text-yellow-400" : "text-neon-blue"} />
+                        <div className={cn("absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] font-black uppercase backdrop-blur-md border", isVipLobby ? "border-yellow-400/30 bg-yellow-400/10 text-yellow-400" : "border-white/10 bg-white/10 text-white")}>
+                           <Clock size={10} className={isVipLobby ? "text-yellow-400" : "text-neon-blue"} />
                            <span>{new Date(lobby.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                         </div>
 
                         {/* Game Icon Overlay */}
-                        <div className={cn("absolute -bottom-5 left-5 h-12 w-12 flex items-center justify-center rounded-xl border shadow-2xl z-20 text-white overflow-hidden", isVipLobby ? "bg-[#18181b] border-yellow-400/30 shadow-yellow-400/10" : "bg-[#0a0a0f] border-white/10")}>
-                          {lobby.game?.iconUrl ? <img src={lobby.game.iconUrl} className="w-8 h-8 object-contain" /> : (lobby.game?.title?.[0] || "🎮")}
+                        <div className={cn("absolute -bottom-4 left-4 h-10 w-10 md:h-12 md:w-12 flex items-center justify-center rounded-xl border shadow-2xl z-20 text-white overflow-hidden", isVipLobby ? "bg-[#18181b] border-yellow-400/30 shadow-yellow-400/10" : "bg-[#0a0a0f] border-white/10")}>
+                          {lobby.game?.iconUrl ? <img src={lobby.game.iconUrl} className="w-6 h-6 md:w-8 md:h-8 object-contain" /> : (lobby.game?.title?.[0] || "🎮")}
                         </div>
                       </div>
 
-                      <div className="p-5 pt-10 flex-1 flex flex-col">
-                        <div className="mb-4 flex items-center justify-between">
-                          <div className={cn("rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-tight border truncate max-w-[130px] transition-all", isVipLobby ? "bg-yellow-400/5 text-yellow-500/80 border-yellow-400/20 group-hover:border-yellow-400/50 group-hover:text-yellow-400" : "bg-white/5 text-gray-500 border-white/10 group-hover:border-neon-blue/20 group-hover:text-neon-blue")}>
+                      <div className="p-4 md:p-5 pt-8 md:pt-10 flex-1 flex flex-col">
+                        <div className="mb-3 md:mb-4 flex items-center justify-between">
+                          <div className={cn("rounded-full px-2.5 py-1 text-[9px] md:text-[10px] font-black uppercase tracking-tight border truncate max-w-[120px] md:max-w-[130px] transition-all", isVipLobby ? "bg-yellow-400/5 text-yellow-500/80 border-yellow-400/20 group-hover:border-yellow-400/50 group-hover:text-yellow-400" : "bg-white/5 text-gray-500 border-white/10 group-hover:border-neon-blue/20 group-hover:text-neon-blue")}>
                             {lobby.game?.title}
                           </div>
                           <div className="flex items-center gap-2 text-white shrink-0">
