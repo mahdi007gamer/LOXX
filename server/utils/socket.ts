@@ -14,8 +14,13 @@ export const emitLobbyUpdate = () => {
     }
 };
 
-export const emitRankingUpdate = async () => {
+export const emitNotification = (userId: string, type: string, data: any) => {
     if (io) {
+        io.of("/notify").to(`user:${userId}`).emit("notification", { type, ...data });
+    }
+};
+
+export const emitRankingUpdate = async () => {
         // Since getLeaderboard is static and async, we need a way to call it here or just notify clients to refetch
         // LeaderboardPage expects the data in the event, so we fetch it
         // To avoid circular dependency, we might just emit a signal for now or pass the data

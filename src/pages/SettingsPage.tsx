@@ -193,25 +193,26 @@ export const SettingsPage = () => {
           </div>
           <div className="flex-1">
             <h3 className="font-black text-white italic">تصویر پروفایل</h3>
-            <p className="text-[10px] text-gray-500 font-bold uppercase mt-1 mb-3">تصویر خود را آپلود کنید یا لینک آن را وارد کنید.</p>
+            <p className="text-[10px] text-gray-500 font-bold uppercase mt-1 mb-3">تصویر خود را آپلود کنید (فقط فرمت‌های PNG و JPG).</p>
             <div className="flex flex-col sm:flex-row gap-4 items-end">
-              <div className="flex-1 w-full">
-                <Input 
-                  label="لینک تصویر (آدرس آنلاین)"
-                  placeholder="https://example.com/avatar.png"
-                  value={formData.avatarUrl}
-                  onChange={(e) => setFormData(p => ({ ...p, avatarUrl: e.target.value }))}
-                />
-              </div>
               <div className="flex-none">
                 <input 
                   type="file" 
-                  accept="image/png, image/jpeg, image/webp" 
+                  accept="image/png, image/jpeg" 
                   className="hidden" 
                   id="avatar-upload"
                   onChange={async (e) => {
                     if (e.target.files && e.target.files[0]) {
                       const file = e.target.files[0];
+                      const allowedTypes = ['image/jpeg', 'image/png'];
+                      if (!allowedTypes.includes(file.type)) {
+                        toast.error("فقط فایل‌های JPG و PNG مجاز هستند");
+                        return;
+                      }
+                      if (file.size > 5 * 1024 * 1024) {
+                        toast.error("حجم فایل نباید بیشتر از ۵ مگابایت باشد");
+                        return;
+                      }
                       const data = new FormData();
                       data.append("file", file);
                       try {

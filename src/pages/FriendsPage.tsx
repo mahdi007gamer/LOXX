@@ -61,6 +61,9 @@ const FriendItem = ({
   const [showMobileActions, setShowMobileActions] = useState(false);
   const { openProfile } = useProfilePopover();
 
+  const isVip = (friend as any).membership === 'VIP';
+  const isPlus = (friend as any).membership === 'PLUS';
+
   return (
     <motion.div 
       layout
@@ -68,8 +71,11 @@ const FriendItem = ({
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, scale: 0.95 }}
       className={cn(
-        "group relative flex flex-col rounded-2xl bg-white/5 p-3 transition-all hover:bg-white/10",
-        showMobileActions ? "bg-white/10 scale-[1.02] border-neon-blue/20 border" : "border border-transparent"
+        "group relative flex flex-col rounded-2xl p-3 transition-all",
+        isVip ? "bg-gradient-to-r from-yellow-500/10 to-transparent border border-yellow-500/30 hover:border-yellow-500/50 shadow-[0_0_15px_rgba(250,204,21,0.15)]" :
+        isPlus ? "bg-gradient-to-r from-neon-blue/10 to-transparent border border-neon-blue/30 hover:border-neon-blue/50 shadow-[0_0_15px_rgba(0,229,255,0.15)]" :
+        "bg-white/5 hover:bg-white/10 border border-transparent",
+        showMobileActions && (!isVip && !isPlus) ? "bg-white/10 scale-[1.02] border-neon-blue/20 border" : ""
       )}
       onClick={() => {
         // Toggle mobile actions on tap for small screens
@@ -93,7 +99,9 @@ const FriendItem = ({
               bannerUrl: (friend as any).bannerUrl || (friend as any).avatarUrl || friend.avatar
             }, false);
           }}>
-            <div className="h-12 w-12 rounded-full bg-white/10 overflow-hidden flex items-center justify-center border border-white/5 group-hover/avatar:border-neon-blue/50 transition-all">
+            <div className={cn("h-12 w-12 rounded-full overflow-hidden flex items-center justify-center border transition-all",
+               isVip ? "bg-yellow-400/20 border-yellow-400/50" : isPlus ? "bg-neon-blue/20 border-neon-blue/50" : "bg-white/10 border-white/5 group-hover/avatar:border-neon-blue/50"
+            )}>
                {((friend.avatar || (friend as any).avatarUrl) && ((friend.avatar || (friend as any).avatarUrl).length > 5 || (friend.avatar || (friend as any).avatarUrl).startsWith("/") || (friend.avatar || (friend as any).avatarUrl).includes("."))) ? (
                  <img src={friend.avatar || (friend as any).avatarUrl} alt={friend.username} className="w-full h-full object-cover" />
                ) : (
@@ -108,7 +116,10 @@ const FriendItem = ({
             <div className="flex items-center gap-2">
               <Link 
                 to={`/profile/${friend.username}`} 
-                className="font-bold text-white hover:text-neon-blue transition-colors"
+                className={cn("font-bold transition-colors hover:text-white", 
+                  isVip ? "text-yellow-400 drop-shadow-[0_0_5px_rgba(250,204,21,0.5)]" : 
+                  isPlus ? "text-neon-blue drop-shadow-[0_0_5px_rgba(0,229,255,0.5)]" : "text-white"
+                )}
                 onClick={(e) => e.stopPropagation()}
               >
                 {friend.displayName}
@@ -280,11 +291,13 @@ export const FriendsPage = () => {
     offline: false
   });
 
+  const getScore = (f: any) => f.membership === 'VIP' ? 2 : f.membership === 'PLUS' ? 1 : 0;
+
   const filteredFriends = useMemo(() => {
     return friends.filter(f => 
       f.username.toLowerCase().includes(searchTerm.toLowerCase()) || 
       f.displayName.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    ).sort((a, b) => getScore(b) - getScore(a));
   }, [friends, searchTerm]);
 
   const favorites = filteredFriends.filter(f => f.isFavorite);

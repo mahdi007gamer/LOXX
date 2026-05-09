@@ -5,6 +5,7 @@ import { GlowButton } from "../ui/GlowButton";
 import { motion, AnimatePresence, useScroll, useMotionValueEvent } from "motion/react";
 import { cn } from "@/src/lib/utils";
 import { useAuth } from "../../context/AuthContext";
+import { NotificationCenter } from "../ui/NotificationCenter";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "داشبورد", path: "/dashboard" },
@@ -95,10 +96,7 @@ export const Navbar = () => {
 
           {/* Right: Actions */}
           <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
-            <button className="relative p-2 text-gray-400 hover:text-neon-pink transition-colors">
-              <Bell size={20} />
-              <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-neon-pink shadow-[0_0_10px_rgba(255,0,153,0.8)]" />
-            </button>
+            {user && <NotificationCenter />}
             
             <Link to="/profile" className="hidden sm:block">
               <div className="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-white/5 text-white transition-all hover:bg-white/10 hover:border-white/40 hover:shadow-[0_0_15px_rgba(255,255,255,0.2)]">

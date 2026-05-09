@@ -2,6 +2,8 @@ import { Response } from "express";
 import { AuthenticatedRequest } from "../middleware/auth.middleware";
 import prisma from "../utils/prisma";
 
+import { emitNotification } from "../utils/socket.ts";
+
 export class EliteGroupController {
   
   static async createGroup(req: AuthenticatedRequest, res: Response) {
@@ -21,8 +23,8 @@ export class EliteGroupController {
         where: { ownerId: userId, type: "ELITE" }
       });
 
-      if (groupCount >= (membership === "VIP" ? 5 : 2)) {
-        return res.status(400).json({ status: "error", error: { message: "شما به سقف مجاز ساخت گروه رسیده‌اید" } });
+      if (groupCount >= 1) {
+        return res.status(400).json({ status: "error", error: { message: "شما فقط می‌توانید یک گروه بسازید" } });
       }
 
       const channel = await prisma.channel.create({
@@ -126,7 +128,7 @@ export class EliteGroupController {
 
         if (isFriend) {
           // Create a notification
-          await prisma.notification.create({
+          const notif = await prisma.notification.create({
             data: {
               userId: targetUser.id,
               type: "ELITE_INVITE",
@@ -134,6 +136,10 @@ export class EliteGroupController {
               referenceId: channel.id,
               data: JSON.stringify({ groupName: channel.title, avatarUrl: channel.avatarUrl })
             }
+          });
+          emitNotification(targetUser.id, "GROUP_INVITE", {
+            message: `شما به گروه ${channel.title} دعوت شدید`,
+            channelId: channel.id
           });
         }
       }

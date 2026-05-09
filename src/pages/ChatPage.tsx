@@ -468,9 +468,8 @@ const CHAT_THEMES = {
 // --- Main Page ---
 
 const INITIAL_CHANNELS: Channel[] = [
-      { id: "general", name: "چت عمومی", type: "public", users: 15420 },
-      { id: "news", name: "اخبار گیمینگ", type: "public", users: 15420 },
-      { id: "lfg", name: "پیدا کردن یار", type: "public", users: 15420 },
+      { id: "general", name: "چت عمومی", type: "public", users: 0 },
+      { id: "news", name: "اخبار گیمینگ", type: "public", users: 0 },
 ];
 
 const MOCK_MESSAGES: Record<string, ChatMessage[]> = {
@@ -563,7 +562,7 @@ export const ChatPage: React.FC = () => {
   const [activeChannelId, setActiveChannelId] = useState("general");
   const [messages, setMessages] = useState<Record<string, ChatMessage[]>>({});
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
-  const [memberCount, setMemberCount] = useState(15420);
+  const [memberCount, setMemberCount] = useState(0);
   const [gameMembers, setGameMembers] = useState<any[]>([]);
   const [typers, setTypers] = useState<Record<string, Record<string, string>>>({});
   const [input, setInput] = useState("");
@@ -584,8 +583,14 @@ export const ChatPage: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 1 * 1024 * 1024) {
-      toast.error("حجم تصویر نباید بیشتر از ۱ مگابایت باشد");
+    const allowedTypes = ['image/jpeg', 'image/png'];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error("فقط فایل‌های JPG و PNG مجاز هستند");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("حجم فایل نباید بیشتر از ۵ مگابایت باشد");
       return;
     }
 
@@ -621,7 +626,6 @@ export const ChatPage: React.FC = () => {
   const [inviteSearchQuery, setInviteSearchQuery] = useState("");
   const [selectedInvitees, setSelectedInvitees] = useState<string[]>([]);
   const [vipGroupName, setVipGroupName] = useState("");
-  const [userLvl, setUserLvl] = useState(42);
   const [eliteGroups, setEliteGroups] = useState<any[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -918,7 +922,7 @@ export const ChatPage: React.FC = () => {
       id: `game-${g.id}`,
       name: `چت ${g.title}`,
       type: "game" as const,
-      users: (g as any).memberCount || parseInt(g.playerCount?.replace(/[^0-9]/g, '') || '0') || 15420,
+      users: (g as any).memberCount || parseInt(g.playerCount?.replace(/[^0-9]/g, '') || '0') || 0,
       icon: g.image
     }));
 
@@ -1462,15 +1466,23 @@ export const ChatPage: React.FC = () => {
         <div className="p-6 border-b border-white/5">
           <div className="flex items-center justify-between mb-2">
             <h2 className="text-xl font-black text-white tracking-widest uppercase">کانال‌ها</h2>
-            {user?.membership === "VIP" && (
+            {(user?.membership === "VIP" || user?.membership === "PLUS") && (
               <button 
-                title="ایجاد گروه VIP"
+                title="ایجاد گروه حرفه‌ای"
                 onClick={() => setShowVipGroupModal(true)}
-                className="group p-2 rounded-xl bg-yellow-400/10 text-yellow-400 hover:bg-yellow-400 hover:text-dark-bg transition-all border border-yellow-400/20 shadow-[0_0_15px_rgba(250,204,21,0.1)] hover:shadow-[0_0_20px_rgba(250,204,21,0.3)] relative"
+                className={cn(
+                  "group p-2 rounded-xl transition-all border relative",
+                  user?.membership === "VIP" 
+                    ? "bg-yellow-400/10 text-yellow-400 hover:bg-yellow-400 hover:text-dark-bg border-yellow-400/20 shadow-[0_0_15px_rgba(250,204,21,0.1)] hover:shadow-[0_0_20px_rgba(250,204,21,0.3)]"
+                    : "bg-neon-blue/10 text-neon-blue hover:bg-neon-blue hover:text-dark-bg border-neon-blue/20 shadow-[0_0_15px_rgba(0,229,255,0.1)] hover:shadow-[0_0_20px_rgba(0,229,255,0.3)]"
+                )}
               >
                 <Plus size={18} />
                 <div className="absolute -top-1 -right-1">
-                  <Crown size={10} className="fill-yellow-400" />
+                  {user?.membership === "VIP" 
+                    ? <Crown size={10} className="fill-yellow-400" />
+                    : <Zap size={10} className="fill-neon-blue" />
+                  }
                 </div>
               </button>
             )}
@@ -1556,6 +1568,7 @@ export const ChatPage: React.FC = () => {
                 const displayName = friend?.displayName || chat.tempDisplayName || "گیمر";
                 const avatar = friend?.avatar;
                 const status = friend?.status || FriendStatus.OFFLINE;
+                const membership = (friend as any)?.membership || MembershipType.NONE;
 
                 return (
                   <button
@@ -1565,13 +1578,18 @@ export const ChatPage: React.FC = () => {
                       "w-full group flex items-center justify-between p-2.5 rounded-2xl transition-all text-right border border-transparent",
                       activeChatId === chat.friendId 
                         ? "bg-neon-blue/10 border-neon-blue/20 shadow-[0_0_20px_rgba(0,229,255,0.05)]" 
-                        : "hover:bg-white/5"
+                        : membership === "VIP" ? "hover:bg-yellow-400/5" : membership === "PLUS" ? "hover:bg-neon-blue/5" : "hover:bg-white/5"
                     )}
                     dir="rtl"
                   >
                     <div className="flex items-center gap-3">
                       <div className="relative">
-                        <div className="h-9 w-9 rounded-full bg-white/10 flex items-center justify-center text-xs overflow-hidden border border-white/5 group-hover:border-white/20 transition-colors">
+                        <div className={cn(
+                          "h-9 w-9 rounded-full flex items-center justify-center text-xs overflow-hidden border transition-colors",
+                          membership === "VIP" ? "border-yellow-400/30 group-hover:border-yellow-400/50 shadow-[0_0_10px_rgba(250,204,21,0.2)] bg-yellow-400/5" :
+                          membership === "PLUS" ? "border-neon-blue/30 group-hover:border-neon-blue/50 shadow-[0_0_10px_rgba(0,229,255,0.2)] bg-neon-blue/5" :
+                          "border-white/5 group-hover:border-white/20 bg-white/10"
+                        )}>
                            {(avatar || (friend as any)?.avatarUrl) && ((avatar || (friend as any)?.avatarUrl).length > 5 || (avatar || (friend as any)?.avatarUrl).startsWith("/") || (avatar || (friend as any)?.avatarUrl).includes(".")) ? (
                              <img src={avatar || (friend as any)?.avatarUrl} alt="" className="h-full w-full object-cover" />
                            ) : (
@@ -1587,13 +1605,18 @@ export const ChatPage: React.FC = () => {
                         )} />
                       </div>
                       <div className="flex flex-col items-start overflow-hidden text-right">
-                        <span className={cn(
-                          "text-xs font-bold transition-colors truncate w-32",
-                          activeChatId === chat.friendId ? "text-neon-blue" : "text-gray-300 group-hover:text-white"
-                        )}>
-                          {displayName}
-                        </span>
                         <div className="flex items-center gap-1.5">
+                          <span className={cn(
+                            "text-xs font-bold transition-colors truncate max-w-[120px]",
+                            membership === 'VIP' ? "text-yellow-400 drop-shadow-[0_0_5px_rgba(250,204,21,0.5)]" :
+                            membership === 'PLUS' ? "text-neon-blue drop-shadow-[0_0_5px_rgba(0,229,255,0.5)]" :
+                            activeChatId === chat.friendId ? "text-neon-blue" : "text-gray-300 group-hover:text-white"
+                          )}>
+                            {displayName}
+                          </span>
+                          {membership === 'VIP' && <Crown size={10} className="text-yellow-400" />}
+                        </div>
+                        <div className="flex items-center gap-1.5 mt-0.5">
                           {chat.messages.length > 0 ? (
                             <span className="text-[10px] text-gray-500 truncate w-24">
                               {chat.messages[chat.messages.length - 1].text}
@@ -1617,78 +1640,6 @@ export const ChatPage: React.FC = () => {
               )}
             </div>
 
-            <h3 className="px-4 text-[10px] font-black text-gray-600 uppercase tracking-widest mb-3 flex items-center gap-2 pt-2 border-t border-white/5">
-              <span className="h-px flex-1 bg-white/5"></span>
-              دوستان آنلاین
-              <span className="h-px flex-1 bg-white/5"></span>
-            </h3>
-            <div className="space-y-1">
-              {[...friends].filter(f => f.status !== FriendStatus.OFFLINE).sort((a,b) => {
-                  const getScore = (f: any) => f.membership === 'VIP' ? 2 : f.membership === 'PLUS' ? 1 : 0;
-                  return getScore(b) - getScore(a);
-              }).slice(0, 10).map((friend) => {
-                const mType = (friend as any).membership;
-                const isVip = mType === 'VIP';
-                const isPlus = mType === 'PLUS';
-
-                return (
-                <button
-                  key={friend.id}
-                  onClick={() => openChat(friend.id, friend.displayName)}
-                  className={cn(
-                    "w-full group flex items-center justify-between p-2 rounded-xl transition-all text-right",
-                    isVip ? "bg-gradient-to-r from-yellow-500/10 to-transparent border border-yellow-500/30 hover:border-yellow-500/50 shadow-[0_0_15px_rgba(250,204,21,0.15)] animate-[pulse_4s_ease-in-out_infinite]" :
-                    isPlus ? "bg-gradient-to-r from-neon-blue/10 to-transparent border border-neon-blue/30 hover:border-neon-blue/50 shadow-[0_0_15px_rgba(0,229,255,0.15)] animate-[pulse_4s_ease-in-out_infinite]" :
-                    "hover:bg-white/5 border border-transparent hover:border-white/5"
-                  )}
-                  dir="rtl"
-                >
-                   <div className="flex items-center gap-3">
-                     <div className="relative">
-                        <div 
-                          className={cn("h-8 w-8 rounded-full flex items-center justify-center text-xs overflow-hidden cursor-pointer", isVip ? "bg-yellow-400/20 border border-yellow-400/50" : isPlus ? "bg-neon-blue/20 border border-neon-blue/50" : "bg-white/10")}
-                          onClick={(e) => {
-                             e.stopPropagation();
-                             openProfile({
-                               senderName: friend.displayName,
-                               senderAvatar: friend.avatar || (friend as any).avatarUrl,
-                               senderLevel: friend.level,
-                               id: friend.id,
-                               membership: (friend as any).membership,
-                               vipMetadata: (friend as any).vipMetadata,
-                               bannerUrl: (friend as any).bannerUrl
-                             }, false);
-                          }}
-                        >
-                           {(friend.avatar || (friend as any).avatarUrl) && ((friend.avatar || (friend as any).avatarUrl).length > 5 || (friend.avatar || (friend as any).avatarUrl).startsWith("/") || (friend.avatar || (friend as any).avatarUrl).includes(".")) ? (
-                             <img src={friend.avatar || (friend as any).avatarUrl} alt="" className="h-full w-full object-cover" />
-                           ) : (
-                             <span className="text-[10px] text-gray-300">{friend.avatar || (friend as any).avatarUrl || "👤"}</span>
-                           )}
-                        </div>
-                        <div className={cn(
-                          "absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-[#0d0d12]",
-                          friend.status === FriendStatus.ONLINE ? "bg-green-500" :
-                          friend.status === FriendStatus.IN_GAME ? "bg-neon-purple shadow-[0_0_8px_rgba(160,32,240,0.8)]" : 
-                          friend.status === FriendStatus.IN_LOBBY ? "bg-neon-blue shadow-[0_0_8px_rgba(0,229,255,0.8)]" :
-                          "bg-gray-600"
-                        )} />
-                     </div>
-                     <div className="flex flex-col items-start">
-                        <span className={cn("text-[11px] font-bold transition-colors", isVip ? "text-yellow-400 drop-shadow-[0_0_5px_rgba(250,204,21,0.5)]" : isPlus ? "text-neon-blue drop-shadow-[0_0_5px_rgba(0,229,255,0.5)]" : "text-gray-400 group-hover:text-white")}>{friend.displayName}</span>
-                        <span className="text-[8px] text-gray-600 font-medium">LVL {friend.level}</span>
-                     </div>
-                   </div>
-                   <MessageCircle size={14} className={cn("transition-all transform scale-0 group-hover:scale-100", isVip ? "text-yellow-400" : isPlus ? "text-neon-blue" : "text-gray-600 group-hover:text-neon-blue")} />
-                </button>
-              )})}
-              {friends.length === 0 && (
-                <div className="py-8 text-center space-y-2 opacity-30">
-                  <User size={24} className="mx-auto text-gray-600" />
-                  <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest italic">لیست دوستان خالی است</p>
-                </div>
-              )}
-            </div>
           </div>
         </div>
 
@@ -1721,9 +1672,9 @@ export const ChatPage: React.FC = () => {
             <div className="flex-1 min-w-0">
               <p className="text-xs font-bold text-white truncate">{user?.displayName || user?.username}</p>
               <div className="flex items-center gap-1">
-                <span className="text-[9px] text-neon-blue font-bold">LVL {Math.floor(userLvl)}</span>
+                <span className="text-[9px] text-neon-blue font-bold">LVL {Math.floor((user as any)?.level || 1)}</span>
                 <div className="h-1 flex-1 bg-white/10 rounded-full overflow-hidden">
-                  <div className="h-full bg-neon-blue transition-all" style={{ width: `${(userLvl % 1) * 100}%` }}></div>
+                  <div className="h-full bg-neon-blue transition-all" style={{ width: `${(((user as any)?.xp || 0) % 1000) / 1000 * 100}%` }}></div>
                 </div>
               </div>
             </div>
