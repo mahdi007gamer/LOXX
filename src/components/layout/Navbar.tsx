@@ -10,7 +10,6 @@ import { NotificationCenter } from "../ui/NotificationCenter";
 const menuItems = [
   { icon: LayoutDashboard, label: "داشبورد", path: "/dashboard" },
   { icon: Gamepad2, label: "بازی‌ها", path: "/games" },
-  { icon: Target, label: "بازی‌های من", path: "/my-games" },
   { icon: Users, label: "لابی‌ها", path: "/lobbies" },
   { icon: User, label: "دوستان", path: "/friends" },
   { icon: MessageSquare, label: "چت سراسری", path: "/chat" },
@@ -107,11 +106,13 @@ export const Navbar = () => {
               </div>
             </Link>
 
-            <Link to="/auth">
-              <GlowButton variant="blue" size="sm" className="hidden xs:flex h-10 px-6 rounded-full font-black text-[10px] tracking-widest">
-                ورود
-              </GlowButton>
-            </Link>
+            {!user ? (
+              <Link to="/auth">
+                <GlowButton variant="blue" size="sm" className="hidden xs:flex h-10 px-6 rounded-full font-black text-[10px] tracking-widest">
+                  ورود
+                </GlowButton>
+              </Link>
+            ) : null}
           </div>
         </div>
       </nav>
@@ -132,53 +133,76 @@ export const Navbar = () => {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="fixed right-0 top-0 z-[10001] h-full w-72 bg-dark-bg border-l border-white/10 p-6 pt-24 md:hidden shadow-2xl"
+              className="fixed right-0 top-0 z-[10001] h-full w-72 bg-dark-bg border-l border-white/10 flex flex-col md:hidden shadow-2xl"
             >
-              <div className="space-y-2">
+              {/* Menu Header with close button */}
+              <div className="flex items-center justify-between p-6 border-b border-white/5 pt-10">
+                <span className="text-xl font-black italic text-white uppercase tracking-tighter">منو دسترسی</span>
+                <button onClick={() => setIsMenuOpen(false)} className="text-gray-500 hover:text-white">
+                  <X size={24} />
+                </button>
+              </div>
+
+              {/* Scrollable Links */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-1">
                 {menuItems.map((item) => (
                   <NavLink
                     key={item.path}
                     to={item.path}
                     onClick={() => setIsMenuOpen(false)}
                     className={({ isActive }) => cn(
-                      "flex items-center gap-4 rounded-xl px-4 py-4 transition-all",
+                      "flex items-center gap-4 rounded-xl px-4 py-3.5 transition-all",
                       isActive 
-                        ? "bg-neon-blue/10 text-neon-blue border-r-4 border-neon-blue" 
+                        ? "bg-neon-blue/10 text-neon-blue" 
                         : "text-gray-400 hover:bg-white/5 hover:text-white"
                     )}
                   >
-                    <item.icon size={22} />
-                    <span className="text-lg font-bold">{item.label}</span>
+                    <item.icon size={20} className={cn(isActive && "drop-shadow-[0_0_8px_rgba(0,229,255,0.5)]")} />
+                    <span className="text-base font-bold italic uppercase tracking-tight">{item.label}</span>
                   </NavLink>
                 ))}
               </div>
 
-              <div className="absolute bottom-10 left-6 right-6">
+              {/* Profile & Logout fixed at bottom */}
+              <div className="p-6 border-t border-white/5 bg-black/20">
                 {user ? (
-                  <div className="flex flex-col gap-2">
+                  <div className="flex flex-col gap-3">
                     <Link to="/profile" onClick={() => setIsMenuOpen(false)}>
-                      <div className="flex items-center gap-4 rounded-2xl bg-white/5 p-4 border border-white/10">
-                        <div className="h-12 w-12 rounded-full overflow-hidden bg-neon-purple/20 flex items-center justify-center text-neon-purple shrink-0">
-                          {user.avatar ? (
-                            <img src={user.avatar} alt="" className="h-full w-full object-cover" />
+                      <div className="flex items-center gap-3 rounded-2xl bg-white/5 p-3 border border-white/10 hover:bg-white/10 transition-all">
+                        <div className="h-10 w-10 rounded-full overflow-hidden bg-neon-purple/20 flex items-center justify-center text-neon-purple shrink-0 border border-white/10">
+                          {user.avatarUrl ? (
+                            <img src={user.avatarUrl} alt="" className="h-full w-full object-cover" />
                           ) : (
-                            <User size={24} />
+                            <User size={20} />
                           )}
                         </div>
                         <div className="min-w-0 flex-1 text-right">
-                          <p className="font-bold text-white uppercase text-sm truncate">{user.displayName || user.username}</p>
-                          <p className="text-[10px] text-gray-400 font-black tracking-widest truncate">{user.membership || "MEMBER"}</p>
+                          <p className="font-bold text-white uppercase text-xs truncate italic tracking-tighter">
+                            {user.displayName || user.username}
+                          </p>
+                          <div className="flex items-center justify-end gap-1">
+                            <span className="text-[8px] text-neon-blue font-black tracking-widest truncate uppercase">
+                              {user.role === 'ADMIN' ? 'ADMIN' : (user.membership || "MEMBER")}
+                            </span>
+                            {user.role === 'ADMIN' && <Shield size={10} className="text-neon-blue" />}
+                          </div>
                         </div>
                       </div>
                     </Link>
-                    <button onClick={logout} className="flex items-center justify-center gap-2 rounded-2xl bg-red-500/10 hover:bg-red-500/20 text-red-500 p-4 border border-red-500/20 transition-colors w-full font-bold">
-                      <LogOut size={18} />
+                    <button 
+                      onClick={() => {
+                        logout();
+                        setIsMenuOpen(false);
+                      }} 
+                      className="flex items-center justify-center gap-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-500 py-3 border border-red-500/20 transition-all w-full font-black text-xs uppercase italic tracking-widest"
+                    >
+                      <LogOut size={16} />
                       خروج از حساب
                     </button>
                   </div>
                 ) : (
                   <Link to="/auth" onClick={() => setIsMenuOpen(false)}>
-                    <GlowButton variant="purple" className="w-full">
+                    <GlowButton variant="purple" className="w-full text-xs font-black uppercase italic h-12 shadow-none border-none blur-none">
                       ورود / ثبت‌نام
                     </GlowButton>
                   </Link>

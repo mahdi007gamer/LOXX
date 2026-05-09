@@ -96,62 +96,64 @@ export const LobbiesPage = () => {
       <Sidebar />
       <main className="flex-1 px-4 py-8 md:mr-64 lg:px-8 pb-32 md:pb-8">
         <div className="container mx-auto max-w-6xl">
-          <header className="mb-10 flex flex-col items-center justify-between gap-6 md:flex-row md:mb-12">
-            <div className="text-center md:text-right w-full md:w-auto">
-              <h1 className="text-3xl md:text-5xl font-black text-white italic tracking-tighter">لابی‌های فعال</h1>
-              <p className="mt-3 text-[11px] md:text-xs text-gray-500 font-bold uppercase tracking-[0.15em] leading-relaxed opacity-60">تیم خود را پیدا کنید و در کنار بقیه بازیکنان حرفه‌ای بازی کنید</p>
+          <header className="mb-6 flex flex-col items-start gap-5 md:flex-row md:items-center md:justify-between md:mb-12">
+            <div className="text-right w-full md:w-auto">
+              <h1 className="text-2xl md:text-5xl font-black text-white italic tracking-tighter uppercase">لابی‌های فعال</h1>
+              <p className="mt-1 text-[9px] md:text-xs text-gray-500 font-bold uppercase tracking-[0.1em] opacity-80 italic">پلتفرم تخصصی تیم‌یابی گیمرها</p>
             </div>
             
-            <div className="flex flex-col w-full items-stretch sm:flex-row sm:items-center gap-4 md:w-auto">
-               <div className="relative flex-1 min-w-0">
-                <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-700" size={18} />
+            <div className="flex flex-col w-full items-stretch md:flex-row md:items-center gap-2.5 md:w-auto">
+               <div className="relative flex-1 md:w-64 lg:w-80">
+                <Search className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-600" size={14} />
                 <input 
                    type="text" 
                    value={searchTerm}
                    onChange={(e) => setSearchTerm(e.target.value)}
-                   placeholder="جستجوی لابی یا بازی..."
-                   className="w-full rounded-2xl border border-white/5 bg-white/5 py-4 pr-12 text-sm text-white focus:border-neon-blue/40 focus:outline-none transition-all placeholder:text-gray-700 font-bold shadow-2xl"
+                   placeholder="جستجوی لابی..."
+                   className="w-full rounded-xl border border-white/5 bg-white/5 py-3 pr-10 text-[11px] text-white focus:border-neon-blue/40 focus:outline-none transition-all placeholder:text-gray-700 font-bold"
                  />
               </div>
               <GlowButton 
                 variant="blue" 
-                className="flex items-center justify-center gap-2 h-14 px-4 sm:px-8 shrink-0 shadow-[0_0_30px_rgba(0,229,255,0.2)] rounded-2xl group whitespace-nowrap" 
+                className="flex items-center justify-center gap-2 h-11 px-6 shrink-0 rounded-xl group transition-all active:scale-95" 
                 onClick={() => setIsModalOpen(true)}
               >
-                <Plus size={20} className="group-hover:rotate-90 transition-transform" />
-                <span className="text-sm font-black uppercase italic">ساخت لابی جدید</span>
+                <Plus size={16} className="group-hover:rotate-90 transition-transform" />
+                <span className="text-[10px] font-black uppercase italic">لابی جدید</span>
               </GlowButton>
             </div>
           </header>
 
           {/* Game Filters */}
-          <div className="-mx-4 px-4 sm:mx-0 sm:px-0 mb-10 flex items-center gap-3 overflow-x-auto pb-4 scrollbar-none snap-x snap-mandatory">
-             <button 
-                onClick={() => setActiveFilter("all")}
-                className={cn(
-                  "whitespace-nowrap rounded-xl px-6 py-3 text-[11px] font-black transition-all snap-start",
-                  activeFilter === "all" 
-                    ? "bg-neon-blue text-dark-bg shadow-[0_0_20px_rgba(0,229,255,0.4)] scale-105" 
-                    : "bg-white/5 text-gray-500 hover:text-white border border-white/5"
-                )}
-             >
-               همه بازی‌ها
-             </button>
-             {games?.map((game) => (
-                <button 
-                  key={game.id} 
-                  onClick={() => setActiveFilter(game.id)}
+          <div className="relative mb-8">
+            <div className="-mx-4 px-4 md:mx-0 md:px-0 flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none snap-x snap-mandatory">
+               <button 
+                  onClick={() => setActiveFilter("all")}
                   className={cn(
-                    "whitespace-nowrap rounded-xl border px-6 py-3 text-[11px] font-black transition-all flex items-center gap-2 snap-start",
-                    activeFilter === game.id
-                      ? "bg-neon-blue/20 border-neon-blue text-neon-blue shadow-[0_0_15px_rgba(0,229,255,0.2)] scale-105"
-                      : "border-white/5 bg-white/5 text-gray-500 hover:text-white"
+                    "whitespace-nowrap rounded-lg px-4 py-2 text-[9px] font-black uppercase transition-all snap-start border",
+                    activeFilter === "all" 
+                      ? "bg-neon-blue border-neon-blue text-dark-bg" 
+                      : "bg-white/5 text-gray-500 border-white/5 hover:text-white"
                   )}
-                >
-                  {game.iconUrl && <img src={game.iconUrl} className="w-4 h-4 object-contain" alt="" />}
-                  {game.title}
-                </button>
-             ))}
+               >
+                 همه
+               </button>
+               {games?.map((game) => (
+                  <button 
+                    key={game.id} 
+                    onClick={() => setActiveFilter(game.id)}
+                    className={cn(
+                      "whitespace-nowrap rounded-lg border px-4 py-2 text-[9px] font-black uppercase transition-all flex items-center gap-2 snap-start",
+                      activeFilter === game.id
+                        ? "bg-neon-blue/10 border-neon-blue text-neon-blue"
+                        : "border-white/5 bg-white/5 text-gray-500 hover:text-white"
+                    )}
+                  >
+                    {game.iconUrl && <img src={game.iconUrl} className="w-3 h-3 object-contain" alt="" />}
+                    {game.title}
+                  </button>
+               ))}
+            </div>
           </div>
 
           {/* Lobbies Grid */}
