@@ -443,7 +443,7 @@ export const PremiumPage = () => {
                          <p className="text-gray-500 font-bold text-sm italic">لطفاً مبلغ را کارت‌به‌کارت کنید و تصویر رسید را بارگذاری نمایید.</p>
                       </div>
 
-                      <div className="w-full max-w-md space-y-6">
+                      <div className="w-full max-w-lg space-y-6">
                         <BankCard 
                           cardNumber="6063-7311-8109-6737"
                           cardHolder="مهدی دلال زاده احمدی"

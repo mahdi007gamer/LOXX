@@ -93,9 +93,9 @@ export enum BadgeType {
 }
 
 export enum MembershipType {
-  NONE = "none",
-  PLUS = "plus",
-  VIP = "vip"
+  NONE = "NONE",
+  PLUS = "PLUS",
+  VIP = "VIP"
 }
 
 export interface Reaction {

@@ -26,12 +26,15 @@ export const SmartImage: React.FC<SmartImageProps> = ({
   useEffect(() => {
     if (!src) return;
     
-    const isGif = src.toLowerCase().endsWith('.gif') || src.toLowerCase().includes('.gif?');
+    // Check if it's a GIF
+    const isGif = src.toLowerCase().split('?')[0].endsWith('.gif');
     
     if (isGif && !isVipEnabled) {
       const img = new Image();
+      // Set crossOrigin BEFORE src
       img.crossOrigin = "anonymous";
       img.src = src;
+      
       img.onload = () => {
         const canvas = document.createElement('canvas');
         canvas.width = img.width;
@@ -42,7 +45,9 @@ export const SmartImage: React.FC<SmartImageProps> = ({
           try {
             setFrozenUrl(canvas.toDataURL('image/png'));
           } catch (e) {
-            console.warn("Failed to freeze GIF due to CORS, showing original (unfrozen)", e);
+            console.warn("CORS error freezing GIF:", e);
+            // Fallback: If it's a GIF and we can't freeze it due to CORS,
+            // we at least try to append a cache-buster or just use original
             setFrozenUrl(src);
           }
         }
