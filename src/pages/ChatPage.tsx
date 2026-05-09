@@ -579,8 +579,47 @@ export const ChatPage: React.FC = () => {
   const [showVipGroupModal, setShowVipGroupModal] = useState(false);
   const [showEliteSettingsModal, setShowEliteSettingsModal] = useState(false);
   const [eliteSettingsData, setEliteSettingsData] = useState({ title: "", avatarUrl: "" });
+
+  const handleGroupAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 1 * 1024 * 1024) {
+      toast.error("حجم تصویر نباید بیشتر از ۱ مگابایت باشد");
+      return;
+    }
+
+    if (!file.type.match(/^image\/(jpeg|png)$/)) {
+      toast.error("فقط فرمت‌های jpg و png مجاز هستند");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const { data } = await api.post("/upload", formData, {
+        headers: { "Content-Type": "multipart/form-data" }
+      });
+      setEliteSettingsData(p => ({ ...p, avatarUrl: data.url }));
+      toast.success("تصویر با موفقیت آپلود شد");
+    } catch (err: any) {
+      toast.error(err.response?.data?.error?.message || "خطا در آپلود تصویر");
+    }
+  };
+
+  const handleRegenerateInviteLink = async () => {
+    try {
+      const res = await api.post(`/elite/${activeChannelId}/regenerate-link`);
+      // Update local state by forcing a refresh or just showing link
+      toast.success("لینک جدید تولید شد: " + window.location.origin + "/invite/" + res.data.data.inviteCode);
+    } catch(err: any) {
+      toast.error(err.response?.data?.error?.message || "خطا در ساخت لینک اختصاصی");
+    }
+  };
   const [showEliteInviteModal, setShowEliteInviteModal] = useState(false);
-  const [inviteUsername, setInviteUsername] = useState("");
+  const [inviteSearchQuery, setInviteSearchQuery] = useState("");
+  const [selectedInvitees, setSelectedInvitees] = useState<string[]>([]);
   const [vipGroupName, setVipGroupName] = useState("");
   const [userLvl, setUserLvl] = useState(42);
   const [eliteGroups, setEliteGroups] = useState<any[]>([]);
@@ -664,14 +703,15 @@ export const ChatPage: React.FC = () => {
   };
 
   const handleInviteToEliteGroup = async () => {
-    if (!inviteUsername.trim()) {
-      toast.error("نام کاربری را وارد کنید");
+    if (selectedInvitees.length === 0) {
+      toast.error("دوستانی که می‌خواهید دعوت کنید را انتخاب کنید");
       return;
     }
     try {
-      await api.post("/elite/members/invite", { groupId: activeChannelId, username: inviteUsername });
+      await api.post("/elite/members/invite", { groupId: activeChannelId, userIds: selectedInvitees });
       toast.success("دعوتنامه با موفقیت ارسال شد");
-      setInviteUsername("");
+      setInviteSearchQuery("");
+      setSelectedInvitees([]);
       setShowEliteInviteModal(false);
     } catch (err: any) {
        toast.error(err.response?.data?.error?.message || "خطا در ارسال دعوتنامه");
@@ -1155,28 +1195,65 @@ export const ChatPage: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-gray-400 mb-2 block">آدرس عکس پروفایل (اختیاری)</label>
-                  <Input 
-                    value={eliteSettingsData.avatarUrl}
-                    onChange={(e) => setEliteSettingsData(p => ({ ...p, avatarUrl: e.target.value }))}
-                    placeholder="https://..."
-                    dir="ltr"
-                  />
+                  <label className="text-xs font-bold text-gray-400 mb-2 block">تصویر پروفایل گروه</label>
+                  <div className="flex items-center gap-4">
+                    <div className="h-12 w-12 rounded-xl bg-white/5 border border-white/10 overflow-hidden flex items-center justify-center shrink-0">
+                      {eliteSettingsData.avatarUrl ? <img src={eliteSettingsData.avatarUrl} alt="" className="h-full w-full object-cover" /> : <Users size={20} className="text-gray-500" />}
+                    </div>
+                    <input type="file" accept="image/png, image/jpeg" onChange={handleGroupAvatarUpload} className="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-neon-blue/10 file:text-neon-blue hover:file:bg-neon-blue/20 cursor-pointer" />
+                  </div>
                 </div>
+                
+                {/* Invite Link Section for VIP */}
+                {user?.membershipType === 'VIP' && (
+                  <div className="pt-4 border-t border-white/5 space-y-3">
+                    <label className="text-xs font-bold text-gray-400 block">لینک دعوت اختصاصی</label>
+                    <div className="flex gap-2">
+                       <Input 
+                         value={(activeChannel as any).inviteCode ? `${window.location.origin}/invite/${(activeChannel as any).inviteCode}` : "در حال ساخت..."}
+                         readOnly
+                         dir="ltr"
+                         className="flex-1 text-xs"
+                       />
+                       <button onClick={handleRegenerateInviteLink} className="h-10 px-4 rounded-xl bg-neon-blue/10 text-neon-blue hover:bg-neon-blue/20 transition-colors shrink-0 font-bold text-xs">
+                         بازتولید
+                       </button>
+                    </div>
+                  </div>
+                )}
                 
                 {/* Members List */}
                 <div className="pt-4 border-t border-white/5">
-                  <label className="text-xs font-bold text-gray-400 mb-3 block">مدیریت اعضا</label>
-                  <div className="max-h-32 overflow-y-auto space-y-2 custom-scrollbar">
-                    {((activeChannel as any).rawMembers || []).map((m: any) => (
-                      <div key={m.userId} className="flex items-center justify-between p-2 rounded-lg bg-white/5">
-                         <span className="text-xs font-medium text-white">{m.user?.username || 'Unknown'}</span>
-                         {m.userId !== user?.id && (
-                           <button onClick={() => handleRemoveEliteMember(m.userId)} className="text-xs text-red-500 hover:text-red-400 font-bold px-2">
+                  <label className="text-xs font-bold text-gray-400 mb-3 block">مدیریت اعضا ({((activeChannel as any).rawMembers || []).length} نفر)</label>
+                  <div className="max-h-48 overflow-y-auto space-y-2 custom-scrollbar pr-2">
+                    {[...((activeChannel as any).rawMembers || [])].sort((a, b) => {
+                      if (a.role === 'OWNER') return -1;
+                      if (b.role === 'OWNER') return 1;
+                      return 0;
+                    }).map((m: any) => (
+                      <div key={m.userId} className="flex items-center justify-between p-2 rounded-xl bg-white/5 hover:bg-white/10 transition-colors border border-white/5">
+                         <div className="flex items-center gap-3">
+                           <div className="h-10 w-10 rounded-xl overflow-hidden shrink-0 border border-white/10 flex items-center justify-center bg-[#0d0d12]">
+                             {m.user?.profile?.avatarUrl ? (
+                               <img src={m.user.profile.avatarUrl} alt="" className="h-full w-full object-cover" />
+                             ) : (
+                               <span className="text-gray-500 text-xs">👤</span>
+                             )}
+                           </div>
+                           <div className="flex flex-col">
+                             <span className="text-sm font-bold text-white">{m.user?.profile?.displayName || m.user?.username}</span>
+                             <span className="text-[10px] text-gray-400" dir="ltr">@{m.user?.username}</span>
+                           </div>
+                         </div>
+                         {m.userId !== user?.id ? (
+                           <button onClick={() => handleRemoveEliteMember(m.userId)} className="text-[10px] bg-red-500/10 text-red-500 hover:bg-red-500/20 px-3 py-1.5 rounded-lg border border-red-500/20 font-black uppercase tracking-widest transition-colors shrink-0">
                              اخراج
                            </button>
+                         ) : (
+                           <span className="text-[10px] font-black uppercase tracking-widest text-[#00e5ff] bg-[#00e5ff]/10 px-3 py-1.5 rounded-lg border border-[#00e5ff]/20 shrink-0">
+                             مدیر
+                           </span>
                          )}
-                         {m.userId === user?.id && <span className="text-[10px] text-gray-500 px-2">مدیر</span>}
                       </div>
                     ))}
                   </div>
@@ -1200,25 +1277,80 @@ export const ChatPage: React.FC = () => {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-[#0b0c10] border border-white/10 rounded-[32px] w-full max-w-sm overflow-hidden shadow-2xl p-6"
+              className="bg-[#0b0c10] border border-white/10 rounded-[32px] w-full max-w-sm overflow-hidden shadow-2xl p-6 flex flex-col max-h-[80vh]"
             >
-              <div className="flex justify-between items-center mb-6">
+              <div className="flex justify-between items-center mb-6 shrink-0">
                 <h3 className="text-xl font-black text-white italic tracking-tighter">دعوت دوستان به گروه</h3>
                 <button onClick={() => setShowEliteInviteModal(false)} className="text-gray-500 hover:text-white"><X size={24}/></button>
               </div>
-              <div className="space-y-4 mb-6">
+              <div className="space-y-4 mb-6 shrink-0">
                 <div>
-                  <label className="text-xs font-bold text-gray-400 mb-2 block">نام کاربری دوستتان</label>
-                  <Input 
-                    value={inviteUsername}
-                    onChange={(e) => setInviteUsername(e.target.value)}
-                    placeholder="username"
-                    dir="ltr"
-                  />
+                  <div className="relative">
+                    <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                    <input 
+                      type="text"
+                      className="w-full bg-[#15151a] border border-white/5 rounded-2xl px-12 py-3.5 text-sm text-white focus:outline-none focus:border-neon-pink/50 transition-colors"
+                      value={inviteSearchQuery}
+                      onChange={(e) => setInviteSearchQuery(e.target.value)}
+                      placeholder="جستجوی دوست..."
+                    />
+                  </div>
                 </div>
               </div>
-              <div className="flex gap-3">
-                 <GlowButton variant="pink" className="flex-1 font-black" onClick={handleInviteToEliteGroup}>ارسال دعوتنامه</GlowButton>
+              
+              <div className="flex-1 overflow-y-auto mb-6 pr-2 space-y-2 custom-scrollbar">
+                {friends.filter(f => 
+                  f.displayName.toLowerCase().includes(inviteSearchQuery.toLowerCase()) || 
+                  f.username.toLowerCase().includes(inviteSearchQuery.toLowerCase())
+                ).map(friend => {
+                  const isSelected = selectedInvitees.includes(friend.id);
+                  // Check if already in group
+                  const isMember = ((activeChannel as any).rawMembers || []).some((m: any) => m.userId === friend.id);
+                  
+                  return (
+                    <div 
+                      key={friend.id} 
+                      className={cn(
+                        "flex items-center justify-between p-3 rounded-2xl border transition-all cursor-pointer",
+                        isMember ? "opacity-50 pointer-events-none border-white/5 bg-white/5" :
+                        isSelected ? "bg-neon-pink/10 border-neon-pink/30" : "bg-white/5 border-white/5 hover:bg-white/10"
+                      )}
+                      onClick={() => {
+                        if (isMember) return;
+                        setSelectedInvitees(prev => 
+                          isSelected ? prev.filter(id => id !== friend.id) : [...prev, friend.id]
+                        );
+                      }}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-xl bg-[#0b0c10] overflow-hidden flex items-center justify-center border border-white/10 shrink-0">
+                          {friend.avatar || (friend as any).avatarUrl ? (
+                            <img src={friend.avatar || (friend as any).avatarUrl} alt="" className="h-full w-full object-cover" />
+                          ) : (
+                            <span className="text-gray-500 text-xs">👤</span>
+                          )}
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-sm font-bold text-white">{friend.displayName}</span>
+                          <span className="text-[10px] text-gray-400" dir="ltr">@{friend.username}</span>
+                        </div>
+                      </div>
+                      <div className={cn(
+                        "h-6 w-6 rounded-lg border-2 flex items-center justify-center transition-colors shrink-0",
+                        isSelected ? "bg-neon-pink border-neon-pink text-[#0b0c10]" : "border-gray-500 text-transparent"
+                      )}>
+                        <Check size={14} />
+                      </div>
+                    </div>
+                  );
+                })}
+                {friends.length === 0 && (
+                   <div className="text-center py-6 text-gray-500 text-sm font-bold">دوستی یافت نشد</div>
+                )}
+              </div>
+              
+              <div className="flex gap-3 shrink-0">
+                 <GlowButton variant="pink" className="flex-1 font-black" onClick={handleInviteToEliteGroup} disabled={selectedInvitees.length === 0}>ارسال دعوتنامه ({selectedInvitees.length})</GlowButton>
               </div>
             </motion.div>
           </div>
@@ -1491,17 +1623,30 @@ export const ChatPage: React.FC = () => {
               <span className="h-px flex-1 bg-white/5"></span>
             </h3>
             <div className="space-y-1">
-              {friends.filter(f => f.status !== FriendStatus.OFFLINE).slice(0, 10).map((friend) => (
+              {[...friends].filter(f => f.status !== FriendStatus.OFFLINE).sort((a,b) => {
+                  const getScore = (f: any) => f.membership === 'VIP' ? 2 : f.membership === 'PLUS' ? 1 : 0;
+                  return getScore(b) - getScore(a);
+              }).slice(0, 10).map((friend) => {
+                const mType = (friend as any).membership;
+                const isVip = mType === 'VIP';
+                const isPlus = mType === 'PLUS';
+
+                return (
                 <button
                   key={friend.id}
                   onClick={() => openChat(friend.id, friend.displayName)}
-                  className="w-full group flex items-center justify-between p-2 rounded-xl hover:bg-white/5 transition-all text-right"
+                  className={cn(
+                    "w-full group flex items-center justify-between p-2 rounded-xl transition-all text-right",
+                    isVip ? "bg-gradient-to-r from-yellow-500/10 to-transparent border border-yellow-500/30 hover:border-yellow-500/50 shadow-[0_0_15px_rgba(250,204,21,0.15)] animate-[pulse_4s_ease-in-out_infinite]" :
+                    isPlus ? "bg-gradient-to-r from-neon-blue/10 to-transparent border border-neon-blue/30 hover:border-neon-blue/50 shadow-[0_0_15px_rgba(0,229,255,0.15)] animate-[pulse_4s_ease-in-out_infinite]" :
+                    "hover:bg-white/5 border border-transparent hover:border-white/5"
+                  )}
                   dir="rtl"
                 >
                    <div className="flex items-center gap-3">
                      <div className="relative">
                         <div 
-                          className={cn("h-8 w-8 rounded-full flex items-center justify-center text-xs overflow-hidden cursor-pointer", (friend as any).membership === 'VIP' ? "bg-yellow-400/10 border border-yellow-400/30" : "bg-white/10")}
+                          className={cn("h-8 w-8 rounded-full flex items-center justify-center text-xs overflow-hidden cursor-pointer", isVip ? "bg-yellow-400/20 border border-yellow-400/50" : isPlus ? "bg-neon-blue/20 border border-neon-blue/50" : "bg-white/10")}
                           onClick={(e) => {
                              e.stopPropagation();
                              openProfile({
@@ -1530,13 +1675,13 @@ export const ChatPage: React.FC = () => {
                         )} />
                      </div>
                      <div className="flex flex-col items-start">
-                        <span className="text-[11px] font-bold text-gray-400 group-hover:text-white transition-colors">{friend.displayName}</span>
+                        <span className={cn("text-[11px] font-bold transition-colors", isVip ? "text-yellow-400 drop-shadow-[0_0_5px_rgba(250,204,21,0.5)]" : isPlus ? "text-neon-blue drop-shadow-[0_0_5px_rgba(0,229,255,0.5)]" : "text-gray-400 group-hover:text-white")}>{friend.displayName}</span>
                         <span className="text-[8px] text-gray-600 font-medium">LVL {friend.level}</span>
                      </div>
                    </div>
-                   <MessageCircle size={14} className="text-gray-600 group-hover:text-neon-blue transition-all transform scale-0 group-hover:scale-100" />
+                   <MessageCircle size={14} className={cn("transition-all transform scale-0 group-hover:scale-100", isVip ? "text-yellow-400" : isPlus ? "text-neon-blue" : "text-gray-600 group-hover:text-neon-blue")} />
                 </button>
-              ))}
+              )})}
               {friends.length === 0 && (
                 <div className="py-8 text-center space-y-2 opacity-30">
                   <User size={24} className="mx-auto text-gray-600" />
@@ -1752,7 +1897,6 @@ export const ChatPage: React.FC = () => {
             >
               <Users size={16} />
             </button>
-            <button className="hidden md:block p-2 text-gray-500 hover:text-white hover:bg-white/5 rounded-lg transition-all"><MoreVertical size={20} /></button>
           </div>
         </header>
 
@@ -2053,7 +2197,15 @@ export const ChatPage: React.FC = () => {
               ) : (
                 <div className="space-y-2">
                   {friends.length > 0 ? (
-                    friends.map((friend, i) => (
+                    [...friends].sort((a, b) => {
+                      const getScore = (f: any) => f.membership === 'VIP' ? 2 : f.membership === 'PLUS' ? 1 : 0;
+                      return getScore(b) - getScore(a);
+                    }).map((friend, i) => {
+                      const mType = (friend as any).membership;
+                      const isVip = mType === 'VIP';
+                      const isPlus = mType === 'PLUS';
+                      
+                      return (
                       <motion.div
                         key={friend.id}
                         initial={{ opacity: 0, x: -20 }}
@@ -2066,13 +2218,16 @@ export const ChatPage: React.FC = () => {
                         }}
                         className={cn(
                           "group relative flex items-center gap-3 p-3 rounded-2xl transition-all cursor-pointer",
-                          friend.status === FriendStatus.ONLINE || friend.status === FriendStatus.IN_GAME ? "bg-white/5 border border-white/5 hover:border-neon-blue/20" : "bg-black/20 border-transparent grayscale opacity-50",
+                          friend.status === FriendStatus.OFFLINE ? "opacity-50 grayscale" : "",
+                          isVip ? "bg-gradient-to-r from-yellow-500/10 to-[#1a1505] border border-yellow-500/30 shadow-[0_0_15px_rgba(250,204,21,0.15)] animate-[pulse_4s_ease-in-out_infinite]" : 
+                          isPlus ? "bg-gradient-to-r from-neon-blue/10 to-[#05111a] border border-neon-blue/30 shadow-[0_0_15px_rgba(0,229,255,0.15)] animate-[pulse_4s_ease-in-out_infinite]" :
+                          "bg-white/5 border border-white/5 hover:border-neon-blue/20",
                           activeChatId === friend.id && "bg-white/10 border-white/20"
                         )}
                       >
                         <div className="relative">
                           <div 
-                            className={cn("h-10 w-10 rounded-xl flex items-center justify-center shadow-lg overflow-hidden group-hover:scale-105 transition-transform", (friend as any).membership === 'VIP' ? "bg-yellow-400/10 border border-yellow-400/30" : "bg-white/10")}
+                            className={cn("h-10 w-10 rounded-xl flex items-center justify-center shadow-lg overflow-hidden group-hover:scale-105 transition-transform", isVip ? "bg-yellow-400/20 border border-yellow-400/50" : isPlus ? "bg-neon-blue/20 border border-neon-blue/50" : "bg-white/10")}
                           >
                              {(friend.avatar || (friend as any).avatarUrl) && ((friend.avatar || (friend as any).avatarUrl).length > 5 || (friend.avatar || (friend as any).avatarUrl).startsWith("/") || (friend.avatar || (friend as any).avatarUrl).includes(".")) ? (
                                <img src={friend.avatar || (friend as any).avatarUrl} alt="" className="h-full w-full object-cover" />
@@ -2090,7 +2245,7 @@ export const ChatPage: React.FC = () => {
                         
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1">
-                            <p className="text-xs font-black text-white truncate">{friend.displayName}</p>
+                            <p className={cn("text-xs font-black truncate", isVip ? "text-yellow-400 drop-shadow-[0_0_5px_rgba(250,204,21,0.5)]" : isPlus ? "text-neon-blue drop-shadow-[0_0_5px_rgba(0,229,255,0.5)]" : "text-white")}>{friend.displayName}</p>
                             {friend.isFavorite && <Star size={10} className="fill-neon-blue text-neon-blue shrink-0" />}
                           </div>
                           <p className="text-[10px] text-gray-500 font-bold">سطح {friend.level}</p>
@@ -2120,9 +2275,11 @@ export const ChatPage: React.FC = () => {
                                    id: friend.id,
                                    senderId: friend.id,
                                    senderName: friend.displayName,
-                                   senderAvatar: friend.avatar || "👤",
+                                   senderAvatar: friend.avatar || (friend as any).avatarUrl,
                                    senderLevel: friend.level,
-                                   senderBadges: [] 
+                                   membership: (friend as any).membership,
+                                   vipMetadata: (friend as any).vipMetadata,
+                                   bannerUrl: (friend as any).bannerUrl
                                  }, false);
                                }}
                                className="h-9 w-9 rounded-xl bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-all flex items-center justify-center border border-white/5"
@@ -2133,7 +2290,8 @@ export const ChatPage: React.FC = () => {
                            </div>
                         </div>
                       </motion.div>
-                    ))
+                    );
+                  })
                   ) : (
                     <div className="py-20 text-center space-y-4 opacity-50">
                        <Users size={40} className="mx-auto text-gray-600" />

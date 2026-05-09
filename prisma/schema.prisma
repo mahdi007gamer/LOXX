@@ -117,6 +117,7 @@ model Channel {
   owner           User?    @relation("OwnedChannels", fields: [ownerId], references: [id])
   avatarUrl       String?
   metadata        String?
+  inviteCode      String?  @unique
   members         ChannelMember[]
   messages        Message[]
 }

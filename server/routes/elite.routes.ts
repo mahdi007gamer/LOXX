@@ -14,6 +14,8 @@ router.post("/members/accept", EliteGroupController.acceptInvite);
 router.post("/members", EliteGroupController.addMember);
 router.post("/members/leave", EliteGroupController.leaveGroup);
 router.delete("/members", EliteGroupController.removeMember);
+router.post("/join-link", EliteGroupController.joinViaInviteLink);
+router.post("/:groupId/regenerate-link", EliteGroupController.regenerateInviteLink);
 router.delete("/:groupId", EliteGroupController.deleteGroup);
 
 export default router;

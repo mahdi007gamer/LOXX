@@ -6,7 +6,7 @@ import { GlowButton } from "../components/ui/GlowButton";
 import { CardSkeleton } from "../components/ui/Skeleton";
 import { Toast } from "../components/ui/Toast";
 import api from "../lib/api";
-import { io, Socket } from "socket.io-client";
+import { lobbySocket } from "../lib/socket";
 import { 
   Gamepad2, 
   Users, 
@@ -40,7 +40,6 @@ export const LobbiesPage = () => {
   const [lobbies, setLobbies] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
-  const socketRef = useRef<Socket | null>(null);
 
   const fetchLobbies = async (showLoading = true) => {
     if (showLoading) setLoading(true);
@@ -59,19 +58,19 @@ export const LobbiesPage = () => {
   useEffect(() => {
     fetchLobbies();
 
-    // Socket Setup for Real-time List
-    const token = localStorage.getItem("token");
-    const socket = io("/lobby", {
-       query: { token }
-    });
-    socketRef.current = socket;
+    // Use global socket for Real-time List
+    if (!lobbySocket.connected) {
+       lobbySocket.connect();
+    }
 
-    socket.on("lobby.list_updated", () => {
+    const handleUpdate = () => {
        fetchLobbies(false); // Refresh list without full skeleton loading
-    });
+    };
+    
+    lobbySocket.on("lobby.list_updated", handleUpdate);
 
     return () => {
-       socket.disconnect();
+       lobbySocket.off("lobby.list_updated", handleUpdate);
     };
   }, []);
 

@@ -43,6 +43,34 @@ export const ProfilePage = () => {
 
   const isVip = user?.membershipType === "VIP" || user?.membershipType === "PLUS";
 
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 1 * 1024 * 1024) {
+      toast.error("حجم تصویر نباید بیشتر از ۱ مگابایت باشد");
+      return;
+    }
+
+    if (!file.type.match(/^image\/(jpeg|png)$/)) {
+      toast.error("فقط فرمت‌های jpg و png مجاز هستند");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const { data } = await api.post("/upload", formData, {
+        headers: { "Content-Type": "multipart/form-data" }
+      });
+      setEditForm(prev => ({ ...prev, avatarUrl: data.url }));
+      toast.success("تصویر با موفقیت آپلود شد");
+    } catch (err: any) {
+      toast.error(err.response?.data?.error?.message || "خطا در آپلود تصویر");
+    }
+  };
+
   return (
     <div className="flex min-h-[calc(100vh-64px)]">
       <Sidebar />
@@ -153,8 +181,13 @@ export const ProfilePage = () => {
             <textarea value={editForm.bio} onChange={e => setEditForm({...editForm, bio: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-neon-blue focus:outline-none" rows={3} />
           </div>
           <div>
-            <label className="text-xs font-bold text-gray-400 mb-1 block">لینک آواتار</label>
-            <input type="text" value={editForm.avatarUrl} onChange={e => setEditForm({...editForm, avatarUrl: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-neon-blue focus:outline-none" />
+            <label className="text-xs font-bold text-gray-400 mb-1 block">تصویر پروفایل</label>
+            <div className="flex items-center gap-4">
+              <div className="h-12 w-12 rounded-xl bg-white/5 border border-white/10 overflow-hidden flex items-center justify-center shrink-0">
+                {editForm.avatarUrl ? <img src={editForm.avatarUrl} alt="" className="h-full w-full object-cover" /> : <User size={20} className="text-gray-500" />}
+              </div>
+              <input type="file" accept="image/png, image/jpeg" onChange={handleAvatarUpload} className="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-neon-blue/10 file:text-neon-blue hover:file:bg-neon-blue/20 cursor-pointer" />
+            </div>
           </div>
           <div>
             <label className="text-xs font-bold text-gray-400 mb-1 block">لینک کاور پروفایل (Banner)</label>
