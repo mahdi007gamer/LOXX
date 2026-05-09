@@ -18,13 +18,45 @@ export const UserEditModal = ({ isOpen, onClose, user, onSuccess }: UserEditModa
   const [membership, setMembership] = useState("NONE");
   const [days, setDays] = useState(30);
   const [loading, setLoading] = useState(false);
+  const [dbBadges, setDbBadges] = useState<any[]>([]);
+  const [userBadges, setUserBadges] = useState<any[]>([]);
 
   useEffect(() => {
     if (user) {
       setRole(user.role || "USER");
       setMembership(user.profile?.membershipType || "NONE");
     }
+    fetchSpecialBadges();
   }, [user]);
+
+  const fetchSpecialBadges = async () => {
+    try {
+      const res = await api.get("/badges/category/SPECIAL");
+      setDbBadges(res.data.data || []);
+    } catch (error) {
+      console.error("Error fetching special badges:", error);
+    }
+  };
+
+  const handleAssignBadge = async (badgeId: string) => {
+    try {
+      await api.post("/badges/assign", { userId: user.id, badgeId });
+      toast.success("نشان با موفقیت اهدا شد");
+      onSuccess(); // Refresh user data to show new badges
+    } catch (error) {
+      toast.error("خطا در اهدای نشان");
+    }
+  };
+
+  const handleRemoveBadge = async (badgeId: string) => {
+    try {
+      await api.post("/badges/remove", { userId: user.id, badgeId });
+      toast.success("نشان حذف شد");
+      onSuccess();
+    } catch (error) {
+      toast.error("خطا در حذف نشان");
+    }
+  };
 
   const handleSave = async () => {
     setLoading(true);
@@ -178,6 +210,37 @@ export const UserEditModal = ({ isOpen, onClose, user, onSuccess }: UserEditModa
                     ))}
                   </div>
                 </div>
+              </div>
+
+              {/* Badges Section */}
+              <div className="space-y-4 border-t border-white/5 pt-8">
+                <div className="flex items-center gap-2 pr-2">
+                  <Shield className="text-neon-blue" size={20} />
+                  <label className="text-[10px] font-black text-gray-600 uppercase tracking-[0.2em] italic">نشان‌های ویژه و اهدایی</label>
+                </div>
+                
+                <div className="flex flex-wrap gap-3">
+                  {dbBadges.map(badge => {
+                    const isOwend = user.badges?.some((ub: any) => ub.badgeId === badge.id);
+                    return (
+                      <button
+                        key={badge.id}
+                        onClick={() => isOwend ? handleRemoveBadge(badge.id) : handleAssignBadge(badge.id)}
+                        className={cn(
+                          "flex items-center gap-2 px-4 py-2 rounded-2xl border transition-all relative overflow-hidden group",
+                          isOwend 
+                            ? "bg-yellow-400/10 border-yellow-400/50 text-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.1)]"
+                            : "bg-white/5 border-white/5 text-gray-500 hover:border-white/20 hover:text-white"
+                        )}
+                      >
+                         <img src={badge.iconUrl} className={cn("h-6 w-6 object-contain", !isOwend && "grayscale opacity-50")} />
+                         <span className="text-[10px] font-black italic">{badge.name}</span>
+                         {isOwend && <div className="absolute top-0 right-0 p-1"><Check size={8} /></div>}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-[9px] text-gray-500 italic">برای اهدا یا پس گرفتن نشان‌های ویژه روی آن‌ها کلیک کنید.</p>
               </div>
 
               <AnimatePresence>

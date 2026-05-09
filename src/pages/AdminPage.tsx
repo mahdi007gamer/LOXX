@@ -282,15 +282,37 @@ export const AdminPage = () => {
             </div>
           ) : activeTab === "games" ? (
             <div className="space-y-6">
-               <div className="flex justify-between items-center bg-white/5 p-6 rounded-[32px] border border-white/5">
+                <div className="flex justify-between items-center bg-white/5 p-6 rounded-[32px] border border-white/5">
                   <div>
                     <h2 className="text-2xl font-black text-white">مدیریت کتابخانه بازی</h2>
                     <p className="text-gray-500 text-sm">بروزرسانی ویژگی‌ها، مپ‌ها و متادیتای بازی‌ها</p>
                   </div>
-                  <GlowButton onClick={() => { setSelectedGame(null); setIsGameModalOpen(true); }}>
-                    <Plus size={20} className="ml-2" /> افزودن بازی جدید
-                  </GlowButton>
-               </div>
+                  <div className="flex gap-4">
+                    <GlowButton 
+                      variant="secondary" 
+                      size="sm" 
+                      onClick={async () => {
+                        if (!confirm("آیا مایل به همگام‌سازی خودکار نشان‌ها با بازی‌ها هستید؟")) return;
+                        setLoading(true);
+                        try {
+                          await api.post("/admin/games/auto-link-badges");
+                          toast.success("همگام‌سازی با موفقیت انجام شد");
+                          fetchData();
+                        } catch {
+                          toast.error("خطا در همگام‌سازی");
+                        } finally {
+                          setLoading(false);
+                        }
+                      }}
+                      className="px-6 h-12 text-[10px] font-black uppercase italic !rounded-2xl gap-2"
+                    >
+                      <Icons.RefreshCw size={16} /> <span>همگام‌سازی نشان‌ها</span>
+                    </GlowButton>
+                    <GlowButton onClick={() => { setSelectedGame(null); setIsGameModalOpen(true); }}>
+                      <Plus size={20} className="ml-2" /> افزودن بازی جدید
+                    </GlowButton>
+                  </div>
+                </div>
 
                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {games.map((game) => (

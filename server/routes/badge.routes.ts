@@ -9,6 +9,7 @@ router.get("/", authenticate, BadgeController.getAllBadges);
 router.get("/category/:category", authenticate, BadgeController.getBadgesByCategory);
 router.get("/my", authenticate, BadgeController.getUserBadges);
 router.post("/pin/:badgeId", authenticate, BadgeController.togglePin);
+router.post("/toggle-standard/:badgeId", authenticate, BadgeController.toggleStandardBadge);
 
 // Admin routes
 router.post("/", authenticate, authorizeAdmin, BadgeController.createBadge);

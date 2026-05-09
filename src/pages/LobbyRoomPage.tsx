@@ -57,6 +57,7 @@ interface Player {
   isSpeaking: boolean;
   volume: number;
   activity: number;
+  badges?: any[];
 }
 
 interface Message {
@@ -68,6 +69,7 @@ interface Message {
   isSystem?: boolean;
   toUserId?: string; // null for lobby chat
   fromUserId?: string;
+  badges?: any[];
 }
 
 export const LobbyRoomPage = () => {
@@ -166,6 +168,10 @@ export const LobbyRoomPage = () => {
       membership: p.membership as MembershipType,
       vipMetadata: p.vipMetadata,
       bannerUrl: p.bannerUrl,
+      badges: p.user?.badges?.map((ub: any) => ({
+        ...ub.badge,
+        isPinned: ub.isPinned
+      })) || [],
       rank: "Verified Gamer",
       isHost: p.role === "HOST",
       isReady: !!p.isReady,
@@ -344,9 +350,10 @@ export const LobbyRoomPage = () => {
       { id: "system-1", user: "LOXX BOT", text: "لابی ساخته شد. منتظر همرزمان هستیم...", time: "System", isSystem: true, fromUserId: "system" },
       ...(lobby?.messages?.map(m => ({
         id: m.id,
-        fromUserId: m.from?.userId,
-        user: m.from?.username || "بازیکن",
-        avatarUrl: (m.from as any)?.avatar || (m.from as any)?.avatarUrl,
+        fromUserId: m.from?.userId || m.senderId,
+        user: m.from?.username || m.sender?.username || "بازیکن",
+        avatarUrl: (m.from as any)?.avatarUrl || m.sender?.profile?.avatarUrl,
+        badges: (m.from as any)?.badges?.map((ub: any) => ub.badge) || m.sender?.badges?.map((ub: any) => ub.badge) || [],
         text: m.content,
         time: m.createdAt ? new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "Recently"
       })) || [])
@@ -1353,7 +1360,14 @@ const PlayerCard = ({
                 )}
               </div>
 
-              <h3 className="text-xs md:text-xl font-black text-white mb-0.5 md:mb-2 truncate max-w-full">{player.name}</h3>
+              <div className="flex items-center gap-1.5 md:gap-2 mb-0.5 md:mb-2 max-w-full">
+                <h3 className="text-xs md:text-xl font-black text-white truncate">{player.name}</h3>
+                <div className="flex items-center gap-0.5 shrink-0">
+                  {player.badges?.filter(b => b.isSpecial).map((badge, idx) => (
+                    <img key={idx} src={badge.iconUrl} alt={badge.name} title={badge.name} className="h-3 w-3 md:h-5 md:w-5 object-contain" />
+                  ))}
+                </div>
+              </div>
               
               {/* Voice Status */}
               <div className="flex items-center gap-1 md:gap-2 mb-2 md:mb-4">
@@ -1548,11 +1562,18 @@ const ChatPanel = ({ messages, players, inputMessage, setInputMessage, onSend, o
                    />
                 </div>
                 <div className={cn("flex-1 space-y-1", isYou ? "text-right" : "text-left")}>
-                  <div className={cn("flex items-center gap-3", isYou ? "flex-row" : "flex-row-reverse")}>
-                    <span className={cn(
-                      "text-[10px] font-black uppercase tracking-widest truncate max-w-[120px]",
-                      isYou ? "text-neon-pink" : "text-neon-blue"
-                    )}>{msg.user}</span>
+                  <div className={cn("flex items-center gap-2 md:gap-3", isYou ? "flex-row" : "flex-row-reverse")}>
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span className={cn(
+                        "text-[10px] font-black uppercase tracking-widest truncate max-w-[120px]",
+                        isYou ? "text-neon-pink" : "text-neon-blue"
+                      )}>{msg.user}</span>
+                      <div className="flex items-center gap-0.5 shrink-0">
+                        {msg.badges?.filter(b => b.isSpecial).map((badge, idx) => (
+                          <img key={idx} src={badge.iconUrl} alt={badge.name} title={badge.name} className="h-3 w-3 md:h-4 md:w-4 object-contain" />
+                        ))}
+                      </div>
+                    </div>
                     <span className="text-[8px] font-bold text-gray-700 opacity-0 group-hover:opacity-100 transition-opacity">{msg.time}</span>
                   </div>
                   <div className={cn(

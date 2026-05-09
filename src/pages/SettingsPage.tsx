@@ -69,13 +69,22 @@ export const SettingsPage = () => {
 
   const [devices, setDevices] = useState<any[]>([]);
   const [userBadges, setUserBadges] = useState<any[]>([]);
+  const [availableChoiceBadges, setAvailableChoiceBadges] = useState<any[]>([]);
 
   useEffect(() => {
     fetchUserData();
     fetchSettings();
     fetchDevices();
     fetchUserBadges();
+    fetchChoiceBadges();
   }, []);
+
+  const fetchChoiceBadges = async () => {
+    try {
+      const res = await api.get("/badges/category/STANDARD");
+      setAvailableChoiceBadges(res.data.data || []);
+    } catch (err) {}
+  };
 
   const fetchUserBadges = async () => {
     try {
@@ -105,6 +114,19 @@ export const SettingsPage = () => {
       toast.success(badge.isPinned ? "نشان از پین خارج شد" : "نشان با موفقیت پین شد");
     } catch (err: any) {
       toast.error(err.response?.data?.error?.message || "خطا در بروزرسانی پین");
+    }
+  };
+
+  const handleToggleStandardBadge = async (badgeId: string) => {
+    try {
+      setSaving(true);
+      await api.post(`/badges/toggle-standard/${badgeId}`);
+      await fetchUserBadges();
+      toast.success("لیست نشان‌ها بروزرسانی شد");
+    } catch (err: any) {
+      toast.error(err.response?.data?.error?.message || "خطا در بروزرسانی نشان");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -503,6 +525,47 @@ export const SettingsPage = () => {
                   <p className="text-xs font-black italic uppercase tracking-widest">هنوز هیچ نشانی کسب نکرده‌اید</p>
                </div>
             )}
+         </div>
+      </NeonCard>
+
+      <NeonCard variant="blue">
+         <div className="flex items-center justify-between mb-8">
+            <div>
+               <h3 className="text-xl font-black text-white italic uppercase tracking-tighter">نشان‌های انتخابی</h3>
+               <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1 italic">نشان‌هایی که می‌توانید برای خود انتخاب کنید (حداکثر ۵ تا برای مینی پروفایل)</p>
+            </div>
+         </div>
+
+         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            {availableChoiceBadges.map((badge) => {
+              const hasBadge = userBadges.some(ub => ub.id === badge.id);
+              return (
+                <motion.div
+                  key={badge.id}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => handleToggleStandardBadge(badge.id)}
+                  className={cn(
+                    "relative aspect-square rounded-[24px] border-2 flex flex-col items-center justify-center p-4 cursor-pointer transition-all duration-300 group",
+                    hasBadge 
+                      ? "bg-neon-pink/10 border-neon-pink shadow-[0_0_20px_rgba(255,0,255,0.1)]" 
+                      : "bg-white/5 border-white/5 hover:border-white/10"
+                  )}
+                >
+                    <img src={badge.iconUrl} alt={badge.name} className={cn("w-12 h-12 object-contain mb-2", !hasBadge && "grayscale opacity-50")} />
+                    <span className={cn("text-[10px] font-black uppercase tracking-tighter text-center line-clamp-1", hasBadge ? "text-white" : "text-gray-600")}>{badge.name}</span>
+                    
+                    <div className={cn(
+                       "absolute inset-0 rounded-[22px] flex items-center justify-center bg-dark-bg/80 opacity-0 group-hover:opacity-100 transition-opacity",
+                       hasBadge ? "bg-red-500/20" : "bg-neon-pink/20"
+                    )}>
+                       <span className="text-[10px] font-black text-white uppercase italic">
+                          {hasBadge ? "حذف کردن" : "اضافه کردن"}
+                       </span>
+                    </div>
+                </motion.div>
+              );
+            })}
          </div>
       </NeonCard>
     </div>

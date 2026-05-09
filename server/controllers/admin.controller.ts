@@ -30,6 +30,9 @@ export const getAllUsers = async (req: Request, res: Response) => {
             level: true
           }
         },
+        badges: {
+          include: { badge: true }
+        },
         subscriptions: {
           orderBy: { expiresAt: "desc" },
           take: 1
@@ -329,6 +332,35 @@ export const deleteGenre = async (req: Request, res: Response) => {
       where: { id }
     });
     res.json({ status: "success", message: "Genre deleted successfully" });
+  } catch (error: any) {
+    res.status(500).json({ status: "error", message: error.message });
+  }
+};
+
+export const autoLinkGameBadges = async (req: Request, res: Response) => {
+  try {
+    const games = await prisma.game.findMany();
+    const badges = await prisma.badge.findMany({ where: { category: "GAME" } });
+    
+    let updatedCount = 0;
+    for (const game of games) {
+      if (game.badgeId) continue;
+      
+      const matchingBadge = badges.find(b => 
+        b.name.toLowerCase().replace(/\s+/g, '') === game.title.toLowerCase().replace(/\s+/g, '') ||
+        game.title.toLowerCase().includes(b.name.toLowerCase())
+      );
+      
+      if (matchingBadge) {
+        await (prisma.game.update as any)({
+          where: { id: game.id },
+          data: { badgeId: matchingBadge.id }
+        });
+        updatedCount++;
+      }
+    }
+    
+    res.json({ status: "success", message: `Auto-linked ${updatedCount} games to badges` });
   } catch (error: any) {
     res.status(500).json({ status: "error", message: error.message });
   }

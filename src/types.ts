@@ -63,6 +63,7 @@ export interface Friend {
   isFavorite: boolean;
   isBlocked: boolean;
   isMuted: boolean;
+  badges?: Badge[];
 }
 
 export interface FriendRequest {
@@ -78,6 +79,7 @@ export interface FriendRequest {
   membership?: MembershipType;
   vipMetadata?: any;
   bannerUrl?: string;
+  badges?: Badge[];
 }
 
 export interface Badge {

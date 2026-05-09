@@ -54,7 +54,7 @@ export class BadgeController {
     try {
       const { badgeId } = req.params;
       const { isPinned } = req.body;
-      const userId = (req as any).user.id;
+      const userId = (req as any).user.userId;
       const result = await BadgeService.pinBadge(userId, badgeId, isPinned);
       res.json({ status: "success", data: result });
     } catch (error: any) {
@@ -64,9 +64,20 @@ export class BadgeController {
 
   static async getUserBadges(req: Request, res: Response) {
     try {
-      const userId = (req as any).user.id;
+      const userId = (req as any).user.userId;
       const badges = await BadgeService.getUserBadges(userId);
       res.json({ status: "success", data: badges });
+    } catch (error: any) {
+      res.status(500).json({ status: "error", message: error.message });
+    }
+  }
+
+  static async toggleStandardBadge(req: Request, res: Response) {
+    try {
+      const { badgeId } = req.params;
+      const userId = (req as any).user.userId;
+      const result = await BadgeService.toggleStandardBadge(userId, badgeId);
+      res.json({ status: "success", data: result });
     } catch (error: any) {
       res.status(500).json({ status: "error", message: error.message });
     }

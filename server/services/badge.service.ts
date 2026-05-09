@@ -33,6 +33,29 @@ export class BadgeService {
     });
   }
 
+  static async toggleStandardBadge(userId: string, badgeId: string) {
+    const badge = await prisma.badge.findUnique({ where: { id: badgeId } });
+    if (!badge || badge.category !== "STANDARD") {
+      throw new Error("این نشان قابل انتخاب توسط کاربر نیست");
+    }
+    
+    const existing = await prisma.userBadge.findUnique({
+      where: { userId_badgeId: { userId, badgeId } }
+    });
+    
+    if (existing) {
+      await prisma.userBadge.delete({
+        where: { userId_badgeId: { userId, badgeId } }
+      });
+      return { added: false };
+    } else {
+      await prisma.userBadge.create({
+        data: { userId, badgeId }
+      });
+      return { added: true };
+    }
+  }
+
   static async assignBadge(userId: string, badgeId: string) {
     return await prisma.userBadge.upsert({
       where: {
@@ -81,29 +104,49 @@ export class BadgeService {
   }
 
   static async seedDefaultBadges() {
-    const STANDARD_BADGES = [
-      { name: "Rainbow Six Siege", iconUrl: "/badges/r6.png", category: "GAME" },
-      { name: "CS2 Pro", iconUrl: "/badges/cs2.png", category: "GAME" },
-      { name: "Valorant Radiant", iconUrl: "/badges/valorant.png", category: "GAME" },
-      { name: "Dota 2 Immortal", iconUrl: "/badges/dota2.png", category: "GAME" },
-      { name: "LoL Challenger", iconUrl: "/badges/lol.png", category: "GAME" },
+    const GAME_BADGES = [
+      { name: "RainbowSix", iconUrl: "/badges/r6.png", category: "GAME" },
+      { name: "Dota 2", iconUrl: "/badges/dota2.png", category: "GAME" },
+      { name: "CsGo", iconUrl: "/badges/csgo.png", category: "GAME" },
+      { name: "GTA V", iconUrl: "/badges/gtav.png", category: "GAME" },
+      { name: "Call Of Duty", iconUrl: "/badges/cod.png", category: "GAME" },
+      { name: "Fortnite", iconUrl: "/badges/fortnite.png", category: "GAME" },
+      { name: "Pubg", iconUrl: "/badges/pubg.png", category: "GAME" },
+      { name: "Zula", iconUrl: "/badges/zula.png", category: "GAME" },
+      { name: "BattleField", iconUrl: "/badges/bf.png", category: "GAME" },
+      { name: "Apex", iconUrl: "/badges/apex.png", category: "GAME" },
+      { name: "Minecraft", iconUrl: "/badges/minecraft.png", category: "GAME" },
+      { name: "LOL", iconUrl: "/badges/lol.png", category: "GAME" },
+      { name: "WOW", iconUrl: "/badges/wow.png", category: "GAME" },
+      { name: "Rust", iconUrl: "/badges/rust.png", category: "GAME" },
     ];
 
-    const USER_CHOICE_BADGES = [
-      { name: "Elite Sniper", iconUrl: "/badges/sniper.png", category: "USER" },
-      { name: "Support Hero", iconUrl: "/badges/support.png", category: "USER" },
-      { name: "Tactical Mind", iconUrl: "/badges/tactical.png", category: "USER" },
-      { name: "entry Fragger", iconUrl: "/badges/entry.png", category: "USER" },
+    const USER_BADGES = [
+      { name: "Smoker", iconUrl: "/badges/smoker.png", category: "USER" },
+      { name: "Sniper", iconUrl: "/badges/sniper.png", category: "USER" },
+      { name: "Rifel", iconUrl: "/badges/rifel.png", category: "USER" },
+      { name: "Faghir", iconUrl: "/badges/faghir.png", category: "USER" },
+      { name: "Feshari", iconUrl: "/badges/feshari.png", category: "USER" },
+      { name: "BCool", iconUrl: "/badges/bcool.png", category: "USER" },
+      { name: "Ferferi", iconUrl: "/badges/ferferi.png", category: "USER" },
+      { name: "SuperLag", iconUrl: "/badges/superlag.png", category: "USER" },
+      { name: "Jooje", iconUrl: "/badges/jooje.png", category: "USER" },
+      { name: "Noob", iconUrl: "/badges/noob.png", category: "USER" },
+      { name: "Weed", iconUrl: "/badges/weed.png", category: "USER" },
+      { name: "Falaj", iconUrl: "/badges/falaj.png", category: "USER" },
+      { name: "Systemy", iconUrl: "/badges/systemy.png", category: "USER" },
+      { name: "Mobile Gamer", iconUrl: "/badges/mobile.png", category: "USER" },
     ];
 
     const SPECIAL_BADGES = [
-      { name: "LOXX Founder", iconUrl: "/badges/founder.png", category: "SPECIAL", isSpecial: true },
-      { name: "Beta Tester", iconUrl: "/badges/beta.png", category: "SPECIAL", isSpecial: true },
-      { name: "Top Contributor", iconUrl: "/badges/top.png", category: "SPECIAL", isSpecial: true },
-      { name: "Streamer Partner", iconUrl: "/badges/streamer.png", category: "SPECIAL", isSpecial: true },
+      { name: "Streamer", iconUrl: "/badges/streamer.png", category: "SPECIAL", isSpecial: true },
+      { name: "Verify", iconUrl: "/badges/verify.png", category: "SPECIAL", isSpecial: true },
+      { name: "Helper", iconUrl: "/badges/helper.png", category: "SPECIAL", isSpecial: true },
+      { name: "Pro Player", iconUrl: "/badges/pro.png", category: "SPECIAL", isSpecial: true },
+      { name: "Leader", iconUrl: "/badges/leader.png", category: "SPECIAL", isSpecial: true },
     ];
 
-    const allBadges = [...STANDARD_BADGES, ...USER_CHOICE_BADGES, ...SPECIAL_BADGES];
+    const allBadges = [...GAME_BADGES, ...USER_BADGES, ...SPECIAL_BADGES];
 
     for (const badgeData of allBadges) {
       await (prisma.badge as any).upsert({

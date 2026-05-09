@@ -494,8 +494,15 @@ export const DashboardPage = () => {
                                 "bg-gray-500"
                               )} />
                             </div>
-                            <div>
-                              <p className="text-sm font-bold text-white leading-tight">{friend.displayName}</p>
+                            <div className="min-w-0 pr-1">
+                              <div className="flex items-center gap-1.5 leading-none mb-0.5">
+                                <p className="text-sm font-bold text-white truncate">{friend.displayName}</p>
+                                <div className="flex items-center gap-0.5 shrink-0">
+                                  {friend.badges?.filter(b => b.isSpecial).map((badge, idx) => (
+                                    <img key={idx} src={badge.iconUrl} alt={badge.name} title={badge.name} className="h-3 w-3 object-contain" />
+                                  ))}
+                                </div>
+                              </div>
                               <p className="text-[10px] text-gray-500 line-clamp-1 italic">
                                 {friend.status === FriendStatus.IN_GAME ? `🎮 ${friend.currentGame}` : 
                                  friend.status === FriendStatus.ONLINE ? "آنلاین" : 

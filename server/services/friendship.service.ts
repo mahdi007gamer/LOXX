@@ -10,8 +10,8 @@ export class FriendshipService {
         ]
       },
       include: {
-        requester: { include: { profile: true } },
-        target: { include: { profile: true } }
+        requester: { include: { profile: true, badges: { include: { badge: true } } } },
+        target: { include: { profile: true, badges: { include: { badge: true } } } }
       }
     });
 
@@ -33,7 +33,8 @@ export class FriendshipService {
         bannerUrl: friend.profile?.bannerUrl,
         membership: friend.profile?.membershipType,
         vipMetadata: friend.profile?.vipMetadata ? JSON.parse(friend.profile.vipMetadata.toString()) : undefined,
-        level: friend.profile?.level || 1
+        level: friend.profile?.level || 1,
+        badges: friend.badges?.map((ub: any) => ({ ...ub.badge, isPinned: ub.isPinned })) || []
       };
     });
   }
@@ -71,8 +72,8 @@ export class FriendshipService {
         ]
       },
       include: {
-        requester: { include: { profile: true } },
-        target: { include: { profile: true } }
+        requester: { include: { profile: true, badges: { include: { badge: true } } } },
+        target: { include: { profile: true, badges: { include: { badge: true } } } }
       }
     });
 
@@ -101,7 +102,8 @@ export class FriendshipService {
         bannerUrl: otherUser.profile?.bannerUrl,
         membership: otherUser.profile?.membershipType,
         vipMetadata: otherUser.profile?.vipMetadata ? JSON.parse(otherUser.profile.vipMetadata.toString()) : undefined,
-        level: otherUser.profile?.level || 1
+        level: otherUser.profile?.level || 1,
+        badges: otherUser.badges?.map((ub: any) => ({ ...ub.badge, isPinned: ub.isPinned })) || []
       };
     });
 

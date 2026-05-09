@@ -30,7 +30,16 @@ export class LobbyService {
         }
       },
       include: {
-        members: { include: { user: { include: { profile: true } } } },
+        members: { 
+          include: { 
+            user: { 
+              include: { 
+                profile: true,
+                badges: { include: { badge: true } }
+              } 
+            } 
+          } 
+        },
         game: true
       }
     });
@@ -55,10 +64,20 @@ export class LobbyService {
         _count: { select: { members: true } },
         game: true,
         host: {
-          include: { profile: true }
+          include: { 
+            profile: true,
+            badges: { include: { badge: true } }
+          }
         },
         members: {
-          include: { user: { include: { profile: true } } }
+          include: { 
+            user: { 
+              include: { 
+                profile: true,
+                badges: { include: { badge: true } }
+              } 
+            } 
+          }
         }
       },
       orderBy: { createdAt: "desc" }
@@ -73,7 +92,22 @@ export class LobbyService {
         members: {
           include: {
             user: {
-              include: { profile: true }
+              include: { 
+                profile: true,
+                badges: { include: { badge: true } }
+              }
+            }
+          }
+        },
+        messages: {
+          take: 50,
+          orderBy: { createdAt: "asc" },
+          include: {
+            sender: {
+              include: { 
+                profile: true,
+                badges: { include: { badge: true } }
+              }
             }
           }
         }
