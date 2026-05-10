@@ -283,8 +283,8 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
       </div>
 
       <div className="px-10 pb-10 pt-0 relative z-20">
-         {/* Readability Overlay for background/gold themes */}
-         <div className="absolute inset-0 z-[-1] bg-gradient-to-b from-transparent via-black/40 to-black/80 backdrop-blur-[2px]" />
+         {/* Enhanced Readability Overlay - subtle darkening for text clarity */}
+         <div className="absolute inset-0 z-[-1] bg-gradient-to-t from-[#0a0a0f] via-[#0a0a0f]/60 to-transparent" />
          
         <div className="flex items-start justify-between">
           <div className="relative -mt-20 mb-6 inline-block">
@@ -354,14 +354,17 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
           <div>
             <div className="flex items-center gap-3">
               <h4 className={cn(
-                "text-3xl font-black italic tracking-tighter uppercase drop-shadow-lg",
+                "text-3xl font-black italic tracking-tighter uppercase",
                 isVIP && !metadata?.colors?.textGradient ? "text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-200" : "text-white",
-                metadata?.shinyName && "animate-pulse drop-shadow-[0_0_12px_rgba(255,255,255,0.6)]"
-              )} style={metadata && metadata.colors && (isVIP || isPLUS) ? 
-                (metadata.colors.textGradient 
-                  ? { backgroundImage: `linear-gradient(to right, ${metadata.colors.text}, ${metadata.colors.textGradient})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }
-                  : { color: metadata.colors.text }) 
-                : {}}>
+                metadata?.shinyName && "animate-pulse"
+              )} style={{
+                ...(metadata && metadata.colors && (isVIP || isPLUS) ? 
+                  (metadata.colors.textGradient 
+                    ? { backgroundImage: `linear-gradient(to right, ${metadata.colors.text}, ${metadata.colors.textGradient})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }
+                    : { color: metadata.colors.text }) 
+                  : {}),
+                textShadow: "0 4px 12px rgba(0,0,0,0.8), 0 2px 4px rgba(0,0,0,0.5)"
+              }}>
                 {user.displayName || user.senderName}
               </h4>
               <div className="flex items-center gap-0.5">
@@ -391,42 +394,42 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
           {/* Accurate Statistics Grid */}
           <div className="grid grid-cols-4 gap-4 py-6 border-y border-white/5">
              <div className="text-center group">
-                <p className="text-[9px] text-gray-600 font-black uppercase mb-1.5 group-hover:text-neon-blue transition-colors italic">عضویت</p>
+                <p className="text-[9px] font-black uppercase mb-1.5 group-hover:text-neon-blue transition-colors italic" style={{ color: metadata?.colors?.statsLabel || "#4b5563" }}>عضویت</p>
                 <div className="flex flex-col items-center">
                   {loading ? (
                     <div className="h-4 w-8 bg-white/5 animate-pulse rounded" />
                   ) : (
-                    <p className="text-sm font-black italic" style={{ color: metadata?.colors?.text || "white" }}>{user.stats?.daysSinceJoin || 0} روز</p>
+                    <p className="text-sm font-black italic" style={{ color: metadata?.colors?.statsText || metadata?.colors?.text || "white", textShadow: "0 2px 4px rgba(0,0,0,0.5)" }}>{user.stats?.daysSinceJoin || 0} روز</p>
                   )}
                 </div>
              </div>
              <div className="text-center group">
-                <p className="text-[9px] text-gray-600 font-black uppercase mb-1.5 group-hover:text-neon-pink transition-colors italic">دوستان</p>
+                <p className="text-[9px] font-black uppercase mb-1.5 group-hover:text-neon-pink transition-colors italic" style={{ color: metadata?.colors?.statsLabel || "#4b5563" }}>دوستان</p>
                 <div className="flex flex-col items-center">
                   {loading ? (
                     <div className="h-4 w-8 bg-white/5 animate-pulse rounded" />
                   ) : (
-                    <p className="text-sm font-black italic" style={{ color: metadata?.colors?.text || "white" }}>{user.stats?.friendsCount || 0}</p>
+                    <p className="text-sm font-black italic" style={{ color: metadata?.colors?.statsText || metadata?.colors?.text || "white", textShadow: "0 2px 4px rgba(0,0,0,0.5)" }}>{user.stats?.friendsCount || 0}</p>
                   )}
                 </div>
              </div>
              <div className="text-center group">
-                <p className="text-[9px] text-gray-600 font-black uppercase mb-1.5 group-hover:text-neon-purple transition-colors italic">لابی‌ها</p>
+                <p className="text-[9px] font-black uppercase mb-1.5 group-hover:text-neon-purple transition-colors italic" style={{ color: metadata?.colors?.statsLabel || "#4b5563" }}>لابی‌ها</p>
                 <div className="flex flex-col items-center">
                   {loading ? (
                     <div className="h-4 w-8 bg-white/5 animate-pulse rounded" />
                   ) : (
-                    <p className="text-sm font-black italic" style={{ color: metadata?.colors?.text || "white" }}>{user.stats?.lobbiesJoined || 0}</p>
+                    <p className="text-sm font-black italic" style={{ color: metadata?.colors?.statsText || metadata?.colors?.text || "white", textShadow: "0 2px 4px rgba(0,0,0,0.5)" }}>{user.stats?.lobbiesJoined || 0}</p>
                   )}
                 </div>
              </div>
              <div className="text-center group">
-                <p className="text-[9px] text-gray-600 font-black uppercase mb-1.5 group-hover:text-yellow-500 transition-colors italic">میزبانی</p>
+                <p className="text-[9px] font-black uppercase mb-1.5 group-hover:text-yellow-500 transition-colors italic" style={{ color: metadata?.colors?.statsLabel || "#4b5563" }}>میزبانی</p>
                 <div className="flex flex-col items-center">
                   {loading ? (
                     <div className="h-4 w-8 bg-white/5 animate-pulse rounded" />
                   ) : (
-                    <p className="text-sm font-black italic" style={{ color: metadata?.colors?.text || "white" }}>{user.stats?.lobbiesCreated || 0}</p>
+                    <p className="text-sm font-black italic" style={{ color: metadata?.colors?.statsText || metadata?.colors?.text || "white", textShadow: "0 2px 4px rgba(0,0,0,0.5)" }}>{user.stats?.lobbiesCreated || 0}</p>
                   )}
                 </div>
              </div>
@@ -446,7 +449,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
                   )}
                 >
                   <img src={ub.iconUrl} alt={ub.name} className="h-4 w-4 object-contain" />
-                  <span className="text-[10px] font-black uppercase italic text-white">{ub.name}</span>
+                  <span className="text-[10px] font-black uppercase italic" style={{ color: metadata?.colors?.badgeText || "white", textShadow: "0 1px 2px rgba(0,0,0,0.5)" }}>{ub.name}</span>
                 </div>
               ))}
               {user.senderBadges?.filter(b => !b.isPinned && b.category !== "GAME").slice(0, 4).map((ub, i) => (
@@ -456,7 +459,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
                   className="flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all border bg-white/5 border-white/10 opacity-70 hover:opacity-100"
                 >
                   <img src={ub.iconUrl} alt={ub.name} className="h-4 w-4 object-contain" />
-                  <span className="text-[10px] font-black uppercase italic text-gray-500">{ub.name}</span>
+                  <span className="text-[10px] font-black uppercase italic" style={{ color: metadata?.colors?.badgeText || "#6b7280" }}>{ub.name}</span>
                 </div>
               ))}
               {!user.senderBadges?.length && !loading && (

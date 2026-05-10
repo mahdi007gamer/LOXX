@@ -129,6 +129,9 @@ export interface VIPMetadata {
     bg: string;
     text: string;
     accent: string;
+    statsText?: string;
+    statsLabel?: string;
+    badgeText?: string;
     textGradient?: string;
     gradient?: {
       enabled: boolean;

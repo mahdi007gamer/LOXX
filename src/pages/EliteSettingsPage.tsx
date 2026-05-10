@@ -50,6 +50,9 @@ interface VIPMetadata {
     bg: string;
     text: string;
     accent: string;
+    statsText?: string;
+    statsLabel?: string;
+    badgeText?: string;
     textGradient?: string;
     gradient?: {
       enabled: boolean;
@@ -90,6 +93,9 @@ export const EliteSettingsPage = () => {
       bg: "#0d0d14",
       text: "#ffffff",
       accent: "#00e5ff",
+      statsText: "#ffffff",
+      statsLabel: "#4b5563",
+      badgeText: "#ffffff",
       gradient: {
         enabled: false,
         color1: "#00e5ff",
@@ -150,6 +156,9 @@ export const EliteSettingsPage = () => {
           bg: "#0d0d14",
           text: "#ffffff",
           accent: "#00e5ff",
+          statsText: "#ffffff",
+          statsLabel: "#4b5563",
+          badgeText: "#ffffff",
           gradient: {
             enabled: false,
             color1: "#00e5ff",
@@ -228,10 +237,6 @@ export const EliteSettingsPage = () => {
     { id: "glitch", label: "گلیچ", icon: Monitor, color: "pink" },
     { id: "fire", label: "آتشین", icon: Flame, color: "orange" },
     { id: "neon_pulse", label: "نئون پالز", icon: CircleDashed, color: "cyan" },
-    { id: "anime", label: "انیمه‌ای", icon: Sparkles, color: "purple", disabled: true },
-    { id: "cyber", label: "سایبر کور", icon: Cpu, color: "green", disabled: true },
-    { id: "cosmic", label: "کازمیک رینگ", icon: Orbit, color: "indigo", disabled: true },
-    { id: "shield", label: "سپر انرژی", icon: ShieldCheck, color: "yellow", disabled: true },
   ];
 
   const getBackgroundStyle = () => {
@@ -426,7 +431,7 @@ export const EliteSettingsPage = () => {
                       </div>
 
                       <div className="space-y-4 pt-4 border-t border-white/5">
-                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest italic">پس‌زمینه مینی پروفایل</label>
+                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest italic">پس‌زمینه مینی پروفایل (JPG, PNG, GIF, WEBP)</label>
                         <div className="relative group">
                           <div className={cn(
                             "h-32 w-full rounded-2xl bg-white/5 border border-white/10 overflow-hidden flex items-center justify-center transition-all",
@@ -459,7 +464,7 @@ export const EliteSettingsPage = () => {
                         
                         <div className="space-y-3">
                           <div className="flex justify-between items-center">
-                            <label className="text-[10px] font-black text-gray-500 uppercase italic">میزان شفافیت ({Math.round(metadata.opacity * 100)}%)</label>
+                            <label className="text-[10px] font-black text-gray-500 uppercase italic">میزان شفافیت بک‌گراند ({Math.round(metadata.opacity * 100)}%)</label>
                             <span className="text-[10px] font-mono text-yellow-400">{metadata.opacity.toFixed(2)}</span>
                           </div>
                           <input 
@@ -514,9 +519,9 @@ export const EliteSettingsPage = () => {
                     </div>
 
                     <div className="pt-4 border-t border-white/5">
-                      <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-4 italic">انتخاب فریم فعال</label>
+                      <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-4 italic">انتخاب فریم فعال (بیش از ۱۰ فریم)</label>
                       <div className="flex flex-wrap gap-3">
-                        {frames.slice(0, 7).map((frame) => (
+                        {frames.map((frame) => (
                           <button
                             key={frame.id}
                             disabled={frame.disabled}
@@ -537,134 +542,210 @@ export const EliteSettingsPage = () => {
                   </NeonCard>
               </div>
 
-              {/* Colors & Preview */}
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                 {/* Color Controls */}
-                 <NeonCard variant="purple" className="lg:col-span-4 space-y-6 self-start">
-                    <h3 className="text-lg font-black text-white italic flex items-center gap-2 border-b border-white/5 pb-4">
-                      <Palette size={20} className="text-neon-purple" />
-                      <span>متون و رنگ‌ها</span>
-                    </h3>
-
-                    <div className="space-y-6">
-                       <div className="grid grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                             <label className="text-[10px] font-black text-gray-400 uppercase italic">نام</label>
-                             <input type="color" value={metadata.colors.text} onChange={(e) => setMetadata(m => ({ ...m, colors: { ...m.colors, text: e.target.value } }))} className="w-full h-10 rounded-xl border-none cursor-pointer bg-white/5" />
-                          </div>
-                          <div className="space-y-2">
-                             <label className="text-[10px] font-black text-gray-400 uppercase italic">تایتل</label>
-                             <input type="color" value={metadata.colors.textGradient || metadata.colors.text} onChange={(e) => setMetadata(m => ({ ...m, colors: { ...m.colors, textGradient: e.target.value } }))} className="w-full h-10 rounded-xl border-none cursor-pointer bg-white/5" />
-                          </div>
-                       </div>
-
-                       <div className="space-y-2">
-                          <label className="text-[10px] font-black text-gray-400 uppercase italic">رنگ تم (Accent)</label>
-                          <input type="color" value={metadata.colors.accent} onChange={(e) => setMetadata(m => ({ ...m, colors: { ...m.colors, accent: e.target.value } }))} className="w-full h-10 rounded-xl border-none cursor-pointer bg-white/5" />
-                       </div>
-
-                       <div className="pt-6 border-t border-white/5">
-                          <div className="flex items-center justify-between mb-4">
-                             <span className="text-[11px] font-black text-white italic">پس‌زمینه گرادینت</span>
-                             <button 
-                                onClick={() => setMetadata(m => ({ ...m, colors: { ...m.colors, gradient: { ...m.colors.gradient!, enabled: !m.colors.gradient?.enabled } } }))}
-                                className={cn(
-                                  "w-10 h-5 rounded-full relative transition-all",
-                                  metadata.colors.gradient?.enabled ? "bg-neon-pink" : "bg-gray-800"
-                                )}
-                             >
-                                <div className={cn("absolute top-1 w-3 h-3 rounded-full bg-white transition-all", metadata.colors.gradient?.enabled ? "right-1" : "left-1")} />
-                             </button>
-                          </div>
-                          
-                          {metadata.colors.gradient?.enabled && (
-                            <div className="space-y-4">
-                               <div className="grid grid-cols-2 gap-4">
-                                  <input type="color" value={metadata.colors.gradient.color1} onChange={(e) => setMetadata(m => ({ ...m, colors: { ...m.colors, gradient: { ...m.colors.gradient!, color1: e.target.value } } }))} className="w-full h-10 rounded-xl cursor-pointer" />
-                                  <input type="color" value={metadata.colors.gradient.color2} onChange={(e) => setMetadata(m => ({ ...m, colors: { ...m.colors, gradient: { ...m.colors.gradient!, color2: e.target.value } } }))} className="w-full h-10 rounded-xl cursor-pointer" />
-                               </div>
-                            </div>
-                          )}
-                       </div>
-                    </div>
-                 </NeonCard>
-
-                 {/* Preview */}
-                 <div className="lg:col-span-8 flex flex-col items-center justify-start py-4">
-                    <div className="relative group scale-[1.05]">
-                      <motion.div 
-                        animate={{ 
-                          rotateY: [0, 1, 0, -1, 0], 
-                          rotateX: [0, -1, 0, 1, 0], 
-                          y: [0, -4, 0],
-                        }}
-                        transition={{ repeat: Infinity, duration: 6, ease: "easeInOut" }}
-                        className={cn(
-                          "relative w-[360px] aspect-[4/5] rounded-[42px] overflow-hidden border backdrop-blur-3xl transition-all duration-500",
-                          metadata.fullGlow ? "shadow-[0_0_60px_rgba(250,204,21,0.3)] border-yellow-400" : "shadow-[0_40px_100px_rgba(0,0,0,0.8)] border-white/10"
-                        )}
-                        style={getBackgroundStyle()}
-                      >
-                        {metadata.bgImage && (
-                          <div className="absolute inset-0 z-0" style={{ backgroundImage: `url(${metadata.bgImage})`, backgroundSize: 'cover', backgroundPosition: 'center', opacity: metadata.opacity }} />
-                        )}
-
-                        {renderFrameEffect(metadata.frame)}
-
-                        <div className="h-32 relative overflow-hidden z-10">
-                           {bannerUrl ? <img src={bannerUrl} alt="Banner" className="w-full h-full object-cover" /> : <div className="absolute inset-0 bg-yellow-500/20" />}
+               {/* Colors & Preview */}
+               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                  {/* Color Controls */}
+                  <NeonCard variant="purple" className="lg:col-span-12 xl:col-span-5 space-y-6 self-start">
+                     <h3 className="text-lg font-black text-white italic flex items-center gap-2 border-b border-white/5 pb-4">
+                       <Palette size={20} className="text-neon-purple" />
+                       <span>سفارشی‌سازی متون و رنگ‌ها</span>
+                     </h3>
+ 
+                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-6">
+                        <div className="space-y-4">
+                           <div className="space-y-2">
+                              <label className="text-[10px] font-black text-gray-400 uppercase italic">رنگ نام کاربری</label>
+                              <div className="flex gap-2">
+                                <input type="color" value={metadata.colors.text} onChange={(e) => setMetadata(m => ({ ...m, colors: { ...m.colors, text: e.target.value } }))} className="w-12 h-10 rounded-xl border-none cursor-pointer bg-white/5" />
+                                <Input value={metadata.colors.text} onChange={(e) => setMetadata(m => ({ ...m, colors: { ...m.colors, text: e.target.value } }))} className="flex-1" />
+                              </div>
+                           </div>
+                           <div className="space-y-2">
+                              <label className="text-[10px] font-black text-gray-400 uppercase italic">رنگ تایتل (ثانویه)</label>
+                              <div className="flex gap-2">
+                                <input type="color" value={metadata.colors.textGradient || metadata.colors.text} onChange={(e) => setMetadata(m => ({ ...m, colors: { ...m.colors, textGradient: e.target.value } }))} className="w-12 h-10 rounded-xl border-none cursor-pointer bg-white/5" />
+                                <Input value={metadata.colors.textGradient || metadata.colors.text} onChange={(e) => setMetadata(m => ({ ...m, colors: { ...m.colors, textGradient: e.target.value } }))} className="flex-1" />
+                              </div>
+                           </div>
+                           <div className="space-y-2">
+                              <label className="text-[10px] font-black text-gray-400 uppercase italic">رنگ تم (Accent)</label>
+                              <div className="flex gap-2">
+                                <input type="color" value={metadata.colors.accent} onChange={(e) => setMetadata(m => ({ ...m, colors: { ...m.colors, accent: e.target.value } }))} className="w-12 h-10 rounded-xl border-none cursor-pointer bg-white/5" />
+                                <Input value={metadata.colors.accent} onChange={(e) => setMetadata(m => ({ ...m, colors: { ...m.colors, accent: e.target.value } }))} className="flex-1" />
+                              </div>
+                           </div>
                         </div>
-
-                        <div className="px-8 pb-8 pt-0 relative z-10">
-                          <div className="flex items-start justify-between">
-                             <div className="relative -mt-16 mb-6">
-                                <div className={cn(
-                                   "h-28 w-28 rounded-[32px] bg-[#0a0a0f] p-[2px] relative z-20",
-                                   metadata.frame === "lightning" ? "border-blue-400 shadow-[0_0_15px_blue]" : "bg-gradient-to-tr from-yellow-400 to-yellow-600"
-                                )}>
-                                   <div className="h-full w-full rounded-[30px] bg-[#0d0d12] flex items-center justify-center overflow-hidden">
-                                      {avatarUrl ? <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" /> : <User size={48} className="text-gray-700" />}
-                                      {metadata.auraEffect && (
-                                        <motion.div animate={{ rotate: 360 }} transition={{ duration: 4, repeat: Infinity, ease: "linear" }} className="absolute inset-0 bg-[conic-gradient(from_0deg,transparent,rgba(250,204,21,0.3),transparent)]" />
-                                      )}
-                                   </div>
+ 
+                        <div className="space-y-4">
+                           <div className="space-y-2">
+                              <label className="text-[10px] font-black text-gray-400 uppercase italic">رنگ مقادیر آمار (Stats)</label>
+                              <div className="flex gap-2">
+                                <input type="color" value={metadata.colors.statsText || "#ffffff"} onChange={(e) => setMetadata(m => ({ ...m, colors: { ...m.colors, statsText: e.target.value } }))} className="w-12 h-10 rounded-xl border-none cursor-pointer bg-white/5" />
+                                <Input value={metadata.colors.statsText || "#ffffff"} onChange={(e) => setMetadata(m => ({ ...m, colors: { ...m.colors, statsText: e.target.value } }))} className="flex-1" />
+                              </div>
+                           </div>
+                           <div className="space-y-2">
+                              <label className="text-[10px] font-black text-gray-400 uppercase italic">رنگ لیبل آمار</label>
+                              <div className="flex gap-2">
+                                <input type="color" value={metadata.colors.statsLabel || "#4b5563"} onChange={(e) => setMetadata(m => ({ ...m, colors: { ...m.colors, statsLabel: e.target.value } }))} className="w-12 h-10 rounded-xl border-none cursor-pointer bg-white/5" />
+                                <Input value={metadata.colors.statsLabel || "#4b5563"} onChange={(e) => setMetadata(m => ({ ...m, colors: { ...m.colors, statsLabel: e.target.value } }))} className="flex-1" />
+                              </div>
+                           </div>
+                           <div className="space-y-2">
+                              <label className="text-[10px] font-black text-gray-400 uppercase italic">رنگ متن نشان‌ها</label>
+                              <div className="flex gap-2">
+                                <input type="color" value={metadata.colors.badgeText || "#ffffff"} onChange={(e) => setMetadata(m => ({ ...m, colors: { ...m.colors, badgeText: e.target.value } }))} className="w-12 h-10 rounded-xl border-none cursor-pointer bg-white/5" />
+                                <Input value={metadata.colors.badgeText || "#ffffff"} onChange={(e) => setMetadata(m => ({ ...m, colors: { ...m.colors, badgeText: e.target.value } }))} className="flex-1" />
+                              </div>
+                           </div>
+                        </div>
+                     </div>
+ 
+                     <div className="pt-6 border-t border-white/5">
+                        <div className="flex items-center justify-between mb-4">
+                           <span className="text-[11px] font-black text-white italic">پس‌زمینه گرادینت کارت</span>
+                           <button 
+                              onClick={() => setMetadata(m => ({ ...m, colors: { ...m.colors, gradient: { ...m.colors.gradient!, enabled: !m.colors.gradient?.enabled } } }))}
+                              className={cn(
+                                "w-10 h-5 rounded-full relative transition-all",
+                                metadata.colors.gradient?.enabled ? "bg-neon-pink" : "bg-gray-800"
+                              )}
+                           >
+                              <div className={cn("absolute top-1 w-3 h-3 rounded-full bg-white transition-all", metadata.colors.gradient?.enabled ? "right-1" : "left-1")} />
+                           </button>
+                        </div>
+                        
+                        {metadata.colors.gradient?.enabled && (
+                          <div className="space-y-4">
+                             <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-1">
+                                   <span className="text-[8px] font-black text-gray-500 uppercase italic">رنگ اول</span>
+                                   <input type="color" value={metadata.colors.gradient.color1} onChange={(e) => setMetadata(m => ({ ...m, colors: { ...m.colors, gradient: { ...m.colors.gradient!, color1: e.target.value } } }))} className="w-full h-10 rounded-xl cursor-pointer" />
                                 </div>
-                                <div className="absolute top-1 right-1 h-6 w-6 bg-green-500 rounded-full border-4 border-[#0a0a0f] z-[25]"></div>
+                                <div className="space-y-1">
+                                   <span className="text-[8px] font-black text-gray-500 uppercase italic">رنگ دوم</span>
+                                   <input type="color" value={metadata.colors.gradient.color2} onChange={(e) => setMetadata(m => ({ ...m, colors: { ...m.colors, gradient: { ...m.colors.gradient!, color2: e.target.value } } }))} className="w-full h-10 rounded-xl cursor-pointer" />
+                                </div>
                              </div>
-                             <div className="mt-6 h-12 w-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-500 opacity-50 shadow-xl">
-                                <MessageSquare size={24} />
+                             <div className="space-y-2">
+                                <label className="text-[10px] font-black text-gray-500 uppercase italic">زاویه ({metadata.colors.gradient.angle}°)</label>
+                                <input type="range" min="0" max="360" value={metadata.colors.gradient.angle} onChange={(e) => setMetadata(m => ({ ...m, colors: { ...m.colors, gradient: { ...m.colors.gradient!, angle: parseInt(e.target.value) } } }))} className="w-full h-1 bg-white/10 rounded-full appearance-none cursor-pointer accent-neon-pink" />
                              </div>
                           </div>
-
-                          <div className="space-y-6">
-                            <div>
-                               <h4 
-                                 className={cn("text-2xl font-black italic tracking-tighter uppercase", metadata.shinyName && "animate-pulse shadow-white")}
-                                 style={{ color: metadata.colors.text }}
-                               >
-                                 {user?.displayName || "Elite User"}
-                               </h4>
-                               <span className="text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2 mt-1" style={{ color: metadata.colors.accent }}>عضو ویژه الیت (VIP)</span>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4 py-4 border-y border-white/5">
-                                <div className="text-center group">
-                                   <p className="text-[9px] text-gray-500 font-black uppercase mb-1">عضویت</p>
-                                   <p className="text-sm font-black text-white italic" style={{ color: metadata.colors.text }}>742 روز</p>
+                        )}
+                     </div>
+                  </NeonCard>
+ 
+                  {/* Preview Section */}
+                  <div className="lg:col-span-12 xl:col-span-7 flex flex-col items-center justify-start py-4">
+                     <div className="mb-6 flex items-center gap-2 px-6 py-2 rounded-full bg-yellow-400/10 border border-yellow-400/20 text-yellow-400">
+                        <Sparkles size={16} />
+                        <span className="text-[10px] font-black uppercase italic tracking-widest">پیش‌نمایش نهایی مینی پروفایل</span>
+                     </div>
+                     
+                     <div className="relative group scale-[1.1] transition-transform">
+                       <motion.div 
+                         initial={{ y: 20, opacity: 0 }}
+                         animate={{ y: 0, opacity: 1 }}
+                         className={cn(
+                           "relative w-[340px] rounded-[48px] overflow-hidden border backdrop-blur-3xl transition-all duration-500",
+                           metadata.fullGlow ? "shadow-[0_0_60px_rgba(250,204,21,0.3)] border-yellow-400" : "shadow-[0_40px_100px_rgba(0,0,0,0.8)] border-white/10"
+                         )}
+                         style={getBackgroundStyle()}
+                       >
+                         {/* Background Image Layer */}
+                         {metadata.bgImage && (
+                           <div 
+                             className="absolute inset-0 z-0 pointer-events-none" 
+                             style={{ 
+                               backgroundImage: `url(${metadata.bgImage})`, 
+                               backgroundSize: 'cover', 
+                               backgroundPosition: 'center', 
+                               opacity: metadata.opacity 
+                             }} 
+                           />
+                         )}
+ 
+                         {/* Enhanced Readability Overlay - exactly as in Popover */}
+                         <div className="absolute inset-0 z-0 bg-gradient-to-t from-[#0a0a0f] via-[#0a0a0f]/60 to-transparent" />
+ 
+                         {renderFrameEffect(metadata.frame)}
+ 
+                         <div className="h-32 relative overflow-hidden z-10">
+                            {bannerUrl ? <img src={bannerUrl} alt="Banner" className="w-full h-full object-cover" /> : <div className="absolute inset-0 bg-gradient-to-br from-yellow-400/20 to-[#0a0a0f]" />}
+                            <div className="absolute inset-0 bg-black/40" />
+                         </div>
+ 
+                         <div className="px-8 pb-10 pt-0 relative z-10">
+                           <div className="flex items-start justify-between">
+                              <div className="relative -mt-14 mb-4 inline-block">
+                                 <div className={cn(
+                                    "h-24 w-24 rounded-[32px] bg-[#0a0a0f] p-[2px] relative z-20",
+                                    metadata.frame === "lightning" ? "border-blue-400 shadow-[0_0_15px_blue]" : "bg-gradient-to-tr from-yellow-400 via-yellow-200 to-yellow-600"
+                                 )}>
+                                    <div className="h-full w-full rounded-[30px] bg-[#0d0d12] flex items-center justify-center overflow-hidden">
+                                       {avatarUrl ? <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" /> : <User size={40} className="text-gray-700" />}
+                                       {metadata.auraEffect && (
+                                         <motion.div animate={{ rotate: 360 }} transition={{ duration: 4, repeat: Infinity, ease: "linear" }} className="absolute inset-0 bg-[conic-gradient(from_0deg,transparent,rgba(250,204,21,0.3),transparent)]" />
+                                       )}
+                                    </div>
+                                 </div>
+                                 <div className="absolute top-1 right-1 h-6 w-6 bg-green-500 rounded-full border-4 border-[#0a0a0f] z-[25]"></div>
+                              </div>
+                           </div>
+ 
+                           <div className="space-y-6">
+                             <div>
+                                <h4 
+                                  className={cn("text-2xl font-black italic tracking-tighter uppercase", metadata.shinyName && "animate-pulse")}
+                                  style={{ 
+                                    color: metadata.colors.text,
+                                    textShadow: "0 4px 12px rgba(0,0,0,0.8), 0 2px 4px rgba(0,0,0,0.5)"
+                                  }}
+                                >
+                                  {user?.displayName || "Elite User"}
+                                </h4>
+                                <span className="text-[9px] font-black uppercase tracking-[0.2em] flex items-center gap-2 mt-1" style={{ color: metadata.colors.accent }}>
+                                   <div className="h-1 w-1 rounded-full bg-current animate-ping" />
+                                   عضو ویژه لوکس (VIP)
+                                </span>
+                             </div>
+ 
+                             <div className="grid grid-cols-4 gap-2 py-4 border-y border-white/5">
+                                 <div className="text-center">
+                                    <p className="text-[8px] font-black uppercase mb-1 italic" style={{ color: metadata.colors.statsLabel || "#4b5563" }}>عضویت</p>
+                                    <p className="text-xs font-black italic" style={{ color: metadata.colors.statsText || metadata.colors.text || "white", textShadow: "0 2px 4px rgba(0,0,0,0.5)" }}>742 روز</p>
+                                 </div>
+                                 <div className="text-center">
+                                    <p className="text-[8px] font-black uppercase mb-1 italic" style={{ color: metadata.colors.statsLabel || "#4b5563" }}>دوستان</p>
+                                    <p className="text-xs font-black italic" style={{ color: metadata.colors.statsText || metadata.colors.text || "white", textShadow: "0 2px 4px rgba(0,0,0,0.5)" }}>128</p>
+                                 </div>
+                                 <div className="text-center">
+                                    <p className="text-[8px] font-black uppercase mb-1 italic" style={{ color: metadata.colors.statsLabel || "#4b5563" }}>لابی‌ها</p>
+                                    <p className="text-xs font-black italic" style={{ color: metadata.colors.statsText || metadata.colors.text || "white", textShadow: "0 2px 4px rgba(0,0,0,0.5)" }}>42</p>
+                                 </div>
+                                 <div className="text-center">
+                                    <p className="text-[8px] font-black uppercase mb-1 italic" style={{ color: metadata.colors.statsLabel || "#4b5563" }}>رتبه</p>
+                                    <p className="text-xs font-black italic" style={{ color: metadata.colors.statsText || metadata.colors.text || "white", textShadow: "0 2px 4px rgba(0,0,0,0.5)" }}>Supreme</p>
+                                 </div>
+                             </div>
+ 
+                             <div className="flex flex-wrap gap-2">
+                                <div className="px-3 py-1 rounded-lg bg-neon-blue/10 border border-neon-blue/20">
+                                   <span className="text-[8px] font-black uppercase italic" style={{ color: metadata.colors.badgeText || "white", textShadow: "0 1px 2px rgba(0,0,0,0.5)" }}>FOUNDER</span>
                                 </div>
-                                <div className="text-center group">
-                                   <p className="text-[9px] text-gray-500 font-black uppercase mb-1">رتبه</p>
-                                   <p className="text-sm font-black text-white italic" style={{ color: metadata.colors.text }}>Supreme</p>
+                                <div className="px-3 py-1 rounded-lg bg-white/5 border border-white/10">
+                                   <span className="text-[8px] font-black uppercase italic" style={{ color: metadata.colors.badgeText || "#6b7280" }}>CHAMPION</span>
                                 </div>
-                            </div>
-
-                            <GlowButton variant="gold" className="w-full h-12 !rounded-2xl font-black text-xs uppercase italic tracking-widest bg-gradient-to-r from-yellow-500 to-yellow-600 text-dark-bg border-none" disabled>پیش‌نمایش پروفایل</GlowButton>
-                          </div>
-                        </div>
-                      </motion.div>
+                             </div>
+ 
+                             <GlowButton variant="gold" className="w-full h-12 !rounded-2xl font-black text-xs uppercase italic tracking-widest bg-gradient-to-r from-yellow-500 to-yellow-600 text-dark-bg border-none" disabled>ویرایش پروفایل</GlowButton>
+                           </div>
+                         </div>
+                       </motion.div>
                     </div>
-                 </div>
-              </div>
+                  </div>
+               </div>
 
               <div className="pt-8">
                 <NeonCard variant="blue" className="p-5 border-neon-blue/20 bg-neon-blue/5">

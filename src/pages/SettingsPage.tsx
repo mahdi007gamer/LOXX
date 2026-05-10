@@ -10,7 +10,7 @@ import {
   User, 
   Bell, 
   Shield, 
-  ShieldAlert,
+  ShieldAlert as SecurityAlert,
   Monitor, 
   Globe, 
   Palette, 
@@ -580,7 +580,7 @@ export const SettingsPage = () => {
              title="محافظت از اکانت" 
              status="تحت نظارت"
              desc="سیستم ضد تقلب و محافظت از اکانت لoxx به صورت ۲۴ ساعته فعال است."
-             icon={<ShieldAlert size={20} className="text-neon-pink" />}
+             icon={<SecurityAlert size={20} className="text-neon-pink" />}
              color="green"
            />
         </div>
