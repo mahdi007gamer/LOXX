@@ -2,6 +2,7 @@ import { Response } from "express";
 import { UserService } from "../services/user.service.ts";
 import { AuthenticatedRequest } from "../middleware/auth.middleware.ts";
 import prisma from "../utils/prisma.ts";
+import { SmsService } from "../services/sms.service.ts";
 
 export class UserController {
   static async getMe(req: AuthenticatedRequest, res: Response) {
@@ -24,6 +25,8 @@ export class UserController {
           bannerUrl: user.profile?.bannerUrl,
           vipMetadata: user.profile?.vipMetadata,
           email: user.email,
+          phoneNumber: user.phoneNumber,
+          phoneVerified: user.phoneVerified,
           role: user.role,
           twoFactorEnabled: user.twoFactorEnabled,
           stats: user.stats,
@@ -144,9 +147,24 @@ export class UserController {
 
   static async setup2FA(req: AuthenticatedRequest, res: Response) {
     try {
-      // In a real application, send an SMS with a random code
-      // For demo purposes, we will return a success message mimicking SMS sent
-      res.json({ status: "success", message: "کد تایید به شماره شما پیامک شد (برای دمو ۱۲۳۴۵ را وارد کنید)" });
+      const userId = req.user!.userId;
+      const user = await prisma.user.findUnique({
+        where: { id: userId }
+      });
+      if (!user || !user.phoneNumber) {
+        return res.status(400).json({ status: "error", error: { message: "ابتدا باید شماره همراه خود را در تنظیمات ثبت کنید" } });
+      }
+
+      const code = Math.floor(10000 + Math.random() * 90000).toString();
+      const expires = new Date(Date.now() + 5 * 60 * 1000);
+
+      await prisma.user.update({
+        where: { id: userId },
+        data: { otpCode: code, otpExpires: expires }
+      });
+
+      await SmsService.sendOtp(user.phoneNumber, code);
+      res.json({ status: "success", message: "کد تایید پیامک شد" });
     } catch (error: any) {
       res.status(500).json({ status: "error", error: { message: error.message } });
     }
@@ -154,14 +172,21 @@ export class UserController {
 
   static async verify2FA(req: AuthenticatedRequest, res: Response) {
     try {
+      const userId = req.user!.userId;
       const { code } = req.body;
-      if (code !== "12345") {
-        return res.status(400).json({ status: "error", error: { message: "کد تایید وارد شده اشتباه است" } });
+      const user = await prisma.user.findUnique({ where: { id: userId } });
+      
+      if (!user || user.otpCode !== code || !user.otpExpires || new Date() > user.otpExpires) {
+        return res.status(400).json({ status: "error", error: { message: "کد تایید اشتباه یا منقضی شده است" } });
       }
 
       await prisma.user.update({
-        where: { id: req.user!.userId },
-        data: { twoFactorEnabled: true }
+        where: { id: userId },
+        data: { 
+          twoFactorEnabled: true,
+          otpCode: null,
+          otpExpires: null
+        }
       });
 
       res.json({ status: "success", message: "تایید دو مرحله‌ای با موفقیت فعال شد" });

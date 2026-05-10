@@ -3,21 +3,29 @@ import { motion, AnimatePresence } from "motion/react";
 import { NeonCard } from "../components/ui/NeonCard";
 import { Input } from "../components/ui/Input";
 import { GlowButton } from "../components/ui/GlowButton";
-import { Gamepad2, Mail, Lock, User, ArrowRight, Loader2, Users } from "lucide-react";
+import { Gamepad2, Mail, Lock, User, ArrowRight, Loader2, Users, Phone, ArrowLeft, ShieldCheck, KeyRound } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import api from "../lib/api";
 import { toast } from "react-hot-toast";
 
+type AuthStep = "AUTH" | "OTP_VERIFY" | "FORGOT_PASSWORD" | "RESET_PASSWORD" | "LOGIN_2FA";
+
 export const AuthPage = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [step, setStep] = useState<AuthStep>("AUTH");
   const [formData, setFormData] = useState({
     username: "",
     email: "",
+    phoneNumber: "",
     password: "",
-    referralCode: ""
+    referralCode: "",
+    otpCode: "",
+    newPassword: ""
   });
+  const [tempUserId, setTempUserId] = useState<string | null>(null);
+  const [forgotIdentifier, setForgotIdentifier] = useState("");
 
   const navigate = useNavigate();
   const { login, user } = useAuth();
@@ -38,39 +46,88 @@ export const AuthPage = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const validatePhone = (phone: string) => {
+    const iranianPhoneRegex = /^(\+98|0)?9\d{9}$/;
+    return iranianPhoneRegex.test(phone.replace(/\s+/g, ''));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      if (isLogin) {
-        const response = await api.post("/auth/login", {
-          email: formData.email,
-          password: formData.password
+      if (step === "AUTH") {
+        if (isLogin) {
+          const response = await api.post("/auth/login", {
+            email: formData.email, // can be email or phone
+            password: formData.password
+          });
+          
+          if (response.data.status === "2fa_required") {
+            setTempUserId(response.data.userId);
+            setStep("LOGIN_2FA");
+            toast.success(response.data.message);
+          } else {
+            login(response.data.token, response.data.user);
+            toast.success("خوش آمدید!");
+          }
+        } else {
+          if (formData.phoneNumber && !validatePhone(formData.phoneNumber)) {
+            toast.error("شماره همراه ایرانی معتبر وارد کنید");
+            setLoading(false);
+            return;
+          }
+
+          const response = await api.post("/auth/register", {
+            username: formData.username,
+            email: formData.email,
+            password: formData.password,
+            phoneNumber: formData.phoneNumber || undefined,
+            referralCode: formData.referralCode || undefined
+          });
+          
+          if (formData.phoneNumber) {
+            setTempUserId(response.data.user.id);
+            setStep("OTP_VERIFY");
+            toast.success("کد تایید پیامک شد");
+          } else {
+            toast.success("ثبت‌نام با موفقیت انجام شد. وارد شوید.");
+            setIsLogin(true);
+          }
+        }
+      } else if (step === "OTP_VERIFY") {
+        await api.post("/auth/verify-phone", {
+          userId: tempUserId,
+          code: formData.otpCode
         });
-        
+        toast.success("شماره همراه تایید شد. اکنون وارد شوید.");
+        setStep("AUTH");
+        setIsLogin(true);
+      } else if (step === "LOGIN_2FA") {
+        const response = await api.post("/auth/verify-2fa", {
+          userId: tempUserId,
+          code: formData.otpCode
+        });
         login(response.data.token, response.data.user);
         toast.success("خوش آمدید!");
-        const code = localStorage.getItem("pending_invite_code");
-        if (code) {
-          localStorage.removeItem("pending_invite_code");
-          navigate("/invite/" + code);
-        } else {
-          navigate("/dashboard");
-        }
-      } else {
-        await api.post("/auth/register", {
-          username: formData.username,
-          email: formData.email,
-          password: formData.password,
-          referralCode: formData.referralCode || undefined
+      } else if (step === "FORGOT_PASSWORD") {
+        await api.post("/auth/forgot-password", {
+          identifier: forgotIdentifier
         });
-        
-        toast.success("ثبت‌نام با موفقیت انجام شد. وارد شوید.");
+        toast.success("کد بازیابی پیامک شد");
+        setStep("RESET_PASSWORD");
+      } else if (step === "RESET_PASSWORD") {
+        await api.post("/auth/reset-password", {
+          identifier: forgotIdentifier,
+          code: formData.otpCode,
+          newPassword: formData.newPassword
+        });
+        toast.success("رمز عبور با موفقیت تغییر کرد. وارد شوید.");
+        setStep("AUTH");
         setIsLogin(true);
       }
     } catch (error: any) {
-      const message = error.response?.data?.error?.message || "خطایی رخ داد";
+      const message = error.response?.data?.error?.message || error.response?.data?.message || "خطایی رخ داد";
       toast.error(message);
     } finally {
       setLoading(false);
@@ -87,10 +144,10 @@ export const AuthPage = () => {
         <NeonCard variant={isLogin ? "blue" : "pink"} className="transition-colors duration-500">
           <AnimatePresence mode="wait">
             <motion.div
-              key={isLogin ? "login" : "signup"}
-              initial={{ opacity: 0, x: isLogin ? -20 : 20 }}
+              key={step === "AUTH" ? (isLogin ? "login" : "signup") : step}
+              initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: isLogin ? 20 : -20 }}
+              exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.3, ease: "easeInOut" }}
             >
               <div className="mb-8 text-center">
@@ -100,108 +157,223 @@ export const AuthPage = () => {
                 >
                   <img src="/logo.png" alt="LOXX" className="h-10 w-auto" />
                 </motion.div>
-                <h2 className="text-2xl font-black text-white">
-                  {isLogin ? "ورود به حساب کاربری" : "ثبت‌نام در لوکس"}
-                </h2>
-                <p className="mt-2 text-sm text-gray-400">
-                  {isLogin 
-                    ? "خوش آمدید! مشخصات خود را وارد کنید" 
-                    : "به جمع هزاران گیمر حرفه‌ای بپیوندید"}
-                </p>
+                
+                {step === "AUTH" && (
+                  <>
+                    <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter">
+                      {isLogin ? "ورود به حساب کاربری" : "ثبت‌نام در لوکس"}
+                    </h2>
+                    <p className="mt-2 text-sm text-gray-400 font-bold">
+                      {isLogin 
+                        ? "مشخصات خود را وارد کنید" 
+                        : "به جمع گیمرهای حرفه‌ای بپیوندید"}
+                    </p>
+                  </>
+                )}
+
+                {step === "OTP_VERIFY" && (
+                  <>
+                    <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter">تایید شماره همراه</h2>
+                    <p className="mt-2 text-sm text-gray-400 font-bold">کد ۵ رقمی پیامک شده را وارد کنید</p>
+                  </>
+                )}
+
+                {step === "LOGIN_2FA" && (
+                  <>
+                    <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter">تایید دو مرحله‌ای</h2>
+                    <p className="mt-2 text-sm text-gray-400 font-bold flex items-center justify-center gap-2"><ShieldCheck size={16} className="text-neon-blue" /> امنیت حساب شما اولویت ماست</p>
+                  </>
+                )}
+
+                {step === "FORGOT_PASSWORD" && (
+                  <>
+                    <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter">فراموشی رمز عبور</h2>
+                    <p className="mt-2 text-sm text-gray-400 font-bold">ایمیل یا شماره همراه خود را وارد کنید</p>
+                  </>
+                )}
+
+                {step === "RESET_PASSWORD" && (
+                  <>
+                    <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter">تغییر رمز عبور</h2>
+                    <p className="mt-2 text-sm text-gray-400 font-bold">کد تایید و رمز جدید را وارد کنید</p>
+                  </>
+                )}
               </div>
 
               <form className="space-y-4" onSubmit={handleSubmit}>
-                <AnimatePresence>
-                  {!isLogin && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="overflow-hidden"
-                    >
-                      <Input 
-                        label="نام کاربری" 
-                        placeholder="Gamer123" 
-                        name="username"
-                        value={formData.username}
-                        onChange={handleInputChange}
-                        icon={<User size={18} />} 
-                        required={!isLogin}
-                      />
-                      <Input 
-                        label="کد معرف (اختیاری)" 
-                        placeholder="کد دعوت خود را وارد کنید" 
-                        name="referralCode"
-                        value={formData.referralCode}
-                        onChange={handleInputChange}
-                        icon={<Users size={18} />} 
-                      />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-                
-                <Input 
-                  label="ایمیل" 
-                  type="email" 
-                  name="email"
-                  placeholder="example@gmail.com" 
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  icon={<Mail size={18} />} 
-                  required
-                />
-                <Input 
-                  label="رمز عبور" 
-                  type="password" 
-                  name="password"
-                  placeholder="••••••••" 
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  icon={<Lock size={18} />} 
-                  required
-                />
-                
-                {isLogin && (
-                  <div className="flex justify-end">
-                    <button type="button" className="text-xs text-neon-blue hover:underline">
-                      فراموشی رمز عبور؟
-                    </button>
-                  </div>
+                {step === "AUTH" && (
+                  <>
+                    <AnimatePresence>
+                      {!isLogin && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="overflow-hidden space-y-4"
+                        >
+                          <Input 
+                            label="نام کاربری" 
+                            placeholder="Gamer123" 
+                            name="username"
+                            value={formData.username}
+                            onChange={handleInputChange}
+                            icon={<User size={18} />} 
+                            required={!isLogin}
+                          />
+                          <Input 
+                            label="شماره همراه (برای تایید)" 
+                            placeholder="09120000000" 
+                            name="phoneNumber"
+                            dir="ltr"
+                            value={formData.phoneNumber}
+                            onChange={handleInputChange}
+                            icon={<Phone size={18} />} 
+                            required={!isLogin}
+                          />
+                          <Input 
+                            label="کد معرف (اختیاری)" 
+                            placeholder="کد دعوت" 
+                            name="referralCode"
+                            value={formData.referralCode}
+                            onChange={handleInputChange}
+                            icon={<Users size={18} />} 
+                          />
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                    
+                    <Input 
+                      label={isLogin ? "ایمیل یا شماره همراه" : "ایمیل"} 
+                      type={isLogin ? "text" : "email"}
+                      name="email"
+                      placeholder={isLogin ? "09... یا example@mail.com" : "example@gmail.com"} 
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      icon={<Mail size={18} />} 
+                      required
+                    />
+                    <Input 
+                      label="رمز عبور" 
+                      type="password" 
+                      name="password"
+                      placeholder="••••••••" 
+                      value={formData.password}
+                      onChange={handleInputChange}
+                      icon={<Lock size={18} />} 
+                      required
+                    />
+                    
+                    {isLogin && (
+                      <div className="flex justify-end">
+                        <button 
+                          type="button" 
+                          onClick={() => setStep("FORGOT_PASSWORD")}
+                          className="text-xs text-neon-blue font-bold hover:underline"
+                        >
+                          فراموشی رمز عبور؟
+                        </button>
+                      </div>
+                    )}
+                  </>
                 )}
 
-                <motion.div
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <GlowButton 
-                    variant={isLogin ? "blue" : "pink"} 
-                    className="w-full"
-                    size="lg"
-                    disabled={loading}
-                  >
-                    {loading ? (
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                    ) : (
-                      isLogin ? "ورود به لابی" : "ساخت اکانت"
-                    )}
-                  </GlowButton>
-                </motion.div>
+                {(step === "OTP_VERIFY" || step === "LOGIN_2FA") && (
+                  <Input 
+                    label="کد تایید" 
+                    name="otpCode"
+                    placeholder="12345"
+                    dir="ltr"
+                    className="text-center tracking-[1em] font-black text-lg"
+                    value={formData.otpCode}
+                    onChange={handleInputChange}
+                    icon={<KeyRound size={18} />}
+                    required
+                  />
+                )}
+
+                {step === "FORGOT_PASSWORD" && (
+                  <Input 
+                    label="ایمیل یا شماره همراه" 
+                    placeholder="0912... یا mail@example.com"
+                    value={forgotIdentifier}
+                    onChange={(e) => setForgotIdentifier(e.target.value)}
+                    icon={<Mail size={18} />}
+                    required
+                  />
+                )}
+
+                {step === "RESET_PASSWORD" && (
+                  <>
+                    <Input 
+                      label="کد تایید شش رقمی" 
+                      name="otpCode"
+                      placeholder="123456"
+                      dir="ltr"
+                      className="text-center tracking-[1em] font-black"
+                      value={formData.otpCode}
+                      onChange={handleInputChange}
+                      icon={<KeyRound size={18} />}
+                      required
+                    />
+                    <Input 
+                      label="رمز عبور جدید" 
+                      type="password"
+                      name="newPassword"
+                      placeholder="••••••••"
+                      value={formData.newPassword}
+                      onChange={handleInputChange}
+                      icon={<Lock size={18} />}
+                      required
+                    />
+                  </>
+                )}
+
+                <div className="flex flex-col gap-3 pt-2">
+                   <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                    <GlowButton 
+                      variant={isLogin ? "blue" : "pink"} 
+                      className="w-full h-14 !rounded-2xl font-black uppercase italic tracking-widest"
+                      size="lg"
+                      disabled={loading}
+                    >
+                      {loading ? (
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                      ) : (
+                        step === "AUTH" ? (isLogin ? "ورود به لابی" : "تایید و ثبت‌نام") :
+                        step === "OTP_VERIFY" || step === "LOGIN_2FA" ? "بررسی کد" :
+                        step === "FORGOT_PASSWORD" ? "ارسال کد تایید" : "تغییر رمز عبور"
+                      )}
+                    </GlowButton>
+                   </motion.div>
+
+                   {step !== "AUTH" && (
+                     <button 
+                      type="button"
+                      onClick={() => setStep("AUTH")}
+                      className="text-xs text-gray-500 hover:text-white transition-colors flex items-center justify-center gap-2 font-bold"
+                     >
+                       <ArrowLeft size={14} /> بازگشت
+                     </button>
+                   )}
+                </div>
               </form>
             </motion.div>
           </AnimatePresence>
 
-          <div className="mt-8 flex flex-col items-center gap-4">
-            <div className="flex h-px w-full bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-            <p className="text-sm text-gray-400">
-              {isLogin ? "هنوز عضو نشده‌اید؟" : "قبلاً ثبت‌نام کرده‌اید؟"}
-              <button 
-                onClick={() => setIsLogin(!isLogin)}
-                className={`mr-2 font-bold transition-colors ${isLogin ? 'text-neon-pink hover:text-neon-pink/80' : 'text-neon-blue hover:text-neon-blue/80'}`}
-              >
-                {isLogin ? "ایجاد حساب کاربری" : "ورود به حساب"}
-              </button>
-            </p>
-          </div>
+          {step === "AUTH" && (
+            <div className="mt-8 flex flex-col items-center gap-4">
+              <div className="flex h-px w-full bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+              <p className="text-sm text-gray-400 font-bold">
+                {isLogin ? "هنوز عضو نشده‌اید؟" : "قبلاً ثبت‌نام کرده‌اید؟"}
+                <button 
+                  onClick={() => setIsLogin(!isLogin)}
+                  className={`mr-2 font-black italic uppercase transition-colors ${isLogin ? 'text-neon-pink hover:text-neon-pink/80' : 'text-neon-blue hover:text-neon-blue/80'}`}
+                >
+                  {isLogin ? "ایجاد حساب کاربری" : "ورود به حساب"}
+                </button>
+              </p>
+            </div>
+          )}
         </NeonCard>
       </div>
     </div>

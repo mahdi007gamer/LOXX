@@ -2,6 +2,7 @@ import argon2 from "argon2";
 import jwt from "jsonwebtoken";
 import prisma from "../utils/prisma.ts";
 import { RegisterDTO, LoginDTO } from "../types/auth.ts";
+import { SmsService } from "./sms.service.ts";
 
 const JWT_SECRET = process.env.JWT_SECRET || "secret";
 const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET || "refresh_secret";
@@ -14,6 +15,7 @@ export class AuthService {
       data: {
         username: data.username,
         email: data.email,
+        phoneNumber: data.phoneNumber ? data.phoneNumber.replace(/\s+/g, '') : null,
         passwordHash,
         profile: {
           create: {
@@ -27,6 +29,10 @@ export class AuthService {
         profile: true
       }
     });
+
+    if (user.phoneNumber) {
+      await this.sendOtp(user.id);
+    }
 
     if (data.referralCode) {
       try {
@@ -95,8 +101,13 @@ export class AuthService {
   }
 
   static async login(data: LoginDTO) {
-    const user = await prisma.user.findUnique({
-      where: { email: data.email },
+    const user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { email: data.email },
+          { phoneNumber: data.email } // Support phone as "email" field in login
+        ]
+      },
       include: { profile: true }
     });
 
@@ -125,5 +136,84 @@ export class AuthService {
 
   static verifyRefreshToken(token: string) {
     return jwt.verify(token, REFRESH_TOKEN_SECRET) as { userId: string };
+  }
+
+  static async sendOtp(userId: string) {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user || !user.phoneNumber) throw new Error("شماره همراه یافت نشد");
+
+    const code = Math.floor(10000 + Math.random() * 90000).toString();
+    const expires = new Date(Date.now() + 5 * 60 * 1000); // 5 mins
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { otpCode: code, otpExpires: expires }
+    });
+
+    await SmsService.sendOtp(user.phoneNumber, code);
+    return true;
+  }
+
+  static async verifyOtp(userId: string, code: string) {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user || !user.otpCode || !user.otpExpires) throw new Error("کد تایید منقضی شده یا نامعتبر است");
+
+    if (new Date() > user.otpExpires) throw new Error("کد تایید منقضی شده است");
+    if (user.otpCode !== code) throw new Error("کد تایید اشتباه است");
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { phoneVerified: true, otpCode: null, otpExpires: null }
+    });
+
+    return true;
+  }
+
+  static async forgotPassword(phoneOrEmail: string) {
+    const user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { email: phoneOrEmail },
+          { phoneNumber: phoneOrEmail }
+        ]
+      }
+    });
+
+    if (!user) throw new Error("کاربری با این مشخصات یافت نشد");
+    if (!user.phoneNumber) throw new Error("شماره همراه برای این کاربر ثبت نشده است");
+
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const expires = new Date(Date.now() + 10 * 60 * 1000);
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { otpCode: code, otpExpires: expires }
+    });
+
+    await SmsService.sendOtp(user.phoneNumber, code);
+    return true;
+  }
+
+  static async resetPassword(phoneOrEmail: string, code: string, newPassword: string) {
+    const user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { email: phoneOrEmail },
+          { phoneNumber: phoneOrEmail }
+        ]
+      }
+    });
+
+    if (!user || user.otpCode !== code || !user.otpExpires || new Date() > user.otpExpires) {
+      throw new Error("کد تایید نامعتبر یا منقضی شده است");
+    }
+
+    const passwordHash = await argon2.hash(newPassword);
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { passwordHash, otpCode: null, otpExpires: null }
+    });
+
+    return true;
   }
 }

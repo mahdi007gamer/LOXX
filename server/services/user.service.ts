@@ -31,8 +31,8 @@ export class UserService {
     const membership = await this.checkAndFixMembership(user.id, user.profile?.membershipType || "NONE", user.subscriptions[0]?.expiresAt || null);
 
     const friendsCount = (user._count.sentFriendReq || 0) + (user._count.recvFriendReq || 0);
-    const lobbiesJoined = user._count.lobbyMembers || 0;
-    const lobbiesCreated = user._count.hostedLobbies || 0;
+    const labsJoined = user.profile?.totalLobbiesJoined || 0;
+    const labsCreated = user._count.hostedLobbies || 0;
     const daysSinceJoin = Math.floor((new Date().getTime() - new Date(user.createdAt).getTime()) / (1000 * 60 * 60 * 24));
 
     return {
@@ -48,8 +48,8 @@ export class UserService {
       })),
       stats: {
         friendsCount,
-        lobbiesJoined,
-        lobbiesCreated,
+        lobbiesJoined: labsJoined,
+        lobbiesCreated: labsCreated,
         daysSinceJoin,
         membershipExpiresAt: membership.expiresAt
       }
@@ -109,8 +109,8 @@ export class UserService {
     const membership = await this.checkAndFixMembership(user.id, user.profile?.membershipType || "NONE", user.subscriptions[0]?.expiresAt || null);
 
     const friendsCount = (user._count.sentFriendReq || 0) + (user._count.recvFriendReq || 0);
-    const lobbiesJoined = user._count.lobbyMembers || 0;
-    const lobbiesCreated = user._count.hostedLobbies || 0;
+    const labsJoined = user.profile?.totalLobbiesJoined || 0;
+    const labsCreated = user._count.hostedLobbies || 0;
     const daysSinceJoin = Math.floor((new Date().getTime() - new Date(user.createdAt).getTime()) / (1000 * 60 * 60 * 24));
 
     return {
@@ -126,8 +126,8 @@ export class UserService {
       })),
       stats: {
         friendsCount,
-        lobbiesJoined,
-        lobbiesCreated,
+        lobbiesJoined: labsJoined,
+        lobbiesCreated: labsCreated,
         daysSinceJoin
       }
     };
@@ -207,7 +207,7 @@ export class UserService {
 
     return {
       joinedAt: user?.createdAt,
-      lobbiesCount: user?._count.lobbyMembers || 0,
+      lobbiesCount: user?.profile?.totalLobbiesJoined || 0,
       friendsCount,
       gamesCount: user?._count.userGames || 0,
       xp: user?.profile?.xp || 0,

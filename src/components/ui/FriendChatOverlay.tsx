@@ -71,16 +71,24 @@ export const FriendChatOverlay = () => {
               className="flex items-center justify-between border-b border-white/5 bg-white/5 px-4 py-3 cursor-grab active:cursor-grabbing select-none"
             >
               <div className="flex items-center gap-3 text-right" dir="rtl">
-                <div className="h-8 w-8 rounded-full bg-white/10 flex items-center justify-center text-sm overflow-hidden">
-                  {((activeFriend?.avatar || (activeFriend as any)?.avatarUrl) && ((activeFriend?.avatar || (activeFriend as any)?.avatarUrl)!.length > 5 || (activeFriend?.avatar || (activeFriend as any)?.avatarUrl)!.startsWith("/") || (activeFriend?.avatar || (activeFriend as any)?.avatarUrl)!.includes(".") || (activeFriend?.avatar || (activeFriend as any)?.avatarUrl)!.includes("data:image"))) ? <img src={activeFriend?.avatar || (activeFriend as any)?.avatarUrl} alt="" className="h-full w-full object-cover rounded-full" /> : <span className="text-[10px]">{activeFriend?.avatar || (activeFriend as any)?.avatarUrl || "👤"}</span>}
+                <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center text-sm overflow-hidden border border-white/10 shadow-inner">
+                  {(activeFriend?.avatar || (activeFriend as any)?.avatarUrl) ? (
+                    <img 
+                      src={activeFriend?.avatar || (activeFriend as any)?.avatarUrl} 
+                      alt="" 
+                      className="h-full w-full object-cover" 
+                    />
+                  ) : (
+                    <span className="text-[10px]">👤</span>
+                  )}
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-white">{activeFriend?.displayName || activeChat?.tempDisplayName || (activeChatId === "1" ? "شما" : "کاربر")}</p>
+                  <p className="text-[13px] font-black italic tracking-tighter text-white uppercase">{activeFriend?.displayName || activeChat?.tempDisplayName || (activeChatId === "1" ? "شما" : "کاربر")}</p>
                   <p className={cn(
-                    "text-[10px]",
+                    "text-[10px] font-bold uppercase tracking-widest",
                     activeFriend?.status === FriendStatus.ONLINE ? "text-green-500" :
-                    activeFriend?.status === FriendStatus.IN_GAME ? "text-neon-purple shadow-[0_0_8px_rgba(160,32,240,0.5)]" :
-                    activeFriend?.status === FriendStatus.IN_LOBBY ? "text-neon-blue shadow-[0_0_8px_rgba(0,229,255,0.5)]" :
+                    activeFriend?.status === FriendStatus.IN_GAME ? "text-neon-purple drop-shadow-[0_0_8px_rgba(160,32,240,0.5)]" :
+                    activeFriend?.status === FriendStatus.IN_LOBBY ? "text-neon-blue drop-shadow-[0_0_8px_rgba(0,229,255,0.5)]" :
                     "text-gray-500"
                   )}>
                     {activeFriend?.status === FriendStatus.IN_GAME ? "در حال بازی" :
@@ -211,11 +219,15 @@ export const FriendChatOverlay = () => {
                 )}
               >
                 <div className="relative shrink-0">
-                   <div className="h-6 w-6 rounded-full bg-white/10 flex items-center justify-center text-[10px] overflow-hidden">
-                     {avatar ? <img src={avatar} alt="" className="h-full w-full" /> : "👤"}
+                   <div className="h-8 w-8 rounded-xl bg-white/10 flex items-center justify-center text-[10px] overflow-hidden border border-white/10 group-hover/tab:scale-110 transition-transform">
+                     {(avatar || (friend as any)?.avatarUrl) ? (
+                       <img src={avatar || (friend as any)?.avatarUrl} alt="" className="h-full w-full object-cover" />
+                     ) : (
+                       <span className="text-[10px]">👤</span>
+                     )}
                    </div>
                    <div className={cn(
-                     "absolute -bottom-1 -right-1 h-3 w-3 rounded-full border-2 border-dark-bg",
+                     "absolute -bottom-1 -right-1 h-3.5 w-3.5 rounded-full border-2 border-dark-bg z-10",
                      status === FriendStatus.ONLINE ? "bg-green-500" : "bg-gray-500"
                    )} />
                    {chat.unreadCount > 0 && (
