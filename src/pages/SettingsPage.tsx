@@ -75,14 +75,6 @@ export const SettingsPage = () => {
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingBanner, setUploadingBanner] = useState(false);
-  
-  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
-  const [showTwoFactorModal, setShowTwoFactorModal] = useState(false);
-  const [twoFactorCode, setTwoFactorCode] = useState("");
-  const [setupStep, setSetupStep] = useState<"initial" | "verifying">("initial");
-  
-  const [showVerificationModal, setShowVerificationModal] = useState(false);
-  const [verificationCode, setVerificationCode] = useState("");
 
   const [settings, setSettings] = useState({
     receiveFriendRequests: true,
@@ -169,7 +161,6 @@ export const SettingsPage = () => {
       const res = await api.get("/auth/me");
       if (res.data.status === "success") {
         const d = res.data.data;
-        setTwoFactorEnabled(d.twoFactorEnabled);
         if (d.vipMetadata) setVipMetadata(d.vipMetadata);
         setFormData(p => ({
           ...p,
@@ -218,61 +209,6 @@ export const SettingsPage = () => {
       setFormData(p => ({ ...p, currentPassword: "", newPassword: "", confirmPassword: "" }));
     } catch (err: any) {
       toast.error(err.response?.data?.error?.message || "خطا در تغییر رمز عبور");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleEnable2FA = async () => {
-    try {
-      setSaving(true);
-      await api.post("/user/me/2fa/enable");
-      setShowTwoFactorModal(true);
-      toast.success("کد تایید به ایمیل شما ارسال شد");
-    } catch (err: any) {
-      toast.error(err.response?.data?.error?.message || "خطا در برقراری ارتباط");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleVerify2FA = async () => {
-    try {
-      setSaving(true);
-      await api.post("/user/me/2fa/verify", { code: twoFactorCode });
-      toast.success("تایید دو مرحله‌ای با موفقیت فعال شد");
-      setShowTwoFactorModal(false);
-      setTwoFactorEnabled(true);
-      setTwoFactorCode("");
-    } catch (err: any) {
-      toast.error(err.response?.data?.error?.message || "کد اشتباه است");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleDisable2FA = async () => {
-    try {
-      setSaving(true);
-      await api.post("/user/me/2fa/disable");
-      toast.success("تایید دو مرحله‌ای غیرفعال شد");
-      setTwoFactorEnabled(false);
-    } catch (err: any) {
-      toast.error(err.response?.data?.error?.message || "خطا در انجام عملیات");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleVerifyEmailByToken = async () => {
-    try {
-      setSaving(true);
-      await api.post("/auth/verify-email", { token: verificationCode });
-      toast.success("ایمیل شما با موفقیت تایید شد");
-      setShowVerificationModal(false);
-      if (refreshUser) refreshUser();
-    } catch (err: any) {
-      toast.error(err.response?.data?.error?.message || "توکن معتبر نمی‌باشد");
     } finally {
       setSaving(false);
     }
@@ -391,27 +327,6 @@ export const SettingsPage = () => {
     <div className="space-y-6">
       <NeonCard variant="purple" className="space-y-8">
         <div>
-           <div className="flex items-center justify-between mb-4">
-             <div>
-               <h3 className="font-black text-white italic mb-1 flex items-center gap-2">
-                 وضعیت تایید حساب
-                 {authUser?.isVerified ? (
-                   <span className="text-[10px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded uppercase not-italic">حساب تایید شده</span>
-                 ) : (
-                   <span className="text-[10px] bg-red-500/20 text-red-400 px-2 py-0.5 rounded uppercase not-italic">حساب تایید نشده</span>
-                 )}
-               </h3>
-               <p className="text-[10px] text-gray-500 font-bold uppercase italic">{authUser?.isVerified ? "هویت شما با موفقیت تایید شده است." : "برای دسترسی به تمامی امکانات، حساب خود را تایید کنید"}</p>
-             </div>
-             {!authUser?.isVerified && (
-               <GlowButton variant="blue" size="sm" className="text-[10px] font-black uppercase italic px-6 border-none" onClick={() => setShowVerificationModal(true)}>تایید پروفایل</GlowButton>
-             )}
-           </div>
-        </div>
-
-        <hr className="border-white/5" />
-
-        <div>
           <h3 className="font-black text-white italic mb-1">تغییر رمز عبور</h3>
           <p className="text-[10px] text-gray-500 font-bold uppercase mb-6 italic">برای امنیت بیشتر از رمزهای طولانی استفاده کنید</p>
           <div className="space-y-6 max-w-md">
@@ -452,78 +367,6 @@ export const SettingsPage = () => {
         <hr className="border-white/5" />
 
         <div>
-           <div className="flex items-center justify-between mb-4">
-             <div>
-               <h3 className="font-black text-white italic mb-1 flex items-center gap-2">
-                 تایید دو مرحله‌ای (2FA) 
-                 {twoFactorEnabled ? (
-                   <span className="text-[10px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded uppercase not-italic">فعال</span>
-                 ) : (
-                   <span className="text-[10px] bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded uppercase not-italic">غیرفعال</span>
-                 )}
-               </h3>
-               <p className="text-[10px] text-gray-500 font-bold uppercase italic">کد تایید هنگام ورود به ایمیل شما ارسال خواهد شد</p>
-             </div>
-             {twoFactorEnabled ? (
-               <GlowButton variant="purple" size="sm" className="text-[10px] font-black uppercase italic px-6 border-none bg-red-500/10 text-red-500 hover:bg-red-500/20 hover:text-red-400 shadow-none" onClick={handleDisable2FA} disabled={saving}>غیرفعال‌سازی 2FA</GlowButton>
-             ) : (
-               <GlowButton variant="blue" size="sm" className="text-[10px] font-black uppercase italic px-6 border-none" onClick={handleEnable2FA} disabled={saving}>فعال‌سازی 2FA</GlowButton>
-             )}
-           </div>
-        </div>
-
-        {/* 2FA Modal */}
-        <AnimatePresence>
-          {(showTwoFactorModal || showVerificationModal) && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-               <motion.div 
-                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                 className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-                 onClick={() => { setShowTwoFactorModal(false); setShowVerificationModal(false); setSetupStep("initial"); }}
-               />
-               <motion.div 
-                 initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
-                 className="relative w-full max-w-sm rounded-[24px] bg-[#0a0a0f] border border-white/10 p-8 shadow-2xl"
-               >
-                 {showVerificationModal ? (
-                   <>
-                     <h3 className="text-xl font-black text-white italic mb-2">تایید ایمیل</h3>
-                     <p className="text-xs text-gray-500 font-bold mb-6 italic">توکن ارسال شده به ایمیل خود را وارد کنید</p>
-                     <Input 
-                       label="توکن تایید"
-                       placeholder="توکن را اینجا قرار دهید"
-                       value={verificationCode}
-                       onChange={(e) => setVerificationCode(e.target.value)}
-                     />
-                     <div className="mt-6 flex flex-col gap-3">
-                       <GlowButton variant="blue" className="w-full text-xs font-black uppercase blur-none shadow-none h-12" onClick={handleVerifyEmailByToken} disabled={saving || !verificationCode}>تایید ایمیل</GlowButton>
-                       <button onClick={() => { setShowVerificationModal(false); }} className="h-10 text-xs font-black text-gray-500 hover:text-white uppercase transition-colors">بعداً انجام میدم</button>
-                     </div>
-                   </>
-                 ) : (
-                   <>
-                     <h3 className="text-xl font-black text-white italic mb-2">تایید ایمیل</h3>
-                     <p className="text-xs text-gray-500 font-bold mb-6 italic">کد تایید ارسال شده به ایمیل را وارد کنید</p>
-                     <Input 
-                       label="کد تایید"
-                       placeholder="مثلا 12345"
-                       value={twoFactorCode}
-                       onChange={(e) => setTwoFactorCode(e.target.value)}
-                     />
-                     <div className="mt-6 flex justify-end gap-3">
-                       <button onClick={() => { setShowTwoFactorModal(false); setSetupStep("initial"); }} className="px-4 text-xs font-black text-gray-500 hover:text-white uppercase">انصراف</button>
-                       <GlowButton variant="blue" className="px-8 text-xs font-black uppercase blur-none shadow-none" onClick={handleVerify2FA} disabled={saving || twoFactorCode.length < 5}>ثبت و فعالسازی</GlowButton>
-                     </div>
-                   </>
-                 )}
-               </motion.div>
-            </div>
-          )}
-        </AnimatePresence>
-
-        <hr className="border-white/5" />
-
-        <div>
           <h3 className="font-black text-white italic mb-4">دستگاه‌های متصل</h3>
           <div className="space-y-3">
              {devices.map((session, i) => (
@@ -561,25 +404,18 @@ export const SettingsPage = () => {
            </div>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-           <SecurityStatusCard 
-             title="وضعیت تایید حساب" 
-             status={authUser?.isVerified ? "تایید شده" : "در انتظار تایید"}
-             desc={authUser?.isVerified ? "حساب شما کاملاً تایید شده و به تمامی امکانات دسترسی دارید." : "تایید ایمیل برای دسترسی به تمامی امکانات لابی و فروشگاه الزامی است."}
-             icon={<Mail size={20} className="text-neon-blue" />}
-             color={authUser?.isVerified ? "green" : "red"}
-           />
-           <SecurityStatusCard 
-             title="تایید دو مرحله‌ای" 
-             status={twoFactorEnabled ? "فعال" : "غیرفعال"}
-             desc={twoFactorEnabled ? "تایید دو مرحله‌ای فعال است و امنیت حساب شما را تضمین می‌کند." : "برای جلوگیری از دسترسی غیرمجاز، تایید دو مرحله‌ای را فعال کنید."}
-             icon={<Lock size={20} className="text-neon-purple" />}
-             color={twoFactorEnabled ? "green" : "blue"}
-           />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
            <SecurityStatusCard 
              title="محافظت از اکانت" 
              status="تحت نظارت"
-             desc="سیستم ضد تقلب و محافظت از اکانت لoxx به صورت ۲۴ ساعته فعال است."
+             desc="تاییدیه ورودهای جدید و مانیتورینگ اتصال حساب لoxx به صورت ۲۴ ساعته فعال است."
+             icon={<Lock size={20} className="text-neon-purple" />}
+             color="blue"
+           />
+           <SecurityStatusCard 
+             title="سیستم ضد تقلب" 
+             status="فعال"
+             desc="سیستم ضد تقلب و محافظت از چت‌ها به منظور جلوگیری از رفتارهای مخرب در لابی‌ها کاملاً فعال است."
              icon={<SecurityAlert size={20} className="text-neon-pink" />}
              color="green"
            />
