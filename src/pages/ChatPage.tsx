@@ -81,7 +81,7 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
       id={`msg-${message.id}`}
       className={cn(
         "flex gap-2 md:gap-3 transition-all duration-300 mb-6 px-1 md:px-0 relative w-full",
-        message.self ? "flex-row justify-start" : "flex-row-reverse justify-end"
+        message.self ? "flex-row justify-start" : "flex-row-reverse justify-start"
       )}
     >
       {/* Interaction Menu Popover Overlay - Globally available */}
@@ -299,7 +299,9 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
 
                 {/* Text Handling */}
                 {message.text && (
-                  <p className="leading-relaxed text-[13px] font-medium text-gray-200 mb-2">
+                  <p className={cn("leading-relaxed text-[13px] font-medium text-gray-200", 
+                    (message.image && activeChannelId !== 'news') || message.lobbyInvite ? "mb-2" : "mb-0"
+                  )}>
                     {message.text.split(/(@\w+)/g).map((part, i) => (
                       part.startsWith('@') ? (
                         <span key={i} className="text-neon-blue font-black hover:underline cursor-pointer">{part}</span>
