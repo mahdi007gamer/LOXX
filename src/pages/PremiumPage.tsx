@@ -208,12 +208,25 @@ export const PremiumPage = () => {
 
     try {
       setSubmitting(true);
-      // In a real app we'd upload to S3/Cloudinary. 
-      // Here we'll send base64 to a mock upload route or just simulate.
-      // We'll simulate by sending the base64 preview (not recommended for production but works here).
+      
+      // 1. Upload receipt to private authorized endpoint
+      const formData = new FormData();
+      formData.append("file", receiptFile);
+      
+      const uploadRes = await api.post("/upload/receipt", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data"
+        }
+      });
+
+      if (!uploadRes.data.url) {
+        throw new Error("خطا در آپلود تصویر رسید");
+      }
+
+      // 2. Create payment request with the private URL
       const response = await api.post("/payments/create", {
         type: selectedPlan,
-        receiptImageUrl: receiptPreview
+        receiptImageUrl: uploadRes.data.url
       });
 
       if (response.data.status === "success") {

@@ -17,6 +17,7 @@ import { UserEditModal } from "../components/modals/UserEditModal";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
 import { SmartImage } from "../components/ui/SmartImage";
+import { AuthorizedImage } from "../components/ui/AuthorizedImage";
 
 export const AdminPage = () => {
   const [activeTab, setActiveTab] = useState<"users" | "games" | "payments" | "genres" | "badges">("users");
@@ -597,7 +598,7 @@ export const AdminPage = () => {
                                         onClick={() => setPreviewImage(req.receiptImageUrl)}
                                         className="h-10 w-20 rounded-xl bg-white/5 overflow-hidden border border-white/10 hover:border-neon-blue transition-all group"
                                      >
-                                        <img src={req.receiptImageUrl} className="h-full w-full object-cover opacity-50 group-hover:opacity-100 transition-opacity" />
+                                        <AuthorizedImage src={req.receiptImageUrl} className="h-full w-full object-cover opacity-50 group-hover:opacity-100 transition-opacity" />
                                      </button>
                                   </td>
                                   <td className="px-6 py-4">
@@ -634,10 +635,7 @@ export const AdminPage = () => {
                         onClick={() => setPreviewImage(null)}
                         className="fixed inset-0 z-50 flex items-center justify-center p-8 bg-black/90 backdrop-blur-xl cursor-zoom-out"
                       >
-                         <motion.img 
-                           initial={{ scale: 0.9, rotateY: -10 }}
-                           animate={{ scale: 1, rotateY: 0 }}
-                           exit={{ scale: 0.9 }}
+                         <AuthorizedImage 
                            src={previewImage}
                            className="max-w-full max-h-full rounded-3xl shadow-2xl border border-white/20"
                          />
