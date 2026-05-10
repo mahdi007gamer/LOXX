@@ -28,7 +28,13 @@ export const AuthorizedImage: React.FC<AuthorizedImageProps> = ({ src, className
       try {
         setLoading(true);
         setError(false);
-        const response = await api.get(src, { responseType: "blob" });
+        
+        let urlPath = src;
+        if (src.startsWith("/api/v1")) {
+          urlPath = src.replace("/api/v1", "");
+        }
+        
+        const response = await api.get(urlPath, { responseType: "blob" });
         const url = URL.createObjectURL(response.data);
         if (isMounted) {
           setObjectUrl(url);
