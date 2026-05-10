@@ -142,7 +142,7 @@ export const SettingsPage = () => {
   const fetchDevices = async () => {
     try {
       const res = await api.get("/user/me/devices");
-      setDevices(res.data.data);
+      setDevices(res.data.data || []);
     } catch(err) {}
   };
 
@@ -673,7 +673,7 @@ export const SettingsPage = () => {
         <div>
           <h3 className="font-black text-white italic mb-4">دستگاه‌های متصل</h3>
           <div className="space-y-3">
-             {devices.map((session, i) => (
+             {(devices || []).map((session, i) => (
                <div key={i} className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/5 group hover:border-white/10 transition-all">
                   <div className="flex items-center gap-4">
                     <div className="h-10 w-10 rounded-lg bg-white/5 flex items-center justify-center text-gray-400 group-hover:text-neon-blue transition-colors">
@@ -690,7 +690,7 @@ export const SettingsPage = () => {
                   <button onClick={() => handleRevokeDevice(session.id)} className="text-[10px] font-black text-neon-pink uppercase italic opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">خروج</button>
                </div>
              ))}
-             {devices.length === 0 && (
+             {(!devices || devices.length === 0) && (
                <p className="text-[10px] text-gray-500 font-bold uppercase">در حال بارگذاری...</p>
              )}
           </div>
