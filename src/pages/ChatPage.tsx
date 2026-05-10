@@ -81,7 +81,7 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
       id={`msg-${message.id}`}
       className={cn(
         "flex gap-2 md:gap-3 transition-all duration-300 mb-6 px-1 md:px-0 relative w-full",
-        message.self ? "flex-row justify-start" : "flex-row-reverse justify-start"
+        message.self ? "flex-row justify-start" : "flex-row-reverse justify-end"
       )}
     >
       {/* Interaction Menu Popover Overlay - Globally available */}
@@ -2037,8 +2037,9 @@ export const ChatPage: React.FC = () => {
         <div 
           ref={scrollRef}
           onScroll={handleScroll}
-          className="flex-1 overflow-y-auto px-2 md:px-8 py-2 md:py-4 space-y-2 md:space-y-4 scroll-smooth custom-scrollbar relative min-h-0 flex flex-col no-scrollbar overscroll-contain"
+          className="flex-1 overflow-y-auto px-2 md:px-6 py-2 md:py-4 space-y-2 md:space-y-4 scroll-smooth custom-scrollbar relative min-h-0 flex flex-col no-scrollbar overscroll-contain"
           style={{ overscrollBehavior: 'contain' }}
+          dir="rtl"
         >
           {/* Date Separator */}
           <div className="flex items-center gap-4 py-4 shrink-0">

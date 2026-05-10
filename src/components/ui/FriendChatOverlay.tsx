@@ -124,8 +124,8 @@ export const FriendChatOverlay = () => {
             </div>
 
             {/* Chat Messages */}
-            <div className="h-80 overflow-y-auto p-4 space-y-4 flex flex-col bg-gradient-to-b from-transparent to-white/[0.02] no-scrollbar">
-               <div className="mt-auto space-y-4">
+            <div className="h-80 overflow-y-auto p-4 space-y-4 flex flex-col bg-gradient-to-b from-transparent to-white/[0.02] no-scrollbar" dir="rtl">
+               <div className="mt-auto space-y-4 flex flex-col">
                  {activeChat?.messages.map(msg => {
                     const hasInvite = msg.text && msg.text.includes("[LOBBY_INVITE]:");
                     const text = hasInvite ? msg.text.split("[LOBBY_INVITE]:")[0].trim() : msg.text;
@@ -133,9 +133,9 @@ export const FriendChatOverlay = () => {
 
                     return (
                       <div key={msg.id} className={cn(
-                        "flex gap-2 max-w-[90%]",
-                        msg.self ? "mr-auto flex-row" : "ml-auto flex-row-reverse"
-                      )} dir="rtl">
+                        "flex gap-2 max-w-[85%]",
+                        msg.self ? "self-start flex-row" : "self-end flex-row-reverse"
+                      )}>
                         {!msg.self && (
                            <div className="h-7 w-7 rounded-lg bg-white/10 shrink-0 overflow-hidden border border-white/10 mt-1 shadow-sm">
                             {(msg.senderAvatar || activeFriend?.avatar || (activeFriend as any)?.avatarUrl || (activeChatId === "1" ? user?.avatarUrl : null)) ? (
@@ -152,19 +152,23 @@ export const FriendChatOverlay = () => {
                         )}
                         <div className={cn(
                           "flex flex-col gap-1",
-                          msg.self ? "items-end text-right" : "items-start text-left"
+                          msg.self ? "items-start text-right" : "items-end text-left"
                         )}>
                           {!msg.self && (
-                            <UserBadges badges={msg.badges || []} />
+                            <div className="flex justify-end mb-0.5">
+                              <UserBadges badges={msg.badges || []} />
+                            </div>
                           )}
                           {msg.self && (
-                            <UserBadges badges={(user as any)?.badges || []} />
+                            <div className="flex justify-start mb-0.5">
+                              <UserBadges badges={(user as any)?.badges || []} />
+                            </div>
                           )}
                           <div className={cn(
                             "rounded-2xl px-3 py-2 text-[11px] font-medium leading-relaxed shadow-lg",
                             msg.self 
-                              ? "bg-neon-blue text-dark-bg rounded-bl-none" 
-                              : "bg-white/10 text-gray-200 rounded-br-none border border-white/10"
+                              ? "bg-neon-blue text-dark-bg rounded-tr-none" 
+                              : "bg-white/12 text-gray-100 rounded-tl-none border border-white/20"
                           )}>
                             {text}
                           </div>
@@ -173,7 +177,7 @@ export const FriendChatOverlay = () => {
                               <LobbyInviteCard initialData={invite} />
                             </div>
                           )}
-                          <span className="text-[8px] text-gray-600 px-1 font-mono">{msg.timestamp}</span>
+                          <span className="text-[8px] text-gray-600 px-1 font-mono uppercase">{msg.timestamp}</span>
                         </div>
                       </div>
                     );
