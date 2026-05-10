@@ -201,102 +201,100 @@ export const DashboardPage = () => {
               ))}
 
               {/* MEMBERSHIP STATUS CARD */}
-              {(currentMembership === "NONE" || currentMembership === "FREE") && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.5 }}
-                  className="col-span-full mt-2"
-                >
-                  <div className={cn(
-                    "p-8 rounded-[48px] border transition-all duration-700 relative overflow-hidden group",
-                    currentMembership === "VIP" 
-                      ? "bg-[#0d0d12] border-yellow-400/20 shadow-[0_40px_100px_-20px_rgba(250,204,21,0.15)]" 
-                      : currentMembership === "PLUS"
-                      ? "bg-[#0d0d12] border-neon-blue/20 shadow-[0_40px_100px_-20px_rgba(0,229,255,0.15)]"
-                      : "bg-[#0d0d12] border-white/5"
-                  )}>
-                     {/* Background Effects */}
-                     {currentMembership === "VIP" && (
-                       <div className="absolute inset-0 bg-gradient-to-br from-yellow-400/5 via-transparent to-transparent opacity-50" />
-                     )}
-                     {currentMembership === "PLUS" && (
-                       <div className="absolute inset-0 bg-gradient-to-br from-neon-blue/5 via-transparent to-transparent opacity-50" />
-                     )}
-                     
-                     <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
-                        <div className="flex items-center gap-6 text-center md:text-right">
-                           <div className={cn(
-                             "h-24 w-24 rounded-[32px] flex items-center justify-center border-2 transition-all duration-700 group-hover:scale-110 group-hover:rotate-6",
-                             currentMembership === "VIP" ? "bg-yellow-400/10 border-yellow-400/40 text-yellow-400 shadow-[0_0_30px_rgba(250,204,21,0.3)]" :
-                             currentMembership === "PLUS" ? "bg-neon-blue/10 border-neon-blue/40 text-neon-blue shadow-[0_0_30px_rgba(0,229,255,0.3)]" :
-                             "bg-white/5 border-white/10 text-gray-700"
-                           )}>
-                              {currentMembership === "VIP" ? <Crown size={54} /> : currentMembership === "PLUS" ? <Zap size={54} /> : <User size={54} />}
-                           </div>
-                           <div>
-                              <p className="text-[10px] text-gray-500 font-black uppercase tracking-[0.2em] mb-1 italic">
-                                {currentMembership === "VIP" || currentMembership === "PLUS" ? "وضعیت اشتراک فعال" : "اطلاعات سطح کاربری"}
-                              </p>
-                              <h2 className={cn(
-                                "text-4xl font-black italic tracking-tighter uppercase leading-none",
-                                currentMembership === "VIP" ? "text-yellow-400 text-shadow-glow" :
-                                currentMembership === "PLUS" ? "text-neon-blue text-shadow-glow" :
-                                "text-white"
-                              )}>
-                                 {currentMembership === "VIP" ? "عضویت ویژه الیت (VIP)" : currentMembership === "PLUS" ? "عضویت طلایی پلاس" : "اشتراک سطح عادی (FREE)"}
-                              </h2>
-                              <p className="text-[11px] text-gray-400 font-bold italic mt-2">
-                                 {currentMembership === "VIP" ? `باقیمانده اشتراک الیت: ${daysLeft} روز (تا ${new Date(expiryDate).toLocaleDateString('fa-IR')})` : 
-                                  currentMembership === "PLUS" ? `باقیمانده اشتراک پلاس: ${daysLeft} روز (تا ${new Date(expiryDate).toLocaleDateString('fa-IR')})` :
-                                  "شما در حال حاضر از طرح رایگان استفاده می‌کنید. برای دسترسی به امکانات ویژه ارتقا دهید."}
-                              </p>
-                           </div>
-                        </div>
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.5 }}
+                className="col-span-full mt-2"
+              >
+                <div className={cn(
+                  "p-8 rounded-[48px] border transition-all duration-700 relative overflow-hidden group",
+                  currentMembership === "VIP" 
+                    ? "bg-[#0d0d12] border-yellow-400/20 shadow-[0_40px_100px_-20px_rgba(250,204,21,0.15)]" 
+                    : currentMembership === "PLUS"
+                    ? "bg-[#0d0d12] border-neon-blue/20 shadow-[0_40px_100px_-20px_rgba(0,229,255,0.15)]"
+                    : "bg-[#0d0d12] border-white/5"
+                )}>
+                   {/* Background Effects */}
+                   {currentMembership === "VIP" && (
+                     <div className="absolute inset-0 bg-gradient-to-br from-yellow-400/5 via-transparent to-transparent opacity-50" />
+                   )}
+                   {currentMembership === "PLUS" && (
+                     <div className="absolute inset-0 bg-gradient-to-br from-neon-blue/5 via-transparent to-transparent opacity-50" />
+                   )}
+                   
+                   <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
+                      <div className="flex items-center gap-6 text-center md:text-right">
+                         <div className={cn(
+                           "h-24 w-24 rounded-[32px] flex items-center justify-center border-2 transition-all duration-700 group-hover:scale-110 group-hover:rotate-6",
+                           currentMembership === "VIP" ? "bg-yellow-400/10 border-yellow-400/40 text-yellow-400 shadow-[0_0_30px_rgba(250,204,21,0.3)]" :
+                           currentMembership === "PLUS" ? "bg-neon-blue/10 border-neon-blue/40 text-neon-blue shadow-[0_0_30px_rgba(0,229,255,0.3)]" :
+                           "bg-white/5 border-white/10 text-gray-700"
+                         )}>
+                            {currentMembership === "VIP" ? <Crown size={54} /> : currentMembership === "PLUS" ? <Zap size={54} /> : <User size={54} />}
+                         </div>
+                         <div>
+                            <p className="text-[10px] text-gray-500 font-black uppercase tracking-[0.2em] mb-1 italic">
+                              {currentMembership !== "NONE" && currentMembership !== "FREE" ? "وضعیت اشتراک فعال" : "اطلاعات سطح کاربری"}
+                            </p>
+                            <h2 className={cn(
+                              "text-3xl md:text-4xl font-black italic tracking-tighter uppercase leading-none",
+                              currentMembership === "VIP" ? "text-yellow-400 text-shadow-glow" :
+                              currentMembership === "PLUS" ? "text-neon-blue text-shadow-glow" :
+                              "text-white"
+                            )}>
+                               {currentMembership === "VIP" ? "عضویت ویژه الیت (VIP)" : currentMembership === "PLUS" ? "عضویت طلایی پلاس" : "اشتراک سطح عادی (FREE)"}
+                            </h2>
+                            <p className="text-[11px] text-gray-400 font-bold italic mt-2">
+                               {currentMembership === "VIP" ? `باقیمانده اشتراک الیت: ${daysLeft} روز (تا ${expiryDate ? new Date(expiryDate).toLocaleDateString('fa-IR') : "نامعلوم"})` : 
+                                currentMembership === "PLUS" ? `باقیمانده اشتراک پلاس: ${daysLeft} روز (تا ${expiryDate ? new Date(expiryDate).toLocaleDateString('fa-IR') : "نامعلوم"})` :
+                                "شما در حال حاضر از طرح رایگان استفاده می‌کنید. برای دسترسی به امکانات ویژه ارتقا دهید."}
+                            </p>
+                         </div>
+                      </div>
 
-                        {currentMembership !== "NONE" && currentMembership !== "FREE" ? (
-                           <div className="flex items-center gap-10 bg-white/[0.02] backdrop-blur-md p-8 rounded-[40px] border border-white/5 min-w-[280px]">
-                              <div className="text-center">
-                                 <p className="text-[10px] text-gray-500 font-black uppercase tracking-[0.2em] mb-2 italic">باقیمانده اشتراک</p>
-                                 <div className="flex items-baseline justify-center gap-1">
-                                    <p className={cn(
-                                      "text-5xl font-black italic tracking-tighter leading-none",
-                                      daysLeft < 5 ? "text-red-500 animate-pulse" : "text-white"
-                                    )}>{daysLeft}</p>
-                                    <span className="text-gray-500 font-black text-xs italic">روز</span>
-                                  </div>
-                              </div>
-                              <div className="h-16 w-px bg-white/10" />
-                              <div className="flex-1">
-                                 <GlowButton 
-                                   variant={currentMembership === "VIP" ? "blue" : "purple"} 
-                                   size="sm" 
-                                   className="h-12 w-full text-[10px] font-black uppercase italic !rounded-2xl"
-                                   onClick={() => navigate("/premium")}
-                                 >
-                                    {daysLeft < 7 ? "تمدید لایسنس" : "مدیریت اشتراک"}
-                                 </GlowButton>
-                              </div>
-                           </div>
-                        ) : (
-                           <GlowButton 
-                              variant="purple" 
-                              className="h-16 px-16 text-sm font-black uppercase italic !rounded-[24px]"
-                              onClick={() => navigate("/premium")}
-                           >
-                              ارتقای حساب کاربری
-                           </GlowButton>
-                        )}
-                     </div>
-                     
-                     {/* Decorative corner light */}
-                     <div className={cn(
-                       "absolute -bottom-20 -right-20 h-40 w-40 rounded-full blur-[80px] opacity-30",
-                       currentMembership === "VIP" ? "bg-yellow-400" : currentMembership === "PLUS" ? "bg-neon-blue" : "bg-neon-purple"
-                     )} />
-                  </div>
-                </motion.div>
-              )}
+                      {currentMembership !== "NONE" && currentMembership !== "FREE" ? (
+                         <div className="flex items-center gap-10 bg-white/[0.02] backdrop-blur-md p-8 rounded-[40px] border border-white/5 min-w-[280px]">
+                            <div className="text-center">
+                               <p className="text-[10px] text-gray-500 font-black uppercase tracking-[0.2em] mb-2 italic">باقیمانده اشتراک</p>
+                               <div className="flex items-baseline justify-center gap-1">
+                                  <p className={cn(
+                                    "text-5xl font-black italic tracking-tighter leading-none",
+                                    daysLeft < 5 ? "text-red-500 animate-pulse" : "text-white"
+                                  )}>{daysLeft}</p>
+                                  <span className="text-gray-500 font-black text-xs italic">روز</span>
+                                </div>
+                            </div>
+                            <div className="h-16 w-px bg-white/10" />
+                            <div className="flex-1">
+                               <GlowButton 
+                                 variant={currentMembership === "VIP" ? "blue" : "purple"} 
+                                 size="sm" 
+                                 className="h-12 w-full text-[10px] font-black uppercase italic !rounded-2xl"
+                                 onClick={() => navigate("/premium")}
+                               >
+                                  {daysLeft < 7 ? "تمدید لایسنس" : "مدیریت اشتراک"}
+                               </GlowButton>
+                            </div>
+                         </div>
+                      ) : (
+                         <GlowButton 
+                            variant="purple" 
+                            className="h-16 px-16 text-sm font-black uppercase italic !rounded-[24px]"
+                            onClick={() => navigate("/premium")}
+                         >
+                            ارتقای حساب کاربری
+                         </GlowButton>
+                      )}
+                   </div>
+                   
+                   {/* Decorative corner light */}
+                   <div className={cn(
+                     "absolute -bottom-20 -right-20 h-40 w-40 rounded-full blur-[80px] opacity-30",
+                     currentMembership === "VIP" ? "bg-yellow-400" : (currentMembership === "PLUS" || currentMembership === "PLATINUM") ? "bg-neon-blue" : "bg-neon-purple"
+                   )} />
+                </div>
+              </motion.div>
             </div>
 
             {/* Your Rank Widget */}

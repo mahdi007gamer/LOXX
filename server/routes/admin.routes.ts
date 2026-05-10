@@ -10,6 +10,7 @@ router.use(authenticate, authorizeAdmin);
 router.get("/users", adminController.getAllUsers);
 router.patch("/users/:id/role", adminController.updateUserRole);
 router.patch("/users/:id/membership", adminController.updateUserMembership);
+router.patch("/users/:id/verify", adminController.updateUserVerification);
 router.delete("/users/:id", adminController.deleteUser);
 
 router.post("/games", adminController.createGame);

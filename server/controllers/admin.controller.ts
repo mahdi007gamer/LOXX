@@ -18,6 +18,7 @@ export const getAllUsers = async (req: Request, res: Response) => {
         id: true,
         username: true,
         email: true,
+        isVerified: true,
         role: true,
         createdAt: true,
         profile: {
@@ -65,6 +66,21 @@ export const updateUserRole = async (req: Request, res: Response) => {
       where: { id },
       data: { role },
       select: { id: true, role: true }
+    });
+    res.json({ status: "success", data: user });
+  } catch (error: any) {
+    res.status(500).json({ status: "error", message: error.message });
+  }
+};
+
+export const updateUserVerification = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { isVerified } = req.body;
+  try {
+    const user = await prisma.user.update({
+      where: { id },
+      data: { isVerified },
+      select: { id: true, isVerified: true }
     });
     res.json({ status: "success", data: user });
   } catch (error: any) {

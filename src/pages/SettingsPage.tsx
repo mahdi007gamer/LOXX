@@ -12,6 +12,12 @@ import {
   Shield, 
   Monitor, 
   Globe, 
+  Palette, 
+  Trash2, 
+  RefreshCw, 
+  Upload, 
+  Layers, 
+  Settings2,
   Lock,
   Camera,
   MessageSquare,
@@ -29,7 +35,10 @@ import {
   Plus,
   Sparkles,
   Star,
-  Mail
+  Mail,
+  Trophy,
+  Activity,
+  UserCheck
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { motion, AnimatePresence } from "motion/react";
@@ -99,17 +108,59 @@ export const SettingsPage = () => {
 
   const [devices, setDevices] = useState<any[]>([]);
   const [userBadges, setUserBadges] = useState<any[]>([]);
+  const [allBadges, setAllBadges] = useState<any[]>([]);
 
   const [vipMetadata, setVipMetadata] = useState<any>({
     auraEffect: true,
     shinyName: true,
-    specialFrame: false
+    specialFrame: false,
+    frame: "none",
+    opacity: 0.8,
+    colors: {
+      bg: "#0d0d14",
+      text: "#ffffff",
+      accent: "#00e5ff"
+    }
   });
 
   useEffect(() => {
     fetchUserData();
     fetchDevices();
+    fetchBadges();
   }, []);
+
+  const fetchBadges = async () => {
+    try {
+      const [allRes, userRes] = await Promise.all([
+        api.get("/badges"),
+        api.get("/badges/my")
+      ]);
+      if (allRes.data.status === "success") setAllBadges(allRes.data.data);
+      if (userRes.data.status === "success") setUserBadges(userRes.data.data);
+    } catch (err) {}
+  };
+
+  const toggleBadge = async (badgeId: string) => {
+    try {
+      await api.post(`/badges/toggle-standard/${badgeId}`);
+      toast.success("وضعیت نشان ویرایش شد");
+      fetchBadges();
+      if (refreshUser) refreshUser();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "خطا در ویرایش نشان");
+    }
+  };
+
+  const togglePinBadge = async (badgeId: string, isPinned: boolean) => {
+    try {
+      await api.post(`/badges/pin/${badgeId}`, { isPinned });
+      toast.success(isPinned ? "نشان پین شد" : "نشان از پین خارج شد");
+      fetchBadges();
+      if (refreshUser) refreshUser();
+    } catch (err: any) {
+      toast.error("خطا در تغییر وضعیت پین");
+    }
+  };
 
   const fetchUserData = async () => {
     try {
@@ -472,47 +523,6 @@ export const SettingsPage = () => {
         <hr className="border-white/5" />
 
         <div>
-           <div className="flex items-center justify-between mb-4">
-             <div>
-               <h3 className="font-black text-white italic mb-1 flex items-center gap-2">
-                 خلاصه وضعیت امنیت
-               </h3>
-               <p className="text-[10px] text-gray-400 font-bold uppercase italic">گزارش کلی از لایه‌های حفاظتی فعال در سیستم</p>
-             </div>
-           </div>
-           
-           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-             <SecurityStatusCard 
-               title="Rate Limiting" 
-               status="فعال" 
-               desc="محافظت در برابر حملات DoS و Brute-force. محدودیت ۱۰۰ درخواست/۱۵دقیقه روی کل سایت" 
-               icon={<Zap size={20} className="text-neon-blue" />}
-             />
-             <SecurityStatusCard 
-               title="XSS Protection" 
-               status="فعال" 
-               desc="پاکسازی خودکار پیام‌ها توسط DOMPurify برای جلوگیری از اجرای اسکریپت‌های مخرب." 
-               icon={<Shield size={20} className="text-neon-pink" />}
-             />
-             <SecurityStatusCard 
-               title="Socket.io Auth" 
-               status="فعال" 
-               desc="احراز هویت تمامی ارتباطات لحظه‌ای با استفاده از JWT بصورت اجباری." 
-               icon={<Smartphone size={20} className="text-green-400" />}
-             />
-             <SecurityStatusCard 
-               title="Email Verification" 
-               status={authUser?.isVerified ? "تایید شده" : "در انتظار تایید"} 
-               desc="سیستم تایید هویت با ایمیل برای جلوگیری از اکانت‌های اسپم و بات." 
-               color={authUser?.isVerified ? "green" : "red"}
-               icon={<Mail size={20} className={authUser?.isVerified ? "text-green-400" : "text-neon-pink"} />}
-             />
-           </div>
-        </div>
-
-        <hr className="border-white/5" />
-
-        <div>
           <h3 className="font-black text-white italic mb-4">دستگاه‌های متصل</h3>
           <div className="space-y-3">
              {devices.map((session, i) => (
@@ -695,89 +705,261 @@ export const SettingsPage = () => {
     </div>
   );
 
-  const renderElite = () => (
-    <div className="space-y-6">
-      {authUser?.membership === "VIP" || authUser?.membership === "PLATINUM" || authUser?.membership === "PLUS" ? (
-        <NeonCard variant="purple" className="p-8 relative overflow-hidden">
-          <div className="absolute top-0 right-0 h-40 w-40 bg-neon-purple/20 blur-[60px]" />
-          <div className="relative z-10">
-            <div className="flex items-center gap-4 mb-8">
-              <div className="h-14 w-14 rounded-2xl bg-neon-purple/10 flex items-center justify-center text-neon-purple border border-neon-purple/20">
-                <Crown size={32} />
-              </div>
-              <div>
-                <h3 className="text-2xl font-black text-white italic uppercase">LOXX Elite</h3>
-                <p className="text-xs text-gray-500 font-bold uppercase tracking-widest">امکانات ویژه برای حرفه‌ای‌ها</p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-               {[
-                 { id: "auraEffect", label: "هاله نورانی", desc: "Aura Effect دور آواتار" },
-                 { id: "shinyName", label: "نام درخشان", desc: "افکت Glow برای نام کاربری" },
-                 { id: "specialFrame", label: "قاب ویژه", desc: "فریم‌های متحرک منحصر به فرد" }
-               ].map((item, i) => (
-                  <div key={i} className="p-4 rounded-xl bg-white/5 border border-white/5 flex items-center justify-between group hover:border-neon-purple/30 transition-all">
-                     <div>
-                        <h4 className="text-xs font-black text-white italic">{item.label}</h4>
-                        <p className="text-[9px] text-gray-500 italic mt-0.5">{item.desc}</p>
-                     </div>
-                     <div 
-                      onClick={() => toggleVipFeature(item.id)}
-                      className={cn(
-                        "h-6 w-11 rounded-full relative transition-colors cursor-pointer",
-                        vipMetadata[item.id] ? "bg-neon-purple/30" : "bg-white/10"
-                      )}
-                     >
-                        <div className={cn(
-                          "absolute top-1 h-4 w-4 rounded-full transition-all",
-                          vipMetadata[item.id] ? "right-1 bg-neon-purple" : "left-1 bg-gray-600"
-                        )} />
+  const renderElite = () => {
+    const isVip = authUser?.membership === "VIP" || authUser?.membership === "PLATINUM" || authUser?.membership === "PLUS";
+    
+    return (
+      <div className="space-y-6">
+        {isVip ? (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            <div className="lg:col-span-12">
+               <div className="flex items-center justify-between bg-yellow-400/5 p-8 rounded-[48px] border border-yellow-400/20 mb-8 relative overflow-hidden group">
+                  <div className="relative z-10">
+                     <div className="flex items-center gap-4 mb-4">
+                        <div className="h-16 w-16 rounded-[24px] bg-yellow-400/10 flex items-center justify-center text-yellow-400 border border-yellow-400/20 group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
+                           <Crown size={32} />
+                        </div>
+                        <div>
+                           <h3 className="text-3xl font-black text-white italic uppercase tracking-tighter">تنظیمات نخبگان</h3>
+                           <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest italic group-hover:text-yellow-400/70 transition-colors">LOXX ELITE PRESETS & CONTROLS</p>
+                        </div>
                      </div>
                   </div>
-               ))}
+                  <GlowButton 
+                    variant="gold" 
+                    className="h-12 px-10 uppercase italic font-black text-xs relative z-10"
+                    onClick={() => window.location.href = "/elite-settings"}
+                  >
+                    پنل پیشرفته نخبگان
+                  </GlowButton>
+                  <div className="absolute top-0 right-0 h-40 w-40 bg-yellow-400 border-b border-l border-yellow-400/20 opacity-[0.03] blur-[40px] pointer-events-none" />
+               </div>
+            </div>
+
+            {/* Quick Controls Section */}
+            <div className="lg:col-span-7 space-y-6">
+               <NeonCard variant="gold" className="space-y-6">
+                  <h4 className="text-lg font-black text-white italic flex items-center gap-2 border-b border-white/5 pb-4">
+                    <Palette size={20} className="text-yellow-400" />
+                    <span>شخصی‌سازی سریع مینی پروفایل</span>
+                  </h4>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                     {[
+                       { id: "auraEffect", label: "هاله نورانی", desc: "نمایش هاله رنگی دور آواتار" },
+                       { id: "shinyName", label: "نام درخشان", desc: "افکت درخشش روی نام کاربری" },
+                       { id: "specialFrame", label: "فریم متحرک", desc: "استفاده از قاب‌های گرافیکی" }
+                     ].map((item, i) => (
+                        <div key={i} className="p-4 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-between group hover:border-yellow-400/20 transition-all">
+                           <div>
+                              <h4 className="text-xs font-black text-white italic">{item.label}</h4>
+                              <p className="text-[9px] text-gray-500 italic mt-0.5">{item.desc}</p>
+                           </div>
+                           <div 
+                            onClick={() => toggleVipFeature(item.id)}
+                            className={cn(
+                              "h-7 w-12 rounded-full relative transition-colors cursor-pointer",
+                              vipMetadata[item.id] ? "bg-yellow-400/20" : "bg-white/10"
+                            )}
+                           >
+                              <div className={cn(
+                                "absolute top-1.5 h-4 w-4 rounded-full transition-all",
+                                vipMetadata[item.id] ? "right-1.5 bg-yellow-400 shadow-[0_0_10px_#facc15]" : "left-1.5 bg-gray-600"
+                              )} />
+                           </div>
+                        </div>
+                     ))}
+                  </div>
+
+                  <div className="space-y-4 pt-4 border-t border-white/5">
+                     <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest italic">شفافیت بک‌گراند (Opacity)</label>
+                     <input 
+                        type="range" 
+                        min="0.1" 
+                        max="1" 
+                        step="0.1"
+                        value={vipMetadata.opacity || 0.8} 
+                        onChange={(e) => {
+                          const val = parseFloat(e.target.value);
+                          setVipMetadata(prev => ({ ...prev, opacity: val }));
+                          api.patch("/user/profile", { vipMetadata: { ...vipMetadata, opacity: val } });
+                        }}
+                        className="w-full h-2 bg-white/10 rounded-full appearance-none cursor-pointer accent-yellow-400"
+                     />
+                  </div>
+               </NeonCard>
+
+               <div className="p-6 rounded-[32px] border border-white/5 bg-white/[0.02] flex items-center gap-6">
+                  <div className="h-16 w-16 rounded-[24px] bg-white/5 flex items-center justify-center text-gray-500">
+                     <Monitor size={32} />
+                  </div>
+                  <div className="flex-1">
+                     <h4 className="text-sm font-black text-white italic">تنظیمات کامل گرافیکی</h4>
+                     <p className="text-[10px] text-gray-500 font-bold uppercase mt-1 leading-relaxed">برای انتخاب گیف، تغییر هاله و شخصی‌سازی دقیق تمام رنگ‌ها وارد پنل نخبگان شوید.</p>
+                  </div>
+                  <button onClick={() => window.location.href = "/elite-settings"} className="p-3 rounded-2xl bg-yellow-400/10 text-yellow-400 hover:bg-yellow-400/20 transition-all">
+                     <ArrowRight size={20} />
+                  </button>
+               </div>
+            </div>
+
+            {/* Preview Section */}
+            <div className="lg:col-span-5 h-full">
+               <div className="sticky top-8">
+                  <div className="flex items-center justify-center gap-3 mb-6">
+                    <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent to-white/10" />
+                    <h3 className="text-[10px] font-black text-yellow-400 uppercase tracking-[0.4em] italic">Live View</h3>
+                    <div className="h-[1px] flex-1 bg-gradient-to-l from-transparent to-white/10" />
+                  </div>
+                  <div className="relative group perspective-1000">
+                     <div className="relative w-full aspect-[4/5] rounded-[32px] overflow-hidden border border-yellow-400/20 shadow-[0_40px_100px_rgba(0,0,0,0.8)] backdrop-blur-3xl" style={{ backgroundColor: vipMetadata.colors?.bg || "#0d0d14", opacity: vipMetadata.opacity || 1 }}>
+                        <div className="h-24 relative overflow-hidden bg-gradient-to-br from-yellow-400 to-yellow-600">
+                           {authUser?.bannerUrl && <img src={authUser.bannerUrl} alt="" className="w-full h-full object-cover opacity-50" />}
+                           <div className="absolute inset-0 bg-black/40" />
+                        </div>
+                        <div className="px-6 pb-6 relative z-10">
+                           <div className="relative -mt-10 mb-4 h-20 w-20 rounded-[24px] bg-[#0d0d12] border-2 border-yellow-400 p-1">
+                              <img src={authUser?.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${authUser?.username}`} className="w-full h-full rounded-[18px] object-cover" alt="" />
+                              {vipMetadata.auraEffect && <div className="absolute -inset-1 rounded-[24px] border border-yellow-400/30 animate-pulse shadow-[0_0_15px_#facc1555]" />}
+                           </div>
+                           <h4 className={cn("text-2xl font-black italic tracking-tighter uppercase", vipMetadata.shinyName ? "text-yellow-400 text-shadow-glow" : "text-white")}>{authUser?.displayName}</h4>
+                           <p className="text-[10px] text-yellow-400/70 font-black uppercase tracking-widest mt-1 italic flex items-center gap-1"><Crown size={10} /> LOXX ELITE MEMBER</p>
+                           
+                           <div className="grid grid-cols-2 gap-4 mt-8">
+                              <div className="h-10 rounded-xl bg-white/5 border border-white/5" />
+                              <div className="h-10 rounded-xl bg-white/5 border border-white/5" />
+                           </div>
+                        </div>
+                     </div>
+                  </div>
+               </div>
             </div>
           </div>
-        </NeonCard>
-      ) : (
-        <NeonCard variant="purple" className="p-12 text-center">
-           <Crown size={48} className="mx-auto mb-4 text-gray-700" />
-           <h3 className="text-xl font-black text-white italic mb-2">بخش مخصوص اعضای ویژه</h3>
-           <p className="text-xs text-gray-400 mb-6 font-bold uppercase">برای دسترسی به این بخش باید حساب خود را ارتقا دهید</p>
-           <GlowButton variant="purple" size="sm" onClick={() => window.location.href = "/membership"}>مشاهده پلن‌ها</GlowButton>
-        </NeonCard>
-      )}
-    </div>
-  );
+        ) : (
+          <NeonCard variant="purple" className="p-12 text-center rounded-[48px] bg-gradient-to-br from-[#0d0d12] to-[#1a1a25] border-white/5 shadow-[0_40px_100px_-20px_rgba(168,85,247,0.15)] relative overflow-hidden group">
+             <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10" />
+             <div className="relative z-10">
+                <div className="h-24 w-24 rounded-[32px] bg-neon-purple/10 flex items-center justify-center text-neon-purple border border-neon-purple/20 mx-auto mb-6 group-hover:scale-110 transition-transform duration-700">
+                   <Crown size={48} />
+                </div>
+                <h3 className="text-3xl font-black text-white italic mb-2 tracking-tighter uppercase">بخش مخصوص اعضای ویژه</h3>
+                <p className="text-xs text-gray-500 mb-10 font-bold uppercase tracking-widest italic">برای دسترسی به تنظیمات پیشرفته نخبگان باید حساب خود را ارتقا دهید</p>
+                <GlowButton variant="purple" className="px-16 h-14 !rounded-[24px] text-sm font-black italic uppercase tracking-widest" onClick={() => window.location.href = "/premium"}>مشاهده پلن‌ها</GlowButton>
+             </div>
+          </NeonCard>
+        )}
+      </div>
+    );
+  };
 
   const renderBadges = () => (
-    <div className="space-y-6">
-      <NeonCard variant="blue">
-        <h3 className="font-black text-white italic mb-1 uppercase">نشان‌های من</h3>
-        <p className="text-[10px] text-gray-500 font-bold uppercase mb-8 italic">مدیریت نشان‌های کسب شده در بازی</p>
-        <div className="grid grid-cols-3 md:grid-cols-6 gap-6">
-           {authUser?.badges?.length ? authUser.badges.map((b: any, i: number) => (
-             <div key={i} className="flex flex-col items-center gap-3 group">
-                <div className="relative">
-                   <div className="h-16 w-16 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 group-hover:border-neon-blue transition-all">
-                      <img src={b.iconUrl} alt={b.name} className="h-10 w-10 object-contain" />
+    <div className="space-y-8">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white/5 p-8 rounded-[40px] border border-white/5">
+         <div>
+            <h3 className="text-2xl font-black text-white italic mb-1 uppercase tracking-tighter">نشان‌های اختصاصی</h3>
+            <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest italic">مدیریت و پین کردن نشان‌های کسب شده</p>
+         </div>
+         <div className="flex items-center gap-6 px-6 py-3 rounded-2xl bg-white/5 border border-white/5">
+            <div className="text-center">
+               <p className="text-[8px] text-gray-500 font-black uppercase">کل نشان‌ها</p>
+               <p className="text-lg font-black text-neon-blue italic">{userBadges.length}</p>
+            </div>
+            <div className="h-8 w-px bg-white/10" />
+            <div className="text-center">
+               <p className="text-[8px] text-gray-500 font-black uppercase">پین شده</p>
+               <p className="text-lg font-black text-neon-pink italic">{userBadges.filter((b: any) => b.isPinned).length}/5</p>
+            </div>
+         </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <NeonCard variant="blue" className="space-y-6 h-fit">
+           <h4 className="text-sm font-black text-white italic flex items-center gap-2 border-b border-white/5 pb-4 uppercase">
+              <Star size={16} className="text-neon-blue" fill="currentColor" />
+              <span>نشان‌های پین شده</span>
+           </h4>
+           <div className="grid grid-cols-4 gap-4">
+              {userBadges.filter((b: any) => b.isPinned).map((b: any, i: number) => (
+                <div key={i} className="flex flex-col items-center gap-2 group relative">
+                   <div className="h-14 w-14 rounded-xl bg-white/5 flex items-center justify-center border border-neon-blue/30 relative">
+                      <img src={b.badge?.iconUrl || b.iconUrl} alt={b.badge?.name || b.name} className="h-8 w-8 object-contain" />
+                      <button 
+                        onClick={() => togglePinBadge(b.badgeId || b.id, false)}
+                        className="absolute -top-1 -right-1 h-5 w-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                         <Lock size={10} />
+                      </button>
                    </div>
-                   {b.isPinned && <Star size={10} className="absolute -top-1 -right-1 text-neon-blue fill-neon-blue" />}
+                   <span className="text-[8px] font-black text-gray-400 italic truncate max-w-full">{b.badge?.name || b.name}</span>
                 </div>
-                <span className="text-[10px] font-black text-white italic block">{b.name}</span>
-             </div>
-           )) : (
-             [...Array(6)].map((_, i) => (
-               <div key={i} className="flex flex-col items-center gap-2 opacity-20">
-                  <div className="h-16 w-16 rounded-2xl bg-white/5 flex items-center justify-center border border-white/5">
-                     <Award size={32} />
+              ))}
+              {userBadges.filter((b: any) => b.isPinned).length === 0 && (
+                <div className="col-span-4 py-8 text-center text-[10px] text-gray-600 font-bold uppercase italic">هیچ نشانی پین نشده است</div>
+              )}
+           </div>
+        </NeonCard>
+
+        <NeonCard className="space-y-6">
+           <h4 className="text-sm font-black text-white italic flex items-center gap-2 border-b border-white/5 pb-4 uppercase">
+              <Award size={16} className="text-neon-pink" />
+              <span>تمام نشان‌های من</span>
+           </h4>
+           <div className="grid grid-cols-4 gap-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+              {userBadges.map((b: any, i: number) => {
+                const badgeId = b.badgeId || b.id;
+                const isPinned = b.isPinned;
+                return (
+                  <div key={i} className={cn(
+                    "flex flex-col items-center gap-2 group p-2 rounded-xl transition-all cursor-pointer",
+                    isPinned ? "bg-neon-blue/5 border border-neon-blue/20" : "hover:bg-white/5"
+                  )} onClick={() => togglePinBadge(badgeId, !isPinned)}>
+                     <div className="h-12 w-12 rounded-lg bg-white/10 flex items-center justify-center relative">
+                        <img src={b.badge?.iconUrl || b.iconUrl} alt={b.badge?.name || b.name} className="h-7 w-7 object-contain" />
+                        {isPinned && <Star size={10} className="absolute -top-1 -right-1 text-neon-blue fill-neon-blue" />}
+                     </div>
+                     <span className="text-[8px] font-black text-white italic truncate max-w-full">{b.badge?.name || b.name}</span>
                   </div>
-                  <span className="text-[10px] font-black uppercase italic">قفل شده</span>
-               </div>
-             ))
-           )}
-        </div>
-      </NeonCard>
+                );
+              })}
+              {userBadges.length === 0 && (
+                <div className="col-span-4 py-12 text-center">
+                   <Lock size={32} className="mx-auto mb-3 text-gray-700 opacity-20" />
+                   <p className="text-[10px] text-gray-600 font-black uppercase italic">شما هنوز نشانی کسب نکرده‌اید</p>
+                </div>
+              )}
+           </div>
+        </NeonCard>
+      </div>
+
+      <div className="bg-white/5 p-8 rounded-[40px] border border-white/10">
+         <div className="flex items-center gap-3 mb-6">
+            <Activity size={20} className="text-neon-blue" />
+            <h4 className="text-sm font-black text-white italic uppercase tracking-tighter">نشان‌های استاندارد رایگان</h4>
+         </div>
+         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {allBadges.filter((b: any) => b.category === "STANDARD").map((b: any, i: number) => {
+              const hasBadge = userBadges.some(ub => (ub.badgeId || ub.id) === b.id);
+              return (
+                <div 
+                  key={i} 
+                  className={cn(
+                    "p-4 rounded-2xl border transition-all cursor-pointer flex flex-col items-center gap-3 group relative overflow-hidden",
+                    hasBadge ? "bg-neon-blue/10 border-neon-blue/40" : "bg-white/5 border-white/5 border-dashed hover:border-white/20"
+                  )}
+                  onClick={() => toggleBadge(b.id)}
+                >
+                   <img src={b.iconUrl} alt={b.name} className={cn("h-10 w-10 object-contain transition-transform group-hover:scale-110", !hasBadge && "grayscale opacity-50")} />
+                   <span className={cn("text-[8px] font-black italic text-center", hasBadge ? "text-white" : "text-gray-600")}>{b.name}</span>
+                   {hasBadge && (
+                     <div className="absolute top-0 right-0 p-1">
+                        <UserCheck size={10} className="text-neon-blue" />
+                     </div>
+                   )}
+                </div>
+              );
+            })}
+         </div>
+      </div>
     </div>
   );
 
@@ -788,7 +970,7 @@ export const SettingsPage = () => {
     { id: "ui", label: "رابط کاربری", icon: Monitor },
     { id: "region", label: "منطقه", icon: Globe },
     { id: "badges", label: "نشان‌ها", icon: Award },
-    { id: "elite", label: "Elite", icon: Crown },
+    { id: "elite", label: "تنظیمات نخبگان", icon: Crown },
   ];
 
   return (
