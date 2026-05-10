@@ -74,7 +74,7 @@ export const AdminPage = () => {
 
   const toggleVerification = async (userId: string, currentStatus: boolean) => {
     try {
-      await api.patch(`/users/${userId}/verify`, { isVerified: !currentStatus });
+      await api.patch(`/user/${userId}/verify`, { isVerified: !currentStatus });
       toast.success("وضعیت تایید تغییر یافت");
       setUsers(users.map(u => u.id === userId ? { ...u, isVerified: !currentStatus } : u));
     } catch (err: any) {

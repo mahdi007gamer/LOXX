@@ -110,6 +110,13 @@ export class UserController {
     try {
       const { id } = req.params;
       const { isVerified } = req.body;
+      const adminId = req.user!.userId;
+
+      // Security: Check if requester is admin
+      const admin = await prisma.user.findUnique({ where: { id: adminId } });
+      if (!admin || admin.role !== "ADMIN") {
+        return res.status(403).json({ status: "error", error: { message: "دسترسی غیرمجاز" } });
+      }
 
       await prisma.user.update({
         where: { id },
