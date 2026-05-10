@@ -135,6 +135,7 @@ export interface VIPMetadata {
     badgeText?: string;
     textGradient?: string;
     auraColor?: string;
+    glowColor?: string;
     gradient?: {
       enabled: boolean;
       color1: string;

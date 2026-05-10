@@ -94,6 +94,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
   const isPLUS = user.membership === MembershipType.PLUS || user.membership === "PLUS";
 
   const getMetadata = (): VIPMetadata | null => {
+    if (!isVIP && !isPLUS) return null;
     if (!user.vipMetadata) return null;
     try {
       return typeof user.vipMetadata === 'string' ? JSON.parse(user.vipMetadata) : user.vipMetadata;
@@ -238,11 +239,12 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
       exit={{ opacity: 0, scale: 0.9, y: 10 }}
       className={cn(
         "w-[380px] rounded-[48px] border overflow-hidden cursor-default rtl text-right transition-all backdrop-blur-3xl px-0 relative z-[20002]",
-        metadata?.fullGlow ? "shadow-[0_0_50px_rgba(250,204,21,0.4)] border-yellow-400" : (isVIP ? "border-yellow-400/40 shadow-[0_40px_100px_rgba(0,0,0,1)]" : "border-white/10 shadow-[0_40px_100px_rgba(0,0,0,1)]")
+        metadata?.fullGlow ? "border-yellow-400" : (isVIP ? "border-yellow-400/40 shadow-[0_40px_100px_rgba(0,0,0,1)]" : "border-white/10 shadow-[0_40px_100px_rgba(0,0,0,1)]")
       )}
       style={{ 
         ...getBackgroundStyle(), 
-        borderColor: metadata?.colors?.accent ? metadata.colors.accent + "40" : (metadata?.fullGlow ? undefined : undefined) 
+        borderColor: metadata?.colors?.accent ? metadata.colors.accent + "40" : (metadata?.fullGlow ? undefined : undefined),
+        boxShadow: metadata?.fullGlow ? `0 0 50px ${metadata?.colors?.glowColor || "#facc15"}66` : undefined
       }}
       onClick={(e) => e.stopPropagation()}
     >

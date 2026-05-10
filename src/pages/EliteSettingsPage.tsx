@@ -56,6 +56,7 @@ interface VIPMetadata {
     badgeText?: string;
     textGradient?: string;
     auraColor?: string;
+    glowColor?: string;
     gradient?: {
       enabled: boolean;
       color1: string;
@@ -100,6 +101,7 @@ export const EliteSettingsPage = () => {
       statsLabel: "#4b5563",
       badgeText: "#ffffff",
       auraColor: "#eab308",
+      glowColor: "#facc15",
       gradient: {
         enabled: false,
         color1: "#00e5ff",
@@ -628,6 +630,15 @@ export const EliteSettingsPage = () => {
                                 </div>
                              </div>
                            )}
+                           {metadata.fullGlow && (
+                             <div className="space-y-2">
+                                <label className="text-[10px] font-black text-gray-400 uppercase italic">رنگ ویژگی Glow</label>
+                                <div className="flex gap-2">
+                                  <input type="color" value={metadata.colors.glowColor || "#facc15"} onChange={(e) => setMetadata(m => ({ ...m, colors: { ...m.colors, glowColor: e.target.value } }))} className="w-12 h-10 rounded-xl border-none cursor-pointer bg-white/5" />
+                                  <Input value={metadata.colors.glowColor || "#facc15"} onChange={(e) => setMetadata(m => ({ ...m, colors: { ...m.colors, glowColor: e.target.value } }))} className="flex-1" />
+                                </div>
+                             </div>
+                           )}
                         </div>
                      </div>
  
@@ -679,9 +690,12 @@ export const EliteSettingsPage = () => {
                          animate={{ y: 0, opacity: 1 }}
                          className={cn(
                            "relative w-[340px] rounded-[48px] overflow-hidden border backdrop-blur-3xl transition-all duration-500",
-                           metadata.fullGlow ? "shadow-[0_0_60px_rgba(250,204,21,0.3)] border-yellow-400" : "shadow-[0_40px_100px_rgba(0,0,0,0.8)] border-white/10"
+                           metadata.fullGlow ? "border-yellow-400" : "shadow-[0_40px_100px_rgba(0,0,0,0.8)] border-white/10"
                          )}
-                         style={getBackgroundStyle()}
+                         style={{
+                           ...getBackgroundStyle(),
+                           boxShadow: metadata.fullGlow ? `0 0 60px ${metadata.colors.glowColor || "#facc15"}4d` : undefined
+                         }}
                        >
                          {/* Background Image Layer */}
                          {metadata.bgImage && (
