@@ -72,6 +72,16 @@ export const AdminPage = () => {
     }
   };
 
+  const toggleVerification = async (userId: string, currentStatus: boolean) => {
+    try {
+      await api.patch(`/users/${userId}/verify`, { isVerified: !currentStatus });
+      toast.success("وضعیت تایید تغییر یافت");
+      setUsers(users.map(u => u.id === userId ? { ...u, isVerified: !currentStatus } : u));
+    } catch (err: any) {
+      toast.error("خطا در تغییر وضعیت تایید");
+    }
+  };
+
   const deleteGenre = async (id: string) => {
     if (!window.confirm("آیا از حذف این ژانر اطمینان دارید؟")) return;
     try {
@@ -247,6 +257,18 @@ export const AdminPage = () => {
                            )}>
                               {user.profile?.membershipType || "NONE"}
                            </span>
+                        </div>
+                        <div className="flex flex-col gap-1 items-center">
+                           <span className="text-[9px] text-gray-600 font-black uppercase tracking-widest">تاییدیه</span>
+                           <button 
+                             onClick={() => toggleVerification(user.id, user.isVerified)}
+                             className={cn(
+                               "h-8 w-8 rounded-xl flex items-center justify-center transition-all border",
+                               user.isVerified ? "bg-green-500/10 text-green-400 border-green-500/20" : "bg-red-500/10 text-red-500 border-red-500/20"
+                             )}
+                           >
+                             <Icons.ShieldCheck size={16} />
+                           </button>
                         </div>
                         <div className="flex flex-col gap-1 items-end">
                            <span className="text-[9px] text-gray-600 font-black uppercase tracking-widest">نقش</span>

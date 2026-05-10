@@ -106,6 +106,22 @@ export class UserController {
     }
   }
 
+  static async verifyUserManually(req: AuthenticatedRequest, res: Response) {
+    try {
+      const { id } = req.params;
+      const { isVerified } = req.body;
+
+      await prisma.user.update({
+        where: { id },
+        data: { isVerified: Boolean(isVerified) }
+      });
+
+      res.json({ status: "success", message: `وضعیت تایید کاربر به ${isVerified ? "تایید شده" : "تایید نشده"} تغییر یافت` });
+    } catch (error: any) {
+      res.status(500).json({ status: "error", error: { message: error.message } });
+    }
+  }
+
   static async toggleGame(req: AuthenticatedRequest, res: Response) {
     try {
       const { gameId } = req.body;
