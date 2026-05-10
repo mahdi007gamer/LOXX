@@ -76,7 +76,7 @@ export class AuthController {
           avatarUrl: user!.profile?.avatarUrl,
           bannerUrl: user!.profile?.bannerUrl,
           displayName: user!.profile?.displayName,
-          vipMetadata: user!.profile?.vipMetadata
+          vipMetadata: user!.profile?.vipMetadata ? JSON.parse(user!.profile.vipMetadata) : null
         }
       });
     } catch (error: any) {
@@ -119,7 +119,7 @@ export class AuthController {
           avatarUrl: user.profile?.avatarUrl,
           bannerUrl: user.profile?.bannerUrl,
           displayName: user.profile?.displayName,
-          vipMetadata: user.profile?.vipMetadata
+          vipMetadata: user.profile?.vipMetadata ? JSON.parse(user.profile.vipMetadata) : null
         }
       });
     } catch (error: any) {

@@ -155,12 +155,12 @@ export class UserService {
     return prisma.profile.update({
       where: { userId },
       data: {
-        displayName: data.display_name,
+        displayName: data.displayName || data.display_name,
         bio: data.bio,
         region: data.region,
         avatarUrl: data.avatarUrl,
         bannerUrl: data.bannerUrl,
-        vipMetadata: data.vipMetadata,
+        vipMetadata: typeof data.vipMetadata === "object" ? JSON.stringify(data.vipMetadata) : data.vipMetadata,
         lastActivity: new Date()
       }
     });
