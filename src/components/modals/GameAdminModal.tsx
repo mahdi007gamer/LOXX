@@ -290,12 +290,17 @@ export const GameAdminModal = ({
                     <select 
                       value={formData.badgeId}
                       onChange={e => setFormData({...formData, badgeId: e.target.value})}
-                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 outline-none focus:border-neon-blue transition-all text-white font-bold"
+                      className="w-full bg-[#0d0d12] border border-white/10 rounded-2xl px-5 py-4 outline-none focus:border-neon-blue transition-all text-white font-bold cursor-pointer"
                     >
-                      <option value="">بدون نشان مخصوص</option>
-                      {dbBadges.map(badge => (
-                        <option key={badge.id} value={badge.id}>{badge.name}</option>
-                      ))}
+                      <option value="" className="bg-[#1a1a24] text-white">بدون نشان مخصوص</option>
+                      {dbBadges
+                        .filter(b => b.category === "GAME")
+                        .map(badge => (
+                          <option key={badge.id} value={badge.id} className="bg-[#1a1a24] text-white">
+                            {badge.name}
+                          </option>
+                        ))
+                      }
                     </select>
                     <p className="text-[10px] text-gray-500 mt-2">این نشان به کاربرانی که بازی را به لیست خود اضافه کنند اهدا می‌شود.</p>
                   </div>

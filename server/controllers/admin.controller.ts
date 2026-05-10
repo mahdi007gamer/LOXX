@@ -199,13 +199,14 @@ export const getGameById = async (req: Request, res: Response) => {
 };
 
 export const createGame = async (req: Request, res: Response) => {
-  const { title, iconUrl, bannerUrl, genres, regions, metadata } = req.body;
+  const { title, iconUrl, bannerUrl, genres, regions, metadata, badgeId } = req.body;
   try {
     const game = await (prisma.game.create as any)({
       data: { 
         title, 
         iconUrl,
         bannerUrl,
+        badgeId: badgeId || null,
         genres: genres ? JSON.stringify(genres) : null,
         regions: regions ? JSON.stringify(regions) : null,
         metadata: metadata ? JSON.stringify(metadata) : null
@@ -219,7 +220,7 @@ export const createGame = async (req: Request, res: Response) => {
 
 export const updateGame = async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { title, iconUrl, bannerUrl, genres, regions, metadata } = req.body;
+  const { title, iconUrl, bannerUrl, genres, regions, metadata, badgeId } = req.body;
   try {
     const game = await (prisma.game.update as any)({
       where: { id },
@@ -227,6 +228,7 @@ export const updateGame = async (req: Request, res: Response) => {
         title, 
         iconUrl,
         bannerUrl,
+        badgeId: badgeId || null,
         genres: genres ? JSON.stringify(genres) : null,
         regions: regions ? JSON.stringify(regions) : null,
         metadata: metadata ? JSON.stringify(metadata) : null
