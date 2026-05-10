@@ -84,7 +84,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
 
   const handleMessage = () => {
     if (user.id) {
-      openChat(user.id, user.senderName);
+      openChat(user.id, user.senderName, user.senderAvatar || user.avatarUrl);
       onClose();
     }
   };

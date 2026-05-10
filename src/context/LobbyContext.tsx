@@ -16,6 +16,7 @@ interface LobbyMember {
   level?: number;
   membership?: string;
   vipMetadata?: any;
+  badges?: any[];
 }
 
 export interface ChatMessage {
@@ -28,6 +29,7 @@ export interface ChatMessage {
     bannerUrl?: string;
     level?: number;
     vipMetadata?: any;
+    badges?: any[];
   };
   content: string;
   createdAt: number;
@@ -409,7 +411,8 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         from: {
           userId: user.id,
           username: user.username,
-          membership: "MEMBER"
+          membership: (user as any).membership || "MEMBER",
+          badges: (user as any).badges || []
         },
         content,
         createdAt: Date.now(),

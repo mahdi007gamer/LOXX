@@ -56,7 +56,7 @@ interface FriendsContextType {
   sendMessage: (friendId: string, text: string) => void;
   markAsRead: (friendId: string) => void;
   closeChat: (friendId: string) => void;
-  openChat: (friendId: string, displayName?: string) => void;
+  openChat: (friendId: string, displayName?: string, avatarUrl?: string) => void;
   toggleFavorite: (friendId: string) => void;
   activeChatId: string | null;
   setActiveChatId: (id: string | null) => void;
@@ -182,7 +182,9 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
           id: id,
           senderId: from.userId,
           senderName: from.username,
-          senderLevel: 1, // Defaulting as backend didn't send level
+          senderLevel: from.level || 1,
+          senderAvatar: from.avatar,
+          badges: from.badges || [],
           self: isSelf,
           text: content,
           timestamp: new Date(createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -219,7 +221,9 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
               friendId: friendId, 
               messages: [chatMsg], 
               isTyping: false, 
-              unreadCount: (activeChatId === friendId || isSelf) ? 0 : 1 
+              unreadCount: (activeChatId === friendId || isSelf) ? 0 : 1,
+              tempDisplayName: isSelf ? (targetId === "1" ? "شما" : undefined) : from.username,
+              tempAvatarUrl: from.avatar
             }];
           }
         });
@@ -335,16 +339,16 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
-  const openChat = (friendId: string, displayName?: string) => {
+  const openChat = (friendId: string, displayName?: string, avatarUrl?: string) => {
     setChats(prev => {
       const existingChat = prev.find(c => c.friendId === friendId);
       if (existingChat) {
-        if (displayName && existingChat.tempDisplayName !== displayName) {
-          return prev.map(c => c.friendId === friendId ? { ...c, tempDisplayName: displayName } : c);
+        if ((displayName && existingChat.tempDisplayName !== displayName) || (avatarUrl && existingChat.tempAvatarUrl !== avatarUrl)) {
+          return prev.map(c => c.friendId === friendId ? { ...c, tempDisplayName: displayName, tempAvatarUrl: avatarUrl } : c);
         }
         return prev;
       }
-      return [...prev, { friendId, messages: [], isTyping: false, unreadCount: 0, tempDisplayName: displayName }];
+      return [...prev, { friendId, messages: [], isTyping: false, unreadCount: 0, tempDisplayName: displayName, tempAvatarUrl: avatarUrl }];
     });
     setActiveChatId(friendId);
     setChatTrigger(t => t + 1);

@@ -57,7 +57,7 @@ const FriendItem = ({
   toggleMute: (id: string) => void;
   toggleBlock: (id: string) => void;
   removeFriend: (id: string) => void;
-  openChat: (id: string, name?: string) => void;
+  openChat: (id: string, name?: string, avatar?: string) => void;
   key?: React.Key;
 }) => {
   const [showMobileActions, setShowMobileActions] = useState(false);
@@ -141,7 +141,7 @@ const FriendItem = ({
         {/* Desktop Actions (Hover) */}
         <div className="hidden lg:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           <button 
-            onClick={(e) => { e.stopPropagation(); openChat(friend.id, friend.displayName); }} 
+            onClick={(e) => { e.stopPropagation(); openChat(friend.id, friend.displayName, friend.avatarUrl || friend.avatar); }} 
             className="p-2 text-gray-400 hover:text-neon-blue hover:bg-neon-blue/10 rounded-lg transition-all" 
             title="ارسال پیام"
           >
@@ -222,7 +222,7 @@ const FriendItem = ({
             className="lg:hidden border-t border-white/5 mt-3 pt-3 flex items-center justify-around overflow-hidden"
           >
             <button 
-              onClick={(e) => { e.stopPropagation(); openChat(friend.id, friend.displayName); }}
+              onClick={(e) => { e.stopPropagation(); openChat(friend.id, friend.displayName, friend.avatarUrl || friend.avatar); }}
               className="flex flex-col items-center gap-1.5 p-2 text-neon-blue"
             >
               <div className="h-10 w-10 rounded-full bg-neon-blue/10 flex items-center justify-center">

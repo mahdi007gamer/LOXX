@@ -518,7 +518,7 @@ export const DashboardPage = () => {
                           {/* Hover Actions */}
                           <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                             <button 
-                              onClick={() => openChat(friend.id, friend.displayName)}
+                              onClick={() => openChat(friend.id, friend.displayName, friend.avatar || friend.avatarUrl)}
                               className="p-1.5 text-gray-400 hover:text-neon-blue hover:bg-neon-blue/10 rounded-lg transition-all"
                             >
                               <MessageSquare size={14} />

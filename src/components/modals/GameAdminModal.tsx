@@ -290,13 +290,14 @@ export const GameAdminModal = ({
                     <select 
                       value={formData.badgeId}
                       onChange={e => setFormData({...formData, badgeId: e.target.value})}
-                      className="w-full bg-[#0d0d12] border border-white/10 rounded-2xl px-5 py-4 outline-none focus:border-neon-blue transition-all text-white font-bold cursor-pointer appearance-none"
+                      className="w-full bg-[#16181c] border border-white/10 rounded-2xl px-5 py-4 outline-none focus:border-neon-blue transition-all text-white font-bold cursor-pointer appearance-none relative z-10"
+                      style={{ colorScheme: 'dark' }}
                     >
-                      <option value="" className="bg-[#0d0d12] text-white">بدون نشان مخصوص</option>
+                      <option value="" className="bg-[#111216] text-white">بدون نشان مخصوص</option>
                       {dbBadges
                         .filter(b => b.category === "GAME")
                         .map(badge => (
-                          <option key={badge.id} value={badge.id} className="bg-[#0d0d12] text-white">
+                          <option key={badge.id} value={badge.id} className="bg-[#111216] text-white">
                             {badge.name}
                           </option>
                         ))

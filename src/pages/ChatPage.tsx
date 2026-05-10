@@ -1629,7 +1629,7 @@ export const ChatPage: React.FC = () => {
                 return (
                   <button
                     key={chat.friendId}
-                    onClick={() => openChat(chat.friendId, displayName)}
+                    onClick={() => openChat(chat.friendId, displayName, chat.tempAvatarUrl)}
                     className={cn(
                       "w-full group flex items-center justify-between p-2.5 rounded-2xl transition-all text-right border border-transparent",
                       activeChatId === chat.friendId 
@@ -2254,7 +2254,7 @@ export const ChatPage: React.FC = () => {
                         transition={{ delay: i * 0.05 }}
                         onClick={(e) => {
                           e.stopPropagation();
-                          openChat(friend.id, friend.displayName);
+                          openChat(friend.id, friend.displayName, friend.avatarUrl || friend.avatar);
                           setShowFriendsSidebar(false);
                         }}
                         className={cn(
@@ -2301,7 +2301,7 @@ export const ChatPage: React.FC = () => {
                              <button 
                                onClick={(e) => {
                                  e.stopPropagation();
-                                 openChat(friend.id, friend.displayName);
+                                 openChat(friend.id, friend.displayName, friend.avatarUrl || friend.avatar);
                                  setShowFriendsSidebar(false);
                                }}
                                className="h-9 w-9 rounded-xl bg-neon-blue/20 text-neon-blue hover:bg-neon-blue hover:text-dark-bg transition-all flex items-center justify-center shadow-lg shadow-neon-blue/10 border border-neon-blue/20"

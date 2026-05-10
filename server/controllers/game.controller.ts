@@ -32,8 +32,6 @@ export class GameController {
             genre: (metadata as any).genre || "بازی آنلاین",
             playerCount: g._count.userGames > 0 ? `${g._count.userGames}` : ((metadata as any).playerCount || "0"),
             friendsPlaying: (metadata as any).friendsPlaying || [],
-            variants: (metadata as any).variants || ["Competitive", "Casual", "Ranked"],
-            maps: (metadata as any).maps || ["Mirage", "Inferno", "Dust 2", "Nuke", "Overpass", "Vertigo"]
           };
         })
       });
@@ -91,19 +89,20 @@ export class GameController {
       if (parsedGame.metadata) {
         const features = Array.isArray(parsedGame.metadata.features) ? [...parsedGame.metadata.features] : [];
         
-        const hasFeature = (names: string[]) => features.some((f: any) => 
-          names.some(n => f.name.toLowerCase().includes(n.toLowerCase()) || n.toLowerCase().includes(f.name.toLowerCase()))
-        );
+        const hasFeature = (keywords: string[]) => features.some((f: any) => {
+          const fn = (f.name || "").toLowerCase();
+          return keywords.some(k => fn === k.toLowerCase() || fn.includes(k.toLowerCase()));
+        });
 
-        const hasMode = hasFeature(['Mode', 'حالت']);
-        const hasMap = hasFeature(['Map', 'نقشه']);
+        const hasMode = hasFeature(['Mode', 'حالت', 'مود']);
+        const hasMap = hasFeature(['Map', 'نقشه', 'مپ']);
 
         // Check if modes/maps exist in legacy metadata but NOT in features
         if (!hasMode && parsedGame.metadata.modes && Array.isArray(parsedGame.metadata.modes) && parsedGame.metadata.modes.length > 0) {
-          features.push({ name: 'حالت بازی (Mode)', options: parsedGame.metadata.modes });
+          features.push({ name: 'Mode', options: parsedGame.metadata.modes });
         }
         if (!hasMap && parsedGame.metadata.maps && Array.isArray(parsedGame.metadata.maps) && parsedGame.metadata.maps.length > 0) {
-          features.push({ name: 'نقشه (Map)', options: parsedGame.metadata.maps });
+          features.push({ name: 'Map', options: parsedGame.metadata.maps });
         }
         
         parsedGame.metadata.features = features;

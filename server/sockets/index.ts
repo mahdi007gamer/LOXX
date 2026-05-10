@@ -204,11 +204,27 @@ export function setupWebSockets(io: Server) {
         where: { id: lobbyId },
         include: { 
           game: true,
-          members: { include: { user: { include: { profile: true } } } },
+          members: { 
+            include: { 
+              user: { 
+                include: { 
+                  profile: true,
+                  badges: { include: { badge: true } }
+                } 
+              } 
+            } 
+          },
           messages: {
             take: 50,
             orderBy: { createdAt: "desc" },
-            include: { sender: { include: { profile: true } } }
+            include: { 
+              sender: { 
+                include: { 
+                  profile: true,
+                  badges: { include: { badge: true } }
+                } 
+              } 
+            }
           }
         }
       });
@@ -260,7 +276,10 @@ export function setupWebSockets(io: Server) {
         
         const user = await prisma.user.findUnique({ 
           where: { id: userId },
-          include: { profile: true } 
+          include: { 
+            profile: true,
+            badges: { include: { badge: true } }
+          } 
         });
         
         // Broadcast joined event
@@ -273,7 +292,8 @@ export function setupWebSockets(io: Server) {
             bannerUrl: user?.profile?.bannerUrl || (user as any)?.avatarUrl,
             level: user?.profile?.level || 1,
             membership: user?.profile?.membershipType || "NONE",
-            vipMetadata: user?.profile?.vipMetadata ? JSON.parse(user.profile.vipMetadata.toString()) : undefined
+            vipMetadata: user?.profile?.vipMetadata ? JSON.parse(user.profile.vipMetadata.toString()) : undefined,
+            badges: user?.badges?.map(ub => ({ ...ub.badge, isPinned: ub.isPinned })) || []
           },
           membersCount: lobby.members.length + 1
         });
@@ -318,14 +338,16 @@ export function setupWebSockets(io: Server) {
                 bannerUrl: m.user.profile?.bannerUrl || (m.user as any).avatarUrl,
                 level: m.user.profile?.level || 1,
                 membership: m.user.profile?.membershipType || "NONE",
-                vipMetadata: m.user.profile?.vipMetadata ? JSON.parse(m.user.profile.vipMetadata.toString()) : undefined
+                vipMetadata: m.user.profile?.vipMetadata ? JSON.parse(m.user.profile.vipMetadata.toString()) : undefined,
+                badges: m.user.badges?.map((ub: any) => ({ ...ub.badge, isPinned: ub.isPinned })) || []
               })) || [],
               messages: updatedLobby.messages?.map((m: any) => ({
                 id: m.id.toString(),
                 from: {
                   userId: m.senderId,
                   username: m.sender.username,
-                  membership: m.sender.profile?.membershipType || "NONE"
+                  membership: m.sender.profile?.membershipType || "NONE",
+                  badges: m.sender.badges?.map((ub: any) => ({ ...ub.badge, isPinned: ub.isPinned })) || []
                 },
                 content: m.content,
                 createdAt: m.createdAt.getTime(),
@@ -564,7 +586,13 @@ export function setupWebSockets(io: Server) {
            return;
         }
 
-        const user = await prisma.user.findUnique({ where: { id: userId }, include: { profile: true } });
+        const user = await prisma.user.findUnique({ 
+          where: { id: userId }, 
+          include: { 
+            profile: true,
+            badges: { include: { badge: true } }
+          } 
+        });
 
         const msg = await prisma.message.create({
           data: {
@@ -584,7 +612,8 @@ export function setupWebSockets(io: Server) {
             level: user?.profile?.level || 1,
             avatar: user?.profile?.avatarUrl,
             bannerUrl: user?.profile?.bannerUrl,
-            vipMetadata: user?.profile?.vipMetadata
+            vipMetadata: user?.profile?.vipMetadata,
+            badges: user?.badges?.map(ub => ({ ...ub.badge, isPinned: ub.isPinned })) || []
           },
           targetType: "lobby",
           targetId: lobbyId,
@@ -887,7 +916,10 @@ export function setupWebSockets(io: Server) {
       try {
         const user = await prisma.user.findUnique({ 
           where: { id: userId },
-          include: { profile: true }
+          include: { 
+            profile: true,
+            badges: { include: { badge: true } }
+          }
         });
 
         if (target.type === "lobby") {
@@ -913,7 +945,8 @@ export function setupWebSockets(io: Server) {
               username: user?.username, 
               membership: user?.profile?.membershipType || "NONE",
               level: user?.profile?.level || 1,
-              avatar: user?.profile?.avatarUrl
+              avatar: user?.profile?.avatarUrl,
+              badges: user?.badges?.map(ub => ({ ...ub.badge, isPinned: ub.isPinned })) || []
             },
             targetType: "lobby",
             targetId: target.id,
@@ -945,7 +978,8 @@ export function setupWebSockets(io: Server) {
               username: user?.username, 
               membership: user?.profile?.membershipType || "NONE",
               level: user?.profile?.level || 1,
-              avatar: user?.profile?.avatarUrl
+              avatar: user?.profile?.avatarUrl,
+              badges: user?.badges?.map(ub => ({ ...ub.badge, isPinned: ub.isPinned })) || []
             },
             targetType: "user",
             targetId: target.id,

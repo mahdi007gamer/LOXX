@@ -619,7 +619,7 @@ export const LobbyRoomPage = () => {
                   onDirectMessage={(id) => {
                     const p = players.find(player => player.id === id);
                     if (p && !p.id.startsWith("slot-")) {
-                      openChat(id, p.name);
+                      openChat(id, p.name, p.avatarUrl || p.avatar);
                     }
                   }}
                   onAddFriend={(id) => {

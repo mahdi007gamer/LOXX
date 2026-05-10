@@ -167,7 +167,7 @@ export const getGameById = async (req: Request, res: Response) => {
       const features = Array.isArray(metadata.features) ? [...metadata.features] : [];
       
       const hasFeature = (names: string[]) => features.some((f: any) => 
-        names.some(n => f.name.toLowerCase().includes(n.toLowerCase()) || n.toLowerCase().includes(f.name.toLowerCase()))
+        names.some(n => f.name.toLowerCase() === n.toLowerCase() || f.name.toLowerCase().includes(n.toLowerCase()))
       );
 
       const hasMode = hasFeature(['Mode', 'حالت']);
@@ -176,10 +176,10 @@ export const getGameById = async (req: Request, res: Response) => {
       const hasLevel = hasFeature(['Level', 'سطح']);
 
       if (!hasMode && metadata.modes && Array.isArray(metadata.modes) && metadata.modes.length > 0) {
-        features.push({ name: 'حالت بازی (Mode)', options: metadata.modes });
+        features.push({ name: 'Mode', options: metadata.modes });
       }
       if (!hasMap && metadata.maps && Array.isArray(metadata.maps) && metadata.maps.length > 0) {
-        features.push({ name: 'نقشه (Map)', options: metadata.maps });
+        features.push({ name: 'Map', options: metadata.maps });
       }
       if (!hasSide && metadata.sides && Array.isArray(metadata.sides) && metadata.sides.length > 0) {
         features.push({ name: 'Side', options: metadata.sides });

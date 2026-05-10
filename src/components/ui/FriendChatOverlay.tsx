@@ -5,9 +5,12 @@ import { MessageSquare, X, Minus, Send, MessageCircle } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { LobbyInviteCard } from "./LobbyInviteCard";
 import { FriendStatus } from "../../types";
+import { UserBadges } from "./UserBadges";
+import { useAuth } from "../../context/AuthContext";
 
 export const FriendChatOverlay = () => {
   const { chats, friends, sendMessage, markAsRead, closeChat, activeChatId, setActiveChatId, chatTrigger } = useFriends();
+  const { user } = useAuth();
   const [isMinimized, setIsMinimized] = useState(false);
   const [inputMessage, setInputMessage] = useState("");
   const [chatDirection, setChatDirection] = useState<"up" | "down">("up");
@@ -71,19 +74,25 @@ export const FriendChatOverlay = () => {
               className="flex items-center justify-between border-b border-white/5 bg-white/5 px-4 py-3 cursor-grab active:cursor-grabbing select-none"
             >
               <div className="flex items-center gap-3 text-right" dir="rtl">
-                <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center text-sm overflow-hidden border border-white/10 shadow-inner">
-                  {(activeFriend?.avatar || (activeFriend as any)?.avatarUrl) ? (
+                <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center text-sm overflow-hidden border border-white/10 shadow-inner group">
+                  {(activeFriend?.avatar || (activeFriend as any)?.avatarUrl || activeChat?.tempAvatarUrl || (activeChatId === "1" ? user?.avatarUrl : null)) ? (
                     <img 
-                      src={activeFriend?.avatar || (activeFriend as any)?.avatarUrl} 
+                      src={activeFriend?.avatar || (activeFriend as any)?.avatarUrl || activeChat?.tempAvatarUrl || (activeChatId === "1" ? user?.avatarUrl : "")} 
                       alt="" 
-                      className="h-full w-full object-cover" 
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" 
+                      referrerPolicy="no-referrer"
                     />
                   ) : (
-                    <span className="text-[10px]">👤</span>
+                    <div className="h-full w-full bg-gradient-to-br from-white/10 to-white/5 flex items-center justify-center">
+                      <span className="text-[10px] opacity-40">👤</span>
+                    </div>
                   )}
                 </div>
                 <div>
-                  <p className="text-[13px] font-black italic tracking-tighter text-white uppercase">{activeFriend?.displayName || activeChat?.tempDisplayName || (activeChatId === "1" ? "شما" : "کاربر")}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-[13px] font-black italic tracking-tighter text-white uppercase">{activeFriend?.displayName || activeChat?.tempDisplayName || (activeChatId === "1" ? "شما" : "کاربر")}</p>
+                    <UserBadges badges={activeFriend?.badges || []} />
+                  </div>
                   <p className={cn(
                     "text-[10px] font-bold uppercase tracking-widest",
                     activeFriend?.status === FriendStatus.ONLINE ? "text-green-500" :
@@ -124,23 +133,48 @@ export const FriendChatOverlay = () => {
 
                     return (
                       <div key={msg.id} className={cn(
-                        "flex flex-col gap-1 max-w-[85%]",
-                        msg.self ? "mr-auto items-end text-right" : "ml-auto items-start text-left"
+                        "flex gap-2 max-w-[90%]",
+                        msg.self ? "mr-auto flex-row" : "ml-auto flex-row-reverse"
                       )} dir="rtl">
-                        <div className={cn(
-                          "rounded-2xl px-3 py-2 text-[11px] font-medium leading-relaxed shadow-lg",
-                          msg.self 
-                            ? "bg-neon-blue text-dark-bg rounded-bl-none" 
-                            : "bg-white/10 text-gray-200 rounded-br-none border border-white/10"
-                        )}>
-                          {text}
-                        </div>
-                        {invite && (
-                          <div className="w-full max-w-[280px] mt-1 pr-1 pointer-events-auto">
-                            <LobbyInviteCard initialData={invite} />
+                        {!msg.self && (
+                           <div className="h-7 w-7 rounded-lg bg-white/10 shrink-0 overflow-hidden border border-white/10 mt-1 shadow-sm">
+                            {(msg.senderAvatar || activeFriend?.avatar || (activeFriend as any)?.avatarUrl || (activeChatId === "1" ? user?.avatarUrl : null)) ? (
+                              <img 
+                                src={msg.senderAvatar || activeFriend?.avatar || (activeFriend as any)?.avatarUrl || (activeChatId === "1" ? user?.avatarUrl : "")} 
+                                alt="" 
+                                className="h-full w-full object-cover" 
+                                referrerPolicy="no-referrer"
+                              />
+                            ) : (
+                              <div className="h-full w-full flex items-center justify-center bg-white/5 text-[8px] opacity-40">👤</div>
+                            )}
                           </div>
                         )}
-                        <span className="text-[8px] text-gray-600 px-1 font-mono">{msg.timestamp}</span>
+                        <div className={cn(
+                          "flex flex-col gap-1",
+                          msg.self ? "items-end text-right" : "items-start text-left"
+                        )}>
+                          {!msg.self && (
+                            <UserBadges badges={msg.badges || []} />
+                          )}
+                          {msg.self && (
+                            <UserBadges badges={(user as any)?.badges || []} />
+                          )}
+                          <div className={cn(
+                            "rounded-2xl px-3 py-2 text-[11px] font-medium leading-relaxed shadow-lg",
+                            msg.self 
+                              ? "bg-neon-blue text-dark-bg rounded-bl-none" 
+                              : "bg-white/10 text-gray-200 rounded-br-none border border-white/10"
+                          )}>
+                            {text}
+                          </div>
+                          {invite && (
+                            <div className="w-full max-w-[280px] mt-1 pr-1 pointer-events-auto">
+                              <LobbyInviteCard initialData={invite} />
+                            </div>
+                          )}
+                          <span className="text-[8px] text-gray-600 px-1 font-mono">{msg.timestamp}</span>
+                        </div>
                       </div>
                     );
                  })}
@@ -220,10 +254,17 @@ export const FriendChatOverlay = () => {
               >
                 <div className="relative shrink-0">
                    <div className="h-8 w-8 rounded-xl bg-white/10 flex items-center justify-center text-[10px] overflow-hidden border border-white/10 group-hover/tab:scale-110 transition-transform">
-                     {(avatar || (friend as any)?.avatarUrl) ? (
-                       <img src={avatar || (friend as any)?.avatarUrl} alt="" className="h-full w-full object-cover" />
+                     {(avatar || (friend as any)?.avatarUrl || chat.tempAvatarUrl || (chat.friendId === "1" ? user?.avatarUrl : null)) ? (
+                       <img 
+                        src={avatar || (friend as any)?.avatarUrl || chat.tempAvatarUrl || (chat.friendId === "1" ? user?.avatarUrl : "")} 
+                        alt="" 
+                        className="h-full w-full object-cover" 
+                        referrerPolicy="no-referrer"
+                       />
                      ) : (
-                       <span className="text-[10px]">👤</span>
+                       <div className="h-full w-full bg-gradient-to-br from-white/10 to-white/5 flex items-center justify-center">
+                         <span className="text-[10px] opacity-40">👤</span>
+                       </div>
                      )}
                    </div>
                    <div className={cn(
@@ -236,7 +277,10 @@ export const FriendChatOverlay = () => {
                      </div>
                    )}
                 </div>
-                <span className="text-[11px] font-black tracking-tight truncate overflow-hidden whitespace-nowrap">{displayName}</span>
+                <div className="flex flex-col items-start min-w-0">
+                  <span className="text-[11px] font-black tracking-tight truncate overflow-hidden whitespace-nowrap">{displayName}</span>
+                  <UserBadges badges={friend?.badges || []} />
+                </div>
               </button>
               
               {/* Close Button on Tab */}

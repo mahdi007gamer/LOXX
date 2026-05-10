@@ -82,6 +82,11 @@
     direction: rtl;
   }
 
+  select, option {
+    background-color: #0d0d12;
+    color: #ffffff;
+  }
+
   /* Custom scrollbar for cyberpunk feel */
   ::-webkit-scrollbar {
     width: 6px;

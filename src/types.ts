@@ -10,6 +10,11 @@ export interface LobbyMember {
   username: string;
   role: "HOST" | "PLAYER" | "SPECTATOR";
   isReady: boolean;
+  avatarUrl?: string;
+  bannerUrl?: string;
+  level?: number;
+  membership?: MembershipType;
+  badges?: Badge[];
 }
 
 export interface Lobby {
@@ -131,7 +136,8 @@ export interface ChatMessage {
   isOnline?: boolean;
   senderLevel: number;
   senderColor?: string; // Color based on level
-  senderBadges?: BadgeType[];
+  senderBadges?: (Badge | BadgeType)[];
+  badges?: (Badge | BadgeType)[];
   text: string;
   timestamp: string;
   isRead: boolean;
@@ -158,6 +164,7 @@ export interface FriendChat {
   isTyping: boolean;
   unreadCount: number;
   tempDisplayName?: string;
+  tempAvatarUrl?: string;
 }
 
 export interface Channel {
