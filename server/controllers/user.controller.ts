@@ -45,8 +45,8 @@ export class UserController {
 
   static async changePassword(req: AuthenticatedRequest, res: Response) {
     try {
-      const { current_password, new_password } = req.body;
-      await UserService.changePassword(req.user!.userId, current_password, new_password);
+      const { currentPassword, newPassword } = req.body;
+      await UserService.changePassword(req.user!.userId, currentPassword, newPassword);
       res.json({ status: "success", message: "Password updated successfully" });
     } catch (error: any) {
       res.status(400).json({ status: "error", error: { code: "PASSWORD_CHANGE_FAILED", message: error.message } });
@@ -136,6 +136,66 @@ export class UserController {
         where: { id, userId: req.user!.userId }
       });
       res.json({ status: "success", message: "Device revoked successfully" });
+    } catch (error: any) {
+      res.status(500).json({ status: "error", error: { message: error.message } });
+    }
+  }
+
+  static async enable2FA(req: AuthenticatedRequest, res: Response) {
+    try {
+      const userId = req.user!.userId;
+      const user = await prisma.user.findUnique({ where: { id: userId } });
+      if (!user) throw new Error("کاربر یافت نشد");
+
+      const code = Math.floor(10000 + Math.random() * 90000).toString();
+      await prisma.user.update({
+        where: { id: userId },
+        data: {
+          twoFactorCode: code,
+          twoFactorCodeExpires: new Date(Date.now() + 10 * 60 * 1000)
+        }
+      });
+
+      console.log(`[2FA ENABLE] Code for ${user.email}: ${code}`);
+      res.json({ status: "success", message: "کد تایید به ایمیل شما ارسال شد" });
+    } catch (error: any) {
+      res.status(500).json({ status: "error", error: { message: error.message } });
+    }
+  }
+
+  static async verify2FA(req: AuthenticatedRequest, res: Response) {
+    try {
+      const userId = req.user!.userId;
+      const { code } = req.body;
+
+      const user = await prisma.user.findUnique({ where: { id: userId } });
+      if (!user || user.twoFactorCode !== code || !user.twoFactorCodeExpires || user.twoFactorCodeExpires < new Date()) {
+        throw new Error("کد تایید نامعتبر است یا منقضی شده");
+      }
+
+      await prisma.user.update({
+        where: { id: userId },
+        data: {
+          twoFactorEnabled: true,
+          twoFactorCode: null,
+          twoFactorCodeExpires: null
+        }
+      });
+
+      res.json({ status: "success", message: "تایید دو مرحله‌ای با موفقیت فعال شد" });
+    } catch (error: any) {
+      res.status(400).json({ status: "error", error: { message: error.message } });
+    }
+  }
+
+  static async disable2FA(req: AuthenticatedRequest, res: Response) {
+    try {
+      const userId = req.user!.userId;
+      await prisma.user.update({
+        where: { id: userId },
+        data: { twoFactorEnabled: false }
+      });
+      res.json({ status: "success", message: "تایید دو مرحله‌ای غیرفعال شد" });
     } catch (error: any) {
       res.status(500).json({ status: "error", error: { message: error.message } });
     }

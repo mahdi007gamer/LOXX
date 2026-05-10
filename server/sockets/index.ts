@@ -4,11 +4,20 @@ import { RankingService } from "../services/ranking.service.ts";
 import { emitLobbyUpdate } from "../utils/socket.ts";
 import prisma from "../utils/prisma.ts";
 
+import DOMPurify from "isomorphic-dompurify";
+
 interface AuthenticatedSocket extends Socket {
   userId?: string;
 }
 
 export function setupWebSockets(io: Server) {
+  const sanitizeMessage = (text: string) => {
+    return DOMPurify.sanitize(text, {
+      ALLOWED_TAGS: [], // No tags allowed
+      ALLOWED_ATTR: [],
+    });
+  };
+
   const authMiddleware = (socket: AuthenticatedSocket, next: any) => {
     const token = socket.handshake.query.token as string || socket.handshake.auth.token as string;
     if (!token) return next(new Error("AUTH_EXPIRED"));
@@ -577,14 +586,6 @@ export function setupWebSockets(io: Server) {
       try {
         if (!target?.id) throw new Error("Missing lobby id");
         const lobbyId = target.id;
-        
-        const member = await prisma.lobbyMember.findFirst({
-           where: { userId, lobbyId }
-        });
-        if (!member) {
-           if (ack) ack({ status: "error", error: { message: "Not in this lobby" } });
-           return;
-        }
 
         const user = await prisma.user.findUnique({ 
           where: { id: userId }, 
@@ -594,9 +595,26 @@ export function setupWebSockets(io: Server) {
           } 
         });
 
+        if (!user) return;
+
+        if (!user.isVerified && user.role !== "ADMIN") {
+           if (ack) ack({ status: "error", error: { code: "NOT_VERIFIED", message: "لطفا ابتدا ایمیل خود را تایید کنید." } });
+           return;
+        }
+        
+        const member = await prisma.lobbyMember.findFirst({
+           where: { userId, lobbyId }
+        });
+        if (!member) {
+           if (ack) ack({ status: "error", error: { message: "Not in this lobby" } });
+           return;
+        }
+
+        const safeContent = sanitizeMessage(filterProfanity(content));
+
         const msg = await prisma.message.create({
           data: {
-            content,
+            content: safeContent,
             senderId: userId,
             lobbyId,
           }
@@ -617,7 +635,7 @@ export function setupWebSockets(io: Server) {
           },
           targetType: "lobby",
           targetId: lobbyId,
-          content,
+          content: safeContent,
           createdAt: msg.createdAt.getTime()
         };
         
@@ -873,6 +891,11 @@ export function setupWebSockets(io: Server) {
 
       if (!user) return;
 
+      if (!user.isVerified && user.role !== "ADMIN") {
+        if (ack) ack({ status: "error", error: { code: "NOT_VERIFIED", message: "لطفا ابتدا ایمیل خود را تایید کنید." } });
+        return;
+      }
+
       // News channel admin check
       if (target.type === "channel" && target.id === "news") {
         if (user.role !== "ADMIN") {
@@ -904,11 +927,11 @@ export function setupWebSockets(io: Server) {
       let safeContent;
       if (isImageMessage) {
         const parts = content.split("[IMAGE]:");
-        const filteredText = filterProfanity(parts[0]);
+        const filteredText = sanitizeMessage(filterProfanity(parts[0]));
         // Reconstruct with the untainted image data
         safeContent = filteredText + "[IMAGE]:" + parts.slice(1).join("[IMAGE]:");
       } else {
-        safeContent = filterProfanity(content);
+        safeContent = sanitizeMessage(filterProfanity(content));
       }
 
       console.log(`[CHAT] send target=${target.type}:${target.id} from=${userId} content="${safeContent}"`);

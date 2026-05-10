@@ -25,6 +25,7 @@ import { setupWebSockets } from "./server/sockets/index.ts";
 import { setIO } from "./server/utils/socket.ts";
 import prisma from "./server/utils/prisma.ts";
 import { errorHandler } from "./server/middleware/error.middleware.ts";
+import { generalLimiter } from "./server/middleware/rateLimit.middleware.ts";
 
 dotenv.config();
 
@@ -50,6 +51,7 @@ async function startServer() {
   // Basic Middleware
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ extended: true, limit: "50mb" }));
+  app.use(generalLimiter);
   app.use(cors({
     origin: true, // Reflect request origin
     credentials: true

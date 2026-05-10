@@ -18,11 +18,21 @@ export class AuthController {
 
   static async login(req: Request, res: Response) {
     try {
-      const { user, accessToken, refreshToken } = await AuthService.login(req.body);
+      const result = await AuthService.login(req.body);
       
+      if (result.status === "2fa_required") {
+        return res.json({
+          status: "2fa_required",
+          message: "کد تایید به ایمیل شما ارسال شد",
+          userId: result.userId
+        });
+      }
+
+      const { user, accessToken, refreshToken } = result;
+
       // Store connected device
       const userAgent = req.headers["user-agent"] || "Unknown Browser";
-      // Basic logic to parse OS and Browser (or just store raw for now)
+      // ... (existing OS/Browser logic)
       let os = "Desktop";
       if (userAgent.includes("Windows")) os = "Windows";
       else if (userAgent.includes("Mac OS")) os = "macOS";
@@ -37,7 +47,7 @@ export class AuthController {
 
       await prisma.connectedDevice.create({
         data: {
-          userId: user.id,
+          userId: user!.id,
           deviceName: `${os} (${browser})`,
           os,
           browser,
@@ -57,15 +67,55 @@ export class AuthController {
         status: "success",
         token: accessToken,
         user: { 
-          id: user.id, 
-          username: user.username, 
-          email: user.email,
-          role: user.role,
-          membership: user.profile?.membershipType 
+          id: user!.id, 
+          username: user!.username, 
+          email: user!.email,
+          role: user!.role,
+          membership: user!.profile?.membershipType,
+          isVerified: user!.isVerified
         }
       });
     } catch (error: any) {
       res.status(401).json({ status: "error", error: { code: "INVALID_CREDENTIALS", message: error.message } });
+    }
+  }
+
+  static async verifyEmail(req: Request, res: Response) {
+    try {
+      const { token } = req.body;
+      await AuthService.verifyEmail(token);
+      res.json({ status: "success", message: "ایمیل شما با موفقیت تایید شد" });
+    } catch (error: any) {
+      res.status(400).json({ status: "error", message: error.message });
+    }
+  }
+
+  static async verify2FA(req: Request, res: Response) {
+    try {
+      const { userId, code } = req.body;
+      const { user, accessToken, refreshToken } = await AuthService.verify2FA(userId, code);
+
+      res.cookie("refresh_token", refreshToken, {
+        httpOnly: true,
+        secure: true,
+        sameSite: "none",
+        maxAge: 7 * 24 * 60 * 60 * 1000
+      });
+
+      res.json({
+        status: "success",
+        token: accessToken,
+        user: { 
+          id: user.id, 
+          username: user.username, 
+          email: user.email,
+          role: user.role,
+          membership: user.profile?.membershipType,
+          isVerified: user.isVerified
+        }
+      });
+    } catch (error: any) {
+      res.status(401).json({ status: "error", message: error.message });
     }
   }
 

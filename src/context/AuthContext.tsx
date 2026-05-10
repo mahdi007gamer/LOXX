@@ -9,6 +9,7 @@ interface User {
   displayName?: string;
   avatarUrl?: string;
   membership?: string;
+  isVerified?: boolean;
 }
 
 interface AuthContextType {

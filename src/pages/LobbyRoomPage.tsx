@@ -427,6 +427,19 @@ export const LobbyRoomPage = () => {
 
   return (
     <div className="h-[calc(100vh-64px)] bg-[#050508] text-white p-2 md:p-6 lg:p-8 flex flex-col gap-4 md:gap-6 relative overflow-hidden font-sans" dir="rtl">
+      {!user?.isVerified && (
+        <div className="fixed top-20 left-4 right-4 z-[100] bg-neon-pink/20 backdrop-blur-md border border-neon-pink/30 rounded-2xl p-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <ShieldAlert size={20} className="text-neon-pink" />
+            <p className="text-sm font-bold text-gray-200">
+              حساب شما تایید نشده است. تا زمان تایید ایمیل، قادر به چت کردن نخواهید بود.
+            </p>
+          </div>
+          <Link to="/settings" className="text-xs font-black text-neon-pink uppercase italic hover:underline">
+            تایید حساب
+          </Link>
+        </div>
+      )}
       {/* Background Elements */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className={cn(

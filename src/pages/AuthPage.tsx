@@ -9,19 +9,21 @@ import { useAuth } from "../context/AuthContext";
 import api from "../lib/api";
 import { toast } from "react-hot-toast";
 
-type AuthStep = "AUTH" | "FORGOT_PASSWORD" | "RESET_PASSWORD";
+type AuthStep = "AUTH" | "FORGOT_PASSWORD" | "RESET_PASSWORD" | "VERIFY_2FA";
 
 export const AuthPage = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState<AuthStep>("AUTH");
+  const [tempUserId, setTempUserId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     username: "",
     email: "",
     password: "",
     referralCode: "",
     otpCode: "",
-    newPassword: ""
+    newPassword: "",
+    twoFactorCode: ""
   });
   const [forgotIdentifier, setForgotIdentifier] = useState("");
 
@@ -56,6 +58,13 @@ export const AuthPage = () => {
             password: formData.password
           });
           
+          if (response.data.status === "2fa_required") {
+            setTempUserId(response.data.userId);
+            setStep("VERIFY_2FA");
+            toast.success("کد تایید دو مرحله‌ای به ایمیل شما ارسال شد");
+            return;
+          }
+
           login(response.data.token, response.data.user);
           toast.success("خوش آمدید!");
         } else {
@@ -69,6 +78,13 @@ export const AuthPage = () => {
           toast.success("ثبت‌نام با موفقیت انجام شد. وارد شوید.");
           setIsLogin(true);
         }
+      } else if (step === "VERIFY_2FA") {
+        const response = await api.post("/auth/verify-2fa", {
+          userId: tempUserId,
+          code: formData.twoFactorCode
+        });
+        login(response.data.token, response.data.user);
+        toast.success("خوش آمدید!");
       } else if (step === "FORGOT_PASSWORD") {
         // Simple forgot password logic
         await api.post("/auth/forgot-password", {
@@ -128,6 +144,13 @@ export const AuthPage = () => {
                         ? "مشخصات خود را وارد کنید" 
                         : "به جمع گیمرهای حرفه‌ای بپیوندید"}
                     </p>
+                  </>
+                )}
+
+                {step === "VERIFY_2FA" && (
+                  <>
+                    <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter">تایید دو مرحله‌ای</h2>
+                    <p className="mt-2 text-sm text-gray-400 font-bold">کد ارسال شده به ایمیل را وارد کنید</p>
                   </>
                 )}
 
@@ -213,6 +236,20 @@ export const AuthPage = () => {
                   </>
                 )}
 
+                {step === "VERIFY_2FA" && (
+                  <Input 
+                    label="کد دو مرحله‌ای" 
+                    name="twoFactorCode"
+                    placeholder="123456"
+                    dir="ltr"
+                    className="text-center tracking-widest font-black"
+                    value={formData.twoFactorCode}
+                    onChange={handleInputChange}
+                    icon={<ShieldCheck size={18} />}
+                    required
+                  />
+                )}
+
                 {step === "FORGOT_PASSWORD" && (
                   <Input 
                     label="ایمیل" 
@@ -254,7 +291,7 @@ export const AuthPage = () => {
                 <div className="flex flex-col gap-3 pt-2">
                    <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                     <GlowButton 
-                      variant={isLogin ? "blue" : "pink"} 
+                      variant={(isLogin || step === "VERIFY_2FA") ? "blue" : "pink"} 
                       className="w-full h-14 !rounded-2xl font-black uppercase italic tracking-widest"
                       size="lg"
                       disabled={loading}
@@ -263,6 +300,7 @@ export const AuthPage = () => {
                         <Loader2 className="h-5 w-5 animate-spin" />
                       ) : (
                         step === "AUTH" ? (isLogin ? "ورود به لابی" : "تایید و ثبت‌نام") :
+                        step === "VERIFY_2FA" ? "بررسی کد" :
                         step === "FORGOT_PASSWORD" ? "ارسال کد تایید" : "تغییر رمز عبور"
                       )}
                     </GlowButton>

@@ -28,15 +28,38 @@ import {
   Award,
   Plus,
   Sparkles,
-  Star
+  Star,
+  Mail
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { motion, AnimatePresence } from "motion/react";
 
+const SecurityStatusCard = ({ title, status, desc, icon, color = "blue" }: any) => (
+  <div className="p-4 rounded-2xl bg-white/5 border border-white/10 hover:border-white/20 transition-all group">
+    <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center gap-3">
+        <div className="h-9 w-9 rounded-xl bg-white/5 flex items-center justify-center">
+          {icon}
+        </div>
+        <h4 className="text-xs font-black text-white italic">{title}</h4>
+      </div>
+      <span className={cn(
+        "text-[9px] font-black uppercase px-2 py-0.5 rounded",
+        color === "green" ? "bg-green-500/20 text-green-400" : 
+        color === "red" ? "bg-red-500/20 text-red-400" : 
+        "bg-neon-blue/20 text-neon-blue"
+      )}>
+        {status}
+      </span>
+    </div>
+    <p className="text-[10px] text-gray-400 leading-relaxed font-bold">{desc}</p>
+  </div>
+);
+
 type SettingsTab = "profile" | "security" | "notifications" | "ui" | "region" | "badges" | "elite";
 
 export const SettingsPage = () => {
-  const { user: authUser } = useAuth();
+  const { user: authUser, refreshUser } = useAuth();
   const [activeTab, setActiveTab] = useState<SettingsTab>("profile");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -46,6 +69,9 @@ export const SettingsPage = () => {
   const [twoFactorCode, setTwoFactorCode] = useState("");
   const [setupStep, setSetupStep] = useState<"initial" | "verifying">("initial");
   
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
+  const [verificationCode, setVerificationCode] = useState("");
+
   const [settings, setSettings] = useState({
     receiveFriendRequests: true,
     receiveLobbyInvites: true,
@@ -57,13 +83,13 @@ export const SettingsPage = () => {
   });
 
   const [formData, setFormData] = useState({
-    displayName: "",
+    displayName: authUser?.displayName || "",
     bio: "",
-    username: "",
-    avatarUrl: "",
+    username: authUser?.username || "",
+    avatarUrl: authUser?.avatarUrl || "",
     bannerUrl: "",
-    region: "Middle East",
-    language: "Persian",
+    region: "IR",
+    language: "fa",
     currentPassword: "",
     newPassword: "",
     confirmPassword: ""
@@ -71,153 +97,41 @@ export const SettingsPage = () => {
 
   const [devices, setDevices] = useState<any[]>([]);
   const [userBadges, setUserBadges] = useState<any[]>([]);
-  const [availableChoiceBadges, setAvailableChoiceBadges] = useState<any[]>([]);
 
   useEffect(() => {
     fetchUserData();
-    fetchSettings();
     fetchDevices();
-    fetchUserBadges();
-    fetchChoiceBadges();
   }, []);
-
-  const fetchChoiceBadges = async () => {
-    try {
-      const res = await api.get("/badges/category/STANDARD");
-      setAvailableChoiceBadges(res.data.data || []);
-    } catch (err) {}
-  };
-
-  const fetchUserBadges = async () => {
-    try {
-      const res = await api.get("/auth/me");
-      setUserBadges(res.data.data.badges || []);
-    } catch(err) {}
-  };
-
-  const handleToggleBadgePin = async (badgeId: string) => {
-    const badge = userBadges.find(b => b.id === badgeId);
-    if (!badge) return;
-
-    const pinnedCount = userBadges.filter(b => b.isPinned).length;
-    if (!badge.isPinned && pinnedCount >= 5) {
-      toast.error("حداکثر می‌توانید ۵ نشان را پین کنید");
-      return;
-    }
-
-    try {
-      await api.patch("/user/profile", {
-        badge_pins: {
-          badgeId,
-          isPinned: !badge.isPinned
-        }
-      });
-      setUserBadges(prev => prev.map(b => b.id === badgeId ? { ...b, isPinned: !b.isPinned } : b));
-      toast.success(badge.isPinned ? "نشان از پین خارج شد" : "نشان با موفقیت پین شد");
-    } catch (err: any) {
-      toast.error(err.response?.data?.error?.message || "خطا در بروزرسانی پین");
-    }
-  };
-
-  const handleToggleStandardBadge = async (badgeId: string) => {
-    try {
-      setSaving(true);
-      await api.post(`/badges/toggle-standard/${badgeId}`);
-      await fetchUserBadges();
-      toast.success("لیست نشان‌ها بروزرسانی شد");
-    } catch (err: any) {
-      toast.error(err.response?.data?.error?.message || "خطا در بروزرسانی نشان");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const fetchDevices = async () => {
-    try {
-      const res = await api.get("/user/me/devices");
-      setDevices(res.data.data);
-    } catch(err) {}
-  };
-
-  const handleRevokeDevice = async (id: string) => {
-    try {
-      await api.delete(`/user/me/devices/${id}`);
-      setDevices(prev => prev.filter(d => d.id !== id));
-      toast.success("دستگاه با موفقیت حذف شد");
-    } catch(err) {
-      toast.error("خطا در حذف دستگاه");
-    }
-  };
-
-  const fetchSettings = async () => {
-    try {
-      const res = await api.get("/settings");
-      setSettings(res.data.data);
-    } catch (err) {
-      console.error("Failed to fetch settings", err);
-    }
-  };
-
-  const updateSetting = async (key: string, value: any) => {
-    setSettings(prev => ({ ...prev, [key]: value }));
-    try {
-      await api.patch("/settings", { [key]: value });
-    } catch (err) {
-      toast.error("خطا در بروزرسانی تنظیمات");
-    }
-  };
 
   const fetchUserData = async () => {
     try {
       const res = await api.get("/auth/me");
-      const user = res.data.data;
-      setFormData(prev => ({
-        ...prev,
-        displayName: user.displayName || "",
-        bio: user.bio || "",
-        username: user.username || "",
-        avatarUrl: user.profile?.avatarUrl || user.avatarUrl || "",
-        bannerUrl: user.profile?.bannerUrl || user.bannerUrl || "",
-        region: user.region || "Middle East",
-      }));
-      setTwoFactorEnabled(user.twoFactorEnabled || false);
-    } catch (err) {
-      toast.error("خطا در دریافت اطلاعات کاربر");
-    } finally {
-      setLoading(false);
-    }
+      if (res.data.status === "success") {
+        setTwoFactorEnabled(res.data.data.twoFactorEnabled);
+      }
+    } catch (err) {}
+    setLoading(false);
   };
 
-  const handleSaveProfile = async () => {
-    setSaving(true);
+  const fetchDevices = async () => {
     try {
-      await api.patch("/user/profile", {
-        display_name: formData.displayName,
-        bio: formData.bio,
-        region: formData.region,
-        avatarUrl: formData.avatarUrl,
-        bannerUrl: formData.bannerUrl
-      });
-      toast.success("پروفایل با موفقیت بروزرسانی شد");
-    } catch (err: any) {
-      toast.error(err.response?.data?.error?.message || "خطا در بروزرسانی");
-    } finally {
-      setSaving(false);
-    }
+      const res = await api.get("/user/sessions");
+      setDevices(res.data.data || []);
+    } catch (err) {}
   };
 
   const handlePasswordChange = async () => {
     if (formData.newPassword !== formData.confirmPassword) {
       return toast.error("رمز عبور جدید و تکرار آن مطابقت ندارند");
     }
-    setSaving(true);
     try {
-      await api.patch("/user/security/password", {
-        current_password: formData.currentPassword,
-        new_password: formData.newPassword
+      setSaving(true);
+      await api.post("/user/change-password", {
+        currentPassword: formData.currentPassword,
+        newPassword: formData.newPassword
       });
       toast.success("رمز عبور با موفقیت تغییر کرد");
-      setFormData(prev => ({ ...prev, currentPassword: "", newPassword: "", confirmPassword: "" }));
+      setFormData(p => ({ ...p, currentPassword: "", newPassword: "", confirmPassword: "" }));
     } catch (err: any) {
       toast.error(err.response?.data?.error?.message || "خطا در تغییر رمز عبور");
     } finally {
@@ -225,220 +139,12 @@ export const SettingsPage = () => {
     }
   };
 
-    const isVip = authUser?.membership === "VIP" || authUser?.membership === "PLUS";
-    const tabs = [
-    ...(isVip ? [{ id: "elite" as const, icon: Crown, label: "Elite Settings" }] : []),
-    { id: "profile" as const, icon: User, label: "پروفایل عمومی" },
-    { id: "badges" as const, icon: Award, label: "نشان‌ها" },
-    { id: "security" as const, icon: Shield, label: "امنیت" },
-    { id: "notifications" as const, icon: Bell, label: "اعلان‌ها" },
-    { id: "ui" as const, icon: Monitor, label: "رابط کاربری" },
-    { id: "region" as const, icon: Globe, label: "زبان و منطقه" },
-  ] as const;
-
-  const renderProfile = () => (
-    <div className="space-y-6">
-      {isVip && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="relative group cursor-pointer mb-8"
-          onClick={() => window.location.href = "/settings/elite"}
-        >
-          <div className="absolute -inset-0.5 bg-gradient-to-r from-yellow-400 via-orange-500 to-yellow-600 rounded-3xl blur opacity-30 group-hover:opacity-100 transition duration-1000 group-hover:duration-200" />
-          <NeonCard variant="gold" className="relative transition-transform group-hover:scale-[1.01] overflow-hidden">
-             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                <Crown size={120} />
-             </div>
-            <div className="flex items-center justify-between relative z-10">
-              <div className="flex items-center gap-6">
-                <div className="h-16 w-16 rounded-[20px] bg-yellow-400/20 flex items-center justify-center text-yellow-400 shadow-xl shadow-yellow-400/10 transition-transform group-hover:rotate-6">
-                  <Crown size={32} />
-                </div>
-                <div>
-                  <h3 className="text-xl font-black text-white italic uppercase tracking-tight">تنظیمات نخبگان (Elite Settings)</h3>
-                  <p className="text-[10px] text-yellow-400/70 font-bold uppercase tracking-[0.2em] mt-1">شخصی‌سازی پیشرفته مینی‌پروفایل، فریم‌ها و افکت‌های VIP</p>
-                </div>
-              </div>
-              <div className="h-12 w-12 rounded-full border border-yellow-400/30 flex items-center justify-center group-hover:bg-yellow-400/10 transition-all">
-                <ArrowRight className="text-yellow-400 -rotate-45 group-hover:rotate-0 transition-transform" />
-              </div>
-            </div>
-          </NeonCard>
-        </motion.div>
-      )}
-
-      <NeonCard variant="blue" className="space-y-8">
-        <div className="flex items-center gap-6">
-          <div className="group relative">
-            <div className="h-24 w-24 rounded-[32px] bg-white/5 border border-white/10 overflow-hidden flex items-center justify-center">
-              {formData.avatarUrl ? (
-                <img src={formData.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center text-neon-blue">
-                  <User size={40} />
-                </div>
-              )}
-            </div>
-          </div>
-          <div className="flex-1">
-            <h3 className="font-black text-white italic">تصویر پروفایل</h3>
-            <p className="text-[10px] text-gray-500 font-bold uppercase mt-1 mb-3">تصویر خود را آپلود کنید (فقط فرمت‌های PNG و JPG).</p>
-            <div className="flex flex-col sm:flex-row gap-4 items-end">
-              <div className="flex-none">
-                <input 
-                  type="file" 
-                  accept="image/png, image/jpeg" 
-                  className="hidden" 
-                  id="avatar-upload"
-                  onChange={async (e) => {
-                    if (e.target.files && e.target.files[0]) {
-                      const file = e.target.files[0];
-                      const allowedTypes = ['image/jpeg', 'image/png'];
-                      if (!allowedTypes.includes(file.type)) {
-                        toast.error("فقط فایل‌های JPG و PNG مجاز هستند");
-                        return;
-                      }
-                      if (file.size > 5 * 1024 * 1024) {
-                        toast.error("حجم فایل نباید بیشتر از ۵ مگابایت باشد");
-                        return;
-                      }
-                      const data = new FormData();
-                      data.append("file", file);
-                      try {
-                        const res = await api.post("/upload", data, {
-                          headers: { "Content-Type": "multipart/form-data" }
-                        });
-                        if (res.data.url) {
-                          setFormData(p => ({ ...p, avatarUrl: res.data.url }));
-                          toast.success("تصویر با موفقیت آپلود شد");
-                        } else {
-                          toast.error("خطا در دریافت تصویر آپلود شده");
-                        }
-                      } catch (err: any) {
-                        toast.error(err.response?.data?.error?.message || "خطا در آپلود تصویر");
-                      }
-                    }
-                  }}
-                />
-                <label htmlFor="avatar-upload" className="h-[46px] px-6 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-xs font-black italic cursor-pointer hover:bg-white/10 hover:border-neon-blue/30 transition-all text-white shrink-0">
-                  <Camera size={16} className="ml-2" />
-                  آپلود تصویر
-                </label>
-              </div>
-            </div>
-            <div className="mt-2 text-right">
-              <button onClick={() => setFormData(p => ({ ...p, avatarUrl: "" }))} className="text-[10px] text-gray-600 font-black uppercase italic hover:text-neon-pink transition-colors">حذف تصویر</button>
-            </div>
-          </div>
-        </div>
-
-        <hr className="border-white/5" />
-
-        <div className="flex items-center gap-6">
-          <div className="flex-1">
-            <h3 className="font-black text-white italic">تصویر کاور (بنر)</h3>
-            <p className="text-[10px] text-gray-500 font-bold uppercase mt-1 mb-3">تصویر بنر پروفایل خود را آپلود کنید (حداکثر ۱ مگابایت، فقط JPG و PNG).</p>
-            <div className="flex flex-col sm:flex-row gap-4 items-end">
-              <div className="flex-none">
-                <input 
-                  type="file" 
-                  accept="image/png, image/jpeg" 
-                  className="hidden" 
-                  id="banner-upload"
-                  onChange={async (e) => {
-                    const file = e.target.files?.[0];
-                    if (!file) return;
-                    
-                    const allowedTypes = ['image/jpeg', 'image/png'];
-                    if (!allowedTypes.includes(file.type)) {
-                      toast.error("فقط فایل‌های JPG و PNG مجاز هستند");
-                      return;
-                    }
-                    if (file.size > 1 * 1024 * 1024) {
-                      toast.error("حجم فایل نباید بیشتر از ۱ مگابایت باشد");
-                      return;
-                    }
-                    
-                    const data = new FormData();
-                    data.append("file", file);
-                    try {
-                      const res = await api.post("/upload/banner", data, {
-                        headers: { "Content-Type": "multipart/form-data" }
-                      });
-                      if (res.data.url) {
-                        setFormData(p => ({ ...p, bannerUrl: res.data.url }));
-                        toast.success("بنر با موفقیت آپلود شد");
-                      }
-                    } catch (err: any) {
-                      toast.error(err.response?.data?.error?.message || "خطا در آپلود بنر");
-                    }
-                  }}
-                />
-                <label htmlFor="banner-upload" className="h-[46px] px-6 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-xs font-black italic cursor-pointer hover:bg-white/10 hover:border-neon-blue/30 transition-all text-white shrink-0">
-                  <Camera size={16} className="ml-2" />
-                  آپلود بنر
-                </label>
-              </div>
-            </div>
-            {formData.bannerUrl && (
-              <div className="mt-4 rounded-xl overflow-hidden border border-white/10 h-24 w-full">
-                 <img src={formData.bannerUrl} alt="Banner Preview" className="w-full h-full object-cover" />
-              </div>
-            )}
-            <div className="mt-2 text-right">
-              <button onClick={() => setFormData(p => ({ ...p, bannerUrl: "" }))} className="text-[10px] text-gray-600 font-black uppercase italic hover:text-neon-pink transition-colors">حذف بنر</button>
-            </div>
-          </div>
-        </div>
-
-        <hr className="border-white/5" />
-
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-          <Input 
-             label="نام نمایشی" 
-             placeholder="Ali_Gamer_98" 
-             value={formData.displayName}
-             onChange={(e) => setFormData(p => ({ ...p, displayName: e.target.value }))}
-          />
-          <Input 
-             label="آیدی یکتا (Handle)" 
-             placeholder="aligamer" 
-             value={formData.username}
-             disabled
-          />
-          <div className="sm:col-span-2">
-            <label className="block px-1 text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2 italic">درباره شما (Bio)</label>
-            <textarea 
-              className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-gray-700 transition-all focus:border-neon-blue/50 focus:outline-none h-32 resize-none"
-              placeholder="کمی در مورد خودتان، بازی‌هایی که دوست دارید و ... بنویسید"
-              value={formData.bio}
-              onChange={(e) => setFormData(p => ({ ...p, bio: e.target.value }))}
-            />
-          </div>
-        </div>
-
-        <div className="flex justify-end pt-4 border-t border-white/5">
-          <GlowButton 
-             variant="blue" 
-             className="px-10 h-10 text-[11px] font-black uppercase italic"
-             onClick={handleSaveProfile}
-             disabled={saving}
-          >
-            {saving ? "در حال ذخیره..." : "ذخیره تغییرات پروفایل"}
-          </GlowButton>
-        </div>
-      </NeonCard>
-    </div>
-  );
-
   const handleEnable2FA = async () => {
     try {
       setSaving(true);
-      const res = await api.post("/user/me/2fa/setup");
-      toast.success(res.data.message);
-      setSetupStep("verifying");
+      await api.post("/user/me/2fa/enable");
       setShowTwoFactorModal(true);
+      toast.success("کد تایید به ایمیل شما ارسال شد");
     } catch (err: any) {
       toast.error(err.response?.data?.error?.message || "خطا در برقراری ارتباط");
     } finally {
@@ -449,12 +155,11 @@ export const SettingsPage = () => {
   const handleVerify2FA = async () => {
     try {
       setSaving(true);
-      const res = await api.post("/user/me/2fa/verify", { code: twoFactorCode });
-      toast.success(res.data.message);
-      setTwoFactorEnabled(true);
+      await api.post("/user/me/2fa/verify", { code: twoFactorCode });
+      toast.success("تایید دو مرحله‌ای با موفقیت فعال شد");
       setShowTwoFactorModal(false);
+      setTwoFactorEnabled(true);
       setTwoFactorCode("");
-      setSetupStep("initial");
     } catch (err: any) {
       toast.error(err.response?.data?.error?.message || "کد اشتباه است");
     } finally {
@@ -465,212 +170,114 @@ export const SettingsPage = () => {
   const handleDisable2FA = async () => {
     try {
       setSaving(true);
-      const res = await api.post("/user/me/2fa/disable");
-      toast.success(res.data.message);
+      await api.post("/user/me/2fa/disable");
+      toast.success("تایید دو مرحله‌ای غیرفعال شد");
       setTwoFactorEnabled(false);
     } catch (err: any) {
-      toast.error(err.response?.data?.error?.message || "خطا");
+      toast.error(err.response?.data?.error?.message || "خطا در انجام عملیات");
     } finally {
       setSaving(false);
     }
   };
 
-  const renderBadges = () => (
-    <div className="space-y-6">
-      <NeonCard variant="purple">
-         <div className="flex items-center justify-between mb-8">
-            <div>
-               <h3 className="text-xl font-black text-white italic uppercase tracking-tighter">نشان‌های من</h3>
-               <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1 italic">نشان‌هایی که برای نمایش در مینی‌-پروفایل پین می‌کنید (حداکثر ۵ عدد)</p>
-            </div>
-            <div className="px-4 py-2 rounded-xl bg-neon-blue/10 border border-neon-blue/20">
-               <span className="text-xs font-black text-neon-blue italic">{userBadges.filter(b => b.isPinned).length} / 5 پین شده</span>
-            </div>
-         </div>
+  const handleVerifyEmailByToken = async () => {
+    try {
+      setSaving(true);
+      await api.post("/auth/verify-email", { token: verificationCode });
+      toast.success("ایمیل شما با موفقیت تایید شد");
+      setShowVerificationModal(false);
+      if (refreshUser) refreshUser();
+    } catch (err: any) {
+      toast.error(err.response?.data?.error?.message || "توکن معتبر نمی‌باشد");
+    } finally {
+      setSaving(false);
+    }
+  };
 
-         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-            {userBadges.map((badge) => (
-              <motion.div
-                key={badge.id}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => handleToggleBadgePin(badge.id)}
-                className={cn(
-                  "relative aspect-square rounded-[24px] border-2 flex flex-col items-center justify-center p-4 cursor-pointer transition-all duration-300 group",
-                  badge.isPinned 
-                    ? "bg-neon-blue/10 border-neon-blue shadow-[0_0_20px_rgba(0,229,255,0.1)]" 
-                    : "bg-white/5 border-white/5 hover:border-white/10"
-                )}
-              >
-                  <img src={badge.iconUrl} alt={badge.name} className="w-12 h-12 object-contain mb-2" />
-                  <span className="text-[10px] font-black text-white uppercase tracking-tighter text-center line-clamp-1">{badge.name}</span>
-                  
-                  {badge.isPinned && (
-                    <div className="absolute top-2 right-2 h-5 w-5 rounded-full bg-neon-blue flex items-center justify-center text-dark-bg">
-                       <Plus size={12} className="rotate-45" />
-                    </div>
-                  )}
-                  
-                  <div className={cn(
-                     "absolute inset-0 rounded-[22px] flex items-center justify-center bg-dark-bg/80 opacity-0 group-hover:opacity-100 transition-opacity",
-                     badge.isPinned ? "bg-red-500/20" : "bg-neon-blue/20"
-                  )}>
-                     <span className="text-[10px] font-black text-white uppercase italic">
-                        {badge.isPinned ? "برداشتن پین" : "پین کردن"}
-                     </span>
-                  </div>
-              </motion.div>
-            ))}
-            {userBadges.length === 0 && (
-               <div className="col-span-full py-20 text-center flex flex-col items-center gap-4 opacity-30">
-                  <Award size={48} />
-                  <p className="text-xs font-black italic uppercase tracking-widest">هنوز هیچ نشانی کسب نکرده‌اید</p>
-               </div>
-            )}
+  const handleRevokeDevice = async (id: string) => {
+    try {
+      await api.delete(`/user/sessions/${id}`);
+      fetchDevices();
+      toast.success("دستگاه با موفقیت خارج شد");
+    } catch (err) {}
+  };
+
+  const updateSetting = (key: string, val: any) => {
+    setSettings(p => ({ ...p, [key]: val }));
+  };
+
+  const renderProfile = () => (
+    <div className="space-y-6">
+      <NeonCard variant="purple" className="relative group overflow-hidden p-0">
+         <div className="h-40 bg-gradient-to-r from-neon-purple/20 to-neon-pink/20 relative">
+            <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20" />
+            <button className="absolute top-4 right-4 h-10 w-10 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white border border-white/10 hover:bg-black/60 transition-all">
+              <Camera size={18} />
+            </button>
+         </div>
+         <div className="px-8 pb-8 -mt-12 relative z-10 flex flex-col md:flex-row gap-6 md:items-end">
+            <div className="relative">
+              <div className="h-28 w-28 rounded-[32px] bg-[#0a0a0f] p-1 border-2 border-neon-purple shadow-[0_0_30px_rgba(191,0,255,0.2)]">
+                <img src={authUser?.avatarUrl || "https://api.dicebear.com/7.x/avataaars/svg?seed=Loxx"} className="h-full w-full rounded-[28px] object-cover" />
+              </div>
+              <button className="absolute bottom-1 right-1 h-8 w-8 rounded-xl bg-neon-purple text-white flex items-center justify-center border-2 border-[#0a0a0f] hover:scale-110 transition-transform">
+                <Camera size={14} />
+              </button>
+            </div>
+            <div className="flex-1 md:pb-2">
+               <h2 className="text-2xl font-black text-white italic tracking-tight">{authUser?.displayName || authUser?.username}</h2>
+               <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">@{authUser?.username}</p>
+            </div>
          </div>
       </NeonCard>
 
-      <NeonCard variant="blue">
-         <div className="flex items-center justify-between mb-8">
-            <div>
-               <h3 className="text-xl font-black text-white italic uppercase tracking-tighter">نشان‌های انتخابی</h3>
-               <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1 italic">نشان‌هایی که می‌توانید برای خود انتخاب کنید</p>
-            </div>
+      <NeonCard variant="purple" className="space-y-6">
+         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+           <Input label="نام نمایشی" value={formData.displayName} onChange={(e) => setFormData(p => ({ ...p, displayName: e.target.value }))} placeholder="نام خود را وارد کنید" />
+           <Input label="نام کاربری" value={formData.username} disabled placeholder="نام کاربری قابل تغییر نیست" />
          </div>
-
-         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-            {availableChoiceBadges.map((badge) => {
-              const hasBadge = userBadges.some(ub => ub.id === badge.id);
-              return (
-                <motion.div
-                  key={badge.id}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => handleToggleStandardBadge(badge.id)}
-                  className={cn(
-                    "relative aspect-square rounded-[24px] border-2 flex flex-col items-center justify-center p-4 cursor-pointer transition-all duration-300 group",
-                    hasBadge 
-                      ? "bg-neon-pink/10 border-neon-pink shadow-[0_0_20px_rgba(255,0,255,0.1)]" 
-                      : "bg-white/5 border-white/5 hover:border-white/10"
-                  )}
-                >
-                    <img src={badge.iconUrl} alt={badge.name} className={cn("w-12 h-12 object-contain mb-2", !hasBadge && "grayscale opacity-50")} />
-                    <span className={cn("text-[10px] font-black uppercase tracking-tighter text-center line-clamp-1", hasBadge ? "text-white" : "text-gray-600")}>{badge.name}</span>
-                    
-                    <div className={cn(
-                       "absolute inset-0 rounded-[22px] flex items-center justify-center bg-dark-bg/80 opacity-0 group-hover:opacity-100 transition-opacity",
-                       hasBadge ? "bg-red-500/20" : "bg-neon-pink/20"
-                    )}>
-                       <span className="text-[10px] font-black text-white uppercase italic">
-                          {hasBadge ? "حذف کردن" : "اضافه کردن"}
-                       </span>
-                    </div>
-                </motion.div>
-              );
-            })}
+         <div>
+            <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2 italic">بیوگرافی</label>
+            <textarea 
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-neon-purple/50 min-h-[100px] font-bold italic"
+              placeholder="چیزی بنویسید..."
+              value={formData.bio}
+              onChange={(e) => setFormData(p => ({ ...p, bio: e.target.value }))}
+            />
+         </div>
+         <div className="flex justify-end pt-4">
+            <GlowButton variant="purple" className="px-12 h-12 text-xs font-black uppercase italic" disabled={saving}>
+              {saving ? "در حال ذخیره..." : "ذخیره تغییرات"}
+            </GlowButton>
          </div>
       </NeonCard>
     </div>
   );
 
-  const renderElite = () => (
-    <div className="space-y-6">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="relative group"
-      >
-        <div className="absolute -inset-1 bg-gradient-to-r from-yellow-400 via-orange-500 to-yellow-600 rounded-[32px] blur-xl opacity-40 group-hover:opacity-60 transition duration-1000" />
-        <NeonCard variant="gold" className="relative p-10 overflow-hidden border-none bg-black/60 backdrop-blur-3xl">
-           <div className="absolute top-0 left-0 p-8 opacity-10">
-              <Crown size={200} />
-           </div>
-           <div className="flex flex-col md:flex-row items-center gap-10 relative z-10 text-center md:text-right">
-              <div className="h-40 w-40 rounded-[48px] bg-yellow-400 text-dark-bg flex items-center justify-center shadow-[0_0_40px_rgba(250,204,21,0.4)]">
-                 <Sparkles size={64} fill="currentColor" />
-              </div>
-              <div className="flex-1">
-                 <h2 className="text-4xl font-black text-white italic uppercase tracking-tighter mb-4">Elite Control Center</h2>
-                 <p className="text-sm text-yellow-400/80 font-black uppercase tracking-widest leading-relaxed">
-                   به عنوان عضو ویژه نخبگان، شما به ابزارهای شخصی‌سازی و هویتی منحصر به فرد دسترسی دارید. تمامی تنظیمات در این بخش بلافاصله در پروفایل شما اعمال می‌شوند.
-                 </p>
-              </div>
-           </div>
-        </NeonCard>
-      </motion.div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <NeonCard variant="purple">
-           <div className="flex items-center gap-4 mb-6">
-              <div className="h-10 w-10 rounded-xl bg-neon-purple/10 flex items-center justify-center text-neon-purple">
-                 <Shield size={20} />
-              </div>
-              <h3 className="text-sm font-black text-white italic uppercase">شخصی‌سازی هویتی</h3>
-           </div>
-           
-           <div className="space-y-4">
-              {[
-                { label: "هاله نورانی (Aura Effect)", desc: "نمایش هاله درخشان دور آواتار", active: true },
-                { label: "نام متحرک (Glow Name)", desc: "استفاده از افکت گرادینت متحرک برای نام", active: true },
-                { label: "فریم الماس (Elite Frame)", desc: "استفاده از قاب ویژه برای عکس پروفایل", active: false }
-              ].map((item, i) => (
-                <div key={i} className="p-4 rounded-xl bg-white/5 border border-white/5 flex items-center justify-between group hover:border-neon-purple/30 transition-all">
-                   <div>
-                      <h4 className="text-xs font-black text-white italic">{item.label}</h4>
-                      <p className="text-[9px] text-gray-500 italic mt-0.5">{item.desc}</p>
-                   </div>
-                   <div className={cn(
-                     "h-6 w-11 rounded-full relative transition-colors cursor-pointer",
-                     item.active ? "bg-neon-purple/30" : "bg-white/10"
-                   )}>
-                      <div className={cn(
-                        "absolute top-1 h-4 w-4 rounded-full transition-all",
-                        item.active ? "right-1 bg-neon-purple shadow-[0_0_10px_rgba(191,0,255,0.5)]" : "left-1 bg-gray-600"
-                      )} />
-                   </div>
-                </div>
-              ))}
-           </div>
-        </NeonCard>
-
-        <NeonCard variant="blue">
-           <div className="flex items-center gap-4 mb-6">
-              <div className="h-10 w-10 rounded-xl bg-neon-blue/10 flex items-center justify-center text-neon-blue">
-                 <Star size={20} />
-              </div>
-              <h3 className="text-sm font-black text-white italic uppercase">قابلیت‌های ویژه لابی</h3>
-           </div>
-           
-           <div className="space-y-4">
-              {[
-                { label: "اعلان ورود (Join Alert)", desc: "اعلان صوتی و متنی هنگام ورود به لابی", active: true },
-                { label: "پین شدن لابی (Pin Lobby)", desc: "پین کردن لابی‌های ساخته شده در صدر لیست", active: true },
-                { label: "تغییر تم لابی (Custom Theme)", desc: "انتخاب تم دلخواه برای صفحه لابی", active: false }
-              ].map((item, i) => (
-                <div key={i} className="p-4 rounded-xl bg-white/5 border border-white/5 flex items-center justify-between group hover:border-neon-blue/30 transition-all">
-                   <div>
-                      <h4 className="text-xs font-black text-white italic">{item.label}</h4>
-                      <p className="text-[9px] text-gray-500 italic mt-0.5">{item.desc}</p>
-                   </div>
-                   <div className={cn(
-                     "h-6 w-11 rounded-full relative transition-colors cursor-pointer",
-                     item.active ? "bg-neon-blue/30" : "bg-white/10"
-                   )}>
-                      <div className={cn(
-                        "absolute top-1 h-4 w-4 rounded-full transition-all",
-                        item.active ? "right-1 bg-neon-blue shadow-[0_0_10px_rgba(0,229,255,0.5)]" : "left-1 bg-gray-600"
-                      )} />
-                   </div>
-                </div>
-              ))}
-           </div>
-        </NeonCard>
-      </div>
-    </div>
-  );
   const renderSecurity = () => (
     <div className="space-y-6">
       <NeonCard variant="purple" className="space-y-8">
+        <div>
+           <div className="flex items-center justify-between mb-4">
+             <div>
+               <h3 className="font-black text-white italic mb-1 flex items-center gap-2">
+                 وضعیت تایید حساب
+                 {authUser?.isVerified ? (
+                   <span className="text-[10px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded uppercase not-italic">تایید شده</span>
+                 ) : (
+                   <span className="text-[10px] bg-red-500/20 text-red-400 px-2 py-0.5 rounded uppercase not-italic">تایید نشده</span>
+                 )}
+               </h3>
+               <p className="text-[10px] text-gray-500 font-bold uppercase italic">برای دسترسی به تمامی امکانات، حساب خود را تایید کنید</p>
+             </div>
+             {!authUser?.isVerified && (
+               <GlowButton variant="blue" size="sm" className="text-[10px] font-black uppercase italic px-6 border-none" onClick={() => setShowVerificationModal(true)}>تایید ایمیل</GlowButton>
+             )}
+           </div>
+        </div>
+
+        <hr className="border-white/5" />
+
         <div>
           <h3 className="font-black text-white italic mb-1">تغییر رمز عبور</h3>
           <p className="text-[10px] text-gray-500 font-bold uppercase mb-6 italic">برای امنیت بیشتر از رمزهای طولانی استفاده کنید</p>
@@ -678,18 +285,21 @@ export const SettingsPage = () => {
             <Input 
                label="رمز عبور فعلی" 
                type="password" 
+               placeholder="••••••••"
                value={formData.currentPassword}
                onChange={(e) => setFormData(p => ({ ...p, currentPassword: e.target.value }))}
             />
             <Input 
                label="رمز عبور جدید" 
                type="password" 
+               placeholder="••••••••"
                value={formData.newPassword}
                onChange={(e) => setFormData(p => ({ ...p, newPassword: e.target.value }))}
             />
             <Input 
                label="تکرار رمز عبور جدید" 
                type="password" 
+               placeholder="••••••••"
                value={formData.confirmPassword}
                onChange={(e) => setFormData(p => ({ ...p, confirmPassword: e.target.value }))}
             />
@@ -712,14 +322,14 @@ export const SettingsPage = () => {
            <div className="flex items-center justify-between mb-4">
              <div>
                <h3 className="font-black text-white italic mb-1 flex items-center gap-2">
-                 تایید دو مرحله‌ای پیامکی 
+                 تایید دو مرحله‌ای (2FA) 
                  {twoFactorEnabled ? (
                    <span className="text-[10px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded uppercase not-italic">فعال</span>
                  ) : (
                    <span className="text-[10px] bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded uppercase not-italic">غیرفعال</span>
                  )}
                </h3>
-               <p className="text-[10px] text-gray-500 font-bold uppercase italic">یک لایه امنیتی اضافی به حساب خود اضافه کنید</p>
+               <p className="text-[10px] text-gray-500 font-bold uppercase italic">کد تایید هنگام ورود به ایمیل شما ارسال خواهد شد</p>
              </div>
              {twoFactorEnabled ? (
                <GlowButton variant="purple" size="sm" className="text-[10px] font-black uppercase italic px-6 border-none bg-red-500/10 text-red-500 hover:bg-red-500/20 hover:text-red-400 shadow-none" onClick={handleDisable2FA} disabled={saving}>غیرفعال‌سازی 2FA</GlowButton>
@@ -731,29 +341,48 @@ export const SettingsPage = () => {
 
         {/* 2FA Modal */}
         <AnimatePresence>
-          {showTwoFactorModal && (
+          {(showTwoFactorModal || showVerificationModal) && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                <motion.div 
                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                  className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-                 onClick={() => { setShowTwoFactorModal(false); setSetupStep("initial"); }}
+                 onClick={() => { setShowTwoFactorModal(false); setShowVerificationModal(false); setSetupStep("initial"); }}
                />
                <motion.div 
                  initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
-                 className="relative w-full max-w-sm rounded-[24px] bg-[#0a0a0f] border border-white/10 p-6 shadow-2xl"
+                 className="relative w-full max-w-sm rounded-[24px] bg-[#0a0a0f] border border-white/10 p-8 shadow-2xl"
                >
-                 <h3 className="text-xl font-black text-white italic mb-2">تایید شماره موبایل</h3>
-                 <p className="text-xs text-gray-500 font-bold mb-6 italic">کد تایید پیامک شده را وارد کنید (۱۲۳۴۵)</p>
-                 <Input 
-                   label="کد تایید"
-                   placeholder="مثلا 12345"
-                   value={twoFactorCode}
-                   onChange={(e) => setTwoFactorCode(e.target.value)}
-                 />
-                 <div className="mt-6 flex justify-end gap-3">
-                   <button onClick={() => { setShowTwoFactorModal(false); setSetupStep("initial"); }} className="px-4 text-xs font-black text-gray-500 hover:text-white uppercase">انصراف</button>
-                   <GlowButton variant="blue" className="px-8 text-xs font-black uppercase blur-none shadow-none" onClick={handleVerify2FA} disabled={saving || twoFactorCode.length < 5}>ثبت و فعالسازی</GlowButton>
-                 </div>
+                 {showVerificationModal ? (
+                   <>
+                     <h3 className="text-xl font-black text-white italic mb-2">تایید ایمیل</h3>
+                     <p className="text-xs text-gray-500 font-bold mb-6 italic">توکن ارسال شده به ایمیل خود را وارد کنید</p>
+                     <Input 
+                       label="توکن تایید"
+                       placeholder="توکن را اینجا قرار دهید"
+                       value={verificationCode}
+                       onChange={(e) => setVerificationCode(e.target.value)}
+                     />
+                     <div className="mt-6 flex flex-col gap-3">
+                       <GlowButton variant="blue" className="w-full text-xs font-black uppercase blur-none shadow-none h-12" onClick={handleVerifyEmailByToken} disabled={saving || !verificationCode}>تایید ایمیل</GlowButton>
+                       <button onClick={() => { setShowVerificationModal(false); }} className="h-10 text-xs font-black text-gray-500 hover:text-white uppercase transition-colors">بعداً انجام میدم</button>
+                     </div>
+                   </>
+                 ) : (
+                   <>
+                     <h3 className="text-xl font-black text-white italic mb-2">تایید ایمیل</h3>
+                     <p className="text-xs text-gray-500 font-bold mb-6 italic">کد تایید ارسال شده به ایمیل را وارد کنید</p>
+                     <Input 
+                       label="کد تایید"
+                       placeholder="مثلا 12345"
+                       value={twoFactorCode}
+                       onChange={(e) => setTwoFactorCode(e.target.value)}
+                     />
+                     <div className="mt-6 flex justify-end gap-3">
+                       <button onClick={() => { setShowTwoFactorModal(false); setSetupStep("initial"); }} className="px-4 text-xs font-black text-gray-500 hover:text-white uppercase">انصراف</button>
+                       <GlowButton variant="blue" className="px-8 text-xs font-black uppercase blur-none shadow-none" onClick={handleVerify2FA} disabled={saving || twoFactorCode.length < 5}>ثبت و فعالسازی</GlowButton>
+                     </div>
+                   </>
+                 )}
                </motion.div>
             </div>
           )}
@@ -762,10 +391,51 @@ export const SettingsPage = () => {
         <hr className="border-white/5" />
 
         <div>
+           <div className="flex items-center justify-between mb-4">
+             <div>
+               <h3 className="font-black text-white italic mb-1 flex items-center gap-2">
+                 خلاصه وضعیت امنیت
+               </h3>
+               <p className="text-[10px] text-gray-400 font-bold uppercase italic">گزارش کلی از لایه‌های حفاظتی فعال در سیستم</p>
+             </div>
+           </div>
+           
+           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+             <SecurityStatusCard 
+               title="Rate Limiting" 
+               status="فعال" 
+               desc="محافظت در برابر حملات DoS و Brute-force. محدودیت ۱۰۰ درخواست/۱۵دقیقه روی کل سایت" 
+               icon={<Zap size={20} className="text-neon-blue" />}
+             />
+             <SecurityStatusCard 
+               title="XSS Protection" 
+               status="فعال" 
+               desc="پاکسازی خودکار پیام‌ها توسط DOMPurify برای جلوگیری از اجرای اسکریپت‌های مخرب." 
+               icon={<Shield size={20} className="text-neon-pink" />}
+             />
+             <SecurityStatusCard 
+               title="Socket.io Auth" 
+               status="فعال" 
+               desc="احراز هویت تمامی ارتباطات لحظه‌ای با استفاده از JWT بصورت اجباری." 
+               icon={<Smartphone size={20} className="text-green-400" />}
+             />
+             <SecurityStatusCard 
+               title="Email Verification" 
+               status={authUser?.isVerified ? "تایید شده" : "در انتظار تایید"} 
+               desc="سیستم تایید هویت با ایمیل برای جلوگیری از اکانت‌های اسپم و بات." 
+               color={authUser?.isVerified ? "green" : "red"}
+               icon={<Mail size={20} className={authUser?.isVerified ? "text-green-400" : "text-neon-pink"} />}
+             />
+           </div>
+        </div>
+
+        <hr className="border-white/5" />
+
+        <div>
           <h3 className="font-black text-white italic mb-4">دستگاه‌های متصل</h3>
           <div className="space-y-3">
              {devices.map((session, i) => (
-               <div key={i} className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/5 group hover:border-white/10 transition-all">
+                <div key={i} className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/5 group hover:border-white/10 transition-all">
                   <div className="flex items-center gap-4">
                     <div className="h-10 w-10 rounded-lg bg-white/5 flex items-center justify-center text-gray-400 group-hover:text-neon-blue transition-colors">
                       <Smartphone size={20} />
@@ -944,6 +614,78 @@ export const SettingsPage = () => {
     </div>
   );
 
+  const renderElite = () => (
+    <div className="space-y-6">
+      <NeonCard variant="purple" className="p-8 relative overflow-hidden">
+        <div className="absolute top-0 right-0 h-32 w-32 bg-neon-purple/20 blur-[60px]" />
+        <div className="relative z-10">
+          <div className="flex items-center gap-4 mb-8">
+            <div className="h-14 w-14 rounded-2xl bg-neon-purple/10 flex items-center justify-center text-neon-purple border border-neon-purple/20">
+              <Crown size={32} />
+            </div>
+            <div>
+              <h3 className="text-2xl font-black text-white italic uppercase">LOXX Elite</h3>
+              <p className="text-xs text-gray-500 font-bold uppercase tracking-widest">امکانات ویژه برای حرفه‌ای‌ها</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+             {[
+               { label: "هاله نورانی", desc: "Aura Effect دور آواتار", active: true },
+               { label: "نام درخشان", desc: "افکت Glow برای نام کاربری", active: true },
+               { label: "قاب ویژه", desc: "فریم‌های متحرک منحصر به فرد", active: false }
+             ].map((item, i) => (
+                <div key={i} className="p-4 rounded-xl bg-white/5 border border-white/5 flex items-center justify-between group hover:border-neon-purple/30 transition-all">
+                   <div>
+                      <h4 className="text-xs font-black text-white italic">{item.label}</h4>
+                      <p className="text-[9px] text-gray-500 italic mt-0.5">{item.desc}</p>
+                   </div>
+                   <div className={cn(
+                     "h-6 w-11 rounded-full relative transition-colors cursor-pointer",
+                     item.active ? "bg-neon-purple/30" : "bg-white/10"
+                   )}>
+                      <div className={cn(
+                        "absolute top-1 h-4 w-4 rounded-full transition-all",
+                        item.active ? "right-1 bg-neon-purple" : "left-1 bg-gray-600"
+                      )} />
+                   </div>
+                </div>
+             ))}
+          </div>
+        </div>
+      </NeonCard>
+    </div>
+  );
+
+  const renderBadges = () => (
+    <div className="space-y-6">
+      <NeonCard variant="blue">
+        <h3 className="font-black text-white italic mb-1 uppercase">نشان‌های من (Badges)</h3>
+        <p className="text-[10px] text-gray-500 font-bold uppercase mb-8 italic">مدیریت نشان‌های کسب شده در بازی</p>
+        <div className="grid grid-cols-3 md:grid-cols-6 gap-6">
+           {[...Array(6)].map((_, i) => (
+             <div key={i} className="flex flex-col items-center gap-2 group cursor-pointer opacity-40 hover:opacity-100 transition-all">
+                <div className="h-16 w-16 rounded-2xl bg-white/5 flex items-center justify-center border border-white/5 group-hover:border-neon-blue/30 group-hover:bg-neon-blue/5">
+                   <Award size={32} className="text-gray-700 group-hover:text-neon-blue" />
+                </div>
+                <span className="text-[10px] font-black text-gray-500 uppercase italic group-hover:text-white">قفل شده</span>
+             </div>
+           ))}
+        </div>
+      </NeonCard>
+    </div>
+  );
+
+  const tabs = [
+    { id: "profile", label: "پروفایل", icon: User },
+    { id: "security", label: "امنیت", icon: Lock },
+    { id: "notifications", label: "اعلان‌ها", icon: Bell },
+    { id: "ui", label: "رابط کاربری", icon: Monitor },
+    { id: "region", label: "منطقه", icon: Globe },
+    { id: "badges", label: "نشان‌ها", icon: Award },
+    { id: "elite", label: "Elite", icon: Crown },
+  ];
+
   return (
     <div className="flex min-h-[calc(100vh-64px)] pb-20 md:pb-0">
       <Sidebar />
@@ -955,7 +697,6 @@ export const SettingsPage = () => {
           </header>
 
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-4">
-             {/* Sidebar Tabs */}
              <div className="lg:col-span-1 space-y-2 overflow-x-auto no-scrollbar pb-2 lg:pb-0 flex lg:flex-col gap-2 lg:gap-2">
                 {tabs.map((tab) => (
                   <button 
@@ -974,7 +715,6 @@ export const SettingsPage = () => {
                 ))}
              </div>
 
-              {/* Content Area */}
               <div className="lg:col-span-3">
                 {activeTab === "elite" && renderElite()}
                 {activeTab === "profile" && renderProfile()}
