@@ -63,8 +63,7 @@ export class UserService {
           where: { userId },
           data: { 
             membershipType: "NONE",
-            // Optionally clear vipMetadata if you want to be strict, 
-            // but usually we keep it for when they renew.
+            vipMetadata: null
           }
         });
         return { type: "NONE", expiresAt };

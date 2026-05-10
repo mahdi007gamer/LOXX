@@ -95,9 +95,20 @@ export class RankingService {
 
     const reset_in = `${days}d ${hours}h ${mins}m`;
 
+    const startOfWeek = new Date(nextMonday.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+    const weeklyLogs = await prisma.xPLog.groupBy({
+      by: ['userId'],
+      _sum: { amount: true },
+      where: { timestamp: { gte: startOfWeek } },
+      orderBy: { _sum: { amount: 'desc' } },
+      take: 50
+    });
+
+    const userIds = weeklyLogs.map(l => l.userId);
+
     const topProfiles = await prisma.profile.findMany({
-      take: 50,
-      orderBy: { xp: "desc" },
+      where: { userId: { in: userIds } },
       include: { 
         user: {
           select: {
@@ -111,19 +122,23 @@ export class RankingService {
       }
     });
 
-    const topUsersFormatted = topProfiles.map((p, i) => ({
-      rank: i + 1,
-      id: p.userId,
-      username: p.user.username,
-      points: p.xp,
-      level: p.level,
-      avatar: p.avatarUrl,
-      avatarUrl: p.avatarUrl,
-      bannerUrl: p.bannerUrl,
-      membership: p.membershipType,
-      vipMetadata: p.vipMetadata ? JSON.parse(p.vipMetadata.toString()) : undefined,
-      trend: i < 3 ? "up" : i > 10 ? "down" : "stable"
-    }));
+    const topUsersFormatted = weeklyLogs.map((log, i) => {
+      const p = topProfiles.find(profile => profile.userId === log.userId);
+      if (!p) return null;
+      return {
+        rank: i + 1,
+        id: p.userId,
+        username: p.user.username,
+        points: log._sum.amount || 0,
+        level: p.level,
+        avatar: p.avatarUrl,
+        avatarUrl: p.avatarUrl,
+        bannerUrl: p.bannerUrl,
+        membership: p.membershipType,
+        vipMetadata: p.vipMetadata ? JSON.parse(p.vipMetadata.toString()) : undefined,
+        trend: i < 3 ? "up" : i > 10 ? "down" : "stable"
+      };
+    }).filter(Boolean);
 
     return {
       reset_in,
@@ -132,24 +147,36 @@ export class RankingService {
   }
 
   static async getUserRank(userId: string) {
-    const allProfiles = await prisma.profile.findMany({
-      orderBy: { xp: "desc" },
-      select: { userId: true, xp: true }
+    const now = new Date();
+    const nextMonday = new Date();
+    nextMonday.setDate(now.getDate() + (1 + 7 - now.getDay()) % 7);
+    nextMonday.setHours(0, 0, 0, 0);
+    if (nextMonday <= now) nextMonday.setDate(nextMonday.getDate() + 7);
+
+    const startOfWeek = new Date(nextMonday.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+    const allLogs = await prisma.xPLog.groupBy({
+      by: ['userId'],
+      _sum: { amount: true },
+      where: { timestamp: { gte: startOfWeek } },
+      orderBy: { _sum: { amount: 'desc' } }
     });
 
-    const index = allProfiles.findIndex(p => p.userId === userId);
-    const rank = index === -1 ? allProfiles.length + 1 : index + 1;
+    const index = allLogs.findIndex(l => l.userId === userId);
     const profile = await prisma.profile.findUnique({ where: { userId } });
+
+    const rank = index === -1 ? allLogs.length + 1 : index + 1;
+    const myPoints = index === -1 ? 0 : (allLogs[index]._sum.amount || 0);
 
     // Points to reach top 10
     let pointsToTop10 = 0;
-    if (rank > 10 && allProfiles.length >= 10) {
-      pointsToTop10 = (allProfiles[9].xp - (profile?.xp || 0)) + 1;
+    if (rank > 10 && allLogs.length >= 10) {
+      pointsToTop10 = ((allLogs[9]._sum.amount || 0) - myPoints) + 1;
     }
 
     return {
       rank,
-      points: profile?.xp || 0,
+      points: myPoints,
       level: profile?.level || 1,
       pointsToTop10: Math.max(0, pointsToTop10)
     };

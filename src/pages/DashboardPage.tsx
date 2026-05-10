@@ -243,7 +243,7 @@ export const DashboardPage = () => {
                               currentMembership === "PLUS" ? "text-neon-blue text-shadow-glow" :
                               "text-white"
                             )}>
-                               {currentMembership === "VIP" ? "عضویت ویژه الیت (VIP)" : currentMembership === "PLUS" ? "عضویت طلایی پلاس" : "اشتراک سطح عادی (FREE)"}
+                               {currentMembership === "VIP" ? "عضو ویژه لوکس" : currentMembership === "PLUS" ? "عضویت طلایی پلاس" : "عضو عادی لوکس"}
                             </h2>
                             <p className="text-[11px] text-gray-400 font-bold italic mt-2">
                                {currentMembership === "VIP" ? `باقیمانده اشتراک الیت: ${daysLeft} روز (تا ${expiryDate ? new Date(expiryDate).toLocaleDateString('fa-IR') : "نامعلوم"})` : 
@@ -305,7 +305,7 @@ export const DashboardPage = () => {
               className="relative"
             >
               <div className={cn(
-                "h-full rounded-[32px] border transition-all duration-500 p-6 flex flex-col justify-between overflow-hidden group",
+                "rounded-[32px] border transition-all duration-500 p-6 flex flex-col gap-6 overflow-hidden group",
                 isTop10 
                   ? "bg-gradient-to-br from-[#12051a] via-[#1a1129] to-[#0a0f1c] border-yellow-400/30 shadow-[0_0_40px_rgba(250,204,21,0.1)]" 
                   : "bg-gradient-to-br from-[#1a1129] to-[#0a0f1c] border-white/10"
@@ -534,7 +534,7 @@ export const DashboardPage = () => {
                 
                 <GlowButton 
                   variant="purple" 
-                  className="w-full text-[11px] h-9 mt-4" 
+                  className="w-full text-[11px] h-9 mt-auto pt-4" 
                   size="sm"
                   onClick={() => setIsFriendsExpanded(!isFriendsExpanded)}
                 >
