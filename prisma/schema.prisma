@@ -17,13 +17,10 @@ model User {
   username        String    @unique // Persian supported
   email           String    @unique
   passwordHash    String
-  phoneNumber     String?   @unique
-  phoneVerified   Boolean   @default(false)
   otpCode         String?
   otpExpires      DateTime?
   role            String    @default("USER") // USER, ADMIN
   isVerified      Boolean   @default(false)
-  twoFactorEnabled Boolean  @default(false)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 

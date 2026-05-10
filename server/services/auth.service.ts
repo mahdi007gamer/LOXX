@@ -2,7 +2,6 @@ import argon2 from "argon2";
 import jwt from "jsonwebtoken";
 import prisma from "../utils/prisma.ts";
 import { RegisterDTO, LoginDTO } from "../types/auth.ts";
-import { SmsService } from "./sms.service.ts";
 
 const JWT_SECRET = process.env.JWT_SECRET || "secret";
 const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET || "refresh_secret";
@@ -15,11 +14,10 @@ export class AuthService {
       data: {
         username: data.username,
         email: data.email,
-        phoneNumber: data.phoneNumber ? data.phoneNumber.replace(/\s+/g, '') : null,
         passwordHash,
         profile: {
           create: {
-            displayName: data.username, // Default to username
+            displayName: data.username,
             region: "IR",
             membershipType: "NONE",
           }
@@ -29,10 +27,6 @@ export class AuthService {
         profile: true
       }
     });
-
-    if (user.phoneNumber) {
-      await this.sendOtp(user.id);
-    }
 
     if (data.referralCode) {
       try {
@@ -79,7 +73,7 @@ export class AuthService {
             }).catch(() => {});
           }
 
-          // Update Invitee (The new user)
+          // Update Invitee
           await prisma.subscription.create({
             data: {
               userId: user.id,
@@ -101,13 +95,8 @@ export class AuthService {
   }
 
   static async login(data: LoginDTO) {
-    const user = await prisma.user.findFirst({
-      where: {
-        OR: [
-          { email: data.email },
-          { phoneNumber: data.email } // Support phone as "email" field in login
-        ]
-      },
+    const user = await prisma.user.findUnique({
+      where: { email: data.email },
       include: { profile: true }
     });
 
@@ -138,50 +127,14 @@ export class AuthService {
     return jwt.verify(token, REFRESH_TOKEN_SECRET) as { userId: string };
   }
 
-  static async sendOtp(userId: string) {
-    const user = await prisma.user.findUnique({ where: { id: userId } });
-    if (!user || !user.phoneNumber) throw new Error("شماره همراه یافت نشد");
-
-    const code = Math.floor(10000 + Math.random() * 90000).toString();
-    const expires = new Date(Date.now() + 5 * 60 * 1000); // 5 mins
-
-    await prisma.user.update({
-      where: { id: userId },
-      data: { otpCode: code, otpExpires: expires }
+  static async forgotPassword(email: string) {
+    const user = await prisma.user.findUnique({
+      where: { email }
     });
 
-    await SmsService.sendOtp(user.phoneNumber, code);
-    return true;
-  }
+    if (!user) throw new Error("کاربری با این ایمیل یافت نشد");
 
-  static async verifyOtp(userId: string, code: string) {
-    const user = await prisma.user.findUnique({ where: { id: userId } });
-    if (!user || !user.otpCode || !user.otpExpires) throw new Error("کد تایید منقضی شده یا نامعتبر است");
-
-    if (new Date() > user.otpExpires) throw new Error("کد تایید منقضی شده است");
-    if (user.otpCode !== code) throw new Error("کد تایید اشتباه است");
-
-    await prisma.user.update({
-      where: { id: userId },
-      data: { phoneVerified: true, otpCode: null, otpExpires: null }
-    });
-
-    return true;
-  }
-
-  static async forgotPassword(phoneOrEmail: string) {
-    const user = await prisma.user.findFirst({
-      where: {
-        OR: [
-          { email: phoneOrEmail },
-          { phoneNumber: phoneOrEmail }
-        ]
-      }
-    });
-
-    if (!user) throw new Error("کاربری با این مشخصات یافت نشد");
-    if (!user.phoneNumber) throw new Error("شماره همراه برای این کاربر ثبت نشده است");
-
+    // In a real app we'd send an email. For now, we store a code in DB.
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     const expires = new Date(Date.now() + 10 * 60 * 1000);
 
@@ -190,18 +143,13 @@ export class AuthService {
       data: { otpCode: code, otpExpires: expires }
     });
 
-    await SmsService.sendOtp(user.phoneNumber, code);
+    console.log(`Password reset code for ${email}: ${code}`);
     return true;
   }
 
-  static async resetPassword(phoneOrEmail: string, code: string, newPassword: string) {
-    const user = await prisma.user.findFirst({
-      where: {
-        OR: [
-          { email: phoneOrEmail },
-          { phoneNumber: phoneOrEmail }
-        ]
-      }
+  static async resetPassword(email: string, code: string, newPassword: string) {
+    const user = await prisma.user.findUnique({
+      where: { email }
     });
 
     if (!user || user.otpCode !== code || !user.otpExpires || new Date() > user.otpExpires) {

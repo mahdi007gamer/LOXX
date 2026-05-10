@@ -9,7 +9,7 @@ import { useAuth } from "../context/AuthContext";
 import api from "../lib/api";
 import { toast } from "react-hot-toast";
 
-type AuthStep = "AUTH" | "OTP_VERIFY" | "FORGOT_PASSWORD" | "RESET_PASSWORD" | "LOGIN_2FA";
+type AuthStep = "AUTH" | "FORGOT_PASSWORD" | "RESET_PASSWORD";
 
 export const AuthPage = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -18,13 +18,11 @@ export const AuthPage = () => {
   const [formData, setFormData] = useState({
     username: "",
     email: "",
-    phoneNumber: "",
     password: "",
     referralCode: "",
     otpCode: "",
     newPassword: ""
   });
-  const [tempUserId, setTempUserId] = useState<string | null>(null);
   const [forgotIdentifier, setForgotIdentifier] = useState("");
 
   const navigate = useNavigate();
@@ -46,11 +44,6 @@ export const AuthPage = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const validatePhone = (phone: string) => {
-    const iranianPhoneRegex = /^(\+98|0)?9\d{9}$/;
-    return iranianPhoneRegex.test(phone.replace(/\s+/g, ''));
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -59,62 +52,29 @@ export const AuthPage = () => {
       if (step === "AUTH") {
         if (isLogin) {
           const response = await api.post("/auth/login", {
-            email: formData.email, // can be email or phone
+            email: formData.email,
             password: formData.password
           });
           
-          if (response.data.status === "2fa_required") {
-            setTempUserId(response.data.userId);
-            setStep("LOGIN_2FA");
-            toast.success(response.data.message);
-          } else {
-            login(response.data.token, response.data.user);
-            toast.success("خوش آمدید!");
-          }
+          login(response.data.token, response.data.user);
+          toast.success("خوش آمدید!");
         } else {
-          if (formData.phoneNumber && !validatePhone(formData.phoneNumber)) {
-            toast.error("شماره همراه ایرانی معتبر وارد کنید");
-            setLoading(false);
-            return;
-          }
-
-          const response = await api.post("/auth/register", {
+          await api.post("/auth/register", {
             username: formData.username,
             email: formData.email,
             password: formData.password,
-            phoneNumber: formData.phoneNumber || undefined,
             referralCode: formData.referralCode || undefined
           });
           
-          if (formData.phoneNumber) {
-            setTempUserId(response.data.user.id);
-            setStep("OTP_VERIFY");
-            toast.success("کد تایید پیامک شد");
-          } else {
-            toast.success("ثبت‌نام با موفقیت انجام شد. وارد شوید.");
-            setIsLogin(true);
-          }
+          toast.success("ثبت‌نام با موفقیت انجام شد. وارد شوید.");
+          setIsLogin(true);
         }
-      } else if (step === "OTP_VERIFY") {
-        await api.post("/auth/verify-phone", {
-          userId: tempUserId,
-          code: formData.otpCode
-        });
-        toast.success("شماره همراه تایید شد. اکنون وارد شوید.");
-        setStep("AUTH");
-        setIsLogin(true);
-      } else if (step === "LOGIN_2FA") {
-        const response = await api.post("/auth/verify-2fa", {
-          userId: tempUserId,
-          code: formData.otpCode
-        });
-        login(response.data.token, response.data.user);
-        toast.success("خوش آمدید!");
       } else if (step === "FORGOT_PASSWORD") {
+        // Simple forgot password logic
         await api.post("/auth/forgot-password", {
           identifier: forgotIdentifier
         });
-        toast.success("کد بازیابی پیامک شد");
+        toast.success("ایمیل بازیابی برای شما ارسال شد");
         setStep("RESET_PASSWORD");
       } else if (step === "RESET_PASSWORD") {
         await api.post("/auth/reset-password", {
@@ -171,24 +131,10 @@ export const AuthPage = () => {
                   </>
                 )}
 
-                {step === "OTP_VERIFY" && (
-                  <>
-                    <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter">تایید شماره همراه</h2>
-                    <p className="mt-2 text-sm text-gray-400 font-bold">کد ۵ رقمی پیامک شده را وارد کنید</p>
-                  </>
-                )}
-
-                {step === "LOGIN_2FA" && (
-                  <>
-                    <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter">تایید دو مرحله‌ای</h2>
-                    <p className="mt-2 text-sm text-gray-400 font-bold flex items-center justify-center gap-2"><ShieldCheck size={16} className="text-neon-blue" /> امنیت حساب شما اولویت ماست</p>
-                  </>
-                )}
-
                 {step === "FORGOT_PASSWORD" && (
                   <>
                     <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter">فراموشی رمز عبور</h2>
-                    <p className="mt-2 text-sm text-gray-400 font-bold">ایمیل یا شماره همراه خود را وارد کنید</p>
+                    <p className="mt-2 text-sm text-gray-400 font-bold">ایمیل خود را وارد کنید</p>
                   </>
                 )}
 
@@ -221,16 +167,6 @@ export const AuthPage = () => {
                             required={!isLogin}
                           />
                           <Input 
-                            label="شماره همراه (برای تایید)" 
-                            placeholder="09120000000" 
-                            name="phoneNumber"
-                            dir="ltr"
-                            value={formData.phoneNumber}
-                            onChange={handleInputChange}
-                            icon={<Phone size={18} />} 
-                            required={!isLogin}
-                          />
-                          <Input 
                             label="کد معرف (اختیاری)" 
                             placeholder="کد دعوت" 
                             name="referralCode"
@@ -243,10 +179,10 @@ export const AuthPage = () => {
                     </AnimatePresence>
                     
                     <Input 
-                      label={isLogin ? "ایمیل یا شماره همراه" : "ایمیل"} 
-                      type={isLogin ? "text" : "email"}
+                      label="ایمیل" 
+                      type="email"
                       name="email"
-                      placeholder={isLogin ? "09... یا example@mail.com" : "example@gmail.com"} 
+                      placeholder="example@gmail.com" 
                       value={formData.email}
                       onChange={handleInputChange}
                       icon={<Mail size={18} />} 
@@ -277,24 +213,11 @@ export const AuthPage = () => {
                   </>
                 )}
 
-                {(step === "OTP_VERIFY" || step === "LOGIN_2FA") && (
-                  <Input 
-                    label="کد تایید" 
-                    name="otpCode"
-                    placeholder="12345"
-                    dir="ltr"
-                    className="text-center tracking-[1em] font-black text-lg"
-                    value={formData.otpCode}
-                    onChange={handleInputChange}
-                    icon={<KeyRound size={18} />}
-                    required
-                  />
-                )}
-
                 {step === "FORGOT_PASSWORD" && (
                   <Input 
-                    label="ایمیل یا شماره همراه" 
-                    placeholder="0912... یا mail@example.com"
+                    label="ایمیل" 
+                    type="email"
+                    placeholder="mail@example.com"
                     value={forgotIdentifier}
                     onChange={(e) => setForgotIdentifier(e.target.value)}
                     icon={<Mail size={18} />}
@@ -305,11 +228,11 @@ export const AuthPage = () => {
                 {step === "RESET_PASSWORD" && (
                   <>
                     <Input 
-                      label="کد تایید شش رقمی" 
+                      label="کد تایید" 
                       name="otpCode"
                       placeholder="123456"
                       dir="ltr"
-                      className="text-center tracking-[1em] font-black"
+                      className="text-center tracking-widest font-black"
                       value={formData.otpCode}
                       onChange={handleInputChange}
                       icon={<KeyRound size={18} />}
@@ -340,7 +263,6 @@ export const AuthPage = () => {
                         <Loader2 className="h-5 w-5 animate-spin" />
                       ) : (
                         step === "AUTH" ? (isLogin ? "ورود به لابی" : "تایید و ثبت‌نام") :
-                        step === "OTP_VERIFY" || step === "LOGIN_2FA" ? "بررسی کد" :
                         step === "FORGOT_PASSWORD" ? "ارسال کد تایید" : "تغییر رمز عبور"
                       )}
                     </GlowButton>

@@ -14,8 +14,4 @@ router.get("/:username", authenticate, UserController.getProfile);
 router.patch("/profile", authenticate, UserController.updateProfile);
 router.patch("/security/password", authenticate, UserController.changePassword);
 
-router.post("/me/2fa/setup", authenticate, UserController.setup2FA);
-router.post("/me/2fa/verify", authenticate, UserController.verify2FA);
-router.post("/me/2fa/disable", authenticate, UserController.disable2FA);
-
 export default router;
