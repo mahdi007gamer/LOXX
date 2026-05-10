@@ -26,7 +26,9 @@ import {
   Crown,
   ArrowRight,
   Award,
-  Plus
+  Plus,
+  Sparkles,
+  Star
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { motion, AnimatePresence } from "motion/react";
@@ -666,28 +668,6 @@ export const SettingsPage = () => {
       </div>
     </div>
   );
-                  : "bg-white/5 border-white/5 hover:border-white/10"
-                  )}
-                >
-                    <img src={badge.iconUrl} alt={badge.name} className={cn("w-12 h-12 object-contain mb-2", !hasBadge && "grayscale opacity-50")} />
-                    <span className={cn("text-[10px] font-black uppercase tracking-tighter text-center line-clamp-1", hasBadge ? "text-white" : "text-gray-600")}>{badge.name}</span>
-                    
-                    <div className={cn(
-                       "absolute inset-0 rounded-[22px] flex items-center justify-center bg-dark-bg/80 opacity-0 group-hover:opacity-100 transition-opacity",
-                       hasBadge ? "bg-red-500/20" : "bg-neon-pink/20"
-                    )}>
-                       <span className="text-[10px] font-black text-white uppercase italic">
-                          {hasBadge ? "حذف کردن" : "اضافه کردن"}
-                       </span>
-                    </div>
-                </motion.div>
-              );
-            })}
-         </div>
-      </NeonCard>
-    </div>
-  );
-
   const renderSecurity = () => (
     <div className="space-y-6">
       <NeonCard variant="purple" className="space-y-8">
