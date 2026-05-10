@@ -44,6 +44,7 @@ interface VIPMetadata {
   frame: FrameType;
   frameColor: string;
   effectType: string;
+  fontStyle?: "none" | "lightning" | "glitch" | "fire";
   opacity: number;
   bgImage?: string;
   colors: {
@@ -89,6 +90,7 @@ export const EliteSettingsPage = () => {
     frame: "none",
     frameColor: "#00e5ff",
     effectType: "none",
+    fontStyle: "none",
     opacity: 0.2,
     colors: {
       bg: "#0d0d14",
@@ -153,6 +155,7 @@ export const EliteSettingsPage = () => {
         frame: "none",
         frameColor: "#00e5ff",
         effectType: "none",
+        fontStyle: "none",
         opacity: 0.2,
         colors: {
           bg: "#0d0d14",
@@ -240,6 +243,19 @@ export const EliteSettingsPage = () => {
     { id: "fire", label: "آتشین", icon: Flame, color: "orange" },
     { id: "neon_pulse", label: "نئون پالز", icon: CircleDashed, color: "cyan" },
   ];
+
+  const getFontStyle = () => {
+    if (metadata?.fontStyle === "lightning") {
+      return { textShadow: "0 0 5px #fff, 0 0 10px #fff, 0 0 20px #0ff, 0 0 40px #0ff", animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite" };
+    }
+    if (metadata?.fontStyle === "fire") {
+      return { textShadow: "0 -2px 4px #fff, 0 -2px 10px #ff3, 0 -10px 20px #fd3, 0 -18px 40px #f80", animation: "pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite" };
+    }
+    if (metadata?.fontStyle === "glitch") {
+      return { textShadow: "2px 0 0 rgba(255,0,0,0.8), -2px 0 0 rgba(0,255,255,0.8)", animation: "pulse 0.5s cubic-bezier(0.4, 0, 0.6, 1) infinite" };
+    }
+    return { textShadow: "0 4px 12px rgba(0,0,0,0.8), 0 2px 4px rgba(0,0,0,0.5)" };
+  };
 
   const getBackgroundStyle = () => {
     if (!metadata.colors.gradient?.enabled) {
@@ -521,22 +537,25 @@ export const EliteSettingsPage = () => {
                     </div>
 
                     <div className="pt-4 border-t border-white/5">
-                      <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-4 italic">انتخاب فریم فعال (بیش از ۱۰ فریم)</label>
-                      <div className="flex flex-wrap gap-3">
-                        {frames.map((frame) => (
+                      <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-4 italic">فونت استایل (Font Style)</label>
+                      <div className="grid grid-cols-2 gap-3">
+                        {[
+                          { id: "none", label: "بدون افکت" },
+                          { id: "lightning", label: "برقی" },
+                          { id: "glitch", label: "گیلیچ" },
+                          { id: "fire", label: "آتیش" }
+                        ].map((style) => (
                           <button
-                            key={frame.id}
-                            disabled={frame.disabled}
-                            onClick={() => setMetadata({ ...metadata, frame: frame.id })}
+                            key={style.id}
+                            onClick={() => setMetadata({ ...metadata, fontStyle: style.id as any })}
                             className={cn(
-                              "relative h-12 w-12 rounded-xl border transition-all flex items-center justify-center group",
-                              metadata.frame === frame.id 
+                              "relative h-12 rounded-xl border transition-all flex items-center justify-center group",
+                              metadata.fontStyle === style.id 
                                 ? "bg-neon-blue/10 border-neon-blue shadow-[0_0_15px_rgba(0,229,255,0.2)]" 
-                                : "bg-white/5 border-white/5 hover:border-white/10",
-                              frame.disabled && "opacity-30 cursor-not-allowed"
+                                : "bg-white/5 border-white/5 hover:border-white/10"
                             )}
                           >
-                             <frame.icon size={18} className={cn(metadata.frame === frame.id ? "text-neon-blue" : "text-gray-600")} />
+                             <span className={cn("text-xs font-black uppercase tracking-widest italic", metadata.fontStyle === style.id ? "text-neon-blue" : "text-gray-400")}>{style.label}</span>
                           </button>
                         ))}
                       </div>
@@ -587,7 +606,7 @@ export const EliteSettingsPage = () => {
                               </div>
                            </div>
                            <div className="space-y-2">
-                              <label className="text-[10px] font-black text-gray-400 uppercase italic">رنگ لیبل آمار</label>
+                              <label className="text-[10px] font-black text-gray-400 uppercase italic">رنگ لیبل‌ها</label>
                               <div className="flex gap-2">
                                 <input type="color" value={metadata.colors.statsLabel || "#4b5563"} onChange={(e) => setMetadata(m => ({ ...m, colors: { ...m.colors, statsLabel: e.target.value } }))} className="w-12 h-10 rounded-xl border-none cursor-pointer bg-white/5" />
                                 <Input value={metadata.colors.statsLabel || "#4b5563"} onChange={(e) => setMetadata(m => ({ ...m, colors: { ...m.colors, statsLabel: e.target.value } }))} className="flex-1" />
@@ -716,7 +735,7 @@ export const EliteSettingsPage = () => {
                                   className={cn("text-2xl font-black italic tracking-tighter uppercase", metadata.shinyName && "animate-pulse")}
                                   style={{ 
                                     color: metadata.colors.text,
-                                    textShadow: "0 4px 12px rgba(0,0,0,0.8), 0 2px 4px rgba(0,0,0,0.5)"
+                                    ...getFontStyle()
                                   }}
                                 >
                                   {user?.displayName || "Elite User"}

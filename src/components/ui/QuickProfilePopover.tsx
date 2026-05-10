@@ -118,8 +118,23 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
       style.backgroundImage = "linear-gradient(to bottom right, #eab308, #a16207)";
     } else if (isPLUS) {
       style.backgroundColor = "#eab308";
+    } else {
+      style.backgroundColor = "#0a0a0f";
     }
     return style;
+  };
+
+  const getFontStyle = () => {
+    if (metadata?.fontStyle === "lightning") {
+      return { textShadow: "0 0 5px #fff, 0 0 10px #fff, 0 0 20px #0ff, 0 0 40px #0ff", animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite" };
+    }
+    if (metadata?.fontStyle === "fire") {
+      return { textShadow: "0 -2px 4px #fff, 0 -2px 10px #ff3, 0 -10px 20px #fd3, 0 -18px 40px #f80", animation: "pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite" };
+    }
+    if (metadata?.fontStyle === "glitch") {
+      return { textShadow: "2px 0 0 rgba(255,0,0,0.8), -2px 0 0 rgba(0,255,255,0.8)", animation: "pulse 0.5s cubic-bezier(0.4, 0, 0.6, 1) infinite" };
+    }
+    return { textShadow: isVIP ? "none" : "0 4px 12px rgba(0,0,0,0.8), 0 2px 4px rgba(0,0,0,0.5)" };
   };
 
   const renderFrameEffect = (type: string) => {
@@ -222,7 +237,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
       animate={{ opacity: 1, scale: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.9, y: 10 }}
       className={cn(
-        "w-[380px] bg-[#0a0a0f] rounded-[48px] border overflow-hidden cursor-default rtl text-right transition-all backdrop-blur-3xl px-0 relative z-[20002]",
+        "w-[380px] rounded-[48px] border overflow-hidden cursor-default rtl text-right transition-all backdrop-blur-3xl px-0 relative z-[20002]",
         metadata?.fullGlow ? "shadow-[0_0_50px_rgba(250,204,21,0.4)] border-yellow-400" : (isVIP ? "border-yellow-400/40 shadow-[0_40px_100px_rgba(0,0,0,1)]" : "border-white/10 shadow-[0_40px_100px_rgba(0,0,0,1)]")
       )}
       style={{ 
@@ -368,7 +383,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
                     ? { backgroundImage: `linear-gradient(to right, ${metadata.colors.text}, ${metadata.colors.textGradient})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }
                     : { color: metadata.colors.text }) 
                   : {}),
-                textShadow: isVIP ? "none" : "0 4px 12px rgba(0,0,0,0.8), 0 2px 4px rgba(0,0,0,0.5)"
+                ...getFontStyle()
               }}>
                 {user.displayName || user.senderName}
               </h4>
@@ -376,7 +391,6 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
                 {user.senderBadges?.filter(b => b.isSpecial).map(badge => (
                   <img key={badge.id} src={badge.iconUrl} alt={badge.name} title={badge.name} className="h-6 w-6 object-contain" />
                 ))}
-                {(!user.senderBadges?.some(b => b.isSpecial)) && <CheckCircle2 size={24} className="text-neon-blue" fill="currentColor" />}
               </div>
             </div>
             <div className="flex items-center gap-2 mt-1">
@@ -399,7 +413,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
           {/* Accurate Statistics Grid */}
           <div className="grid grid-cols-4 gap-4 py-6 border-y border-white/5">
              <div className="text-center group">
-                <p className="text-[9px] font-black uppercase mb-1.5 group-hover:text-neon-blue transition-colors italic" style={{ color: metadata?.colors?.statsLabel || "#4b5563" }}>عضویت</p>
+                <p className="text-[9px] font-black uppercase mb-1.5 group-hover:text-neon-blue transition-colors italic" style={{ color: metadata?.colors?.statsLabel || (isVIP ? "#451a03" : "#4b5563") }}>عضویت</p>
                 <div className="flex flex-col items-center">
                   {loading ? (
                     <div className="h-4 w-8 bg-white/5 animate-pulse rounded" />
@@ -409,7 +423,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
                 </div>
              </div>
              <div className="text-center group">
-                <p className="text-[9px] font-black uppercase mb-1.5 group-hover:text-neon-pink transition-colors italic" style={{ color: isVIP ? "#451a03" : (metadata?.colors?.statsLabel || "#4b5563") }}>دوستان</p>
+                <p className="text-[9px] font-black uppercase mb-1.5 group-hover:text-neon-pink transition-colors italic" style={{ color: metadata?.colors?.statsLabel || (isVIP ? "#451a03" : "#4b5563") }}>دوستان</p>
                 <div className="flex flex-col items-center">
                   {loading ? (
                     <div className="h-4 w-8 bg-white/5 animate-pulse rounded" />
@@ -419,7 +433,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
                 </div>
              </div>
              <div className="text-center group">
-                <p className="text-[9px] font-black uppercase mb-1.5 group-hover:text-neon-purple transition-colors italic" style={{ color: isVIP ? "#451a03" : (metadata?.colors?.statsLabel || "#4b5563") }}>لابی‌ها</p>
+                <p className="text-[9px] font-black uppercase mb-1.5 group-hover:text-neon-purple transition-colors italic" style={{ color: metadata?.colors?.statsLabel || (isVIP ? "#451a03" : "#4b5563") }}>لابی‌ها</p>
                 <div className="flex flex-col items-center">
                   {loading ? (
                     <div className="h-4 w-8 bg-white/5 animate-pulse rounded" />
@@ -429,7 +443,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
                 </div>
              </div>
              <div className="text-center group">
-                <p className="text-[9px] font-black uppercase mb-1.5 group-hover:text-yellow-500 transition-colors italic" style={{ color: isVIP ? "#451a03" : (metadata?.colors?.statsLabel || "#4b5563") }}>میزبانی</p>
+                <p className="text-[9px] font-black uppercase mb-1.5 group-hover:text-yellow-500 transition-colors italic" style={{ color: metadata?.colors?.statsLabel || (isVIP ? "#451a03" : "#4b5563") }}>میزبانی</p>
                 <div className="flex flex-col items-center">
                   {loading ? (
                     <div className="h-4 w-8 bg-white/5 animate-pulse rounded" />
@@ -442,7 +456,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
 
           {/* Badges Section */}
           <div className="space-y-4">
-            <h5 className="text-[10px] font-black text-gray-600 uppercase tracking-widest italic">نشان‌های انتخابی و دستاوردها</h5>
+            <h5 className="text-[10px] font-black uppercase tracking-widest italic" style={{ color: metadata?.colors?.statsLabel || (isVIP ? "#451a03" : "#4b5563") }}>نشان‌های انتخابی و دستاوردها</h5>
             <div className="flex flex-wrap gap-2.5 max-h-[120px] overflow-y-auto no-scrollbar">
               {user.senderBadges?.filter(b => b.isPinned).map((ub, i) => (
                 <div 

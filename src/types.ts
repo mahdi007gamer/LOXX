@@ -123,6 +123,7 @@ export interface VIPMetadata {
   frame: string;
   frameColor: string;
   effectType: string;
+  fontStyle?: "none" | "lightning" | "glitch" | "fire";
   opacity: number;
   bgImage?: string;
   colors: {
@@ -133,6 +134,7 @@ export interface VIPMetadata {
     statsLabel?: string;
     badgeText?: string;
     textGradient?: string;
+    auraColor?: string;
     gradient?: {
       enabled: boolean;
       color1: string;
