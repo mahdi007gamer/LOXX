@@ -63,6 +63,8 @@ export const SettingsPage = () => {
   const [activeTab, setActiveTab] = useState<SettingsTab>("profile");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [uploadingBanner, setUploadingBanner] = useState(false);
   
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
   const [showTwoFactorModal, setShowTwoFactorModal] = useState(false);
@@ -98,6 +100,12 @@ export const SettingsPage = () => {
   const [devices, setDevices] = useState<any[]>([]);
   const [userBadges, setUserBadges] = useState<any[]>([]);
 
+  const [vipMetadata, setVipMetadata] = useState<any>({
+    auraEffect: true,
+    shinyName: true,
+    specialFrame: false
+  });
+
   useEffect(() => {
     fetchUserData();
     fetchDevices();
@@ -105,12 +113,36 @@ export const SettingsPage = () => {
 
   const fetchUserData = async () => {
     try {
+      if (refreshUser) await refreshUser();
       const res = await api.get("/auth/me");
       if (res.data.status === "success") {
-        setTwoFactorEnabled(res.data.data.twoFactorEnabled);
+        const d = res.data.data;
+        setTwoFactorEnabled(d.twoFactorEnabled);
+        if (d.vipMetadata) setVipMetadata(d.vipMetadata);
+        setFormData(p => ({
+          ...p,
+          displayName: d.displayName || "",
+          bio: d.bio || "",
+          username: d.username || "",
+          avatarUrl: d.avatarUrl || "",
+          bannerUrl: d.bannerUrl || "",
+          region: d.region || "IR",
+        }));
       }
     } catch (err) {}
     setLoading(false);
+  };
+
+  const toggleVipFeature = async (key: string) => {
+    try {
+      const newMetadata = { ...vipMetadata, [key]: !vipMetadata[key] };
+      setVipMetadata(newMetadata);
+      await api.patch("/user/profile", { vipMetadata: newMetadata });
+      toast.success("تنظیمات ویژه به‌روزرسانی شد");
+      if (refreshUser) refreshUser();
+    } catch (err: any) {
+      toast.error("خطا در به‌روزرسانی تنظیمات ویژه");
+    }
   };
 
   const fetchDevices = async () => {
@@ -194,6 +226,49 @@ export const SettingsPage = () => {
     }
   };
 
+  const handleUpload = async (file: File, type: "avatar" | "banner") => {
+    try {
+      if (type === "avatar") setUploadingAvatar(true);
+      else setUploadingBanner(true);
+
+      const formDataUpload = new FormData();
+      formDataUpload.append("file", file);
+
+      const res = await api.post("/upload", formDataUpload, {
+        headers: { "Content-Type": "multipart/form-data" }
+      });
+
+      if (res.data.url) {
+        setFormData(p => ({ ...p, [type === "avatar" ? "avatarUrl" : "bannerUrl"]: res.data.url }));
+        toast.success(type === "avatar" ? "تصویر پروفایل انتخاب شد" : "بنر انتخاب شد");
+      }
+    } catch (err: any) {
+      toast.error("خطا در آپلود تصویر");
+    } finally {
+      if (type === "avatar") setUploadingAvatar(false);
+      else setUploadingBanner(false);
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    try {
+      setSaving(true);
+      await api.patch("/user/profile", {
+        displayName: formData.displayName,
+        bio: formData.bio,
+        avatarUrl: formData.avatarUrl,
+        bannerUrl: formData.bannerUrl,
+        region: formData.region
+      });
+      toast.success("پروفایل با موفقیت به‌روزرسانی شد");
+      if (refreshUser) refreshUser();
+    } catch (err: any) {
+      toast.error(err.response?.data?.error?.message || "خطا در برقراری ارتباط");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleRevokeDevice = async (id: string) => {
     try {
       await api.delete(`/user/sessions/${id}`);
@@ -210,23 +285,29 @@ export const SettingsPage = () => {
     <div className="space-y-6">
       <NeonCard variant="purple" className="relative group overflow-hidden p-0">
          <div className="h-40 bg-gradient-to-r from-neon-purple/20 to-neon-pink/20 relative">
-            <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20" />
-            <button className="absolute top-4 right-4 h-10 w-10 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white border border-white/10 hover:bg-black/60 transition-all">
-              <Camera size={18} />
-            </button>
+            {formData.bannerUrl ? (
+              <img src={formData.bannerUrl} className="h-full w-full object-cover" />
+            ) : (
+              <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20" />
+            )}
+            <label className="absolute top-4 right-4 h-10 w-10 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white border border-white/10 hover:bg-black/60 transition-all cursor-pointer">
+              {uploadingBanner ? <Sparkles className="animate-spin" size={18} /> : <Camera size={18} />}
+              <input type="file" className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && handleUpload(e.target.files[0], "banner")} />
+            </label>
          </div>
          <div className="px-8 pb-8 -mt-12 relative z-10 flex flex-col md:flex-row gap-6 md:items-end">
             <div className="relative">
               <div className="h-28 w-28 rounded-[32px] bg-[#0a0a0f] p-1 border-2 border-neon-purple shadow-[0_0_30px_rgba(191,0,255,0.2)]">
-                <img src={authUser?.avatarUrl || "https://api.dicebear.com/7.x/avataaars/svg?seed=Loxx"} className="h-full w-full rounded-[28px] object-cover" />
+                <img src={formData.avatarUrl || "https://api.dicebear.com/7.x/avataaars/svg?seed=Loxx"} className="h-full w-full rounded-[28px] object-cover" />
               </div>
-              <button className="absolute bottom-1 right-1 h-8 w-8 rounded-xl bg-neon-purple text-white flex items-center justify-center border-2 border-[#0a0a0f] hover:scale-110 transition-transform">
-                <Camera size={14} />
-              </button>
+              <label className="absolute bottom-1 right-1 h-8 w-8 rounded-xl bg-neon-purple text-white flex items-center justify-center border-2 border-[#0a0a0f] hover:scale-110 transition-transform cursor-pointer">
+                {uploadingAvatar ? <Sparkles className="animate-spin text-white" size={14} /> : <Camera size={14} />}
+                <input type="file" className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && handleUpload(e.target.files[0], "avatar")} />
+              </label>
             </div>
             <div className="flex-1 md:pb-2">
-               <h2 className="text-2xl font-black text-white italic tracking-tight">{authUser?.displayName || authUser?.username}</h2>
-               <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">@{authUser?.username}</p>
+               <h2 className="text-2xl font-black text-white italic tracking-tight">{formData.displayName || formData.username}</h2>
+               <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">@{formData.username}</p>
             </div>
          </div>
       </NeonCard>
@@ -246,7 +327,7 @@ export const SettingsPage = () => {
             />
          </div>
          <div className="flex justify-end pt-4">
-            <GlowButton variant="purple" className="px-12 h-12 text-xs font-black uppercase italic" disabled={saving}>
+            <GlowButton variant="purple" className="px-12 h-12 text-xs font-black uppercase italic" disabled={saving} onClick={handleSaveProfile}>
               {saving ? "در حال ذخیره..." : "ذخیره تغییرات"}
             </GlowButton>
          </div>
@@ -387,47 +468,6 @@ export const SettingsPage = () => {
             </div>
           )}
         </AnimatePresence>
-
-        <hr className="border-white/5" />
-
-        <div>
-           <div className="flex items-center justify-between mb-4">
-             <div>
-               <h3 className="font-black text-white italic mb-1 flex items-center gap-2">
-                 خلاصه وضعیت امنیت
-               </h3>
-               <p className="text-[10px] text-gray-400 font-bold uppercase italic">گزارش کلی از لایه‌های حفاظتی فعال در سیستم</p>
-             </div>
-           </div>
-           
-           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-             <SecurityStatusCard 
-               title="Rate Limiting" 
-               status="فعال" 
-               desc="محافظت در برابر حملات DoS و Brute-force. محدودیت ۱۰۰ درخواست/۱۵دقیقه روی کل سایت" 
-               icon={<Zap size={20} className="text-neon-blue" />}
-             />
-             <SecurityStatusCard 
-               title="XSS Protection" 
-               status="فعال" 
-               desc="پاکسازی خودکار پیام‌ها توسط DOMPurify برای جلوگیری از اجرای اسکریپت‌های مخرب." 
-               icon={<Shield size={20} className="text-neon-pink" />}
-             />
-             <SecurityStatusCard 
-               title="Socket.io Auth" 
-               status="فعال" 
-               desc="احراز هویت تمامی ارتباطات لحظه‌ای با استفاده از JWT بصورت اجباری." 
-               icon={<Smartphone size={20} className="text-green-400" />}
-             />
-             <SecurityStatusCard 
-               title="Email Verification" 
-               status={authUser?.isVerified ? "تایید شده" : "در انتظار تایید"} 
-               desc="سیستم تایید هویت با ایمیل برای جلوگیری از اکانت‌های اسپم و بات." 
-               color={authUser?.isVerified ? "green" : "red"}
-               icon={<Mail size={20} className={authUser?.isVerified ? "text-green-400" : "text-neon-pink"} />}
-             />
-           </div>
-        </div>
 
         <hr className="border-white/5" />
 
@@ -631,22 +671,25 @@ export const SettingsPage = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
              {[
-               { label: "هاله نورانی", desc: "Aura Effect دور آواتار", active: true },
-               { label: "نام درخشان", desc: "افکت Glow برای نام کاربری", active: true },
-               { label: "قاب ویژه", desc: "فریم‌های متحرک منحصر به فرد", active: false }
+               { id: "auraEffect", label: "هاله نورانی", desc: "Aura Effect دور آواتار" },
+               { id: "shinyName", label: "نام درخشان", desc: "افکت Glow برای نام کاربری" },
+               { id: "specialFrame", label: "قاب ویژه", desc: "فریم‌های متحرک منحصر به فرد" }
              ].map((item, i) => (
                 <div key={i} className="p-4 rounded-xl bg-white/5 border border-white/5 flex items-center justify-between group hover:border-neon-purple/30 transition-all">
                    <div>
                       <h4 className="text-xs font-black text-white italic">{item.label}</h4>
                       <p className="text-[9px] text-gray-500 italic mt-0.5">{item.desc}</p>
                    </div>
-                   <div className={cn(
-                     "h-6 w-11 rounded-full relative transition-colors cursor-pointer",
-                     item.active ? "bg-neon-purple/30" : "bg-white/10"
-                   )}>
+                   <div 
+                    onClick={() => toggleVipFeature(item.id)}
+                    className={cn(
+                      "h-6 w-11 rounded-full relative transition-colors cursor-pointer",
+                      vipMetadata[item.id] ? "bg-neon-purple/30" : "bg-white/10"
+                    )}
+                   >
                       <div className={cn(
                         "absolute top-1 h-4 w-4 rounded-full transition-all",
-                        item.active ? "right-1 bg-neon-purple" : "left-1 bg-gray-600"
+                        vipMetadata[item.id] ? "right-1 bg-neon-purple" : "left-1 bg-gray-600"
                       )} />
                    </div>
                 </div>

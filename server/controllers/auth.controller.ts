@@ -72,7 +72,11 @@ export class AuthController {
           email: user!.email,
           role: user!.role,
           membership: user!.profile?.membershipType,
-          isVerified: user!.isVerified
+          isVerified: user!.isVerified,
+          avatarUrl: user!.profile?.avatarUrl,
+          bannerUrl: user!.profile?.bannerUrl,
+          displayName: user!.profile?.displayName,
+          vipMetadata: user!.profile?.vipMetadata
         }
       });
     } catch (error: any) {
@@ -111,7 +115,11 @@ export class AuthController {
           email: user.email,
           role: user.role,
           membership: user.profile?.membershipType,
-          isVerified: user.isVerified
+          isVerified: user.isVerified,
+          avatarUrl: user.profile?.avatarUrl,
+          bannerUrl: user.profile?.bannerUrl,
+          displayName: user.profile?.displayName,
+          vipMetadata: user.profile?.vipMetadata
         }
       });
     } catch (error: any) {

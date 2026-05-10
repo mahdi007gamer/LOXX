@@ -8,7 +8,9 @@ interface User {
   role: string;
   displayName?: string;
   avatarUrl?: string;
+  bannerUrl?: string;
   membership?: string;
+  vipMetadata?: any;
   isVerified?: boolean;
 }
 
