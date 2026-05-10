@@ -282,7 +282,10 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
          </button>
       </div>
 
-      <div className="px-10 pb-10 pt-0 relative z-10">
+      <div className="px-10 pb-10 pt-0 relative z-20">
+         {/* Readability Overlay for background/gold themes */}
+         <div className="absolute inset-0 z-[-1] bg-gradient-to-b from-transparent via-black/40 to-black/80 backdrop-blur-[2px]" />
+         
         <div className="flex items-start justify-between">
           <div className="relative -mt-20 mb-6 inline-block">
              <div className={cn(
@@ -322,7 +325,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
                )}
             </div>
 
-             <div className="absolute top-1 right-1 h-7 w-7 bg-green-500 rounded-full border-[5px] border-[#0a0a0f] z-20 shadow-lg"></div>
+             <div className="absolute top-1 right-1 h-7 w-7 bg-green-500 rounded-full border-[5px] border-[#0a0a0f] z-30 shadow-lg"></div>
              
              {isVIP && (
                <div className="absolute -bottom-4 -left-4 h-12 w-12 rounded-full bg-yellow-400 text-dark-bg border-4 border-[#0a0a0f] flex items-center justify-center shadow-2xl z-20">
@@ -339,7 +342,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
           {!isSelf && (
             <button 
               onClick={handleMessage}
-              className="mt-6 h-14 w-14 rounded-3xl bg-white/5 text-gray-400 flex items-center justify-center hover:bg-neon-blue hover:text-dark-bg transition-all border border-white/10 group active:scale-95 shadow-xl"
+              className="mt-6 h-14 w-14 rounded-3xl bg-white/10 text-white flex items-center justify-center hover:bg-neon-blue hover:text-dark-bg transition-all border border-white/10 group active:scale-95 shadow-xl backdrop-blur-xl"
               title="ارسال پیام"
             >
               <MessageCircle size={28} className="group-hover:rotate-12 transition-transform" />
@@ -351,7 +354,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
           <div>
             <div className="flex items-center gap-3">
               <h4 className={cn(
-                "text-3xl font-black italic tracking-tighter uppercase",
+                "text-3xl font-black italic tracking-tighter uppercase drop-shadow-lg",
                 isVIP && !metadata?.colors?.textGradient ? "text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-200" : "text-white",
                 metadata?.shinyName && "animate-pulse drop-shadow-[0_0_12px_rgba(255,255,255,0.6)]"
               )} style={metadata && metadata.colors && (isVIP || isPLUS) ? 

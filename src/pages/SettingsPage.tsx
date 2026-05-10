@@ -10,6 +10,7 @@ import {
   User, 
   Bell, 
   Shield, 
+  ShieldAlert,
   Monitor, 
   Globe, 
   Palette, 

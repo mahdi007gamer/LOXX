@@ -105,32 +105,63 @@ export const EliteSettingsPage = () => {
   const [uploadingBg, setUploadingBg] = useState(false);
 
   useEffect(() => {
-    if (user?.vipMetadata) {
+    const initMetadata = () => {
+      if (!user?.vipMetadata) {
+        setLoading(false);
+        return;
+      }
+      
       try {
         const parsed = typeof user.vipMetadata === 'string' ? JSON.parse(user.vipMetadata) : user.vipMetadata;
-        setMetadata(prev => {
-          const merged = { ...prev, ...parsed };
-          // Ensure nested objects exist
-          if (!merged.colors) {
-            merged.colors = prev.colors;
+        setMetadata(prev => ({
+          ...prev,
+          ...parsed,
+          colors: {
+            ...prev.colors,
+            ...(parsed.colors || {}),
+            gradient: {
+              ...prev.colors.gradient!,
+              ...(parsed.colors?.gradient || {})
+            }
           }
-          if (!merged.colors.gradient) {
-            merged.colors.gradient = {
-              enabled: false,
-              color1: merged.colors.accent,
-              color2: "#000000",
-              type: "linear",
-              angle: 45
-            };
-          }
-          return merged;
-        });
+        }));
       } catch (e) {
         console.error("Failed to parse VIP metadata", e);
+      } finally {
+        setLoading(false);
       }
-    }
-    setLoading(false);
+    };
+
+    initMetadata();
   }, [user]);
+
+  const handleReset = () => {
+    if (window.confirm("آیا مطمئن هستید که می‌خواهید تمامی تنظیمات نخبگان را به حالت پیش‌فرض برگردانید؟")) {
+      setMetadata({
+        auraEffect: false,
+        shinyName: false,
+        specialFrame: false,
+        fullGlow: false,
+        frame: "none",
+        frameColor: "#00e5ff",
+        effectType: "none",
+        opacity: 0.2,
+        colors: {
+          bg: "#0d0d14",
+          text: "#ffffff",
+          accent: "#00e5ff",
+          gradient: {
+            enabled: false,
+            color1: "#00e5ff",
+            color2: "#0044ff",
+            type: "linear",
+            angle: 45
+          }
+        }
+      });
+      toast.success("تنظیمات به حالت پیش‌فرض بازگشت");
+    }
+  };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'avatar' | 'banner' | 'bg') => {
     const file = e.target.files?.[0];
@@ -303,9 +334,9 @@ export const EliteSettingsPage = () => {
     }
   };
 
-  const isVip = user?.membership === "VIP";
+  const isVip = user?.membership === "VIP" || (user as any)?.membershipType === "VIP";
 
-  if (!isVip) {
+  if (!isVip && !loading) {
     return (
       <div className="flex min-h-[calc(100vh-64px)] items-center justify-center">
         <Sidebar />
@@ -347,6 +378,13 @@ export const EliteSettingsPage = () => {
             </div>
             
             <div className="flex gap-3">
+              <button 
+                onClick={handleReset}
+                className="h-12 px-6 rounded-2xl bg-red-500/10 border border-red-500/20 text-xs font-black text-red-500 italic hover:bg-red-500/20 transition-all flex items-center gap-2"
+                title="بازگشت به تنظیمات کارخانه"
+              >
+                <Trash2 size={16} />
+              </button>
               <button 
                 onClick={() => window.location.href = "/settings"}
                 className="h-12 px-6 rounded-2xl bg-white/5 border border-white/10 text-xs font-black text-white italic hover:bg-white/10 transition-all flex items-center gap-2"
