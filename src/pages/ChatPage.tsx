@@ -11,11 +11,12 @@ import { cn } from "../lib/utils";
 import { motion, AnimatePresence } from "motion/react";
 import { useGames } from "../context/GamesContext";
 import { useFriends } from "../context/FriendsContext";
+import { useLobby } from "../context/LobbyContext";
 import { BadgeType, ChatMessage, Channel, MembershipType, FriendStatus } from "../types";
 
 import { useProfilePopover } from "../context/ProfilePopoverContext";
 import { useAuth } from "../context/AuthContext";
-import { useLobby } from "../context/LobbyContext";
+import { UserBadges } from "../components/ui/UserBadges";
 import { chatSocket } from "../lib/socket";
 import { toast } from "react-hot-toast";
 import api from "../lib/api";
@@ -27,6 +28,7 @@ interface BadgeIconProps {
 }
 
 const BadgeIcon: React.FC<BadgeIconProps> = ({ type }) => {
+  // Legacy BadgeIcon - we prefer UserBadges component for dynamic icons from server
   switch(type) {
     case BadgeType.STREAMER: return <div title="Streamer" className="text-neon-blue"><Zap size={12} fill="currentColor" /></div>;
     case BadgeType.PRO: return <div title="Pro Player" className="text-neon-pink"><Award size={12} fill="currentColor" /></div>;
@@ -173,6 +175,14 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
             "flex gap-1 items-center",
             message.self ? "flex-row" : "flex-row-reverse"
           )}>
+             {/* Dynamic Badges from Server */}
+             {(message as any).badges && (
+               <UserBadges 
+                 badges={(message as any).badges} 
+                 className={cn(message.self ? "flex-row" : "flex-row-reverse")}
+               />
+             )}
+             {/* Legacy Badge Types */}
              {message.senderBadges?.map((b, i) => <BadgeIcon key={i} type={b} />)}
           </div>
 

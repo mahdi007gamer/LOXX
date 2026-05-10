@@ -42,7 +42,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
 
   useEffect(() => {
     const fetchFullData = async () => {
-      const identifier = initialUser.id || initialUser.senderName;
+      const identifier = initialUser.id || (initialUser.senderName ? initialUser.senderName.trim() : null);
       if (!identifier) return;
       
       setLoading(true);

@@ -36,8 +36,6 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
     ageRestricted: false,
     autoClose: true,
     autoArchive: true,
-    mode: "",
-    selectedMaps: ""
   });
 
   useEffect(() => {
@@ -74,8 +72,20 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
     if (!formData.gameId) return;
     setLoading(true);
     try {
+      // Find mode and maps in metadata to populate top-level fields for the database
+      let mode = "";
+      let selectedMaps = "";
+
+      Object.entries(formData.metadata).forEach(([key, val]) => {
+        const k = key.toLowerCase();
+        if (k.includes('mode') || k.includes('حالت')) mode = val as string;
+        if (k.includes('map') || k.includes('نقشه')) selectedMaps = val as string;
+      });
+
       const payload = {
         ...formData,
+        mode,
+        selectedMaps,
         metadata: JSON.stringify({
           ...formData.metadata,
           discordRequired: formData.discordRequired,
@@ -294,8 +304,6 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
                                 const newMetadata = { ...formData.metadata, [feature.name]: opt };
                                 setFormData({
                                    ...formData, 
-                                   mode: isMode ? opt : formData.mode,
-                                   selectedMaps: isMap ? opt : formData.selectedMaps,
                                    metadata: newMetadata
                                 });
                               }}

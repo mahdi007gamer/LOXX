@@ -164,28 +164,27 @@ export const getGameById = async (req: Request, res: Response) => {
     // Migration: If metadata has modes/maps but they aren't in features, add them
     const metadata = parsedGame.metadata;
     if (metadata) {
-      const features = Array.isArray(metadata.features) ? metadata.features : [];
+      const features = Array.isArray(metadata.features) ? [...metadata.features] : [];
       
-      const findFeature = (name: string) => features.find((f: any) => 
-        f.name.toLowerCase().includes(name.toLowerCase()) || 
-        name.toLowerCase().includes(f.name.toLowerCase())
+      const hasFeature = (names: string[]) => features.some((f: any) => 
+        names.some(n => f.name.toLowerCase().includes(n.toLowerCase()) || n.toLowerCase().includes(f.name.toLowerCase()))
       );
 
-      const hasMode = findFeature('Mode') || findFeature('حالت بازی');
-      const hasMap = findFeature('Map') || findFeature('نقشه');
-      const hasSide = findFeature('Side');
-      const hasLevel = findFeature('Level');
+      const hasMode = hasFeature(['Mode', 'حالت']);
+      const hasMap = hasFeature(['Map', 'نقشه']);
+      const hasSide = hasFeature(['Side', 'تیم']);
+      const hasLevel = hasFeature(['Level', 'سطح']);
 
-      if (!hasMode && metadata.modes && Array.isArray(metadata.modes)) {
+      if (!hasMode && metadata.modes && Array.isArray(metadata.modes) && metadata.modes.length > 0) {
         features.push({ name: 'حالت بازی (Mode)', options: metadata.modes });
       }
-      if (!hasMap && metadata.maps && Array.isArray(metadata.maps)) {
+      if (!hasMap && metadata.maps && Array.isArray(metadata.maps) && metadata.maps.length > 0) {
         features.push({ name: 'نقشه (Map)', options: metadata.maps });
       }
-      if (!hasSide && metadata.sides && Array.isArray(metadata.sides)) {
+      if (!hasSide && metadata.sides && Array.isArray(metadata.sides) && metadata.sides.length > 0) {
         features.push({ name: 'Side', options: metadata.sides });
       }
-      if (!hasLevel && metadata.levels && Array.isArray(metadata.levels)) {
+      if (!hasLevel && metadata.levels && Array.isArray(metadata.levels) && metadata.levels.length > 0) {
         features.push({ name: 'Level', options: metadata.levels });
       }
       

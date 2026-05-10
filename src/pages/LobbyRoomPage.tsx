@@ -35,6 +35,7 @@ import {
 import { GlowButton } from "../components/ui/GlowButton";
 import { SmartImage } from "../components/ui/SmartImage";
 import { useFriends } from "../context/FriendsContext";
+import { UserBadges } from "../components/ui/UserBadges";
 import { useProfilePopover } from "../context/ProfilePopoverContext";
 import { MembershipType } from "../types";
 import { cn } from "@/src/lib/utils";
@@ -1197,12 +1198,20 @@ const MatchInfoPanel = ({ isStarting, isMatchStarted, countdown, players, lobby,
                     meta = typeof lobby?.metadata === 'string' ? JSON.parse(lobby.metadata || "{}") : (lobby?.metadata || {}); 
                   } catch(e) {}
                   
-                  return Object.entries(meta).map(([key, val]) => (
-                    <div key={key} className="flex items-center gap-3">
-                      <span className="text-[10px] font-black text-gray-600 uppercase tracking-widest">{key}</span>
-                      <span className="text-xs font-black text-white bg-white/5 px-3 py-1 rounded-lg border border-white/10">{val as string}</span>
-                    </div>
-                  ));
+                  const excludedKeys = [
+                    'discordRequired', 'ageRestricted', 'autoClose', 'autoArchive',
+                    'modes', 'maps', 'features', 'slug', 'description', 'imageUrl',
+                    'genre', 'developer', 'platform'
+                  ];
+
+                  return Object.entries(meta)
+                    .filter(([key, v]) => !excludedKeys.includes(key) && typeof v !== 'object')
+                    .map(([key, value]) => (
+                      <div key={key} className="flex items-center gap-3">
+                        <span className="text-[10px] font-black text-gray-600 uppercase tracking-widest">{key}</span>
+                        <span className="text-xs font-black text-white bg-white/5 px-3 py-1 rounded-lg border border-white/10">{value as string}</span>
+                      </div>
+                    ));
                 })()}
              </div>
           </motion.div>
@@ -1362,11 +1371,7 @@ const PlayerCard = ({
 
               <div className="flex items-center gap-1.5 md:gap-2 mb-0.5 md:mb-2 max-w-full">
                 <h3 className="text-xs md:text-xl font-black text-white truncate">{player.name}</h3>
-                <div className="flex items-center gap-0.5 shrink-0">
-                  {player.badges?.filter(b => b.isSpecial).map((badge, idx) => (
-                    <img key={idx} src={badge.iconUrl} alt={badge.name} title={badge.name} className="h-3 w-3 md:h-5 md:w-5 object-contain" />
-                  ))}
-                </div>
+                <UserBadges badges={player.badges || []} />
               </div>
               
               {/* Voice Status */}
@@ -1568,11 +1573,7 @@ const ChatPanel = ({ messages, players, inputMessage, setInputMessage, onSend, o
                         "text-[10px] font-black uppercase tracking-widest truncate max-w-[120px]",
                         isYou ? "text-neon-pink" : "text-neon-blue"
                       )}>{msg.user}</span>
-                      <div className="flex items-center gap-0.5 shrink-0">
-                        {msg.badges?.filter(b => b.isSpecial).map((badge, idx) => (
-                          <img key={idx} src={badge.iconUrl} alt={badge.name} title={badge.name} className="h-3 w-3 md:h-4 md:w-4 object-contain" />
-                        ))}
-                      </div>
+                      <UserBadges badges={msg.badges || []} className={cn(isYou ? "flex-row" : "flex-row-reverse")} />
                     </div>
                     <span className="text-[8px] font-bold text-gray-700 opacity-0 group-hover:opacity-100 transition-opacity">{msg.time}</span>
                   </div>

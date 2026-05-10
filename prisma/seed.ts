@@ -35,6 +35,32 @@ async function main() {
     });
   }
 
+  const badges = [
+    { name: "VIP", iconUrl: "https://cdn-icons-png.flaticon.com/512/1067/1067357.png", isSpecial: true, category: "SPECIAL" },
+    { name: "Plus", iconUrl: "https://cdn-icons-png.flaticon.com/512/1384/1384060.png", isSpecial: true, category: "SPECIAL" },
+    { name: "Streamer", iconUrl: "https://cdn-icons-png.flaticon.com/512/5968/5968853.png", isSpecial: true, category: "SPECIAL" },
+    { name: "Pro Player", iconUrl: "https://cdn-icons-png.flaticon.com/512/4436/4436481.png", isSpecial: true, category: "SPECIAL" },
+    { name: "CsGo", iconUrl: "https://cdn-icons-png.flaticon.com/512/10121/10121021.png", isSpecial: false, category: "GAME" },
+    { name: "Dota 2", iconUrl: "https://cdn-icons-png.flaticon.com/512/588/588308.png", isSpecial: false, category: "GAME" },
+    { name: "Valorant", iconUrl: "https://cdn-icons-png.flaticon.com/512/10121/10121022.png", isSpecial: false, category: "GAME" },
+    { name: "LOL", iconUrl: "https://cdn-icons-png.flaticon.com/512/825/825561.png", isSpecial: false, category: "GAME" },
+    { name: "Pubg", iconUrl: "https://cdn-icons-png.flaticon.com/512/10121/10121023.png", isSpecial: false, category: "GAME" },
+    { name: "Apex", iconUrl: "https://cdn-icons-png.flaticon.com/512/10121/10121024.png", isSpecial: false, category: "GAME" },
+    { name: "Fortnite", iconUrl: "https://cdn-icons-png.flaticon.com/512/10121/10121025.png", isSpecial: false, category: "GAME" },
+    { name: "RainbowSix", iconUrl: "https://cdn-icons-png.flaticon.com/512/10121/10121026.png", isSpecial: false, category: "GAME" },
+    { name: "GTA V", iconUrl: "https://cdn-icons-png.flaticon.com/512/10121/10121027.png", isSpecial: false, category: "GAME" },
+    { name: "Minecraft", iconUrl: "https://cdn-icons-png.flaticon.com/512/10121/10121028.png", isSpecial: false, category: "GAME" }
+  ];
+
+  console.log("Seeding badges...");
+  for (const b of badges) {
+    await prisma.badge.upsert({
+      where: { name: b.name },
+      update: b,
+      create: b
+    });
+  }
+
   const games = [
     {
       title: "Counter-Strike 2",
@@ -47,9 +73,9 @@ async function main() {
         genre: "FPS", 
         developer: "Valve", 
         platform: "PC", 
-        modes: ["Competitive", "Casual", "Wingman", "Deathmatch"], 
-        maps: ["Dust II", "Mirage", "Inferno", "Nuke", "Overpass", "Ancient", "Anubis"],
         features: [
+           { name: "Mode", options: ["Competitive", "Casual", "Wingman", "Deathmatch"] },
+           { name: "Map", options: ["Dust II", "Mirage", "Inferno", "Nuke", "Overpass", "Ancient", "Anubis"] },
            { name: "Side", options: ["Terrorists", "Counter-Terrorists", "Any"] },
            { name: "Level", options: ["Silver", "Gold Nova", "Master Guardian", "Global Elite", "Any"] }
         ]
@@ -66,9 +92,8 @@ async function main() {
         genre: "MOBA", 
         developer: "Valve", 
         platform: "PC", 
-        modes: ["Ranked", "Turbo", "Casual", "All Pick", "Captains Mode"], 
-        maps: ["Default"],
         features: [
+           { name: "Mode", options: ["Ranked", "Turbo", "Casual", "All Pick", "Captains Mode"] },
            { name: "Role", options: ["Carry", "Mid", "Offlane", "Support", "Hard Support"] },
            { name: "Rank", options: ["Herald", "Guardian", "Crusader", "Archon", "Legend", "Ancient", "Divine", "Immortal"] }
         ]
@@ -85,9 +110,9 @@ async function main() {
         genre: "FPS", 
         developer: "Ubisoft", 
         platform: "PC/Console", 
-        modes: ["Ranked", "Standard", "Quick Match", "Arcade"], 
-        maps: ["Bank", "Club House", "Oregon", "Kafe", "Consulate"],
         features: [
+          { name: "Mode", options: ["Ranked", "Standard", "Quick Match", "Arcade"] },
+          { name: "Map", options: ["Bank", "Club House", "Oregon", "Kafe", "Consulate"] },
           { name: "Side", options: ["Attackers", "Defenders", "Any"] },
           { name: "Rank", options: ["Copper", "Bronze", "Silver", "Gold", "Platinum", "Emerald", "Diamond", "Champion"] }
         ]
@@ -133,6 +158,7 @@ async function main() {
     {
       title: "Valorant",
       bannerUrl: "https://images.alphacoders.com/108/1089228.jpg",
+      badgeName: "Valorant",
       metadata: { 
         slug: "valorant", 
         description: "Character-based tactical shooter", 
@@ -196,9 +222,9 @@ async function main() {
         genre: "Battle Royale", 
         developer: "KRAFTON", 
         platform: "PC/Console", 
-        modes: ["Ranked", "Normal", "Intense Battle Royale"], 
-        maps: ["Erangel", "Miramar", "Sanhok", "Vikendi", "Taego", "Deston", "Rondo"],
         features: [
+          { name: "Mode", options: ["Ranked", "Normal", "Intense Battle Royale"] },
+          { name: "Map", options: ["Erangel", "Miramar", "Sanhok", "Vikendi", "Taego", "Deston", "Rondo"] },
           { name: "Perspective", options: ["FPP", "TPP"] }
         ]
       }
