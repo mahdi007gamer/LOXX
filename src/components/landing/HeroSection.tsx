@@ -36,12 +36,24 @@ export const HeroSection = () => {
             repeat: Infinity, 
             ease: "easeInOut" 
           }}
-          className="mb-8 flex flex-col items-center"
+          className="mb-8 flex flex-col items-center relative"
         >
+          {/* Subtle Lightning / Power Effect */}
+          <motion.div 
+            animate={{ opacity: [0, 0.2, 0.5, 0, 0.1, 0] }}
+            transition={{ duration: 4, repeat: Infinity, times: [0, 0.05, 0.1, 0.2, 0.25, 1] }}
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-gradient-to-r from-transparent via-white to-transparent blur-[40px] opacity-0 mix-blend-overlay -rotate-12 pointer-events-none z-0"
+          />
+          <motion.div 
+            animate={{ opacity: [0.1, 0.3, 0.1], scale: [0.95, 1.05, 0.95] }}
+            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] h-[80%] bg-neon-blue/20 rounded-full blur-[80px] pointer-events-none z-0 mix-blend-screen"
+          />
+          
           <img 
             src="/logo.png" 
             alt="LOXX Logo" 
-            className="w-full max-w-[300px] md:max-w-[500px] drop-shadow-[0_0_50px_rgba(0,229,255,0.4)] mb-4"
+            className="relative z-10 w-full max-w-[300px] md:max-w-[500px] drop-shadow-[0_0_50px_rgba(0,229,255,0.4)] mb-4"
           />
           <h1 className="text-7xl font-black leading-[1.1] tracking-tighter text-white sm:text-8xl md:text-9xl lg:text-[11rem] hidden">
             <span className="block drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)]">لوکس</span>

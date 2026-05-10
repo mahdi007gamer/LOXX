@@ -4,10 +4,10 @@ import { MessageSquare, Users, Gamepad2, Target, Trophy } from "lucide-react";
 
 const FloatingIcon = ({ icon: Icon, delay = 0, x = 0, y = 0 }: { icon: any, delay?: number, x: number, y: number }) => (
   <motion.div
-    initial={{ opacity: 0, x: `${x}%`, y: `${y}%` }}
+    initial={{ opacity: 0 }}
     animate={{ 
       opacity: [0, 0.2, 0],
-      y: [`${y}%`, `${y - 12}%`],
+      y: [0, -100],
       rotate: [0, 8, -8, 0]
     }}
     transition={{ 
@@ -16,7 +16,8 @@ const FloatingIcon = ({ icon: Icon, delay = 0, x = 0, y = 0 }: { icon: any, dela
       repeat: Infinity, 
       ease: "easeInOut" 
     }}
-    className="absolute text-neon-blue/20"
+    style={{ left: `${x}%`, top: `${y}%` }}
+    className="absolute text-neon-blue/20 -translate-x-1/2 -translate-y-1/2"
   >
     <Icon size={120} strokeWidth={0.5} />
   </motion.div>
