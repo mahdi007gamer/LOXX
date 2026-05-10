@@ -115,6 +115,36 @@ export enum MembershipType {
   VIP = "VIP"
 }
 
+export interface VIPMetadata {
+  auraEffect: boolean;
+  shinyName: boolean;
+  specialFrame: boolean;
+  fullGlow: boolean;
+  frame: string;
+  frameColor: string;
+  effectType: string;
+  opacity: number;
+  bgImage?: string;
+  colors: {
+    bg: string;
+    text: string;
+    accent: string;
+    textGradient?: string;
+    gradient?: {
+      enabled: boolean;
+      color1: string;
+      color2: string;
+      type: "linear" | "radial" | "conic";
+      angle: number;
+    };
+  };
+  chatStyle?: {
+    bubbleColor: string;
+    textColor: string;
+    effect?: string;
+  };
+}
+
 export interface Reaction {
   emoji: string;
   count: number;

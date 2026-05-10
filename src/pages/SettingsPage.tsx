@@ -395,15 +395,15 @@ export const SettingsPage = () => {
                <h3 className="font-black text-white italic mb-1 flex items-center gap-2">
                  وضعیت تایید حساب
                  {authUser?.isVerified ? (
-                   <span className="text-[10px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded uppercase not-italic">تایید شده</span>
+                   <span className="text-[10px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded uppercase not-italic">حساب تایید شده</span>
                  ) : (
-                   <span className="text-[10px] bg-red-500/20 text-red-400 px-2 py-0.5 rounded uppercase not-italic">تایید نشده</span>
+                   <span className="text-[10px] bg-red-500/20 text-red-400 px-2 py-0.5 rounded uppercase not-italic">حساب تایید نشده</span>
                  )}
                </h3>
-               <p className="text-[10px] text-gray-500 font-bold uppercase italic">برای دسترسی به تمامی امکانات، حساب خود را تایید کنید</p>
+               <p className="text-[10px] text-gray-500 font-bold uppercase italic">{authUser?.isVerified ? "هویت شما با موفقیت تایید شده است." : "برای دسترسی به تمامی امکانات، حساب خود را تایید کنید"}</p>
              </div>
              {!authUser?.isVerified && (
-               <GlowButton variant="blue" size="sm" className="text-[10px] font-black uppercase italic px-6 border-none" onClick={() => setShowVerificationModal(true)}>تایید ایمیل</GlowButton>
+               <GlowButton variant="blue" size="sm" className="text-[10px] font-black uppercase italic px-6 border-none" onClick={() => setShowVerificationModal(true)}>تایید پروفایل</GlowButton>
              )}
            </div>
         </div>
@@ -546,6 +546,42 @@ export const SettingsPage = () => {
                <p className="text-[10px] text-gray-500 font-bold uppercase">در حال بارگذاری...</p>
              )}
           </div>
+        </div>
+      </NeonCard>
+
+      <NeonCard variant="blue" className="p-8">
+        <div className="flex items-center gap-3 mb-8">
+           <div className="h-10 w-10 rounded-xl bg-neon-blue/10 flex items-center justify-center text-neon-blue border border-neon-blue/20">
+              <Shield size={20} />
+           </div>
+           <div>
+              <h3 className="font-black text-white italic uppercase tracking-tighter">خلاصه وضعیت امنیت</h3>
+              <p className="text-[9px] text-gray-500 font-black uppercase tracking-widest italic">Security Health & Guard Status</p>
+           </div>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+           <SecurityStatusCard 
+             title="وضعیت تایید حساب" 
+             status={authUser?.isVerified ? "تایید شده" : "در انتظار تایید"}
+             desc={authUser?.isVerified ? "حساب شما کاملاً تایید شده و به تمامی امکانات دسترسی دارید." : "تایید ایمیل برای دسترسی به تمامی امکانات لابی و فروشگاه الزامی است."}
+             icon={<Mail size={20} className="text-neon-blue" />}
+             color={authUser?.isVerified ? "green" : "red"}
+           />
+           <SecurityStatusCard 
+             title="تایید دو مرحله‌ای" 
+             status={twoFactorEnabled ? "فعال" : "غیرفعال"}
+             desc={twoFactorEnabled ? "تایید دو مرحله‌ای فعال است و امنیت حساب شما را تضمین می‌کند." : "برای جلوگیری از دسترسی غیرمجاز، تایید دو مرحله‌ای را فعال کنید."}
+             icon={<Lock size={20} className="text-neon-purple" />}
+             color={twoFactorEnabled ? "green" : "blue"}
+           />
+           <SecurityStatusCard 
+             title="محافظت از اکانت" 
+             status="تحت نظارت"
+             desc="سیستم ضد تقلب و محافظت از اکانت لoxx به صورت ۲۴ ساعته فعال است."
+             icon={<ShieldAlert size={20} className="text-neon-pink" />}
+             color="green"
+           />
         </div>
       </NeonCard>
     </div>

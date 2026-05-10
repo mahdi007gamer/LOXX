@@ -4,9 +4,10 @@ import { motion } from "motion/react";
 import { useFriends } from "../../context/FriendsContext";
 import { BadgeType, MembershipType } from "../../types";
 import { cn } from "../../lib/utils";
-import { Award, Star, Zap, Crown, User, Shield, Sparkles, X, Trophy, MessageCircle, CheckCircle2 } from "lucide-react";
+import { Award, Star, Zap, Crown, User, Shield, Sparkles, X, Trophy, MessageCircle, CheckCircle2, ShieldCheck } from "lucide-react";
 import api from "../../lib/api";
 import { SmartImage } from "./SmartImage";
+import { VIPMetadata } from "../../types";
 
 export interface QuickProfileUser {
   senderName: string;
@@ -92,37 +93,166 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
   const isVIP = user.membership === MembershipType.VIP || user.membership === "VIP";
   const isPLUS = user.membership === MembershipType.PLUS || user.membership === "PLUS";
 
-  const metadata = typeof user.vipMetadata === 'string' ? JSON.parse(user.vipMetadata) : user.vipMetadata;
+  const getMetadata = (): VIPMetadata | null => {
+    if (!user.vipMetadata) return null;
+    try {
+      return typeof user.vipMetadata === 'string' ? JSON.parse(user.vipMetadata) : user.vipMetadata;
+    } catch (e) {
+      return null;
+    }
+  };
+
+  const metadata = getMetadata();
   const bannerUrl = user.bannerUrl || "";
 
   const getBackgroundStyle = () => {
-    if (!metadata || !metadata.colors) return {};
-    if (!metadata.colors.gradient?.enabled) {
-      return { backgroundColor: metadata.colors.bg };
+    if (!metadata || !metadata.colors) {
+      if (isVIP) return { backgroundImage: "linear-gradient(to bottom right, #facc15, #854d0e)" };
+      return {};
     }
-    const { color1, color2, type, angle } = metadata.colors.gradient;
-    if (type === "linear") return { background: `linear-gradient(${angle}deg, ${color1}, ${color2})` };
-    if (type === "radial") return { background: `radial-gradient(circle at center, ${color1}, ${color2})` };
-    return { background: `conic-gradient(from ${angle}deg, ${color1}, ${color2})` };
+    
+    let style: any = {};
+    
+    if (metadata.colors.gradient?.enabled) {
+      const { color1, color2, type, angle } = metadata.colors.gradient;
+      if (type === "linear") style.background = `linear-gradient(${angle}deg, ${color1}, ${color2})`;
+      else if (type === "radial") style.background = `radial-gradient(circle at center, ${color1}, ${color2})`;
+      else style.background = `conic-gradient(from ${angle}deg, ${color1}, ${color2})`;
+    } else {
+      style.backgroundColor = metadata.colors.bg;
+    }
+    
+    return style;
+  };
+
+  const renderFrameEffect = (type: string) => {
+    if (!metadata?.specialFrame) return null;
+    
+    switch (type) {
+      case "lightning":
+        return (
+          <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+            <motion.div 
+              animate={{ opacity: [0, 0.4, 0.2, 0.5, 0] }}
+              transition={{ repeat: Infinity, duration: 1.5 }}
+              className="absolute inset-0 bg-blue-400/20 blur-2xl"
+            />
+            <div className="absolute inset-0 border-[3px] border-blue-400/30 rounded-[2.5rem]" />
+            {[1, 2, 3].map(i => (
+              <motion.div
+                key={i}
+                animate={{ 
+                  opacity: [0, 1, 0],
+                  scale: [1, 1.02, 1],
+                  filter: ["blur(0px)", "blur(2px)", "blur(0px)"]
+                }}
+                transition={{ repeat: Infinity, duration: 0.15, delay: i * 0.4 }}
+                className="absolute inset-0 border-[2px] border-white/40 shadow-[0_0_25px_rgba(96,165,250,0.9)] rounded-[2.5rem]"
+              />
+            ))}
+          </div>
+        );
+      case "fire":
+        return (
+          <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none rounded-[2.5rem]">
+            <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-orange-600/60 via-red-500/20 to-transparent blur-xl" />
+            <div className="absolute inset-x-0 bottom-0 border-b-[4px] border-orange-500/50 blur-[2px]" />
+            {[1, 2, 3, 4, 5, 6, 7].map(i => (
+              <motion.div
+                key={i}
+                animate={{ 
+                  y: [20, -120],
+                  x: [i * 15, i * 15 + (Math.sin(i) * 30)],
+                  opacity: [0, 1, 0],
+                  scale: [1.2, 0.2],
+                  rotate: [0, 180]
+                }}
+                transition={{ repeat: Infinity, duration: 0.8 + Math.random(), delay: i * 0.15 }}
+                className="absolute bottom-0 w-6 h-6 bg-orange-500/40 rounded-full blur-md"
+              />
+            ))}
+          </div>
+        );
+      case "glitch":
+        return (
+          <motion.div 
+            animate={{ 
+              x: ["-2px", "2px", "-1px", "1px", "0px"],
+              y: ["1px", "-1px", "0px"],
+              filter: ["hue-rotate(0deg)", "hue-rotate(180deg)", "hue-rotate(0deg)"]
+            }}
+            transition={{ repeat: Infinity, duration: 0.2, repeatDelay: 3 }}
+            className="absolute inset-0 z-0 border-[3px] border-pink-500 rounded-[2.5rem] shadow-[inset_0_0_20px_rgba(236,72,153,0.5),0_0_15px_rgba(236,72,153,0.5)]"
+          />
+        );
+      case "neon_pulse":
+        return (
+          <motion.div 
+            animate={{ 
+              boxShadow: [
+                "0 0 10px #00e5ff, inset 0 0 10px #00e5ff",
+                "0 0 30px #00e5ff, inset 0 0 15px #00e5ff",
+                "0 0 10px #00e5ff, inset 0 0 10px #00e5ff"
+              ],
+              borderColor: ["#00e5ff", "#ffffff", "#00e5ff"]
+            }}
+            transition={{ repeat: Infinity, duration: 1.5 }}
+            className="absolute inset-0 z-0 border-[3px] border-cyan-400 rounded-[2.5rem]"
+          />
+        );
+      case "gold_aura":
+        return (
+          <motion.div 
+            animate={{ scale: [1, 1.1, 1], rotate: 360 }}
+            transition={{ duration: 10, repeat: Infinity }}
+            className="absolute -inset-8 z-0 bg-[radial-gradient(circle,rgba(250,204,21,0.2)_0%,transparent_70%)] rounded-full pointer-events-none"
+          />
+        );
+      case "diamond":
+        return (
+          <div className="absolute inset-0 z-0 border-2 border-cyan-400/30 rounded-none transform rotate-45 scale-150 pointer-events-none" />
+        );
+      default:
+        return null;
+    }
   };
 
   const pinnedBadges = user.senderBadges?.filter(b => b.isPinned) || [];
-  const specialBadges = user.senderBadges?.filter(b => b.isSpecial) || [];
-  const standardBadges = user.senderBadges?.filter(b => !b.isSpecial && b.category !== "GAME") || [];
-  const gameBadges = user.senderBadges?.filter(b => b.category === "GAME") || [];
 
   return (
     <motion.div 
       initial={{ opacity: 0, scale: 0.9, y: 10 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.9, y: 10 }}
-      className="w-[380px] bg-[#0a0a0f] rounded-[48px] border border-white/10 shadow-[0_40px_100px_rgba(0,0,0,1)] overflow-hidden cursor-default rtl text-right transition-all backdrop-blur-3xl px-0 relative z-[20002]"
-      style={metadata && metadata.colors ? { ...getBackgroundStyle(), borderColor: metadata.colors.accent + "40" } : {}}
+      className={cn(
+        "w-[380px] bg-[#0a0a0f] rounded-[48px] border overflow-hidden cursor-default rtl text-right transition-all backdrop-blur-3xl px-0 relative z-[20002]",
+        metadata?.fullGlow ? "shadow-[0_0_50px_rgba(250,204,21,0.4)] border-yellow-400" : (isVIP ? "border-yellow-400/40 shadow-[0_40px_100px_rgba(0,0,0,1)]" : "border-white/10 shadow-[0_40px_100px_rgba(0,0,0,1)]")
+      )}
+      style={{ 
+        ...getBackgroundStyle(), 
+        borderColor: metadata?.colors?.accent ? metadata.colors.accent + "40" : (metadata?.fullGlow ? undefined : undefined) 
+      }}
       onClick={(e) => e.stopPropagation()}
     >
+      {/* Custom BG Image */}
+      {metadata?.bgImage && (
+        <div 
+          className="absolute inset-0 pointer-events-none z-0"
+          style={{ 
+            backgroundImage: `url(${metadata.bgImage})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            opacity: metadata.opacity ?? 0.2
+          }}
+        />
+      )}
+
+      {/* Effects */}
+      {metadata?.frame && renderFrameEffect(metadata.frame)}
+
       {/* Dynamic Banner */}
       <div className={cn(
-        "h-40 relative overflow-hidden",
+        "h-40 relative overflow-hidden z-10",
         !bannerUrl && (isVIP ? "bg-gradient-to-br from-yellow-400 via-yellow-600 to-yellow-800" :
         isPLUS ? "bg-gradient-to-br from-neon-blue via-blue-600 to-indigo-800" :
         "bg-gradient-to-l from-gray-800 to-gray-900")
@@ -152,28 +282,44 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
          </button>
       </div>
 
-      <div className="px-10 pb-10 pt-0 relative">
+      <div className="px-10 pb-10 pt-0 relative z-10">
         <div className="flex items-start justify-between">
           <div className="relative -mt-20 mb-6 inline-block">
              <div className={cn(
-               "h-32 w-32 rounded-[40px] bg-[#0a0a0f] p-2 shadow-2xl relative z-10",
-               isVIP ? "p-[3px] bg-gradient-to-tr from-yellow-400 via-yellow-200 to-yellow-500" :
-               isPLUS ? "p-[3px] bg-neon-blue" : "border border-white/10"
+               "h-32 w-32 rounded-[40px] bg-[#0a0a0f] p-[2px] shadow-2xl relative z-20",
+               metadata?.specialFrame && metadata.frame === "lightning" ? "p-0 border-blue-400 shadow-[0_0_15px_blue]" : (
+                 isVIP ? "p-[3px] bg-gradient-to-tr from-yellow-400 via-yellow-100 to-yellow-600" :
+                 isPLUS ? "p-[3px] bg-neon-blue" : "border border-white/10"
+               )
              )}>
-                  <div className="h-full w-full rounded-[34px] bg-[#0d0d12] flex items-center justify-center text-6xl overflow-hidden relative">
-                  {(user.senderAvatar || user.avatarUrl) ? (
-                    <SmartImage 
-                       src={user.senderAvatar || user.avatarUrl} 
-                       isVipEnabled={isVIP || isPLUS} 
-                       alt={user.displayName || user.senderName} 
-                       className="w-full h-full object-cover relative z-10" 
-                    />
-                  ) : (
-                    <div className="h-full w-full flex items-center justify-center bg-white/5 text-gray-700">
-                      <User size={64} />
-                    </div>
-                  )}
-              </div>
+                   <div className="h-full w-full rounded-[34px] bg-[#0d0d12] flex items-center justify-center text-6xl overflow-hidden relative">
+                   {(user.senderAvatar || user.avatarUrl) ? (
+                     <SmartImage 
+                        src={user.senderAvatar || user.avatarUrl} 
+                        isVipEnabled={isVIP || isPLUS} 
+                        alt={user.displayName || user.senderName} 
+                        className="w-full h-full object-cover relative z-10" 
+                     />
+                   ) : (
+                     <div className="h-full w-full flex items-center justify-center bg-white/5 text-gray-700">
+                       <User size={64} />
+                     </div>
+                   )}
+                   
+                   {/* VIP Animated Aura around Avatar */}
+                   {((isVIP || isPLUS) && metadata?.auraEffect) && (
+                     <motion.div 
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+                        className="absolute inset-0 bg-[conic-gradient(from_0deg,transparent,rgba(250,204,21,0.3),transparent)]"
+                     />
+                   )}
+               </div>
+               
+               {/* Optional Avatar Frame Pulse */}
+               {metadata?.specialFrame && metadata.frame === "lightning" && (
+                 <div className="absolute inset-0 border-2 border-blue-400 animate-pulse rounded-[40px] shadow-[0_0_15px_rgba(96,165,250,0.8)]" />
+               )}
             </div>
 
              <div className="absolute top-1 right-1 h-7 w-7 bg-green-500 rounded-full border-[5px] border-[#0a0a0f] z-20 shadow-lg"></div>
@@ -206,7 +352,8 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
             <div className="flex items-center gap-3">
               <h4 className={cn(
                 "text-3xl font-black italic tracking-tighter uppercase",
-                isVIP && !metadata?.colors?.textGradient ? "text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-200" : "text-white"
+                isVIP && !metadata?.colors?.textGradient ? "text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-200" : "text-white",
+                metadata?.shinyName && "animate-pulse drop-shadow-[0_0_12px_rgba(255,255,255,0.6)]"
               )} style={metadata && metadata.colors && (isVIP || isPLUS) ? 
                 (metadata.colors.textGradient 
                   ? { backgroundImage: `linear-gradient(to right, ${metadata.colors.text}, ${metadata.colors.textGradient})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }
@@ -215,21 +362,21 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
                 {user.displayName || user.senderName}
               </h4>
               <div className="flex items-center gap-0.5">
-                {specialBadges.map(badge => (
+                {user.senderBadges?.filter(b => b.isSpecial).map(badge => (
                   <img key={badge.id} src={badge.iconUrl} alt={badge.name} title={badge.name} className="h-6 w-6 object-contain" />
                 ))}
-                {!specialBadges.length && <CheckCircle2 size={24} className="text-neon-blue" fill="currentColor" />}
+                {(!user.senderBadges?.some(b => b.isSpecial)) && <CheckCircle2 size={24} className="text-neon-blue" fill="currentColor" />}
               </div>
             </div>
             <div className="flex items-center gap-2 mt-1">
                {isVIP ? (
-                 <span className="text-[11px] text-yellow-500 font-black uppercase tracking-[0.2em] flex items-center gap-2">
-                   <div className="h-1.5 w-1.5 rounded-full bg-yellow-500 animate-ping" />
+                 <span className="text-[11px] font-black uppercase tracking-[0.2em] flex items-center gap-2" style={{ color: metadata?.colors?.accent || "#facc15" }}>
+                   <div className="h-1.5 w-1.5 rounded-full bg-current animate-ping" />
                    عضو ویژه لوکس (VIP)
                  </span>
                ) : isPLUS ? (
-                 <span className="text-[11px] text-neon-blue font-black uppercase tracking-[0.2em] flex items-center gap-2">
-                   <div className="h-1.5 w-1.5 rounded-full bg-neon-blue animate-pulse" />
+                 <span className="text-[11px] font-black uppercase tracking-[0.2em] flex items-center gap-2" style={{ color: metadata?.colors?.accent || "#00e5ff" }}>
+                   <div className="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />
                    عضو طلایی پلاس (PLUS)
                  </span>
                ) : (
@@ -246,7 +393,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
                   {loading ? (
                     <div className="h-4 w-8 bg-white/5 animate-pulse rounded" />
                   ) : (
-                    <p className="text-sm font-black text-white italic">{user.stats?.daysSinceJoin || 0} روز</p>
+                    <p className="text-sm font-black italic" style={{ color: metadata?.colors?.text || "white" }}>{user.stats?.daysSinceJoin || 0} روز</p>
                   )}
                 </div>
              </div>
@@ -256,7 +403,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
                   {loading ? (
                     <div className="h-4 w-8 bg-white/5 animate-pulse rounded" />
                   ) : (
-                    <p className="text-sm font-black text-white italic">{user.stats?.friendsCount || 0}</p>
+                    <p className="text-sm font-black italic" style={{ color: metadata?.colors?.text || "white" }}>{user.stats?.friendsCount || 0}</p>
                   )}
                 </div>
              </div>
@@ -266,7 +413,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
                   {loading ? (
                     <div className="h-4 w-8 bg-white/5 animate-pulse rounded" />
                   ) : (
-                    <p className="text-sm font-black text-white italic">{user.stats?.lobbiesJoined || 0}</p>
+                    <p className="text-sm font-black italic" style={{ color: metadata?.colors?.text || "white" }}>{user.stats?.lobbiesJoined || 0}</p>
                   )}
                 </div>
              </div>
@@ -276,7 +423,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
                   {loading ? (
                     <div className="h-4 w-8 bg-white/5 animate-pulse rounded" />
                   ) : (
-                    <p className="text-sm font-black text-white italic">{user.stats?.lobbiesCreated || 0}</p>
+                    <p className="text-sm font-black italic" style={{ color: metadata?.colors?.text || "white" }}>{user.stats?.lobbiesCreated || 0}</p>
                   )}
                 </div>
              </div>
@@ -286,22 +433,27 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
           <div className="space-y-4">
             <h5 className="text-[10px] font-black text-gray-600 uppercase tracking-widest italic">نشان‌های انتخابی و دستاوردها</h5>
             <div className="flex flex-wrap gap-2.5 max-h-[120px] overflow-y-auto no-scrollbar">
-              {user.senderBadges?.map((ub, i) => (
+              {user.senderBadges?.filter(b => b.isPinned).map((ub, i) => (
                 <div 
                   key={ub.id || i} 
                   title={ub.name} 
                   className={cn(
                     "flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all border",
-                    ub.isPinned 
-                      ? "bg-neon-blue/10 border-neon-blue shadow-[0_0_10px_rgba(0,229,255,0.2)]" 
-                      : "bg-white/5 border-white/10 opacity-70 hover:opacity-100"
+                    "bg-neon-blue/10 border-neon-blue shadow-[0_0_10px_rgba(0,229,255,0.2)]"
                   )}
                 >
                   <img src={ub.iconUrl} alt={ub.name} className="h-4 w-4 object-contain" />
-                  <span className={cn(
-                    "text-[10px] font-black uppercase italic",
-                    ub.isPinned ? "text-white" : "text-gray-500"
-                  )}>{ub.name}</span>
+                  <span className="text-[10px] font-black uppercase italic text-white">{ub.name}</span>
+                </div>
+              ))}
+              {user.senderBadges?.filter(b => !b.isPinned && b.category !== "GAME").slice(0, 4).map((ub, i) => (
+                <div 
+                  key={ub.id || i} 
+                  title={ub.name} 
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all border bg-white/5 border-white/10 opacity-70 hover:opacity-100"
+                >
+                  <img src={ub.iconUrl} alt={ub.name} className="h-4 w-4 object-contain" />
+                  <span className="text-[10px] font-black uppercase italic text-gray-500">{ub.name}</span>
                 </div>
               ))}
               {!user.senderBadges?.length && !loading && (
@@ -309,26 +461,6 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
               )}
             </div>
           </div>
-
-          {/* Games Section */}
-          {user.games && user.games.length > 0 && (
-            <div className="space-y-4">
-              <h5 className="text-[10px] font-black text-gray-600 uppercase tracking-widest italic">بازی‌های فعال</h5>
-              <div className="flex flex-wrap gap-3">
-                {user.games.map((g, i) => (
-                  <div key={g.id} className="relative group/game">
-                    <div className="h-12 w-12 rounded-xl bg-white/5 border border-white/10 overflow-hidden hover:border-neon-blue/50 transition-all">
-                      <img src={g.bannerUrl} alt={g.title} className="h-full w-full object-cover grayscale group-hover/game:grayscale-0 transition-all" />
-                    </div>
-                    {/* Tooltip on hover */}
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-black/80 rounded text-[8px] text-white whitespace-nowrap opacity-0 group-hover/game:opacity-100 transition-opacity pointer-events-none z-30">
-                      {g.title}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
 
           {/* Actions */}
           <div className="pt-4">
@@ -350,7 +482,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
               </GlowButton>
             ) : (
                 <GlowButton 
-                  variant="blue" 
+                  variant={isVIP ? "gold" : "blue"} 
                   className="w-full h-16 !rounded-3xl font-black text-base uppercase italic tracking-[0.2em] shadow-xl hover:scale-[1.02] transition-all"
                   onClick={() => window.location.href = "/settings"}
                 >
