@@ -106,8 +106,6 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
   const bannerUrl = user.bannerUrl || "";
 
   const getBackgroundStyle = () => {
-    if (isVIP) return { backgroundImage: "linear-gradient(to bottom right, #eab308, #a16207)" };
-    
     let style: any = {};
     if (metadata && metadata.colors && metadata.colors.gradient?.enabled) {
       const { color1, color2, type, angle } = metadata.colors.gradient;
@@ -116,6 +114,10 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
       else style.background = `conic-gradient(from ${angle}deg, ${color1}, ${color2})`;
     } else if (metadata && metadata.colors && metadata.colors.bg) {
       style.backgroundColor = metadata.colors.bg;
+    } else if (isVIP) {
+      style.backgroundImage = "linear-gradient(to bottom right, #eab308, #a16207)";
+    } else if (isPLUS) {
+      style.backgroundColor = "#eab308";
     }
     return style;
   };
@@ -283,6 +285,14 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
          
         <div className="flex items-start justify-between">
           <div className="relative -mt-20 mb-6 inline-block">
+             {((isVIP || isPLUS) && metadata?.auraEffect) && (
+               <motion.div 
+                 animate={{ opacity: [0.4, 0.9, 0.4], scale: [0.95, 1.05, 0.95] }}
+                 transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                 className="absolute -inset-2 rounded-[46px] blur-xl z-0 pointer-events-none"
+                 style={{ backgroundColor: metadata?.colors?.auraColor || "#eab308" }}
+               />
+             )}
              <div className={cn(
                "h-32 w-32 rounded-[40px] bg-[#0a0a0f] p-[2px] shadow-2xl relative z-20",
                metadata?.specialFrame && metadata.frame === "lightning" ? "p-0 border-blue-400 shadow-[0_0_15px_blue]" : (
@@ -309,7 +319,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
                      <motion.div 
                         animate={{ rotate: 360 }}
                         transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-                        className="absolute inset-0 bg-[conic-gradient(from_0deg,transparent,rgba(250,204,21,0.3),transparent)]"
+                        className="absolute inset-0 transparent"
                      />
                    )}
                </div>

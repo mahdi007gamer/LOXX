@@ -54,6 +54,7 @@ interface VIPMetadata {
     statsLabel?: string;
     badgeText?: string;
     textGradient?: string;
+    auraColor?: string;
     gradient?: {
       enabled: boolean;
       color1: string;
@@ -96,6 +97,7 @@ export const EliteSettingsPage = () => {
       statsText: "#ffffff",
       statsLabel: "#4b5563",
       badgeText: "#ffffff",
+      auraColor: "#eab308",
       gradient: {
         enabled: false,
         color1: "#00e5ff",
@@ -598,6 +600,15 @@ export const EliteSettingsPage = () => {
                                 <Input value={metadata.colors.badgeText || "#ffffff"} onChange={(e) => setMetadata(m => ({ ...m, colors: { ...m.colors, badgeText: e.target.value } }))} className="flex-1" />
                               </div>
                            </div>
+                           {metadata.auraEffect && (
+                             <div className="space-y-2">
+                                <label className="text-[10px] font-black text-gray-400 uppercase italic">رنگ هاله نورانی</label>
+                                <div className="flex gap-2">
+                                  <input type="color" value={metadata.colors.auraColor || "#eab308"} onChange={(e) => setMetadata(m => ({ ...m, colors: { ...m.colors, auraColor: e.target.value } }))} className="w-12 h-10 rounded-xl border-none cursor-pointer bg-white/5" />
+                                  <Input value={metadata.colors.auraColor || "#eab308"} onChange={(e) => setMetadata(m => ({ ...m, colors: { ...m.colors, auraColor: e.target.value } }))} className="flex-1" />
+                                </div>
+                             </div>
+                           )}
                         </div>
                      </div>
  
@@ -679,15 +690,20 @@ export const EliteSettingsPage = () => {
                          <div className="px-8 pb-10 pt-0 relative z-10">
                            <div className="flex items-start justify-between">
                               <div className="relative -mt-14 mb-4 inline-block">
+                                 {metadata.auraEffect && (
+                                   <motion.div 
+                                     animate={{ opacity: [0.4, 0.9, 0.4], scale: [0.95, 1.05, 0.95] }} 
+                                     transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }} 
+                                     className="absolute -inset-2 rounded-[38px] blur-xl z-0 pointer-events-none"
+                                     style={{ backgroundColor: metadata.colors.auraColor || "#eab308" }}
+                                   />
+                                 )}
                                  <div className={cn(
                                     "h-24 w-24 rounded-[32px] bg-[#0a0a0f] p-[2px] relative z-20",
                                     metadata.frame === "lightning" ? "border-blue-400 shadow-[0_0_15px_blue]" : "bg-gradient-to-tr from-yellow-400 via-yellow-200 to-yellow-600"
                                  )}>
                                     <div className="h-full w-full rounded-[30px] bg-[#0d0d12] flex items-center justify-center overflow-hidden">
                                        {avatarUrl ? <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" /> : <User size={40} className="text-gray-700" />}
-                                       {metadata.auraEffect && (
-                                         <motion.div animate={{ rotate: 360 }} transition={{ duration: 4, repeat: Infinity, ease: "linear" }} className="absolute inset-0 bg-[conic-gradient(from_0deg,transparent,rgba(250,204,21,0.3),transparent)]" />
-                                       )}
                                     </div>
                                  </div>
                                  <div className="absolute top-1 right-1 h-6 w-6 bg-green-500 rounded-full border-4 border-[#0a0a0f] z-[25]"></div>
