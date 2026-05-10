@@ -38,11 +38,12 @@ export const Navbar = () => {
     e.preventDefault();
     if (user) {
       openProfile({
-        senderName: user.displayName || user.username,
+        senderName: user.username, // Use username for stable API lookups
+        displayName: user.displayName || user.username,
         senderAvatar: user.avatarUrl,
         bannerUrl: user.bannerUrl,
         senderLevel: 24, // Fallback or dynamic
-        senderBadges: [BadgeType.PRO],
+        senderBadges: user.badges || [], // Use real badges from AuthContext
         id: user.id,
         membership: user.membership as any,
         vipMetadata: user.vipMetadata,

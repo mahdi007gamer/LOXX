@@ -10,6 +10,7 @@ import { SmartImage } from "./SmartImage";
 
 export interface QuickProfileUser {
   senderName: string;
+  displayName?: string;
   senderAvatar?: string;
   avatarUrl?: string; // fallback
   senderLevel: number;
@@ -18,6 +19,7 @@ export interface QuickProfileUser {
   id?: string;
   bannerUrl?: string;
   vipMetadata?: any;
+  games?: any[];
   stats?: {
     friendsCount: number;
     lobbiesJoined: number;
@@ -40,15 +42,19 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
 
   useEffect(() => {
     const fetchFullData = async () => {
-      if (!initialUser.senderName) return;
+      const identifier = initialUser.id || initialUser.senderName;
+      if (!identifier) return;
+      
       setLoading(true);
       try {
-        const response = await api.get(`/user/${initialUser.senderName}`);
+        // Encode the identifier to handle spaces
+        const response = await api.get(`/user/${encodeURIComponent(identifier)}`);
         const data = response.data.data;
         setUserData({
           ...initialUser,
           id: data.id,
           senderName: data.username,
+          displayName: data.displayName || data.username,
           senderAvatar: data.avatarUrl,
           avatarUrl: data.avatarUrl,
           bannerUrl: data.bannerUrl,
@@ -56,7 +62,8 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
           senderLevel: data.level || initialUser.senderLevel,
           stats: data.stats,
           vipMetadata: data.vipMetadata,
-          senderBadges: data.badges || []
+          senderBadges: data.badges || [],
+          games: data.games || []
         });
       } catch (error) {
         console.error("Failed to fetch profile stats", error);
@@ -66,7 +73,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
     };
 
     fetchFullData();
-  }, [initialUser.senderName]);
+  }, [initialUser.senderName, initialUser.id]);
 
   const user = userData;
 
@@ -101,6 +108,8 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
 
   const pinnedBadges = user.senderBadges?.filter(b => b.isPinned) || [];
   const specialBadges = user.senderBadges?.filter(b => b.isSpecial) || [];
+  const standardBadges = user.senderBadges?.filter(b => !b.isSpecial && b.category !== "GAME") || [];
+  const gameBadges = user.senderBadges?.filter(b => b.category === "GAME") || [];
 
   return (
     <motion.div 
@@ -156,7 +165,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
                     <SmartImage 
                        src={user.senderAvatar || user.avatarUrl} 
                        isVipEnabled={isVIP || isPLUS} 
-                       alt={user.senderName} 
+                       alt={user.displayName || user.senderName} 
                        className="w-full h-full object-cover relative z-10" 
                     />
                   ) : (
@@ -203,7 +212,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
                   ? { backgroundImage: `linear-gradient(to right, ${metadata.colors.text}, ${metadata.colors.textGradient})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }
                   : { color: metadata.colors.text }) 
                 : {}}>
-                {user.senderName}
+                {user.displayName || user.senderName}
               </h4>
               <div className="flex items-center gap-0.5">
                 {specialBadges.map(badge => (
@@ -273,47 +282,53 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
              </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="p-5 rounded-3xl bg-white/5 border border-white/5 text-center group hover:border-neon-pink/30 transition-all cursor-default relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-1 opacity-10"><Shield size={40} /></div>
-              <p className="text-[10px] text-gray-600 font-black uppercase mb-2 relative z-10 italic">رتبه لوکس</p>
-              <div className="flex items-center justify-center gap-2 relative z-10">
-                 <p className="text-base font-black text-neon-pink italic uppercase tracking-tighter">Elite King</p>
-              </div>
-            </div>
-            <div className="p-5 rounded-3xl bg-white/5 border border-white/5 text-center group hover:border-neon-blue/30 transition-all cursor-default relative overflow-hidden">
-               <div className="absolute top-0 right-0 p-1 opacity-10"><Sparkles size={40} /></div>
-              <p className="text-[10px] text-gray-600 font-black uppercase mb-2 relative z-10 italic">سطح کل</p>
-              <div className="flex items-center justify-center gap-2 relative z-10">
-                 <p className="text-base font-black text-neon-blue italic tracking-tighter">Level {user.senderLevel}</p>
-              </div>
+          {/* Badges Section */}
+          <div className="space-y-4">
+            <h5 className="text-[10px] font-black text-gray-600 uppercase tracking-widest italic">نشان‌های انتخابی و دستاوردها</h5>
+            <div className="flex flex-wrap gap-2.5 max-h-[120px] overflow-y-auto no-scrollbar">
+              {user.senderBadges?.map((ub, i) => (
+                <div 
+                  key={ub.id || i} 
+                  title={ub.name} 
+                  className={cn(
+                    "flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all border",
+                    ub.isPinned 
+                      ? "bg-neon-blue/10 border-neon-blue shadow-[0_0_10px_rgba(0,229,255,0.2)]" 
+                      : "bg-white/5 border-white/10 opacity-70 hover:opacity-100"
+                  )}
+                >
+                  <img src={ub.iconUrl} alt={ub.name} className="h-4 w-4 object-contain" />
+                  <span className={cn(
+                    "text-[10px] font-black uppercase italic",
+                    ub.isPinned ? "text-white" : "text-gray-500"
+                  )}>{ub.name}</span>
+                </div>
+              ))}
+              {!user.senderBadges?.length && !loading && (
+                <p className="text-[10px] text-gray-500 italic">بدون نشان‌های کسب شده</p>
+              )}
             </div>
           </div>
 
-          {/* Dynamic Badges */}
-          <div className="flex flex-wrap gap-2.5 max-h-[100px] overflow-y-auto no-scrollbar">
-            {user.senderBadges?.map((ub, i) => (
-              <div 
-                key={i} 
-                title={ub.name} 
-                className={cn(
-                  "flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all border",
-                  ub.isPinned 
-                    ? "bg-neon-blue/10 border-neon-blue shadow-[0_0_10px_rgba(0,229,255,0.2)]" 
-                    : "bg-white/5 border-white/10 opacity-70 hover:opacity-100"
-                )}
-              >
-                <img src={ub.iconUrl} alt={ub.name} className="h-4 w-4 object-contain" />
-                <span className={cn(
-                  "text-[10px] font-black uppercase italic",
-                  ub.isPinned ? "text-white" : "text-gray-500"
-                )}>{ub.name}</span>
+          {/* Games Section */}
+          {user.games && user.games.length > 0 && (
+            <div className="space-y-4">
+              <h5 className="text-[10px] font-black text-gray-600 uppercase tracking-widest italic">بازی‌های فعال</h5>
+              <div className="flex flex-wrap gap-3">
+                {user.games.map((g, i) => (
+                  <div key={g.id} className="relative group/game">
+                    <div className="h-12 w-12 rounded-xl bg-white/5 border border-white/10 overflow-hidden hover:border-neon-blue/50 transition-all">
+                      <img src={g.bannerUrl} alt={g.title} className="h-full w-full object-cover grayscale group-hover/game:grayscale-0 transition-all" />
+                    </div>
+                    {/* Tooltip on hover */}
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-black/80 rounded text-[8px] text-white whitespace-nowrap opacity-0 group-hover/game:opacity-100 transition-opacity pointer-events-none z-30">
+                      {g.title}
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-            {!user.senderBadges?.length && !loading && (
-              <p className="text-[10px] text-gray-500 italic">بدون نشان‌های کسب شده</p>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* Actions */}
           <div className="pt-4">

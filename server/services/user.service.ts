@@ -73,9 +73,16 @@ export class UserService {
     return { type: currentType, expiresAt };
   }
 
-  static async getProfileByUsername(username: string) {
-    const user = await prisma.user.findUnique({
-      where: { username },
+  static async getProfileByUsername(identifier: string) {
+    // Try to find by username, ID, or Display Name
+    const user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { username: identifier },
+          { id: identifier },
+          { profile: { displayName: identifier } }
+        ]
+      },
       include: {
         profile: true,
         badges: {

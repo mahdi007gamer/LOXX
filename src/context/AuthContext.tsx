@@ -17,6 +17,7 @@ interface AuthContextType {
   login: (token: string, userData: any) => void;
   logout: () => Promise<void>;
   updateUser: (newData: Partial<User>) => void;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -26,6 +27,17 @@ import { presenceSocket, lobbySocket, chatSocket, notifySocket, rankingSocket, v
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const refreshUser = async () => {
+    try {
+      const response = await api.get("/auth/me");
+      if (response.data.status === "success") {
+        setUser(response.data.data || response.data.user);
+      }
+    } catch (error) {
+      console.error("User refresh failed:", error);
+    }
+  };
 
   const connectSockets = () => {
     presenceSocket.connect();
@@ -94,7 +106,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, updateUser }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, updateUser, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

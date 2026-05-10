@@ -16,7 +16,7 @@ export const GamesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [allGames, setAllGames] = useState<Game[]>([]);
   const [myGames, setMyGames] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
 
   useEffect(() => {
     const fetchGames = async () => {
@@ -54,6 +54,7 @@ export const GamesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             ? [...prev, gameId] 
             : prev.filter(id => id !== gameId)
         );
+        await refreshUser();
       }
     } catch (error) {
       console.error("Failed to toggle game:", error);

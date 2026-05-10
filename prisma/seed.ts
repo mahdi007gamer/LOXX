@@ -39,6 +39,7 @@ async function main() {
     {
       title: "Counter-Strike 2",
       bannerUrl: "https://images.alphacoders.com/132/1328491.jpeg",
+      badgeName: "CsGo",
       metadata: { 
         slug: "cs2", 
         description: "Tactical first-person shooter", 
@@ -57,6 +58,7 @@ async function main() {
     {
       title: "Dota 2",
       bannerUrl: "https://images6.alphacoders.com/430/430580.jpg",
+      badgeName: "Dota 2",
       metadata: { 
         slug: "dota2", 
         description: "Multiplayer online battle arena", 
@@ -69,6 +71,62 @@ async function main() {
         features: [
            { name: "Role", options: ["Carry", "Mid", "Offlane", "Support", "Hard Support"] },
            { name: "Rank", options: ["Herald", "Guardian", "Crusader", "Archon", "Legend", "Ancient", "Divine", "Immortal"] }
+        ]
+      }
+    },
+    {
+      title: "Tom Clancy's Rainbow Six Siege",
+      bannerUrl: "https://images4.alphacoders.com/605/605141.jpg",
+      badgeName: "RainbowSix",
+      metadata: { 
+        slug: "r6s", 
+        description: "High-precision tactical shooter", 
+        imageUrl: "https://ubistatic-a.akamaihd.net/ubicomstatic/en-us/global/search-thumbnail/r6s-search-thumbnail_mobile_224531.jpg", 
+        genre: "FPS", 
+        developer: "Ubisoft", 
+        platform: "PC/Console", 
+        modes: ["Ranked", "Standard", "Quick Match", "Arcade"], 
+        maps: ["Bank", "Club House", "Oregon", "Kafe", "Consulate"],
+        features: [
+          { name: "Side", options: ["Attackers", "Defenders", "Any"] },
+          { name: "Rank", options: ["Copper", "Bronze", "Silver", "Gold", "Platinum", "Emerald", "Diamond", "Champion"] }
+        ]
+      }
+    },
+    {
+      title: "Fortnite",
+      bannerUrl: "https://images8.alphacoders.com/891/891823.jpg",
+      badgeName: "Fortnite",
+      metadata: { 
+        slug: "fortnite", 
+        description: "Battle Royale, Building, and more", 
+        imageUrl: "https://cdn2.unrealengine.com/25br-keyart-1920x1080-1920x1080-f04bf4cf53a2.jpg", 
+        genre: "Battle Royale", 
+        developer: "Epic Games", 
+        platform: "Multi-platform", 
+        modes: ["Battle Royale", "Zero Build", "Creative", "Ranked"], 
+        maps: ["Current Season Map"],
+        features: [
+          { name: "Mode", options: ["Build", "Zero Build"] },
+          { name: "Rank", options: ["Bronze", "Silver", "Gold", "Platinum", "Diamond", "Elite", "Champion", "Unreal"] }
+        ]
+      }
+    },
+    {
+      title: "Call of Duty: Warzone",
+      bannerUrl: "https://images7.alphacoders.com/106/1066440.jpg",
+      badgeName: "Call Of Duty",
+      metadata: { 
+        slug: "warzone", 
+        description: "Massive scale combat arena", 
+        imageUrl: "https://www.callofduty.com/content/dam/atvi/callofduty/cod-touchui/warzone/strategy-guide/articles/2023/chapter-1/01b-wz-progression/01B-WZ-Progression-001.jpg", 
+        genre: "Battle Royale", 
+        developer: "Activision", 
+        platform: "PC/Console", 
+        modes: ["Battle Royale", "Resurgence", "Plunder"], 
+        maps: ["Urzikstan", "Vondel", "Ashika Island"],
+        features: [
+          { name: "Style", options: ["Aggressive", "Tactical", "Casual"] }
         ]
       }
     },
@@ -91,26 +149,27 @@ async function main() {
       }
     },
     {
-      title: "Mafia (مافیا)",
-      bannerUrl: "https://images.alphacoders.com/101/1018599.jpg",
+      title: "Grand Theft Auto V",
+      bannerUrl: "https://images8.alphacoders.com/452/452336.jpg",
+      badgeName: "GTA V",
       metadata: { 
-        slug: "mafia", 
-        description: "A game of psychological deduction", 
-        imageUrl: "https://images.alphacoders.com/101/1018599.jpg", 
-        genre: "Mafia (Deduction)", 
-        developer: "Community", 
-        platform: "Online/Voice", 
-        modes: ["Classic (10 Player)", "Godfather (12 Player)", "Turbo (Voice)", "Advanced (15 Player)"], 
-        maps: ["Town", "Mansion", "Virtual Table"],
+        slug: "gtav", 
+        description: "Open world action-adventure", 
+        imageUrl: "https://media-rockstargames-com.akamaized.net/rockstargames-newsite/img/global/games/fob/640/V.jpg", 
+        genre: "Sandbox", 
+        developer: "Rockstar North", 
+        platform: "PC/Console", 
+        modes: ["GTA Online", "Roleplay", "Story Mode"], 
+        maps: ["Los Santos"],
         features: [
-          { name: "Scenario", options: ["Shaba-ye-Mafia", "Classic", "Custom"] },
-          { name: "Voice Required", options: ["Yes", "No", "Optional"] }
+          { name: "Server Type", options: ["Public", "Roleplay (RP)", "Custom Friends"] }
         ]
       }
     },
     {
       title: "Apex Legends",
       bannerUrl: "https://images.alphacoders.com/100/1002161.jpg",
+      badgeName: "Apex",
       metadata: { 
         slug: "apex", 
         description: "Hero shooter Battle Royale", 
@@ -127,32 +186,79 @@ async function main() {
       }
     },
     {
-      title: "EA SPORTS FC 24",
-      bannerUrl: "https://images.alphacoders.com/132/1321033.jpeg",
+      title: "PUBG: BATTLEGROUNDS",
+      bannerUrl: "https://images.alphacoders.com/838/838141.jpg",
+      badgeName: "Pubg",
       metadata: { 
-        slug: "fc24", 
-        description: "Football Simulation", 
-        imageUrl: "https://media.contentapi.ea.com/content/dam/ea/fc/fc-24/common/fc24-featured-image-16x9.adapt.crop16x9.1023w.jpg", 
-        genre: "Sports", 
-        developer: "EA Sports", 
+        slug: "pubg", 
+        description: "The original Battle Royale", 
+        imageUrl: "https://wstatic-prod.pubg.com/web/live/main_ed99a4c/img/6786c5f.jpg", 
+        genre: "Battle Royale", 
+        developer: "KRAFTON", 
         platform: "PC/Console", 
-        modes: ["Ultimate Team (Ranked)", "Pro Clubs", "Kick-off (Casual)", "Co-op Seasons"], 
-        maps: ["Any Stadium"],
+        modes: ["Ranked", "Normal", "Intense Battle Royale"], 
+        maps: ["Erangel", "Miramar", "Sanhok", "Vikendi", "Taego", "Deston", "Rondo"],
         features: [
-          { name: "Play Style", options: ["Competitive", "Casual Fun", "Training"] },
-          { name: "Division", options: ["Elite", "Div 1", "Div 2", "Div 3", "Div 4", "Div 5+"] }
+          { name: "Perspective", options: ["FPP", "TPP"] }
+        ]
+      }
+    },
+    {
+      title: "Minecraft",
+      bannerUrl: "https://images4.alphacoders.com/131/1313366.jpeg",
+      badgeName: "Minecraft",
+      metadata: { 
+        slug: "minecraft", 
+        description: "Build, explore and survive", 
+        imageUrl: "https://www.minecraft.net/content/dam/games/minecraft/key-art/MC-Vanilla-KeyArt.jpg", 
+        genre: "Sandbox", 
+        developer: "Mojang Studios", 
+        platform: "Multi-platform", 
+        modes: ["Survival", "Creative", "Hardcore", "Adventure"], 
+        maps: ["Infinite procedurally generated"],
+        features: [
+          { name: "Edition", options: ["Java Edition", "Bedrock Edition"] },
+          { name: "Role", options: ["Builder", "Survivor", "Redstoner", "PvPer"] }
+        ]
+      }
+    },
+    {
+      title: "League of Legends",
+      bannerUrl: "https://images.alphacoders.com/640/640822.jpg",
+      badgeName: "LOL",
+      metadata: { 
+        slug: "lol", 
+        description: "Fast-paced MOBA", 
+        imageUrl: "https://cmsassets.rgpub.io/pb/zh_tr/rso/images/LoL_Header_Standard.jpg", 
+        genre: "MOBA", 
+        developer: "Riot Games", 
+        platform: "PC", 
+        modes: ["Ranked Solo/Duo", "Ranked Flex", "ARAM", "Normal Blind/Draft"], 
+        maps: ["Summoner's Rift", "Howling Abyss"],
+        features: [
+          { name: "Role", options: ["Top", "Jungle", "Mid", "ADC", "Support"] },
+          { name: "Rank", options: ["Iron", "Bronze", "Silver", "Gold", "Platinum", "Emerald", "Diamond", "Master", "Grandmaster", "Challenger"] }
         ]
       }
     }
   ];
 
   for (const g of games) {
+    let badgeId = null;
+    if (g.badgeName) {
+      const badge = await prisma.badge.findUnique({ where: { name: g.badgeName } });
+      if (badge) badgeId = badge.id;
+    }
+
     await prisma.game.upsert({
       where: { title: g.title },
-      update: {},
+      update: {
+        badgeId
+      },
       create: {
         title: g.title,
         bannerUrl: g.bannerUrl,
+        badgeId,
         metadata: JSON.stringify(g.metadata)
       }
     });
