@@ -51,7 +51,6 @@ async function startServer() {
   // Basic Middleware
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ extended: true, limit: "50mb" }));
-  app.use(generalLimiter);
   app.use(cors({
     origin: true, // Reflect request origin
     credentials: true
@@ -60,6 +59,9 @@ async function startServer() {
   app.use(helmet({
     contentSecurityPolicy: false, // For development with Vite
   }));
+
+  // Rate Limiting - Apply only to API routes
+  app.use("/api", generalLimiter);
 
   // Serve uploads directory
   app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
