@@ -532,7 +532,7 @@ export const SettingsPage = () => {
          <div className="flex items-center justify-between mb-8">
             <div>
                <h3 className="text-xl font-black text-white italic uppercase tracking-tighter">نشان‌های انتخابی</h3>
-               <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1 italic">نشان‌هایی که می‌توانید برای خود انتخاب کنید (حداکثر ۵ تا برای مینی پروفایل)</p>
+               <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1 italic">نشان‌هایی که می‌توانید برای خود انتخاب کنید</p>
             </div>
          </div>
 
@@ -550,6 +550,123 @@ export const SettingsPage = () => {
                     hasBadge 
                       ? "bg-neon-pink/10 border-neon-pink shadow-[0_0_20px_rgba(255,0,255,0.1)]" 
                       : "bg-white/5 border-white/5 hover:border-white/10"
+                  )}
+                >
+                    <img src={badge.iconUrl} alt={badge.name} className={cn("w-12 h-12 object-contain mb-2", !hasBadge && "grayscale opacity-50")} />
+                    <span className={cn("text-[10px] font-black uppercase tracking-tighter text-center line-clamp-1", hasBadge ? "text-white" : "text-gray-600")}>{badge.name}</span>
+                    
+                    <div className={cn(
+                       "absolute inset-0 rounded-[22px] flex items-center justify-center bg-dark-bg/80 opacity-0 group-hover:opacity-100 transition-opacity",
+                       hasBadge ? "bg-red-500/20" : "bg-neon-pink/20"
+                    )}>
+                       <span className="text-[10px] font-black text-white uppercase italic">
+                          {hasBadge ? "حذف کردن" : "اضافه کردن"}
+                       </span>
+                    </div>
+                </motion.div>
+              );
+            })}
+         </div>
+      </NeonCard>
+    </div>
+  );
+
+  const renderElite = () => (
+    <div className="space-y-6">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="relative group"
+      >
+        <div className="absolute -inset-1 bg-gradient-to-r from-yellow-400 via-orange-500 to-yellow-600 rounded-[32px] blur-xl opacity-40 group-hover:opacity-60 transition duration-1000" />
+        <NeonCard variant="gold" className="relative p-10 overflow-hidden border-none bg-black/60 backdrop-blur-3xl">
+           <div className="absolute top-0 left-0 p-8 opacity-10">
+              <Crown size={200} />
+           </div>
+           <div className="flex flex-col md:flex-row items-center gap-10 relative z-10 text-center md:text-right">
+              <div className="h-40 w-40 rounded-[48px] bg-yellow-400 text-dark-bg flex items-center justify-center shadow-[0_0_40px_rgba(250,204,21,0.4)]">
+                 <Sparkles size={64} fill="currentColor" />
+              </div>
+              <div className="flex-1">
+                 <h2 className="text-4xl font-black text-white italic uppercase tracking-tighter mb-4">Elite Control Center</h2>
+                 <p className="text-sm text-yellow-400/80 font-black uppercase tracking-widest leading-relaxed">
+                   به عنوان عضو ویژه نخبگان، شما به ابزارهای شخصی‌سازی و هویتی منحصر به فرد دسترسی دارید. تمامی تنظیمات در این بخش بلافاصله در پروفایل شما اعمال می‌شوند.
+                 </p>
+              </div>
+           </div>
+        </NeonCard>
+      </motion.div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <NeonCard variant="purple">
+           <div className="flex items-center gap-4 mb-6">
+              <div className="h-10 w-10 rounded-xl bg-neon-purple/10 flex items-center justify-center text-neon-purple">
+                 <Shield size={20} />
+              </div>
+              <h3 className="text-sm font-black text-white italic uppercase">شخصی‌سازی هویتی</h3>
+           </div>
+           
+           <div className="space-y-4">
+              {[
+                { label: "هاله نورانی (Aura Effect)", desc: "نمایش هاله درخشان دور آواتار", active: true },
+                { label: "نام متحرک (Glow Name)", desc: "استفاده از افکت گرادینت متحرک برای نام", active: true },
+                { label: "فریم الماس (Elite Frame)", desc: "استفاده از قاب ویژه برای عکس پروفایل", active: false }
+              ].map((item, i) => (
+                <div key={i} className="p-4 rounded-xl bg-white/5 border border-white/5 flex items-center justify-between group hover:border-neon-purple/30 transition-all">
+                   <div>
+                      <h4 className="text-xs font-black text-white italic">{item.label}</h4>
+                      <p className="text-[9px] text-gray-500 italic mt-0.5">{item.desc}</p>
+                   </div>
+                   <div className={cn(
+                     "h-6 w-11 rounded-full relative transition-colors cursor-pointer",
+                     item.active ? "bg-neon-purple/30" : "bg-white/10"
+                   )}>
+                      <div className={cn(
+                        "absolute top-1 h-4 w-4 rounded-full transition-all",
+                        item.active ? "right-1 bg-neon-purple shadow-[0_0_10px_rgba(191,0,255,0.5)]" : "left-1 bg-gray-600"
+                      )} />
+                   </div>
+                </div>
+              ))}
+           </div>
+        </NeonCard>
+
+        <NeonCard variant="blue">
+           <div className="flex items-center gap-4 mb-6">
+              <div className="h-10 w-10 rounded-xl bg-neon-blue/10 flex items-center justify-center text-neon-blue">
+                 <Star size={20} />
+              </div>
+              <h3 className="text-sm font-black text-white italic uppercase">قابلیت‌های ویژه لابی</h3>
+           </div>
+           
+           <div className="space-y-4">
+              {[
+                { label: "اعلان ورود (Join Alert)", desc: "اعلان صوتی و متنی هنگام ورود به لابی", active: true },
+                { label: "پین شدن لابی (Pin Lobby)", desc: "پین کردن لابی‌های ساخته شده در صدر لیست", active: true },
+                { label: "تغییر تم لابی (Custom Theme)", desc: "انتخاب تم دلخواه برای صفحه لابی", active: false }
+              ].map((item, i) => (
+                <div key={i} className="p-4 rounded-xl bg-white/5 border border-white/5 flex items-center justify-between group hover:border-neon-blue/30 transition-all">
+                   <div>
+                      <h4 className="text-xs font-black text-white italic">{item.label}</h4>
+                      <p className="text-[9px] text-gray-500 italic mt-0.5">{item.desc}</p>
+                   </div>
+                   <div className={cn(
+                     "h-6 w-11 rounded-full relative transition-colors cursor-pointer",
+                     item.active ? "bg-neon-blue/30" : "bg-white/10"
+                   )}>
+                      <div className={cn(
+                        "absolute top-1 h-4 w-4 rounded-full transition-all",
+                        item.active ? "right-1 bg-neon-blue shadow-[0_0_10px_rgba(0,229,255,0.5)]" : "left-1 bg-gray-600"
+                      )} />
+                   </div>
+                </div>
+              ))}
+           </div>
+        </NeonCard>
+      </div>
+    </div>
+  );
+                  : "bg-white/5 border-white/5 hover:border-white/10"
                   )}
                 >
                     <img src={badge.iconUrl} alt={badge.name} className={cn("w-12 h-12 object-contain mb-2", !hasBadge && "grayscale opacity-50")} />
@@ -879,36 +996,7 @@ export const SettingsPage = () => {
 
               {/* Content Area */}
               <div className="lg:col-span-3">
-                {activeTab === "elite" && (
-                   <div className="space-y-6">
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="relative group cursor-pointer"
-                        onClick={() => window.location.href = "/settings/elite"}
-                      >
-                        <div className="absolute -inset-1 bg-gradient-to-r from-yellow-400 via-orange-500 to-yellow-600 rounded-[32px] blur-xl opacity-40 group-hover:opacity-70 transition duration-1000" />
-                        <NeonCard variant="gold" className="relative p-10 overflow-hidden border-none bg-black/40 backdrop-blur-xl">
-                           <div className="absolute top-0 left-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
-                              <Crown size={200} />
-                           </div>
-                           <div className="flex flex-col md:flex-row items-center gap-8 relative z-10 text-center md:text-right">
-                              <div className="h-24 w-24 rounded-[32px] bg-yellow-400 text-dark-bg flex items-center justify-center shadow-[0_0_40px_rgba(250,204,21,0.4)] group-hover:scale-110 transition-transform duration-500">
-                                 <Crown size={48} fill="currentColor" />
-                              </div>
-                              <div className="flex-1">
-                                 <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter mb-2">داشبورد نخبگان (Elite Settings)</h2>
-                                 <p className="text-sm text-yellow-400/80 font-bold uppercase tracking-widest italic mb-6">کنترل کامل بر فریم‌ها، افکت‌ها و استایل‌های اختصاصی VIP</p>
-                                 <GlowButton variant="gold" className="px-12 h-12 text-xs font-black uppercase italic">باز کردن تنظیمات پیشرفته</GlowButton>
-                              </div>
-                              <div className="h-16 w-16 rounded-full border-2 border-yellow-400/30 flex items-center justify-center group-hover:bg-yellow-400/10 transition-all">
-                                 <ArrowRight className="text-yellow-400 -rotate-45 group-hover:rotate-0 transition-transform" />
-                              </div>
-                           </div>
-                        </NeonCard>
-                      </motion.div>
-                   </div>
-                )}
+                {activeTab === "elite" && renderElite()}
                 {activeTab === "profile" && renderProfile()}
                 {activeTab === "badges" && renderBadges()}
                 {activeTab === "security" && renderSecurity()}

@@ -95,7 +95,7 @@ export const DashboardPage = () => {
 
   const isTop10 = userRank.rank > 0 && userRank.rank <= 10;
   
-  const currentMembership = user?.profile?.membershipType || "NONE";
+  const currentMembership = user?.membership || user?.profile?.membershipType || "NONE";
   const expiryDate = (stats as any).membershipExpiresAt;
   const daysLeft = expiryDate ? Math.max(0, Math.ceil((new Date(expiryDate).getTime() - new Date().getTime()) / (1000 * 3600 * 24))) : 0;
 
@@ -104,8 +104,8 @@ export const DashboardPage = () => {
       <Sidebar />
       <main className="flex-1 px-4 py-8 md:mr-64 lg:px-8 pb-24 md:pb-8">
         <div className="container mx-auto max-w-6xl">
-          {/* VIP/PROMO BANNER FOR NON-MEMBERS */}
-          {currentMembership !== "VIP" && currentMembership !== "PLUS" && (
+          {/* VIP/PROMO BANNER - HIDDEN FOR MEMBERS */}
+          {currentMembership === "NONE" || currentMembership === "FREE" ? (
             <motion.div 
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
