@@ -70,6 +70,21 @@ export class AuthService {
     return { status: "success", user, accessToken, refreshToken };
   }
 
+  static async sendVerificationEmail(userId: string) {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new Error("User not found");
+    if (user.isVerified) throw new Error("ایمیل شما قبلاً تایید شده است");
+
+    const verificationToken = uuidv4();
+    await prisma.user.update({
+      where: { id: userId },
+      data: { verificationToken }
+    });
+
+    console.log(`[EMAIL] Verification link for ${user.email}: http://loxx.ir/verify?token=${verificationToken}`);
+    return true;
+  }
+
   static async verifyEmail(token: string) {
     const user = await prisma.user.findFirst({
       where: { verificationToken: token }

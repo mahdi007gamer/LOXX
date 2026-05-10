@@ -84,6 +84,17 @@ export class AuthController {
     }
   }
 
+  static async sendVerificationEmail(req: Request, res: Response) {
+    try {
+      const userId = (req as any).user?.userId;
+      if (!userId) throw new Error("Unauthorized");
+      await AuthService.sendVerificationEmail(userId);
+      res.json({ status: "success", message: "کد تایید به ایمیل شما ارسال شد" });
+    } catch (error: any) {
+      res.status(400).json({ status: "error", message: error.message });
+    }
+  }
+
   static async verifyEmail(req: Request, res: Response) {
     try {
       const { token } = req.body;

@@ -106,22 +106,17 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
   const bannerUrl = user.bannerUrl || "";
 
   const getBackgroundStyle = () => {
-    if (!metadata || !metadata.colors) {
-      if (isVIP) return { backgroundImage: "linear-gradient(to bottom right, #facc15, #854d0e)" };
-      return {};
-    }
+    if (isVIP) return { backgroundImage: "linear-gradient(to bottom right, #eab308, #a16207)" };
     
     let style: any = {};
-    
-    if (metadata.colors.gradient?.enabled) {
+    if (metadata && metadata.colors && metadata.colors.gradient?.enabled) {
       const { color1, color2, type, angle } = metadata.colors.gradient;
       if (type === "linear") style.background = `linear-gradient(${angle}deg, ${color1}, ${color2})`;
       else if (type === "radial") style.background = `radial-gradient(circle at center, ${color1}, ${color2})`;
       else style.background = `conic-gradient(from ${angle}deg, ${color1}, ${color2})`;
-    } else {
+    } else if (metadata && metadata.colors && metadata.colors.bg) {
       style.backgroundColor = metadata.colors.bg;
     }
-    
     return style;
   };
 
@@ -253,7 +248,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
       {/* Dynamic Banner */}
       <div className={cn(
         "h-40 relative overflow-hidden z-10",
-        !bannerUrl && (isVIP ? "bg-gradient-to-br from-yellow-400 via-yellow-600 to-yellow-800" :
+        !bannerUrl && (isVIP ? "bg-gradient-to-br from-[#facc15] via-[#eab308] to-[#ca8a04]" :
         isPLUS ? "bg-gradient-to-br from-neon-blue via-blue-600 to-indigo-800" :
         "bg-gradient-to-l from-gray-800 to-gray-900")
       )}>
@@ -355,7 +350,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
             <div className="flex items-center gap-3">
               <h4 className={cn(
                 "text-3xl font-black italic tracking-tighter uppercase",
-                isVIP && !metadata?.colors?.textGradient ? "text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-200" : "text-white",
+                isVIP ? "text-[#0a0a0f]" : "text-white",
                 metadata?.shinyName && "animate-pulse"
               )} style={{
                 ...(metadata && metadata.colors && (isVIP || isPLUS) ? 
@@ -363,7 +358,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
                     ? { backgroundImage: `linear-gradient(to right, ${metadata.colors.text}, ${metadata.colors.textGradient})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }
                     : { color: metadata.colors.text }) 
                   : {}),
-                textShadow: "0 4px 12px rgba(0,0,0,0.8), 0 2px 4px rgba(0,0,0,0.5)"
+                textShadow: isVIP ? "none" : "0 4px 12px rgba(0,0,0,0.8), 0 2px 4px rgba(0,0,0,0.5)"
               }}>
                 {user.displayName || user.senderName}
               </h4>
@@ -399,37 +394,37 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
                   {loading ? (
                     <div className="h-4 w-8 bg-white/5 animate-pulse rounded" />
                   ) : (
-                    <p className="text-sm font-black italic" style={{ color: metadata?.colors?.statsText || metadata?.colors?.text || "white", textShadow: "0 2px 4px rgba(0,0,0,0.5)" }}>{user.stats?.daysSinceJoin || 0} روز</p>
+                    <p className="text-sm font-black italic" style={{ color: isVIP && !metadata?.colors?.text ? "#0a0a0f" : (metadata?.colors?.statsText || metadata?.colors?.text || "white"), textShadow: isVIP ? "none" : "0 2px 4px rgba(0,0,0,0.5)" }}>{user.stats?.daysSinceJoin || 0} روز</p>
                   )}
                 </div>
              </div>
              <div className="text-center group">
-                <p className="text-[9px] font-black uppercase mb-1.5 group-hover:text-neon-pink transition-colors italic" style={{ color: metadata?.colors?.statsLabel || "#4b5563" }}>دوستان</p>
+                <p className="text-[9px] font-black uppercase mb-1.5 group-hover:text-neon-pink transition-colors italic" style={{ color: isVIP ? "#451a03" : (metadata?.colors?.statsLabel || "#4b5563") }}>دوستان</p>
                 <div className="flex flex-col items-center">
                   {loading ? (
                     <div className="h-4 w-8 bg-white/5 animate-pulse rounded" />
                   ) : (
-                    <p className="text-sm font-black italic" style={{ color: metadata?.colors?.statsText || metadata?.colors?.text || "white", textShadow: "0 2px 4px rgba(0,0,0,0.5)" }}>{user.stats?.friendsCount || 0}</p>
+                    <p className="text-sm font-black italic" style={{ color: isVIP && !metadata?.colors?.text ? "#0a0a0f" : (metadata?.colors?.statsText || metadata?.colors?.text || "white"), textShadow: isVIP ? "none" : "0 2px 4px rgba(0,0,0,0.5)" }}>{user.stats?.friendsCount || 0}</p>
                   )}
                 </div>
              </div>
              <div className="text-center group">
-                <p className="text-[9px] font-black uppercase mb-1.5 group-hover:text-neon-purple transition-colors italic" style={{ color: metadata?.colors?.statsLabel || "#4b5563" }}>لابی‌ها</p>
+                <p className="text-[9px] font-black uppercase mb-1.5 group-hover:text-neon-purple transition-colors italic" style={{ color: isVIP ? "#451a03" : (metadata?.colors?.statsLabel || "#4b5563") }}>لابی‌ها</p>
                 <div className="flex flex-col items-center">
                   {loading ? (
                     <div className="h-4 w-8 bg-white/5 animate-pulse rounded" />
                   ) : (
-                    <p className="text-sm font-black italic" style={{ color: metadata?.colors?.statsText || metadata?.colors?.text || "white", textShadow: "0 2px 4px rgba(0,0,0,0.5)" }}>{user.stats?.lobbiesJoined || 0}</p>
+                    <p className="text-sm font-black italic" style={{ color: isVIP && !metadata?.colors?.text ? "#0a0a0f" : (metadata?.colors?.statsText || metadata?.colors?.text || "white"), textShadow: isVIP ? "none" : "0 2px 4px rgba(0,0,0,0.5)" }}>{user.stats?.lobbiesJoined || 0}</p>
                   )}
                 </div>
              </div>
              <div className="text-center group">
-                <p className="text-[9px] font-black uppercase mb-1.5 group-hover:text-yellow-500 transition-colors italic" style={{ color: metadata?.colors?.statsLabel || "#4b5563" }}>میزبانی</p>
+                <p className="text-[9px] font-black uppercase mb-1.5 group-hover:text-yellow-500 transition-colors italic" style={{ color: isVIP ? "#451a03" : (metadata?.colors?.statsLabel || "#4b5563") }}>میزبانی</p>
                 <div className="flex flex-col items-center">
                   {loading ? (
                     <div className="h-4 w-8 bg-white/5 animate-pulse rounded" />
                   ) : (
-                    <p className="text-sm font-black italic" style={{ color: metadata?.colors?.statsText || metadata?.colors?.text || "white", textShadow: "0 2px 4px rgba(0,0,0,0.5)" }}>{user.stats?.lobbiesCreated || 0}</p>
+                    <p className="text-sm font-black italic" style={{ color: isVIP && !metadata?.colors?.text ? "#0a0a0f" : (metadata?.colors?.statsText || metadata?.colors?.text || "white"), textShadow: isVIP ? "none" : "0 2px 4px rgba(0,0,0,0.5)" }}>{user.stats?.lobbiesCreated || 0}</p>
                   )}
                 </div>
              </div>
@@ -449,17 +444,17 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
                   )}
                 >
                   <img src={ub.iconUrl} alt={ub.name} className="h-4 w-4 object-contain" />
-                  <span className="text-[10px] font-black uppercase italic" style={{ color: metadata?.colors?.badgeText || "white", textShadow: "0 1px 2px rgba(0,0,0,0.5)" }}>{ub.name}</span>
+                  <span className="text-[10px] font-black uppercase italic" style={{ color: isVIP && !metadata?.colors?.badgeText ? "#0a0a0f" : (metadata?.colors?.badgeText || "white"), textShadow: isVIP ? "none" : "0 1px 2px rgba(0,0,0,0.5)" }}>{ub.name}</span>
                 </div>
               ))}
               {user.senderBadges?.filter(b => !b.isPinned && b.category !== "GAME").slice(0, 4).map((ub, i) => (
                 <div 
                   key={ub.id || i} 
                   title={ub.name} 
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all border bg-white/5 border-white/10 opacity-70 hover:opacity-100"
+                  className={cn("flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all border", isVIP ? "bg-black/10 border-black/10" : "bg-white/5 border-white/10 opacity-70 hover:opacity-100")}
                 >
                   <img src={ub.iconUrl} alt={ub.name} className="h-4 w-4 object-contain" />
-                  <span className="text-[10px] font-black uppercase italic" style={{ color: metadata?.colors?.badgeText || "#6b7280" }}>{ub.name}</span>
+                  <span className="text-[10px] font-black uppercase italic" style={{ color: isVIP && !metadata?.colors?.badgeText ? "#0a0a0f" : (metadata?.colors?.badgeText || "#6b7280") }}>{ub.name}</span>
                 </div>
               ))}
               {!user.senderBadges?.length && !loading && (
