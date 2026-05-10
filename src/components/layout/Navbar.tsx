@@ -95,8 +95,11 @@ export const Navbar = () => {
                     exit={{ opacity: 0, x: -10 }}
                     className="flex flex-col -space-y-1"
                   >
-                    <span className="text-xl font-black italic tracking-tighter text-white group-hover:text-neon-blue transition-colors uppercase">
-                      LOXX
+                    <span className="text-xl md:text-3xl font-black italic tracking-tighter text-white group-hover:text-neon-blue transition-colors uppercase">
+                      لوکس
+                    </span>
+                    <span className="text-[8px] md:text-[10px] text-gray-400 font-bold tracking-widest hidden sm:block">
+                      پیشرفته‌ترین پلتفرم گیمینگ فارسی
                     </span>
                   </motion.div>
                 )}

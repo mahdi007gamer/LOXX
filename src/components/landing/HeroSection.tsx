@@ -27,7 +27,7 @@ export const HeroSection = () => {
           <span className="tracking-widest uppercase">درگاه ورود به لوکس باز شد</span>
         </motion.div>
         
-        <motion.div 
+        <motion.div
           animate={{ 
             y: [0, -10, 0],
           }}
@@ -38,18 +38,6 @@ export const HeroSection = () => {
           }}
           className="mb-8 flex flex-col items-center relative"
         >
-          {/* Subtle Lightning / Power Effect */}
-          <motion.div 
-            animate={{ opacity: [0, 0.2, 0.5, 0, 0.1, 0] }}
-            transition={{ duration: 4, repeat: Infinity, times: [0, 0.05, 0.1, 0.2, 0.25, 1] }}
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-gradient-to-r from-transparent via-white to-transparent blur-[40px] opacity-0 mix-blend-overlay -rotate-12 pointer-events-none z-0"
-          />
-          <motion.div 
-            animate={{ opacity: [0.1, 0.3, 0.1], scale: [0.95, 1.05, 0.95] }}
-            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] h-[80%] bg-neon-blue/20 rounded-full blur-[80px] pointer-events-none z-0 mix-blend-screen"
-          />
-          
           <img 
             src="/logo.png" 
             alt="LOXX Logo" 

@@ -2,26 +2,35 @@ import React from "react";
 import { motion } from "motion/react";
 import { MessageSquare, Users, Gamepad2, Target, Trophy } from "lucide-react";
 
-const FloatingIcon = ({ icon: Icon, delay = 0, x = 0, y = 0 }: { icon: any, delay?: number, x: number, y: number }) => (
-  <motion.div
-    initial={{ opacity: 0 }}
-    animate={{ 
-      opacity: [0, 0.2, 0],
-      y: [0, -100],
-      rotate: [0, 8, -8, 0]
-    }}
-    transition={{ 
-      duration: 20, 
-      delay, 
-      repeat: Infinity, 
-      ease: "easeInOut" 
-    }}
-    style={{ left: `${x}%`, top: `${y}%` }}
-    className="absolute text-neon-blue/20 -translate-x-1/2 -translate-y-1/2"
-  >
-    <Icon size={120} strokeWidth={0.5} />
-  </motion.div>
-);
+const FloatingIcon = ({ icon: Icon, delay = 0, x = 0, y = 0 }: { icon: any, delay?: number, x: number, y: number }) => {
+  // Use pseudo-random duration based on coordinates and delay to avoid synchronous flashing
+  const duration = 10 + (x % 5) + (y % 5);
+  return (
+    <motion.div
+      initial={{ opacity: 0.1, filter: "drop-shadow(0px 0px 0px rgba(0,229,255,0))" }}
+      animate={{ 
+        opacity: [0.1, 0.25, 0.1],
+        filter: [
+          "drop-shadow(0px 0px 0px rgba(0,229,255,0))", 
+          "drop-shadow(0px 0px 15px rgba(0,229,255,0.6))", 
+          "drop-shadow(0px 0px 0px rgba(0,229,255,0))"
+        ],
+        y: [0, -20, 0], // Reduced movement for a more subtle effect
+        rotate: [0, 4, -4, 0]
+      }}
+      transition={{ 
+        duration, 
+        delay, 
+        repeat: Infinity, 
+        ease: "easeInOut" 
+      }}
+      style={{ left: `${x}%`, top: `${y}%` }}
+      className="absolute text-neon-blue -translate-x-1/2 -translate-y-1/2"
+    >
+      <Icon size={120} strokeWidth={0.5} />
+    </motion.div>
+  );
+};
 
 export const CyberGrid = () => {
   return (
