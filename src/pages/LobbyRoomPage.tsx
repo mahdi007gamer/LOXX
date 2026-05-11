@@ -1282,7 +1282,7 @@ const PlayerCard = ({
         "relative p-3 md:p-6 rounded-[24px] md:rounded-[32px] border transition-all duration-300 backdrop-blur-md cursor-pointer group h-full flex flex-col justify-between min-w-0 min-h-[220px] md:min-h-[360px] w-full",
         isSlot ? "border-dashed border-white/10 bg-transparent opacity-40 hover:opacity-100" : "bg-[#0a0a0f] border-white/10 shadow-2xl overflow-hidden",
         player.isReady && !isSlot && (isVipLobby ? "scale-[1.02] ring-1 ring-yellow-400/40 border-yellow-400/30 shadow-[0_20px_40px_-5px_rgba(250,204,21,0.15)] bg-gradient-to-b from-[#0a0a0f] to-yellow-900/10" : "scale-[1.02] ring-1 ring-neon-blue/40 border-neon-blue/30 shadow-[0_20px_40px_-5px_rgba(0,229,255,0.15)]"),
-        isVipLobby && !isSlot && "border-yellow-400/20 hover:border-yellow-400/40 shadow-[0_0_20px_rgba(250,204,21,0.05)] bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] bg-blend-soft-light",
+        isVipLobby && !isSlot && "border-yellow-400/20 hover:border-yellow-400/40 shadow-[0_0_20px_rgba(250,204,21,0.05)] bg-yellow-400/5 bg-blend-soft-light",
         player.isSpeaking && "ring-2 ring-green-500/50 shadow-[0_0_30px_rgba(34,197,94,0.1)]"
       )}
     >

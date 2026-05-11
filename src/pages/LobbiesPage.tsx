@@ -206,7 +206,7 @@ export const LobbiesPage = () => {
                     <NeonCard 
                       className={cn(
                         "group relative flex flex-col h-full overflow-hidden p-0 bg-[#0a0a0f] transition-all",
-                        isVipLobby ? "border-yellow-400/20 hover:border-yellow-400/60 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] bg-blend-soft-light" : "border-white/5 hover:border-neon-blue/20",
+                        isVipLobby ? "border-yellow-400/20 hover:border-yellow-400/60 bg-yellow-400/5 bg-blend-soft-light" : "border-white/5 hover:border-neon-blue/20",
                         lobby.isPrivate && "opacity-80 grayscale-[0.5]",
                         isVipLobby && "bg-[#0d0d12] shadow-[0_0_30px_rgba(250,204,21,0.05)]"
                       )}

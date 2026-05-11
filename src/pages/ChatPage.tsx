@@ -289,7 +289,7 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
                  </div>
               )}
   
-              <div className="px-4 py-2.5">
+              <div className="px-4 pt-3 pb-1.5">
                 {/* Image Handling - News channel shows image first */}
                 {activeChannelId === 'news' && message.image && (
                   <div className="mb-3 rounded-lg overflow-hidden border border-white/10 shadow-xl max-w-full">

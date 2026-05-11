@@ -113,7 +113,7 @@ export const DashboardPage = () => {
               onClick={() => navigate("/premium")}
             >
               <div className="relative min-h-[160px] md:h-40 w-full rounded-[48px] overflow-hidden bg-[#0d0d12] border border-white/10 group-hover:border-neon-purple/50 transition-all duration-700 shadow-[0_40px_100px_-20px_rgba(168,85,247,0.2)]">
-                 <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10" />
+                 <div className="absolute inset-0 bg-white/5 opacity-10 pattern-dots" />
                  
                  <div className="absolute inset-0 flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x md:divide-x-reverse divide-white/5 rtl:divide-x-reverse">
                     {/* PLUS PROMO */}
