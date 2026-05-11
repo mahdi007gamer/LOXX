@@ -22,7 +22,7 @@ export const NameWithBadge: React.FC<NameWithBadgeProps> = ({
   className,
   nameClassName
 }) => {
-  const specialBadges = badges.filter(b => b.isSpecial);
+  const specialBadges = badges.filter(b => b?.isSpecial);
 
   // Map known badge names to icons if iconUrl is missing or just for fallback
   const getBadgeIcon = (badge: Badge) => {
