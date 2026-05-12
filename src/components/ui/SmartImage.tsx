@@ -81,7 +81,9 @@ export const SmartImage: React.FC<SmartImageProps> = ({
         } catch (err) {
           console.error("SmartImage fetch error:", err);
           if (isMounted) {
-            handleImageError();
+            // As a last resort, try direct URL without auth headers
+            setDisplaySrc(fullUrl);
+            setLoading(false);
           }
         }
       } else {

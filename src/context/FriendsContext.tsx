@@ -86,17 +86,20 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
         if (pendingPresenceSnapshot.current) {
           const snapshot = pendingPresenceSnapshot.current;
           pendingPresenceSnapshot.current = null;
-          const updated = fetchedFriends.map((f: Friend) => {
+          const updated = fetchedFriends.map((f: any) => {
             const statusData = snapshot.find(u => u.userId === f.id);
             return { 
               ...f, 
-              status: statusData ? (statusData.status as FriendStatus) : FriendStatus.OFFLINE 
+              status: statusData ? (statusData.status as FriendStatus) : (f.status as FriendStatus || FriendStatus.OFFLINE)
             };
           });
           return sortFriends(updated);
         }
-        // Default all to offline if no snapshot yet (will be updated by realtime events)
-        const initial = fetchedFriends.map((f: Friend) => ({ ...f, status: FriendStatus.OFFLINE }));
+        // Use API status, fallback to offline
+        const initial = fetchedFriends.map((f: any) => ({ 
+          ...f, 
+          status: (f.status as FriendStatus) || FriendStatus.OFFLINE 
+        }));
         return sortFriends(initial);
       });
     } catch (error) {

@@ -68,6 +68,13 @@ export class FriendshipController {
          if (req.body.action === "ACCEPTED") {
             io.of("/notify").to(`user:${friendship.requesterId}`).emit("friend_list_updated");
             io.of("/notify").to(`user:${friendship.targetId}`).emit("friend_list_updated");
+            
+            const requesterId = friendship.requesterId;
+            const targetId = friendship.targetId;
+
+            // Broadcast presence to ensure instant online status update
+            io.of("/presence").emit("presence.changed", { userId: requesterId, status: "online" });
+            io.of("/presence").emit("presence.changed", { userId: targetId, status: "online" });
          }
       }
 

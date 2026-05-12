@@ -473,7 +473,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
                   <span className="text-[10px] font-black uppercase italic" style={{ color: isVIP && !metadata?.colors?.badgeText ? "#0a0a0f" : (metadata?.colors?.badgeText || "white"), textShadow: isVIP ? "none" : "0 1px 2px rgba(0,0,0,0.5)" }}>{ub.name}</span>
                 </div>
               ))}
-              {user.senderBadges?.filter(b => !b.isPinned && b.category !== "GAME").slice(0, 4).map((ub, i) => (
+              {user.senderBadges?.filter(b => !b.isPinned).slice(0, 5).map((ub, i) => (
                 <div 
                   key={ub.id || i} 
                   title={ub.name} 

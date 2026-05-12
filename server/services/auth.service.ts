@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import { v4 as uuidv4 } from "uuid";
 import prisma from "../utils/prisma.ts";
 import { RegisterDTO, LoginDTO } from "../types/auth.ts";
+import { EmailService } from "./email.service.ts";
 
 const JWT_SECRET = process.env.JWT_SECRET || "secret";
 const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET || "refresh_secret";
@@ -32,6 +33,7 @@ export class AuthService {
     });
 
     console.log(`[EMAIL] Verification link for ${user.email}: http://loxx.ir/verify?token=${verificationToken}`);
+    await EmailService.sendVerificationEmail(user.email, verificationToken);
 
     if (data.referralCode) {
       // ... existing referral logic
@@ -61,6 +63,7 @@ export class AuthService {
       });
 
       console.log(`[EMAIL] 2FA Code for ${user.email}: ${otpCode}`);
+      await EmailService.sendOTP(user.email, otpCode);
       return { status: "2fa_required", userId: user.id };
     }
 
@@ -82,6 +85,7 @@ export class AuthService {
     });
 
     console.log(`[EMAIL] Verification link for ${user.email}: http://loxx.ir/verify?token=${verificationToken}`);
+    await EmailService.sendVerificationEmail(user.email, verificationToken);
     return true;
   }
 
@@ -150,6 +154,7 @@ export class AuthService {
     });
 
     console.log(`Password reset code for ${email}: ${code}`);
+    await EmailService.sendOTP(email, code);
     return true;
   }
 

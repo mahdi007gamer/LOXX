@@ -237,60 +237,73 @@ export const LobbyRoomPage = () => {
     let lastVol = 0;
 
     if (lobby && user) {
-      navigator.mediaDevices.getUserMedia({ audio: true })
-        .then(str => {
-          stream = str;
-          setLocalStream(str);
+      const gUM = (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) || 
+                  (navigator as any).getUserMedia || 
+                  (navigator as any).webkitGetUserMedia || 
+                  (navigator as any).mozGetUserMedia;
 
-          audioContext = new AudioContext();
-          analyzer = audioContext.createAnalyser();
-          microphone = audioContext.createMediaStreamSource(stream);
-          microphone.connect(analyzer);
-          
-          analyzer.fftSize = 256;
-          const bufferLength = analyzer.frequencyBinCount;
-          const dataArray = new Uint8Array(bufferLength);
+      if (gUM) {
+        (gUM === navigator.mediaDevices?.getUserMedia ? 
+          navigator.mediaDevices.getUserMedia({ audio: true }) : 
+          new Promise((resolve, reject) => (gUM as any).call(navigator, { audio: true }, resolve, reject))
+        )
+          .then(str => {
+            stream = str;
+            setLocalStream(str);
 
-          const analyzeVoice = () => {
-             if (stream.getAudioTracks()[0]?.enabled) {
-               analyzer.getByteFrequencyData(dataArray);
-               let sum = 0;
-               for(let i = 0; i < bufferLength; i++) {
-                 sum += dataArray[i];
-               }
-               const avg = sum / bufferLength;
-               const newVol = Math.min(100, Math.round(avg * 2));
-               
-               // Only update local state if change is very significant
-               if (Math.abs(newVol - lastVol) > 20 || (newVol === 0 && lastVol !== 0)) {
-                 lastVol = newVol;
-                 setLocalVolume(newVol);
-               }
+            audioContext = new AudioContext();
+            analyzer = audioContext.createAnalyser();
+            microphone = audioContext.createMediaStreamSource(stream);
+            microphone.connect(analyzer);
+            
+            analyzer.fftSize = 256;
+            const bufferLength = analyzer.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
 
-               const talkingNow = avg > 20; 
-               if (talkingNow !== isTalking) {
-                 isTalking = talkingNow;
-                 voiceSocket.emit("voice.talking", { roomId: lobby.id, isTalking });
+            const analyzeVoice = () => {
+               if (stream.getAudioTracks()[0]?.enabled) {
+                 analyzer.getByteFrequencyData(dataArray);
+                 let sum = 0;
+                 for(let i = 0; i < bufferLength; i++) {
+                   sum += dataArray[i];
+                 }
+                 const avg = sum / bufferLength;
+                 const newVol = Math.min(100, Math.round(avg * 2));
+                 
+                 // Only update local state if change is very significant
+                 if (Math.abs(newVol - lastVol) > 20 || (newVol === 0 && lastVol !== 0)) {
+                   lastVol = newVol;
+                   setLocalVolume(newVol);
+                 }
+
+                 const talkingNow = avg > 20; 
+                 if (talkingNow !== isTalking) {
+                   isTalking = talkingNow;
+                   voiceSocket.emit("voice.talking", { roomId: lobby.id, isTalking });
+                 }
+               } else {
+                 if (lastVol !== 0) {
+                   lastVol = 0;
+                   setLocalVolume(0);
+                 }
+                 if (isTalking) {
+                   isTalking = false;
+                   voiceSocket.emit("voice.talking", { roomId: lobby.id, isTalking: false });
+                 }
                }
-             } else {
-               if (lastVol !== 0) {
-                 lastVol = 0;
-                 setLocalVolume(0);
-               }
-               if (isTalking) {
-                 isTalking = false;
-                 voiceSocket.emit("voice.talking", { roomId: lobby.id, isTalking: false });
-               }
-             }
-             rafId = requestAnimationFrame(analyzeVoice);
-          };
-          analyzeVoice();
-        })
-        .catch(err => {
-          console.error("Mic access denied", err);
-          toast.error("دسترسی به میکروفون داده نشد");
-          setLobbyMuted(true);
-        });
+               rafId = requestAnimationFrame(analyzeVoice);
+            };
+            analyzeVoice();
+          })
+          .catch(err => {
+            console.error("Mic access denied", err);
+            toast.error("دسترسی به میکروفون داده نشد");
+            setLobbyMuted(true);
+          });
+      } else {
+        console.warn("MediaDevices API not available");
+        setLobbyMuted(true);
+      }
     }
 
     return () => {
@@ -1016,7 +1029,10 @@ const RemoteAudioPlayer = ({ stream, onVolumeChange, volumeLevel }: { stream: Me
 
     if (stream && stream.getAudioTracks().length > 0) {
       try {
-        audioContext = new AudioContext();
+        const AudioCtx = (window as any).AudioContext || (window as any).webkitAudioContext;
+        if (!AudioCtx) throw new Error("AudioContext not supported");
+
+        audioContext = new AudioCtx();
         analyzer = audioContext.createAnalyser();
         microphone = audioContext.createMediaStreamSource(stream);
         microphone.connect(analyzer);
@@ -1027,7 +1043,8 @@ const RemoteAudioPlayer = ({ stream, onVolumeChange, volumeLevel }: { stream: Me
 
         let lastVol = 0;
         const analyzeVoice = () => {
-           if (stream.getAudioTracks()[0].enabled) {
+           const tracks = stream.getAudioTracks();
+           if (tracks.length > 0 && tracks[0].enabled) {
              analyzer.getByteFrequencyData(dataArray);
              let sum = 0;
              for(let i = 0; i < bufferLength; i++) {

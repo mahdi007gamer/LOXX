@@ -43,8 +43,10 @@ export const AuthorizedImage: React.FC<AuthorizedImageProps> = ({ src, className
       } catch (err) {
         console.error("Failed to load authorized image:", err);
         if (isMounted) {
-          setError(true);
+          // Fallback to direct URL
+          setObjectUrl(src.startsWith("/api/v1") ? src : `/api/v1${src.startsWith("/") ? "" : "/"}${src}`);
           setLoading(false);
+          setError(false);
         }
       }
     };
