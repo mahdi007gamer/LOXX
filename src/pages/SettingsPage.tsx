@@ -34,7 +34,7 @@ import {
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { motion, AnimatePresence } from "motion/react";
-import { getFileUrl } from "../lib/constants";
+import { SmartImage } from "../components/ui/SmartImage";
 
 type SettingsTab = "profile" | "security" | "notifications" | "ui" | "region" | "badges" | "elite";
 
@@ -281,13 +281,10 @@ export const SettingsPage = () => {
           <div className="group relative">
             <div className="h-24 w-24 rounded-[32px] bg-white/5 border border-white/10 overflow-hidden flex items-center justify-center">
               {formData.avatarUrl || formData.username ? (
-                <img 
-                  src={getFileUrl(formData.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${formData.username}`)} 
+                <SmartImage 
+                  src={formData.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${formData.username}`} 
                   alt={formData.displayName}
                   className="w-full h-full object-cover" 
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(formData.displayName || 'User');
-                  }}
                 />
               ) : (
                 <div className="flex h-full w-full items-center justify-center text-neon-blue">
@@ -398,7 +395,7 @@ export const SettingsPage = () => {
             </div>
             {formData.bannerUrl && (
               <div className="mt-4 rounded-xl overflow-hidden border border-white/10 h-24 w-full">
-                 <img src={getFileUrl(formData.bannerUrl)} alt="Banner Preview" className="w-full h-full object-cover" />
+                 <SmartImage src={formData.bannerUrl} alt="Banner Preview" className="w-full h-full object-cover" />
               </div>
             )}
             <div className="mt-2 text-right">

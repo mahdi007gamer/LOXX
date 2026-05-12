@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import api from "../../lib/api";
-import { getFileUrl } from "../../lib/constants";
+import { SmartImage } from "../ui/SmartImage";
 
 interface GameFeature {
   name: string;
@@ -276,7 +276,7 @@ export const GameAdminModal = ({
                   <div className="relative group">
                     <div className="h-32 w-32 rounded-[28px] bg-white/5 border-2 border-dashed border-white/10 flex flex-col items-center justify-center overflow-hidden transition-all group-hover:border-neon-blue/50">
                       {formData.iconUrl ? (
-                        <img src={getFileUrl(formData.iconUrl)} className="h-full w-full object-cover" alt="icon" />
+                        <SmartImage src={formData.iconUrl} className="h-full w-full object-cover" alt="icon" />
                       ) : (
                         <>
                           <ImageIcon className="text-gray-500 mb-2" size={24} />
@@ -321,7 +321,7 @@ export const GameAdminModal = ({
                   <div className="relative group">
                     <div className="h-32 w-full rounded-[28px] bg-white/5 border-2 border-dashed border-white/10 flex flex-col items-center justify-center overflow-hidden transition-all group-hover:border-neon-blue/50">
                       {formData.bannerUrl ? (
-                        <img src={getFileUrl(formData.bannerUrl)} className="h-full w-full object-cover" alt="banner" />
+                        <SmartImage src={formData.bannerUrl} className="h-full w-full object-cover" alt="banner" />
                       ) : (
                         <>
                           <Upload className="text-gray-500 mb-2" size={24} />

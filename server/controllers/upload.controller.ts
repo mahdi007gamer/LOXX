@@ -19,7 +19,7 @@ export class UploadController {
       const filePath = `/uploads/${req.file.filename}`;
       
       return res.status(200).json({
-        url: filePath,
+        url: `/api/v1/upload/file/${req.file.filename}`,
         filename: req.file.filename,
         mimetype: req.file.mimetype,
         size: req.file.size
@@ -30,6 +30,21 @@ export class UploadController {
           message: error.message || "خطا در آپلود فایل"
         }
       });
+    }
+  }
+
+  static async getFile(req: Request, res: Response) {
+    try {
+      const { filename } = req.params;
+      const filePath = path.join(process.cwd(), "uploads", filename);
+      
+      if (!fs.existsSync(filePath)) {
+        return res.status(404).json({ error: "File not found" });
+      }
+
+      return res.sendFile(filePath);
+    } catch (error: any) {
+      return res.status(500).json({ error: error.message });
     }
   }
 

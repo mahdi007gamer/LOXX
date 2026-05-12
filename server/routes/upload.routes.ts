@@ -95,6 +95,7 @@ const router = Router();
 router.post("/", authenticate, upload.single("file"), UploadController.uploadFile);
 router.post("/banner", authenticate, bannerUpload.single("file"), UploadController.uploadFile);
 router.post("/receipt", authenticate, receiptUpload.single("file"), UploadController.uploadReceipt);
+router.get("/file/:filename", UploadController.getFile);
 router.get("/receipt/:filename", authenticate, UploadController.getReceipt);
 
 export default router;

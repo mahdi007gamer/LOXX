@@ -38,7 +38,8 @@ import { useFriends } from "../context/FriendsContext";
 import { UserBadges } from "../components/ui/UserBadges";
 import { useProfilePopover } from "../context/ProfilePopoverContext";
 import { MembershipType } from "../types";
-import { cn } from "@/src/lib/utils";
+import { SmartImage } from "../components/ui/SmartImage";
+import { cn } from "../lib/utils";
 
 interface Player {
   id: string;
@@ -507,7 +508,7 @@ export const LobbyRoomPage = () => {
              isVipLobby ? "bg-[#0d0d12] border-yellow-400/30 shadow-[0_0_15px_rgba(250,204,21,0.2)]" : "bg-white/5 border-white/10"
            )}>
               {lobby?.game?.iconUrl ? (
-                <img src={getFileUrl(lobby.game.iconUrl)} className="w-full h-full object-contain" />
+                <SmartImage src={lobby.game.iconUrl} className="w-full h-full object-contain" />
               ) : <Gamepad2 className={isVipLobby ? "text-yellow-400" : "text-neon-blue"} size={24} />}
            </div>
            
@@ -792,13 +793,10 @@ export const LobbyRoomPage = () => {
                  <div key={i} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl hover:bg-white/10 transition-colors group">
                     <div className="flex items-center gap-3">
                        <div className="h-10 w-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden shrink-0">
-                         <img 
-                           src={getFileUrl(friend.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${friend.username}`)}
+                         <SmartImage 
+                           src={friend.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${friend.username}`}
                            className="w-full h-full object-cover"
                            alt={friend.username}
-                           onError={(e) => {
-                             (e.target as HTMLImageElement).src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(friend.username);
-                           }}
                          />
                        </div>
                        <div>
@@ -832,13 +830,10 @@ export const LobbyRoomPage = () => {
                   {(() => {
                     const p = players.find(p => p.id === activeProfileUserId);
                     return (
-                      <img 
-                         src={getFileUrl(p?.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p?.name}`)}
+                      <SmartImage 
+                         src={p?.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p?.name}`}
                          className="w-full h-full object-cover"
                          alt={p?.name || "Player"}
-                         onError={(e) => {
-                           (e.target as HTMLImageElement).src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(p?.name || 'G');
-                         }}
                       />
                     );
                   })()}
@@ -1343,13 +1338,10 @@ const PlayerCard = ({
                   }}
                 >
                   <div className="relative z-10 h-full w-full flex items-center justify-center overflow-hidden rounded-[18px] md:rounded-[28px]">
-                    <img 
-                      src={getFileUrl(player.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${player.name}`)}
+                    <SmartImage 
+                      src={player.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${player.name}`}
                       className="w-full h-full object-cover"
                       alt={player.name}
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(player.name);
-                      }}
                     />
                   </div>
                   <div className="absolute inset-0 bg-gradient-to-tr from-black/20 to-transparent rounded-[18px] md:rounded-[28px]" />
@@ -1578,13 +1570,10 @@ const ChatPanel = ({ messages, players, inputMessage, setInputMessage, onSend, o
                 isYou ? "flex-row" : "flex-row-reverse"
               )}>
                 <div className="h-8 w-8 rounded-xl bg-white/5 border border-white/10 flex-shrink-0 flex items-center justify-center text-lg mt-1 font-black uppercase overflow-hidden">
-                   <img 
-                     src={getFileUrl(msg.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${msg.user}`)}
+                   <SmartImage 
+                     src={msg.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${msg.user}`}
                      className="w-full h-full object-cover"
                      alt={msg.user}
-                     onError={(e) => {
-                       (e.target as HTMLImageElement).src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(msg.user);
-                     }}
                    />
                 </div>
                 <div className={cn("flex-1 space-y-1", isYou ? "text-right" : "text-left")}>
