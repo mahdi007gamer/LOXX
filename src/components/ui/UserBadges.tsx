@@ -1,5 +1,6 @@
 import React from "react";
 import { cn } from "@/src/lib/utils";
+import { getFileUrl } from "@/src/lib/constants";
 
 interface UserBadgesProps {
   badges: any[];
@@ -26,7 +27,7 @@ export const UserBadges: React.FC<UserBadgesProps> = ({
       {displayBadges.map((badge, idx) => (
         <img 
           key={idx} 
-          src={badge.iconUrl} 
+          src={getFileUrl(badge.iconUrl)} 
           alt={badge.name} 
           title={badge.name} 
           className={cn("h-3 w-3 md:h-4 md:w-4 object-contain", iconClassName)} 

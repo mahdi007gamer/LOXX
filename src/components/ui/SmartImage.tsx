@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { cn } from '../../lib/utils';
 import { ShieldAlert } from 'lucide-react';
+import { getFileUrl } from '../../lib/constants';
 
 interface SmartImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   isVipEnabled?: boolean;
@@ -22,16 +23,18 @@ export const SmartImage: React.FC<SmartImageProps> = ({
   const [error, setError] = useState(false);
   const [isFrozen, setIsFrozen] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  
+  const fullSrc = getFileUrl(src);
 
   useEffect(() => {
-    if (!src) return;
+    if (!fullSrc) return;
     
-    const isGif = src.toLowerCase().includes('.gif') || src.includes('data:image/gif');
+    const isGif = fullSrc.toLowerCase().includes('.gif') || fullSrc.includes('data:image/gif');
     
     if (isGif && !isVipEnabled) {
       const img = new Image();
       img.crossOrigin = "anonymous";
-      img.src = src;
+      img.src = fullSrc;
       
       img.onload = () => {
         if (canvasRef.current) {
@@ -51,9 +54,9 @@ export const SmartImage: React.FC<SmartImageProps> = ({
     } else {
       setIsFrozen(false);
     }
-  }, [src, isVipEnabled]);
+  }, [fullSrc, isVipEnabled]);
 
-  if (error || !src) {
+  if (error || !fullSrc) {
     return (
       <div className={cn("flex items-center justify-center bg-gray-900 text-gray-700", className)}>
         {fallback || <ShieldAlert size={24} />}
@@ -64,7 +67,7 @@ export const SmartImage: React.FC<SmartImageProps> = ({
   if (isVipEnabled) {
     return (
       <img 
-        src={src} 
+        src={fullSrc} 
         alt={alt} 
         className={className} 
         {...props} 
@@ -80,7 +83,7 @@ export const SmartImage: React.FC<SmartImageProps> = ({
       />
       {!isFrozen && (
         <img 
-          src={src} 
+          src={fullSrc} 
           alt={alt} 
           className="w-full h-full object-cover" 
           {...props}

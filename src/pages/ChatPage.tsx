@@ -6,6 +6,7 @@ import { GlowButton } from "../components/ui/GlowButton";
 import { Input } from "../components/ui/Input";
 import { LobbyInviteCard } from "../components/ui/LobbyInviteCard";
 import { SmartImage } from "../components/ui/SmartImage";
+import { getFileUrl } from "../lib/constants";
 import { Send, Hash, Users, MoreVertical, Plus, Smile, Image as ImageIcon, Reply, Heart, ChevronDown, Award, Star, Zap, Crown, Play, Check, Menu, X, MessageSquare, User, Trophy, Palette, Trash, MessageCircle, Search, UserPlus as UserPlusIcon, Settings } from "lucide-react";
 import { cn } from "../lib/utils";
 import { motion, AnimatePresence } from "motion/react";
@@ -293,7 +294,7 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
                 {/* Image Handling - News channel shows image first */}
                 {activeChannelId === 'news' && message.image && (
                   <div className="mb-3 rounded-lg overflow-hidden border border-white/10 shadow-xl max-w-full">
-                    <img src={message.image} alt="News image" className="w-full h-auto object-contain cursor-pointer" onClick={() => window.open(message.image, '_blank')} />
+                    <img src={getFileUrl(message.image)} alt="News image" className="w-full h-auto object-contain cursor-pointer" onClick={() => window.open(getFileUrl(message.image), '_blank')} />
                   </div>
                 )}
 
@@ -313,7 +314,7 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
                 {/* Regular Image (Non-news or second in news) */}
                 {activeChannelId !== 'news' && message.image && (
                   <div className="mt-1 rounded-lg overflow-hidden border border-white/10 shadow-xl max-w-[280px]">
-                    <img src={message.image} alt="Chat image" className="w-full h-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onClick={() => window.open(message.image, '_blank')} />
+                    <img src={getFileUrl(message.image)} alt="Chat image" className="w-full h-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onClick={() => window.open(getFileUrl(message.image), '_blank')} />
                   </div>
                 )}
 
@@ -402,12 +403,12 @@ const ChannelButton: React.FC<ChannelButtonProps> = ({ channel, active, onClick,
     <div className="flex items-center gap-3 relative z-10 rtl:flex-row-reverse">
       {channel.type === "game" && channel.icon ? (
         <div className="relative">
-          <img src={channel.icon} alt="" className="h-5 w-5 rounded-md object-cover grayscale group-hover:grayscale-0 transition-all opacity-60 group-hover:opacity-100" />
+          <img src={getFileUrl(channel.icon)} alt="" className="h-5 w-5 rounded-md object-cover grayscale group-hover:grayscale-0 transition-all opacity-60 group-hover:opacity-100" />
           <div className={cn("absolute -bottom-0.5 -left-0.5 h-2 w-2 rounded-full border-2 border-black", active ? "bg-neon-blue" : "bg-gray-700")}></div>
         </div>
       ) : channel.type === "elite" ? (
          (channel as any).avatarUrl ? (
-           <img src={(channel as any).avatarUrl} alt="" className="h-5 w-5 rounded-full object-cover" />
+           <img src={getFileUrl((channel as any).avatarUrl)} alt="" className="h-5 w-5 rounded-full object-cover" />
          ) : (
            <Crown size={16} className={active ? "text-yellow-400" : "text-gray-500"} />
          )

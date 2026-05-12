@@ -6,6 +6,7 @@ import { useAuth } from "../context/AuthContext";
 import { useWebRTC } from "../hooks/useWebRTC";
 import { chatSocket, lobbySocket, voiceSocket } from "../lib/socket";
 import { toast } from "react-hot-toast";
+import { getFileUrl } from "../lib/constants";
 import { 
   Users, 
   Shield, 
