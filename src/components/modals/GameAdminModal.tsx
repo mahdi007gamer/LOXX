@@ -183,16 +183,25 @@ export const GameAdminModal = ({
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Simulate upload - in a real app, use a service or FormData to server
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setFormData(prev => ({
-        ...prev,
-        [type === "icon" ? "iconUrl" : "bannerUrl"]: reader.result as string
-      }));
-    };
-    reader.readAsDataURL(file);
-    toast.success("تصویر با موفقیت انتخاب شد");
+    const data = new FormData();
+    data.append("file", file);
+
+    try {
+      const loadingToast = toast.loading(type === "icon" ? "در حال آپلود آیکون..." : "در حال آپلود بنر...");
+      const res = await api.post("/upload", data);
+      
+      if (res.data.url) {
+        setFormData(prev => ({
+          ...prev,
+          [type === "icon" ? "iconUrl" : "bannerUrl"]: res.data.url
+        }));
+        toast.dismiss(loadingToast);
+        toast.success("تصویر با موفقیت آپلود شد");
+      }
+    } catch (err: any) {
+      toast.dismiss();
+      toast.error(err.response?.data?.error?.message || "خطا در آپلود تصویر");
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

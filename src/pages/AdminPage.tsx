@@ -341,16 +341,16 @@ export const AdminPage = () => {
                 {games.map((game) => (
                   <NeonCard key={game.id} className="p-0 overflow-hidden group">
                     <div className="h-32 w-full relative bg-gray-900">
-                      {game.bannerUrl && <img src={game.bannerUrl} className="h-full w-full object-cover opacity-50 group-hover:scale-110 transition-transform duration-500" alt={game.title} />}
+                      {game.bannerUrl && <SmartImage src={game.bannerUrl} className="h-full w-full object-cover opacity-50 group-hover:scale-110 transition-transform duration-500" alt={game.title} />}
                       <div className="absolute inset-0 bg-gradient-to-t from-dark-bg to-transparent" />
                       <div className="absolute bottom-4 right-4 flex items-center gap-3">
                         <div className="h-12 w-12 rounded-2xl bg-[#0a0a0f] border border-white/10 p-1">
-                          {game.iconUrl && <img src={game.iconUrl} className="h-full w-full rounded-xl object-cover" alt="icon" />}
+                          {game.iconUrl && <SmartImage src={game.iconUrl} className="h-full w-full rounded-xl object-cover" alt={game.title} />}
                         </div>
                         <h3 className="font-black text-xl text-white drop-shadow-lg">{game.title}</h3>
                         {game.badge && (
                           <div className="h-6 w-6 ml-2" title={game.badge.name}>
-                            <img src={game.badge.iconUrl} className="h-full w-full object-contain filter drop-shadow-[0_0_5px_rgba(0,229,255,0.5)]" alt="badge" />
+                            <SmartImage src={game.badge.iconUrl} className="h-full w-full object-contain filter drop-shadow-[0_0_5px_rgba(0,229,255,0.5)]" alt={game.badge.name} />
                           </div>
                         )}
                       </div>
@@ -520,7 +520,7 @@ export const AdminPage = () => {
                       className="relative group bg-[#0d0d12] border border-white/5 rounded-[32px] p-6 flex flex-col items-center text-center transition-all hover:border-white/20"
                     >
                        <div className="h-16 w-16 mb-4 relative flex items-center justify-center">
-                          <img src={badge.iconUrl} className="h-full w-full object-contain" alt={badge.name} />
+                          <SmartImage src={badge.iconUrl} className="h-full w-full object-contain" alt={badge.name} />
                           {badge.isSpecial && (
                             <div className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-yellow-400 flex items-center justify-center text-black border-2 border-[#0d0d12]">
                                <Icons.Shield size={12} fill="currentColor" />

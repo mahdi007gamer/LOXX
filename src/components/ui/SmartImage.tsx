@@ -75,9 +75,19 @@ export const SmartImage: React.FC<SmartImageProps> = ({
   }, [fullSrc, isVipEnabled, fallbackIndex]);
 
   if (error || !fullSrc) {
+    const initials = alt ? alt.substring(0, 2).toUpperCase() : "??";
+    const colors = [
+      "bg-blue-500", "bg-purple-500", "bg-pink-500", 
+      "bg-indigo-500", "bg-cyan-500", "bg-teal-500",
+      "bg-emerald-500", "bg-amber-500", "bg-rose-500"
+    ];
+    const colorIndex = alt ? alt.length % colors.length : 0;
+    const bgColor = colors[colorIndex];
+
     return (
-      <div className={cn("flex items-center justify-center bg-gray-900/50 text-gray-700 animate-pulse", className)}>
-        <ShieldAlert size={24} className="opacity-20" />
+      <div className={cn("flex flex-col items-center justify-center text-white/40 font-black italic select-none", bgColor, className)}>
+        <span className="text-xl tracking-tighter">{initials}</span>
+        <ShieldAlert size={12} className="mt-1 opacity-50" />
       </div>
     );
   }
