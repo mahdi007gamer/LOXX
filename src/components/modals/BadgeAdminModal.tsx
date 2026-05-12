@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { X, Save, Award, Shield, Palette } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { GlowButton } from "../ui/GlowButton";
-import { SmartImage } from "../ui/SmartImage";
+import { getFileUrl } from "../../lib/constants";
 import api from "../../lib/api";
 import { toast } from "react-hot-toast";
 
@@ -160,11 +160,11 @@ export const BadgeAdminModal = ({ isOpen, onClose, badge, onSuccess }: BadgeAdmi
                   <label className="text-[10px] text-gray-500 font-black uppercase tracking-widest mr-2">آیکن نشان</label>
                   <div className="flex gap-4">
                      <div className="h-20 w-20 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden shrink-0">
-                        <SmartImage 
-                           src={formData.iconUrl} 
-                           alt={formData.name} 
-                           className="h-full w-full object-contain" 
-                        />
+                        {formData.iconUrl ? (
+                          <img src={getFileUrl(formData.iconUrl)} className="h-full w-full object-contain" />
+                        ) : (
+                          <Award size={32} className="text-gray-700" />
+                        )}
                      </div>
                      <div className="flex-1 space-y-3">
                         <input 

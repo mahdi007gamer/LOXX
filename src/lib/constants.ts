@@ -10,7 +10,7 @@ export const UPLOADS_URL = `${API_BASE_URL}/uploads`;
  */
 export const getFileUrl = (path: string | undefined | null) => {
   if (!path) return '';
-  if (path.startsWith('http')) return path;
+  if (path.startsWith('http') || path.startsWith('data:') || path.startsWith('blob:')) return path;
   
   // If the path already has /uploads, we just prepend the base
   if (path.startsWith('/uploads/')) {

@@ -16,7 +16,7 @@ import { BadgeAdminModal } from "../components/modals/BadgeAdminModal";
 import { UserEditModal } from "../components/modals/UserEditModal";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
-import { SmartImage } from "../components/ui/SmartImage";
+import { getFileUrl } from "../lib/constants";
 import { AuthorizedImage } from "../components/ui/AuthorizedImage";
 
 export const AdminPage = () => {
@@ -233,12 +233,20 @@ export const AdminPage = () => {
                    >
                      <div className="flex items-center gap-4 mb-6">
                         <div className="h-16 w-16 rounded-2xl overflow-hidden border border-white/10 shrink-0 bg-gray-900">
-                           <SmartImage 
-                              src={user.profile?.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`} 
-                              isVipEnabled={user.profile?.membershipType === "VIP"}
-                              className="h-full w-full object-cover" 
-                              alt="avatar" 
-                            />
+                            {user.profile?.avatarUrl || user.username ? (
+                              <img 
+                                src={getFileUrl(user.profile?.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`)} 
+                                className="h-full w-full object-cover" 
+                                alt="avatar" 
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(user.username || 'User');
+                                }}
+                              />
+                            ) : (
+                               <div className="flex h-full w-full items-center justify-center text-gray-500">
+                                  <Users size={24} />
+                               </div>
+                            )}
                         </div>
                         <div className="flex-1 min-w-0">
                            <h3 className="text-white font-black italic truncate">{user.username}</h3>
@@ -341,16 +349,16 @@ export const AdminPage = () => {
                 {games.map((game) => (
                   <NeonCard key={game.id} className="p-0 overflow-hidden group">
                     <div className="h-32 w-full relative bg-gray-900">
-                      {game.bannerUrl && <SmartImage src={game.bannerUrl} className="h-full w-full object-cover opacity-50 group-hover:scale-110 transition-transform duration-500" alt={game.title} />}
+                      {game.bannerUrl && <img src={getFileUrl(game.bannerUrl)} className="h-full w-full object-cover opacity-50 group-hover:scale-110 transition-transform duration-500" alt={game.title} />}
                       <div className="absolute inset-0 bg-gradient-to-t from-dark-bg to-transparent" />
                       <div className="absolute bottom-4 right-4 flex items-center gap-3">
                         <div className="h-12 w-12 rounded-2xl bg-[#0a0a0f] border border-white/10 p-1">
-                          {game.iconUrl && <SmartImage src={game.iconUrl} className="h-full w-full rounded-xl object-cover" alt={game.title} />}
+                          {game.iconUrl && <img src={getFileUrl(game.iconUrl)} className="h-full w-full rounded-xl object-cover" alt={game.title} />}
                         </div>
                         <h3 className="font-black text-xl text-white drop-shadow-lg">{game.title}</h3>
                         {game.badge && (
                           <div className="h-6 w-6 ml-2" title={game.badge.name}>
-                            <SmartImage src={game.badge.iconUrl} className="h-full w-full object-contain filter drop-shadow-[0_0_5px_rgba(0,229,255,0.5)]" alt={game.badge.name} />
+                            <img src={getFileUrl(game.badge.iconUrl)} className="h-full w-full object-contain filter drop-shadow-[0_0_5px_rgba(0,229,255,0.5)]" alt={game.badge.name} />
                           </div>
                         )}
                       </div>
@@ -520,7 +528,7 @@ export const AdminPage = () => {
                       className="relative group bg-[#0d0d12] border border-white/5 rounded-[32px] p-6 flex flex-col items-center text-center transition-all hover:border-white/20"
                     >
                        <div className="h-16 w-16 mb-4 relative flex items-center justify-center">
-                          <SmartImage src={badge.iconUrl} className="h-full w-full object-contain" alt={badge.name} />
+                          <img src={getFileUrl(badge.iconUrl)} className="h-full w-full object-contain" alt={badge.name} />
                           {badge.isSpecial && (
                             <div className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-yellow-400 flex items-center justify-center text-black border-2 border-[#0d0d12]">
                                <Icons.Shield size={12} fill="currentColor" />

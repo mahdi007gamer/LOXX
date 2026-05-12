@@ -30,8 +30,7 @@ import { motion } from "motion/react";
 import { cn } from "../lib/utils";
 import { CreateLobbyModal } from "../components/modals/CreateLobbyModal";
 import { useGames } from "../context/GamesContext";
-import { SmartImage } from "../components/ui/SmartImage";
-import { getAvatarFallbacks } from "../lib/avatar";
+import { getFileUrl } from "../lib/constants";
 
 export const LobbiesPage = () => {
   const navigate = useNavigate();
@@ -247,8 +246,8 @@ export const LobbiesPage = () => {
                              </div>
                           </div>
                         )}
-                        <SmartImage 
-                          src={lobby.game?.bannerUrl || "https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&q=80&w=1000"} 
+                        <img 
+                          src={getFileUrl(lobby.game?.bannerUrl || "https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&q=80&w=1000")} 
                           alt={lobby.game?.title} 
                           className="h-full w-full object-cover transition-transform duration-1000 group-hover:scale-110"
                           referrerPolicy="no-referrer"
@@ -262,7 +261,7 @@ export const LobbiesPage = () => {
 
                         {/* Game Icon Overlay */}
                         <div className={cn("absolute -bottom-4 left-4 h-10 w-10 md:h-12 md:w-12 flex items-center justify-center rounded-xl border shadow-2xl z-20 text-white overflow-hidden", isVipLobby ? "bg-[#18181b] border-yellow-400/30 shadow-yellow-400/10" : "bg-[#0a0a0f] border-white/10")}>
-                          {lobby.game?.iconUrl ? <SmartImage src={lobby.game.iconUrl} className="w-6 h-6 md:w-8 md:h-8 object-contain" /> : (lobby.game?.title?.[0] || "🎮")}
+                          {lobby.game?.iconUrl ? <img src={getFileUrl(lobby.game.iconUrl)} className="w-6 h-6 md:w-8 md:h-8 object-contain" /> : (lobby.game?.title?.[0] || "🎮")}
                         </div>
                       </div>
 
@@ -329,11 +328,13 @@ export const LobbiesPage = () => {
                               <div className="flex -space-x-2.5">
                                  {lobby.members?.slice(0, 4)?.map((m: any) => (
                                    <div key={m.userId} className="h-7 w-7 rounded-full border-2 border-dark-bg bg-white/10 flex items-center justify-center overflow-hidden ring-1 ring-white/5">
-                                      <SmartImage 
-                                        src={m.user?.profile?.avatarUrl || m.user?.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${m.user?.username}`} 
-                                        fallbacks={getAvatarFallbacks(m.user?.username || 'Guest')}
+                                      <img 
+                                        src={getFileUrl(m.user?.profile?.avatarUrl || m.user?.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${m.user?.username}`)} 
                                         className="w-full h-full object-cover"
                                         alt={m.user?.username}
+                                        onError={(e) => {
+                                          (e.target as HTMLImageElement).src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(m.user?.username || 'G');
+                                        }}
                                       />
                                    </div>
                                  ))}
