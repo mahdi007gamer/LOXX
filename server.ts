@@ -47,6 +47,7 @@ async function startServer() {
 
   setIO(io);
   app.set("io", io);
+  app.set("trust proxy", 1);
 
   // Basic Middleware
   app.use(express.json({ limit: "50mb" }));
@@ -65,6 +66,7 @@ async function startServer() {
 
   // Serve uploads directory
   app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
+  app.use("/public", express.static(path.join(process.cwd(), "public")));
 
   // API Routes (to be implemented)
   app.use("/api/v1/auth", authRoutes);
