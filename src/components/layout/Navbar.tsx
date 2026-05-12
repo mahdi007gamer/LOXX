@@ -9,6 +9,7 @@ import { useAuth } from "../../context/AuthContext";
 import { NotificationCenter } from "../ui/NotificationCenter";
 import { useProfilePopover } from "../../context/ProfilePopoverContext";
 import { BadgeType, MembershipType } from "../../types";
+import { getAvatarFallbacks } from "../../lib/avatar";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "داشبورد", path: "/dashboard" },
@@ -131,6 +132,7 @@ export const Navbar = () => {
                     <div className="h-full w-full rounded-[10px] bg-dark-bg flex items-center justify-center overflow-hidden">
                        <SmartImage 
                          src={user.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`} 
+                         fallbacks={getAvatarFallbacks(user.username)}
                          isVipEnabled={isVIP || isPLUS}
                          className="h-full w-full object-cover" 
                          alt={user.username} 
@@ -217,6 +219,7 @@ export const Navbar = () => {
                         <div className="h-full w-full rounded-[15px] bg-[#050507] flex items-center justify-center overflow-hidden">
                           <SmartImage 
                             src={user.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`} 
+                            fallbacks={getAvatarFallbacks(user.username)}
                             isVipEnabled={isVIP || isPLUS}
                             className="h-full w-full object-cover" 
                             alt={user.username} 

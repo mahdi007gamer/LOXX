@@ -5,26 +5,45 @@ import { getFileUrl } from '../../lib/constants';
 
 interface SmartImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   isVipEnabled?: boolean;
-  fallback?: React.ReactNode;
+  fallbacks?: string[];
 }
 
 /**
  * SmartImage displays an image, but if it's a GIF and membership is inactive,
  * it attempts to "freeze" it by drawing the first frame to a canvas.
+ * It also handles multiple fallback URLs if the primary one fails.
  */
 export const SmartImage: React.FC<SmartImageProps> = ({ 
   src, 
   alt, 
   className, 
   isVipEnabled = false,
-  fallback,
+  fallbacks = [],
+  onError,
   ...props 
 }) => {
   const [error, setError] = useState(false);
   const [isFrozen, setIsFrozen] = useState(false);
+  const [fallbackIndex, setFallbackIndex] = useState(-1);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   
-  const fullSrc = getFileUrl(src);
+  const currentSrc = fallbackIndex === -1 ? src : fallbacks[fallbackIndex];
+  const fullSrc = getFileUrl(currentSrc);
+
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    if (fallbackIndex + 1 < fallbacks.length) {
+      setFallbackIndex(prev => prev + 1);
+    } else {
+      setError(true);
+      if (onError) onError(e);
+    }
+  };
+
+  useEffect(() => {
+    // Reset fallback if src changes
+    setFallbackIndex(-1);
+    setError(false);
+  }, [src]);
 
   useEffect(() => {
     if (!fullSrc) return;
@@ -48,18 +67,17 @@ export const SmartImage: React.FC<SmartImageProps> = ({
         }
       };
       img.onerror = () => {
-        setError(true);
-        setIsFrozen(false);
+        handleImageError({} as any);
       };
     } else {
       setIsFrozen(false);
     }
-  }, [fullSrc, isVipEnabled]);
+  }, [fullSrc, isVipEnabled, fallbackIndex]);
 
   if (error || !fullSrc) {
     return (
-      <div className={cn("flex items-center justify-center bg-gray-900 text-gray-700", className)}>
-        {fallback || <ShieldAlert size={24} />}
+      <div className={cn("flex items-center justify-center bg-gray-900/50 text-gray-700 animate-pulse", className)}>
+        <ShieldAlert size={24} className="opacity-20" />
       </div>
     );
   }
@@ -70,6 +88,7 @@ export const SmartImage: React.FC<SmartImageProps> = ({
         src={fullSrc} 
         alt={alt} 
         className={className} 
+        onError={handleImageError}
         {...props} 
       />
     );
@@ -86,6 +105,7 @@ export const SmartImage: React.FC<SmartImageProps> = ({
           src={fullSrc} 
           alt={alt} 
           className="w-full h-full object-cover" 
+          onError={handleImageError}
           {...props}
         />
       )}

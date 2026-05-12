@@ -6,6 +6,7 @@ import { GlowButton } from "../components/ui/GlowButton";
 import { Input } from "../components/ui/Input";
 import { LobbyInviteCard } from "../components/ui/LobbyInviteCard";
 import { SmartImage } from "../components/ui/SmartImage";
+import { getAvatarFallbacks } from "../lib/avatar";
 import { getFileUrl } from "../lib/constants";
 import { Send, Hash, Users, MoreVertical, Plus, Smile, Image as ImageIcon, Reply, Heart, ChevronDown, Award, Star, Zap, Crown, Play, Check, Menu, X, MessageSquare, User, Trophy, Palette, Trash, MessageCircle, Search, UserPlus as UserPlusIcon, Settings } from "lucide-react";
 import { cn } from "../lib/utils";
@@ -125,6 +126,7 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGi
         )}>
           <SmartImage 
             src={message.senderAvatar || message.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${message.senderName}`}
+            fallbacks={getAvatarFallbacks(message.senderName)}
             isVipEnabled={isVIP}
             className="w-full h-full object-cover rounded-xl"
             alt={message.senderName}

@@ -40,6 +40,7 @@ import { UserBadges } from "../components/ui/UserBadges";
 import { useProfilePopover } from "../context/ProfilePopoverContext";
 import { MembershipType } from "../types";
 import { cn } from "@/src/lib/utils";
+import { getAvatarFallbacks } from "../lib/avatar";
 
 interface Player {
   id: string;
@@ -508,7 +509,7 @@ export const LobbyRoomPage = () => {
              isVipLobby ? "bg-[#0d0d12] border-yellow-400/30 shadow-[0_0_15px_rgba(250,204,21,0.2)]" : "bg-white/5 border-white/10"
            )}>
               {lobby?.game?.iconUrl ? (
-                <img src={lobby.game.iconUrl} className="w-full h-full object-contain" />
+                <SmartImage src={lobby.game.iconUrl} className="w-full h-full object-contain" />
               ) : <Gamepad2 className={isVipLobby ? "text-yellow-400" : "text-neon-blue"} size={24} />}
            </div>
            
@@ -795,6 +796,7 @@ export const LobbyRoomPage = () => {
                        <div className="h-10 w-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden shrink-0">
                          <SmartImage 
                            src={friend.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${friend.username}`}
+                           fallbacks={getAvatarFallbacks(friend.username)}
                            isVipEnabled={friend.membership === MembershipType.VIP || friend.membership === MembershipType.PLUS}
                            className="w-full h-full object-cover"
                            alt={friend.username}
@@ -833,6 +835,7 @@ export const LobbyRoomPage = () => {
                     return (
                       <SmartImage 
                          src={p?.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p?.name}`}
+                         fallbacks={getAvatarFallbacks(p?.name || 'Gamer')}
                          isVipEnabled={p?.membership === MembershipType.VIP || p?.membership === MembershipType.PLUS}
                          className="w-full h-full object-cover"
                          alt={p?.name || "Player"}
@@ -1342,6 +1345,7 @@ const PlayerCard = ({
                   <div className="relative z-10 h-full w-full flex items-center justify-center overflow-hidden rounded-[18px] md:rounded-[28px]">
                     <SmartImage 
                       src={player.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${player.name}`}
+                      fallbacks={getAvatarFallbacks(player.name)}
                       isVipEnabled={player.membership === MembershipType.VIP || player.membership === MembershipType.PLUS}
                       className="w-full h-full object-cover"
                       alt={player.name}
@@ -1575,6 +1579,7 @@ const ChatPanel = ({ messages, players, inputMessage, setInputMessage, onSend, o
                 <div className="h-8 w-8 rounded-xl bg-white/5 border border-white/10 flex-shrink-0 flex items-center justify-center text-lg mt-1 font-black uppercase overflow-hidden">
                    <SmartImage 
                      src={msg.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${msg.user}`}
+                     fallbacks={getAvatarFallbacks(msg.user)}
                      isVipEnabled={isAnimated}
                      className="w-full h-full object-cover"
                      alt={msg.user}
