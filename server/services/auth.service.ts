@@ -13,6 +13,7 @@ export class AuthService {
   static async register(data: RegisterDTO & { referralCode?: string }) {
     const passwordHash = await argon2.hash(data.password);
     const verificationToken = uuidv4();
+    const email = data.email || `${data.phone}@loxx.ir`;
     const isAdmin = data.phone === "13781378" || data.username === "admin";
     const isVip = data.phone === "123" || data.username === "VIP";
     
@@ -20,9 +21,9 @@ export class AuthService {
       data: {
         username: data.username,
         phone: data.phone,
-        email: data.email || null,
+        email: email,
         passwordHash,
-        verificationToken: (isAdmin) ? null : verificationToken,
+        verificationToken: isAdmin ? null : verificationToken,
         isVerified: isAdmin ? true : false,
         role: isAdmin ? "ADMIN" : "USER",
         profile: {
