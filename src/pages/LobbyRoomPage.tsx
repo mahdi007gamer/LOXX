@@ -31,7 +31,9 @@ import {
   Crown,
   ShieldAlert,
   Gavel,
-  Gamepad2
+  Gamepad2,
+  CheckCircle2,
+  UserCheck
 } from "lucide-react";
 import { GlowButton } from "../components/ui/GlowButton";
 import { useFriends } from "../context/FriendsContext";
@@ -60,6 +62,7 @@ interface Player {
   volume: number;
   activity: number;
   badges?: any[];
+  isVerified?: boolean;
 }
 
 interface Message {
@@ -1398,7 +1401,12 @@ const PlayerCard = ({
               </div>
 
               <div className="flex items-center gap-1.5 md:gap-2 mb-0.5 md:mb-2 max-w-full">
-                <h3 className="text-xs md:text-xl font-black text-white truncate">{player.name}</h3>
+                <h3 className="text-xs md:text-xl font-black text-white truncate flex items-center gap-1.5">
+                  {player.name}
+                  {player.isVerified && (
+                    <CheckCircle2 size={14} className="text-neon-blue" fill="currentColor" />
+                  )}
+                </h3>
                 <UserBadges badges={player.badges || []} />
               </div>
               

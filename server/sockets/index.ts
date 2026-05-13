@@ -301,6 +301,7 @@ export function setupWebSockets(io: Server) {
             bannerUrl: user?.profile?.bannerUrl || (user as any)?.avatarUrl,
             level: user?.profile?.level || 1,
             membership: user?.profile?.membershipType || "NONE",
+            isVerified: user?.isVerified,
             vipMetadata: user?.profile?.vipMetadata ? JSON.parse(user.profile.vipMetadata.toString()) : undefined,
             badges: user?.badges?.map(ub => ({ ...ub.badge, isPinned: ub.isPinned })) || []
           },
@@ -347,6 +348,7 @@ export function setupWebSockets(io: Server) {
                 bannerUrl: m.user.profile?.bannerUrl || (m.user as any).avatarUrl,
                 level: m.user.profile?.level || 1,
                 membership: m.user.profile?.membershipType || "NONE",
+                isVerified: m.user.isVerified,
                 vipMetadata: m.user.profile?.vipMetadata ? JSON.parse(m.user.profile.vipMetadata.toString()) : undefined,
                 badges: m.user.badges?.map((ub: any) => ({ ...ub.badge, isPinned: ub.isPinned })) || []
               })) || [],

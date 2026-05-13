@@ -9,7 +9,11 @@ export class AuthController {
       res.status(201).json({
         status: "success",
         message: "User registered successfully",
-        user: { id: user.id, username: user.username }
+        user: { 
+          id: user.id, 
+          username: user.username,
+          verificationToken: user.verificationToken
+        }
       });
     } catch (error: any) {
       res.status(400).json({ status: "error", error: { code: "VALIDATION_FAILED", message: error.message } });

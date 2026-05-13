@@ -21,6 +21,8 @@ import paymentRoutes from "./server/routes/payment.routes.ts";
 import uploadRoutes from "./server/routes/upload.routes.ts";
 import eliteRoutes from "./server/routes/elite.routes.ts";
 import badgeRoutes from "./server/routes/badge.routes.ts";
+import webhookRoutes from "./server/routes/webhook.routes.ts";
+import { BaleService } from "./server/services/bale.service.ts";
 import { setupWebSockets } from "./server/sockets/index.ts";
 import { setIO } from "./server/utils/socket.ts";
 import prisma from "./server/utils/prisma.ts";
@@ -84,6 +86,7 @@ async function startServer() {
   app.use("/api/v1/upload", uploadRoutes);
   app.use("/api/v1/elite", eliteRoutes);
   app.use("/api/v1/badges", badgeRoutes);
+  app.use("/api/v1/webhooks", webhookRoutes);
   
   app.get("/api/health", (req, res) => {
     res.json({ status: "ok", message: "LOXX Backend is running in Persian mode (UTF-8)" });
@@ -132,6 +135,11 @@ async function startServer() {
 
   // WebSocket Handlers
   setupWebSockets(io);
+
+  // Initialize Bale Webhook
+  if (process.env.APP_URL) {
+    BaleService.setWebhook(process.env.APP_URL);
+  }
 }
 
 startServer();

@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from "uuid";
 import prisma from "../utils/prisma.ts";
 import { RegisterDTO, LoginDTO } from "../types/auth.ts";
 import { EmailService } from "./email.service.ts";
+import { BaleService } from "./bale.service.ts";
 
 const JWT_SECRET = process.env.JWT_SECRET || "secret";
 const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET || "refresh_secret";
@@ -32,9 +33,9 @@ export class AuthService {
       }
     });
 
-    console.log(`[EMAIL] Verification link for ${user.email}: http://loxx.ir/verify?token=${verificationToken}`);
-    await EmailService.sendVerificationEmail(user.email, verificationToken);
-
+    console.log(`[BALE] Verification link: ble.ir/loxxbot?start=${verificationToken}`);
+    // EmailService.sendVerificationEmail is now removed as per user request to use Bale instead
+    
     if (data.referralCode) {
       // ... existing referral logic
     }
@@ -62,8 +63,13 @@ export class AuthService {
         data: { otpCode, otpExpires }
       });
 
-      console.log(`[EMAIL] 2FA Code for ${user.email}: ${otpCode}`);
-      await EmailService.sendOTP(user.email, otpCode);
+      console.log(`[BALE/EMAIL] 2FA Code: ${otpCode}`);
+      if (user.baleId) {
+        await BaleService.sendOTPViaBot(user.baleId, otpCode);
+      } else {
+        // Fallback or skip if not linked
+        await EmailService.sendOTP(user.email, otpCode);
+      }
       return { status: "2fa_required", userId: user.id };
     }
 
@@ -84,8 +90,7 @@ export class AuthService {
       data: { verificationToken }
     });
 
-    console.log(`[EMAIL] Verification link for ${user.email}: http://loxx.ir/verify?token=${verificationToken}`);
-    await EmailService.sendVerificationEmail(user.email, verificationToken);
+    console.log(`[BALE] Verification link: ble.ir/loxxbot?start=${verificationToken}`);
     return true;
   }
 
@@ -144,7 +149,6 @@ export class AuthService {
 
     if (!user) throw new Error("کاربری با این ایمیل یافت نشد");
 
-    // In a real app we'd send an email. For now, we store a code in DB.
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     const expires = new Date(Date.now() + 10 * 60 * 1000);
 
@@ -153,8 +157,12 @@ export class AuthService {
       data: { otpCode: code, otpExpires: expires }
     });
 
-    console.log(`Password reset code for ${email}: ${code}`);
-    await EmailService.sendOTP(email, code);
+    console.log(`[BALE/EMAIL] Security code: ${code}`);
+    if (user.baleId) {
+      await BaleService.sendOTPViaBot(user.baleId, code);
+    } else {
+      await EmailService.sendOTP(email, code);
+    }
     return true;
   }
 

@@ -235,6 +235,16 @@ export const ProfilePage = () => {
                     <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest flex items-center gap-1.5 whitespace-nowrap">
                       <Clock size={12} /> عضویت از {profileData?.stats?.daysSinceJoin || 0} روز پیش
                     </span>
+                    <div className="h-1 w-1 rounded-full bg-gray-700" />
+                    {profileData?.isVerified ? (
+                      <span className="text-[10px] text-green-500 font-bold uppercase tracking-widest flex items-center gap-1.5 whitespace-nowrap">
+                        <CheckCircle2 size={12} /> تایید شده
+                      </span>
+                    ) : (
+                      <span className="text-[10px] text-amber-500 font-bold uppercase tracking-widest flex items-center gap-1.5 whitespace-nowrap">
+                        <Shield size={12} /> منتظر تایید بله
+                      </span>
+                    )}
                   </div>
                   <p className="mt-4 text-gray-400 text-sm max-w-2xl leading-relaxed italic line-clamp-2">{profileData?.bio || "بایوگرافی هنوز تنظیم نشده است"}</p>
                 </div>
@@ -314,6 +324,25 @@ export const ProfilePage = () => {
                    </div>
                 </div>
               </NeonCard>
+
+              {!profileData?.isVerified && (
+                <NeonCard variant="blue" className="p-8 border-neon-blue/30 bg-neon-blue/5">
+                  <h3 className="flex items-center gap-3 font-black text-white italic uppercase tracking-tighter text-lg mb-4">
+                    <Shield size={18} className="text-neon-blue" />
+                    <span>تایید هویت بله</span>
+                  </h3>
+                  <p className="text-xs text-gray-400 mb-6 leading-relaxed italic">
+                    حساب شما هنوز تایید نشده است. برای دسترسی کامل به امکانات و نمایش نشان تایید، اکانت خود را به بازوی بله متصل کنید.
+                  </p>
+                  <GlowButton 
+                    variant="blue" 
+                    className="w-full h-12 !rounded-2xl font-black italic text-[10px] uppercase tracking-widest"
+                    onClick={() => window.open(`https://ble.ir/loxxbot?start=${profileData?.verificationToken || ''}`, '_blank')}
+                  >
+                    اتصال به @loxxbot
+                  </GlowButton>
+                </NeonCard>
+              )}
             </div>
 
             {/* Right Column: Mini Profile Preview & Activities */}

@@ -9,13 +9,14 @@ import { useAuth } from "../context/AuthContext";
 import api from "../lib/api";
 import { toast } from "react-hot-toast";
 
-type AuthStep = "AUTH" | "FORGOT_PASSWORD" | "RESET_PASSWORD" | "VERIFY_2FA";
+type AuthStep = "AUTH" | "FORGOT_PASSWORD" | "RESET_PASSWORD" | "VERIFY_2FA" | "VERIFY_BALE";
 
 export const AuthPage = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState<AuthStep>("AUTH");
   const [tempUserId, setTempUserId] = useState<string | null>(null);
+  const [verificationToken, setVerificationToken] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     username: "",
     email: "",
@@ -68,16 +69,22 @@ export const AuthPage = () => {
           login(response.data.token, response.data.user);
           toast.success("خوش آمدید!");
         } else {
-          await api.post("/auth/register", {
+          const registerResponse = await api.post("/auth/register", {
             username: formData.username,
             email: formData.email,
             password: formData.password,
             referralCode: formData.referralCode || undefined
           });
           
-          toast.success("ثبت‌نام با موفقیت انجام شد. وارد شوید.");
-          setIsLogin(true);
+          setVerificationToken(registerResponse.data.user.verificationToken);
+          setStep("VERIFY_BALE");
+          toast.success("ثبت‌نام با موفقیت انجام شد.");
         }
+      } else if (step === "VERIFY_BALE") {
+        // Users can just try to login after verifying on Bale
+        setIsLogin(true);
+        setStep("AUTH");
+        toast.success("حالا می‌توانید وارد شوید (پس از تایید در بله)");
       } else if (step === "VERIFY_2FA") {
         const response = await api.post("/auth/verify-2fa", {
           userId: tempUserId,
@@ -147,10 +154,17 @@ export const AuthPage = () => {
                   </>
                 )}
 
+                {step === "VERIFY_BALE" && (
+                  <>
+                    <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter">تایید هویت با بله</h2>
+                    <p className="mt-2 text-sm text-gray-400 font-bold">برای فعالسازی حساب، باید از طریق بازوی بله اقدام کنید</p>
+                  </>
+                )}
+
                 {step === "VERIFY_2FA" && (
                   <>
                     <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter">تایید دو مرحله‌ای</h2>
-                    <p className="mt-2 text-sm text-gray-400 font-bold">کد ارسال شده به ایمیل را وارد کنید</p>
+                    <p className="mt-2 text-sm text-gray-400 font-bold">کد ارسال شده به ایمیل یا بله را وارد کنید</p>
                   </>
                 )}
 
@@ -236,6 +250,32 @@ export const AuthPage = () => {
                   </>
                 )}
 
+                {step === "VERIFY_BALE" && (
+                  <div className="space-y-6 text-center">
+                    <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
+                       <p className="text-gray-300 text-sm leading-relaxed mb-4">
+                         ۱. وارد بازوی <span className="text-neon-blue font-bold">@loxxbot</span> در پیام‌رسان بله شوید.<br />
+                         ۲. بر روی دکمه <span className="text-neon-pink font-bold">شروع (Start)</span> کلیک کنید.<br />
+                         ۳. شماره همراه خود را برای تایید نهایی ارسال کنید.
+                       </p>
+                       
+                       <a 
+                        href={`https://ble.ir/loxxbot?start=${verificationToken}`} 
+                        target="_blank" 
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-2 px-6 py-3 bg-[#00e5ff] text-black rounded-xl font-black italic uppercase text-sm hover:scale-105 transition-transform"
+                       >
+                         <Phone size={18} />
+                         ورود به بازوی بله
+                       </a>
+                    </div>
+                    
+                    <p className="text-[10px] text-gray-500">
+                      پس از تایید در بله، به این صفحه برگردید و وارد حساب خود شوید.
+                    </p>
+                  </div>
+                )}
+
                 {step === "VERIFY_2FA" && (
                   <Input 
                     label="کد دو مرحله‌ای" 
@@ -300,6 +340,7 @@ export const AuthPage = () => {
                         <Loader2 className="h-5 w-5 animate-spin" />
                       ) : (
                         step === "AUTH" ? (isLogin ? "ورود به لابی" : "تایید و ثبت‌نام") :
+                        step === "VERIFY_BALE" ? "متوجه شدم (ورود)" :
                         step === "VERIFY_2FA" ? "بررسی کد" :
                         step === "FORGOT_PASSWORD" ? "ارسال کد تایید" : "تغییر رمز عبور"
                       )}
