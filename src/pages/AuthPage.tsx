@@ -308,7 +308,7 @@ export const AuthPage = () => {
                     disabled={loading}
                   >
                     {loading ? <Loader2 className="animate-spin" /> : (
-                      step === "AUTH" ? (isLogin ? "ورود به سرزمین لوکس" : "ایجاد اتحاد جدید") :
+                      step === "AUTH" ? (isLogin ? "ورود به سرزمین لوکس" : "ثبت‌نام در لوکس") :
                       step === "VERIFY_BALE" ? "بازگشت به ورود" : "تایید نهایی"
                     )}
                   </GlowButton>
