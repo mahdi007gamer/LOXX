@@ -15,7 +15,9 @@ export class WebhookController {
     const text = message.text || "";
 
     // 1. Handle /start verification
-    if (text.startsWith("/start ")) {
+    if (text === "/start") {
+      await BaleService.sendWelcomeMessage(chatId);
+    } else if (text.startsWith("/start ")) {
       const token = text.split(" ")[1];
       const user = await prisma.user.findFirst({
         where: { verificationToken: token }

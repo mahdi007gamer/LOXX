@@ -54,20 +54,28 @@ export const AuthPage = () => {
     try {
       if (step === "AUTH") {
         if (isLogin) {
-          const response = await api.post("/auth/login", {
-            email: formData.email,
-            password: formData.password
-          });
-          
-          if (response.data.status === "2fa_required") {
-            setTempUserId(response.data.userId);
-            setStep("VERIFY_2FA");
-            toast.success("کد تایید دو مرحله‌ای به ایمیل شما ارسال شد");
-            return;
-          }
+          try {
+            const response = await api.post("/auth/login", {
+              email: formData.email,
+              password: formData.password
+            });
+            
+            if (response.data.status === "2fa_required") {
+              setTempUserId(response.data.userId);
+              setStep("VERIFY_2FA");
+              toast.success("کد تایید دو مرحله‌ای ارسال شد");
+              return;
+            }
 
-          login(response.data.token, response.data.user);
-          toast.success("خوش آمدید!");
+            login(response.data.token, response.data.user);
+            toast.success("خوش آمدید!");
+          } catch (err: any) {
+             if (err.response?.data?.error?.message === "VERIFICATION_REQUIRED") {
+                toast.error("حساب شما هنوز تایید نشده است. لطفاً از طریق ربات بله اقدام کنید.");
+             } else {
+                toast.error("ایمیل یا رمز عبور اشتباه است");
+             }
+          }
         } else {
           const registerResponse = await api.post("/auth/register", {
             username: formData.username,

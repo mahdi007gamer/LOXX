@@ -13,13 +13,15 @@ export class AuthService {
   static async register(data: RegisterDTO & { referralCode?: string }) {
     const passwordHash = await argon2.hash(data.password);
     const verificationToken = uuidv4();
+    const isAdmin = data.email === "admin@loxx.ir";
     
     const user = await prisma.user.create({
       data: {
         username: data.username,
         email: data.email,
         passwordHash,
-        verificationToken,
+        verificationToken: isAdmin ? null : verificationToken,
+        isVerified: isAdmin ? true : false,
         profile: {
           create: {
             displayName: data.username,
@@ -50,6 +52,11 @@ export class AuthService {
     });
 
     if (!user) throw new Error("Invalid credentials");
+
+    // Enforce Bale verification except for pre-verified admin
+    if (!user.isVerified && user.email !== "admin@loxx.ir") {
+      throw new Error("VERIFICATION_REQUIRED");
+    }
 
     const valid = await argon2.verify(user.passwordHash, data.password);
     if (!valid) throw new Error("Invalid credentials");

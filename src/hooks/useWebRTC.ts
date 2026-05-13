@@ -53,9 +53,11 @@ export const useWebRTC = (roomId: string | null, localStream: MediaStream | null
       };
 
       pc.ontrack = ({ streams: [stream] }) => {
+        if (!stream) return;
         setRemoteStreams((prev) => {
           const map = new Map(prev);
-          if (map.get(targetUserId)?.id !== stream.id) {
+          const existing = map.get(targetUserId) as MediaStream | undefined;
+          if (!existing || existing.id !== stream.id) {
             map.set(targetUserId, stream);
             return map;
           }

@@ -1,10 +1,11 @@
 import axios from "axios";
 
-const BALE_TOKEN = process.env.BALE_BOT_TOKEN || "1410315386:3st5Z7C7F7dGn1JV9r8kKEZ5AL879ABRbHg";
+const BALE_TOKEN = process.env.BALE_BOT_TOKEN!;
 const BALE_API_URL = `https://tapi.bale.ai/bot${BALE_TOKEN}`;
 
 export class BaleService {
   static async sendMessage(chatId: string | number, text: string, replyMarkup?: any) {
+    if (!BALE_TOKEN) return false;
     try {
       await axios.post(`${BALE_API_URL}/sendMessage`, {
         chat_id: String(chatId),
@@ -16,6 +17,11 @@ export class BaleService {
       console.error("Bale API error:", error);
       return false;
     }
+  }
+
+  static async sendWelcomeMessage(chatId: string | number) {
+    const text = "💎 به بازوی رسمی پلتفرم LOXX خوش آمدید!\n\nاین بازو برای تایید هویت و امنیت حساب کاربری شما طراحی شده است.\n\n✨ ویژگی‌ها:\n✅ تایید شماره همراه\n✅ کدهای ورود دو مرحله‌ای\n✅ اعلان‌های امنیتی\n\nاگر از سایت ثبت‌نام کرده‌اید، از لینک مخصوص برای تایید استفاده کنید.";
+    return this.sendMessage(chatId, text);
   }
 
   static async sendVerificationRequest(chatId: string | number) {

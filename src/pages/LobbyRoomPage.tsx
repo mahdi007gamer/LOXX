@@ -240,16 +240,10 @@ export const LobbyRoomPage = () => {
     let lastVol = 0;
 
     if (lobby && user) {
-      const gUM = (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) || 
-                  (navigator as any).getUserMedia || 
-                  (navigator as any).webkitGetUserMedia || 
-                  (navigator as any).mozGetUserMedia;
+      const gUM = navigator.mediaDevices?.getUserMedia;
 
       if (gUM) {
-        (gUM === navigator.mediaDevices?.getUserMedia ? 
-          navigator.mediaDevices.getUserMedia({ audio: true }) : 
-          new Promise((resolve, reject) => (gUM as any).call(navigator, { audio: true }, resolve, reject))
-        )
+        navigator.mediaDevices.getUserMedia({ audio: true })
           .then(str => {
             stream = str;
             setLocalStream(str);
@@ -620,6 +614,7 @@ export const LobbyRoomPage = () => {
                 <PlayerCard 
                   key={player.id} 
                   player={player}
+                  volume={player.volume}
                   isVipLobby={isVipLobby}
                   isSelected={selectedPlayer === player.id}
                   onSelect={() => setSelectedPlayer(selectedPlayer === player.id ? null : player.id)}
@@ -1000,27 +995,40 @@ const StatCard = ({ label, value }: { label: string, value: string }) => (
 
 const RemoteAudioPlayer = ({ stream, onVolumeChange, volumeLevel }: { stream: MediaStream, onVolumeChange: (vol: number) => void, volumeLevel: number, key?: any }) => {
   const audioRef = useRef<HTMLAudioElement>(null);
+  const gainNodeRef = useRef<GainNode | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
   
   useEffect(() => {
-    if (audioRef.current && stream) {
-      console.log("RemoteAudioPlayer: attaching stream", stream.id);
-      audioRef.current.srcObject = stream;
-      audioRef.current.play()
-        .then(() => { 
-          console.log("RemoteAudioPlayer: playing success");
-        })
-        .catch(e => {
-          if (e.name !== "AbortError") {
-            console.error("Audio play failed:", e);
-          }
-        });
+    if (stream && stream.getAudioTracks().length > 0) {
+      const AudioCtx = (window as any).AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtx) return;
+
+      const audioContext = new AudioCtx();
+      audioContextRef.current = audioContext;
+      
+      const source = audioContext.createMediaStreamSource(stream);
+      const gainNode = audioContext.createGain();
+      const destination = audioContext.createMediaStreamDestination();
+      
+      source.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      gainNodeRef.current = gainNode;
+
+      if (audioRef.current) {
+        audioRef.current.srcObject = stream;
+        audioRef.current.play().catch(console.error);
+      }
     }
+
+    return () => {
+      audioContextRef.current?.close();
+    };
   }, [stream]);
 
-  // Handle local user volume adjustment for this specific remote peer
   useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.volume = volumeLevel / 100;
+    if (gainNodeRef.current) {
+      // Scale 0-200 to 0-2.0
+      gainNodeRef.current.gain.setTargetAtTime(volumeLevel / 100, audioContextRef.current?.currentTime || 0, 0.1);
     }
   }, [volumeLevel]);
 
@@ -1033,42 +1041,40 @@ const RemoteAudioPlayer = ({ stream, onVolumeChange, volumeLevel }: { stream: Me
     if (stream && stream.getAudioTracks().length > 0) {
       try {
         const AudioCtx = (window as any).AudioContext || (window as any).webkitAudioContext;
-        if (!AudioCtx) throw new Error("AudioContext not supported");
+        if (AudioCtx) {
+          audioContext = new AudioCtx();
+          analyzer = audioContext.createAnalyser();
+          microphone = audioContext.createMediaStreamSource(stream);
+          microphone.connect(analyzer);
+          
+          analyzer.fftSize = 256;
+          const bufferLength = analyzer.frequencyBinCount;
+          const dataArray = new Uint8Array(bufferLength);
 
-        audioContext = new AudioCtx();
-        analyzer = audioContext.createAnalyser();
-        microphone = audioContext.createMediaStreamSource(stream);
-        microphone.connect(analyzer);
-        
-        analyzer.fftSize = 256;
-        const bufferLength = analyzer.frequencyBinCount;
-        const dataArray = new Uint8Array(bufferLength);
-
-        let lastVol = 0;
-        const analyzeVoice = () => {
-           const tracks = stream.getAudioTracks();
-           if (tracks.length > 0 && tracks[0].enabled) {
-             analyzer.getByteFrequencyData(dataArray);
-             let sum = 0;
-             for(let i = 0; i < bufferLength; i++) {
-               sum += dataArray[i];
-             }
-             const avg = sum / bufferLength;
-             const currentVol = Math.min(100, Math.round(avg * 2.5));
-             
-             // Only report significant changes to parent state to avoid re-render loops
-             // Increased threshold to 25 and added absolute check for 0
-             if (Math.abs(currentVol - lastVol) > 25 || (currentVol === 0 && lastVol !== 0) || (currentVol > 10 && lastVol === 0)) {
-               lastVol = currentVol;
-               onVolumeChange(currentVol);
-             }
-           } else if (lastVol !== 0) {
-             lastVol = 0;
-             onVolumeChange(0);
-           }
-           rafId = requestAnimationFrame(analyzeVoice);
-        };
-        analyzeVoice();
+          let lastVol = 0;
+          const analyzeVoice = () => {
+            const tracks = stream.getAudioTracks();
+            if (tracks.length > 0 && tracks[0].enabled) {
+              analyzer.getByteFrequencyData(dataArray);
+              let sum = 0;
+              for(let i = 0; i < bufferLength; i++) {
+                sum += dataArray[i];
+              }
+              const avg = sum / bufferLength;
+              const currentVol = Math.min(100, Math.round(avg * 2.5));
+              
+              if (Math.abs(currentVol - lastVol) > 25 || (currentVol === 0 && lastVol !== 0) || (currentVol > 10 && lastVol === 0)) {
+                lastVol = currentVol;
+                onVolumeChange(currentVol);
+              }
+            } else if (lastVol !== 0) {
+              lastVol = 0;
+              onVolumeChange(0);
+            }
+            rafId = requestAnimationFrame(analyzeVoice);
+          };
+          analyzeVoice();
+        }
       } catch (e) {
         console.error("Voice analysis setup failed", e);
       }
@@ -1077,7 +1083,6 @@ const RemoteAudioPlayer = ({ stream, onVolumeChange, volumeLevel }: { stream: Me
     return () => {
       if (rafId) cancelAnimationFrame(rafId);
       if (audioContext && audioContext.state !== "closed") audioContext.close();
-      onVolumeChange(0);
     };
   }, [stream, onVolumeChange]);
 
@@ -1280,6 +1285,7 @@ const PlayerCard = ({
   onAddFriend: (id: string) => void;
   onKick?: (id: string) => void;
   onBan?: (id: string) => void;
+  volume: number;
   isHostView?: boolean;
   disabled?: boolean;
   isVipLobby?: boolean;
@@ -1439,7 +1445,7 @@ const PlayerCard = ({
                 </div>
                 <input 
                   type="range" 
-                  min="0" max="100" 
+                  min="0" max="200" 
                   value={player.volume} 
                   onChange={(e) => onVolumeChange(parseInt(e.target.value))}
                   onClick={(e) => e.stopPropagation()}
