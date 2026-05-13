@@ -32,6 +32,9 @@ export const SmartImage: React.FC<SmartImageProps> = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const isMountedRef = useRef(true);
 
+  // Memoize fallbacks to prevent infinite loops if literal arrays are passed in props
+  const memoizedFallbacks = React.useMemo(() => fallbacks, [JSON.stringify(fallbacks)]);
+
   useEffect(() => {
     isMountedRef.current = true;
     return () => { isMountedRef.current = false; };
@@ -101,10 +104,10 @@ export const SmartImage: React.FC<SmartImageProps> = ({
         URL.revokeObjectURL(objectUrl);
       }
     };
-  }, [src, fallbackIndex, fallbacks]);
+  }, [src, fallbackIndex, memoizedFallbacks]);
 
   const handleImageError = () => {
-    if (fallbackIndex < fallbacks.length - 1) {
+    if (fallbackIndex < memoizedFallbacks.length - 1) {
       setFallbackIndex(prev => prev + 1);
     } else {
       setError(true);

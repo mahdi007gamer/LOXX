@@ -3,22 +3,27 @@ import { voiceSocket } from '../lib/socket';
 
 export const useWebRTC = (roomId: string | null, localStream: MediaStream | null, userId: string | undefined) => {
   const peersRef = useRef<Map<string, RTCPeerConnection>>(new Map());
-  const negotiationStateRef = useRef<Map<string, { makingOffer: boolean, ignoreOffer: boolean }>>(new Map());
-  const pendingCandidatesRef = useRef<Map<string, any[]>>(new Map());
   const [remoteStreams, setRemoteStreams] = useState<Map<string, MediaStream>>(new Map());
   const localStreamRef = useRef<MediaStream | null>(null);
 
+  // Track negotiation state to prevent "glare" (polite peer implementation)
+  const makingOfferRef = useRef<Map<string, boolean>>(new Map());
+  const ignoreOfferRef = useRef<Map<string, boolean>>(new Map());
+
   useEffect(() => {
-    // If localStream changed, add tracks to all existing peers
     if (localStream && localStream !== localStreamRef.current) {
+      const oldStream = localStreamRef.current;
       localStreamRef.current = localStream;
-      peersRef.current.forEach(pc => {
+
+      peersRef.current.forEach((pc) => {
         const senders = pc.getSenders();
-        localStream.getTracks().forEach(track => {
-            const isAlreadySending = senders.some(s => s.track === track);
-            if (!isAlreadySending) {
-               pc.addTrack(track, localStream);
-            }
+        localStream.getTracks().forEach((track) => {
+          const sender = senders.find((s) => s.track?.kind === track.kind);
+          if (sender) {
+            sender.replaceTrack(track);
+          } else {
+            pc.addTrack(track, localStream);
+          }
         });
       });
     }
@@ -27,64 +32,49 @@ export const useWebRTC = (roomId: string | null, localStream: MediaStream | null
   useEffect(() => {
     if (!roomId || !userId) return;
 
-    // Join the voice signaling channel
     voiceSocket.emit('voice.join', { roomId });
 
-    const getNegotiationState = (uId: string) => {
-      if (!negotiationStateRef.current.has(uId)) {
-        negotiationStateRef.current.set(uId, { makingOffer: false, ignoreOffer: false });
-      }
-      return negotiationStateRef.current.get(uId)!;
-    };
-
-    const createPeer = (targetUserId: string, initiator: boolean) => {
+    const createPeer = (targetUserId: string) => {
       const pc = new RTCPeerConnection({
         iceServers: [
           { urls: "stun:stun.l.google.com:19302" },
           { urls: "stun:stun1.l.google.com:19302" },
+          { urls: "stun:stun2.l.google.com:19302" },
         ],
       });
 
-      pc.onicecandidate = (event) => {
-        if (event.candidate) {
+      pc.onicecandidate = ({ candidate }) => {
+        if (candidate) {
           voiceSocket.emit("voice.signal", {
-            targetUserId,
-            signal: { candidate: event.candidate },
+            targetUserId: targetUserId,
+            signal: { candidate },
           });
         }
       };
 
-      pc.ontrack = (event) => {
-        console.log("WebRTC: received remote track", targetUserId, event.track.kind);
-        const stream = (event.streams && event.streams[0]) || new MediaStream();
-        
-        if (!stream.getTracks().includes(event.track)) {
-           stream.addTrack(event.track);
-        }
-
+      pc.ontrack = ({ streams: [stream] }) => {
         setRemoteStreams((prev) => {
           const map = new Map(prev);
-          map.set(targetUserId, stream);
-          return map;
+          if (map.get(targetUserId)?.id !== stream.id) {
+            map.set(targetUserId, stream);
+            return map;
+          }
+          return prev;
         });
       };
 
       pc.onnegotiationneeded = async () => {
         try {
-          const state = getNegotiationState(targetUserId);
-          state.makingOffer = true;
-          const offer = await pc.createOffer();
-          if (pc.signalingState !== "stable") return;
-          await pc.setLocalDescription(offer);
+          makingOfferRef.current.set(targetUserId, true);
+          await pc.setLocalDescription();
           voiceSocket.emit("voice.signal", {
-            targetUserId,
+            targetUserId: targetUserId,
             signal: pc.localDescription,
           });
         } catch (err) {
-          console.error("Negotiation error:", err);
+          console.error(`WebRTC: Negotiation error with ${targetUserId}:`, err);
         } finally {
-          const state = getNegotiationState(targetUserId);
-          state.makingOffer = false;
+          makingOfferRef.current.set(targetUserId, false);
         }
       };
 
@@ -94,7 +84,6 @@ export const useWebRTC = (roomId: string | null, localStream: MediaStream | null
         }
       };
 
-      // Add tracks AFTER setting handlers to ensure onnegotiationneeded triggers
       if (localStreamRef.current) {
         localStreamRef.current.getTracks().forEach((track) => {
           pc.addTrack(track, localStreamRef.current!);
@@ -104,83 +93,84 @@ export const useWebRTC = (roomId: string | null, localStream: MediaStream | null
       return pc;
     };
 
-    const handleUserJoined = (data: { userId: string }) => {
-      if (data.userId === userId) return;
-      console.log("WebRTC: user joined", data.userId);
-      if (!peersRef.current.has(data.userId)) {
-        const pc = createPeer(data.userId, true);
-        peersRef.current.set(data.userId, pc);
-      }
-    };
-
-    const handleUserLeft = (data: { userId: string }) => {
-      console.log("WebRTC: user left", data.userId);
-      if (peersRef.current.has(data.userId)) {
-        peersRef.current.get(data.userId)?.close();
-        peersRef.current.delete(data.userId);
-      }
-      negotiationStateRef.current.delete(data.userId);
-      setRemoteStreams(prev => {
-        const map = new Map(prev);
-        map.delete(data.userId);
-        return map;
-      });
-    };
-
-    const handleSignal = async (data: { fromUserId: string, signal: any }) => {
-      if (data.fromUserId === userId) return;
-      
-      const pc = peersRef.current.get(data.fromUserId);
-      if (!pc) {
-        // If we get a signal but have no PC, create one (polite side)
-        const newPc = createPeer(data.fromUserId, false);
-        peersRef.current.set(data.fromUserId, newPc);
-        // Wait a tiny bit then handle the signal again now that PC exists
-        await handleSignal(data);
-        return;
-      }
-
-      const isSlowNode = userId! > data.fromUserId;
-      const description = data.signal;
-      const state = getNegotiationState(data.fromUserId);
-
+    const handleSignal = async ({ fromUserId, signal }: { fromUserId: string, signal: any }) => {
       try {
-        if (description.type) {
-          const offerCollision =
-            description.type === "offer" &&
-            (state.makingOffer || pc.signalingState !== "stable");
+        let pc = peersRef.current.get(fromUserId);
+        const isPolite = userId < fromUserId; // Stable role assignment
 
-          state.ignoreOffer = !isSlowNode && offerCollision;
-          if (state.ignoreOffer) return;
+        if (signal.description) {
+          const description = new RTCSessionDescription(signal.description);
+          const offerCollision = description.type === "offer" &&
+            (makingOfferRef.current.get(fromUserId) || pc?.signalingState !== "stable");
 
-          await pc.setRemoteDescription(new RTCSessionDescription(description));
+          ignoreOfferRef.current.set(fromUserId, !isPolite && offerCollision);
+          if (ignoreOfferRef.current.get(fromUserId)) return;
+
+          if (!pc) {
+            pc = createPeer(fromUserId);
+            peersRef.current.set(fromUserId, pc);
+          }
+
+          await pc.setRemoteDescription(description);
           if (description.type === "offer") {
-            const answer = await pc.createAnswer();
-            await pc.setLocalDescription(answer);
+            await pc.setLocalDescription();
             voiceSocket.emit("voice.signal", {
-              targetUserId: data.fromUserId,
+              targetUserId: fromUserId,
               signal: pc.localDescription,
             });
           }
-
-          // Process buffered candidates
-          const candidates = pendingCandidatesRef.current.get(data.fromUserId) || [];
-          for (const cand of candidates) {
-            await pc.addIceCandidate(cand);
+        } else if (signal.candidate) {
+          try {
+            if (!pc) return; // Should not happen with description-first signaling
+            await pc.addIceCandidate(new RTCIceCandidate(signal.candidate));
+          } catch (err) {
+            if (!ignoreOfferRef.current.get(fromUserId)) throw err;
           }
-          pendingCandidatesRef.current.delete(data.fromUserId);
-        } else if (description.candidate) {
-          if (pc.remoteDescription) {
-            await pc.addIceCandidate(description.candidate);
-          } else {
-            const buffered = pendingCandidatesRef.current.get(data.fromUserId) || [];
-            buffered.push(description.candidate);
-            pendingCandidatesRef.current.set(data.fromUserId, buffered);
+        } else if (signal.type && signal.sdp) {
+          // Alternative signal format handling if legacy
+          const description = new RTCSessionDescription(signal);
+           if (!pc) {
+            pc = createPeer(fromUserId);
+            peersRef.current.set(fromUserId, pc);
+          }
+          await pc.setRemoteDescription(description);
+          if (description.type === "offer") {
+            await pc.setLocalDescription();
+            voiceSocket.emit("voice.signal", {
+              targetUserId: fromUserId,
+              signal: pc.localDescription,
+            });
           }
         }
       } catch (err) {
-        console.error("Signal Handling Error:", err);
+        console.error("WebRTC: Signal error", err);
       }
+    };
+
+    const handleUserJoined = ({ userId: joinedUserId }: { userId: string }) => {
+      if (joinedUserId === userId) return;
+      if (!peersRef.current.has(joinedUserId)) {
+        const pc = createPeer(joinedUserId);
+        peersRef.current.set(joinedUserId, pc);
+      }
+    };
+
+    const handleUserLeft = ({ userId: leftUserId }: { userId: string }) => {
+      const pc = peersRef.current.get(leftUserId);
+      if (pc) {
+        pc.close();
+        peersRef.current.delete(leftUserId);
+      }
+      makingOfferRef.current.delete(leftUserId);
+      ignoreOfferRef.current.delete(leftUserId);
+      setRemoteStreams((prev) => {
+        const map = new Map(prev);
+        if (map.has(leftUserId)) {
+          map.delete(leftUserId);
+          return map;
+        }
+        return prev;
+      });
     };
 
     voiceSocket.on('voice.user_joined', handleUserJoined);
@@ -193,8 +183,10 @@ export const useWebRTC = (roomId: string | null, localStream: MediaStream | null
       voiceSocket.off('voice.user_left', handleUserLeft);
       voiceSocket.off('voice.signal', handleSignal);
 
-      peersRef.current.forEach(pc => pc.close());
+      peersRef.current.forEach((pc) => pc.close());
       peersRef.current.clear();
+      makingOfferRef.current.clear();
+      ignoreOfferRef.current.clear();
       setRemoteStreams(new Map());
     };
   }, [roomId, userId]);

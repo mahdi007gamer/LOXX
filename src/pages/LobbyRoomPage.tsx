@@ -153,9 +153,9 @@ export const LobbyRoomPage = () => {
 
   const handlePeerVolumeChange = useCallback((peerUserId: string, vol: number) => {
     setPeerActivity(prev => {
+      // Very strict threshold to minimize re-renders
+      if (Math.abs((prev[peerUserId] || 0) - vol) < 25 && vol !== 0 && prev[peerUserId] !== 0) return prev;
       if (prev[peerUserId] === vol) return prev;
-      // Only update if difference is significant to throttle re-renders
-      if (Math.abs((prev[peerUserId] || 0) - vol) < 15 && vol !== 0) return prev;
       return { ...prev, [peerUserId]: vol };
     });
   }, []);

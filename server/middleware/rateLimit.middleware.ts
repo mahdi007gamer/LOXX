@@ -3,7 +3,7 @@ import rateLimit from "express-rate-limit";
 // General rate limiter
 export const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5000, // Limit each IP to 5000 requests per windowMs (increased from 1000)
+  max: 10000, // Limit each IP to 10000 requests per windowMs (increased from 5000)
   message: { 
     status: "error", 
     message: "تعداد درخواست‌های شما بیش از حد مجاز است. لطفا ۱۵ دقیقه صبر کنید." 
