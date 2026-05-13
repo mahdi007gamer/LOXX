@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import prisma from "../utils/prisma.ts";
+import argon2 from "argon2";
 
 export const getAllUsers = async (req: Request, res: Response) => {
   try {
@@ -8,7 +9,7 @@ export const getAllUsers = async (req: Request, res: Response) => {
     const whereClause = search ? {
       OR: [
         { username: { contains: String(search) } as any },
-        { email: { contains: String(search) } as any }
+        { phone: { contains: String(search) } as any }
       ]
     } : {};
 
@@ -17,7 +18,7 @@ export const getAllUsers = async (req: Request, res: Response) => {
       select: {
         id: true,
         username: true,
-        email: true,
+        phone: true,
         isVerified: true,
         role: true,
         createdAt: true,
@@ -378,6 +379,47 @@ export const autoLinkGameBadges = async (req: Request, res: Response) => {
     }
     
     res.json({ status: "success", message: `Auto-linked ${updatedCount} games to badges` });
+  } catch (error: any) {
+    res.status(500).json({ status: "error", message: error.message });
+  }
+};
+
+export const updateUserDetails = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { username, phone, password } = req.body;
+  
+  try {
+    const data: any = {};
+    if (username) data.username = username;
+    if (phone) data.phone = phone;
+    if (password) data.passwordHash = await argon2.hash(password);
+
+    const user = await prisma.user.update({
+      where: { id },
+      data,
+      select: { id: true, username: true, phone: true }
+    });
+
+    res.json({ status: "success", data: user });
+  } catch (error: any) {
+    res.status(500).json({ status: "error", message: error.message });
+  }
+};
+
+export const exportDatabase = async (req: Request, res: Response) => {
+  try {
+    const games = await prisma.game.findMany();
+    const badges = await prisma.badge.findMany();
+    
+    const backup = {
+      timestamp: new Date().toISOString(),
+      games,
+      badges
+    };
+
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', 'attachment; filename=loxx_backup.json');
+    res.send(JSON.stringify(backup, null, 2));
   } catch (error: any) {
     res.status(500).json({ status: "error", message: error.message });
   }

@@ -36,8 +36,14 @@ export class WebhookController {
             data: { baleId: String(fromId), isVerified: true }
           });
 
+          const getBaseUrl = () => {
+            if (process.env.APP_URL) return process.env.APP_URL;
+            const protocol = req.secure ? "https" : "http";
+            return `${protocol}://${req.get("host")}`;
+          };
+
           const sessionToken = AuthService.generateAccessToken(user.id);
-          const callbackUrl = `${process.env.APP_URL}/auth/bale/callback?token=${sessionToken}`;
+          const callbackUrl = `${getBaseUrl()}/auth/bale/callback?token=${sessionToken}`;
 
           await BaleService.sendMessage(chatId, `✅ حساب شما تایید شد.\n\nبرای ورود به سیستم روی لینک زیر کلیک کنید:`, {
             inline_keyboard: [[{ text: "🚀 ورود به لابی", url: callbackUrl }]]
@@ -83,8 +89,14 @@ export class WebhookController {
           }
         });
         
+        const getBaseUrl = () => {
+          if (process.env.APP_URL) return process.env.APP_URL;
+          const protocol = req.secure ? "https" : "http";
+          return `${protocol}://${req.get("host")}`;
+        };
+
         const sessionToken = AuthService.generateAccessToken(user.id);
-        const callbackUrl = `${process.env.APP_URL}/auth/bale/callback?token=${sessionToken}`;
+        const callbackUrl = `${getBaseUrl()}/auth/bale/callback?token=${sessionToken}`;
 
         await BaleService.sendMessage(chatId, "✅ حساب کاربری شما با موفقیت تایید شد.", {
           inline_keyboard: [[{ text: "🚀 ورود به سایت", url: callbackUrl }]]

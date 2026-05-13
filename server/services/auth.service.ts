@@ -3,7 +3,6 @@ import jwt from "jsonwebtoken";
 import { v4 as uuidv4 } from "uuid";
 import prisma from "../utils/prisma.ts";
 import { RegisterDTO, LoginDTO } from "../types/auth.ts";
-import { EmailService } from "./email.service.ts";
 import { BaleService } from "./bale.service.ts";
 
 const JWT_SECRET = process.env.JWT_SECRET || "secret";
@@ -13,7 +12,6 @@ export class AuthService {
   static async register(data: RegisterDTO & { referralCode?: string }) {
     const passwordHash = await argon2.hash(data.password);
     const verificationToken = uuidv4();
-    const email = data.email || `${data.phone}@loxx.ir`;
     const isAdmin = data.phone === "13781378" || data.username === "admin";
     const isVip = data.phone === "123" || data.username === "VIP";
     
@@ -21,7 +19,6 @@ export class AuthService {
       data: {
         username: data.username,
         phone: data.phone,
-        email: email,
         passwordHash,
         verificationToken: isAdmin ? null : verificationToken,
         isVerified: isAdmin ? true : false,
@@ -86,10 +83,10 @@ export class AuthService {
     return { status: "success", user, accessToken, refreshToken };
   }
 
-  static async sendVerificationEmail(userId: string) {
+  static async sendBaleVerificationLink(userId: string) {
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new Error("User not found");
-    if (user.isVerified) throw new Error("ایمیل شما قبلاً تایید شده است");
+    if (user.isVerified) throw new Error("حساب شما قبلاً تایید شده است");
 
     const verificationToken = uuidv4();
     await prisma.user.update({
@@ -98,21 +95,6 @@ export class AuthService {
     });
 
     console.log(`[BALE] Verification link: ble.ir/loxxbot?start=${verificationToken}`);
-    return true;
-  }
-
-  static async verifyEmail(token: string) {
-    const user = await prisma.user.findFirst({
-      where: { verificationToken: token }
-    });
-
-    if (!user) throw new Error("توکن نامعتبر است");
-
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { isVerified: true, verificationToken: null }
-    });
-
     return true;
   }
 

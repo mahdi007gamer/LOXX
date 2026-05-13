@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { NeonCard } from "../components/ui/NeonCard";
 import { Input } from "../components/ui/Input";
 import { GlowButton } from "../components/ui/GlowButton";
-import { Gamepad2, Mail, Lock, User, ArrowRight, Loader2, Users, Phone, ArrowLeft, ShieldCheck, KeyRound } from "lucide-react";
+import { Gamepad2, MessageCircle, Lock, User, ArrowRight, Loader2, Users, Phone, ArrowLeft, ShieldCheck, KeyRound } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import api from "../lib/api";
@@ -42,6 +42,25 @@ export const AuthPage = () => {
       }
     }
   }, [user, navigate]);
+
+  React.useEffect(() => {
+    let interval: any;
+    if (step === "VERIFY_BALE" && formData.phone) {
+      interval = setInterval(async () => {
+        try {
+          const response = await api.get(`/auth/status/${formData.phone}`);
+          if (response.data.verified) {
+            login(response.data.token, response.data.user);
+            toast.success("حساب شما با موفقیت تایید شد!");
+            navigate("/dashboard");
+          }
+        } catch (err) {
+          console.error("Polling error:", err);
+        }
+      }, 3000); // Poll every 3 seconds
+    }
+    return () => clearInterval(interval);
+  }, [step, formData.phone, login, navigate]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -264,22 +283,32 @@ export const AuthPage = () => {
                             <div className="relative">
                                <div className="absolute inset-0 bg-neon-blue blur-xl opacity-30 animate-pulse" />
                                <div className="h-16 w-16 rounded-full bg-neon-blue/20 flex items-center justify-center border border-neon-blue/50">
-                                  <ShieldCheck size={32} className="text-neon-blue" />
+                                  <Loader2 size={32} className="text-neon-blue animate-spin" />
                                </div>
                             </div>
                          </div>
-                         <p className="text-gray-300 text-sm leading-relaxed mb-6 font-medium">
-                           برای تایید هویت و ورود امن به لوکس، کافیست در ربات بله روی دکمه شروع بزنید.
+                         <h3 className="text-xl font-black text-white italic mb-2">منتظر تایید شماره موبایل...</h3>
+                         <p className="text-gray-300 text-sm leading-relaxed mb-6 font-bold">
+                           لطفاً روی دکمه زیر بزنید و پس از ورود به ربات، شماره موبایل خود را با استفاده از دکمه داخل ربات بله به اشتراک بگذارید.
                          </p>
                          
                          <GlowButton 
+                          type="button"
                           variant="blue"
                           className="w-full h-14 !rounded-2xl font-black italic uppercase tracking-tighter"
                           onClick={() => window.open(verificationToken ? `https://ble.ir/loxxbot?start=${verificationToken}` : `https://ble.ir/loxxbot`, "_blank")}
                          >
-                           <Gamepad2 size={20} className="mr-2" />
-                           تایید در بله
+                           <MessageCircle size={20} className="ml-2" />
+                           ورود به ربات بله و تایید شماره
                          </GlowButton>
+
+                         <button 
+                           type="button"
+                           onClick={() => setStep("AUTH")}
+                           className="mt-6 text-xs text-gray-500 hover:text-white transition-colors underline decoration-white/10 underline-offset-4"
+                         >
+                           لغو و بازگشت به صفحه ورود
+                         </button>
                        </div>
                     </div>
                   </div>

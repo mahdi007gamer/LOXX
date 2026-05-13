@@ -74,7 +74,6 @@ export class AuthController {
           id: user!.id, 
           username: user!.username, 
           phone: user!.phone,
-          email: user!.email,
           role: user!.role,
           membership: user!.profile?.membershipType,
           isVerified: user!.isVerified,
@@ -149,22 +148,12 @@ export class AuthController {
     }
   }
 
-  static async sendVerificationEmail(req: Request, res: Response) {
+  static async sendBaleVerificationLink(req: Request, res: Response) {
     try {
       const userId = (req as any).user?.userId;
       if (!userId) throw new Error("Unauthorized");
-      await AuthService.sendVerificationEmail(userId);
+      await AuthService.sendBaleVerificationLink(userId);
       res.json({ status: "success", message: "لینک تایید ارسال شد" });
-    } catch (error: any) {
-      res.status(400).json({ status: "error", message: error.message });
-    }
-  }
-
-  static async verifyEmail(req: Request, res: Response) {
-    try {
-      const { token } = req.body;
-      await AuthService.verifyEmail(token);
-      res.json({ status: "success", message: "ایمیل شما با موفقیت تایید شد" });
     } catch (error: any) {
       res.status(400).json({ status: "error", message: error.message });
     }
@@ -247,6 +236,50 @@ export class AuthController {
       res.json({ status: "success", message: "رمز عبور با موفقیت تغییر کرد" });
     } catch (error: any) {
       res.status(400).json({ status: "error", message: error.message });
+    }
+  }
+
+  static async checkStatus(req: Request, res: Response) {
+    try {
+      const { phone } = req.params;
+      const user = await prisma.user.findFirst({
+        where: { phone },
+        include: { profile: true }
+      });
+
+      if (!user) return res.status(404).json({ status: "error", message: "User not found" });
+
+      if (user.isVerified) {
+         const accessToken = AuthService.generateAccessToken(user.id);
+         const refreshToken = AuthService.generateRefreshToken(user.id);
+
+         res.cookie("refresh_token", refreshToken, {
+           httpOnly: true,
+           secure: true,
+           sameSite: "none",
+           maxAge: 7 * 24 * 60 * 60 * 1000
+         });
+
+         return res.json({
+           status: "success",
+           verified: true,
+           token: accessToken,
+           user: {
+             id: user.id,
+             username: user.username,
+             phone: user.phone,
+             role: user.role,
+             membership: user.profile?.membershipType,
+             isVerified: user.isVerified,
+             avatarUrl: user.profile?.avatarUrl,
+             displayName: user.profile?.displayName
+           }
+         });
+      }
+
+      res.json({ status: "success", verified: false });
+    } catch (error: any) {
+      res.status(500).json({ status: "error", message: error.message });
     }
   }
 }

@@ -18,13 +18,18 @@ export const UserEditModal = ({ isOpen, onClose, user, onSuccess }: UserEditModa
   const [membership, setMembership] = useState("NONE");
   const [days, setDays] = useState(30);
   const [loading, setLoading] = useState(false);
+  const [username, setUsername] = useState("");
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
   const [dbBadges, setDbBadges] = useState<any[]>([]);
-  const [userBadges, setUserBadges] = useState<any[]>([]);
 
   useEffect(() => {
     if (user) {
       setRole(user.role || "USER");
       setMembership(user.profile?.membershipType || "NONE");
+      setUsername(user.username || "");
+      setPhone(user.phone || "");
+      setPassword("");
     }
     fetchSpecialBadges();
   }, [user]);
@@ -61,10 +66,17 @@ export const UserEditModal = ({ isOpen, onClose, user, onSuccess }: UserEditModa
   const handleSave = async () => {
     setLoading(true);
     try {
-      // 1. Update Role
+      // 1. Update Core Details
+      await api.patch(`/admin/users/${user.id}`, { 
+        username, 
+        phone, 
+        password: password || undefined 
+      });
+
+      // 2. Update Role
       await api.patch(`/admin/users/${user.id}/role`, { role });
       
-      // 2. Update Membership
+      // 3. Update Membership
       await api.patch(`/admin/users/${user.id}/membership`, { 
         membershipType: membership,
         days: membership !== "NONE" ? Number(days) : 0
@@ -136,11 +148,11 @@ export const UserEditModal = ({ isOpen, onClose, user, onSuccess }: UserEditModa
               {/* Profile Overview */}
               <div className="bg-white/5 p-6 rounded-3xl border border-white/5 flex items-center gap-6">
                  <div className="h-20 w-20 rounded-2xl overflow-hidden border-2 border-white/10 shrink-0">
-                    <img src={user.profile?.avatarUrl || "https://api.dicebear.com/7.x/avataaars/svg?seed=Lucky"} className="h-full w-full object-cover" />
+                    <img src={user.profile?.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`} className="h-full w-full object-cover" />
                  </div>
                  <div>
                     <h3 className="text-lg font-black text-white">{user.profile?.displayName || user.username}</h3>
-                    <p className="text-gray-500 text-xs font-bold mb-2">{user.email}</p>
+                    <p className="text-gray-500 text-xs font-bold mb-2">{user.phone}</p>
                     <div className="flex gap-2">
                        <span className={cn(
                          "px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border",
@@ -158,6 +170,35 @@ export const UserEditModal = ({ isOpen, onClose, user, onSuccess }: UserEditModa
                        </span>
                     </div>
                  </div>
+              </div>
+
+              {/* Core Details Edit */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                   <label className="text-[10px] font-black text-gray-600 uppercase tracking-widest pr-2">نام کاربری</label>
+                   <input 
+                     value={username}
+                     onChange={e => setUsername(e.target.value)}
+                     className="w-full bg-white/5 border border-white/5 rounded-2xl py-3 px-6 text-sm text-white focus:border-neon-blue/50 outline-none transition-all font-bold"
+                   />
+                </div>
+                <div className="space-y-2">
+                   <label className="text-[10px] font-black text-gray-600 uppercase tracking-widest pr-2">شماره همراه</label>
+                   <input 
+                     value={phone}
+                     onChange={e => setPhone(e.target.value)}
+                     className="w-full bg-white/5 border border-white/5 rounded-2xl py-3 px-6 text-sm text-white focus:border-neon-blue/50 outline-none transition-all font-bold"
+                   />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                   <label className="text-[10px] font-black text-gray-600 uppercase tracking-widest pr-2">تغییر رمز عبور (خالی بگذارید تا تغییر نکند)</label>
+                   <input 
+                     type="password"
+                     value={password}
+                     onChange={e => setPassword(e.target.value)}
+                     className="w-full bg-white/5 border border-white/5 rounded-2xl py-3 px-6 text-sm text-white focus:border-neon-blue/50 outline-none transition-all font-bold"
+                   />
+                </div>
               </div>
 
               {/* Editing Controls */}

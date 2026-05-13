@@ -8,6 +8,8 @@ const router = Router();
 router.use(authenticate, authorizeAdmin);
 
 router.get("/users", adminController.getAllUsers);
+router.patch("/users/:id", adminController.updateUserDetails);
+router.get("/backup", adminController.exportDatabase);
 router.patch("/users/:id/role", adminController.updateUserRole);
 router.patch("/users/:id/membership", adminController.updateUserMembership);
 router.patch("/users/:id/verify", adminController.updateUserVerification);

@@ -153,6 +153,16 @@ export const AdminPage = () => {
               </div>
               <p className="text-gray-400 font-bold uppercase text-[10px] tracking-widest italic opacity-60">Advanced Authority Controls</p>
             </div>
+            <GlowButton 
+              variant="secondary"
+              size="sm"
+              className="h-12 px-6 text-[10px] uppercase font-black tracking-widest italic !rounded-2xl gap-2"
+              onClick={() => {
+                window.location.href = `${api.defaults.baseURL}/admin/backup`;
+              }}
+            >
+              <Icons.Download size={16} /> <span>پشتیبانی از دیتابیس</span>
+            </GlowButton>
           </header>
 
           <div className="flex gap-4 border-b border-white/5 pb-px overflow-x-auto">
@@ -212,7 +222,7 @@ export const AdminPage = () => {
                     type="text"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder="جستجو در نام کاربری یا ایمیل..."
+                    placeholder="جستجو در نام کاربری یا شماره همراه..."
                     className="w-full bg-white/5 border border-white/5 rounded-2xl py-4 pr-12 text-sm text-white focus:outline-none focus:border-neon-blue/50 transition-all font-bold"
                   />
                 </div>
@@ -250,7 +260,7 @@ export const AdminPage = () => {
                         </div>
                         <div className="flex-1 min-w-0">
                            <h3 className="text-white font-black italic truncate">{user.username}</h3>
-                           <p className="text-[10px] text-gray-500 font-bold italic truncate uppercase">{user.email}</p>
+                           <p className="text-[10px] text-gray-500 font-bold italic truncate uppercase">{user.phone}</p>
                         </div>
                      </div>
 

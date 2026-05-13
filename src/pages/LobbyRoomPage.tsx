@@ -1259,8 +1259,25 @@ const MatchInfoPanel = ({ isStarting, isMatchStarted, countdown, players, lobby,
   );
 };
 
-const PlayerCard = ({ 
+const PlayerCard: React.FC<{ 
+  player: Player;
+  volume?: number;
+  isSelected: boolean;
+  onSelect: () => void;
+  onVolumeChange: (val: number) => void;
+  onMute: (id: string) => void;
+  onInvite: () => void;
+  onProfile: (id: string) => void;
+  onDirectMessage: (id: string) => void;
+  onAddFriend: (id: string) => void;
+  onKick?: (id: string) => void;
+  onBan?: (id: string) => void;
+  isHostView?: boolean;
+  disabled?: boolean;
+  isVipLobby?: boolean;
+}> = ({ 
   player, 
+  volume,
   isSelected, 
   onSelect, 
   onVolumeChange, 
@@ -1274,21 +1291,6 @@ const PlayerCard = ({
   isHostView,
   disabled,
   isVipLobby
-}: { 
-  player: Player, 
-  isSelected: boolean,
-  onSelect: () => void,
-  onVolumeChange: (val: number) => void,
-  onMute: (id: string) => void,
-  onInvite: () => void,
-  onProfile: (id: string) => void,
-  onDirectMessage: (id: string) => void,
-  onAddFriend: (id: string) => void;
-  onKick?: (id: string) => void;
-  onBan?: (id: string) => void;
-  isHostView?: boolean;
-  disabled?: boolean;
-  isVipLobby?: boolean;
 }) => {
   const isSlot = player.name === "Empty Slot";
   const { user } = useAuth();

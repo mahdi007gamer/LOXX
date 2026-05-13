@@ -21,7 +21,6 @@ async function main() {
     create: {
       username: "admin",
       phone: adminPhone,
-      email: "admin@loxx.ir",
       passwordHash: adminHash,
       isVerified: true,
       role: "ADMIN",
@@ -48,7 +47,6 @@ async function main() {
     create: {
       username: "VIP",
       phone: vipPhone,
-      email: "vip@loxx.ir",
       passwordHash: vipHash,
       isVerified: false,
       role: "USER",

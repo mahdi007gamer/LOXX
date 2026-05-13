@@ -16,7 +16,7 @@ router.post("/verify-2fa", AuthController.verify2FA);
 router.post("/bale/url", AuthController.getBaleLoginUrl);
 router.post("/bale/callback", AuthController.verifyBaleCallback);
 router.get("/me", authenticate, UserController.getMe);
-router.post("/verify-email", AuthController.verifyEmail);
-router.post("/send-verification-email", authenticate, AuthController.sendVerificationEmail);
+router.get("/status/:phone", AuthController.checkStatus);
+router.post("/send-verification-link", authenticate, AuthController.sendBaleVerificationLink);
 
 export default router;
