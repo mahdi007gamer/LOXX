@@ -27,7 +27,7 @@ export class AuthController {
       if (result.status === "2fa_required") {
         return res.json({
           status: "2fa_required",
-          message: "کد تایید به ایمیل شما ارسال شد",
+          message: "کد تایید ارسال شد",
           userId: result.userId
         });
       }
@@ -73,6 +73,7 @@ export class AuthController {
         user: { 
           id: user!.id, 
           username: user!.username, 
+          phone: user!.phone,
           email: user!.email,
           role: user!.role,
           membership: user!.profile?.membershipType,
@@ -84,7 +85,67 @@ export class AuthController {
         }
       });
     } catch (error: any) {
+      if (error.message === "VERIFICATION_REQUIRED") {
+        return res.status(403).json({ status: "error", error: { code: "VERIFICATION_REQUIRED", message: "VERIFICATION_REQUIRED" } });
+      }
       res.status(401).json({ status: "error", error: { code: "INVALID_CREDENTIALS", message: error.message } });
+    }
+  }
+
+  static async getBaleLoginUrl(req: Request, res: Response) {
+    try {
+      const { phone } = req.body;
+      if (!phone) throw new Error("Phone is required");
+      
+      const token = AuthService.generateBaleAuthToken(phone);
+      const url = `https://ble.ir/loxxbot?start=${token}`;
+      
+      res.json({ status: "success", url });
+    } catch (error: any) {
+      res.status(400).json({ status: "error", message: error.message });
+    }
+  }
+
+  static async verifyBaleCallback(req: Request, res: Response) {
+    try {
+      const { token } = req.body;
+      const { userId } = AuthService.verifyAccessToken(token); // bot sends session token
+      
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        include: { profile: true }
+      });
+
+      if (!user) throw new Error("User not found");
+
+      const refreshToken = AuthService.generateRefreshToken(user.id);
+      
+      res.cookie("refresh_token", refreshToken, {
+        httpOnly: true,
+        secure: true,
+        sameSite: "none",
+        maxAge: 7 * 24 * 60 * 60 * 1000
+      });
+
+      res.json({
+        status: "success",
+        token,
+        user: { 
+          id: user.id, 
+          username: user.username, 
+          phone: user.phone,
+          email: user.email,
+          role: user.role,
+          membership: user.profile?.membershipType,
+          isVerified: user.isVerified,
+          avatarUrl: user.profile?.avatarUrl,
+          bannerUrl: user.profile?.bannerUrl,
+          displayName: user.profile?.displayName,
+          vipMetadata: user.profile?.vipMetadata ? JSON.parse(user.profile.vipMetadata) : null
+        }
+      });
+    } catch (error: any) {
+      res.status(403).json({ status: "error", message: error.message });
     }
   }
 
@@ -93,7 +154,7 @@ export class AuthController {
       const userId = (req as any).user?.userId;
       if (!userId) throw new Error("Unauthorized");
       await AuthService.sendVerificationEmail(userId);
-      res.json({ status: "success", message: "کد تایید به ایمیل شما ارسال شد" });
+      res.json({ status: "success", message: "لینک تایید ارسال شد" });
     } catch (error: any) {
       res.status(400).json({ status: "error", message: error.message });
     }
@@ -127,6 +188,7 @@ export class AuthController {
         user: { 
           id: user.id, 
           username: user.username, 
+          phone: user.phone,
           email: user.email,
           role: user.role,
           membership: user.profile?.membershipType,
@@ -170,9 +232,9 @@ export class AuthController {
 
   static async forgotPassword(req: Request, res: Response) {
     try {
-      const { identifier } = req.body;
-      await AuthService.forgotPassword(identifier);
-      res.json({ status: "success", message: "ایمیل بازیابی ارسال شد" });
+      const { phone } = req.body;
+      await AuthService.forgotPassword(phone);
+      res.json({ status: "success", message: "کد بازیابی ارسال شد" });
     } catch (error: any) {
       res.status(400).json({ status: "error", message: error.message });
     }
@@ -180,8 +242,8 @@ export class AuthController {
 
   static async resetPassword(req: Request, res: Response) {
     try {
-      const { identifier, code, newPassword } = req.body;
-      await AuthService.resetPassword(identifier, code, newPassword);
+      const { phone, code, newPassword } = req.body;
+      await AuthService.resetPassword(phone, code, newPassword);
       res.json({ status: "success", message: "رمز عبور با موفقیت تغییر کرد" });
     } catch (error: any) {
       res.status(400).json({ status: "error", message: error.message });

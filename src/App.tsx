@@ -26,6 +26,7 @@ import { PremiumPage } from "./pages/PremiumPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { FriendsPage } from "./pages/FriendsPage";
 import { InviteRedirectPage } from "./pages/InviteRedirectPage";
+import { BaleCallbackPage } from "./pages/BaleCallbackPage";
 import { GamesPage } from "./pages/GamesPage";
 import { MyGamesPage } from "./pages/MyGamesPage";
 import { EliteSettingsPage } from "./pages/EliteSettingsPage";
@@ -64,6 +65,7 @@ const AppContent = () => {
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/auth" element={<AuthPage />} />
+          <Route path="/auth/bale/callback" element={<BaleCallbackPage />} />
           
           <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
           <Route path="/chat" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />

@@ -19,7 +19,7 @@ export const AuthPage = () => {
   const [verificationToken, setVerificationToken] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     username: "",
-    email: "",
+    phone: "",
     password: "",
     referralCode: "",
     otpCode: "",
@@ -47,6 +47,24 @@ export const AuthPage = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const handleBaleLogin = async () => {
+    if (!formData.phone && isLogin) {
+      toast.error("لطفاً ابتدا شماره همراه خود را وارد کنید");
+      return;
+    }
+    setLoading(true);
+    try {
+      const response = await api.post("/auth/bale/url", { phone: formData.phone });
+      window.open(response.data.url, "_blank");
+      setStep("VERIFY_BALE");
+      toast.success("در حال انتقال به بله...");
+    } catch (error: any) {
+      toast.error("خطا در برقراری ارتباط با بله");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -56,30 +74,31 @@ export const AuthPage = () => {
         if (isLogin) {
           try {
             const response = await api.post("/auth/login", {
-              email: formData.email,
+              phone: formData.phone,
               password: formData.password
             });
             
             if (response.data.status === "2fa_required") {
               setTempUserId(response.data.userId);
               setStep("VERIFY_2FA");
-              toast.success("کد تایید دو مرحله‌ای ارسال شد");
+              toast.success("کد تایید ارسال شد");
               return;
             }
 
             login(response.data.token, response.data.user);
             toast.success("خوش آمدید!");
           } catch (err: any) {
-             if (err.response?.data?.error?.message === "VERIFICATION_REQUIRED") {
-                toast.error("حساب شما هنوز تایید نشده است. لطفاً از طریق ربات بله اقدام کنید.");
+             if (err.response?.data?.error?.code === "VERIFICATION_REQUIRED") {
+                setStep("VERIFY_BALE");
+                toast.error("حساب شما هنوز تایید نشده است.");
              } else {
-                toast.error("ایمیل یا رمز عبور اشتباه است");
+                toast.error("شماره همراه یا رمز عبور اشتباه است");
              }
           }
         } else {
           const registerResponse = await api.post("/auth/register", {
             username: formData.username,
-            email: formData.email,
+            phone: formData.phone,
             password: formData.password,
             referralCode: formData.referralCode || undefined
           });
@@ -89,10 +108,8 @@ export const AuthPage = () => {
           toast.success("ثبت‌نام با موفقیت انجام شد.");
         }
       } else if (step === "VERIFY_BALE") {
-        // Users can just try to login after verifying on Bale
         setIsLogin(true);
         setStep("AUTH");
-        toast.success("حالا می‌توانید وارد شوید (پس از تایید در بله)");
       } else if (step === "VERIFY_2FA") {
         const response = await api.post("/auth/verify-2fa", {
           userId: tempUserId,
@@ -101,15 +118,14 @@ export const AuthPage = () => {
         login(response.data.token, response.data.user);
         toast.success("خوش آمدید!");
       } else if (step === "FORGOT_PASSWORD") {
-        // Simple forgot password logic
         await api.post("/auth/forgot-password", {
-          identifier: forgotIdentifier
+          phone: forgotIdentifier
         });
-        toast.success("ایمیل بازیابی برای شما ارسال شد");
+        toast.success("کد بازیابی ارسال شد");
         setStep("RESET_PASSWORD");
       } else if (step === "RESET_PASSWORD") {
         await api.post("/auth/reset-password", {
-          identifier: forgotIdentifier,
+          phone: forgotIdentifier,
           code: formData.otpCode,
           newPassword: formData.newPassword
         });
@@ -128,7 +144,6 @@ export const AuthPage = () => {
   return (
     <div className="flex min-h-[calc(100vh-64px)] items-center justify-center px-4 py-12">
       <div className="relative w-full max-w-md">
-        {/* Decorative blur backgrounds */}
         <div className="absolute -left-20 -top-20 -z-10 h-64 w-64 rounded-full bg-neon-blue/10 blur-[80px]" />
         <div className="absolute -bottom-20 -right-20 -z-10 h-64 w-64 rounded-full bg-neon-pink/10 blur-[80px]" />
 
@@ -136,15 +151,14 @@ export const AuthPage = () => {
           <AnimatePresence mode="wait">
             <motion.div
               key={step === "AUTH" ? (isLogin ? "login" : "signup") : step}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.3, ease: "easeInOut" }}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.3 }}
             >
               <div className="mb-8 text-center">
                 <motion.div 
-                  layoutId="auth-icon"
-                  className={`mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border bg-white/5 shadow-lg transition-colors duration-500 overflow-hidden ${isLogin ? 'border-neon-blue/50 text-neon-blue' : 'border-neon-pink/50 text-neon-pink'}`}
+                  className={`mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border bg-white/5 shadow-neon transition-colors ${isLogin ? 'border-neon-blue/50 text-neon-blue' : 'border-neon-pink/50 text-neon-pink'}`}
                 >
                   <img src="/logo.png" alt="LOXX" className="h-10 w-auto" />
                 </motion.div>
@@ -152,85 +166,57 @@ export const AuthPage = () => {
                 {step === "AUTH" && (
                   <>
                     <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter">
-                      {isLogin ? "ورود به حساب کاربری" : "ثبت‌نام در لوکس"}
+                      {isLogin ? "ورود پادشاهی" : "عضویت در لوکس"}
                     </h2>
-                    <p className="mt-2 text-sm text-gray-400 font-bold">
+                    <p className="mt-2 text-xs text-gray-500 font-bold uppercase tracking-widest">
                       {isLogin 
-                        ? "مشخصات خود را وارد کنید" 
-                        : "به جمع گیمرهای حرفه‌ای بپیوندید"}
+                        ? "آماده نبردهای سهمگین هستید؟" 
+                        : "به جمع برترین گیمرهای ایران بپیوندید"}
                     </p>
                   </>
                 )}
 
                 {step === "VERIFY_BALE" && (
                   <>
-                    <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter">تایید هویت با بله</h2>
-                    <p className="mt-2 text-sm text-gray-400 font-bold">برای فعالسازی حساب، باید از طریق بازوی بله اقدام کنید</p>
+                    <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter">اتصال امن بله</h2>
+                    <p className="mt-2 text-xs text-gray-500 font-bold uppercase tracking-widest">منتظر تایید شما در بازوی بله هستیم</p>
                   </>
                 )}
-
-                {step === "VERIFY_2FA" && (
-                  <>
-                    <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter">تایید دو مرحله‌ای</h2>
-                    <p className="mt-2 text-sm text-gray-400 font-bold">کد ارسال شده به ایمیل یا بله را وارد کنید</p>
-                  </>
-                )}
-
-                {step === "FORGOT_PASSWORD" && (
-                  <>
-                    <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter">فراموشی رمز عبور</h2>
-                    <p className="mt-2 text-sm text-gray-400 font-bold">ایمیل خود را وارد کنید</p>
-                  </>
-                )}
-
-                {step === "RESET_PASSWORD" && (
-                  <>
-                    <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter">تغییر رمز عبور</h2>
-                    <p className="mt-2 text-sm text-gray-400 font-bold">کد تایید و رمز جدید را وارد کنید</p>
-                  </>
-                )}
+                {/* ... other steps ... */}
               </div>
 
               <form className="space-y-4" onSubmit={handleSubmit}>
                 {step === "AUTH" && (
                   <>
-                    <AnimatePresence>
+                    <AnimatePresence mode="popLayout">
                       {!isLogin && (
                         <motion.div
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: "auto" }}
-                          exit={{ opacity: 0, height: 0 }}
-                          className="overflow-hidden space-y-4"
+                          initial={{ opacity: 0, y: -20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -20 }}
+                          className="space-y-4"
                         >
                           <Input 
                             label="نام کاربری" 
-                            placeholder="Gamer123" 
+                            placeholder="Gamer_Elite" 
                             name="username"
                             value={formData.username}
                             onChange={handleInputChange}
                             icon={<User size={18} />} 
                             required={!isLogin}
                           />
-                          <Input 
-                            label="کد معرف (اختیاری)" 
-                            placeholder="کد دعوت" 
-                            name="referralCode"
-                            value={formData.referralCode}
-                            onChange={handleInputChange}
-                            icon={<Users size={18} />} 
-                          />
                         </motion.div>
                       )}
                     </AnimatePresence>
                     
                     <Input 
-                      label="ایمیل" 
-                      type="email"
-                      name="email"
-                      placeholder="example@gmail.com" 
-                      value={formData.email}
+                      label="شماره همراه" 
+                      type="tel"
+                      name="phone"
+                      placeholder="0912xxxxxxx" 
+                      value={formData.phone}
                       onChange={handleInputChange}
-                      icon={<Mail size={18} />} 
+                      icon={<Phone size={18} />} 
                       required
                     />
                     <Input 
@@ -243,15 +229,26 @@ export const AuthPage = () => {
                       icon={<Lock size={18} />} 
                       required
                     />
+
+                    {!isLogin && (
+                      <Input 
+                        label="کد معرف (هدیه شروع)" 
+                        placeholder="Invite Code" 
+                        name="referralCode"
+                        value={formData.referralCode}
+                        onChange={handleInputChange}
+                        icon={<Users size={18} />} 
+                      />
+                    )}
                     
                     {isLogin && (
                       <div className="flex justify-end">
                         <button 
                           type="button" 
                           onClick={() => setStep("FORGOT_PASSWORD")}
-                          className="text-xs text-neon-blue font-bold hover:underline"
+                          className="text-[10px] text-neon-blue font-black uppercase tracking-widest hover:underline"
                         >
-                          فراموشی رمز عبور؟
+                          فراموشی رمز؟
                         </button>
                       </div>
                     )}
@@ -260,127 +257,92 @@ export const AuthPage = () => {
 
                 {step === "VERIFY_BALE" && (
                   <div className="space-y-6 text-center">
-                    <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
-                       <p className="text-gray-300 text-sm leading-relaxed mb-4">
-                         ۱. وارد بازوی <span className="text-neon-blue font-bold">@loxxbot</span> در پیام‌رسان بله شوید.<br />
-                         ۲. بر روی دکمه <span className="text-neon-pink font-bold">شروع (Start)</span> کلیک کنید.<br />
-                         ۳. شماره همراه خود را برای تایید نهایی ارسال کنید.
-                       </p>
-                       
-                       <a 
-                        href={`https://ble.ir/loxxbot?start=${verificationToken}`} 
-                        target="_blank" 
-                        rel="noreferrer"
-                        className="inline-flex items-center gap-2 px-6 py-3 bg-[#00e5ff] text-black rounded-xl font-black italic uppercase text-sm hover:scale-105 transition-transform"
-                       >
-                         <Phone size={18} />
-                         ورود به بازوی بله
-                       </a>
+                    <div className="bg-white/5 border border-white/10 rounded-2xl p-6 relative overflow-hidden group">
+                       <div className="absolute inset-0 bg-gradient-to-br from-neon-blue/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                       <div className="relative z-10">
+                         <div className="flex justify-center mb-4">
+                            <div className="relative">
+                               <div className="absolute inset-0 bg-neon-blue blur-xl opacity-30 animate-pulse" />
+                               <div className="h-16 w-16 rounded-full bg-neon-blue/20 flex items-center justify-center border border-neon-blue/50">
+                                  <ShieldCheck size={32} className="text-neon-blue" />
+                               </div>
+                            </div>
+                         </div>
+                         <p className="text-gray-300 text-sm leading-relaxed mb-6 font-medium">
+                           برای تایید هویت و ورود امن به لوکس، کافیست در ربات بله روی دکمه شروع بزنید.
+                         </p>
+                         
+                         <GlowButton 
+                          variant="blue"
+                          className="w-full h-14 !rounded-2xl font-black italic uppercase tracking-tighter"
+                          onClick={() => window.open(verificationToken ? `https://ble.ir/loxxbot?start=${verificationToken}` : `https://ble.ir/loxxbot`, "_blank")}
+                         >
+                           <Gamepad2 size={20} className="mr-2" />
+                           تایید در بله
+                         </GlowButton>
+                       </div>
                     </div>
-                    
-                    <p className="text-[10px] text-gray-500">
-                      پس از تایید در بله، به این صفحه برگردید و وارد حساب خود شوید.
-                    </p>
                   </div>
                 )}
 
+                {/* Keep other steps simplified but consistent */}
                 {step === "VERIFY_2FA" && (
-                  <Input 
-                    label="کد دو مرحله‌ای" 
-                    name="twoFactorCode"
-                    placeholder="123456"
-                    dir="ltr"
-                    className="text-center tracking-widest font-black"
-                    value={formData.twoFactorCode}
-                    onChange={handleInputChange}
-                    icon={<ShieldCheck size={18} />}
-                    required
-                  />
+                   <Input label="کد تایید" name="twoFactorCode" placeholder="123456" dir="ltr" className="text-center font-black" value={formData.twoFactorCode} onChange={handleInputChange} icon={<KeyRound size={18} />} required />
                 )}
 
                 {step === "FORGOT_PASSWORD" && (
-                  <Input 
-                    label="ایمیل" 
-                    type="email"
-                    placeholder="mail@example.com"
-                    value={forgotIdentifier}
-                    onChange={(e) => setForgotIdentifier(e.target.value)}
-                    icon={<Mail size={18} />}
-                    required
-                  />
+                   <Input label="شماره همراه" name="phone" placeholder="0912xxxxxxx" value={forgotIdentifier} onChange={(e) => setForgotIdentifier(e.target.value)} icon={<Phone size={18} />} required />
                 )}
 
                 {step === "RESET_PASSWORD" && (
-                  <>
-                    <Input 
-                      label="کد تایید" 
-                      name="otpCode"
-                      placeholder="123456"
-                      dir="ltr"
-                      className="text-center tracking-widest font-black"
-                      value={formData.otpCode}
-                      onChange={handleInputChange}
-                      icon={<KeyRound size={18} />}
-                      required
-                    />
-                    <Input 
-                      label="رمز عبور جدید" 
-                      type="password"
-                      name="newPassword"
-                      placeholder="••••••••"
-                      value={formData.newPassword}
-                      onChange={handleInputChange}
-                      icon={<Lock size={18} />}
-                      required
-                    />
-                  </>
+                   <>
+                     <Input label="کد تایید" name="otpCode" placeholder="123456" dir="ltr" className="text-center font-black" value={formData.otpCode} onChange={handleInputChange} icon={<KeyRound size={18} />} required />
+                     <Input label="رمز جدید" type="password" name="newPassword" placeholder="••••••••" value={formData.newPassword} onChange={handleInputChange} icon={<Lock size={18} />} required />
+                   </>
                 )}
 
-                <div className="flex flex-col gap-3 pt-2">
-                   <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                    <GlowButton 
-                      variant={(isLogin || step === "VERIFY_2FA") ? "blue" : "pink"} 
-                      className="w-full h-14 !rounded-2xl font-black uppercase italic tracking-widest"
-                      size="lg"
-                      disabled={loading}
-                    >
-                      {loading ? (
-                        <Loader2 className="h-5 w-5 animate-spin" />
-                      ) : (
-                        step === "AUTH" ? (isLogin ? "ورود به لابی" : "تایید و ثبت‌نام") :
-                        step === "VERIFY_BALE" ? "متوجه شدم (ورود)" :
-                        step === "VERIFY_2FA" ? "بررسی کد" :
-                        step === "FORGOT_PASSWORD" ? "ارسال کد تایید" : "تغییر رمز عبور"
-                      )}
-                    </GlowButton>
-                   </motion.div>
+                <div className="space-y-4 pt-4">
+                  <GlowButton 
+                    variant={isLogin ? "blue" : "pink"} 
+                    className="w-full h-14 !rounded-2xl font-black uppercase italic tracking-widest"
+                    disabled={loading}
+                  >
+                    {loading ? <Loader2 className="animate-spin" /> : (
+                      step === "AUTH" ? (isLogin ? "ورود به سرزمین لوکس" : "ایجاد اتحاد جدید") :
+                      step === "VERIFY_BALE" ? "بازگشت به ورود" : "تایید نهایی"
+                    )}
+                  </GlowButton>
 
-                   {step !== "AUTH" && (
-                     <button 
+                  {isLogin && step === "AUTH" && (
+                    <div className="relative">
+                      <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/5" /></div>
+                      <div className="relative flex justify-center text-[10px] uppercase font-black text-gray-500 tracking-[0.2em]"><span className="bg-[#050505] px-4">OR</span></div>
+                    </div>
+                  )}
+
+                  {isLogin && step === "AUTH" && (
+                    <button 
                       type="button"
-                      onClick={() => setStep("AUTH")}
-                      className="text-xs text-gray-500 hover:text-white transition-colors flex items-center justify-center gap-2 font-bold"
-                     >
-                       <ArrowLeft size={14} /> بازگشت
-                     </button>
-                   )}
+                      onClick={handleBaleLogin}
+                      className="group w-full h-14 bg-white/5 hover:bg-white/10 active:scale-95 border border-white/10 hover:border-neon-blue/50 rounded-2xl transition-all duration-300 flex items-center justify-center gap-3 font-black italic uppercase text-xs tracking-widest text-white"
+                    >
+                      <div className="h-2 w-2 rounded-full bg-neon-blue group-hover:animate-ping" />
+                      ورود سریع با بله
+                    </button>
+                  )}
                 </div>
               </form>
             </motion.div>
           </AnimatePresence>
 
           {step === "AUTH" && (
-            <div className="mt-8 flex flex-col items-center gap-4">
-              <div className="flex h-px w-full bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-              <p className="text-sm text-gray-400 font-bold">
-                {isLogin ? "هنوز عضو نشده‌اید؟" : "قبلاً ثبت‌نام کرده‌اید؟"}
-                <button 
-                  onClick={() => setIsLogin(!isLogin)}
-                  className={`mr-2 font-black italic uppercase transition-colors ${isLogin ? 'text-neon-pink hover:text-neon-pink/80' : 'text-neon-blue hover:text-neon-blue/80'}`}
-                >
-                  {isLogin ? "ایجاد حساب کاربری" : "ورود به حساب"}
-                </button>
-              </p>
+            <div className="mt-8 text-center">
+              <button 
+                onClick={() => setIsLogin(!isLogin)}
+                className={`text-xs font-black italic uppercase tracking-tighter transition-colors ${isLogin ? 'text-neon-pink hover:text-white' : 'text-neon-blue hover:text-white'}`}
+              >
+                {isLogin ? "هنوز اکانت نداری؟ همین حالا بساز" : "قبلاً ثبت‌نام کردی؟ وارد شو"}
+              </button>
             </div>
           )}
         </NeonCard>

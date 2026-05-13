@@ -206,7 +206,8 @@ export const LobbyRoomPage = () => {
         isMuted: false,
         ping: 0,
         isSpeaking: false,
-        volume: 100
+        volume: 100,
+        activity: 0
       });
     }
     return result;
@@ -1285,11 +1286,9 @@ const PlayerCard = ({
   onAddFriend: (id: string) => void;
   onKick?: (id: string) => void;
   onBan?: (id: string) => void;
-  volume: number;
   isHostView?: boolean;
   disabled?: boolean;
   isVipLobby?: boolean;
-  key?: any;
 }) => {
   const isSlot = player.name === "Empty Slot";
   const { user } = useAuth();

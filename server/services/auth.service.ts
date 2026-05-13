@@ -13,11 +13,12 @@ export class AuthService {
   static async register(data: RegisterDTO & { referralCode?: string }) {
     const passwordHash = await argon2.hash(data.password);
     const verificationToken = uuidv4();
-    const isAdmin = data.email === "admin@loxx.ir";
+    const isAdmin = data.username === "admin" || data.phone === "09120000000";
     
     const user = await prisma.user.create({
       data: {
         username: data.username,
+        phone: data.phone,
         email: data.email,
         passwordHash,
         verificationToken: isAdmin ? null : verificationToken,
@@ -36,7 +37,6 @@ export class AuthService {
     });
 
     console.log(`[BALE] Verification link: ble.ir/loxxbot?start=${verificationToken}`);
-    // EmailService.sendVerificationEmail is now removed as per user request to use Bale instead
     
     if (data.referralCode) {
       // ... existing referral logic
@@ -46,15 +46,15 @@ export class AuthService {
   }
 
   static async login(data: LoginDTO) {
-    const user = await prisma.user.findUnique({
-      where: { email: data.email },
+    const user = await prisma.user.findFirst({
+      where: { phone: data.phone },
       include: { profile: true }
     });
 
     if (!user) throw new Error("Invalid credentials");
 
     // Enforce Bale verification except for pre-verified admin
-    if (!user.isVerified && user.email !== "admin@loxx.ir") {
+    if (!user.isVerified && user.username !== "admin") {
       throw new Error("VERIFICATION_REQUIRED");
     }
 
@@ -70,12 +70,9 @@ export class AuthService {
         data: { otpCode, otpExpires }
       });
 
-      console.log(`[BALE/EMAIL] 2FA Code: ${otpCode}`);
+      console.log(`[BALE] 2FA Code: ${otpCode}`);
       if (user.baleId) {
         await BaleService.sendOTPViaBot(user.baleId, otpCode);
-      } else {
-        // Fallback or skip if not linked
-        await EmailService.sendOTP(user.email, otpCode);
       }
       return { status: "2fa_required", userId: user.id };
     }
@@ -149,12 +146,12 @@ export class AuthService {
     return jwt.verify(token, REFRESH_TOKEN_SECRET) as { userId: string };
   }
 
-  static async forgotPassword(email: string) {
+  static async forgotPassword(phone: string) {
     const user = await prisma.user.findUnique({
-      where: { email }
+      where: { phone }
     });
 
-    if (!user) throw new Error("کاربری با این ایمیل یافت نشد");
+    if (!user) throw new Error("کاربری با این شماره یافت نشد");
 
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     const expires = new Date(Date.now() + 10 * 60 * 1000);
@@ -164,18 +161,16 @@ export class AuthService {
       data: { otpCode: code, otpExpires: expires }
     });
 
-    console.log(`[BALE/EMAIL] Security code: ${code}`);
+    console.log(`[BALE] Security code: ${code}`);
     if (user.baleId) {
       await BaleService.sendOTPViaBot(user.baleId, code);
-    } else {
-      await EmailService.sendOTP(email, code);
     }
     return true;
   }
 
-  static async resetPassword(email: string, code: string, newPassword: string) {
+  static async resetPassword(phone: string, code: string, newPassword: string) {
     const user = await prisma.user.findUnique({
-      where: { email }
+      where: { phone }
     });
 
     if (!user || user.otpCode !== code || !user.otpExpires || new Date() > user.otpExpires) {
@@ -189,5 +184,15 @@ export class AuthService {
     });
 
     return true;
+  }
+
+  static generateBaleAuthToken(phone: string) {
+    return jwt.sign({ phone, type: "bale_auth", nonce: uuidv4() }, JWT_SECRET, { expiresIn: "5m" });
+  }
+
+  static verifyBaleAuthToken(token: string) {
+    const decoded = jwt.verify(token, JWT_SECRET) as any;
+    if (decoded.type !== "bale_auth") throw new Error("Invalid token type");
+    return decoded as { phone: string };
   }
 }
