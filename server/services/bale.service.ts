@@ -1,13 +1,22 @@
 import axios from "axios";
+import https from "https";
+import http from "http";
 
 const BALE_TOKEN = process.env.BALE_BOT_TOKEN!;
 const BALE_API_URL = `https://tapi.bale.ai/bot${BALE_TOKEN}`;
+
+const baleApi = axios.create({
+  baseURL: BALE_API_URL,
+  proxy: false,
+  httpAgent: new http.Agent(),
+  httpsAgent: new https.Agent()
+});
 
 export class BaleService {
   static async sendMessage(chatId: string | number, text: string, replyMarkup?: any) {
     if (!BALE_TOKEN) return false;
     try {
-      await axios.post(`${BALE_API_URL}/sendMessage`, {
+      await baleApi.post("/sendMessage", {
         chat_id: String(chatId),
         text,
         reply_markup: replyMarkup
@@ -49,7 +58,7 @@ export class BaleService {
 
   static async setWebhook(url: string) {
     try {
-      await axios.post(`${BALE_API_URL}/setWebhook`, {
+      await baleApi.post("/setWebhook", {
           url: `${url}/api/v1/webhooks/bale`
       });
       console.log(`Bale Webhook set to ${url}/api/v1/webhooks/bale`);

@@ -31,6 +31,15 @@ import { generalLimiter } from "./server/middleware/rateLimit.middleware.ts";
 
 dotenv.config();
 
+// Debug Proxy Settings
+const proxyVars = ['HTTP_PROXY', 'HTTPS_PROXY', 'ALL_PROXY', 'http_proxy', 'https_proxy', 'all_proxy'];
+console.log("[DEBUG] Current Proxy Env Vars:");
+proxyVars.forEach(v => {
+  if (process.env[v]) {
+    console.log(`  ${v}: ${process.env[v]}`);
+  }
+});
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
