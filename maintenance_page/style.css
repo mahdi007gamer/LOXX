@@ -1,13 +1,11 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap');
-
 :root {
-    --bg: #030305;
-    --neon-blue: #00f2ff;
-    --neon-purple: #7000ff;
-    --neon-pink: #ff0055;
-    --text-dim: #94a3b8;
-    --glass: rgba(15, 23, 42, 0.6);
-    --glass-border: rgba(255, 255, 255, 0.08);
+  --bg: #030305;
+  --neon-blue: #00f2ff;
+  --neon-purple: #7000ff;
+  --neon-pink: #ff0055;
+  --text-dim: #94a3b8;
+  --glass: rgba(15, 23, 42, 0.6);
+  --glass-border: rgba(255, 255, 255, 0.08);
 }
 
 * {
@@ -24,7 +22,7 @@ body {
     align-items: center;
     justify-content: center;
     overflow: hidden;
-    font-family: 'Inter', sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     line-height: 1.6;
 }
 
