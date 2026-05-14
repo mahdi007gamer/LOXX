@@ -50,10 +50,11 @@ export const getAllUsers = async (req: Request, res: Response) => {
 export const deleteUser = async (req: Request, res: Response) => {
   const { id } = req.params;
   try {
-    // 1. First cleanup related records that don't have Cascade in DB yet
-    // This is a safety measure to prevent 500 errors
+    // 1. Cleanup all related records using deleteMany to avoid errors if they don't exist
+    // This handles foreign key constraints manually since onDelete: Cascade might not be active
     await prisma.$transaction([
       prisma.userBadge.deleteMany({ where: { userId: id } }),
+      prisma.badge.deleteMany({ where: { creatorId: id } }),
       prisma.friendship.deleteMany({ where: { OR: [{ requesterId: id }, { targetId: id }] } }),
       prisma.message.deleteMany({ where: { OR: [{ senderId: id }, { receiverId: id }] } }),
       prisma.lobbyMember.deleteMany({ where: { userId: id } }),
@@ -68,16 +69,16 @@ export const deleteUser = async (req: Request, res: Response) => {
       prisma.referral.deleteMany({ where: { OR: [{ inviterId: id }, { inviteeId: id }] } }),
       prisma.channel.updateMany({ where: { ownerId: id }, data: { ownerId: null } }),
       prisma.auditLog.updateMany({ where: { userId: id }, data: { userId: null } }),
-      prisma.lobby.deleteMany({ where: { hostId: id } }), // Lobbies hosted by user
-      prisma.profile.delete({ where: { userId: id } }),
-      prisma.userSettings.delete({ where: { userId: id } }),
+      prisma.lobby.deleteMany({ where: { hostId: id } }), 
+      prisma.profile.deleteMany({ where: { userId: id } }),
+      prisma.userSettings.deleteMany({ where: { userId: id } }),
       prisma.user.delete({ where: { id } })
     ]);
 
-    res.json({ status: "success", message: "User deleted successfully" });
+    res.json({ status: "success", message: "کاربر با موفقیت حذف شد" });
   } catch (error: any) {
     console.error("Delete user error:", error);
-    res.status(500).json({ status: "error", message: error.message });
+    res.status(500).json({ status: "error", message: "خطا در حذف کاربر: " + error.message });
   }
 };
 
