@@ -1,5 +1,6 @@
 import { Response } from "express";
 import { UserService } from "../services/user.service.ts";
+import { BaleService } from "../services/bale.service.ts";
 import { AuthenticatedRequest } from "../middleware/auth.middleware.ts";
 import prisma from "../utils/prisma.ts";
 
@@ -173,6 +174,7 @@ export class UserController {
       const userId = req.user!.userId;
       const user = await prisma.user.findUnique({ where: { id: userId } });
       if (!user) throw new Error("کاربر یافت نشد");
+      if (!user.baleId) throw new Error("ابتدا باید شماره خود را در ربات بله تایید کنید");
 
       const code = Math.floor(10000 + Math.random() * 90000).toString();
       await prisma.user.update({
@@ -183,8 +185,9 @@ export class UserController {
         }
       });
 
-      console.log(`[2FA ENABLE] Code for ${user.email}: ${code}`);
-      res.json({ status: "success", message: "کد تایید به ایمیل شما ارسال شد" });
+      await BaleService.sendOTPViaBot(user.baleId, code);
+      console.log(`[2FA ENABLE] Code for ${user.username} sent via Bale: ${code}`);
+      res.json({ status: "success", message: "کد تایید به حساب بله شما ارسال شد" });
     } catch (error: any) {
       res.status(500).json({ status: "error", error: { message: error.message } });
     }

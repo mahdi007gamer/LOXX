@@ -449,7 +449,7 @@ export const SettingsPage = () => {
       setSaving(true);
       await api.post("/user/me/2fa/enable");
       setShowTwoFactorModal(true);
-      toast.success("کد تایید به ایمیل شما ارسال شد");
+      toast.success("کد تایید به حساب بله شما ارسال شد");
     } catch (err: any) {
       toast.error(err.response?.data?.error?.message || "خطا در برقراری ارتباط");
     } finally {
@@ -570,7 +570,7 @@ export const SettingsPage = () => {
            <div className="flex items-center justify-between mb-4">
              <div>
                <h3 className="font-black text-white italic mb-1 flex items-center gap-2">
-                 تایید دو مرحله‌ای (2FA) پیامکی 
+                 تایید دو مرحله‌ای (بله) 
                  {twoFactorEnabled ? (
                    <span className="text-[10px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded uppercase not-italic">فعال</span>
                  ) : (

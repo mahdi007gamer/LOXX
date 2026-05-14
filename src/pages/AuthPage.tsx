@@ -201,7 +201,15 @@ export const AuthPage = () => {
                     <p className="mt-2 text-xs text-gray-500 font-bold uppercase tracking-widest">منتظر تایید شما در بازوی بله هستیم</p>
                   </>
                 )}
-                {/* ... other steps ... */}
+                {step === "VERIFY_2FA" && (
+                  <>
+                    <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter">امنیت دو مرحله‌ای</h2>
+                    <p className="mt-2 text-xs text-gray-500 font-bold uppercase tracking-widest leading-relaxed">
+                      کد تایید امنیتی به حساب بله شما ارسال شد.<br />
+                      لطفاً آن را در زیر وارد کنید.
+                    </p>
+                  </>
+                )}
               </div>
 
               <form className="space-y-4" onSubmit={handleSubmit}>

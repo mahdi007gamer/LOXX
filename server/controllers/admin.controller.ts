@@ -50,11 +50,33 @@ export const getAllUsers = async (req: Request, res: Response) => {
 export const deleteUser = async (req: Request, res: Response) => {
   const { id } = req.params;
   try {
-    await prisma.user.delete({
-      where: { id }
-    });
+    // 1. First cleanup related records that don't have Cascade in DB yet
+    // This is a safety measure to prevent 500 errors
+    await prisma.$transaction([
+      prisma.userBadge.deleteMany({ where: { userId: id } }),
+      prisma.friendship.deleteMany({ where: { OR: [{ requesterId: id }, { targetId: id }] } }),
+      prisma.message.deleteMany({ where: { OR: [{ senderId: id }, { receiverId: id }] } }),
+      prisma.lobbyMember.deleteMany({ where: { userId: id } }),
+      prisma.xpLog.deleteMany({ where: { userId: id } }),
+      prisma.subscription.deleteMany({ where: { userId: id } }),
+      prisma.paymentRequest.deleteMany({ where: { userId: id } }),
+      prisma.activity.deleteMany({ where: { userId: id } }),
+      prisma.lobbyBan.deleteMany({ where: { userId: id } }),
+      prisma.connectedDevice.deleteMany({ where: { userId: id } }),
+      prisma.notification.deleteMany({ where: { userId: id } }),
+      prisma.userGame.deleteMany({ where: { userId: id } }),
+      prisma.referral.deleteMany({ where: { OR: [{ inviterId: id }, { inviteeId: id }] } }),
+      prisma.channel.updateMany({ where: { ownerId: id }, data: { ownerId: null } }),
+      prisma.auditLog.updateMany({ where: { userId: id }, data: { userId: null } }),
+      prisma.lobby.deleteMany({ where: { hostId: id } }), // Lobbies hosted by user
+      prisma.profile.delete({ where: { userId: id } }),
+      prisma.userSettings.delete({ where: { userId: id } }),
+      prisma.user.delete({ where: { id } })
+    ]);
+
     res.json({ status: "success", message: "User deleted successfully" });
   } catch (error: any) {
+    console.error("Delete user error:", error);
     res.status(500).json({ status: "error", message: error.message });
   }
 };
