@@ -3,77 +3,82 @@ document.addEventListener('DOMContentLoaded', () => {
     const percentageText = document.getElementById('percentage');
     const starsContainer = document.querySelector('.stars-container');
 
-    // 1. Generate Binary/Star Background
-    function createStars() {
-        const count = 100;
+    // 1. Cyber Stars Background
+    function createCyberStars() {
+        if (!starsContainer) return;
+        const count = 80;
         for (let i = 0; i < count; i++) {
             const star = document.createElement('div');
-            star.style.position = 'absolute';
-            star.style.width = Math.random() * 2 + 'px';
-            star.style.height = star.style.width;
-            star.style.background = 'white';
-            star.style.borderRadius = '50%';
-            star.style.left = Math.random() * 100 + '%';
-            star.style.top = Math.random() * 100 + '%';
-            star.style.opacity = Math.random();
-            star.style.boxShadow = `0 0 ${Math.random() * 5}px white`;
+            const size = Math.random() * 2 + 1;
             
-            // Animation
-            const duration = Math.random() * 3 + 2;
-            star.style.animation = `twinkle ${duration}s infinite ease-in-out`;
-            
+            Object.assign(star.style, {
+                position: 'absolute',
+                width: `${size}px`,
+                height: `${size}px`,
+                background: Math.random() > 0.8 ? '#00f2ff' : '#ffffff',
+                borderRadius: '50%',
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+                opacity: Math.random() * 0.5 + 0.1,
+                boxShadow: `0 0 ${Math.random() * 8}px currentColor`,
+                animation: `float-star ${Math.random() * 10 + 10}s linear infinite`
+            });
+
             starsContainer.appendChild(star);
         }
     }
 
-    // Add twinkle keyframes to stylesheet
+    // Dynamic Animation Injection
     const styleSheet = document.styleSheets[0];
-    styleSheet.insertRule(`
-        @keyframes twinkle {
-            0%, 100% { opacity: 0.2; transform: scale(0.8); }
-            50% { opacity: 0.8; transform: scale(1.1); }
+    const animations = [
+        `@keyframes float-star {
+            from { transform: translateY(0) translateX(0); }
+            to { transform: translateY(-100vh) translateX(${Math.random() * 50}px); }
+        }`,
+        `@keyframes progress-drift {
+            0% { transform: skewX(-20deg) translateX(-100%); }
+            100% { transform: skewX(-20deg) translateX(200%); }
+        }`
+    ];
+    animations.forEach(anim => styleSheet.insertRule(anim, styleSheet.cssRules.length));
+
+    createCyberStars();
+
+    // 2. Controlled Async Progress Simulation
+    let currentProgress = 0;
+    const targetCap = 99.4; // Technical limit feel
+    
+    function animateProgress() {
+        // Human-like non-linear loading
+        const jump = Math.random() * 0.8;
+        currentProgress += jump;
+
+        if (currentProgress > targetCap) {
+            currentProgress = targetCap - (Math.random() * 0.2);
         }
-    `, styleSheet.cssRules.length);
 
-    createStars();
+        if (progressFill) progressFill.style.width = `${currentProgress}%`;
+        if (percentageText) percentageText.innerText = `${currentProgress.toFixed(1)}%`;
 
-    // 2. Fake Progress Animation
-    let progress = 0;
-    const updateProgress = () => {
-        // Randomly increment progress to feel like real loading
-        const increment = Math.random() * 0.5 + 0.1;
-        progress += increment;
+        const nextTick = Math.random() * 800 + 400;
+        setTimeout(animateProgress, nextTick);
+    }
 
-        if (progress > 98) {
-            // Stay at 99.x% to indicate "almost done"
-            progress = 98 + Math.random();
-        }
+    // Initiation
+    setTimeout(animateProgress, 500);
 
-        progressFill.style.width = `${progress}%`;
-        percentageText.innerText = `${Math.floor(progress)}%`;
+    // 3. Subtle Perspective Tilt (Desktop Only)
+    const card = document.querySelector('.glass-container');
+    if (window.innerWidth > 1024 && card) {
+        document.addEventListener('mousemove', (e) => {
+            const { innerWidth, innerHeight } = window;
+            const x = (e.clientX - innerWidth / 2) / 100;
+            const y = (e.clientY - innerHeight / 2) / 100;
+            
+            card.style.transform = `rotateX(${-y}deg) rotateY(${x}deg)`;
+        });
+    }
 
-        requestAnimationFrame(updateProgress);
-    };
-
-    // Start with a small delay for dramatic effect
-    setTimeout(() => {
-        updateProgress();
-    }, 1000);
-
-    // 3. Mouse Parallax Effect on Glass Card
-    const card = document.querySelector('.glass-card');
-    document.addEventListener('mousemove', (e) => {
-        const xAxis = (window.innerWidth / 2 - e.pageX) / 40;
-        const yAxis = (window.innerHeight / 2 - e.pageY) / 40;
-        card.style.transform = `rotateY(${xAxis}deg) rotateX(${yAxis}deg)`;
-    });
-
-    document.addEventListener('mouseenter', () => {
-        card.style.transition = 'none';
-    });
-
-    document.addEventListener('mouseleave', () => {
-        card.style.transition = 'all 0.5s ease';
-        card.style.transform = `rotateY(0deg) rotateX(0deg)`;
-    });
+    // Log for debugging
+    console.log("Maintenance Protocol Active: v2.0.1 ALPHA");
 });
