@@ -54,11 +54,12 @@ export const deleteUser = async (req: Request, res: Response) => {
     // This handles foreign key constraints manually since onDelete: Cascade might not be active
     await prisma.$transaction([
       prisma.userBadge.deleteMany({ where: { userId: id } }),
-      prisma.badge.deleteMany({ where: { creatorId: id } }),
       prisma.friendship.deleteMany({ where: { OR: [{ requesterId: id }, { targetId: id }] } }),
+      prisma.channelMember.deleteMany({ where: { userId: id } }),
+      prisma.message.updateMany({ where: { replyTo: { OR: [{ senderId: id }, { receiverId: id }] } }, data: { replyToId: null } }),
       prisma.message.deleteMany({ where: { OR: [{ senderId: id }, { receiverId: id }] } }),
       prisma.lobbyMember.deleteMany({ where: { userId: id } }),
-      prisma.xpLog.deleteMany({ where: { userId: id } }),
+      prisma.xPLog.deleteMany({ where: { userId: id } }),
       prisma.subscription.deleteMany({ where: { userId: id } }),
       prisma.paymentRequest.deleteMany({ where: { userId: id } }),
       prisma.activity.deleteMany({ where: { userId: id } }),
@@ -67,8 +68,8 @@ export const deleteUser = async (req: Request, res: Response) => {
       prisma.notification.deleteMany({ where: { userId: id } }),
       prisma.userGame.deleteMany({ where: { userId: id } }),
       prisma.referral.deleteMany({ where: { OR: [{ inviterId: id }, { inviteeId: id }] } }),
+      prisma.auditLog.deleteMany({ where: { userId: id } }), // Added
       prisma.channel.updateMany({ where: { ownerId: id }, data: { ownerId: null } }),
-      prisma.auditLog.updateMany({ where: { userId: id }, data: { userId: null } }),
       prisma.lobby.deleteMany({ where: { hostId: id } }), 
       prisma.profile.deleteMany({ where: { userId: id } }),
       prisma.userSettings.deleteMany({ where: { userId: id } }),

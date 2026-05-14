@@ -2,8 +2,48 @@ import { Request, Response } from "express";
 import path from "path";
 import fs from "fs";
 import prisma from "../utils/prisma.ts";
+import sharp from "sharp";
 
 export class UploadController {
+  private static async compressImage(filePath: string, target: string) {
+    try {
+      const ext = path.extname(filePath).toLowerCase();
+      if (![".jpg", ".jpeg", ".png", ".webp", ".gif"].includes(ext)) {
+        return;
+      }
+
+      const tempPath = filePath + "_tmp";
+      let width = 1000;
+
+      switch (target) {
+        case "profile": width = 128; break;
+        case "cover": width = 300; break;
+        case "elite_bg": width = 300; break;
+        case "badge": width = 100; break;
+        case "game_profile": width = 100; break;
+        case "game_banner": width = 200; break;
+        case "chat": width = 500; break;
+      }
+
+      const image = sharp(filePath);
+      const metadata = await image.metadata();
+
+      // Proportional resizing (maintains aspect ratio)
+      const resizeWidth = (metadata.width && metadata.width > width) ? width : metadata.width;
+
+      // Convert to high-quality JPEG for cross-platform compatibility and good compression
+      await sharp(filePath)
+        .resize(resizeWidth, null, { withoutEnlargement: true })
+        .jpeg({ quality: 85, mozjpeg: true, chromaSubsampling: "4:4:4" })
+        .toFile(tempPath);
+
+      fs.unlinkSync(filePath);
+      fs.renameSync(tempPath, filePath);
+    } catch (error) {
+      console.error("Compression error:", error);
+    }
+  }
+
   static async uploadFile(req: Request, res: Response) {
     try {
       if (!req.file) {
@@ -14,15 +54,17 @@ export class UploadController {
         });
       }
 
-      // In a real production app, you might upload to S3 or Cloudinary.
-      // Here we serve from local disk for the exercise.
-      const filePath = `/uploads/${req.file.filename}`;
+      const target = (req.query.target as string) || (req.body.target as string) || 'default';
+      const fullPath = path.join(process.cwd(), "uploads", req.file.filename);
+
+      // Perform compression
+      await UploadController.compressImage(fullPath, target);
       
       return res.status(200).json({
         url: `/api/v1/upload/file/${req.file.filename}`,
         filename: req.file.filename,
         mimetype: req.file.mimetype,
-        size: req.file.size
+        size: fs.statSync(fullPath).size // Get compressed size
       });
     } catch (error: any) {
       return res.status(500).json({

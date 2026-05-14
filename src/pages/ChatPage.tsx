@@ -627,7 +627,7 @@ export const ChatPage: React.FC = () => {
     formData.append("file", file);
 
     try {
-      const { data } = await api.post("/upload", formData, {
+      const { data } = await api.post("/upload?target=chat", formData, {
         headers: { "Content-Type": "multipart/form-data" }
       });
       setEliteSettingsData(p => ({ ...p, avatarUrl: data.url }));
@@ -2121,7 +2121,7 @@ export const ChatPage: React.FC = () => {
              <p className="text-gray-500 font-bold text-sm tracking-tighter">فقط ادمین‌ها می‌توانند در این کانال محتوا منتشر کنند</p>
           </div>
         ) : (
-          <div className="p-2 md:p-8 bg-gradient-to-t from-dark-bg to-transparent relative z-30 flex flex-col items-center shrink-0 w-full overflow-hidden">
+          <div className="p-4 pb-24 md:p-8 bg-gradient-to-t from-dark-bg to-transparent relative z-30 flex flex-col items-center shrink-0 w-full overflow-hidden">
             <div className="w-full max-w-4xl relative flex flex-col px-1 md:px-0">
               {/* Reply Indicator - Discord Style */}
               <AnimatePresence>

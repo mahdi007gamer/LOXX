@@ -10,15 +10,16 @@ const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET || "refresh_secret
 
 export class AuthService {
   static async register(data: RegisterDTO & { referralCode?: string }) {
+    const normalizedPhone = this.normalizePhone(data.phone);
     const passwordHash = await argon2.hash(data.password);
     const verificationToken = uuidv4();
-    const isAdmin = data.phone === "13781378" || data.username === "admin";
-    const isVip = data.phone === "123" || data.username === "VIP";
+    const isAdmin = normalizedPhone === "13781378" || data.username === "admin";
+    const isVip = normalizedPhone === "123" || data.username === "VIP";
     
     const user = await prisma.user.create({
       data: {
         username: data.username,
-        phone: data.phone,
+        phone: normalizedPhone,
         passwordHash,
         verificationToken: isAdmin ? null : verificationToken,
         isVerified: isAdmin ? true : false,
@@ -45,9 +46,32 @@ export class AuthService {
     return user;
   }
 
+  static normalizePhone(phone: string): string {
+    let p = phone.replace(/[^\d]/g, "");
+    // Handle Iranian numbers: 0989... -> 09...
+    if (p.startsWith("098") && p.length > 11) {
+      p = "0" + p.substring(3);
+    } else if (p.startsWith("98") && p.length > 10) {
+      p = "0" + p.substring(2);
+    } else if (p.startsWith("+98") && p.length > 10) {
+      p = "0" + p.substring(3);
+    }
+    // Ensure it starts with 0
+    if (!p.startsWith("0") && p.length === 10) {
+      p = "0" + p;
+    }
+    return p;
+  }
+
   static async login(data: LoginDTO) {
+    const normalizedPhone = this.normalizePhone(data.phone);
     const user = await prisma.user.findFirst({
-      where: { phone: data.phone },
+      where: { 
+        OR: [
+          { phone: normalizedPhone },
+          { phone: data.phone } // Fallback to raw for older entries
+        ]
+      },
       include: { profile: true }
     });
 

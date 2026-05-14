@@ -77,6 +77,7 @@ export class AuthController {
           role: user!.role,
           membership: user!.profile?.membershipType,
           isVerified: user!.isVerified,
+          twoFactorEnabled: user!.twoFactorEnabled,
           avatarUrl: user!.profile?.avatarUrl,
           bannerUrl: user!.profile?.bannerUrl,
           displayName: user!.profile?.displayName,
@@ -96,7 +97,8 @@ export class AuthController {
       const { phone } = req.body;
       if (!phone) throw new Error("Phone is required");
       
-      const token = AuthService.generateBaleAuthToken(phone);
+      const normalizedPhone = AuthService.normalizePhone(phone);
+      const token = AuthService.generateBaleAuthToken(normalizedPhone);
       const url = `https://ble.ir/loxxbot?start=${token}`;
       
       res.json({ status: "success", url });
@@ -133,10 +135,10 @@ export class AuthController {
           id: user.id, 
           username: user.username, 
           phone: user.phone,
-          email: user.email,
           role: user.role,
           membership: user.profile?.membershipType,
           isVerified: user.isVerified,
+          twoFactorEnabled: user.twoFactorEnabled,
           avatarUrl: user.profile?.avatarUrl,
           bannerUrl: user.profile?.bannerUrl,
           displayName: user.profile?.displayName,
@@ -178,10 +180,10 @@ export class AuthController {
           id: user.id, 
           username: user.username, 
           phone: user.phone,
-          email: user.email,
           role: user.role,
           membership: user.profile?.membershipType,
           isVerified: user.isVerified,
+          twoFactorEnabled: user.twoFactorEnabled,
           avatarUrl: user.profile?.avatarUrl,
           bannerUrl: user.profile?.bannerUrl,
           displayName: user.profile?.displayName,
@@ -271,6 +273,7 @@ export class AuthController {
              role: user.role,
              membership: user.profile?.membershipType,
              isVerified: user.isVerified,
+             twoFactorEnabled: user.twoFactorEnabled,
              avatarUrl: user.profile?.avatarUrl,
              displayName: user.profile?.displayName
            }

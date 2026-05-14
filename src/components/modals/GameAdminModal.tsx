@@ -189,7 +189,7 @@ export const GameAdminModal = ({
 
     try {
       const loadingToast = toast.loading(type === "icon" ? "در حال آپلود آیکون..." : "در حال آپلود بنر...");
-      const res = await api.post("/upload", data);
+      const res = await api.post(`/upload?target=${type === 'icon' ? 'game_profile' : 'game_banner'}`, data);
       
       if (res.data.url) {
         setFormData(prev => ({

@@ -78,7 +78,7 @@ export const HeroSection = () => {
               />
             </GlowButton>
           </Link>
-          <Link to="/rooms">
+          <Link to="/lobbies">
             <GlowButton variant="blue" size="lg" className="group min-w-[200px] !rounded-2xl text-lg backdrop-blur-md">
               <Gamepad2 size={24} className="ml-2 group-hover:rotate-12 transition-transform" />
               <span>اتاق‌های بازی</span>

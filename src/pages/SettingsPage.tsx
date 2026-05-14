@@ -318,7 +318,7 @@ export const SettingsPage = () => {
                       const data = new FormData();
                       data.append("file", file);
                       try {
-                        const res = await api.post("/upload", data, {
+                        const res = await api.post("/upload?target=profile", data, {
                           headers: { "Content-Type": "multipart/form-data" }
                         });
                         if (res.data.url) {
@@ -375,7 +375,7 @@ export const SettingsPage = () => {
                     const data = new FormData();
                     data.append("file", file);
                     try {
-                      const res = await api.post("/upload/banner", data, {
+                      const res = await api.post("/upload/banner?target=cover", data, {
                         headers: { "Content-Type": "multipart/form-data" }
                       });
                       if (res.data.url) {

@@ -69,7 +69,9 @@ export const BadgeAdminModal = ({ isOpen, onClose, badge, onSuccess }: BadgeAdmi
 
     try {
       const loadingToast = toast.loading("در حال آپلود نشان...");
-      const res = await api.post("/upload", uploadData);
+      const res = await api.post("/upload?target=badge", uploadData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
       setFormData(prev => ({ ...prev, iconUrl: res.data.url }));
       toast.dismiss(loadingToast);
       toast.success("نشان آپلود شد");

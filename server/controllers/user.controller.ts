@@ -26,9 +26,9 @@ export class UserController {
           vipMetadata: user.profile?.vipMetadata ? JSON.parse(user.profile.vipMetadata) : null,
           isVerified: user.isVerified,
           verificationToken: user.verificationToken,
+          twoFactorEnabled: user.twoFactorEnabled,
           baleId: user.baleId,
           phone: user.phone,
-          email: user.email,
           role: user.role,
           stats: user.stats,
           badges: user.badges
@@ -76,7 +76,8 @@ export class UserController {
           bannerUrl: user.profile?.bannerUrl,
           stats: user.stats,
           badges: user.badges,
-          vipMetadata: user.profile?.vipMetadata
+          vipMetadata: user.profile?.vipMetadata,
+          twoFactorEnabled: user.twoFactorEnabled
         }
       });
     } catch (error: any) {
@@ -176,16 +177,25 @@ export class UserController {
       if (!user) throw new Error("کاربر یافت نشد");
       if (!user.baleId) throw new Error("ابتدا باید شماره خود را در ربات بله تایید کنید");
 
-      const code = Math.floor(10000 + Math.random() * 90000).toString();
-      await prisma.user.update({
-        where: { id: userId },
-        data: {
-          twoFactorCode: code,
-          twoFactorCodeExpires: new Date(Date.now() + 10 * 60 * 1000)
-        }
-      });
+      let code = user.twoFactorCode;
+      const now = new Date();
+      
+      // If code exists and is still valid (within 2 mins), reuse it
+      if (code && user.twoFactorCodeExpires && user.twoFactorCodeExpires > now) {
+        // Just reuse existing code
+      } else {
+        // Generate new code and set 2 min expiration
+        code = Math.floor(10000 + Math.random() * 90000).toString();
+        await prisma.user.update({
+          where: { id: userId },
+          data: {
+            twoFactorCode: code,
+            twoFactorCodeExpires: new Date(Date.now() + 2 * 60 * 1000)
+          }
+        });
+      }
 
-      await BaleService.sendOTPViaBot(user.baleId, code);
+      await BaleService.sendOTPViaBot(user.baleId, code!);
       console.log(`[2FA ENABLE] Code for ${user.username} sent via Bale: ${code}`);
       res.json({ status: "success", message: "کد تایید به حساب بله شما ارسال شد" });
     } catch (error: any) {

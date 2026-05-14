@@ -205,7 +205,7 @@ export const EliteSettingsPage = () => {
     setter(true);
 
     try {
-      const { data } = await api.post('/upload', formData, {
+      const { data } = await api.post(`/upload?target=${type === 'avatar' ? 'profile' : type === 'banner' ? 'cover' : 'elite_bg'}`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       if (type === 'avatar') setAvatarUrl(data.url);

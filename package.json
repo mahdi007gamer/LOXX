@@ -50,6 +50,7 @@
     "react-hot-toast": "^2.6.0",
     "react-router-dom": "^7.14.2",
     "redis": "^4.7.1",
+    "sharp": "^0.34.5",
     "socket.io": "^4.8.3",
     "socket.io-client": "^4.8.3",
     "swr": "^2.4.1",
