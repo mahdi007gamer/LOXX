@@ -244,8 +244,15 @@ export class AuthController {
   static async checkStatus(req: Request, res: Response) {
     try {
       const { phone } = req.params;
+      const normalizedPhone = AuthService.normalizePhone(phone);
+
       const user = await prisma.user.findFirst({
-        where: { phone },
+        where: { 
+          OR: [
+            { phone: normalizedPhone },
+            { phone: phone }
+          ]
+        },
         include: { profile: true }
       });
 

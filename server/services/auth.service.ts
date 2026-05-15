@@ -48,7 +48,17 @@ export class AuthService {
   }
 
   static normalizePhone(phone: string): string {
-    let p = phone.replace(/[^\d]/g, "");
+    if (!phone) return "";
+    
+    // Convert Persian/Arabic digits to English
+    const persianDigits = [/۰/g, /۱/g, /۲/g, /۳/g, /۴/g, /۵/g, /۶/g, /۷/g, /۸/g, /۹/g];
+    const arabicDigits = [/٠/g, /١/g, /٢/g, /٣/g, /٤/g, /٥/g, /٦/g, /٧/g, /٨/g, /٩/g];
+    let p = phone;
+    for (let i = 0; i < 10; i++) {
+      p = p.replace(persianDigits[i], i.toString()).replace(arabicDigits[i], i.toString());
+    }
+
+    p = p.replace(/[^\d]/g, "");
     // Handle Iranian numbers: 0989... -> 09...
     if (p.startsWith("098") && p.length > 11) {
       p = "0" + p.substring(3);

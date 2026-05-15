@@ -37,9 +37,12 @@ export class WebhookController {
           });
 
           const getBaseUrl = () => {
-            if (process.env.APP_URL) return process.env.APP_URL;
-            const protocol = req.secure ? "https" : "http";
-            return `${protocol}://${req.get("host")}`;
+            if (process.env.APP_URL && process.env.APP_URL.startsWith("http")) {
+               return process.env.APP_URL.endsWith("/") ? process.env.APP_URL.slice(0, -1) : process.env.APP_URL;
+            }
+            const protocol = req.secure || req.headers["x-forwarded-proto"] === "https" ? "https" : "http";
+            const host = req.get("host") || "loxx.ir";
+            return `${protocol}://${host}`;
           };
 
           const sessionToken = AuthService.generateAccessToken(user.id);
@@ -72,8 +75,8 @@ export class WebhookController {
     // 2. Handle contact sharing (Fallback/Manual verification)
     else if (message.contact) {
       const contact = message.contact;
-      let phone = contact.phone_number;
-      if (!phone.startsWith("0")) phone = "0" + phone.replace("+98", ""); // Normalize
+      // Use the standard normalization from AuthService
+      const phone = AuthService.normalizePhone(contact.phone_number);
       
       const user = await prisma.user.findUnique({
         where: { baleId: String(fromId) }
@@ -90,9 +93,12 @@ export class WebhookController {
         });
         
         const getBaseUrl = () => {
-          if (process.env.APP_URL) return process.env.APP_URL;
-          const protocol = req.secure ? "https" : "http";
-          return `${protocol}://${req.get("host")}`;
+          if (process.env.APP_URL && process.env.APP_URL.startsWith("http")) {
+             return process.env.APP_URL.endsWith("/") ? process.env.APP_URL.slice(0, -1) : process.env.APP_URL;
+          }
+          const protocol = req.secure || req.headers["x-forwarded-proto"] === "https" ? "https" : "http";
+          const host = req.get("host") || "loxx.ir";
+          return `${protocol}://${host}`;
         };
 
         const sessionToken = AuthService.generateAccessToken(user.id);
