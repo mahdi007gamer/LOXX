@@ -37,11 +37,19 @@ export class WebhookController {
           });
 
           const getBaseUrl = () => {
-            if (process.env.APP_URL && process.env.APP_URL.startsWith("http")) {
-               return process.env.APP_URL.endsWith("/") ? process.env.APP_URL.slice(0, -1) : process.env.APP_URL;
+            // Priority 1: APP_URL env var
+            if (process.env.APP_URL && process.env.APP_URL.includes("loxx.ir")) {
+               return process.env.APP_URL.replace(/\/$/, "");
             }
-            const protocol = req.secure || req.headers["x-forwarded-proto"] === "https" ? "https" : "http";
-            const host = req.get("host") || "loxx.ir";
+            
+            // Priority 2: Use Request headers but avoid loopback/IPs if we know the domain
+            const protocol = req.headers["x-forwarded-proto"] || (req.secure ? "https" : "http");
+            const host = req.get("host") || "";
+            
+            if (host.includes("127.0.0.1") || host.includes("localhost") || !host) {
+               return "https://loxx.ir";
+            }
+            
             return `${protocol}://${host}`;
           };
 
@@ -93,11 +101,19 @@ export class WebhookController {
         });
         
         const getBaseUrl = () => {
-          if (process.env.APP_URL && process.env.APP_URL.startsWith("http")) {
-             return process.env.APP_URL.endsWith("/") ? process.env.APP_URL.slice(0, -1) : process.env.APP_URL;
+          // Priority 1: APP_URL env var
+          if (process.env.APP_URL && process.env.APP_URL.includes("loxx.ir")) {
+             return process.env.APP_URL.replace(/\/$/, "");
           }
-          const protocol = req.secure || req.headers["x-forwarded-proto"] === "https" ? "https" : "http";
-          const host = req.get("host") || "loxx.ir";
+          
+          // Priority 2: Use Request headers but avoid loopback/IPs if we know the domain
+          const protocol = req.headers["x-forwarded-proto"] || (req.secure ? "https" : "http");
+          const host = req.get("host") || "";
+          
+          if (host.includes("127.0.0.1") || host.includes("localhost") || !host) {
+             return "https://loxx.ir";
+          }
+          
           return `${protocol}://${host}`;
         };
 

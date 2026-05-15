@@ -75,12 +75,13 @@ export class AuthService {
   }
 
   static async login(data: LoginDTO) {
-    const normalizedPhone = this.normalizePhone(data.phone);
+    const normalizedPhone = this.normalizePhone(data.phone || "");
     const user = await prisma.user.findFirst({
       where: { 
         OR: [
           { phone: normalizedPhone },
-          { phone: data.phone } // Fallback to raw for older entries
+          { phone: data.phone },
+          { username: data.phone } // data.phone field might contain username
         ]
       },
       include: { profile: true }
@@ -94,7 +95,10 @@ export class AuthService {
     }
 
     const valid = await argon2.verify(user.passwordHash, data.password);
-    if (!valid) throw new Error("Invalid credentials");
+    if (!valid) {
+      console.log(`[AUTH] Password verification failed for user: ${user.username}`);
+      throw new Error("Invalid credentials");
+    }
 
     if (user.twoFactorEnabled) {
       const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
