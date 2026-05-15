@@ -58,14 +58,17 @@ export class AuthService {
       p = p.replace(persianDigits[i], i.toString()).replace(arabicDigits[i], i.toString());
     }
 
+    // Handle +98 before removing non-digits
+    if (p.includes("+98")) {
+      p = "0" + p.split("+98")[1];
+    }
+
     p = p.replace(/[^\d]/g, "");
     // Handle Iranian numbers: 0989... -> 09...
     if (p.startsWith("098") && p.length > 11) {
       p = "0" + p.substring(3);
     } else if (p.startsWith("98") && p.length > 10) {
       p = "0" + p.substring(2);
-    } else if (p.startsWith("+98") && p.length > 10) {
-      p = "0" + p.substring(3);
     }
     // Ensure it starts with 0
     if (!p.startsWith("0") && p.length === 10) {
@@ -76,6 +79,7 @@ export class AuthService {
 
   static async login(data: LoginDTO) {
     const normalizedPhone = this.normalizePhone(data.phone || "");
+    console.log(`[AUTH] Login normalize: "${data.phone}" -> "${normalizedPhone}"`);
     const user = await prisma.user.findFirst({
       where: { 
         OR: [

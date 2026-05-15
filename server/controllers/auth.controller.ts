@@ -5,6 +5,7 @@ import prisma from "../utils/prisma.ts";
 export class AuthController {
   static async register(req: Request, res: Response) {
     try {
+      console.log(`[AUTH_CTRL] Registering user: ${req.body.username}, phone: ${req.body.phone}`);
       const user = await AuthService.register(req.body);
       res.status(201).json({
         status: "success",
@@ -16,15 +17,18 @@ export class AuthController {
         }
       });
     } catch (error: any) {
+      console.error(`[AUTH_CTRL] Registration failed: ${error.message}`);
       res.status(400).json({ status: "error", error: { code: "VALIDATION_FAILED", message: error.message } });
     }
   }
 
   static async login(req: Request, res: Response) {
     try {
+      console.log(`[AUTH_CTRL] Login attempt for: ${req.body.phone}`);
       const result = await AuthService.login(req.body);
       
       if (result.status === "2fa_required") {
+        console.log(`[AUTH_CTRL] 2FA required for user: ${result.userId}`);
         return res.json({
           status: "2fa_required",
           message: "کد تایید ارسال شد",
@@ -33,6 +37,7 @@ export class AuthController {
       }
 
       const { user, accessToken, refreshToken } = result;
+      console.log(`[AUTH_CTRL] Login successful for: ${user?.username}`);
 
       // Store connected device
       const userAgent = req.headers["user-agent"] || "Unknown Browser";
@@ -85,6 +90,7 @@ export class AuthController {
         }
       });
     } catch (error: any) {
+      console.log(`[AUTH_CTRL] Login failed for ${req.body.phone}: ${error.message}`);
       if (error.message === "VERIFICATION_REQUIRED") {
         return res.status(403).json({ status: "error", error: { code: "VERIFICATION_REQUIRED", message: "VERIFICATION_REQUIRED" } });
       }
