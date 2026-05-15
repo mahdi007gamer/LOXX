@@ -16,6 +16,7 @@ model User {
   id              String    @id @default(uuid())
   username        String    @unique // Persian supported
   phone           String?   @unique
+  email           String?   @unique
   baleId          String?   @unique
   passwordHash    String
   otpCode         String?

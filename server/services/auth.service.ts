@@ -20,6 +20,7 @@ export class AuthService {
       data: {
         username: data.username,
         phone: normalizedPhone,
+        email: data.email || `${data.username}-${uuidv4().substring(0, 8)}@loxx.ir`,
         passwordHash,
         verificationToken: isAdmin ? null : verificationToken,
         isVerified: isAdmin ? true : false,
