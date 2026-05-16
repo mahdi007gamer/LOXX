@@ -25,17 +25,23 @@ export class UploadController {
         case "chat": width = 500; break;
       }
 
-      const image = sharp(filePath);
+      const isGif = ext === ".gif";
+      const image = sharp(filePath, isGif ? { animated: true } : {});
       const metadata = await image.metadata();
 
       // Proportional resizing (maintains aspect ratio)
       const resizeWidth = (metadata.width && metadata.width > width) ? width : metadata.width;
 
-      // Convert to high-quality JPEG for cross-platform compatibility and good compression
-      await sharp(filePath)
-        .resize(resizeWidth, null, { withoutEnlargement: true })
-        .jpeg({ quality: 85, mozjpeg: true, chromaSubsampling: "4:4:4" })
-        .toFile(tempPath);
+      // Pipeline for processing
+      let pipeline = image.resize(resizeWidth, null, { withoutEnlargement: true });
+
+      if (isGif) {
+        // Keep GIF animated and apply optimization
+        await pipeline.gif().toFile(tempPath);
+      } else {
+        // Convert to high-quality JPEG for cross-platform compatibility and good compression
+        await pipeline.jpeg({ quality: 85, mozjpeg: true, chromaSubsampling: "4:4:4" }).toFile(tempPath);
+      }
 
       fs.unlinkSync(filePath);
       fs.renameSync(tempPath, filePath);

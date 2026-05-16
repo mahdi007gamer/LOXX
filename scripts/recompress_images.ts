@@ -17,18 +17,23 @@ async function processImages() {
     const filePath = path.join(uploadsDir, file);
     const ext = path.extname(file).toLowerCase();
 
-    if (['.jpg', '.jpeg', '.png', '.webp'].includes(ext)) {
+    if (['.jpg', '.jpeg', '.png', '.webp', '.gif'].includes(ext)) {
       try {
         console.log(`Processing ${file}...`);
         const tempPath = filePath + "_tmp";
+        const isGif = ext === '.gif';
         
-        // We don't know the target, so we'll use a conservative 800px limit for existing images
-        // unless they are specifically named (which we can't easily tell).
-        // Let's just compress them to save space.
-        
-        await sharp(filePath)
-          .resize(800, null, { withoutEnlargement: true })
-          .toFile(tempPath);
+        const image = sharp(filePath, isGif ? { animated: true } : {});
+        const metadata = await image.metadata();
+        const resizeWidth = (metadata.width && metadata.width > 800) ? 800 : metadata.width;
+
+        let pipeline = image.resize(resizeWidth, null, { withoutEnlargement: true });
+
+        if (isGif) {
+          await pipeline.gif().toFile(tempPath);
+        } else {
+          await pipeline.toFile(tempPath);
+        }
           
         fs.unlinkSync(filePath);
         fs.renameSync(tempPath, filePath);
