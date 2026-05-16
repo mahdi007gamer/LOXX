@@ -14,16 +14,30 @@ const baleApi = axios.create({
 
 export class BaleService {
   static async sendMessage(chatId: string | number, text: string, replyMarkup?: any) {
-    if (!BALE_TOKEN) return false;
+    if (!BALE_TOKEN) return null;
     try {
-      await baleApi.post("/sendMessage", {
+      const response = await baleApi.post("/sendMessage", {
         chat_id: String(chatId),
         text,
         reply_markup: replyMarkup
       });
-      return true;
+      return response.data;
     } catch (error) {
       console.error("Bale API error:", error);
+      return null;
+    }
+  }
+
+  static async deleteMessage(chatId: string | number, messageId: number) {
+    if (!BALE_TOKEN) return false;
+    try {
+      await baleApi.post("/deleteMessage", {
+        chat_id: String(chatId),
+        message_id: messageId
+      });
+      return true;
+    } catch (error) {
+      console.error("Bale API error (deleteMessage):", error);
       return false;
     }
   }

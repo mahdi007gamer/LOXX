@@ -1185,7 +1185,7 @@ export const ChatPage: React.FC = () => {
 
   return (
     <div 
-      className="flex h-[calc(100vh-128px)] md:h-[calc(100vh-64px)] overflow-hidden bg-dark-bg rtl text-right relative overscroll-none" 
+      className="flex h-[calc(100dvh-128px)] md:h-[calc(100vh-64px)] overflow-hidden bg-dark-bg rtl text-right relative overscroll-none" 
       style={{ overscrollBehavior: 'none' }} 
       onDragOver={(e) => {
         if (activeChannelId === 'news' && (user as any)?.role === 'ADMIN') {
@@ -2114,14 +2114,13 @@ export const ChatPage: React.FC = () => {
             </motion.button>
           )}
         </AnimatePresence>
-
-        {/* Input Area - Adjusted for mobile */}
+             {/* Input Area - Adjusted for mobile */}
         {activeChannelId === 'news' && !isAdmin ? (
           <div className="p-8 pb-12 text-center opacity-50">
              <p className="text-gray-500 font-bold text-sm tracking-tighter">فقط ادمین‌ها می‌توانند در این کانال محتوا منتشر کنند</p>
           </div>
         ) : (
-          <div className="p-4 pb-24 md:p-8 bg-gradient-to-t from-dark-bg to-transparent relative z-30 flex flex-col items-center shrink-0 w-full overflow-hidden">
+          <div className="p-4 pb-20 md:p-8 bg-gradient-to-t from-dark-bg to-transparent relative z-30 flex flex-col items-center shrink-0 w-full overflow-visible">
             <div className="w-full max-w-4xl relative flex flex-col px-1 md:px-0">
               {/* Reply Indicator - Discord Style */}
               <AnimatePresence>
@@ -2168,8 +2167,16 @@ export const ChatPage: React.FC = () => {
                 <input
                   type="text"
                   value={input}
-                  onChange={(e) => {
-                    setInput(e.target.value);
+                  onChange={(e) => setInput(e.target.value)}
+                  onFocus={(e) => {
+                    // Mobile keyboard fix
+                    setTimeout(() => {
+                      e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }, 300);
+                  }}
+                  onBlur={() => {
+                    // Force layout recalc
+                    window.scrollTo(0, 0);
                   }}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") handleSend();

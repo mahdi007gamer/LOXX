@@ -66,24 +66,6 @@ export const AuthPage = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleBaleLogin = async () => {
-    if (!formData.phone && isLogin) {
-      toast.error("لطفاً ابتدا شماره همراه خود را وارد کنید");
-      return;
-    }
-    setLoading(true);
-    try {
-      const response = await api.post("/auth/bale/url", { phone: formData.phone });
-      window.open(response.data.url, "_blank");
-      setStep("VERIFY_BALE");
-      toast.success("در حال انتقال به بله...");
-    } catch (error: any) {
-      toast.error("خطا در برقراری ارتباط با بله");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -349,24 +331,6 @@ export const AuthPage = () => {
                       step === "VERIFY_BALE" ? "بازگشت به ورود" : "تایید نهایی"
                     )}
                   </GlowButton>
-
-                  {isLogin && step === "AUTH" && (
-                    <div className="relative">
-                      <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/5" /></div>
-                      <div className="relative flex justify-center text-[10px] uppercase font-black text-gray-500 tracking-[0.2em]"><span className="bg-[#050505] px-4">OR</span></div>
-                    </div>
-                  )}
-
-                  {isLogin && step === "AUTH" && (
-                    <button 
-                      type="button"
-                      onClick={handleBaleLogin}
-                      className="group w-full h-14 bg-white/5 hover:bg-white/10 active:scale-95 border border-white/10 hover:border-neon-blue/50 rounded-2xl transition-all duration-300 flex items-center justify-center gap-3 font-black italic uppercase text-xs tracking-widest text-white"
-                    >
-                      <div className="h-2 w-2 rounded-full bg-neon-blue group-hover:animate-ping" />
-                      ورود سریع با بله
-                    </button>
-                  )}
                 </div>
               </form>
             </motion.div>

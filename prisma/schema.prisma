@@ -51,8 +51,21 @@ model User {
   invitesSent     Referral[]   @relation("Inviter")
   invitationReceived Referral?   @relation("Invitee")
   paymentRequests PaymentRequest[]
+  loginTokens     LoginToken[]
   lobbyBans       LobbyBan[]
   devices         ConnectedDevice[]
+}
+
+model LoginToken {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  isUsed    Boolean  @default(false)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([token])
 }
 
 model UserSettings {

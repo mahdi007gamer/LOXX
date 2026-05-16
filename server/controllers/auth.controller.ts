@@ -100,14 +100,8 @@ export class AuthController {
 
   static async getBaleLoginUrl(req: Request, res: Response) {
     try {
-      const { phone } = req.body;
-      if (!phone) throw new Error("Phone is required");
-      
-      const normalizedPhone = AuthService.normalizePhone(phone);
-      const token = AuthService.generateBaleAuthToken(normalizedPhone);
-      const url = `https://ble.ir/loxxbot?start=${token}`;
-      
-      res.json({ status: "success", url });
+      // DISABLED: Standard registration/login flow is required.
+      res.status(403).json({ status: "error", message: "این قابلیت غیرفعال شده است. لطفاً از طریق ثبت‌نام استاندارد اقدام کنید." });
     } catch (error: any) {
       res.status(400).json({ status: "error", message: error.message });
     }
@@ -116,16 +110,9 @@ export class AuthController {
   static async verifyBaleCallback(req: Request, res: Response) {
     try {
       const { token } = req.body;
-      const { userId } = AuthService.verifyAccessToken(token); // bot sends session token
+      if (!token) throw new Error("Token is required");
       
-      const user = await prisma.user.findUnique({
-        where: { id: userId },
-        include: { profile: true }
-      });
-
-      if (!user) throw new Error("User not found");
-
-      const refreshToken = AuthService.generateRefreshToken(user.id);
+      const { user, accessToken, refreshToken } = await AuthService.verifyOneTimeLoginToken(token);
       
       res.cookie("refresh_token", refreshToken, {
         httpOnly: true,
@@ -136,7 +123,7 @@ export class AuthController {
 
       res.json({
         status: "success",
-        token,
+        token: accessToken,
         user: { 
           id: user.id, 
           username: user.username, 
@@ -152,6 +139,7 @@ export class AuthController {
         }
       });
     } catch (error: any) {
+      console.error("[AUTH_CTRL] Bale callback verification failed:", error.message);
       res.status(403).json({ status: "error", message: error.message });
     }
   }

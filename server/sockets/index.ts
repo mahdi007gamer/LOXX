@@ -1095,20 +1095,5 @@ export function setupWebSockets(io: Server) {
     });
   });
 
-  // Cron Job for Cleaning Messages Older Than 7 Days
-  setInterval(async () => {
-    try {
-      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-      const res = await prisma.message.deleteMany({
-        where: {
-          createdAt: { lt: sevenDaysAgo }
-        }
-      });
-      console.log(`[CRON] Cleaned up ${res.count} old messages`);
-    } catch (e) {
-       console.error("[CRON] Failed to clean up messages", e);
-    }
-  }, 24 * 60 * 60 * 1000); // Run daily
-
   console.log("WebSocket namespaces initialized");
 }

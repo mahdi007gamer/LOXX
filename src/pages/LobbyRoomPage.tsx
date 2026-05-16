@@ -727,17 +727,17 @@ export const LobbyRoomPage = () => {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsChatOpen(false)}
-              className="fixed inset-0 bg-black/80 z-[100] lg:hidden"
+              className="fixed inset-0 bg-black/80 z-[6000] lg:hidden"
             />
             <motion.div 
               initial={{ y: "100%" }}
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="fixed bottom-0 left-0 right-0 h-[80vh] bg-[#0a0a0f] rounded-t-[40px] z-[101] lg:hidden border-t border-white/10 overflow-hidden flex flex-col"
+              className="fixed bottom-0 left-0 right-0 h-[80dvh] bg-[#0a0a0f] rounded-t-[40px] z-[6005] lg:hidden border-t border-white/10 overflow-hidden flex flex-col pb-safe"
             >
-              <div className="h-1.5 w-12 bg-white/10 rounded-full mx-auto mt-4 mb-2" />
-              <div className="flex-1 overflow-hidden">
+              <div className="h-1.5 w-12 bg-white/10 rounded-full mx-auto mt-4 mb-2 shrink-0" />
+              <div className="flex-1 overflow-hidden pb-20">
                 <ChatPanel 
                   currentUserId={user?.id}
                   messages={messages} 

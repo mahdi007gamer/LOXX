@@ -162,6 +162,43 @@ export class AuthService {
     return jwt.sign({ userId }, JWT_SECRET, { expiresIn: "15m" });
   }
 
+  static async generateOneTimeLoginToken(userId: string) {
+    const token = uuidv4();
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
+
+    await prisma.loginToken.create({
+      data: {
+        userId,
+        token,
+        expiresAt
+      }
+    });
+
+    return token;
+  }
+
+  static async verifyOneTimeLoginToken(token: string) {
+    const loginToken = await prisma.loginToken.findUnique({
+      where: { token },
+      include: { user: { include: { profile: true } } }
+    });
+
+    if (!loginToken || loginToken.isUsed || new Date() > loginToken.expiresAt) {
+      throw new Error("لینک ورود معتبر نیست یا منقضی شده است.");
+    }
+
+    // Mark as used
+    await prisma.loginToken.update({
+      where: { id: loginToken.id },
+      data: { isUsed: true }
+    });
+
+    const accessToken = this.generateAccessToken(loginToken.userId);
+    const refreshToken = this.generateRefreshToken(loginToken.userId);
+
+    return { user: loginToken.user, accessToken, refreshToken };
+  }
+
   static generateRefreshToken(userId: string) {
     return jwt.sign({ userId }, REFRESH_TOKEN_SECRET, { expiresIn: "7d" });
   }
@@ -214,10 +251,12 @@ export class AuthService {
     return true;
   }
 
+  // DEPRECATED: Standard login with verification is preferred.
   static generateBaleAuthToken(phone: string) {
     return jwt.sign({ phone, type: "bale_auth", nonce: uuidv4() }, JWT_SECRET, { expiresIn: "5m" });
   }
 
+  // DEPRECATED: Standard login with verification is preferred.
   static verifyBaleAuthToken(token: string) {
     const decoded = jwt.verify(token, JWT_SECRET) as any;
     if (decoded.type !== "bale_auth") throw new Error("Invalid token type");
