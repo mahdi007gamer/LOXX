@@ -73,7 +73,19 @@ async function startServer() {
 
   // Serve uploads directory
   app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
-  app.use("/public", express.static(path.join(process.cwd(), "public")));
+  // Serve public directory both at /public and at root to ensure compatibility with Vite/Production
+  const publicPath = path.join(process.cwd(), "public");
+  app.use("/public", express.static(publicPath));
+  app.use(express.static(publicPath));
+
+  // Explicitly serve fonts with correct MIME types to fix decoding errors
+  app.use("/fonts", express.static(path.join(publicPath, "fonts"), {
+    setHeaders: (res, path) => {
+      if (path.endsWith(".woff2")) res.setHeader("Content-Type", "font/woff2");
+      if (path.endsWith(".woff")) res.setHeader("Content-Type", "font/woff");
+      if (path.endsWith(".ttf")) res.setHeader("Content-Type", "font/ttf");
+    }
+  }));
 
   // API Routes (to be implemented)
   app.use("/api/v1/auth", authRoutes);
