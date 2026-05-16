@@ -16,17 +16,21 @@ export class UploadController {
       let width = 1000;
 
       switch (target) {
-        case "profile": width = 128; break;
-        case "cover": width = 300; break;
-        case "elite_bg": width = 300; break;
-        case "badge": width = 100; break;
-        case "game_profile": width = 100; break;
-        case "game_banner": width = 200; break;
-        case "chat": width = 500; break;
+        case "profile": width = 256; break;
+        case "cover": width = 800; break; // Increased from 300 to 800 for better wide screen support
+        case "elite_bg": width = 600; break;
+        case "badge": width = 200; break;
+        case "game_profile": width = 200; break;
+        case "game_banner": width = 450; break; // Increased as requested for 16:9 quality
+        case "chat": width = 1000; break;
       }
 
       const isGif = ext === ".gif";
-      const image = sharp(filePath, isGif ? { animated: true } : {});
+      const isWebp = ext === ".webp";
+      const isPng = ext === ".png";
+
+      // For GIFs, we need animated: true to process all frames
+      const image = sharp(filePath, (isGif || isWebp) ? { animated: true } : {});
       const metadata = await image.metadata();
 
       // Proportional resizing (maintains aspect ratio)
@@ -38,8 +42,14 @@ export class UploadController {
       if (isGif) {
         // Keep GIF animated and apply optimization
         await pipeline.gif().toFile(tempPath);
+      } else if (isWebp) {
+        // Maintain WebP format and animation if present
+        await pipeline.webp({ quality: 80, effort: 4 }).toFile(tempPath);
+      } else if (isPng) {
+        // Maintain PNG transparency
+        await pipeline.png({ quality: 80, palette: true }).toFile(tempPath);
       } else {
-        // Convert to high-quality JPEG for cross-platform compatibility and good compression
+        // Default to high-quality JPEG for others
         await pipeline.jpeg({ quality: 85, mozjpeg: true, chromaSubsampling: "4:4:4" }).toFile(tempPath);
       }
 

@@ -300,15 +300,15 @@ export const SettingsPage = () => {
               <div className="flex-none">
                 <input 
                   type="file" 
-                  accept="image/png, image/jpeg" 
+                  accept="image/png, image/jpeg, image/gif, image/webp" 
                   className="hidden" 
                   id="avatar-upload"
                   onChange={async (e) => {
                     if (e.target.files && e.target.files[0]) {
                       const file = e.target.files[0];
-                      const allowedTypes = ['image/jpeg', 'image/png'];
+                      const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
                       if (!allowedTypes.includes(file.type)) {
-                        toast.error("فقط فایل‌های JPG و PNG مجاز هستند");
+                        toast.error("فقط فایل‌های JPG، PNG، GIF و WEBP مجاز هستند");
                         return;
                       }
                       if (file.size > 5 * 1024 * 1024) {
@@ -350,25 +350,25 @@ export const SettingsPage = () => {
         <div className="flex items-center gap-6">
           <div className="flex-1">
             <h3 className="font-black text-white italic">تصویر کاور (بنر)</h3>
-            <p className="text-[10px] text-gray-500 font-bold uppercase mt-1 mb-3">تصویر بنر پروفایل خود را آپلود کنید (حداکثر ۱ مگابایت، فقط JPG و PNG).</p>
+            <p className="text-[10px] text-gray-500 font-bold uppercase mt-1 mb-3">تصویر بنر پروفایل خود را آپلود کنید (حداکثر ۵ مگابایت، JPG، PNG، GIF و WEBP).</p>
             <div className="flex flex-col sm:flex-row gap-4 items-end">
               <div className="flex-none">
                 <input 
                   type="file" 
-                  accept="image/png, image/jpeg" 
+                  accept="image/png, image/jpeg, image/gif, image/webp" 
                   className="hidden" 
                   id="banner-upload"
                   onChange={async (e) => {
                     const file = e.target.files?.[0];
                     if (!file) return;
                     
-                    const allowedTypes = ['image/jpeg', 'image/png'];
+                    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
                     if (!allowedTypes.includes(file.type)) {
-                      toast.error("فقط فایل‌های JPG و PNG مجاز هستند");
+                      toast.error("فقط فایل‌های JPG، PNG، GIF و WEBP مجاز هستند");
                       return;
                     }
-                    if (file.size > 1 * 1024 * 1024) {
-                      toast.error("حجم فایل نباید بیشتر از ۱ مگابایت باشد");
+                    if (file.size > 5 * 1024 * 1024) {
+                      toast.error("حجم فایل نباید بیشتر از ۵ مگابایت باشد");
                       return;
                     }
                     
