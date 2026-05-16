@@ -173,9 +173,9 @@ export const LobbyRoomPage = () => {
       membership: p.membership as MembershipType,
       vipMetadata: p.vipMetadata,
       bannerUrl: p.bannerUrl,
-      badges: p.user?.badges?.map((ub: any) => ({
-        ...ub.badge,
-        isPinned: ub.isPinned
+      badges: (p.user?.badges || p.badges || []).map((ub: any) => ({
+        ...(ub.badge || ub),
+        isPinned: ub.isPinned || false
       })) || [],
       rank: "Verified Gamer",
       isHost: p.role === "HOST",
@@ -259,7 +259,7 @@ export const LobbyRoomPage = () => {
             const dataArray = new Uint8Array(bufferLength);
 
             const analyzeVoice = () => {
-               if (stream.getAudioTracks()[0]?.enabled) {
+               if (stream.getAudioTracks().length > 0 && stream.getAudioTracks()[0].enabled) {
                  analyzer.getByteFrequencyData(dataArray);
                  let sum = 0;
                  for(let i = 0; i < bufferLength; i++) {
@@ -1632,7 +1632,7 @@ const ChatPanel = ({ messages, players, inputMessage, setInputMessage, onSend, o
         )})}
       </div>
 
-      <form onSubmit={onSend} className="p-6 bg-black/20 border-t border-white/5">
+      <form onSubmit={onSend} className="p-4 md:p-6 pb-24 md:pb-6 bg-black/20 border-t border-white/5">
         <div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-2xl p-1 pr-4 focus-within:border-neon-blue/50 transition-all relative">
           <input
             type="text"

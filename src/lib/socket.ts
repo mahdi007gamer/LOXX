@@ -5,9 +5,10 @@ const SOCKET_URL = window.location.origin;
 export const createNamespaceSocket = (namespace: string) => {
   // Determine if we should force WSS (useful if Runflare configures HTTP but forwards to HTTPS)
   // By using location.origin, we respect the current protocol (HTTP vs HTTPS)
+  // Force websocket transport to fix session unknown errors in VPS/Runflare load balancers
   return io(`${SOCKET_URL}/${namespace}`, {
     autoConnect: false, // Better to let AuthContext connect them when token exists
-    transports: ['polling', 'websocket'], // Try polling first, then upgrade (Socket.io standard behavior, safest for proxies)
+    transports: ['websocket'], // MUST be websocket only to prevent load balancer session drops
     reconnectionDelay: 1000,
     reconnectionDelayMax: 5000,
     auth: (cb) => {

@@ -772,7 +772,18 @@ export const ChatPage: React.FC = () => {
 
   useEffect(() => {
     // Join channel and fetch history when switched
-    chatSocket.emit("chat.join", { type: "channel", id: activeChannelId }, (res: any) => {
+    console.log("[CHAT] Switching to channel:", activeChannelId);
+    
+    // Determine the type explicitly based on the activeChannel object
+    const getTargetType = () => {
+      if (!activeChannel) return "channel";
+      if (activeChannel.type === 'dm') return "user";
+      if (activeChannel.type === 'game') return "channel";
+      return "channel"; 
+    };
+
+    chatSocket.emit("chat.join", { type: getTargetType(), id: activeChannelId }, (res: any) => {
+      console.log("[CHAT] Join response for", activeChannelId, ":", res);
       if (res.status === "ok" && res.data) {
         if (res.data.messages) {
           setMessages(prev => ({ ...prev, [activeChannelId]: res.data.messages.map((m: any) => formatIncomingMessage(m, user?.id)) }));
@@ -782,6 +793,9 @@ export const ChatPage: React.FC = () => {
           setChannelUsers(prev => ({ ...prev, [activeChannelId]: res.data.memberCount }));
         }
         setUnreadCounts(prev => ({ ...prev, [activeChannelId]: 0 }));
+      } else if (res.status === "error") {
+        console.error("[CHAT] Error joining channel:", activeChannelId, res.error);
+        toast.error(`خطا در اتصال به کانال: ${res.error?.message || "نامشخص"}`);
       }
     });
   }, [activeChannelId, user?.id]);
@@ -879,68 +893,88 @@ export const ChatPage: React.FC = () => {
     };
   }, [activeChannelId, user?.id]);
 
+  const friendChat = chats.find(c => c.friendId === activeChannelId);
+  const friend = friends.find(f => f.id === activeChannelId);
+
+  const activeChannel = allChannels.find(c => c.id === activeChannelId) || 
+    (friendChat || friend ? { 
+      id: activeChannelId, 
+      name: friend?.displayName || friendChat?.tempDisplayName || "گفتگو", 
+      type: 'dm',
+      icon: friend?.avatar || (friend as any)?.avatarUrl || "👤"
+    } : allChannels[0] || INITIAL_CHANNELS[0]);
+
+  // Handle typing state correctly by extracting the getter inside the effect
   useEffect(() => {
     if (activeChannelId) {
+      const getTargetType = () => {
+        if (!activeChannel) return "channel";
+        if (activeChannel.type === 'dm') return "user";
+        return "channel"; 
+      };
+
       chatSocket.emit("chat.typing", { 
-        target: { type: "channel", id: activeChannelId }, 
+        target: { type: getTargetType(), id: activeChannelId }, 
         isTyping: input.length > 0 
       });
     }
-  }, [input, activeChannelId]);
+  }, [input, activeChannelId, activeChannel]);
 
   const formatIncomingMessage = (msg: any, currentUserId?: string): ChatMessage => {
      const badges: BadgeType[] = [];
-     if (msg.from.membership === "VIP") badges.push(BadgeType.VIP);
-     if (msg.from.membership === "PLUS") badges.push(BadgeType.PLUS);
+     const from = msg.from || {};
+     if (from.membership === "VIP") badges.push(BadgeType.VIP);
+     if (from.membership === "PLUS") badges.push(BadgeType.PLUS);
      
      const isNewsChannel = msg.targetId === 'news' || msg.channelId === 'news';
      
      let text = msg.content || "";
      let image: string | undefined;
+     let gif: string | undefined;
      let lobbyInvite: any | undefined;
 
-     if (text.includes("[IMAGE]:")) {
-       const parts = text.split("[IMAGE]:");
-       text = parts[0].trim();
-       // Take everything after [IMAGE]: as the image data, ignoring line breaks
-       image = parts[1]?.trim();
-     }
+     if (typeof text === 'string') {
+       if (text.includes("[IMAGE]:")) {
+         const parts = text.split("[IMAGE]:");
+         text = parts[0].trim();
+         image = parts[1]?.trim();
+       }
 
-     let gif: string | undefined;
-     if (text.includes("[GIF]:")) {
-       const parts = text.split("[GIF]:");
-       text = parts[0].trim();
-       gif = parts[1]?.trim();
-     }
+       if (text.includes("[GIF]:")) {
+         const parts = text.split("[GIF]:");
+         text = parts[0].trim();
+         gif = parts[1]?.trim();
+       }
 
-     if (text.includes("[LOBBY_INVITE]:")) {
-       const parts = text.split("[LOBBY_INVITE]:");
-       text = parts[0].trim();
-       try {
-         const inviteStr = parts[1]?.split("\n")[0].trim();
-         lobbyInvite = JSON.parse(inviteStr);
-       } catch (e) {
-         console.error("Failed to parse lobby invite", e);
+       if (text.includes("[LOBBY_INVITE]:")) {
+         const parts = text.split("[LOBBY_INVITE]:");
+         text = parts[0].trim();
+         try {
+           const inviteStr = parts[1] ? parts[1].split("\n")[0].trim() : "";
+           if (inviteStr) lobbyInvite = JSON.parse(inviteStr);
+         } catch (e) {
+           console.error("Failed to parse lobby invite", e);
+         }
        }
      }
      
      return {
        id: msg.id,
-       senderId: isNewsChannel ? "loxx-system" : msg.from.userId,
-       senderName: isNewsChannel ? "لوکس" : msg.from.username,
-       senderAvatar: isNewsChannel ? "/logo.png" : (msg.from.avatar || (msg.from as any).avatarUrl),
-       bannerUrl: isNewsChannel ? undefined : msg.from.bannerUrl,
-       vipMetadata: isNewsChannel ? undefined : msg.from.vipMetadata,
-       senderLevel: msg.from.level,
+       senderId: isNewsChannel ? "loxx-system" : (from.userId || "unknown"),
+       senderName: isNewsChannel ? "لوکس" : (from.username || "کاربر ناشناس"),
+       senderAvatar: isNewsChannel ? "/logo.png" : (from.avatar || from.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${from.userId || "guest"}`),
+       bannerUrl: isNewsChannel ? undefined : from.bannerUrl,
+       vipMetadata: isNewsChannel ? undefined : from.vipMetadata,
+       senderLevel: from.level || 1,
        senderBadges: isNewsChannel ? [] : badges,
        text,
        image,
        gif,
        lobbyInvite: lobbyInvite || msg.lobbyInvite,
-       isOnline: isNewsChannel ? true : msg.from.isOnline,
-       timestamp: new Date(msg.createdAt).toLocaleTimeString("fa-IR", { hour: "2-digit", minute: "2-digit" }),
+       isOnline: isNewsChannel ? true : !!from.isOnline,
+       timestamp: new Date(msg.createdAt || Date.now()).toLocaleTimeString("fa-IR", { hour: "2-digit", minute: "2-digit" }),
        isRead: true,
-       self: msg.from.userId === currentUserId,
+       self: from.userId === currentUserId,
        reactions: msg.reactions || [],
        replyTo: msg.replyTo ? { 
            id: msg.replyTo.id, 
@@ -961,17 +995,7 @@ export const ChatPage: React.FC = () => {
     }));
 
   const allChannels = [...INITIAL_CHANNELS, ...myGamesChannels, ...eliteGroups, ...proGroups];
-  const friendChat = chats.find(c => c.friendId === activeChannelId);
-  const friend = friends.find(f => f.id === activeChannelId);
   
-  const activeChannel = allChannels.find(c => c.id === activeChannelId) || 
-    (friendChat || friend ? { 
-      id: activeChannelId, 
-      name: friend?.displayName || friendChat?.tempDisplayName || "گفتگو", 
-      type: 'dm',
-      icon: friend?.avatar || (friend as any)?.avatarUrl || "👤"
-    } : allChannels[0] || INITIAL_CHANNELS[0]);
-
   const currentMessages = messages[activeChannelId] || [];
 
   // Update member count based on active channel
@@ -1037,8 +1061,15 @@ export const ChatPage: React.FC = () => {
     setInput("");
     setReplyingTo(null);
 
+    const getTargetType = () => {
+      if (!activeChannel) return "channel";
+      if (activeChannel.type === 'dm') return "user";
+      if (activeChannel.type === 'game') return "channel";
+      return "channel"; 
+    };
+
     chatSocket.emit("chat.send", {
-      target: { type: "channel", id: activeChannelId },
+      target: { type: getTargetType(), id: activeChannelId },
       content: messageText,
       tempId,
       replyToId: replyingTo?.id
@@ -1806,23 +1837,29 @@ export const ChatPage: React.FC = () => {
                 <p className="text-[8px] md:text-[10px] text-gray-500 font-bold uppercase tracking-tighter truncate">{memberCount.toLocaleString()} عضو</p>
                 {gameMembers.length > 0 && (
                   <div className="hidden sm:flex items-center -space-x-2 mr-2">
-                    {gameMembers.slice(0, 4).map((member, i) => (
+                    {gameMembers.slice(0, 4).map((member, i) => {
+                      const mId = member.id || member.userId || `m-${i}`;
+                      const mName = member.username || member.user?.username || "?";
+                      const mAvatar = member.avatar || member.user?.profile?.avatarUrl;
+                      const mLevel = member.level || member.user?.level || 1;
+                      return (
                       <div 
-                        key={member.id} 
+                        key={mId} 
                         className="h-6 w-6 rounded-full border-2 border-[#0a0a0f] overflow-hidden bg-white/5 cursor-pointer hover:translate-y-[-2px] transition-transform"
-                        title={member.username}
+                        title={mName}
                         onClick={() => openProfile({
-                          id: member.id,
-                          senderId: member.id,
-                          senderName: member.username,
-                          senderAvatar: member.avatar || "👤",
-                          senderLevel: member.level,
+                          id: mId,
+                          senderId: mId,
+                          senderName: mName,
+                          senderAvatar: mAvatar || "👤",
+                          senderLevel: mLevel,
                           senderBadges: []
                         }, false)}
                       >
-                        {member.avatar ? <img src={member.avatar} alt="" className="h-full w-full object-cover" /> : <div className="h-full w-full flex items-center justify-center text-[10px] text-gray-400 font-bold">{member.username[0]}</div>}
+                        {mAvatar ? <img src={mAvatar} alt="" className="h-full w-full object-cover" /> : <div className="h-full w-full flex items-center justify-center text-[10px] text-gray-400 font-bold">{mName[0]}</div>}
                       </div>
-                    ))}
+                      );
+                    })}
                     {gameMembers.length > 4 && (
                       <div className="h-6 w-6 rounded-full border-2 border-[#0a0a0f] bg-white/5 flex items-center justify-center text-[8px] text-gray-400 font-bold">
                         +{gameMembers.length - 4}
@@ -2120,7 +2157,7 @@ export const ChatPage: React.FC = () => {
              <p className="text-gray-500 font-bold text-sm tracking-tighter">فقط ادمین‌ها می‌توانند در این کانال محتوا منتشر کنند</p>
           </div>
         ) : (
-          <div className="p-4 pb-20 md:p-8 bg-gradient-to-t from-dark-bg to-transparent relative z-30 flex flex-col items-center shrink-0 w-full overflow-visible">
+          <div className="p-4 pb-28 md:p-8 bg-gradient-to-t from-dark-bg to-transparent relative z-30 flex flex-col items-center shrink-0 w-full overflow-visible">
             <div className="w-full max-w-4xl relative flex flex-col px-1 md:px-0">
               {/* Reply Indicator - Discord Style */}
               <AnimatePresence>
@@ -2175,8 +2212,10 @@ export const ChatPage: React.FC = () => {
                     }, 300);
                   }}
                   onBlur={() => {
-                    // Force layout recalc
-                    window.scrollTo(0, 0);
+                    // Optimized mobile blur handle
+                    if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+                      window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+                    }
                   }}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") handleSend();

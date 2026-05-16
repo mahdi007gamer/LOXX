@@ -126,8 +126,15 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
         presenceSocket.emit("presence.update", { status: "online" });
       }, 4 * 60 * 1000);
 
+      // Polling fallback to mitigate real-time issues across scalable nodes (without Redis Adapter)
+      const fetchInterval = setInterval(() => {
+        fetchFriends();
+        fetchRequests();
+      }, 15000);
+
       return () => {
         clearInterval(presenceInterval);
+        clearInterval(fetchInterval);
       };
     }
   }, [user, fetchFriends, fetchRequests]);
