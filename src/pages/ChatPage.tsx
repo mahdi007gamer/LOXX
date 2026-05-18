@@ -895,6 +895,17 @@ export const ChatPage: React.FC = () => {
     };
   }, [activeChannelId, user?.id]);
 
+  const myGamesChannels = (games || [])
+    .filter(g => myGames?.includes(g.id))
+    .map(g => ({
+      id: `game-${g.id}`,
+      name: `چت ${g.title}`,
+      type: "game" as const,
+      users: (g as any).memberCount || parseInt(g.playerCount?.replace(/[^0-9]/g, '') || '0') || 0,
+      icon: g.image
+    }));
+
+  const allChannels = [...INITIAL_CHANNELS, ...myGamesChannels, ...eliteGroups, ...proGroups];
   const friendChat = chats.find(c => c.friendId === activeChannelId);
   const friend = friends.find(f => f.id === activeChannelId);
 
@@ -986,18 +997,6 @@ export const ChatPage: React.FC = () => {
      };
   };
 
-  const myGamesChannels = (games || [])
-    .filter(g => myGames?.includes(g.id))
-    .map(g => ({
-      id: `game-${g.id}`,
-      name: `چت ${g.title}`,
-      type: "game" as const,
-      users: (g as any).memberCount || parseInt(g.playerCount?.replace(/[^0-9]/g, '') || '0') || 0,
-      icon: g.image
-    }));
-
-  const allChannels = [...INITIAL_CHANNELS, ...myGamesChannels, ...eliteGroups, ...proGroups];
-  
   const currentMessages = messages[activeChannelId] || [];
 
   // Update member count based on active channel

@@ -2,10 +2,21 @@ import { Request, Response } from "express";
 import path from "path";
 import fs from "fs";
 import prisma from "../utils/prisma.ts";
-import sharp from "sharp";
+
+let sharp: any;
+try {
+  sharp = require("sharp");
+} catch (e) {
+  console.warn("Sharp module not found or incompatible (might be unsupported CPU). Image compression disabled.");
+}
 
 export class UploadController {
   private static async compressImage(filePath: string, target: string) {
+    if (!sharp) {
+      console.warn(`Skipping compression for ${filePath} because sharp is not available.`);
+      return;
+    }
+    
     try {
       const ext = path.extname(filePath).toLowerCase();
       if (![".jpg", ".jpeg", ".png", ".webp", ".gif"].includes(ext)) {
