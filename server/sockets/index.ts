@@ -37,12 +37,35 @@ export function setupWebSockets(io: Server) {
 
   const userConnections = new Map<string, Set<string>>(); // userId -> Set of socketIds
 
+  const formatUserForSocket = (user: any) => ({
+    userId: user.id,
+    username: user.username,
+    membership: user.profile?.membershipType || "NONE",
+    level: user.profile?.level || 1,
+    avatar: user.profile?.avatarUrl,
+    bannerUrl: user.profile?.bannerUrl,
+    vipMetadata: user.profile?.vipMetadata,
+    badges: user.badges?.map((ub: any) => ({ ...ub.badge, isPinned: ub.isPinned })) || []
+  });
+
   // Namespaces
   const presenceNs = io.of("/presence");
   const lobbyNs = io.of("/lobby");
   const chatNs = io.of("/chat");
   const notifyNs = io.of("/notify");
   const voiceNs = io.of("/voice");
+
+  // Periodically update lastActivity for all connected users (every 2 minutes)
+  // This keeps them "online" in FriendshipService which checks for lastActivity < 5 mins
+  setInterval(async () => {
+    const activeUserIds = Array.from(userConnections.keys());
+    if (activeUserIds.length > 0) {
+      await prisma.profile.updateMany({
+        where: { userId: { in: activeUserIds } },
+        data: { lastActivity: new Date() }
+      }).catch(() => {});
+    }
+  }, 2 * 60 * 1000);
 
   // Helper to handle user connection tracking and global presence broadcasting
   const updatePresence = async (userId: string, status: "online" | "offline") => {
@@ -740,8 +763,8 @@ export function setupWebSockets(io: Server) {
 
     socket.on("chat.reaction", async (data: { messageId: string, emoji: string }) => {
       try {
-        const messageId = data.messageId;
-        if (!messageId) return;
+        const messageId = parseInt(data.messageId);
+        if (isNaN(messageId)) return;
 
         const message = await prisma.message.findUnique({
           where: { id: messageId }
@@ -784,8 +807,8 @@ export function setupWebSockets(io: Server) {
 
     socket.on("chat.delete", async (data: { messageId: string }) => {
       try {
-        const messageId = data.messageId;
-        if (!messageId) return;
+        const messageId = parseInt(data.messageId);
+        if (isNaN(messageId)) return;
 
         const message = await prisma.message.findUnique({
           where: { id: messageId }
@@ -951,7 +974,12 @@ export function setupWebSockets(io: Server) {
 
       const user = await prisma.user.findUnique({ 
         where: { id: userId },
-        include: { profile: true }
+        include: { 
+          profile: true,
+          badges: {
+            include: { badge: true }
+          }
+        }
       });
 
       if (!user) return;
@@ -1022,24 +1050,33 @@ export function setupWebSockets(io: Server) {
               content: safeContent,
               senderId: userId,
               lobbyId: target.id,
+              replyToId: replyToId ? (typeof replyToId === 'string' ? parseInt(replyToId) : replyToId) : undefined
+            },
+            include: {
+              replyTo: {
+                include: {
+                  sender: true
+                }
+              }
             }
-          }) as any;
+          });
+
+          const replyToData = msg.replyTo ? {
+            id: msg.replyTo.id,
+            user: msg.replyTo.sender.username,
+            text: msg.replyTo.content
+          } : undefined;
 
           const msgPayload = {
             id: msg.id.toString(),
             tempId,
-            from: { 
-              userId, 
-              username: user?.username, 
-              membership: user?.profile?.membershipType || "NONE",
-              level: user?.profile?.level || 1,
-              avatar: user?.profile?.avatarUrl,
-              badges: user?.badges?.map(ub => ({ ...ub.badge, isPinned: ub.isPinned })) || []
-            },
+            from: formatUserForSocket(user),
             targetType: "lobby",
             targetId: target.id,
             content: safeContent,
-            createdAt: msg.createdAt.getTime()
+            createdAt: msg.createdAt.getTime(),
+            replyToId: replyToId,
+            replyTo: replyToData
           };
           
           chatNs.to(`lobby:${target.id}`).emit("chat.message", msgPayload);
@@ -1055,24 +1092,33 @@ export function setupWebSockets(io: Server) {
               content: safeContent,
               senderId: userId,
               receiverId: target.id,
+              replyToId: replyToId ? (typeof replyToId === 'string' ? parseInt(replyToId) : replyToId) : undefined
+            },
+            include: {
+              replyTo: {
+                include: {
+                  sender: true
+                }
+              }
             }
-          }) as any;
+          });
+
+          const replyToData = msg.replyTo ? {
+            id: msg.replyTo.id,
+            user: msg.replyTo.sender.username,
+            text: msg.replyTo.content
+          } : undefined;
 
           const msgPayload = {
             id: msg.id.toString(),
             tempId,
-            from: { 
-              userId, 
-              username: user?.username, 
-              membership: user?.profile?.membershipType || "NONE",
-              level: user?.profile?.level || 1,
-              avatar: user?.profile?.avatarUrl,
-              badges: user?.badges?.map(ub => ({ ...ub.badge, isPinned: ub.isPinned })) || []
-            },
+            from: formatUserForSocket(user),
             targetType: "user",
             targetId: target.id,
             content: safeContent,
-            createdAt: msg.createdAt.getTime()
+            createdAt: msg.createdAt.getTime(),
+            replyToId: replyToId,
+            replyTo: replyToData
           };
           chatNs.to(`user:${target.id}`).emit("chat.message", msgPayload);
           chatNs.to(`user:${userId}`).emit("chat.message", msgPayload);
@@ -1097,7 +1143,7 @@ export function setupWebSockets(io: Server) {
             content: safeContent,
             senderId: userId,
             channelId: target.id, 
-            replyToId: replyToId ? String(replyToId) : undefined
+            replyToId: replyToId ? (typeof replyToId === 'string' ? parseInt(replyToId) : replyToId) : undefined
           },
           include: {
             replyTo: {
@@ -1109,7 +1155,7 @@ export function setupWebSockets(io: Server) {
         });
 
         const replyToData = msg.replyTo ? {
-          id: msg.replyTo.id.toString(),
+          id: msg.replyTo.id,
           user: msg.replyTo.sender.username,
           text: msg.replyTo.content
         } : undefined;
@@ -1117,15 +1163,7 @@ export function setupWebSockets(io: Server) {
         chatNs.to(room).emit("chat.message", {
           id: msg.id.toString(),
           tempId: tempId,
-          from: { 
-            userId, 
-            username: user?.username, 
-            membership: user?.profile?.membershipType || "NONE",
-            level: user?.profile?.level || 1,
-            avatar: user?.profile?.avatarUrl,
-            bannerUrl: user?.profile?.bannerUrl,
-            vipMetadata: user?.profile?.vipMetadata
-          },
+          from: formatUserForSocket(user),
           targetType: "channel",
           targetId: target.id,
           content: safeContent,

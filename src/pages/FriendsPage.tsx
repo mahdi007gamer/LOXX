@@ -7,6 +7,8 @@ import { useAuth } from "../context/AuthContext";
 import { Friend, FriendStatus, FriendRequest } from "../types";
 import api from "../lib/api";
 import { notifySocket } from "../lib/socket";
+import { SmartImage } from "../components/ui/SmartImage";
+import { getAvatarFallbacks } from "../lib/avatar";
 import { 
   Search, 
   UserPlus, 
@@ -104,11 +106,13 @@ const FriendItem = ({
             <div className={cn("h-12 w-12 rounded-full overflow-hidden flex items-center justify-center border transition-all",
                isVip ? "bg-yellow-400/20 border-yellow-400/50" : isPlus ? "bg-neon-blue/20 border-neon-blue/50" : "bg-white/10 border-white/5 group-hover/avatar:border-neon-blue/50"
             )}>
-               {((friend.avatar || (friend as any).avatarUrl) && ((friend.avatar || (friend as any).avatarUrl).length > 5 || (friend.avatar || (friend as any).avatarUrl).startsWith("/") || (friend.avatar || (friend as any).avatarUrl).includes("."))) ? (
-                 <img src={friend.avatar || (friend as any).avatarUrl} alt={friend.username} className="w-full h-full object-cover" />
-               ) : (
-                 <div className="h-full w-full flex items-center justify-center text-xl">{friend.avatar || (friend as any).avatarUrl || "👤"}</div>
-               )}
+               <SmartImage 
+                 src={friend.avatarUrl || friend.avatar} 
+                 alt={friend.username}
+                 fallbacks={getAvatarFallbacks(friend.username)}
+                 className="w-full h-full object-cover"
+                 isVipEnabled={isVip || isPlus}
+               />
             </div>
             <div className="absolute -bottom-0.5 -right-0.5 border-2 border-dark-bg rounded-full p-0.5 bg-dark-bg z-10">
               <StatusBadge status={friend.status} />
@@ -467,11 +471,12 @@ export const FriendsPage = () => {
                          }
                        }}
                      >
-                       {user?.avatarUrl && (user.avatarUrl.length > 5 || user.avatarUrl.startsWith("/") || user.avatarUrl.includes(".")) ? (
-                         <img src={user.avatarUrl} alt="avatar" className="w-full h-full object-cover" />
-                       ) : (
-                         user?.avatarUrl || "👤"
-                       )}
+                        <SmartImage 
+                          src={user?.avatarUrl} 
+                          alt="avatar" 
+                          fallbacks={user ? getAvatarFallbacks(user.username) : []}
+                          className="w-full h-full object-cover" 
+                        />
                      </div>
                     <div className="flex-1 min-w-0">
                       <h3 className="font-black text-white text-base md:text-lg truncate">{user?.displayName || user?.username}</h3>

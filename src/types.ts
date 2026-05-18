@@ -206,7 +206,7 @@ export interface FriendChat {
 export interface Channel {
   id: string;
   name: string;
-  type: "public" | "game" | "private";
+  type: "public" | "game" | "private" | "elite";
   users: number;
   icon?: string;
 }
