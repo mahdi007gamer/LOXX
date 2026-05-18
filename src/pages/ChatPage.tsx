@@ -26,7 +26,8 @@ import api from "../lib/api";
 // --- Sub-components ---
 
 interface BadgeIconProps {
-  type: BadgeType;
+  type: BadgeType | any;
+  key?: any;
 }
 
 function BadgeIcon({ type }: BadgeIconProps) {
@@ -49,6 +50,7 @@ interface MessageItemProps {
   onReply: (message: ChatMessage) => void;
   activeChannelId: string;
   onDelete: (msgId: string) => void;
+  [key: string]: any; // Allow React keys
 }
 
 function MessageItem({ message, onReaction, onSaveGif, onReply, activeChannelId, onDelete }: MessageItemProps) {
@@ -186,7 +188,7 @@ function MessageItem({ message, onReaction, onSaveGif, onReply, activeChannelId,
                />
              )}
              {/* Legacy Badge Types */}
-             {message.senderBadges?.map((b, i) => <BadgeIcon key={i} type={b} />)}
+             {message.senderBadges?.map((b, i) => <BadgeIcon key={i} type={b as any} />)}
           </div>
 
           <span className={cn(
@@ -390,6 +392,7 @@ interface ChannelButtonProps {
   active: boolean;
   onClick: () => void;
   unreadCount?: number;
+  key?: any;
 }
 
 function ChannelButton({ channel, active, onClick, unreadCount }: ChannelButtonProps) {
@@ -784,11 +787,29 @@ export const ChatPage: React.FC = () => {
       return "channel"; 
     };
 
-    const joinChannel = () => {
-      chatSocket.emit("chat.join", { type: getTargetType(), id: activeChannelId }, (res: any) => {
+    const joinChannel = async () => {
+      const type = getTargetType();
+      
+      // Attempt to load history via REST API first for better reliability
+      try {
+        const res = await api.get(`/chat/${activeChannelId}/messages`, {
+          params: { type, limit: 50 }
+        });
+        if (res.data.status === "success" && res.data.data) {
+          setMessages(prev => ({ 
+            ...prev, 
+            [activeChannelId]: res.data.data.map((m: any) => formatIncomingMessage(m, user?.id)) 
+          }));
+        }
+      } catch (err) {
+        console.warn("[CHAT] Fallback history fetch failed, relying on socket join:", err);
+      }
+
+      chatSocket.emit("chat.join", { type, id: activeChannelId }, (res: any) => {
         console.log("[CHAT] Join response for", activeChannelId, ":", res);
         if (res.status === "ok" && res.data) {
-          if (res.data.messages) {
+          // If messages weren't loaded by REST or we want to overwrite with freshest socket data
+          if (res.data.messages && res.data.messages.length > 0) {
             setMessages(prev => ({ ...prev, [activeChannelId]: res.data.messages.map((m: any) => formatIncomingMessage(m, user?.id)) }));
           }
           if (res.data.memberCount !== undefined) {
@@ -944,10 +965,17 @@ export const ChatPage: React.FC = () => {
   }, [input, activeChannelId, activeChannel]);
 
   const formatIncomingMessage = (msg: any, currentUserId?: string): ChatMessage => {
-     const badges: BadgeType[] = [];
+     let badges: BadgeType[] = [];
      const from = msg.from || {};
-     if (from.membership === "VIP") badges.push(BadgeType.VIP);
-     if (from.membership === "PLUS") badges.push(BadgeType.PLUS);
+     
+     // Handle badges from the new unified format
+     if (from.badges && Array.isArray(from.badges)) {
+        badges = from.badges.map((b: any) => (b.type || b.name || "") as BadgeType).filter(t => !!t);
+     } else {
+        // Fallback for simple membership types
+        if (from.membership === "VIP") badges.push(BadgeType.VIP);
+        if (from.membership === "PLUS") badges.push(BadgeType.PLUS);
+     }
      
      const isNewsChannel = msg.targetId === 'news' || msg.channelId === 'news';
      

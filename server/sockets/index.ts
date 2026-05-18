@@ -859,26 +859,32 @@ export function setupWebSockets(io: Server) {
              where: { channelId: data.id },
              take: 50,
              orderBy: { createdAt: "desc" },
-             include: { sender: { include: { profile: true } } }
+             include: { 
+               sender: { 
+                 include: { 
+                   profile: true,
+                   badges: { include: { badge: true } }
+                 } 
+               },
+               replyTo: {
+                 include: { sender: true }
+               }
+             }
            });
 
            const formatted = messages.map(msg => ({
               id: msg.id.toString(),
-              from: {
-                userId: msg.senderId,
-                username: msg.sender.username,
-                membership: msg.sender.profile?.membershipType || "NONE",
-                level: msg.sender.profile?.level || 1,
-                avatar: msg.sender.profile?.avatarUrl,
-                bannerUrl: msg.sender.profile?.bannerUrl,
-                vipMetadata: msg.sender.profile?.vipMetadata,
-                isOnline: userConnections.has(msg.senderId)
-              },
+              from: formatUserForSocket(msg.sender),
               targetType: "channel",
               targetId: data.id,
               content: msg.content,
               createdAt: msg.createdAt.getTime(),
               replyToId: msg.replyToId,
+              replyTo: msg.replyTo ? {
+                id: msg.replyTo.id.toString(),
+                user: msg.replyTo.sender.username,
+                text: msg.replyTo.content
+              } : undefined,
               reactions: msg.reactions ? JSON.parse(msg.reactions) : []
            })).reverse();
            
@@ -893,26 +899,32 @@ export function setupWebSockets(io: Server) {
              },
              take: 50,
              orderBy: { createdAt: "desc" },
-             include: { sender: { include: { profile: true } } }
+             include: { 
+               sender: { 
+                 include: { 
+                   profile: true,
+                   badges: { include: { badge: true } }
+                 } 
+               },
+               replyTo: {
+                 include: { sender: true }
+               }
+             }
            });
 
            const formatted = messages.map(msg => ({
               id: msg.id.toString(),
-              from: {
-                userId: msg.senderId,
-                username: msg.sender.username,
-                membership: msg.sender.profile?.membershipType || "NONE",
-                level: msg.sender.profile?.level || 1,
-                avatar: msg.sender.profile?.avatarUrl,
-                bannerUrl: msg.sender.profile?.bannerUrl,
-                vipMetadata: msg.sender.profile?.vipMetadata,
-                isOnline: userConnections.has(msg.senderId)
-              },
+              from: formatUserForSocket(msg.sender),
               targetType: "user",
               targetId: data.id,
               content: msg.content,
               createdAt: msg.createdAt.getTime(),
               replyToId: msg.replyToId,
+              replyTo: msg.replyTo ? {
+                id: msg.replyTo.id.toString(),
+                user: msg.replyTo.sender.username,
+                text: msg.replyTo.content
+              } : undefined,
               reactions: msg.reactions ? JSON.parse(msg.reactions) : []
            })).reverse();
            
@@ -922,26 +934,32 @@ export function setupWebSockets(io: Server) {
              where: { lobbyId: data.id },
              take: 50,
              orderBy: { createdAt: "desc" },
-             include: { sender: { include: { profile: true } } }
+             include: { 
+               sender: { 
+                 include: { 
+                   profile: true,
+                   badges: { include: { badge: true } }
+                 } 
+               },
+               replyTo: {
+                 include: { sender: true }
+               }
+             }
            });
 
            const formatted = messages.map(msg => ({
               id: msg.id.toString(),
-              from: {
-                userId: msg.senderId,
-                username: msg.sender.username,
-                membership: msg.sender.profile?.membershipType || "NONE",
-                level: msg.sender.profile?.level || 1,
-                avatar: msg.sender.profile?.avatarUrl,
-                bannerUrl: msg.sender.profile?.bannerUrl,
-                vipMetadata: msg.sender.profile?.vipMetadata,
-                isOnline: userConnections.has(msg.senderId)
-              },
+              from: formatUserForSocket(msg.sender),
               targetType: "lobby",
               targetId: data.id,
               content: msg.content,
               createdAt: msg.createdAt.getTime(),
               replyToId: msg.replyToId,
+              replyTo: msg.replyTo ? {
+                id: msg.replyTo.id.toString(),
+                user: msg.replyTo.sender.username,
+                text: msg.replyTo.content
+              } : undefined,
               reactions: msg.reactions ? JSON.parse(msg.reactions) : []
            })).reverse();
            
@@ -1038,19 +1056,39 @@ export function setupWebSockets(io: Server) {
           }
         });
 
+        if (!user) {
+          console.error(`[CHAT SEND] User not found: ${userId}`);
+          if (ack) ack({ status: "error", error: { code: "AUTH_EXPIRED", message: "User not found" } });
+          return;
+        }
+
+        // Safe replyToId parsing
+        let finalReplyToId: number | undefined = undefined;
+        if (replyToId) {
+          try {
+            const parsed = parseInt(String(replyToId));
+            if (!isNaN(parsed)) finalReplyToId = parsed;
+          } catch (e) {
+            console.warn(`[CHAT SEND] Invalid replyToId: ${replyToId}`);
+          }
+        }
+
         if (target.type === "lobby") {
           // Verify membership
           const membership = await prisma.lobbyMember.findUnique({
              where: { lobbyId_userId: { lobbyId: target.id, userId } }
           });
-          if (!membership) throw new Error("NOT_MEMBER");
+          if (!membership) {
+            if (ack) ack({ status: "error", error: { code: "FORBIDDEN", message: "تراکنش لابی نامعتبر است." } });
+            return;
+          }
 
           const msg = await prisma.message.create({
             data: {
               content: safeContent,
               senderId: userId,
               lobbyId: target.id,
-              replyToId: replyToId ? (typeof replyToId === 'string' ? parseInt(replyToId) : replyToId) : undefined
+              replyToId: finalReplyToId
             },
             include: {
               replyTo: {
@@ -1062,7 +1100,7 @@ export function setupWebSockets(io: Server) {
           });
 
           const replyToData = msg.replyTo ? {
-            id: msg.replyTo.id,
+            id: msg.replyTo.id.toString(),
             user: msg.replyTo.sender.username,
             text: msg.replyTo.content
           } : undefined;
@@ -1075,7 +1113,7 @@ export function setupWebSockets(io: Server) {
             targetId: target.id,
             content: safeContent,
             createdAt: msg.createdAt.getTime(),
-            replyToId: replyToId,
+            replyToId: finalReplyToId ? String(finalReplyToId) : undefined,
             replyTo: replyToData
           };
           
@@ -1092,7 +1130,7 @@ export function setupWebSockets(io: Server) {
               content: safeContent,
               senderId: userId,
               receiverId: target.id,
-              replyToId: replyToId ? (typeof replyToId === 'string' ? parseInt(replyToId) : replyToId) : undefined
+              replyToId: finalReplyToId
             },
             include: {
               replyTo: {
@@ -1104,7 +1142,7 @@ export function setupWebSockets(io: Server) {
           });
 
           const replyToData = msg.replyTo ? {
-            id: msg.replyTo.id,
+            id: msg.replyTo.id.toString(),
             user: msg.replyTo.sender.username,
             text: msg.replyTo.content
           } : undefined;
@@ -1117,7 +1155,7 @@ export function setupWebSockets(io: Server) {
             targetId: target.id,
             content: safeContent,
             createdAt: msg.createdAt.getTime(),
-            replyToId: replyToId,
+            replyToId: finalReplyToId ? String(finalReplyToId) : undefined,
             replyTo: replyToData
           };
           chatNs.to(`user:${target.id}`).emit("chat.message", msgPayload);
@@ -1134,7 +1172,7 @@ export function setupWebSockets(io: Server) {
            update: {},
            create: {
              id: target.id,
-             title: target.id // or a mapped title
+             title: target.id 
            }
         });
 
@@ -1143,7 +1181,7 @@ export function setupWebSockets(io: Server) {
             content: safeContent,
             senderId: userId,
             channelId: target.id, 
-            replyToId: replyToId ? (typeof replyToId === 'string' ? parseInt(replyToId) : replyToId) : undefined
+            replyToId: finalReplyToId
           },
           include: {
             replyTo: {
@@ -1155,12 +1193,12 @@ export function setupWebSockets(io: Server) {
         });
 
         const replyToData = msg.replyTo ? {
-          id: msg.replyTo.id,
+          id: msg.replyTo.id.toString(),
           user: msg.replyTo.sender.username,
           text: msg.replyTo.content
         } : undefined;
 
-        chatNs.to(room).emit("chat.message", {
+        const msgPayload = {
           id: msg.id.toString(),
           tempId: tempId,
           from: formatUserForSocket(user),
@@ -1168,14 +1206,16 @@ export function setupWebSockets(io: Server) {
           targetId: target.id,
           content: safeContent,
           createdAt: msg.createdAt.getTime(),
-          replyToId: replyToId,
+          replyToId: finalReplyToId ? String(finalReplyToId) : undefined,
           replyTo: replyToData
-        });
+        };
+
+        chatNs.to(room).emit("chat.message", msgPayload);
 
         if (ack) ack({ status: "ok", data: { tempId, messageId: msg.id.toString(), createdAt: msg.createdAt.getTime() } });
       } catch (err) {
         console.error("[CHAT SEND ERROR]", err);
-        if (ack) ack({ status: "error", error: { code: "INTERNAL_ERROR", message: "Failed to send message" } });
+        if (ack) ack({ status: "error", error: { code: "INTERNAL_ERROR", message: "خطا در ارسال پیام. دوباره تلاش کنید." } });
       }
     });
   });
