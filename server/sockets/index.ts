@@ -740,8 +740,8 @@ export function setupWebSockets(io: Server) {
 
     socket.on("chat.reaction", async (data: { messageId: string, emoji: string }) => {
       try {
-        const messageId = parseInt(data.messageId);
-        if (isNaN(messageId)) return;
+        const messageId = data.messageId;
+        if (!messageId) return;
 
         const message = await prisma.message.findUnique({
           where: { id: messageId }
@@ -784,8 +784,8 @@ export function setupWebSockets(io: Server) {
 
     socket.on("chat.delete", async (data: { messageId: string }) => {
       try {
-        const messageId = parseInt(data.messageId);
-        if (isNaN(messageId)) return;
+        const messageId = data.messageId;
+        if (!messageId) return;
 
         const message = await prisma.message.findUnique({
           where: { id: messageId }
@@ -860,6 +860,69 @@ export function setupWebSockets(io: Server) {
            })).reverse();
            
            if (ack) ack({ status: "ok", data: { messages: formatted, memberCount } });
+        } else if (data.type === "user") {
+           const messages = await prisma.message.findMany({
+             where: { 
+                OR: [
+                  { senderId: userId, receiverId: data.id },
+                  { senderId: data.id, receiverId: userId }
+                ]
+             },
+             take: 50,
+             orderBy: { createdAt: "desc" },
+             include: { sender: { include: { profile: true } } }
+           });
+
+           const formatted = messages.map(msg => ({
+              id: msg.id.toString(),
+              from: {
+                userId: msg.senderId,
+                username: msg.sender.username,
+                membership: msg.sender.profile?.membershipType || "NONE",
+                level: msg.sender.profile?.level || 1,
+                avatar: msg.sender.profile?.avatarUrl,
+                bannerUrl: msg.sender.profile?.bannerUrl,
+                vipMetadata: msg.sender.profile?.vipMetadata,
+                isOnline: userConnections.has(msg.senderId)
+              },
+              targetType: "user",
+              targetId: data.id,
+              content: msg.content,
+              createdAt: msg.createdAt.getTime(),
+              replyToId: msg.replyToId,
+              reactions: msg.reactions ? JSON.parse(msg.reactions) : []
+           })).reverse();
+           
+           if (ack) ack({ status: "ok", data: { messages: formatted, memberCount: 2 } });
+        } else if (data.type === "lobby") {
+           const messages = await prisma.message.findMany({
+             where: { lobbyId: data.id },
+             take: 50,
+             orderBy: { createdAt: "desc" },
+             include: { sender: { include: { profile: true } } }
+           });
+
+           const formatted = messages.map(msg => ({
+              id: msg.id.toString(),
+              from: {
+                userId: msg.senderId,
+                username: msg.sender.username,
+                membership: msg.sender.profile?.membershipType || "NONE",
+                level: msg.sender.profile?.level || 1,
+                avatar: msg.sender.profile?.avatarUrl,
+                bannerUrl: msg.sender.profile?.bannerUrl,
+                vipMetadata: msg.sender.profile?.vipMetadata,
+                isOnline: userConnections.has(msg.senderId)
+              },
+              targetType: "lobby",
+              targetId: data.id,
+              content: msg.content,
+              createdAt: msg.createdAt.getTime(),
+              replyToId: msg.replyToId,
+              reactions: msg.reactions ? JSON.parse(msg.reactions) : []
+           })).reverse();
+           
+           if (ack) ack({ status: "ok", data: { messages: formatted, memberCount: 0 } });
         } else {
            if (ack) ack({ status: "ok", data: { messages: [], memberCount } });
         }
@@ -1034,7 +1097,7 @@ export function setupWebSockets(io: Server) {
             content: safeContent,
             senderId: userId,
             channelId: target.id, 
-            replyToId: replyToId ? (typeof replyToId === 'string' ? parseInt(replyToId) : replyToId) : undefined
+            replyToId: replyToId ? String(replyToId) : undefined
           },
           include: {
             replyTo: {

@@ -1057,6 +1057,9 @@ export const ChatPage: React.FC = () => {
        id: tempId,
        senderId: user?.id || "me",
        senderName: user?.username || "شما",
+       senderAvatar: user?.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.id || "guest"}`,
+       bannerUrl: user?.bannerUrl,
+       vipMetadata: user?.vipMetadata,
        senderLevel: 1,
        text: messageText,
        timestamp: new Date().toLocaleTimeString("fa-IR", { hour: "2-digit", minute: "2-digit" }),
@@ -1086,8 +1089,7 @@ export const ChatPage: React.FC = () => {
       replyToId: replyingTo?.id
     }, (res: any) => {
        if (res.status === "error") {
-          // Replace temp msg with error ? Or just log it.
-          alert(res.error?.message || "Error sending message");
+          toast.error(res.error?.message || "Error sending message");
           setMessages(prev => ({
              ...prev,
              [activeChannelId]: prev[activeChannelId].filter(m => m.id !== tempId)

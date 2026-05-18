@@ -88,9 +88,10 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
           pendingPresenceSnapshot.current = null;
           const updated = fetchedFriends.map((f: any) => {
             const statusData = snapshot.find(u => u.userId === f.id);
+            const isAlreadyOnline = f.status !== "offline" && f.status !== FriendStatus.OFFLINE;
             return { 
               ...f, 
-              status: statusData ? (statusData.status as FriendStatus) : (f.status as FriendStatus || FriendStatus.OFFLINE)
+              status: statusData ? (statusData.status as FriendStatus) : (isAlreadyOnline ? f.status : FriendStatus.OFFLINE)
             };
           });
           return sortFriends(updated);
@@ -150,7 +151,9 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
           }
           const updated = prev.map(f => {
             const statusData = data.users.find(u => u.userId === f.id);
-            const status = (statusData ? statusData.status : "offline") as FriendStatus;
+            // If API already says they are online, keep them online. Otherwise use snapshot data
+            const isAlreadyOnline = f.status !== FriendStatus.OFFLINE;
+            const status = statusData ? (statusData.status as FriendStatus) : (isAlreadyOnline ? f.status : FriendStatus.OFFLINE);
             return { ...f, status };
           });
           return sortFriends(updated);
@@ -372,6 +375,7 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
       id: tempId,
       senderId: user?.id || "",
       senderName: user?.username || "شما",
+      senderAvatar: user?.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.id || "guest"}`,
       senderLevel: 1,
       self: true,
       text: text,
@@ -388,6 +392,22 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
       target: { type: "user", id: friendId }, 
       content: text,
       tempId
+    }, (res: any) => {
+      if (res.status === "error") {
+        toast.error(res.error?.message || "خطا در ارسال پیام");
+        setChats(prev => prev.map(c => c.friendId === friendId 
+          ? { ...c, messages: c.messages.filter(m => m.id !== tempId) } 
+          : c
+        ));
+      } else if (res.status === "ok") {
+        setChats(prev => prev.map(c => c.friendId === friendId 
+          ? { 
+              ...c, 
+              messages: c.messages.map(m => m.id === tempId ? { ...m, id: res.data.messageId } : m)
+            } 
+          : c
+        ));
+      }
     });
   };
 
