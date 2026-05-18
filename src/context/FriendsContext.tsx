@@ -352,7 +352,7 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
-  const openChat = (friendId: string, displayName?: string, avatarUrl?: string) => {
+  const openChat = async (friendId: string, displayName?: string, avatarUrl?: string) => {
     setChats(prev => {
       const existingChat = prev.find(c => c.friendId === friendId);
       if (existingChat) {
@@ -363,6 +363,36 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
       }
       return [...prev, { friendId, messages: [], isTyping: false, unreadCount: 0, tempDisplayName: displayName, tempAvatarUrl: avatarUrl }];
     });
+
+    try {
+      const res = await api.get(`/chat/${friendId}/messages`, { params: { type: 'user', limit: 30 } });
+      if (res.data.status === "success" && res.data.data) {
+         setChats(prev => prev.map(c => {
+           if (c.friendId === friendId) {
+             const messages = res.data.data.map((msg: any) => {
+                const isSelf = msg.from.userId === user?.id;
+                return {
+                  id: msg.id,
+                  senderId: msg.from.userId,
+                  senderName: msg.from.username,
+                  senderLevel: msg.from.level || 1,
+                  senderAvatar: msg.from.avatar,
+                  badges: msg.from.badges || [],
+                  self: isSelf,
+                  text: msg.content,
+                  timestamp: new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                  isRead: true
+                };
+             });
+             return { ...c, messages, unreadCount: 0 };
+           }
+           return c;
+         }));
+      }
+    } catch (err) {
+      console.error("Failed to load overlay chat history:", err);
+    }
+
     setActiveChatId(friendId);
     setChatTrigger(t => t + 1);
   };

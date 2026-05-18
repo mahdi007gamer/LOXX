@@ -55,24 +55,30 @@ export class ChatController {
       });
 
       // Format for frontend
-      const formatted = messages.reverse().map(m => ({
+      const formatted = messages.map(m => ({
         id: m.id.toString(),
-        text: m.content,
-        timestamp: m.createdAt.toISOString(),
-        senderId: m.senderId,
-        senderName: m.sender.profile?.displayName || m.sender.username,
-        senderAvatar: m.sender.profile?.avatarUrl,
-        senderLevel: m.sender.profile?.level || 1,
-        badges: m.sender.badges.map(usb => ({ ...usb.badge, isPinned: usb.isPinned })),
-        self: m.senderId === userId,
-        targetId: m.channelId || m.lobbyId || m.receiverId,
+        from: {
+          userId: m.sender.id,
+          username: m.sender.username,
+          membership: m.sender.profile?.membershipType || "NONE",
+          level: m.sender.profile?.level || 1,
+          avatar: m.sender.profile?.avatarUrl,
+          bannerUrl: m.sender.profile?.bannerUrl,
+          vipMetadata: m.sender.profile?.vipMetadata,
+          badges: m.sender.badges.map(ub => ({ ...ub.badge, isPinned: ub.isPinned }))
+        },
         targetType: type,
+        targetId: m.channelId || m.lobbyId || m.receiverId,
+        content: m.content,
+        createdAt: m.createdAt.getTime(),
+        replyToId: m.replyToId ? m.replyToId.toString() : undefined,
         replyTo: m.replyTo ? {
           id: m.replyTo.id.toString(),
-          user: m.replyTo.sender.profile?.displayName || m.replyTo.sender.username,
+          user: m.replyTo.sender.username,
           text: m.replyTo.content
-        } : undefined
-      }));
+        } : undefined,
+        reactions: m.reactions ? JSON.parse(m.reactions as string) : []
+      })).reverse();
 
       res.json({ status: "success", data: formatted });
     } catch (error: any) {
