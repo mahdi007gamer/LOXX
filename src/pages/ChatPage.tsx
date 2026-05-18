@@ -784,22 +784,32 @@ export const ChatPage: React.FC = () => {
       return "channel"; 
     };
 
-    chatSocket.emit("chat.join", { type: getTargetType(), id: activeChannelId }, (res: any) => {
-      console.log("[CHAT] Join response for", activeChannelId, ":", res);
-      if (res.status === "ok" && res.data) {
-        if (res.data.messages) {
-          setMessages(prev => ({ ...prev, [activeChannelId]: res.data.messages.map((m: any) => formatIncomingMessage(m, user?.id)) }));
+    const joinChannel = () => {
+      chatSocket.emit("chat.join", { type: getTargetType(), id: activeChannelId }, (res: any) => {
+        console.log("[CHAT] Join response for", activeChannelId, ":", res);
+        if (res.status === "ok" && res.data) {
+          if (res.data.messages) {
+            setMessages(prev => ({ ...prev, [activeChannelId]: res.data.messages.map((m: any) => formatIncomingMessage(m, user?.id)) }));
+          }
+          if (res.data.memberCount !== undefined) {
+            setMemberCount(res.data.memberCount);
+            setChannelUsers(prev => ({ ...prev, [activeChannelId]: res.data.memberCount }));
+          }
+          setUnreadCounts(prev => ({ ...prev, [activeChannelId]: 0 }));
+        } else if (res.status === "error") {
+          console.error("[CHAT] Error joining channel:", activeChannelId, res.error);
+          toast.error(`خطا در اتصال به کانال: ${res.error?.message || "نامشخص"}`);
         }
-        if (res.data.memberCount !== undefined) {
-          setMemberCount(res.data.memberCount);
-          setChannelUsers(prev => ({ ...prev, [activeChannelId]: res.data.memberCount }));
-        }
-        setUnreadCounts(prev => ({ ...prev, [activeChannelId]: 0 }));
-      } else if (res.status === "error") {
-        console.error("[CHAT] Error joining channel:", activeChannelId, res.error);
-        toast.error(`خطا در اتصال به کانال: ${res.error?.message || "نامشخص"}`);
-      }
-    });
+      });
+    };
+
+    joinChannel();
+    chatSocket.on("connect", joinChannel);
+
+    return () => {
+      chatSocket.off("connect", joinChannel);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeChannelId, user?.id]);
 
   useEffect(() => {

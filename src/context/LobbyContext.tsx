@@ -361,12 +361,13 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         });
         
         // Immediately join chat and voice rooms
-        if (chatSocket.connected) {
+        const joinChatAndVoice = () => {
           chatSocket.emit("chat.join", { type: "lobby", id: lobbyId });
-        }
-        if (voiceSocket.connected) {
           voiceSocket.emit("voice.join", { roomId: lobbyId });
-        }
+        };
+        joinChatAndVoice();
+        chatSocket.once("connect", () => { chatSocket.emit("chat.join", { type: "lobby", id: lobbyId }); });
+        voiceSocket.once("connect", () => { voiceSocket.emit("voice.join", { roomId: lobbyId }); });
       } else {
         toast.error(ack?.error?.message || "Join failed");
       }
