@@ -1073,6 +1073,7 @@ export function setupWebSockets(io: Server) {
 
         if (ack) ack({ status: "ok", data: { tempId, messageId: msg.id.toString(), createdAt: msg.createdAt.getTime() } });
       } catch (err) {
+        console.error("[CHAT SEND ERROR]", err);
         if (ack) ack({ status: "error", error: { code: "INTERNAL_ERROR", message: "Failed to send message" } });
       }
     });

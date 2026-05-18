@@ -29,7 +29,7 @@ interface BadgeIconProps {
   type: BadgeType;
 }
 
-const BadgeIcon: React.FC<BadgeIconProps> = ({ type }) => {
+function BadgeIcon({ type }: BadgeIconProps) {
   // Legacy BadgeIcon - we prefer UserBadges component for dynamic icons from server
   switch(type) {
     case BadgeType.STREAMER: return <div title="Streamer" className="text-neon-blue"><Zap size={12} fill="currentColor" /></div>;
@@ -40,7 +40,7 @@ const BadgeIcon: React.FC<BadgeIconProps> = ({ type }) => {
     case BadgeType.PLUS: return <div title="Plus" className="text-neon-blue"><Zap size={12} fill="currentColor" /></div>;
     default: return null;
   }
-};
+}
 
 interface MessageItemProps {
   message: ChatMessage;
@@ -51,7 +51,7 @@ interface MessageItemProps {
   onDelete: (msgId: string) => void;
 }
 
-const MessageItem: React.FC<MessageItemProps> = ({ message, onReaction, onSaveGif, onReply, activeChannelId, onDelete }) => {
+function MessageItem({ message, onReaction, onSaveGif, onReply, activeChannelId, onDelete }: MessageItemProps) {
   const { openProfile } = useProfilePopover();
   const { user } = useAuth();
   const isAdmin = (user as any)?.role === 'ADMIN';
@@ -392,7 +392,8 @@ interface ChannelButtonProps {
   unreadCount?: number;
 }
 
-const ChannelButton: React.FC<ChannelButtonProps> = ({ channel, active, onClick, unreadCount }) => (
+function ChannelButton({ channel, active, onClick, unreadCount }: ChannelButtonProps) {
+  return (
   <button
     onClick={onClick}
     className={cn(
@@ -433,7 +434,8 @@ const ChannelButton: React.FC<ChannelButtonProps> = ({ channel, active, onClick,
       <div className="absolute right-0 top-0 bottom-0 w-1 bg-neon-blue shadow-[-2px_0_15px_rgba(0,229,255,0.5)]"></div>
     )}
   </button>
-);
+  );
+}
 
 // --- Themes ---
 
