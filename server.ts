@@ -49,7 +49,10 @@ async function startServer() {
     cors: {
       origin: "*",
       methods: ["GET", "POST"]
-    }
+    },
+    path: "/api/v1/socket.io",
+    pingInterval: 10000,
+    pingTimeout: 5000
   });
 
   setIO(io);

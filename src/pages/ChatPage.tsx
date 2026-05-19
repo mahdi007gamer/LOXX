@@ -603,6 +603,23 @@ export const ChatPage: React.FC = () => {
   const [showFriendsSidebar, setShowFriendsSidebar] = useState(false);
   const [showChannelMenu, setShowChannelMenu] = useState(false);
   const [chatTheme, setChatTheme] = useState<keyof typeof CHAT_THEMES>((localStorage.getItem("loxx-chat-theme") as any) || "aura");
+  
+  const [isSocketConnected, setIsSocketConnected] = useState(chatSocket.connected);
+
+  useEffect(() => {
+    const onConnect = () => setIsSocketConnected(true);
+    const onDisconnect = () => setIsSocketConnected(false);
+    
+    setIsSocketConnected(chatSocket.connected);
+
+    chatSocket.on("connect", onConnect);
+    chatSocket.on("disconnect", onDisconnect);
+
+    return () => {
+      chatSocket.off("connect", onConnect);
+      chatSocket.off("disconnect", onDisconnect);
+    };
+  }, []);
   const [showThemeMenu, setShowThemeMenu] = useState(false);
   const [showVipGroupModal, setShowVipGroupModal] = useState(false);
   const [showEliteSettingsModal, setShowEliteSettingsModal] = useState(false);
@@ -1874,8 +1891,11 @@ export const ChatPage: React.FC = () => {
                 )}
               </div>
               <div className="flex items-center gap-1.5 md:gap-2 truncate">
-                <div className="h-1 w-1 md:h-1.5 md:w-1.5 rounded-full bg-blue-500 shrink-0"></div>
+                <div className={`h-1 w-1 md:h-1.5 md:w-1.5 rounded-full ${isSocketConnected ? 'bg-blue-500' : 'bg-red-500'} shrink-0`} title={isSocketConnected ? "متصل" : "قطع ارتباط"}></div>
                 <p className="text-[8px] md:text-[10px] text-gray-500 font-bold uppercase tracking-tighter truncate">{memberCount.toLocaleString()} عضو</p>
+                {!isSocketConnected && (
+                  <span className="text-[10px] text-red-500 font-bold animate-pulse mr-2">در حال اتصال...</span>
+                )}
                 {gameMembers.length > 0 && (
                   <div className="hidden sm:flex items-center -space-x-2 mr-2">
                     {gameMembers.slice(0, 4).map((member, i) => {

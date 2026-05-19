@@ -7,6 +7,7 @@ export const createNamespaceSocket = (namespace: string) => {
   // By using location.origin, we respect the current protocol (HTTP vs HTTPS)
   // Force websocket transport to fix session unknown errors in VPS/Runflare load balancers
   return io(`${SOCKET_URL}/${namespace}`, {
+    path: '/api/v1/socket.io',
     autoConnect: false,
     transports: ['polling', 'websocket'], // Use polling fallback for reverse proxies
     reconnectionDelay: 1000,
