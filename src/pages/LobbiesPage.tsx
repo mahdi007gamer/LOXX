@@ -139,11 +139,11 @@ export const LobbiesPage = () => {
                  <button onClick={() => setActiveFilter('all')} className="text-[9px] font-bold text-neon-blue hover:text-white transition-colors uppercase tracking-widest">CLEAR ALL</button>
                )}
             </div>
-            <div className="flex items-center gap-2 overflow-x-auto pb-4 scrollbar-none snap-x snap-mandatory mask-fade-edges">
+            <div className="flex items-center gap-2 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent snap-x snap-mandatory mask-fade-edges">
                <button 
                   onClick={() => setActiveFilter("all")}
                   className={cn(
-                    "whitespace-nowrap rounded-lg px-5 py-2.5 text-[9px] md:text-[11px] font-black uppercase transition-all snap-start border flex items-center gap-2",
+                    "shrink-0 whitespace-nowrap rounded-lg px-5 py-2.5 text-[9px] md:text-[11px] font-black uppercase transition-all snap-start border flex items-center justify-center gap-2",
                     activeFilter === "all" 
                       ? "bg-neon-blue border-neon-blue text-dark-bg shadow-[0_0_15px_rgba(0,229,255,0.3)]" 
                       : "bg-white/5 text-gray-500 border-white/5 hover:border-white/10 hover:text-white"
@@ -157,19 +157,21 @@ export const LobbiesPage = () => {
                     key={game.id} 
                     onClick={() => setActiveFilter(game.id)}
                     className={cn(
-                      "whitespace-nowrap rounded-lg border px-4 py-2.5 text-[9px] md:text-[11px] font-black uppercase transition-all flex items-center gap-2 snap-start",
+                      "shrink-0 whitespace-nowrap rounded-lg border px-4 py-2 text-[9px] md:text-[11px] font-black uppercase transition-all flex items-center justify-center gap-2 snap-start",
                       activeFilter === game.id
                         ? "bg-neon-blue/10 border-neon-blue text-neon-blue shadow-[0_0_15px_rgba(0,229,255,0.1)]"
                         : "border-white/5 bg-white/5 text-gray-500 hover:border-white/10 hover:text-white"
                     )}
                   >
                     {game.iconUrl && (
-                      <SmartImage 
-                        src={game.iconUrl} 
-                        className="w-3.5 h-3.5 md:w-4 md:h-4 object-contain grayscale brightness-150 group-hover:grayscale-0 transition-all" 
-                      />
+                      <div className="flex items-center justify-center">
+                        <SmartImage 
+                          src={game.iconUrl} 
+                          className="w-4 h-4 md:w-5 md:h-5 object-contain grayscale brightness-150 group-hover:grayscale-0 transition-all shrink-0" 
+                        />
+                      </div>
                     )}
-                    {game.title}
+                    <span>{game.title}</span>
                   </button>
                ))}
             </div>
@@ -242,22 +244,24 @@ export const LobbiesPage = () => {
                       )}
 
                       {/* Game Banner */}
-                      <div className="relative h-40 md:h-44 w-full overflow-hidden shrink-0">
-                        {lobby.isPrivate && (
-                          <div className="absolute inset-0 z-10 bg-black/60 backdrop-blur-[2px] flex items-center justify-center">
-                             <div className="flex flex-col items-center gap-2 text-white">
-                               <Lock size={28} className="text-neon-purple animate-pulse" />
-                               <span className="text-[9px] font-black uppercase tracking-[0.3em] text-neon-purple">PRIVATE</span>
-                             </div>
-                          </div>
-                        )}
-                        <SmartImage 
-                          src={lobby.game?.bannerUrl || "https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&q=80&w=1000"} 
-                          alt={lobby.game?.title} 
-                          className="h-full w-full object-cover transition-transform duration-1000 group-hover:scale-110"
-                          referrerPolicy="no-referrer"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0f] via-[#0a0a0f]/20 to-transparent" />
+                      <div className="relative h-40 md:h-44 w-full shrink-0">
+                        <div className="absolute inset-0 overflow-hidden">
+                          {lobby.isPrivate && (
+                            <div className="absolute inset-0 z-10 bg-black/60 backdrop-blur-[2px] flex items-center justify-center">
+                               <div className="flex flex-col items-center gap-2 text-white">
+                                 <Lock size={28} className="text-neon-purple animate-pulse" />
+                                 <span className="text-[9px] font-black uppercase tracking-[0.3em] text-neon-purple">PRIVATE</span>
+                               </div>
+                            </div>
+                          )}
+                          <SmartImage 
+                            src={lobby.game?.bannerUrl || "https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&q=80&w=1000"} 
+                            alt={lobby.game?.title} 
+                            className="h-full w-full object-cover transition-transform duration-1000 group-hover:scale-110"
+                            referrerPolicy="no-referrer"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0f] via-[#0a0a0f]/20 to-transparent" />
+                        </div>
                         
                         <div className={cn("absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] font-black uppercase backdrop-blur-md border", isVipLobby ? "border-yellow-400/30 bg-yellow-400/10 text-yellow-400" : "border-white/10 bg-white/10 text-white")}>
                            <Clock size={10} className={isVipLobby ? "text-yellow-400" : "text-neon-blue"} />

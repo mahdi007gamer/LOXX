@@ -45,7 +45,8 @@ export function setupWebSockets(io: Server) {
     avatar: user.profile?.avatarUrl,
     bannerUrl: user.profile?.bannerUrl,
     vipMetadata: user.profile?.vipMetadata,
-    badges: user.badges?.map((ub: any) => ({ ...ub.badge, isPinned: ub.isPinned })) || []
+    badges: user.badges?.map((ub: any) => ({ ...ub.badge, isPinned: ub.isPinned })) || [],
+    isOnline: userConnections.has(user.id)
   });
 
   // Namespaces

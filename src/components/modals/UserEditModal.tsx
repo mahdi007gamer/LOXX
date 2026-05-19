@@ -16,7 +16,8 @@ interface UserEditModalProps {
 export const UserEditModal = ({ isOpen, onClose, user, onSuccess }: UserEditModalProps) => {
   const [role, setRole] = useState("USER");
   const [membership, setMembership] = useState("NONE");
-  const [days, setDays] = useState(30);
+  const [days, setDays] = useState(0); // Default to 0 so we don't accidentally add days
+  const [remainingDays, setRemainingDays] = useState(0);
   const [loading, setLoading] = useState(false);
   const [username, setUsername] = useState("");
   const [phone, setPhone] = useState("");
@@ -30,6 +31,15 @@ export const UserEditModal = ({ isOpen, onClose, user, onSuccess }: UserEditModa
       setUsername(user.username || "");
       setPhone(user.phone || "");
       setPassword("");
+
+      // Calculate remaining days if sub exists
+      const sub = user.subscriptions?.[0];
+      if (sub && new Date(sub.expiresAt) > new Date()) {
+         const diffTime = Math.abs(new Date(sub.expiresAt).getTime() - new Date().getTime());
+         setRemainingDays(Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+      } else {
+         setRemainingDays(0);
+      }
     }
     fetchSpecialBadges();
   }, [user]);
@@ -296,20 +306,30 @@ export const UserEditModal = ({ isOpen, onClose, user, onSuccess }: UserEditModa
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-2">
                           <Clock size={16} className="text-neon-blue" />
-                          <span className="text-sm font-black text-white italic">مدت اعتبار (روز)</span>
+                          <span className="text-sm font-black text-white italic">اعتبار فعلی: {remainingDays} روز |افزودن اعتبار (روز)</span>
                         </div>
-                        <span className="text-2xl font-black text-neon-blue italic">{days} <span className="text-xs">روز</span></span>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="number"
+                            min="0"
+                            max="3650"
+                            value={days}
+                            onChange={(e) => setDays(Number(e.target.value))}
+                            className="w-16 bg-white/10 text-neon-blue font-black text-xl italic rounded-lg px-2 text-center outline-none border border-transparent focus:border-neon-blue/50"
+                          />
+                          <span className="text-xs font-black text-neon-blue italic">روز</span>
+                        </div>
                       </div>
                       <input 
                         type="range"
-                        min="1"
+                        min="0"
                         max="365"
                         value={days}
                         onChange={(e) => setDays(Number(e.target.value))}
                         className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-neon-blue"
                       />
                       <div className="flex justify-between mt-2 text-[8px] font-black text-gray-600 uppercase italic tracking-widest">
-                        <span>۱ روز</span>
+                        <span>۰ روز</span>
                         <span>۱ سال</span>
                       </div>
                     </div>

@@ -18,6 +18,7 @@ export class UploadController {
     }
     
     try {
+      if (target === "badge") return;
       const ext = path.extname(filePath).toLowerCase();
       if (![".jpg", ".jpeg", ".png", ".webp", ".gif"].includes(ext)) {
         return;

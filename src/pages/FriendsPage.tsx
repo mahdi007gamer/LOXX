@@ -300,6 +300,7 @@ export const FriendsPage = () => {
   const getScore = (f: any) => f.membership === 'VIP' ? 2 : f.membership === 'PLUS' ? 1 : 0;
 
   const [activities, setActivities] = useState<any[]>([]);
+  const [userStats, setUserStats] = useState({ level: (user as any)?.level || 1, points: (user as any)?.points || 0 });
 
   // Format activity action helper
   const getActivityText = (act: any) => {
@@ -318,6 +319,14 @@ export const FriendsPage = () => {
   };
 
   useEffect(() => {
+    if (user?.id) {
+       api.get(`/users/me`).then(res => {
+         if (res.data.status === "success" && res.data.data) {
+            setUserStats({ level: res.data.data.level, points: res.data.data.xp });
+         }
+       }).catch(err => console.warn("Failed to load live user stats", err));
+    }
+    
     api.get("/friendships/activities").then(res => {
       if (res.data.status === "success") {
         setActivities(res.data.data);
@@ -496,12 +505,12 @@ export const FriendsPage = () => {
                       <div className="flex items-center gap-3 mt-2">
                          <div className="flex flex-col">
                            <span className="text-[8px] md:text-[10px] text-gray-600 uppercase font-bold">سطح</span>
-                           <span className="text-xs md:text-sm font-black text-neon-purple">{(user as any)?.level || 1}</span>
+                           <span className="text-xs md:text-sm font-black text-neon-purple">{userStats.level}</span>
                          </div>
                          <div className="w-px h-6 bg-white/5" />
                          <div className="flex flex-col">
                            <span className="text-[8px] md:text-[10px] text-gray-600 uppercase font-bold">امتیاز</span>
-                           <span className="text-xs md:text-sm font-black text-neon-blue">{(user as any)?.xp || 0}</span>
+                           <span className="text-xs md:text-sm font-black text-neon-blue">{userStats.points}</span>
                          </div>
                       </div>
                     </div>

@@ -162,11 +162,17 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
       // Listen for presence changes using dot protocol
       presenceSocket.on("presence.changed", (data: { userId: string, status: string, activity?: string }) => {
-        let friendName = "";
         setFriends(prev => {
           const friend = prev.find(f => f.id === data.userId);
-          if (friend) friendName = friend.displayName || friend.username;
+          const friendName = friend ? (friend.displayName || friend.username) : "";
           
+          if (friendName && data.status === "online") {
+            toast(`${friendName} آنلاین شد`, {
+              icon: '🟢',
+              id: `online-${data.userId}`
+            });
+          }
+
           const updated = prev.map(f => f.id === data.userId ? { 
             ...f, 
             status: data.status as FriendStatus,
@@ -174,13 +180,6 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
           } : f);
           return sortFriends(updated);
         });
-
-        if (friendName && data.status === "online") {
-          toast(`${friendName} آنلاین شد`, { 
-            icon: '🟢', 
-            id: `online-${data.userId}` 
-          });
-        }
       });
 
       // Listen for incoming chat messages using dot protocol

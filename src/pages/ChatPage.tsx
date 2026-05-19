@@ -201,7 +201,7 @@ function MessageItem({ message, onReaction, onSaveGif, onReply, activeChannelId,
         <div className="flex flex-col w-full">
           <div className={cn("relative group/bubble-container flex items-center w-fit", message.self ? "ml-auto" : "mr-auto")}>
             {/* VIP Glow Backing */}
-            {isVIP && !message.self && (
+            {isVIP && (
               <div className="absolute inset-0 bg-yellow-400/5 blur-3xl rounded-full scale-150 animate-pulse pointer-events-none" />
             )}
             
@@ -254,12 +254,12 @@ function MessageItem({ message, onReaction, onSaveGif, onReply, activeChannelId,
                   : message.self 
                     ? "bg-[#140e1a] text-white border-neon-pink/20 rounded-tr-none" 
                     : "bg-white/5 text-gray-100 border-white/10 rounded-tl-none",
-                isVIP && !message.self && "border-yellow-400/40 bg-gradient-to-br from-yellow-400/[0.12] to-transparent shadow-[0_0_40px_rgba(250,204,21,0.12)]",
-                isPLUS && !message.self && "border-neon-blue/40 bg-gradient-to-br from-neon-blue/[0.12] to-transparent shadow-[0_0_30px_rgba(0,229,255,0.12)]"
+                isVIP && "border-yellow-400/40 bg-gradient-to-br from-yellow-400/[0.12] to-transparent shadow-[0_0_40px_rgba(250,204,21,0.12)]",
+                isPLUS && "border-neon-blue/40 bg-gradient-to-br from-neon-blue/[0.12] to-transparent shadow-[0_0_30px_rgba(0,229,255,0.12)]"
               )}
             >
                {/* VIP/PLUS Shimmer Effect */}
-               {(isVIP || isPLUS) && !message.self && (
+               {(isVIP || isPLUS) && (
                 <motion.div 
                   animate={{ x: ["-100%", "200%"] }}
                   transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
@@ -2218,7 +2218,7 @@ export const ChatPage: React.FC = () => {
              <p className="text-gray-500 font-bold text-sm tracking-tighter">فقط ادمین‌ها می‌توانند در این کانال محتوا منتشر کنند</p>
           </div>
         ) : (
-          <div className="p-4 pb-28 md:p-8 bg-gradient-to-t from-dark-bg to-transparent relative z-30 flex flex-col items-center shrink-0 w-full overflow-visible">
+          <div className="p-3 pb-20 md:p-8 bg-gradient-to-t from-dark-bg to-transparent relative z-30 flex flex-col items-center shrink-0 w-full overflow-visible">
             <div className="w-full max-w-4xl relative flex flex-col px-1 md:px-0">
               {/* Reply Indicator - Discord Style */}
               <AnimatePresence>

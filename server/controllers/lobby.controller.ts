@@ -2,7 +2,8 @@ import { Response } from "express";
 import { LobbyService } from "../services/lobby.service.ts";
 import { RankingService } from "../services/ranking.service.ts";
 import { AuthenticatedRequest } from "../middleware/auth.middleware.ts";
-import { emitLobbyUpdate } from "../utils/socket.ts";
+import { emitLobbyUpdate, emitNotification } from "../utils/socket.ts";
+import prisma from "../utils/prisma.ts";
 
 export class LobbyController {
   static async create(req: AuthenticatedRequest, res: Response) {
@@ -13,6 +14,32 @@ export class LobbyController {
       await RankingService.addXP(req.user!.userId, 20, "LOBBY_CREATE");
       
       emitLobbyUpdate();
+
+      // Emit lobby created notification to friends
+      try {
+        const friendships = await prisma.friendship.findMany({
+          where: { OR: [{ requesterId: req.user!.userId, status: "ACCEPTED" }, { targetId: req.user!.userId, status: "ACCEPTED" }] },
+          include: { 
+            requester: { select: { username: true, profile: { select: { displayName: true } } } }, 
+            target: { select: { username: true, profile: { select: { displayName: true } } } } 
+          }
+        });
+        
+        for (const f of friendships) {
+          const friendId = f.requesterId === req.user!.userId ? f.targetId : f.requesterId;
+          const myProfile = f.requesterId === req.user!.userId ? f.requester : f.target;
+          const myName = myProfile.profile?.displayName || myProfile.username;
+          
+          emitNotification(friendId, "FRIEND_ACTIVITY", {
+              message: `${myName} یک لابی جدید ساخت: ${lobby.title}`,
+              lobbyId: lobby.id,
+              userId: req.user!.userId
+          });
+        }
+      } catch (e) {
+        console.error("Failed to emit friend lobby notification", e);
+      }
+
       res.status(201).json({ status: "success", data: lobby });
     } catch (error: any) {
       res.status(400).json({ status: "error", error: { code: "VALIDATION_FAILED", message: error.message } });
