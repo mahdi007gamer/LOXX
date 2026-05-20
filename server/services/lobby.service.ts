@@ -177,7 +177,8 @@ export class LobbyService {
           data: { role: "HOST" }
         });
       } else {
-        await prisma.lobby.delete({ where: { id: lobbyId } });
+        await prisma.message.deleteMany({ where: { lobbyId } }).catch(() => {});
+        await prisma.lobby.delete({ where: { id: lobbyId } }).catch(() => {});
       }
     }
   }

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence, useDragControls } from "motion/react";
 import { useFriends } from "../../context/FriendsContext";
-import { MessageSquare, X, Minus, Send, MessageCircle } from "lucide-react";
+import { MessageSquare, X, Minus, Send, MessageCircle, Crown } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { LobbyInviteCard } from "./LobbyInviteCard";
 import { FriendStatus } from "../../types";
@@ -90,6 +90,7 @@ export const FriendChatOverlay = () => {
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
+                    {activeFriend?.badges?.find((b: any) => b?.isSpecial && b?.name === "VIP" || b?.type === "VIP") && <Crown className="w-3 h-3 text-yellow-500 drop-shadow-[0_0_5px_rgba(250,204,21,0.5)]" />}
                     <p className="text-[13px] font-black italic tracking-tighter text-white uppercase">{activeFriend?.displayName || activeChat?.tempDisplayName || (activeChatId === "1" ? "شما" : "کاربر")}</p>
                     <UserBadges badges={activeFriend?.badges || []} />
                   </div>
@@ -156,21 +157,32 @@ export const FriendChatOverlay = () => {
                         )}>
                           {!msg.self && (
                             <div className="flex justify-end mb-0.5">
-                              <UserBadges badges={msg.badges || []} />
+                              {activeFriend?.badges?.find((b: any) => b?.isSpecial && b?.name === "VIP" || b?.type === "VIP") && <Crown className="w-3 h-3 text-yellow-500 drop-shadow-[0_0_5px_rgba(250,204,21,0.5)] ml-1" />}
+                              <UserBadges badges={msg.badges || activeFriend?.badges || []} />
                             </div>
                           )}
                           {msg.self && (
                             <div className="flex justify-start mb-0.5">
+                              {((user as any)?.badges?.find((b: any) => b?.isSpecial && b?.name === "VIP" || b?.type === "VIP") || (user as any)?.membershipType === "VIP") && <Crown className="w-3 h-3 text-yellow-500 drop-shadow-[0_0_5px_rgba(250,204,21,0.5)] mr-1" />}
                               <UserBadges badges={(user as any)?.badges || []} />
                             </div>
                           )}
                           <div className={cn(
-                            "rounded-2xl px-3 py-2 text-[11px] font-medium leading-relaxed shadow-lg",
+                            "relative overflow-hidden rounded-2xl px-3 py-2 text-[11px] font-medium leading-relaxed shadow-lg",
                             msg.self 
                               ? "bg-neon-blue text-dark-bg rounded-tr-none" 
-                              : "bg-white/12 text-gray-100 rounded-tl-none border border-white/20"
+                              : "bg-white/12 text-gray-100 rounded-tl-none border border-white/20",
+                            ((!msg.self && activeFriend?.badges?.some((b: any) => b?.isSpecial && b?.name === "VIP" || b?.type === "VIP")) || (msg.self && ((user as any)?.badges?.some((b: any) => b?.isSpecial && b?.name === "VIP" || b?.type === "VIP") || (user as any)?.membershipType === "VIP"))) && "border-yellow-400/40 bg-gradient-to-br from-yellow-400/[0.12] to-transparent shadow-[0_0_40px_rgba(250,204,21,0.12)] text-white"
                           )}>
-                            {text}
+                            {/* VIP Shimmer Effect */}
+                            {((!msg.self && activeFriend?.badges?.some((b: any) => b?.isSpecial && b?.name === "VIP" || b?.type === "VIP")) || (msg.self && ((user as any)?.badges?.some((b: any) => b?.isSpecial && b?.name === "VIP" || b?.type === "VIP") || (user as any)?.membershipType === "VIP"))) && (
+                              <motion.div 
+                                animate={{ x: ["-100%", "200%"] }}
+                                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                                className="absolute inset-0 skew-x-12 pointer-events-none z-0 bg-gradient-to-r from-transparent via-yellow-400/50 to-transparent mix-blend-overlay"
+                              />
+                            )}
+                            <span className="relative z-10">{text}</span>
                           </div>
                           {invite && (
                             <div className="w-full max-w-[280px] mt-1 pr-1 pointer-events-auto">

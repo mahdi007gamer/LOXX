@@ -101,7 +101,8 @@ export function setupWebSockets(io: Server) {
 
           // If host leaves or no members left, delete lobby
           if (!remainingMembers.length || lobby.hostId === userId) {
-            await prisma.lobby.delete({ where: { id: lobbyId } }).catch(() => {});
+            await prisma.message.deleteMany({ where: { lobbyId } }).catch(() => {});
+            await prisma.lobby.delete({ where: { id: lobbyId } }).catch((err) => { console.error("Error deleting lobby on host exit:", err); });
             lobbyNs.to(`lobby:${lobbyId}`).emit("lobby.closed", { lobbyId });
             emitLobbyUpdate();
           } else {
@@ -417,7 +418,8 @@ export function setupWebSockets(io: Server) {
 
         // If host leaves or no members left, delete lobby
         if (!remainingLobby || remainingLobby.hostId === userId || remainingLobby.members.length === 0) {
-          await prisma.lobby.delete({ where: { id: lobbyId } }).catch(() => {});
+          await prisma.message.deleteMany({ where: { lobbyId } }).catch(() => {});
+          await prisma.lobby.delete({ where: { id: lobbyId } }).catch((err) => { console.error("Error deleting lobby leave:", err); });
           lobbyNs.to(`lobby:${lobbyId}`).emit("lobby.closed", { lobbyId });
           emitLobbyUpdate();
         } else {

@@ -1616,7 +1616,7 @@ const ChatPanel = ({ messages, players, inputMessage, setInputMessage, onSend, o
                         "text-[10px] font-black uppercase tracking-widest truncate max-w-[120px] flex items-center gap-1",
                         isYou ? "text-neon-pink" : "text-neon-blue"
                       )}>
-                        {isVIP && <Crown className="w-3 h-3 shrink-0 text-yellow-500 drop-shadow-[0_0_5px_rgba(250,204,21,0.5)]" />}
+                        {isVIP && <Crown className="w-[14px] h-[14px] shrink-0 fill-yellow-500 text-yellow-500 drop-shadow-[0_0_8px_rgba(250,204,21,0.8)]" />}
                         {msg.user}
                       </span>
                       <UserBadges badges={msg.badges || []} className={cn(isYou ? "flex-row" : "flex-row-reverse")} />
@@ -1635,8 +1635,8 @@ const ChatPanel = ({ messages, players, inputMessage, setInputMessage, onSend, o
                         animate={{ x: ["-100%", "200%"] }}
                         transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
                         className={cn(
-                          "absolute inset-0 skew-x-12 pointer-events-none z-0",
-                          isVIP ? "bg-gradient-to-r from-transparent via-yellow-400/10 to-transparent" : "bg-gradient-to-r from-transparent via-neon-blue/10 to-transparent"
+                          "absolute inset-0 skew-x-12 pointer-events-none z-0 mix-blend-overlay",
+                          isVIP ? "bg-gradient-to-r from-transparent via-yellow-400/50 to-transparent" : "bg-gradient-to-r from-transparent via-neon-blue/40 to-transparent"
                         )}
                       />
                     )}
