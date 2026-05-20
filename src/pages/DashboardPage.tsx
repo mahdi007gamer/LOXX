@@ -502,7 +502,7 @@ export const DashboardPage = () => {
                               <div className="flex items-center gap-1.5 leading-none mb-0.5">
                                 <p className="text-sm font-bold text-white truncate">{friend.displayName}</p>
                                 <div className="flex items-center gap-0.5 shrink-0">
-                                  {friend.badges?.filter(b => b.isSpecial).map((badge, idx) => (
+                                  {friend.badges?.filter((b: any) => b?.isSpecial).map((badge: any, idx: number) => (
                                     <img key={idx} src={badge.iconUrl} alt={badge.name} title={badge.name} className="h-3 w-3 object-contain" />
                                   ))}
                                 </div>

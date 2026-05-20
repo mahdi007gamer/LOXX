@@ -20,7 +20,7 @@ export const UserBadges: React.FC<UserBadgesProps> = ({
   // Filter for special, pinned, or game badges unless showAll is true
   const displayBadges = showAll 
     ? badges 
-    : badges.filter(b => b.isSpecial || b.isPinned || b.category === "GAME");
+    : badges.filter(b => b?.isSpecial || b?.isPinned || b?.category === "GAME");
 
   if (displayBadges.length === 0) return null;
 

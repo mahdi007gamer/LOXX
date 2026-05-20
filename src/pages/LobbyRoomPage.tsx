@@ -1580,7 +1580,8 @@ const ChatPanel = ({ messages, players, inputMessage, setInputMessage, onSend, o
         {filteredMessages.map((msg, index) => {
           const isYou = msg.fromUserId === currentUserId && currentUserId !== undefined;
           const sender = players.find(p => p.id === msg.fromUserId);
-          const isAnimated = sender?.membership === MembershipType.VIP || sender?.membership === MembershipType.PLUS;
+          const isVIP = sender?.membership === "VIP" || msg.badges?.includes("VIP");
+          const isPLUS = sender?.membership === "PLUS" || msg.badges?.includes("PLUS");
           
           return (
           <div key={`${msg.id}-${index}`} className={cn(
@@ -1612,18 +1613,34 @@ const ChatPanel = ({ messages, players, inputMessage, setInputMessage, onSend, o
                   <div className={cn("flex items-center gap-2 md:gap-3", isYou ? "flex-row" : "flex-row-reverse")}>
                     <div className="flex items-center gap-1.5 min-w-0">
                       <span className={cn(
-                        "text-[10px] font-black uppercase tracking-widest truncate max-w-[120px]",
+                        "text-[10px] font-black uppercase tracking-widest truncate max-w-[120px] flex items-center gap-1",
                         isYou ? "text-neon-pink" : "text-neon-blue"
-                      )}>{msg.user}</span>
+                      )}>
+                        {isVIP && <Crown className="w-3 h-3 shrink-0 text-yellow-500 drop-shadow-[0_0_5px_rgba(250,204,21,0.5)]" />}
+                        {msg.user}
+                      </span>
                       <UserBadges badges={msg.badges || []} className={cn(isYou ? "flex-row" : "flex-row-reverse")} />
                     </div>
                     <span className="text-[8px] font-bold text-gray-700 opacity-0 group-hover:opacity-100 transition-opacity">{msg.time}</span>
                   </div>
                   <div className={cn(
-                    "border border-white/10 rounded-2xl px-4 py-2.5 text-xs text-gray-300 leading-relaxed shadow-lg",
-                    isYou ? "bg-neon-pink/5 rounded-tr-none border-neon-pink/10" : "bg-white/5 rounded-tl-none"
+                    "relative overflow-hidden border border-white/10 rounded-2xl px-4 py-2.5 text-xs text-gray-300 leading-relaxed shadow-lg",
+                    isYou ? "bg-neon-pink/5 rounded-tr-none border-neon-pink/10" : "bg-white/5 rounded-tl-none",
+                    isVIP && "border-yellow-400/40 bg-gradient-to-br from-yellow-400/[0.12] to-transparent shadow-[0_0_40px_rgba(250,204,21,0.12)]",
+                    isPLUS && "border-neon-blue/40 bg-gradient-to-br from-neon-blue/[0.12] to-transparent shadow-[0_0_30px_rgba(0,229,255,0.12)]"
                   )}>
-                    {msg.text}
+                    {/* VIP/PLUS Shimmer Effect */}
+                    {(isVIP || isPLUS) && (
+                      <motion.div 
+                        animate={{ x: ["-100%", "200%"] }}
+                        transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                        className={cn(
+                          "absolute inset-0 skew-x-12 pointer-events-none z-0",
+                          isVIP ? "bg-gradient-to-r from-transparent via-yellow-400/10 to-transparent" : "bg-gradient-to-r from-transparent via-neon-blue/10 to-transparent"
+                        )}
+                      />
+                    )}
+                    <span className="relative z-10">{msg.text}</span>
                   </div>
                 </div>
               </div>

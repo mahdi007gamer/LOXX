@@ -173,6 +173,7 @@ function MessageItem({ message, onReaction, onSaveGif, onReply, activeChannelId,
               }, message.self);
               }}
             >
+              {isVIP && <Crown className="w-3 h-3 text-yellow-500 drop-shadow-[0_0_5px_rgba(250,204,21,0.5)]" />}
               {message.senderName}
             </span>
           
@@ -988,11 +989,11 @@ export const ChatPage: React.FC = () => {
      // Handle badges from the new unified format
      if (from.badges && Array.isArray(from.badges)) {
         badges = from.badges.map((b: any) => (b.type || b.name || "") as BadgeType).filter(t => !!t);
-     } else {
-        // Fallback for simple membership types
-        if (from.membership === "VIP") badges.push(BadgeType.VIP);
-        if (from.membership === "PLUS") badges.push(BadgeType.PLUS);
      }
+     
+     // Fallback for simple membership types
+     if ((from.membership === "VIP" || from.membershipType === "VIP") && !badges.includes(BadgeType.VIP)) badges.push(BadgeType.VIP);
+     if ((from.membership === "PLUS" || from.membershipType === "PLUS") && !badges.includes(BadgeType.PLUS)) badges.push(BadgeType.PLUS);
      
      const isNewsChannel = msg.targetId === 'news' || msg.channelId === 'news';
      

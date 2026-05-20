@@ -390,7 +390,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
                 {user.displayName || user.senderName}
               </h4>
               <div className="flex items-center gap-0.5">
-                {user.senderBadges?.filter(b => b.isSpecial).map(badge => (
+                {user.senderBadges?.filter(b => b?.isSpecial).map(badge => (
                   <img key={badge.id} src={badge.iconUrl} alt={badge.name} title={badge.name} className="h-6 w-6 object-contain" />
                 ))}
               </div>
