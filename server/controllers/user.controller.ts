@@ -10,6 +10,10 @@ export class UserController {
       const user: any = await UserService.getMe(req.user!.userId);
       if (!user) return res.status(401).json({ status: "error", error: { code: "UNAUTHORIZED", message: "User not found" } });
 
+      const rewardNotification = await prisma.notification.findFirst({
+        where: { userId: req.user!.userId, type: "WEEKLY_REWARD", isRead: false }
+      });
+
       res.json({
         status: "success",
         data: {
@@ -31,7 +35,8 @@ export class UserController {
           phone: user.phone,
           role: user.role,
           stats: user.stats,
-          badges: user.badges
+          badges: user.badges,
+          rewardNotification: rewardNotification ? { id: rewardNotification.id, ...JSON.parse(rewardNotification.data || '{}') } : null
         }
       });
     } catch (error: any) {

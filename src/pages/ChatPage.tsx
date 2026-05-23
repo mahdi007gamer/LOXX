@@ -173,7 +173,6 @@ function MessageItem({ message, onReaction, onSaveGif, onReply, activeChannelId,
               }, message.self);
               }}
             >
-              {isVIP && <Crown className="w-[14px] h-[14px] shrink-0 fill-yellow-500 text-yellow-500 drop-shadow-[0_0_8px_rgba(250,204,21,0.8)]" />}
               {message.senderName}
             </span>
           

@@ -618,7 +618,7 @@ export const SettingsPage = () => {
                  ) : (
                    <>
                      <h3 className="text-xl font-black text-white italic mb-2">تایید دو مرحله‌ای</h3>
-                     <p className="text-xs text-gray-500 font-bold mb-6 italic">کد تایید ارسال شده به ایمیل را وارد کنید</p>
+                     <p className="text-xs text-gray-500 font-bold mb-6 italic">کد تایید ارسال شده به بات بله را وارد کنید</p>
                      <Input 
                        label="کد تایید"
                        placeholder="مثلا 123456"

@@ -38,6 +38,11 @@ import { useProfilePopover } from "../context/ProfilePopoverContext";
 import { MembershipType } from "../types";
 
 export const DashboardPage = () => {
+  const navigate = useNavigate();
+  const { friends, openChat } = useFriends();
+  const { user } = useAuth();
+  const { openProfile } = useProfilePopover();
+
   const [loading, setLoading] = useState(true);
   const [isLobbyModalOpen, setIsLobbyModalOpen] = useState(false);
   const [isFriendsExpanded, setIsFriendsExpanded] = useState(false);
@@ -58,10 +63,23 @@ export const DashboardPage = () => {
     pointsToTop10: 0
   });
 
-  const navigate = useNavigate();
-  const { friends, openChat } = useFriends();
-  const { user } = useAuth();
-  const { openProfile } = useProfilePopover();
+  const [rewardNotification, setRewardNotification] = useState<any>(null);
+  
+  useEffect(() => {
+    if (user && (user as any).rewardNotification) {
+      setRewardNotification((user as any).rewardNotification);
+    }
+  }, [user]);
+
+  const handleDismissReward = async () => {
+    if (!rewardNotification) return;
+    try {
+      await api.delete(`/notifications/${rewardNotification.id}`);
+    } catch(e) {
+      console.error(e);
+    }
+    setRewardNotification(null);
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -552,6 +570,51 @@ export const DashboardPage = () => {
           onClose={() => setIsLobbyModalOpen(false)}
           onSuccess={() => setIsLobbyModalOpen(false)}
         />
+
+        <AnimatePresence>
+          {rewardNotification && rewardNotification.showModal && (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
+            >
+              <motion.div 
+                initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                className="bg-[#0a0a0f] border border-yellow-400/40 shadow-[0_0_80px_rgba(250,204,21,0.2)] rounded-[32px] p-8 md:p-12 max-w-xl w-full text-center relative overflow-hidden"
+              >
+                <div className="absolute inset-0 bg-yellow-400/5 mix-blend-overlay" />
+                
+                <div className="relative z-10 flex flex-col items-center">
+                  <div className="h-24 w-24 rounded-full bg-yellow-400/10 flex items-center justify-center text-yellow-400 mb-6 relative">
+                     <Crown size={48} className="drop-shadow-[0_0_15px_rgba(250,204,21,0.8)]" />
+                     <motion.div 
+                       animate={{ rotate: 360 }}
+                       transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+                       className="absolute inset-0 border-2 border-dashed border-yellow-400/30 rounded-full"
+                     />
+                  </div>
+                  
+                  <h2 className="text-3xl md:text-4xl font-black text-white italic tracking-tighter mb-4">
+                    تبریک! شما در جمع <span className="text-yellow-400">نخبگان</span> هستید
+                  </h2>
+                  <p className="text-gray-300 text-sm md:text-base leading-relaxed mb-8">
+                    شما مقام <span className="text-white font-bold text-lg mx-1">{rewardNotification.rank}</span> را در رتبه‌بندی هفتگی کسب کردید و به پاس تلاش شما، <span className="text-yellow-400 font-black text-lg mx-1">{rewardNotification.daysVIP} روز</span> اشتراک <strong className="text-yellow-400 mx-1">VIP</strong> به شما هدیه داده شد.
+                  </p>
+                  
+                  <button 
+                    onClick={handleDismissReward}
+                    className="h-12 px-8 rounded-full bg-yellow-400 text-[#0a0a0f] font-black uppercase tracking-widest text-sm hover:bg-yellow-300 transition-colors shadow-[0_0_20px_rgba(250,204,21,0.4)]"
+                  >
+                    دریافت پاداش و ورود
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </main>
     </div>
   );

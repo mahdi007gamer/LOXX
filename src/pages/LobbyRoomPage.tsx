@@ -104,9 +104,16 @@ export const LobbyRoomPage = () => {
 
   const [isAudioContextResumed, setIsAudioContextResumed] = useState(true);
   const [wasInLobby, setWasInLobby] = useState(false);
+  const [localStream, setLocalStream] = useState<MediaStream | null>(null);
 
   const resumeAudio = useCallback(async () => {
     try {
+      const gUM = navigator.mediaDevices?.getUserMedia;
+      if (gUM && !localStream) {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        setLocalStream(stream);
+      }
+
       const ctx = new AudioContext();
       if (ctx.state === "suspended") {
         await ctx.resume();
@@ -115,8 +122,9 @@ export const LobbyRoomPage = () => {
       toast.success("سیستم صوتی فعال شد", { id: 'audio-resume' });
     } catch (e) {
       console.error("Audio resume failed", e);
+      toast.error("دسترسی به میکروفون داده نشد");
     }
-  }, []);
+  }, [localStream]);
 
   useEffect(() => {
     const ctx = new AudioContext();
@@ -136,7 +144,6 @@ export const LobbyRoomPage = () => {
   // Redirect if lobby becomes null (e.g., closed by host)
   const [countdown, setCountdown] = useState(5);
   const [localVolume, setLocalVolume] = useState(0);
-  const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   
   // Voice Settings
   const [voiceMode, setVoiceMode] = useState<"activation" | "ptt">("activation");
@@ -181,7 +188,7 @@ export const LobbyRoomPage = () => {
       isHost: p.role === "HOST",
       isReady: !!p.isReady,
       hasMic: true,
-      isMuted: !!p.micMuted,
+      isMuted: p.userId === user?.id ? !!p.micMuted : (peerVolumes[p.userId] === 0 || !!p.micMuted),
       ping: 25,
       isSpeaking: p.userId === user?.id 
         ? localVolume > 15 
@@ -235,85 +242,66 @@ export const LobbyRoomPage = () => {
     let audioContext: AudioContext;
     let analyzer: AnalyserNode;
     let microphone: MediaStreamAudioSourceNode;
-    let stream: MediaStream;
     let rafId: number;
     let isTalking = false;
     let lastVol = 0;
 
-    if (lobby && user) {
-      const gUM = navigator.mediaDevices?.getUserMedia;
+    if (lobby && user && localStream && isAudioContextResumed) {
+      try {
+        audioContext = new AudioContext();
+        analyzer = audioContext.createAnalyser();
+        microphone = audioContext.createMediaStreamSource(localStream);
+        microphone.connect(analyzer);
+        
+        analyzer.fftSize = 256;
+        const bufferLength = analyzer.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
 
-      if (gUM) {
-        navigator.mediaDevices.getUserMedia({ audio: true })
-          .then(str => {
-            stream = str;
-            setLocalStream(str);
+        const analyzeVoice = () => {
+           if (localStream.getAudioTracks().length > 0 && localStream.getAudioTracks()[0].enabled) {
+             analyzer.getByteFrequencyData(dataArray);
+             let sum = 0;
+             for(let i = 0; i < bufferLength; i++) {
+               sum += dataArray[i];
+             }
+             const avg = sum / bufferLength;
+             const newVol = Math.min(100, Math.round(avg * 2));
+             
+             // Only update local state if change is very significant
+             if (Math.abs(newVol - lastVol) > 20 || (newVol === 0 && lastVol !== 0)) {
+               lastVol = newVol;
+               setLocalVolume(newVol);
+             }
 
-            audioContext = new AudioContext();
-            analyzer = audioContext.createAnalyser();
-            microphone = audioContext.createMediaStreamSource(stream);
-            microphone.connect(analyzer);
-            
-            analyzer.fftSize = 256;
-            const bufferLength = analyzer.frequencyBinCount;
-            const dataArray = new Uint8Array(bufferLength);
-
-            const analyzeVoice = () => {
-               if (stream.getAudioTracks().length > 0 && stream.getAudioTracks()[0].enabled) {
-                 analyzer.getByteFrequencyData(dataArray);
-                 let sum = 0;
-                 for(let i = 0; i < bufferLength; i++) {
-                   sum += dataArray[i];
-                 }
-                 const avg = sum / bufferLength;
-                 const newVol = Math.min(100, Math.round(avg * 2));
-                 
-                 // Only update local state if change is very significant
-                 if (Math.abs(newVol - lastVol) > 20 || (newVol === 0 && lastVol !== 0)) {
-                   lastVol = newVol;
-                   setLocalVolume(newVol);
-                 }
-
-                 const talkingNow = avg > 20; 
-                 if (talkingNow !== isTalking) {
-                   isTalking = talkingNow;
-                   voiceSocket.emit("voice.talking", { roomId: lobby.id, isTalking });
-                 }
-               } else {
-                 if (lastVol !== 0) {
-                   lastVol = 0;
-                   setLocalVolume(0);
-                 }
-                 if (isTalking) {
-                   isTalking = false;
-                   voiceSocket.emit("voice.talking", { roomId: lobby.id, isTalking: false });
-                 }
-               }
-               rafId = requestAnimationFrame(analyzeVoice);
-            };
-            analyzeVoice();
-          })
-          .catch(err => {
-            console.error("Mic access denied", err);
-            toast.error("دسترسی به میکروفون داده نشد");
-            setLobbyMuted(true);
-          });
-      } else {
-        console.warn("MediaDevices API not available");
-        setLobbyMuted(true);
+             const talkingNow = avg > 20; 
+             if (talkingNow !== isTalking) {
+               isTalking = talkingNow;
+               voiceSocket.emit("voice.talking", { roomId: lobby.id, isTalking });
+             }
+           } else {
+             if (lastVol !== 0) {
+               lastVol = 0;
+               setLocalVolume(0);
+             }
+             if (isTalking) {
+               isTalking = false;
+               voiceSocket.emit("voice.talking", { roomId: lobby.id, isTalking: false });
+             }
+           }
+           rafId = requestAnimationFrame(analyzeVoice);
+        };
+        analyzeVoice();
+      } catch (err) {
+        console.error("Mic analysis init failed", err);
       }
     }
 
     return () => {
       if (rafId) cancelAnimationFrame(rafId);
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
-      }
       if (audioContext && audioContext.state !== "closed") audioContext.close();
       setLocalVolume(0);
-      setLocalStream(null);
     };
-  }, [lobby?.id, user?.id]);
+  }, [lobby?.id, user?.id, localStream, isAudioContextResumed]);
 
   useEffect(() => {
     if (localStream && localStream.getAudioTracks().length > 0) {

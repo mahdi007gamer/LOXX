@@ -30,6 +30,15 @@ export class LobbyController {
           const myProfile = f.requesterId === req.user!.userId ? f.requester : f.target;
           const myName = myProfile.profile?.displayName || myProfile.username;
           
+          await prisma.notification.create({
+            data: {
+              userId: friendId,
+              type: "FRIEND_ACTIVITY",
+              data: JSON.stringify({ message: `${myName} یک لابی جدید ساخت: ${lobby.title}`, lobbyId: lobby.id, userId: req.user!.userId }),
+              isRead: false
+            }
+          });
+
           emitNotification(friendId, "FRIEND_ACTIVITY", {
               message: `${myName} یک لابی جدید ساخت: ${lobby.title}`,
               lobbyId: lobby.id,

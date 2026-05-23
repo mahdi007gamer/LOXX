@@ -135,6 +135,16 @@ async function startServer() {
     }
   }, 12 * 60 * 60 * 1000);
 
+  // Weekly Ranking Rewards Job (every hour)
+  setInterval(async () => {
+    try {
+      const { RankingService } = await import("./server/services/ranking.service.ts");
+      await RankingService.distributeWeeklyRewards();
+    } catch(err) {
+      console.error("[CRON] Weekly rewards job error:", err);
+    }
+  }, 60 * 60 * 1000);
+
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
     const { createServer: createViteServer } = await import("vite");

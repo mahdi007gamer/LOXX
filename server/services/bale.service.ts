@@ -66,7 +66,7 @@ export class BaleService {
   }
 
   static async sendOTPViaBot(chatId: string | number, code: string) {
-    const text = `کد تایید ورود شما:\n\n${code}\n\nاین کد تا ۱۰ دقیقه دیگر معتبر است.`;
+    const text = `👑 کد ورود شما به پلتفرم لوکس:\n\n✨ 『 ${code} 』 ✨\n\n🔒 این کد مختص شماست و تا ۱۰ دقیقه دیگر اعتبار دارد.\n\n🎮 ورود به دنیای حرفه‌ای‌ها...`;
     return this.sendMessage(chatId, text);
   }
 

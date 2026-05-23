@@ -146,6 +146,83 @@ export class RankingService {
     };
   }
 
+  static async distributeWeeklyRewards(isManual: boolean = false) {
+    const now = new Date();
+    
+    // Check if we already distributed this week
+    const lastReward = await prisma.notification.findFirst({
+      where: { type: "WEEKLY_REWARD" },
+      orderBy: { createdAt: "desc" }
+    });
+
+    if (!isManual && lastReward && (now.getTime() - lastReward.createdAt.getTime() < 6 * 24 * 60 * 60 * 1000)) {
+      return; 
+    }
+
+    if (!isManual && now.getDay() !== 1) return; // Only run automatically on Mondays
+
+    let startOfPrevWeek = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    startOfPrevWeek.setHours(0, 0, 0, 0);
+    let endOfPrevWeek = new Date(now.getTime());
+    endOfPrevWeek.setHours(0, 0, 0, 0);
+    
+    if (isManual) {
+      // Just test with current week if manual trigger
+      startOfPrevWeek = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      endOfPrevWeek = now;
+    }
+
+    const prevWeekLogs = await prisma.xPLog.groupBy({
+      by: ['userId'],
+      _sum: { amount: true },
+      where: { timestamp: { gte: startOfPrevWeek, lt: endOfPrevWeek } },
+      orderBy: { _sum: { amount: 'desc' } },
+      take: 3
+    });
+
+    if (prevWeekLogs.length === 0) return;
+
+    const rewards = [3, 2, 1];
+
+    for (let i = 0; i < prevWeekLogs.length; i++) {
+       const uId = prevWeekLogs[i].userId;
+       const days = rewards[i];
+       if (!days) break;
+
+       const expireTime = new Date();
+       expireTime.setDate(expireTime.getDate() + days);
+
+       const existingSub = await prisma.subscription.findFirst({
+         where: { userId: uId }
+       });
+
+       if (existingSub) {
+         await prisma.subscription.update({
+           where: { id: existingSub.id },
+           data: { type: "VIP", expiresAt: expireTime }
+         });
+       } else {
+         await prisma.subscription.create({
+           data: { userId: uId, type: "VIP", expiresAt: expireTime }
+         });
+       }
+
+       await prisma.profile.update({
+         where: { userId: uId },
+         data: { membershipType: "VIP" }
+       });
+
+       await prisma.notification.create({
+         data: {
+           userId: uId,
+           type: "WEEKLY_REWARD",
+           data: JSON.stringify({ message: `شما مقام ${i+1} را در رده بندی هفتگی کسب کردید و ${days} روز اشتراک VIP هدیه گرفتید!`, rank: i+1, daysVIP: days, showModal: true }),
+           isRead: false
+         }
+       });
+    }
+  }
+
   static async getUserRank(userId: string) {
     const now = new Date();
     const nextMonday = new Date();
