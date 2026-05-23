@@ -69,13 +69,14 @@ export class ChatController {
         },
         targetType: type,
         targetId: m.channelId || m.lobbyId || m.receiverId,
-        content: m.content,
+        content: m.isDeleted ? "این پیام حذف شده است." : m.content,
+        isDeleted: m.isDeleted,
         createdAt: m.createdAt.getTime(),
         replyToId: m.replyToId ? m.replyToId.toString() : undefined,
         replyTo: m.replyTo ? {
           id: m.replyTo.id.toString(),
           user: m.replyTo.sender.username,
-          text: m.replyTo.content
+          text: m.replyTo.isDeleted ? "این پیام حذف شده است." : m.replyTo.content
         } : undefined,
         reactions: m.reactions ? JSON.parse(m.reactions as string) : []
       })).reverse();

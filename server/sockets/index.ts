@@ -900,13 +900,14 @@ export function setupWebSockets(io: Server) {
               from: formatUserForSocket(msg.sender),
               targetType: "channel",
               targetId: data.id,
-              content: msg.content,
+              content: msg.isDeleted ? "این پیام حذف شده است." : msg.content,
+              isDeleted: msg.isDeleted,
               createdAt: msg.createdAt.getTime(),
               replyToId: msg.replyToId,
               replyTo: msg.replyTo ? {
                 id: msg.replyTo.id.toString(),
                 user: msg.replyTo.sender.username,
-                text: msg.replyTo.content
+                text: msg.replyTo.isDeleted ? "این پیام حذف شده است." : msg.replyTo.content
               } : undefined,
               reactions: msg.reactions ? JSON.parse(msg.reactions) : []
            })).reverse();
@@ -940,13 +941,14 @@ export function setupWebSockets(io: Server) {
               from: formatUserForSocket(msg.sender),
               targetType: "user",
               targetId: data.id,
-              content: msg.content,
+              content: msg.isDeleted ? "این پیام حذف شده است." : msg.content,
+              isDeleted: msg.isDeleted,
               createdAt: msg.createdAt.getTime(),
               replyToId: msg.replyToId,
               replyTo: msg.replyTo ? {
                 id: msg.replyTo.id.toString(),
                 user: msg.replyTo.sender.username,
-                text: msg.replyTo.content
+                text: msg.replyTo.isDeleted ? "این پیام حذف شده است." : msg.replyTo.content
               } : undefined,
               reactions: msg.reactions ? JSON.parse(msg.reactions) : []
            })).reverse();
@@ -975,13 +977,14 @@ export function setupWebSockets(io: Server) {
               from: formatUserForSocket(msg.sender),
               targetType: "lobby",
               targetId: data.id,
-              content: msg.content,
+              content: msg.isDeleted ? "این پیام حذف شده است." : msg.content,
+              isDeleted: msg.isDeleted,
               createdAt: msg.createdAt.getTime(),
               replyToId: msg.replyToId,
               replyTo: msg.replyTo ? {
                 id: msg.replyTo.id.toString(),
                 user: msg.replyTo.sender.username,
-                text: msg.replyTo.content
+                text: msg.replyTo.isDeleted ? "این پیام حذف شده است." : msg.replyTo.content
               } : undefined,
               reactions: msg.reactions ? JSON.parse(msg.reactions) : []
            })).reverse();
