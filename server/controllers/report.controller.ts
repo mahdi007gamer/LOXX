@@ -12,7 +12,7 @@ export class ReportController {
 
       // Check if already reported
       const existing = await prisma.report.findFirst({
-        where: { reporterId, targetId, targetType }
+        where: { reporterId, targetId, targetType, status: "PENDING" }
       });
 
       if (existing) {
