@@ -91,17 +91,8 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // SFX Helper
   const playSFX = (type: 'message' | 'join' | 'leave' | 'notification' | 'action' | 'pop') => {
-    const sounds = {
-      pop: 'https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3', // Quick pop
-      message: 'https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3',
-      join: 'https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3',
-      leave: 'https://assets.mixkit.co/active_storage/sfx/2359/2359-preview.mp3',
-      notification: 'https://assets.mixkit.co/active_storage/sfx/2361/2361-preview.mp3',
-      action: 'https://assets.mixkit.co/active_storage/sfx/2362/2362-preview.mp3'
-    };
-    const audio = new Audio(sounds[type]);
-    audio.volume = 0.3;
-    audio.play().catch(() => {});
+    // Disabled SFX due to network blocks on mixkit assets in some regions
+    // which causes console errors.
   };
 
   useEffect(() => {

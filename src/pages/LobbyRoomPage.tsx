@@ -109,14 +109,21 @@ export const LobbyRoomPage = () => {
   const [wasInLobby, setWasInLobby] = useState(false);
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
 
-  const resumeAudio = useCallback(async () => {
+  const requestMicrophone = useCallback(async () => {
     try {
-      const gUM = navigator.mediaDevices?.getUserMedia;
-      if (gUM && !localStream) {
+      if (navigator.mediaDevices?.getUserMedia && !localStream) {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         setLocalStream(stream);
       }
+    } catch (e) {
+      console.error("Microphone permission denied", e);
+      setIsAudioContextResumed(false);
+    }
+  }, [localStream]);
 
+  const resumeAudio = useCallback(async () => {
+    try {
+      await requestMicrophone();
       const ctx = new AudioContext();
       if (ctx.state === "suspended") {
         await ctx.resume();
@@ -127,7 +134,7 @@ export const LobbyRoomPage = () => {
       console.error("Audio resume failed", e);
       toast.error("دسترسی به میکروفون داده نشد");
     }
-  }, [localStream]);
+  }, [requestMicrophone]);
 
   useEffect(() => {
     const ctx = new AudioContext();
@@ -135,7 +142,8 @@ export const LobbyRoomPage = () => {
       setIsAudioContextResumed(false);
     }
     ctx.close();
-  }, []);
+    requestMicrophone();
+  }, [requestMicrophone]);
 
   // Join lobby on mount
   useEffect(() => {

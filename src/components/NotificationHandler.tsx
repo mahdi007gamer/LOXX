@@ -99,9 +99,7 @@ export const NotificationHandler = () => {
 
   useEffect(() => {
     const playNotifySFX = () => {
-      const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3');
-      audio.volume = 0.3;
-      audio.play().catch(() => {});
+      // Disabled mixkit sound
     };
 
     const handleLobbyInvite = (inviteData: any) => {
