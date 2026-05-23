@@ -797,7 +797,7 @@ export const LobbyRoomPage = () => {
                     <div className="flex items-center gap-3">
                        <div className="h-10 w-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden shrink-0">
                          <SmartImage 
-                           src={friend.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${friend.username}`}
+                           src={friend.avatarUrl || ""}
                            className="w-full h-full object-cover"
                            alt={friend.username}
                          />
@@ -834,7 +834,7 @@ export const LobbyRoomPage = () => {
                     const p = players.find(p => p.id === activeProfileUserId);
                     return (
                       <SmartImage 
-                         src={p?.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p?.name}`}
+                         src={p?.avatarUrl || ""}
                          className="w-full h-full object-cover"
                          alt={p?.name || "Player"}
                       />
@@ -1357,7 +1357,7 @@ const PlayerCard: React.FC<{
                 >
                   <div className="relative z-10 h-full w-full flex items-center justify-center overflow-hidden rounded-[18px] md:rounded-[28px]">
                     <SmartImage 
-                      src={player.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${player.name}`}
+                      src={player.avatarUrl || ""}
                       className="w-full h-full object-cover"
                       alt={player.name}
                     />
@@ -1595,7 +1595,7 @@ const ChatPanel = ({ messages, players, inputMessage, setInputMessage, onSend, o
               )}>
                 <div className="h-8 w-8 rounded-xl bg-white/5 border border-white/10 flex-shrink-0 flex items-center justify-center text-lg mt-1 font-black uppercase overflow-hidden">
                    <SmartImage 
-                     src={msg.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${msg.user}`}
+                     src={msg.avatarUrl || ""}
                      className="w-full h-full object-cover"
                      alt={msg.user}
                    />

@@ -258,7 +258,7 @@ export const AdminPage = () => {
                         <div className="h-16 w-16 rounded-2xl overflow-hidden border border-white/10 shrink-0 bg-gray-900">
                             {user.profile?.avatarUrl || user.username ? (
                               <img 
-                                src={getFileUrl(user.profile?.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`)} 
+                                src={getFileUrl(user.profile?.avatarUrl || "")} 
                                 className="h-full w-full object-cover" 
                                 alt="avatar" 
                                 onError={(e) => {

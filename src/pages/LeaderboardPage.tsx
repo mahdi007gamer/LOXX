@@ -143,7 +143,7 @@ export const LeaderboardPage = () => {
                       </div>
                       <div className="w-full h-full rounded-full bg-dark-bg flex items-center justify-center overflow-hidden border border-white/5">
                         <SmartImage 
-                          src={podium[1].avatarUrl || podium[1].avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${podium[1].username}`}
+                          src={podium[1].avatarUrl || podium[1].avatar || ""}
                           fallbacks={getAvatarFallbacks(podium[1].username)}
                           isVipEnabled={podium[1].membership === MembershipType.VIP || podium[1].membership === "VIP"}
                           className="w-full h-full object-cover"
@@ -176,7 +176,7 @@ export const LeaderboardPage = () => {
                        >
                          <div className="w-full h-full rounded-full bg-yellow-400/10 flex items-center justify-center border border-yellow-400/20 overflow-hidden">
                             <SmartImage 
-                              src={podium[0].avatarUrl || podium[0].avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${podium[0].username}`}
+                              src={podium[0].avatarUrl || podium[0].avatar || ""}
                               fallbacks={getAvatarFallbacks(podium[0].username)}
                               isVipEnabled={podium[0].membership === MembershipType.VIP || podium[0].membership === "VIP"}
                               className="w-full h-full object-cover"
@@ -211,7 +211,7 @@ export const LeaderboardPage = () => {
                       </div>
                       <div className="w-full h-full rounded-full bg-dark-bg flex items-center justify-center overflow-hidden border border-white/5">
                         <SmartImage 
-                          src={podium[2].avatarUrl || podium[2].avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${podium[2].username}`}
+                          src={podium[2].avatarUrl || podium[2].avatar || ""}
                           fallbacks={getAvatarFallbacks(podium[2].username)}
                           isVipEnabled={podium[2].membership === MembershipType.VIP || podium[2].membership === "VIP"}
                           className="w-full h-full object-cover"
@@ -248,7 +248,7 @@ export const LeaderboardPage = () => {
                                }, false)}
                              >
                                <SmartImage 
-                                 src={player.avatarUrl || player.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${player.username}`}
+                                 src={player.avatarUrl || player.avatar || ""}
                                  fallbacks={getAvatarFallbacks(player.username)}
                                  isVipEnabled={player.membership === MembershipType.VIP || player.membership === "VIP"}
                                  className="w-full h-full object-cover"

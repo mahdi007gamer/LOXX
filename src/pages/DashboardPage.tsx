@@ -556,7 +556,7 @@ export const DashboardPage = () => {
                             >
                               <div className="h-10 w-10 rounded-full bg-white/10 flex items-center justify-center text-md overflow-hidden border border-white/5 group-hover/avatar:border-neon-blue/50 transition-all">
                                 <SmartImage 
-                                  src={friend.avatar || (friend as any).avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${friend.username}`} 
+                                  src={friend.avatar || (friend as any).avatarUrl || ""} 
                                   fallbacks={getAvatarFallbacks(friend.username)}
                                   isVipEnabled={friend.membership === MembershipType.VIP || friend.membership === MembershipType.PLUS}
                                   className="w-full h-full object-cover" 

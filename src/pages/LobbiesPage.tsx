@@ -339,7 +339,7 @@ export const LobbiesPage = () => {
                                  {lobby.members?.slice(0, 4)?.map((m: any) => (
                                    <div key={m.userId} className="h-7 w-7 rounded-full border-2 border-dark-bg bg-white/10 flex items-center justify-center overflow-hidden ring-1 ring-white/5">
                                       <SmartImage 
-                                        src={m.user?.profile?.avatarUrl || m.user?.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${m.user?.username}`} 
+                                        src={m.user?.profile?.avatarUrl || m.user?.avatarUrl || ""} 
                                         className="w-full h-full object-cover"
                                         alt={m.user?.username}
                                       />

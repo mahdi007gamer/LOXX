@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Sidebar } from "../components/layout/Sidebar";
 import { NeonCard } from "../components/ui/NeonCard";
 import { GlowButton } from "../components/ui/GlowButton";
+import { SmartImage } from "../components/ui/SmartImage";
 import { Input } from "../components/ui/Input";
 import { useAuth } from "../context/AuthContext";
 import api from "../lib/api";
@@ -736,7 +737,7 @@ export const EliteSettingsPage = () => {
                                     metadata.frame === "lightning" ? "border-blue-400 shadow-[0_0_15px_blue]" : "bg-gradient-to-tr from-yellow-400 via-yellow-200 to-yellow-600"
                                  )}>
                                     <div className="h-full w-full rounded-[30px] bg-[#0d0d12] flex items-center justify-center overflow-hidden">
-                                       {avatarUrl ? <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" /> : <User size={40} className="text-gray-700" />}
+                                       {avatarUrl ? <SmartImage src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" /> : <User size={40} className="text-gray-700" />}
                                     </div>
                                  </div>
                                  <div className="absolute top-1 right-1 h-6 w-6 bg-green-500 rounded-full border-4 border-[#0a0a0f] z-[25]"></div>

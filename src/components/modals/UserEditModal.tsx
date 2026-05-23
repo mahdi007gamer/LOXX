@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { X, Shield, Crown, User, Calendar, Save, Trash2, ShieldAlert, Clock, Zap, Check } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { GlowButton } from "../ui/GlowButton";
+import { SmartImage } from "../ui/SmartImage";
 import api from "../../lib/api";
 import { toast } from "react-hot-toast";
 import { cn } from "../../lib/utils";
@@ -158,7 +159,7 @@ export const UserEditModal = ({ isOpen, onClose, user, onSuccess }: UserEditModa
               {/* Profile Overview */}
               <div className="bg-white/5 p-6 rounded-3xl border border-white/5 flex items-center gap-6">
                  <div className="h-20 w-20 rounded-2xl overflow-hidden border-2 border-white/10 shrink-0">
-                    <img src={user.profile?.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`} className="h-full w-full object-cover" />
+                    <SmartImage src={user.profile?.avatarUrl || ""} className="h-full w-full object-cover" />
                  </div>
                  <div>
                     <h3 className="text-lg font-black text-white">{user.profile?.displayName || user.username}</h3>

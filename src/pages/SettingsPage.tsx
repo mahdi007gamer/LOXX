@@ -283,7 +283,7 @@ export const SettingsPage = () => {
             <div className="h-24 w-24 rounded-[32px] bg-white/5 border border-white/10 overflow-hidden flex items-center justify-center">
               {formData.avatarUrl || formData.username ? (
                 <SmartImage 
-                  src={formData.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${formData.username}`} 
+                  src={formData.avatarUrl || ""} 
                   alt={formData.displayName}
                   className="w-full h-full object-cover" 
                 />

@@ -295,11 +295,11 @@ export function setupWebSockets(io: Server) {
           include: { members: true }
         });
 
-        if (!lobby) throw new Error("RESOURCE_NOT_FOUND");
-        if (lobby.status === "STARTING" || lobby.status === "IN_PROGRESS") throw new Error("LOBBY_STARTED");
+        if (!lobby) throw new Error("لابی پیدا نشد یا منقضی شده است.");
+        if (lobby.status === "STARTING" || lobby.status === "IN_PROGRESS") throw new Error("بازی این لابی قبلا شروع شده است.");
         if (lobby.password && lobby.password !== password) throw new Error("INVALID_PASSWORD");
         const existingMember = lobby.members.find(m => m.userId === userId);
-        if (!existingMember && lobby.members.length >= lobby.maxPlayers) throw new Error("LOBBY_FULL");
+        if (!existingMember && lobby.members.length >= lobby.maxPlayers) throw new Error("ظرفیت لابی پر است.");
 
         // Check if already a member before upserting to know if we should increment
         const existingMemberRecord = await prisma.lobbyMember.findUnique({

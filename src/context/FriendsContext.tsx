@@ -404,7 +404,7 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
       id: tempId,
       senderId: user?.id || "",
       senderName: user?.username || "شما",
-      senderAvatar: user?.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.id || "guest"}`,
+      senderAvatar: user?.avatarUrl || "",
       senderLevel: 1,
       self: true,
       text: text,

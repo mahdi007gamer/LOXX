@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { X, Users, Globe, Mic, Lock, ChevronRight, ChevronLeft, Gamepad, Sparkles, AlertCircle, Check, Settings2, Map as MapIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { GlowButton } from "../ui/GlowButton";
+import { SmartImage } from "../ui/SmartImage";
 import { useGames } from "../../context/GamesContext";
 import api from "../../lib/api";
 import { toast } from "react-hot-toast";
@@ -216,7 +217,7 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
                  <div className="flex items-center justify-between w-full border-t border-white/5 pt-4">
                    <GlowButton size="sm" className="w-[100px] text-[10px]" disabled>JOIN NOW</GlowButton>
                    <div className="flex items-center gap-2 text-xs font-black text-gray-400">
-                     شما <img src={user?.profile?.avatarUrl || `https://api.dicebear.com/7.x/notionists/svg?seed=${user?.username}`} className="h-6 w-6 rounded-full border border-white/20" />
+                    عضویت: من <SmartImage src={user?.profile?.avatarUrl || ""} className="h-6 w-6 rounded-full border border-white/20 inline-block align-middle mx-1" />
                    </div>
                  </div>
                </div>

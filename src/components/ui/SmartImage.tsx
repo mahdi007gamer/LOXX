@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from "react";
-import { RefreshCw } from "lucide-react";
 import { cn } from "../../lib/utils";
 import api from "../../lib/api";
 import { getFileUrl } from "../../lib/constants";
@@ -143,9 +142,7 @@ export const SmartImage: React.FC<SmartImageProps> = ({
 
   if (loading && !displaySrc && !error) {
     return (
-      <div className={cn("flex items-center justify-center bg-white/5", className)}>
-        <RefreshCw size={16} className="animate-spin text-neon-blue" />
-      </div>
+      <div className={cn("animate-pulse bg-white/10", className)} />
     );
   }
 

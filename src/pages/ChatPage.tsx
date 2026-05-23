@@ -8,7 +8,7 @@ import { LobbyInviteCard } from "../components/ui/LobbyInviteCard";
 import { SmartImage } from "../components/ui/SmartImage";
 import { getAvatarFallbacks } from "../lib/avatar";
 import { getFileUrl } from "../lib/constants";
-import { Send, Hash, Users, MoreVertical, Plus, Smile, Image as ImageIcon, Reply, Heart, ChevronDown, Award, Star, Zap, Crown, Play, Check, Menu, X, MessageSquare, User, Trophy, Palette, Trash, MessageCircle, Search, UserPlus as UserPlusIcon, Settings } from "lucide-react";
+import { Send, Hash, Users, MoreVertical, Plus, Smile, Image as ImageIcon, Reply, Heart, ChevronDown, Award, Star, Zap, Crown, Play, Check, Menu, X, MessageSquare, User, Trophy, Palette, Trash, MessageCircle, Search, UserPlus as UserPlusIcon, Settings, Flag, AlertTriangle } from "lucide-react";
 import { cn } from "../lib/utils";
 import { motion, AnimatePresence } from "motion/react";
 import { useGames } from "../context/GamesContext";
@@ -128,7 +128,7 @@ function MessageItem({ message, onReaction, onSaveGif, onReply, activeChannelId,
           isPLUS && "border-2 border-neon-blue shadow-[0_0_10px_rgba(0,229,255,0.3)]"
         )}>
           <SmartImage 
-            src={message.senderAvatar || message.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${message.senderName}`}
+            src={message.senderAvatar || message.avatarUrl || ""}
             fallbacks={getAvatarFallbacks(message.senderName)}
             isVipEnabled={isVIP}
             className="w-full h-full object-cover rounded-xl"
@@ -228,7 +228,7 @@ function MessageItem({ message, onReaction, onSaveGif, onReply, activeChannelId,
                    onClick={(e) => { e.stopPropagation(); onReport(message); setShowActions(false); }}
                    title="گزارش محتوا"
                  >
-                   <Icons.Flag size={14} />
+                   <Flag size={14} />
                  </button>
               )}
               {(isAdmin || message.self) && (
@@ -1044,7 +1044,7 @@ export const ChatPage: React.FC = () => {
        id: msg.id,
        senderId: isNewsChannel ? "loxx-system" : (from.userId || "unknown"),
        senderName: isNewsChannel ? "لوکس" : (from.username || "کاربر ناشناس"),
-       senderAvatar: isNewsChannel ? "/logo.png" : (from.avatar || from.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${from.userId || "guest"}`),
+       senderAvatar: isNewsChannel ? "/logo.png" : (from.avatar || from.avatarUrl || ""),
        bannerUrl: isNewsChannel ? undefined : from.bannerUrl,
        vipMetadata: isNewsChannel ? undefined : from.vipMetadata,
        senderLevel: from.level || 1,
@@ -1116,7 +1116,7 @@ export const ChatPage: React.FC = () => {
        id: tempId,
        senderId: user?.id || "me",
        senderName: user?.username || "شما",
-       senderAvatar: user?.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.id || "guest"}`,
+       senderAvatar: user?.avatarUrl || "",
        bannerUrl: user?.bannerUrl,
        vipMetadata: user?.vipMetadata,
        senderLevel: 1,
@@ -2503,7 +2503,7 @@ export const ChatPage: React.FC = () => {
               
               <div className="flex items-center gap-3 mb-6">
                 <div className="h-10 w-10 rounded-full bg-red-500/10 flex items-center justify-center text-red-500">
-                  <Icons.AlertTriangle size={20} />
+                  <AlertTriangle size={20} />
                 </div>
                 <div>
                   <h3 className="text-xl font-black text-white italic tracking-tighter">گزارش تخلف</h3>

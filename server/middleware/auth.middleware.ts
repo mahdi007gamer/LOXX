@@ -19,9 +19,13 @@ export const authenticate = async (req: AuthenticatedRequest, res: Response, nex
     req.user = decoded;
 
     // Penalty checking for all authenticated endpoints
-    const penalty = await PenaltyService.checkPenalty(decoded.userId, []);
-    if (penalty.isBanned && penalty.message?.includes("کاملا مسدود است")) {
-      return res.status(403).json({ status: "error", error: { code: "BANNED", message: penalty.message } });
+    try {
+      const penalty = await PenaltyService.checkPenalty(decoded.userId, []);
+      if (penalty.isBanned && penalty.message?.includes("کاملا مسدود است")) {
+        return res.status(403).json({ status: "error", error: { code: "BANNED", message: penalty.message } });
+      }
+    } catch (e) {
+      console.error("[Auth] Penalty check error (db might not be updated):", e);
     }
 
     next();
