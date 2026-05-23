@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { useLobby } from "../context/LobbyContext";
 import { useAuth } from "../context/AuthContext";
 import { useWebRTC } from "../hooks/useWebRTC";
-import { chatSocket, lobbySocket, voiceSocket } from "../lib/socket";
+import { chatSocket, lobbySocket, voiceSocket, getSharedAudioContext, resumeSharedAudioContext } from "../lib/socket";
 import { toast } from "react-hot-toast";
 import { getFileUrl } from "../lib/constants";
 import { 
@@ -126,8 +126,7 @@ export const LobbyRoomPage = () => {
   const resumeAudio = useCallback(async () => {
     try {
       await requestMicrophone();
-      const socketLib = await import('../lib/socket');
-      const resumed = await socketLib.resumeSharedAudioContext();
+      const resumed = await resumeSharedAudioContext();
       if (resumed) {
         setIsAudioContextResumed(true);
         toast.success("سیستم صوتی فعال شد", { id: 'audio-resume' });
@@ -141,14 +140,12 @@ export const LobbyRoomPage = () => {
   }, [requestMicrophone]);
 
   useEffect(() => {
-    import('../lib/socket').then(socketLib => {
-      const ctx = socketLib.getSharedAudioContext();
-      if (ctx.state === "suspended") {
-        setIsAudioContextResumed(false);
-      } else {
-        setIsAudioContextResumed(true);
-      }
-    });
+    const ctx = getSharedAudioContext();
+    if (ctx.state === "suspended") {
+      setIsAudioContextResumed(false);
+    } else {
+      setIsAudioContextResumed(true);
+    }
     requestMicrophone();
   }, [requestMicrophone]);
 
@@ -740,7 +737,7 @@ export const LobbyRoomPage = () => {
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="fixed bottom-0 left-0 right-0 h-[80dvh] bg-[#0a0a0f] rounded-t-[40px] z-[6005] lg:hidden border-t border-white/10 overflow-hidden flex flex-col pb-safe"
+              className="fixed bottom-0 left-0 right-0 h-[80dvh] bg-[#0a0a0f] rounded-t-[40px] z-[6005] lg:hidden border-t border-white/10 overflow-hidden flex flex-col"
             >
               <div className="h-1.5 w-12 bg-white/10 rounded-full mx-auto mt-4 mb-2 shrink-0" />
               <div className="flex-1 overflow-hidden flex flex-col">
@@ -1001,30 +998,39 @@ const StatCard = ({ label, value }: { label: string, value: string }) => (
 );
 
 const RemoteAudioPlayer = ({ stream, onVolumeChange, volumeLevel }: { stream: MediaStream, onVolumeChange: (vol: number) => void, volumeLevel: number, key?: any }) => {
-  const gainNodeRef = useRef<GainNode | null>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
+
+  useEffect(() => {
+    if (audioRef.current && stream) {
+      if (audioRef.current.srcObject !== stream) {
+         audioRef.current.srcObject = stream;
+      }
+      audioRef.current.play().catch(e => console.warn("AutoPlay blocked:", e));
+    }
+  }, [stream]);
+
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = Math.min(Math.max(volumeLevel / 100, 0), 1);
+    }
+  }, [volumeLevel]);
 
   useEffect(() => {
     let analyzer: AnalyserNode;
     let microphone: MediaStreamAudioSourceNode;
-    let gainNode: GainNode;
     let rafId: number;
     let sharedAudioContext: AudioContext;
 
     if (stream && stream.getAudioTracks().length > 0) {
       try {
-        const socketLib = require('../lib/socket');
-        sharedAudioContext = socketLib.getSharedAudioContext();
+        sharedAudioContext = getSharedAudioContext();
         
         analyzer = sharedAudioContext.createAnalyser();
-        gainNode = sharedAudioContext.createGain();
-        gainNodeRef.current = gainNode;
 
         microphone = sharedAudioContext.createMediaStreamSource(stream);
         
-        // Connect for both analysis and playback
+        // Only connect for analysis, NOT for playback. Playback happens via <audio> tag.
         microphone.connect(analyzer);
-        microphone.connect(gainNode);
-        gainNode.connect(sharedAudioContext.destination);
         
         analyzer.fftSize = 256;
         const bufferLength = analyzer.frequencyBinCount;
@@ -1061,25 +1067,13 @@ const RemoteAudioPlayer = ({ stream, onVolumeChange, volumeLevel }: { stream: Me
     return () => {
       if (rafId) cancelAnimationFrame(rafId);
       try {
-        if (gainNode) gainNode.disconnect();
         if (microphone) microphone.disconnect();
         if (analyzer) analyzer.disconnect();
       } catch(e) {}
     };
   }, [stream, onVolumeChange]);
 
-  useEffect(() => {
-    const socketLib = require('../lib/socket');
-    const ctx = socketLib.getSharedAudioContext();
-    if (gainNodeRef.current && ctx) {
-      const vol = Math.min(Math.max(volumeLevel / 100, 0), 1);
-      if (ctx.state !== "closed" && isFinite(ctx.currentTime)) {
-        gainNodeRef.current.gain.setTargetAtTime(vol, ctx.currentTime, 0.1);
-      }
-    }
-  }, [volumeLevel]);
-
-  return null;
+  return <audio ref={audioRef} autoPlay playsInline className="hidden" />;
 };
 
 const Modal = ({ title, children, onClose }: { title: string, children: React.ReactNode, onClose: () => void }) => (
