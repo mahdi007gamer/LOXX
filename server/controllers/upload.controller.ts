@@ -18,7 +18,6 @@ export class UploadController {
     }
     
     try {
-      if (target === "badge") return;
       const ext = path.extname(filePath).toLowerCase();
       if (![".jpg", ".jpeg", ".png", ".webp", ".gif"].includes(ext)) {
         return;
@@ -58,8 +57,8 @@ export class UploadController {
         // Maintain WebP format and animation if present
         await pipeline.webp({ quality: 80, effort: 4 }).toFile(tempPath);
       } else if (isPng) {
-        // Maintain PNG transparency
-        await pipeline.png({ quality: 80, palette: true }).toFile(tempPath);
+        // Maintain PNG transparency without losing alpha channel
+        await pipeline.png({ compressionLevel: 9 }).toFile(tempPath);
       } else {
         // Default to high-quality JPEG for others
         await pipeline.jpeg({ quality: 85, mozjpeg: true, chromaSubsampling: "4:4:4" }).toFile(tempPath);
