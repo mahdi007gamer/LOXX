@@ -36,7 +36,7 @@ import { cn } from "../lib/utils";
 import { motion, AnimatePresence } from "motion/react";
 import { SmartImage } from "../components/ui/SmartImage";
 
-type SettingsTab = "profile" | "security" | "notifications" | "ui" | "region" | "badges" | "elite";
+type SettingsTab = "profile" | "security" | "notifications" | "ui" | "region" | "badges" | "elite" | "support";
 
 export const SettingsPage = () => {
   const { user: authUser, refreshUser } = useAuth();
@@ -242,6 +242,7 @@ export const SettingsPage = () => {
     { id: "notifications" as const, icon: Bell, label: "اعلان‌ها" },
     { id: "ui" as const, icon: Monitor, label: "رابط کاربری" },
     { id: "region" as const, icon: Globe, label: "زبان و منطقه" },
+    { id: "support" as const, icon: MessageSquare, label: "تماس با مدیریت" },
   ] as const;
 
   const renderProfile = () => (
@@ -1060,6 +1061,59 @@ export const SettingsPage = () => {
     </div>
   );
 
+  const [supportMessage, setSupportMessage] = useState("");
+
+  const handleSendSupport = async () => {
+    if (!supportMessage.trim()) { toast.error("متن پیام خالی است"); return; }
+    setSaving(true);
+    try {
+      await api.post("/reports", {
+        targetType: "TICKET",
+        reason: supportMessage
+      });
+      toast.success("پیام شما با موفقیت ارسال شد");
+      setSupportMessage("");
+    } catch { toast.error("خطا در ارسال پیام"); }
+    finally { setSaving(false); }
+  };
+
+  const renderSupport = () => (
+    <div className="space-y-6">
+      <NeonCard className="space-y-6">
+        <div className="flex items-center gap-4 border-b border-white/5 pb-4">
+          <div className="h-12 w-12 rounded-xl bg-neon-blue/10 flex items-center justify-center text-neon-blue">
+             <MessageSquare size={24} />
+          </div>
+          <div>
+            <h3 className="text-xl font-black italic uppercase tracking-tighter">ارسال تیکت / گزارش</h3>
+            <p className="text-[10px] uppercase font-bold tracking-widest text-gray-500">ارتباط مستقیم با مدیریت</p>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest italic">شرح پیام</label>
+          <textarea
+            value={supportMessage}
+            onChange={(e) => setSupportMessage(e.target.value)}
+            className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-gray-700 transition-all focus:border-neon-blue/50 focus:outline-none h-40 resize-none"
+            placeholder="گزارش مشکل، باگ، یا پیشنهاد خود را اینجا بنویسید..."
+          />
+        </div>
+
+        <div className="flex justify-end pt-4 border-t border-white/5">
+          <GlowButton 
+            variant="blue" 
+            className="px-10 h-10 text-[11px] font-black uppercase italic"
+            onClick={handleSendSupport}
+            disabled={saving}
+          >
+            {saving ? "در حال ارسال..." : "ارسال پیام"}
+          </GlowButton>
+        </div>
+      </NeonCard>
+    </div>
+  );
+
   return (
     <div className="flex min-h-[calc(100vh-64px)] pb-20 md:pb-0">
       <Sidebar />
@@ -1099,6 +1153,7 @@ export const SettingsPage = () => {
                 {activeTab === "notifications" && renderNotifications()}
                 {activeTab === "ui" && renderUI()}
                 {activeTab === "region" && renderRegion()}
+                {activeTab === "support" && renderSupport()}
               </div>
           </div>
         </div>

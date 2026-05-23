@@ -5,9 +5,16 @@ import { AuthenticatedRequest } from "../middleware/auth.middleware.ts";
 import { emitLobbyUpdate, emitNotification } from "../utils/socket.ts";
 import prisma from "../utils/prisma.ts";
 
+import { PenaltyService } from "../services/penalty.service.ts";
+
 export class LobbyController {
   static async create(req: AuthenticatedRequest, res: Response) {
     try {
+      const penalty = await PenaltyService.checkPenalty(req.user!.userId, ["LOBBY_BAN"]);
+      if (penalty.isBanned) {
+        return res.status(403).json({ status: "error", error: { message: penalty.message } });
+      }
+
       const lobby = await LobbyService.createLobby(req.user!.userId, req.body);
       
       // Award XP for creating lobby

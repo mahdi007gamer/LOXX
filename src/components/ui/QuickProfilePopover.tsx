@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { GlowButton } from "./GlowButton";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import { useFriends } from "../../context/FriendsContext";
 import { BadgeType, MembershipType } from "../../types";
 import { cn } from "../../lib/utils";
-import { Award, Star, Zap, Crown, User, Shield, Sparkles, X, Trophy, MessageCircle, CheckCircle2, ShieldCheck } from "lucide-react";
+import { Award, Star, Zap, Crown, User, Shield, Sparkles, X, Trophy, MessageCircle, CheckCircle2, ShieldCheck, Flag } from "lucide-react";
+import * as Icons from "lucide-react";
 import api from "../../lib/api";
+import { toast } from "react-hot-toast";
 import { SmartImage } from "./SmartImage";
 import { VIPMetadata } from "../../types";
 
@@ -89,6 +91,9 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
       onClose();
     }
   };
+
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportReason, setReportReason] = useState("");
 
   const isVIP = user.membership === MembershipType.VIP || user.membership === "VIP";
   const isPLUS = user.membership === MembershipType.PLUS || user.membership === "PLUS";
@@ -233,6 +238,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
   const pinnedBadges = user.senderBadges?.filter(b => b.isPinned) || [];
 
   return (
+    <>
     <motion.div 
       initial={{ opacity: 0, scale: 0.9, y: 10 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -288,12 +294,23 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
            />
          )}
          
-         <button 
-          onClick={onClose}
-          className="absolute top-6 left-6 h-10 w-10 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-neon-pink hover:text-white transition-all z-20 backdrop-blur-xl border border-white/10 shadow-lg group"
-         >
-           <X size={20} className="group-hover:rotate-90 transition-transform" />
-         </button>
+         <div className="absolute top-6 left-6 flex items-center gap-2 z-20">
+           {!isSelf && (
+             <button 
+               onClick={() => setShowReportModal(true)}
+               className="h-10 w-10 rounded-full bg-black/60 text-gray-300 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all backdrop-blur-xl border border-white/10 shadow-lg"
+               title="گزارش پروفایل"
+             >
+               <Icons.Flag size={16} />
+             </button>
+           )}
+           <button 
+            onClick={onClose}
+            className="h-10 w-10 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-neon-pink hover:text-white transition-all backdrop-blur-xl border border-white/10 shadow-lg group"
+           >
+             <X size={20} className="group-hover:rotate-90 transition-transform" />
+           </button>
+         </div>
       </div>
 
       <div className="px-10 pb-10 pt-0 relative z-20">
@@ -520,6 +537,80 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
         </div>
       </div>
     </motion.div>
+
+    <AnimatePresence>
+      {showReportModal && (
+        <motion.div
+           initial={{ opacity: 0 }}
+           animate={{ opacity: 1 }}
+           exit={{ opacity: 0 }}
+           className="fixed inset-0 z-[30000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+        >
+           <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-[#0a0a0f] border border-red-500/20 rounded-3xl p-6 w-full max-w-md shadow-2xl relative"
+           >
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-1 bg-red-500 rounded-b-xl shadow-[0_0_15px_rgba(239,68,68,0.5)]" />
+              
+              <div className="flex items-center gap-3 mb-6">
+                <div className="h-10 w-10 rounded-full bg-red-500/10 flex items-center justify-center text-red-500">
+                  <Icons.AlertTriangle size={20} />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black text-white italic tracking-tighter">گزارش پروفایل تخلف</h3>
+                  <p className="text-[10px] text-gray-500 uppercase tracking-widest font-black">Report Profile</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                 <div>
+                    <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2 block">دلیل گزارش</label>
+                    <textarea 
+                      value={reportReason}
+                      onChange={(e) => setReportReason(e.target.value)}
+                      className="w-full h-24 bg-white/5 border border-white/10 rounded-xl p-3 text-sm text-white focus:border-red-500/50 transition-colors resize-none"
+                      placeholder="دلیل گزارش خود را به صورت کامل توضیح دهید..."
+                    />
+                 </div>
+              </div>
+
+              <div className="flex items-center gap-3 mt-8">
+                 <button 
+                   onClick={() => { setShowReportModal(false); setReportReason(""); }}
+                   className="flex-1 h-12 rounded-xl bg-white/5 text-gray-400 font-bold hover:bg-white/10 hover:text-white transition-colors"
+                 >
+                   انصراف
+                 </button>
+                 <button 
+                   onClick={async () => {
+                     if (!reportReason.trim()) { toast.error("لطفاً دلیل گزارش را بنویسید"); return; }
+                     try {
+                       await api.post("/reports", {
+                         reportedUserId: user.id,
+                         targetId: user.id?.toString(),
+                         targetType: "PROFILE",
+                         reason: reportReason
+                       });
+                       toast.success("گزارش شما با موفقیت ثبت شد");
+                       setShowReportModal(false);
+                       setReportReason("");
+                     } catch (e: any) {
+                       toast.error(e.response?.data?.error?.message || "خطا در ثبت گزارش");
+                       setShowReportModal(false);
+                     }
+                   }}
+                   className="flex-1 h-12 rounded-xl bg-red-500/20 border border-red-500/30 text-red-500 font-bold hover:bg-red-500 hover:text-white transition-all shadow-[0_0_15px_rgba(239,68,68,0.2)] hover:shadow-[0_0_20px_rgba(239,68,68,0.4)]"
+                 >
+                   ارسال گزارش
+                 </button>
+              </div>
+           </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+    </>
   );
 };
 

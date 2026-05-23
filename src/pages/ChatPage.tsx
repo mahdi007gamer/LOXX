@@ -50,10 +50,11 @@ interface MessageItemProps {
   onReply: (message: ChatMessage) => void;
   activeChannelId: string;
   onDelete: (msgId: string) => void;
+  onReport?: (msg: ChatMessage) => void;
   [key: string]: any; // Allow React keys
 }
 
-function MessageItem({ message, onReaction, onSaveGif, onReply, activeChannelId, onDelete }: MessageItemProps) {
+function MessageItem({ message, onReaction, onSaveGif, onReply, activeChannelId, onDelete, onReport }: MessageItemProps) {
   const { openProfile } = useProfilePopover();
   const { user } = useAuth();
   const isAdmin = (user as any)?.role === 'ADMIN';
@@ -188,7 +189,9 @@ function MessageItem({ message, onReaction, onSaveGif, onReply, activeChannelId,
                />
              )}
              {/* Legacy Badge Types */}
-             {message.senderBadges?.map((b, i) => <BadgeIcon key={i} type={b as any} />)}
+             {message.senderBadges
+                ?.filter(b => !((message as any).badges?.length > 0 && b === BadgeType.VIP))
+                .map((b, i) => <BadgeIcon key={i} type={b as any} />)}
           </div>
 
           <span className={cn(
@@ -219,6 +222,15 @@ function MessageItem({ message, onReaction, onSaveGif, onReply, activeChannelId,
               >
                 <Reply size={14} />
               </button>
+              {!message.self && onReport && (
+                 <button
+                   className="h-6 w-6 md:h-7 md:w-7 flex items-center justify-center text-gray-400 hover:text-red-500 transition-colors rounded-lg hover:bg-white/5 relative z-10 shrink-0"
+                   onClick={(e) => { e.stopPropagation(); onReport(message); setShowActions(false); }}
+                   title="گزارش محتوا"
+                 >
+                   <Icons.Flag size={14} />
+                 </button>
+              )}
               {(isAdmin || message.self) && (
                 <button 
                   className="h-6 w-6 md:h-7 md:w-7 flex items-center justify-center text-gray-400 hover:text-red-500 transition-colors rounded-lg hover:bg-white/5 relative z-10 shrink-0" 
@@ -624,6 +636,8 @@ export const ChatPage: React.FC = () => {
   const [showVipGroupModal, setShowVipGroupModal] = useState(false);
   const [showEliteSettingsModal, setShowEliteSettingsModal] = useState(false);
   const [eliteSettingsData, setEliteSettingsData] = useState({ title: "", avatarUrl: "" });
+  const [reportingMessage, setReportingMessage] = useState<ChatMessage | null>(null);
+  const [reportReason, setReportReason] = useState("");
 
   const handleGroupAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -2160,6 +2174,7 @@ export const ChatPage: React.FC = () => {
               onReply={(m) => setReplyingTo(m)}
               activeChannelId={activeChannelId}
               onDelete={deleteMessage}
+              onReport={(m) => setReportingMessage(m)}
             />
           ))}
           
@@ -2466,6 +2481,86 @@ export const ChatPage: React.FC = () => {
             </div>
           </motion.div>
         </div>
+      )}
+    </AnimatePresence>
+
+    {/* Report Modal */}
+    <AnimatePresence>
+      {reportingMessage && (
+        <motion.div
+           initial={{ opacity: 0 }}
+           animate={{ opacity: 1 }}
+           exit={{ opacity: 0 }}
+           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+        >
+           <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-[#0a0a0f] border border-red-500/20 rounded-3xl p-6 w-full max-w-md shadow-2xl relative"
+           >
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-1 bg-red-500 rounded-b-xl shadow-[0_0_15px_rgba(239,68,68,0.5)]" />
+              
+              <div className="flex items-center gap-3 mb-6">
+                <div className="h-10 w-10 rounded-full bg-red-500/10 flex items-center justify-center text-red-500">
+                  <Icons.AlertTriangle size={20} />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black text-white italic tracking-tighter">گزارش تخلف</h3>
+                  <p className="text-[10px] text-gray-500 uppercase tracking-widest font-black">Report Content</p>
+                </div>
+              </div>
+
+              <div className="bg-white/5 border border-white/5 p-4 rounded-xl mb-6">
+                 <p className="text-xs text-gray-400 mb-2">پیام مورد گزارش:</p>
+                 <p className="text-sm text-gray-200 border-r-2 border-red-500/50 pr-3 line-clamp-3">{reportingMessage.content}</p>
+                 <p className="text-[10px] font-bold text-gray-500 mt-2 text-left">- {reportingMessage.senderName}</p>
+              </div>
+
+              <div className="space-y-4">
+                 <div>
+                    <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2 block">دلیل گزارش</label>
+                    <textarea 
+                      value={reportReason}
+                      onChange={(e) => setReportReason(e.target.value)}
+                      className="w-full h-24 bg-white/5 border border-white/10 rounded-xl p-3 text-sm text-white focus:border-red-500/50 transition-colors resize-none"
+                      placeholder="دلیل گزارش خود را به صورت کامل توضیح دهید..."
+                    />
+                 </div>
+              </div>
+
+              <div className="flex items-center gap-3 mt-8">
+                 <button 
+                   onClick={() => { setReportingMessage(null); setReportReason(""); }}
+                   className="flex-1 h-12 rounded-xl bg-white/5 text-gray-400 font-bold hover:bg-white/10 hover:text-white transition-colors"
+                 >
+                   انصراف
+                 </button>
+                 <button 
+                   onClick={async () => {
+                     if (!reportReason.trim()) { toast.error("لطفاً دلیل گزارش را بنویسید"); return; }
+                     try {
+                       await api.post("/reports", {
+                         reportedUserId: reportingMessage.senderId,
+                         targetId: reportingMessage.id.toString(),
+                         targetType: "MESSAGE",
+                         reason: reportReason
+                       });
+                       toast.success("گزارش شما با موفقیت ثبت شد");
+                       setReportingMessage(null);
+                       setReportReason("");
+                     } catch (e: any) {
+                       toast.error(e.response?.data?.error?.message || "خطا در ثبت گزارش");
+                       setReportingMessage(null);
+                     }
+                   }}
+                   className="flex-1 h-12 rounded-xl bg-red-500/20 border border-red-500/30 text-red-500 font-bold hover:bg-red-500 hover:text-white transition-all shadow-[0_0_15px_rgba(239,68,68,0.2)] hover:shadow-[0_0_20px_rgba(239,68,68,0.4)]"
+                 >
+                   ارسال گزارش
+                 </button>
+              </div>
+           </motion.div>
+        </motion.div>
       )}
     </AnimatePresence>
     </div>

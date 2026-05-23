@@ -25,13 +25,21 @@ export const NotificationCenter = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [specialRewardModal, setSpecialRewardModal] = useState<AppNotification | null>(null);
   const navigate = useNavigate();
 
   const fetchNotifications = async () => {
     try {
       const res = await api.get("/notifications");
-      setNotifications(res.data.data?.items || []);
-      setUnreadCount(res.data.data?.items?.filter((n: any) => !n.isRead).length || 0);
+      const items = res.data.data?.items || [];
+      setNotifications(items);
+      setUnreadCount(items.filter((n: any) => !n.isRead).length || 0);
+
+      // Check for special weekly reward
+      const special = items.find((n: AppNotification) => !n.isRead && n.type === "WEEKLY_REWARD" && n.data?.showModal);
+      if (special) {
+        setSpecialRewardModal(special);
+      }
     } catch (e) {
       console.error(e);
     }
@@ -178,6 +186,51 @@ export const NotificationCenter = () => {
               </div>
             </motion.div>
           </>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {specialRewardModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
+          >
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0, rotateY: -90 }}
+              animate={{ scale: 1, opacity: 1, rotateY: 0 }}
+              exit={{ scale: 0.8, opacity: 0, rotateY: 90 }}
+              transition={{ type: "spring", stiffness: 200, damping: 20 }}
+              className="bg-gradient-to-b from-[#1a140a] to-dark-bg border border-yellow-500/30 rounded-3xl p-8 max-w-sm w-full shadow-[0_0_80px_rgba(234,179,8,0.2)] text-center relative overflow-hidden"
+            >
+              <div className="absolute top-0 inset-x-0 h-32 bg-yellow-500/20 blur-3xl rounded-full" />
+              
+              <div className="mx-auto w-24 h-24 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600 p-[2px] shadow-2xl shadow-yellow-500/40 relative z-10 mb-6 flex items-center justify-center">
+                <div className="w-full h-full bg-dark-bg rounded-full flex items-center justify-center overflow-hidden relative">
+                  <motion.div animate={{ rotate: 360 }} transition={{ duration: 10, repeat: Infinity, ease: "linear" }} className="absolute inset-0 bg-yellow-500/20" />
+                  <span className="text-4xl text-yellow-400 font-black relative z-10 drop-shadow-[0_0_10px_rgba(250,204,21,0.8)]">🏆</span>
+                </div>
+              </div>
+
+              <h2 className="text-2xl font-black text-white italic capitalize mb-2">تبریک!</h2>
+              <p className="text-xs text-yellow-400 font-bold uppercase tracking-widest mb-6">رتبه {specialRewardModal.data?.rank} هفتگی</p>
+
+              <p className="text-sm text-gray-300 font-bold leading-relaxed mb-8">
+                {specialRewardModal.data?.message}
+              </p>
+
+              <button
+                onClick={async () => {
+                   await markAsRead(specialRewardModal.id);
+                   setSpecialRewardModal(null);
+                }}
+                className="w-full py-4 rounded-xl bg-gradient-to-r from-yellow-600 to-yellow-400 text-dark-bg font-black uppercase italic tracking-widest hover:scale-105 transition-transform shadow-[0_0_20px_rgba(234,179,8,0.4)] relative z-10 cursor-pointer"
+              >
+                دریافت جایزه
+              </button>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

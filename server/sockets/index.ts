@@ -1,6 +1,7 @@
 import { Server, Socket } from "socket.io";
 import { AuthService } from "../services/auth.service.ts";
 import { RankingService } from "../services/ranking.service.ts";
+import { PenaltyService } from "../services/penalty.service.ts";
 import { emitLobbyUpdate } from "../utils/socket.ts";
 import prisma from "../utils/prisma.ts";
 
@@ -10,7 +11,19 @@ interface AuthenticatedSocket extends Socket {
   userId?: string;
 }
 
+// Global reference for emitting
+let globalIo: Server;
+export let globalNotifyNs: any = null;
+
+export function sendRealtimeWarning(userId: string, message: string) {
+  if (globalNotifyNs) {
+    globalNotifyNs.to(`user:${userId}`).emit("moderation.warning", { message });
+  }
+}
+
 export function setupWebSockets(io: Server) {
+  globalIo = io;
+  
   const sanitizeMessage = (text: string) => {
     return DOMPurify.sanitize(text, {
       ALLOWED_TAGS: [], // No tags allowed
@@ -55,6 +68,8 @@ export function setupWebSockets(io: Server) {
   const chatNs = io.of("/chat");
   const notifyNs = io.of("/notify");
   const voiceNs = io.of("/voice");
+
+  globalNotifyNs = notifyNs;
 
   // Periodically update lastActivity for all connected users (every 2 minutes)
   // This keeps them "online" in FriendshipService which checks for lastActivity < 5 mins
@@ -270,6 +285,11 @@ export function setupWebSockets(io: Server) {
       if (!userId) return ack?.({ status: "error", error: { message: "Unauthorized" } });
       
       try {
+        const penalty = await PenaltyService.checkPenalty(userId, ["LOBBY_BAN"]);
+        if (penalty.isBanned) {
+          throw new Error("شما از ساخت و ورود به لابی محروم هستید.");
+        }
+
         const lobby = await prisma.lobby.findUnique({
           where: { id: lobbyId },
           include: { members: true }
@@ -1010,6 +1030,12 @@ export function setupWebSockets(io: Server) {
         return;
       }
 
+      const penalty = await PenaltyService.checkPenalty(userId, ["CHAT_BAN"]);
+      if (penalty.isBanned) {
+        if (ack) ack({ status: "error", error: { code: "BANNED", message: penalty.message } });
+        return;
+      }
+
       // News channel admin check
       if (target.type === "channel" && target.id === "news") {
         if (user.role !== "ADMIN") {
@@ -1037,7 +1063,13 @@ export function setupWebSockets(io: Server) {
          }
       }
 
-      // Profanity Filter
+      // Profanity & Link Filter
+      const hasLink = /(https?:\/\/[^\s]+)|(www\.[^\s]+)|([a-zA-Z0-9-]+\.[a-zA-Z]{2,})/i.test(content);
+      if (hasLink && user.role !== "ADMIN") {
+         if (ack) ack({ status: "error", error: { code: "FORBIDDEN_LINK", message: "ارسال لینک در چت عمومی ممنوع است." } });
+         return;
+      }
+
       let safeContent;
       if (isImageMessage) {
         const parts = content.split("[IMAGE]:");

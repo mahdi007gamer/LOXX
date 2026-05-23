@@ -54,6 +54,9 @@ model User {
   loginTokens     LoginToken[]
   lobbyBans       LobbyBan[]
   devices         ConnectedDevice[]
+  reportsMade     Report[]     @relation("ReportedBy")
+  reportsReceived Report[]     @relation("ReportedUser")
+  penalties       Penalty[]
 }
 
 model LoginToken {
@@ -368,4 +371,34 @@ model ConnectedDevice {
   ipAddress String
   lastActive DateTime @default(now())
   createdAt DateTime @default(now())
+}
+
+model Report {
+  id             String   @id @default(uuid())
+  reporterId     String
+  reporter       User     @relation("ReportedBy", fields: [reporterId], references: [id], onDelete: Cascade)
+  reportedUserId String?
+  reportedUser   User?    @relation("ReportedUser", fields: [reportedUserId], references: [id], onDelete: Cascade)
+  targetId       String?  // Id of message or profile
+  targetType     String   // MESSAGE, PROFILE, GENERAL
+  reason         String
+  status         String   @default("PENDING") // PENDING, REVIEWED, ACTIONED
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  
+  // A user can report a specific target only once
+  // (We use a hack with a check in the backend instead of unique constraint because targetId can be null for general reports, but it would be fine if targetId is a dummy for general. But wait, Prisma @@unique allows nulls depending on DB, postgres treats each null as distinct. So it's fine. But let's just use it.)
+  @@unique([reporterId, targetId, targetType])
+}
+
+model Penalty {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String   // CHAT_BAN, LOBBY_BAN, GLOBAL_BAN
+  reason    String?
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  
+  @@index([userId, expiresAt])
 }

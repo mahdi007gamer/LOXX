@@ -1,13 +1,13 @@
 import { Request, Response, NextFunction } from "express";
 import { AuthService } from "../services/auth.service.ts";
-
+import { PenaltyService } from "../services/penalty.service.ts";
 import prisma from "../utils/prisma.ts";
 
 export interface AuthenticatedRequest extends Request {
   user?: { userId: string };
 }
 
-export const authenticate = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+export const authenticate = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return res.status(401).json({ status: "error", error: { code: "AUTH_EXPIRED", message: "Missing token" } });
@@ -17,6 +17,13 @@ export const authenticate = (req: AuthenticatedRequest, res: Response, next: Nex
   try {
     const decoded = AuthService.verifyAccessToken(token);
     req.user = decoded;
+
+    // Penalty checking for all authenticated endpoints
+    const penalty = await PenaltyService.checkPenalty(decoded.userId, []);
+    if (penalty.isBanned && penalty.message?.includes("کاملا مسدود است")) {
+      return res.status(403).json({ status: "error", error: { code: "BANNED", message: penalty.message } });
+    }
+
     next();
   } catch (error) {
     res.status(401).json({ status: "error", error: { code: "AUTH_EXPIRED", message: "Invalid or expired token" } });

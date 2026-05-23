@@ -20,6 +20,7 @@ import uploadRoutes from "./server/routes/upload.routes.ts";
 import eliteRoutes from "./server/routes/elite.routes.ts";
 import badgeRoutes from "./server/routes/badge.routes.ts";
 import chatRoutes from "./server/routes/chat.routes.ts";
+import reportRoutes from "./server/routes/report.routes.ts";
 import webhookRoutes from "./server/routes/webhook.routes.ts";
 import { BaleService } from "./server/services/bale.service.ts";
 import { setupWebSockets } from "./server/sockets/index.ts";
@@ -107,6 +108,7 @@ async function startServer() {
   app.use("/api/v1/elite", eliteRoutes);
   app.use("/api/v1/badges", badgeRoutes);
   app.use("/api/v1/chat", chatRoutes);
+  app.use("/api/v1/reports", reportRoutes);
   app.use("/api/v1/webhooks", webhookRoutes);
   
   app.get("/api/health", (req, res) => {

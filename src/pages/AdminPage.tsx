@@ -20,12 +20,13 @@ import { getFileUrl } from "../lib/constants";
 import { AuthorizedImage } from "../components/ui/AuthorizedImage";
 
 export const AdminPage = () => {
-  const [activeTab, setActiveTab] = useState<"users" | "games" | "payments" | "genres" | "badges">("users");
+  const [activeTab, setActiveTab] = useState<"users" | "games" | "payments" | "genres" | "badges" | "reports">("users");
   const [users, setUsers] = useState<any[]>([]);
   const [games, setGames] = useState<any[]>([]);
   const [payments, setPayments] = useState<any[]>([]);
   const [genres, setGenres] = useState<any[]>([]);
   const [badges, setBadges] = useState<any[]>([]);
+  const [reports, setReports] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isGameModalOpen, setIsGameModalOpen] = useState(false);
   const [isGenreModalOpen, setIsGenreModalOpen] = useState(false);
@@ -64,6 +65,9 @@ export const AdminPage = () => {
       } else if (activeTab === "badges") {
         const res = await api.get("/badges");
         setBadges(res.data.data || []);
+      } else if (activeTab === "reports") {
+        const res = await api.get("/reports/admin").catch(() => ({ data: { data: [] } }));
+        setReports(res.data.data || []);
       }
     } catch (err) {
       toast.error("خطا در بارگذاری داده‌ها");
@@ -210,6 +214,15 @@ export const AdminPage = () => {
              >
                نشان‌ها
                {activeTab === "badges" && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-neon-blue shadow-[0_0_15px_#00E5FF]" />}
+             </button>
+             <button
+               onClick={() => setActiveTab("reports")}
+               className={`pb-4 px-6 text-sm font-black uppercase tracking-widest transition-all relative ${
+                 activeTab === "reports" ? "text-neon-blue" : "text-gray-500 hover:text-gray-300"
+               }`}
+             >
+               گزارش‌های تخلف
+               {activeTab === "reports" && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-neon-blue shadow-[0_0_15px_#00E5FF]" />}
              </button>
           </div>
 
@@ -582,6 +595,120 @@ export const AdminPage = () => {
                   ))}
                </div>
             </div>
+          ) : activeTab === "reports" ? (
+             <div className="space-y-6">
+                <div className="flex justify-between items-center bg-white/5 p-6 rounded-[32px] border border-white/5">
+                   <div>
+                     <h3 className="text-xl tracking-tighter uppercase font-black italic">گزارش‌های تخلف</h3>
+                     <p className="text-gray-400 text-sm tracking-widest mt-1">بررسی شکایات و اعمال محدودیت</p>
+                   </div>
+                </div>
+
+                <div className="space-y-4">
+                  {reports.map((report) => (
+                    <NeonCard key={report.id} className="p-6">
+                      <div className="flex flex-col md:flex-row justify-between gap-4">
+                        <div className="space-y-2">
+                           <div className="flex items-center gap-2">
+                              <span className={cn(
+                                "px-2 py-0.5 rounded-full text-[10px] uppercase font-black italic border",
+                                report.status === "PENDING" ? "bg-yellow-400/10 text-yellow-400 border-yellow-400/20" :
+                                "bg-green-500/10 text-green-500 border-green-500/20"
+                              )}>
+                                {report.status}
+                              </span>
+                              <span className="text-xs text-gray-500 tracking-widest">{new Date(report.createdAt).toLocaleString("fa-IR")}</span>
+                           </div>
+                           <h4 className="font-bold text-white uppercase">{report.targetType}</h4>
+                           <p className="text-sm text-gray-300">گزارش دهنده: <span className="font-black italic">{report.reporter?.username}</span></p>
+                           {report.reportedUser && (
+                             <p className="text-sm text-gray-300">کاربر متخلف: <span className="text-neon-coral font-black italic">{report.reportedUser.username}</span></p>
+                           )}
+                           <div className="bg-[#0a0a0f] p-3 rounded-xl border border-white/5 mt-2">
+                             <p className="text-sm text-gray-400 select-all">{report.reason}</p>
+                           </div>
+                        </div>
+
+                        {report.status === "PENDING" && (
+                          <div className="flex flex-col gap-2 min-w-[200px]">
+                           {report.targetType === "MESSAGE" && report.targetId && (
+                             <button
+                               onClick={async () => {
+                                 try {
+                                   await api.post(`/reports/admin/${report.id}/action`, { action: "DELETE_MESSAGE" });
+                                   toast.success("پیام حذف شد");
+                                   fetchData();
+                                 } catch {
+                                   toast.error("خطا در عملیات");
+                                 }
+                               }}
+                               className="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 rounded-xl text-xs font-black uppercase transition-colors"
+                             >
+                               حذف پیام تخلف
+                             </button>
+                           )}
+                           
+                           <div className="pt-4 border-t border-white/5 space-y-2">
+                             <p className="text-[10px] text-gray-500 uppercase font-black">اعمال محدودیت به متخلف</p>
+                             <button
+                               onClick={async () => {
+                                 const duration = prompt("مدت زمان محدودیت چت (به دقیقه):", "15");
+                                 if (!duration) return;
+                                 try {
+                                   await api.post(`/reports/admin/${report.id}/action`, { 
+                                     action: "PENALIZE", penaltyType: "CHAT_BAN", durationMinutes: duration, reason: report.reason 
+                                   });
+                                   toast.success("محدودیت چت اعمال شد");
+                                   fetchData();
+                                 } catch { toast.error("خطا"); }
+                               }}
+                               className="w-full px-4 py-2 bg-yellow-400/10 hover:bg-yellow-400/20 text-yellow-400 border border-yellow-400/20 rounded-xl text-xs font-black uppercase transition-colors text-right"
+                             >
+                               + مسدودیت چت
+                             </button>
+                             <button
+                               onClick={async () => {
+                                 const duration = prompt("مدت زمان اخراج کامل (به دقیقه):", "60");
+                                 if (!duration) return;
+                                 try {
+                                   await api.post(`/reports/admin/${report.id}/action`, { 
+                                     action: "PENALIZE", penaltyType: "GLOBAL_BAN", durationMinutes: duration, reason: report.reason 
+                                   });
+                                   toast.success("مسدودیت کامل اعمال شد");
+                                   fetchData();
+                                 } catch { toast.error("خطا"); }
+                               }}
+                               className="w-full px-4 py-2 bg-neon-coral/10 hover:bg-neon-coral/20 text-neon-coral border border-neon-coral/20 rounded-xl text-xs font-black uppercase transition-colors text-right"
+                             >
+                               + مسدودیت کامل
+                             </button>
+                           </div>
+                           
+                           <button
+                             onClick={async () => {
+                               try {
+                                 await api.post(`/reports/admin/${report.id}/action`, { action: "DISMISS" });
+                                 toast.success("گزارش بسته شد");
+                                 fetchData();
+                               } catch { toast.error("خطا"); }
+                             }}
+                             className="px-4 py-2 bg-white/5 hover:bg-white/10 text-gray-400 rounded-xl text-xs font-black uppercase transition-colors mt-auto"
+                           >
+                             بستن فرم
+                           </button>
+                          </div>
+                        )}
+                      </div>
+                    </NeonCard>
+                  ))}
+                  
+                  {reports.length === 0 && (
+                    <div className="text-center p-12 bg-white/5 rounded-[32px] border border-white/5">
+                      <p className="text-gray-500 font-bold">گزارشی یافت نشد</p>
+                    </div>
+                  )}
+                </div>
+             </div>
           ) : (
              <div className="space-y-6">
                 <div className="flex justify-between items-center bg-white/5 p-6 rounded-[32px] border border-white/5">

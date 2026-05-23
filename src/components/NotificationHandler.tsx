@@ -119,7 +119,23 @@ export const NotificationHandler = () => {
       });
     };
 
+    const handleWarning = (data: any) => {
+      toast.error(data.message, { 
+        duration: 10000, 
+        icon: '⚠️',
+        style: {
+          borderRadius: '16px',
+          background: '#1a0505',
+          color: '#ef4444',
+          border: '1px solid rgba(239, 68, 68, 0.2)',
+          fontWeight: '900',
+          padding: '16px',
+        }
+      });
+    };
+
     notifySocket.on("lobby.invite", handleLobbyInvite);
+    notifySocket.on("moderation.warning", handleWarning);
     notifySocket.on("notification", (data: any) => {
       if (data.type === "LOBBY_INVITE") {
         handleLobbyInvite(data);
@@ -131,6 +147,7 @@ export const NotificationHandler = () => {
 
     return () => {
       notifySocket.off("lobby.invite");
+      notifySocket.off("moderation.warning");
       notifySocket.off("notification");
     };
   }, [navigate]);
