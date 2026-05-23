@@ -26,3 +26,34 @@ export const chatSocket = createNamespaceSocket("chat");
 export const notifySocket = createNamespaceSocket("notify");
 export const rankingSocket = createNamespaceSocket("ranking");
 export const voiceSocket = createNamespaceSocket("voice");
+
+// We export a shared AudioContext manager so it can be resumed on user interaction
+// and used everywhere to bypass mobile autoplay policies.
+
+let sharedAudioContext: AudioContext | null = null;
+
+export const getSharedAudioContext = () => {
+  if (!sharedAudioContext) {
+    const AudioCtx = (window as any).AudioContext || (window as any).webkitAudioContext;
+    if (AudioCtx) {
+      sharedAudioContext = new AudioCtx();
+    }
+  }
+  return sharedAudioContext;
+};
+
+export const resumeSharedAudioContext = async () => {
+  const ctx = getSharedAudioContext();
+  if (ctx && ctx.state === "suspended") {
+    try {
+      await ctx.resume();
+      console.log("Shared AudioContext resumed successfully.");
+      return true;
+    } catch (e) {
+      console.error("Failed to resume shared AudioContext", e);
+      return false;
+    }
+  }
+  return true;
+};
+
