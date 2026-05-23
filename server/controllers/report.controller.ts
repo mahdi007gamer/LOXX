@@ -38,10 +38,29 @@ export class ReportController {
         orderBy: { createdAt: 'desc' },
         include: {
           reporter: { select: { username: true } },
-          reportedUser: { select: { username: true } }
+          reportedUser: { 
+            include: { profile: true } 
+          }
         }
       });
-      res.json({ status: "success", data: reports });
+
+      // Enhance reports with target data
+      const enhancedReports = await Promise.all(reports.map(async (r) => {
+         let targetData = null;
+         if (r.targetType === "MESSAGE" && r.targetId) {
+            const msg = await prisma.message.findUnique({
+               where: { id: parseInt(r.targetId) },
+               select: { content: true, isDeleted: true }
+            });
+            targetData = msg;
+         }
+         return {
+           ...r,
+           targetData
+         };
+      }));
+
+      res.json({ status: "success", data: enhancedReports });
     } catch (err: any) {
       res.status(500).json({ status: "error", error: { message: err.message } });
     }
@@ -60,6 +79,41 @@ export class ReportController {
           where: { id: Number(report.targetId) },
           data: { isDeleted: true, content: "این پیام توسط مدیریت حذف شد." }
         }).catch(() => {});
+        
+        if (report.reportedUserId) {
+          sendRealtimeWarning(report.reportedUserId, "یکی از پیام‌های شما به دلیل گزارش کاربران توسط سیستم حذف شد.");
+        }
+      }
+
+      if (action === 'CLEAR_ASSET' && report.reportedUserId) {
+        const { assetType } = req.body;
+        if (assetType === 'AVATAR' || assetType === 'BANNER') {
+          await prisma.profile.update({
+            where: { userId: report.reportedUserId },
+            data: { [assetType === 'AVATAR' ? 'avatarUrl' : 'bannerUrl']: null }
+          });
+        } else if (assetType === 'VIP_BG') {
+          const profile = await prisma.profile.findUnique({ where: { userId: report.reportedUserId } });
+          if (profile?.vipMetadata) {
+            try {
+              const meta = JSON.parse(profile.vipMetadata);
+              meta.bgImage = null;
+              await prisma.profile.update({
+                where: { userId: report.reportedUserId },
+                data: { vipMetadata: JSON.stringify(meta) }
+              });
+            } catch(e) {}
+          }
+        }
+        await prisma.notification.create({
+          data: {
+            userId: report.reportedUserId,
+            type: "WARNING",
+            data: JSON.stringify({ message: "تصویر/بنر پروفایل شما به دلیل تخلف ظاهری حذف شد." }),
+            isRead: false
+          }
+        });
+        sendRealtimeWarning(report.reportedUserId, "تصویر پروفایل شما به دلیل عدم رعایت قوانین حذف شد.");
       }
 
       if (action === 'PENALIZE' && report.reportedUserId) {

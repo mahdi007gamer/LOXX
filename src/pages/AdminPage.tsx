@@ -607,31 +607,117 @@ export const AdminPage = () => {
                 <div className="space-y-4">
                   {reports.map((report) => (
                     <NeonCard key={report.id} className="p-6">
-                      <div className="flex flex-col md:flex-row justify-between gap-4">
-                        <div className="space-y-2">
-                           <div className="flex items-center gap-2">
-                              <span className={cn(
-                                "px-2 py-0.5 rounded-full text-[10px] uppercase font-black italic border",
-                                report.status === "PENDING" ? "bg-yellow-400/10 text-yellow-400 border-yellow-400/20" :
-                                "bg-green-500/10 text-green-500 border-green-500/20"
-                              )}>
-                                {report.status}
-                              </span>
-                              <span className="text-xs text-gray-500 tracking-widest">{new Date(report.createdAt).toLocaleString("fa-IR")}</span>
+                      <div className="flex flex-col md:flex-row justify-between gap-6">
+                        <div className="space-y-4 flex-1">
+                           <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <span className={cn(
+                                  "px-2 py-0.5 rounded-full text-[10px] uppercase font-black italic border",
+                                  report.status === "PENDING" ? "bg-yellow-400/10 text-yellow-400 border-yellow-400/20" :
+                                  "bg-green-500/10 text-green-500 border-green-500/20"
+                                )}>
+                                  {report.status}
+                                </span>
+                                <span className="text-xs text-gray-500 tracking-widest">{new Date(report.createdAt).toLocaleString("fa-IR")}</span>
+                              </div>
+                              <h4 className="font-bold text-white uppercase">{report.targetType}</h4>
                            </div>
-                           <h4 className="font-bold text-white uppercase">{report.targetType}</h4>
-                           <p className="text-sm text-gray-300">گزارش دهنده: <span className="font-black italic">{report.reporter?.username}</span></p>
-                           {report.reportedUser && (
-                             <p className="text-sm text-gray-300">کاربر متخلف: <span className="text-neon-coral font-black italic">{report.reportedUser.username}</span></p>
+                           
+                           <div className="grid grid-cols-2 gap-4 bg-white/5 p-4 rounded-2xl border border-white/5">
+                             <div>
+                               <p className="text-[10px] text-gray-500 uppercase font-black tracking-widest mb-1">گزارش دهنده</p>
+                               <span className="font-bold text-white">{report.reporter?.username}</span>
+                             </div>
+                             {report.reportedUser && (
+                               <div>
+                                 <p className="text-[10px] text-red-400/80 uppercase font-black tracking-widest mb-1">فرد گزارش شده (متخلف)</p>
+                                 <span className="font-black text-red-400 italic">{report.reportedUser.username}</span>
+                               </div>
+                             )}
+                           </div>
+                           
+                           <div className="bg-[#0a0a0f] p-4 rounded-2xl border border-white/5 relative overflow-hidden group">
+                             <div className="absolute top-0 right-0 w-1 bg-neon-coral h-full opacity-50"></div>
+                             <p className="text-[10px] text-neon-coral uppercase font-black tracking-widest mb-2">دلیل گزارش</p>
+                             <p className="text-sm text-gray-300 leading-relaxed font-bold">{report.reason}</p>
+                           </div>
+
+                           {/* Display Target Data contextually */}
+                           {report.targetType === "MESSAGE" && report.targetData && (
+                             <div className="bg-[#0a0a0f] p-4 rounded-2xl border border-white/5 relative">
+                               <div className="absolute top-0 right-0 w-1 bg-neon-blue h-full opacity-50"></div>
+                               <p className="text-[10px] text-neon-blue uppercase font-black tracking-widest mb-2">محتوای پیام گزارش شده</p>
+                               <p className="text-sm text-white italic">« {report.targetData.content} »</p>
+                               {report.targetData.isDeleted && <span className="text-xs text-red-500 mt-2 block">(پیام در حال حاضر حذف شده است)</span>}
+                             </div>
                            )}
-                           <div className="bg-[#0a0a0f] p-3 rounded-xl border border-white/5 mt-2">
-                             <p className="text-sm text-gray-400 select-all">{report.reason}</p>
-                           </div>
+
+                           {report.targetType === "PROFILE" && report.reportedUser?.profile && (
+                             <div className="bg-[#0a0a0f] p-4 rounded-2xl border border-white/5 relative">
+                               <div className="absolute top-0 right-0 w-1 bg-purple-500 h-full opacity-50"></div>
+                               <p className="text-[10px] text-purple-500 uppercase font-black tracking-widest mb-4">تصاویر پروفایل متخلف</p>
+                               <div className="flex gap-4 flex-wrap">
+                                 {report.reportedUser.profile.avatarUrl && (
+                                    <div className="flex flex-col items-center gap-2">
+                                      <div className="h-16 w-16 rounded-full overflow-hidden border border-white/10">
+                                         <AuthorizedImage src={report.reportedUser.profile.avatarUrl} className="h-full w-full object-cover" />
+                                      </div>
+                                      <button
+                                        onClick={async () => {
+                                          try {
+                                            await api.post(`/reports/admin/${report.id}/action`, { action: "CLEAR_ASSET", assetType: "AVATAR" });
+                                            toast.success("آواتار حذف شد");
+                                            fetchData();
+                                          } catch { toast.error("خطا"); }
+                                        }}
+                                        className="text-[10px] text-red-400 hover:text-red-300 transition-colors uppercase font-black"
+                                      >حذف آواتار</button>
+                                    </div>
+                                 )}
+                                 {report.reportedUser.profile.bannerUrl && (
+                                    <div className="flex flex-col items-center gap-2">
+                                      <div className="h-16 w-32 rounded-lg overflow-hidden border border-white/10">
+                                         <AuthorizedImage src={report.reportedUser.profile.bannerUrl} className="h-full w-full object-cover" />
+                                      </div>
+                                      <button
+                                        onClick={async () => {
+                                          try {
+                                            await api.post(`/reports/admin/${report.id}/action`, { action: "CLEAR_ASSET", assetType: "BANNER" });
+                                            toast.success("بنر حذف شد");
+                                            fetchData();
+                                          } catch { toast.error("خطا"); }
+                                        }}
+                                        className="text-[10px] text-red-400 hover:text-red-300 transition-colors uppercase font-black"
+                                      >حذف بنر</button>
+                                    </div>
+                                 )}
+                                 {report.reportedUser.profile.vipMetadata && JSON.parse(report.reportedUser.profile.vipMetadata).bgImage && (
+                                    <div className="flex flex-col items-center gap-2">
+                                      <div className="h-16 w-32 rounded-lg overflow-hidden border border-white/10">
+                                         <AuthorizedImage src={JSON.parse(report.reportedUser.profile.vipMetadata).bgImage} className="h-full w-full object-cover" />
+                                      </div>
+                                      <button
+                                        onClick={async () => {
+                                          try {
+                                            await api.post(`/reports/admin/${report.id}/action`, { action: "CLEAR_ASSET", assetType: "VIP_BG" });
+                                            toast.success("بک‌گراند حذف شد");
+                                            fetchData();
+                                          } catch { toast.error("خطا"); }
+                                        }}
+                                        className="text-[10px] text-red-400 hover:text-red-300 transition-colors uppercase font-black"
+                                      >حذف بک‌گراند</button>
+                                    </div>
+                                 )}
+                               </div>
+                             </div>
+                           )}
                         </div>
 
                         {report.status === "PENDING" && (
-                          <div className="flex flex-col gap-2 min-w-[200px]">
-                           {report.targetType === "MESSAGE" && report.targetId && (
+                          <div className="flex flex-col gap-2 min-w-[220px] bg-white/5 p-4 rounded-2xl border border-white/5">
+                           <p className="text-[10px] text-gray-500 uppercase font-black text-center mb-2">عملیات مدیریتی</p>
+                           
+                           {report.targetType === "MESSAGE" && report.targetId && !report.targetData?.isDeleted && (
                              <button
                                onClick={async () => {
                                  try {
@@ -642,14 +728,13 @@ export const AdminPage = () => {
                                    toast.error("خطا در عملیات");
                                  }
                                }}
-                               className="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 rounded-xl text-xs font-black uppercase transition-colors"
+                               className="px-4 py-3 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 rounded-xl text-xs font-black uppercase transition-colors w-full"
                              >
-                               حذف پیام تخلف
+                               پاک کردن پیام
                              </button>
                            )}
                            
-                           <div className="pt-4 border-t border-white/5 space-y-2">
-                             <p className="text-[10px] text-gray-500 uppercase font-black">اعمال محدودیت به متخلف</p>
+                           <div className="pt-2">
                              <button
                                onClick={async () => {
                                  const duration = prompt("مدت زمان محدودیت چت (به دقیقه):", "15");
@@ -662,9 +747,9 @@ export const AdminPage = () => {
                                    fetchData();
                                  } catch { toast.error("خطا"); }
                                }}
-                               className="w-full px-4 py-2 bg-yellow-400/10 hover:bg-yellow-400/20 text-yellow-400 border border-yellow-400/20 rounded-xl text-xs font-black uppercase transition-colors text-right"
+                               className="w-full px-4 py-3 bg-yellow-400/10 hover:bg-yellow-400/20 text-yellow-400 border border-yellow-400/20 rounded-xl text-xs font-black uppercase transition-colors text-right mb-2"
                              >
-                               + مسدودیت چت
+                               مسدودیت چت متخلف
                              </button>
                              <button
                                onClick={async () => {
@@ -678,9 +763,9 @@ export const AdminPage = () => {
                                    fetchData();
                                  } catch { toast.error("خطا"); }
                                }}
-                               className="w-full px-4 py-2 bg-neon-coral/10 hover:bg-neon-coral/20 text-neon-coral border border-neon-coral/20 rounded-xl text-xs font-black uppercase transition-colors text-right"
+                               className="w-full px-4 py-3 bg-neon-coral/10 hover:bg-neon-coral/20 text-neon-coral border border-neon-coral/20 rounded-xl text-xs font-black uppercase transition-colors text-right"
                              >
-                               + مسدودیت کامل
+                               مسدودیت کامل اکانت
                              </button>
                            </div>
                            
@@ -692,9 +777,9 @@ export const AdminPage = () => {
                                  fetchData();
                                } catch { toast.error("خطا"); }
                              }}
-                             className="px-4 py-2 bg-white/5 hover:bg-white/10 text-gray-400 rounded-xl text-xs font-black uppercase transition-colors mt-auto"
+                             className="px-4 py-3 bg-white/5 hover:bg-white/10 text-gray-300 border border-white/10 rounded-xl text-xs font-black uppercase transition-colors mt-auto w-full"
                            >
-                             بستن فرم
+                             رد گزارش / بستن
                            </button>
                           </div>
                         )}
