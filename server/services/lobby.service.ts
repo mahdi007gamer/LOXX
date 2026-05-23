@@ -25,7 +25,8 @@ export class LobbyService {
           create: {
             userId,
             role: "HOST",
-            isReady: true
+            isReady: true,
+            micStatus: true
           }
         }
       },
@@ -139,7 +140,8 @@ export class LobbyService {
         lobbyId,
         userId,
         role: "PLAYER",
-        isReady: false
+        isReady: false,
+        micStatus: true
       }
     });
 

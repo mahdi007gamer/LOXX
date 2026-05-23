@@ -658,6 +658,16 @@ export function setupWebSockets(io: Server) {
            return;
         }
 
+        // Spam Check: Any continuous word > 15 characters
+        if (user.role !== "ADMIN") {
+          const cleanText = content.replace(/@\w+/g, '').trim();
+          const hasSpamWord = cleanText.length > 0 && cleanText.split(/\s+/).some(word => word.length > 15);
+          if (hasSpamWord) {
+             if (ack) ack({ status: "error", error: { code: "SPAM", message: "پیام شما به عنوان اسپم شناسایی شد." } });
+             return;
+          }
+        }
+
         const safeContent = sanitizeMessage(filterProfanity(content));
 
         const msg = await prisma.message.create({
@@ -1064,6 +1074,17 @@ export function setupWebSockets(io: Server) {
             if (ack) ack({ status: "error", error: { code: "PERMISSION_DENIED", message: "فقط ادمین‌ها می‌توانند در این کانال پیام ارسال کنند." } });
             return;
          }
+      }
+
+      // Spam Check: Any continuous word > 15 characters
+      const textToValidate = isImageMessage ? content.split("[IMAGE]:")[0] : content;
+      if (user.role !== "ADMIN") {
+        const cleanText = textToValidate.replace(/\[LOBBY_INVITE\]:[\w-]+/g, '').replace(/@\w+/g, '').trim();
+        const hasSpamWord = cleanText.length > 0 && cleanText.split(/\s+/).some(word => word.length > 15);
+        if (hasSpamWord) {
+           if (ack) ack({ status: "error", error: { code: "SPAM", message: "پیام شما به عنوان اسپم شناسایی شد (استفاده از کلمات طولانی یا تکراری بیش از ۱۵ حرف)." } });
+           return;
+        }
       }
 
       // Profanity & Link Filter

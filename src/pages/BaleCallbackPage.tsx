@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import api from "../lib/api";
@@ -11,8 +11,12 @@ export const BaleCallbackPage = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
   const token = searchParams.get("token");
+  const hasRun = useRef(false);
 
   useEffect(() => {
+    if (hasRun.current) return;
+    hasRun.current = true;
+
     const verifyToken = async () => {
       if (!token) {
         toast.error("توکن نامعتبر است");

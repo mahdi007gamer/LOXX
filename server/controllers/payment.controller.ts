@@ -42,6 +42,15 @@ export class PaymentController {
     }
   }
 
+  static async adminListHistory(req: AuthenticatedRequest, res: Response) {
+    try {
+      const payments = await PaymentService.getAllHistoryPayments();
+      res.json({ status: "success", data: payments });
+    } catch (error: any) {
+      res.status(500).json({ status: "error", message: error.message });
+    }
+  }
+
   static async adminApprove(req: AuthenticatedRequest, res: Response) {
     try {
       const { paymentId } = req.body;

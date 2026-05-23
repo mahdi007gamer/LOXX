@@ -316,9 +316,9 @@ function MessageItem({ message, onReaction, onSaveGif, onReply, activeChannelId,
 
                 {/* Text Handling */}
                 {message.text && (
-                  <p className={cn("leading-relaxed text-[13px] font-medium text-gray-200", 
+                  <p className={cn("leading-relaxed text-[13px] font-medium text-gray-200 break-words break-all whitespace-pre-wrap", 
                     (message.image && activeChannelId !== 'news') || message.lobbyInvite ? "mb-2" : "mb-0"
-                  )}>
+                  )} style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}>
                     {message.text.split(/(@\w+)/g).map((part, i) => (
                       part.startsWith('@') ? (
                         <span key={i} className="text-neon-blue font-black hover:underline cursor-pointer">{part}</span>
@@ -2154,7 +2154,7 @@ export const ChatPage: React.FC = () => {
         <div 
           ref={scrollRef}
           onScroll={handleScroll}
-          className="flex-1 overflow-y-auto px-2 md:px-6 py-2 md:py-4 space-y-2 md:space-y-4 scroll-smooth custom-scrollbar relative min-h-0 flex flex-col no-scrollbar overscroll-contain"
+          className="flex-1 overflow-y-auto overflow-x-hidden px-2 md:px-6 py-2 md:py-4 space-y-2 md:space-y-4 scroll-smooth custom-scrollbar relative min-h-0 flex flex-col no-scrollbar overscroll-contain"
           style={{ overscrollBehavior: 'contain' }}
           dir="rtl"
         >
@@ -2233,7 +2233,7 @@ export const ChatPage: React.FC = () => {
              <p className="text-gray-500 font-bold text-sm tracking-tighter">فقط ادمین‌ها می‌توانند در این کانال محتوا منتشر کنند</p>
           </div>
         ) : (
-          <div className="p-3 pb-20 md:p-8 bg-gradient-to-t from-dark-bg to-transparent relative z-30 flex flex-col items-center shrink-0 w-full overflow-visible">
+          <div className="p-3 md:p-8 bg-gradient-to-t from-dark-bg to-transparent relative z-30 flex flex-col items-center shrink-0 w-full overflow-visible">
             <div className="w-full max-w-4xl relative flex flex-col px-1 md:px-0">
               {/* Reply Indicator - Discord Style */}
               <AnimatePresence>

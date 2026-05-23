@@ -10,6 +10,7 @@ router.get("/status", authenticate, PaymentController.status);
 
 // Admin routes
 router.get("/admin/pending", authenticate, authorizeAdmin, PaymentController.adminListPending);
+router.get("/admin/history", authenticate, authorizeAdmin, PaymentController.adminListHistory);
 router.post("/admin/approve", authenticate, authorizeAdmin, PaymentController.adminApprove);
 router.post("/admin/reject", authenticate, authorizeAdmin, PaymentController.adminReject);
 

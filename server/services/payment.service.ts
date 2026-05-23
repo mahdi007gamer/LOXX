@@ -56,6 +56,15 @@ export class PaymentService {
     });
   }
 
+  static async getAllHistoryPayments() {
+    return prisma.paymentRequest.findMany({
+      where: { status: { in: ["APPROVED", "REJECTED"] } },
+      include: { user: { include: { profile: true } } },
+      orderBy: { updatedAt: "desc" },
+      take: 100
+    });
+  }
+
   static async approvePayment(paymentId: string) {
     const payment = await prisma.paymentRequest.findUnique({
       where: { id: paymentId }

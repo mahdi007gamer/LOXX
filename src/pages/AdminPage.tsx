@@ -20,10 +20,11 @@ import { getFileUrl } from "../lib/constants";
 import { AuthorizedImage } from "../components/ui/AuthorizedImage";
 
 export const AdminPage = () => {
-  const [activeTab, setActiveTab] = useState<"users" | "games" | "payments" | "genres" | "badges" | "reports">("users");
+  const [activeTab, setActiveTab] = useState<"users" | "games" | "payments" | "paymentsHistory" | "genres" | "badges" | "reports">("users");
   const [users, setUsers] = useState<any[]>([]);
   const [games, setGames] = useState<any[]>([]);
   const [payments, setPayments] = useState<any[]>([]);
+  const [paymentsHistory, setPaymentsHistory] = useState<any[]>([]);
   const [genres, setGenres] = useState<any[]>([]);
   const [badges, setBadges] = useState<any[]>([]);
   const [reports, setReports] = useState<any[]>([]);
@@ -59,6 +60,9 @@ export const AdminPage = () => {
       } else if (activeTab === "payments") {
         const res = await api.get("/payments/admin/pending");
         setPayments(res.data.data || []);
+      } else if (activeTab === "paymentsHistory") {
+        const res = await api.get("/payments/admin/history");
+        setPaymentsHistory(res.data.data || []);
       } else if (activeTab === "genres") {
         const res = await api.get("/admin/genres");
         setGenres(res.data.data || []);
@@ -196,6 +200,15 @@ export const AdminPage = () => {
               >
                 تراکنش‌های معلق
                 {activeTab === "payments" && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-neon-blue shadow-[0_0_15px_#00E5FF]" />}
+             </button>
+             <button
+                onClick={() => setActiveTab("paymentsHistory")}
+                className={`pb-4 px-6 text-sm font-black uppercase tracking-widest transition-all relative ${
+                  activeTab === "paymentsHistory" ? "text-neon-blue" : "text-gray-500 hover:text-gray-300"
+                }`}
+              >
+                تاریخچه تراکنش‌ها
+                {activeTab === "paymentsHistory" && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-neon-blue shadow-[0_0_15px_#00E5FF]" />}
              </button>
              <button
                onClick={() => setActiveTab("genres")}
@@ -789,7 +802,7 @@ export const AdminPage = () => {
                   )}
                 </div>
              </div>
-          ) : (
+          ) : activeTab === "payments" ? (
              <div className="space-y-6">
                 <div className="flex justify-between items-center bg-white/5 p-6 rounded-[32px] border border-white/5">
                    <div>
@@ -842,7 +855,7 @@ export const AdminPage = () => {
                                   </td>
                                   <td className="px-6 py-4">
                                      <button 
-                                        onClick={() => setPreviewImage(req.receiptImageUrl)}
+                                        onClick={() => setPreviewImage(getFileUrl(req.receiptImageUrl))}
                                         className="h-10 w-20 rounded-xl bg-white/5 overflow-hidden border border-white/10 hover:border-neon-blue transition-all group"
                                      >
                                         <AuthorizedImage src={req.receiptImageUrl} className="h-full w-full object-cover opacity-50 group-hover:opacity-100 transition-opacity" />
@@ -893,7 +906,102 @@ export const AdminPage = () => {
                    )}
                 </AnimatePresence>
              </div>
-          )}
+          ) : activeTab === "paymentsHistory" ? (
+             <div className="space-y-6">
+                <div className="flex justify-between items-center bg-white/5 p-6 rounded-[32px] border border-white/5">
+                   <div>
+                     <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter">تاریخچه تراکنش‌ها</h2>
+                     <p className="text-gray-500 text-sm font-bold">تراکنش‌های تایید شده و رد شده اخیر</p>
+                   </div>
+                   <div className="flex items-center gap-4">
+                      <div className="h-10 w-10 rounded-2xl bg-neon-blue/10 flex items-center justify-center text-neon-blue border border-neon-blue/20">
+                         <Clock size={20} />
+                      </div>
+                      <span className="text-white font-black italic">{paymentsHistory.length} تراکنش</span>
+                   </div>
+                </div>
+
+                <div className="glass rounded-[32px] overflow-hidden border border-white/5 shadow-2xl">
+                   {paymentsHistory.length === 0 ? (
+                      <div className="p-20 text-center text-gray-500 uppercase font-black italic tracking-widest text-xs opacity-50">
+                         تراکنشی یافت نشد
+                      </div>
+                   ) : (
+                      <table className="w-full text-right font-bold">
+                         <thead>
+                           <tr className="bg-white/5 text-gray-500 text-[10px] font-black uppercase tracking-widest italic border-b border-white/5">
+                             <th className="px-6 py-5">کاربر</th>
+                             <th className="px-6 py-5">مبلغ</th>
+                             <th className="px-6 py-5">تاریخ</th>
+                             <th className="px-6 py-5">رسید پرداخت</th>
+                             <th className="px-6 py-5">وضعیت</th>
+                           </tr>
+                         </thead>
+                         <tbody className="divide-y divide-white/5">
+                            {paymentsHistory.map(req => (
+                               <tr key={req.id} className="hover:bg-white/5 transition-colors">
+                                  <td className="px-6 py-4">
+                                     <div className="flex flex-col">
+                                        <span className="text-white font-black italic">{req.user.username}</span>
+                                        <span className="text-[10px] text-gray-500">{req.user.email}</span>
+                                     </div>
+                                  </td>
+                                  <td className="px-6 py-4">
+                                     <span className="text-emerald-400 font-bold">{req.amount.toLocaleString()} تومان</span>
+                                     <span className="text-gray-500 text-[10px] block mt-1">{req.roleRequested} - {req.durationDays} روز</span>
+                                  </td>
+                                  <td className="px-6 py-4">
+                                     <span className="text-gray-300 text-xs">{new Date(req.updatedAt).toLocaleDateString('fa-IR')}</span>
+                                  </td>
+                                  <td className="px-6 py-4">
+                                     <button 
+                                       onClick={(e) => {
+                                          e.stopPropagation();
+                                          setPreviewImage(getFileUrl(req.receiptImageUrl));
+                                       }}
+                                       className="h-10 w-16 bg-white/5 rounded-lg border border-white/10 overflow-hidden relative group"
+                                     >
+                                        <AuthorizedImage src={req.receiptImageUrl} className="h-full w-full object-cover opacity-50 group-hover:opacity-100 transition-opacity" />
+                                     </button>
+                                  </td>
+                                  <td className="px-6 py-4">
+                                     {req.status === "APPROVED" ? (
+                                        <span className="text-green-500 text-xs font-black uppercase bg-green-500/10 px-3 py-1 rounded-full border border-green-500/20">تایید شده</span>
+                                     ) : (
+                                        <div className="flex flex-col items-start gap-1">
+                                          <span className="text-red-500 text-xs font-black uppercase bg-red-500/10 px-3 py-1 rounded-full border border-red-500/20">رد شده</span>
+                                          {req.reason && <span className="text-[9px] text-gray-500 w-32 truncate" title={req.reason}>{req.reason}</span>}
+                                        </div>
+                                     )}
+                                  </td>
+                               </tr>
+                            ))}
+                         </tbody>
+                      </table>
+                   )}
+                </div>
+
+                <AnimatePresence>
+                   {previewImage && (
+                      <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={() => setPreviewImage(null)}
+                        className="fixed inset-0 z-[100] flex items-center justify-center p-8 bg-black/90 backdrop-blur-xl cursor-zoom-out"
+                      >
+                         <AuthorizedImage 
+                           src={previewImage}
+                           className="max-w-full max-h-[90vh] rounded-3xl shadow-2xl border border-white/20"
+                         />
+                         <button className="absolute top-8 right-8 text-white/60 hover:text-white transition-colors">
+                            <X size={32} />
+                         </button>
+                      </motion.div>
+                   )}
+                </AnimatePresence>
+             </div>
+          ) : null}
         </div>
       </div>
 

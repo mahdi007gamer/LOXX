@@ -34,7 +34,25 @@ export class WebhookController {
 
     // 1. Handle /start verification / login
     if (text === "/start") {
-      await BaleService.sendWelcomeMessage(chatId);
+      try {
+        const user = await prisma.user.findFirst({
+           where: { baleId: String(fromId) }
+        });
+        
+        if (user && user.isVerified) {
+           const oneTimeToken = await AuthService.generateOneTimeLoginToken(user.id);
+           const callbackUrl = `${getBaseUrl()}/auth/bale/callback?token=${oneTimeToken}`;
+           
+           await BaleService.sendMessage(chatId, "✨ **سیستم هوشمند LOXX**\n\nدر حال ارتباط امن با پلتفرم...", { remove_keyboard: true });
+           await BaleService.sendMessage(chatId, "👑 **ورود سریع**\n\nحساب شما در وضعیت **Verified** قرار دارد. با کلیک بر روی دکمه زیر وارد پنل لوکس شوید:", {
+             inline_keyboard: [[{ text: "🚀 ورود سریع به پنل لوکس", url: callbackUrl }]]
+           });
+        } else {
+           await BaleService.sendWelcomeMessage(chatId);
+        }
+      } catch (e) {
+        await BaleService.sendWelcomeMessage(chatId);
+      }
     } else if (text.startsWith("/start ")) {
       const token = text.split(" ")[1];
       
@@ -111,8 +129,10 @@ export class WebhookController {
           const oneTimeToken = await AuthService.generateOneTimeLoginToken(user.id);
           const callbackUrl = `${getBaseUrl()}/auth/bale/callback?token=${oneTimeToken}`;
 
-          await BaleService.sendMessage(chatId, "👑 **تایید نهایی با موفقیت انجام شد**\n\nحساب هوشمند شما با موفقیت به سطح **LoXX Verified** ارتقا یافت.\n\nاکنون تمامی محدودیت‌های تجاری و رقابتی برای شما برداشته شده است:", {
-            inline_keyboard: [[{ text: "🎮 ورود به دنیای لوکس", url: callbackUrl }]]
+          await BaleService.sendMessage(chatId, "در حال فعال‌سازی دسترسی امن...", { remove_keyboard: true });
+          
+          await BaleService.sendMessage(chatId, "👑 **تایید نهایی با موفقیت انجام شد**\n\nحساب هوشمند شما با موفقیت به سطح **LoXX Verified** ارتقا یافت.\n\nاکنون تمامی محدودیت‌های تجاری و رقابتی برای شما برداشته شده است.\n\nاز طریق لینک ایمن زیر می‌توانید مستقیماً وارد پنل شوید:", {
+            inline_keyboard: [[{ text: "🚀 ورود یکبار مصرف به دنیای لوکس", url: callbackUrl }]]
           });
         } else {
            await BaleService.sendMessage(chatId, "❌ **عدم تطابق اطلاعات**\n\nکاربری با این مشخصات یافت نشد. لطفاً در سایت ثبت‌نام کنید.");
