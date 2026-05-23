@@ -47,7 +47,7 @@ const AppContent = () => {
   const isLanding = location.pathname === "/";
 
   return (
-    <div className="min-h-screen bg-dark-bg text-gray-100 selection:bg-neon-pink selection:text-white pb-20 md:pb-0">
+    <div className="min-h-screen bg-dark-bg text-gray-100 selection:bg-neon-pink selection:text-white pb-16 md:pb-0">
       <NotificationHandler />
       {/* Abstract background effects */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10">

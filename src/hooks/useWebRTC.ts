@@ -71,7 +71,7 @@ export const useWebRTC = (roomId: string | null, localStream: MediaStream | null
           await pc.setLocalDescription();
           voiceSocket.emit("voice.signal", {
             targetUserId: targetUserId,
-            signal: pc.localDescription,
+            signal: { description: pc.localDescription },
           });
         } catch (err) {
           console.error(`WebRTC: Negotiation error with ${targetUserId}:`, err);
@@ -118,7 +118,7 @@ export const useWebRTC = (roomId: string | null, localStream: MediaStream | null
             await pc.setLocalDescription();
             voiceSocket.emit("voice.signal", {
               targetUserId: fromUserId,
-              signal: pc.localDescription,
+              signal: { description: pc.localDescription },
             });
           }
         } else if (signal.candidate) {
@@ -127,21 +127,6 @@ export const useWebRTC = (roomId: string | null, localStream: MediaStream | null
             await pc.addIceCandidate(new RTCIceCandidate(signal.candidate));
           } catch (err) {
             if (!ignoreOfferRef.current.get(fromUserId)) throw err;
-          }
-        } else if (signal.type && signal.sdp) {
-          // Alternative signal format handling if legacy
-          const description = new RTCSessionDescription(signal);
-           if (!pc) {
-            pc = createPeer(fromUserId);
-            peersRef.current.set(fromUserId, pc);
-          }
-          await pc.setRemoteDescription(description);
-          if (description.type === "offer") {
-            await pc.setLocalDescription();
-            voiceSocket.emit("voice.signal", {
-              targetUserId: fromUserId,
-              signal: pc.localDescription,
-            });
           }
         }
       } catch (err) {

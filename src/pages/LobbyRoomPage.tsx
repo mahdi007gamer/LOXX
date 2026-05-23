@@ -987,40 +987,19 @@ const StatCard = ({ label, value }: { label: string, value: string }) => (
 
 const RemoteAudioPlayer = ({ stream, onVolumeChange, volumeLevel }: { stream: MediaStream, onVolumeChange: (vol: number) => void, volumeLevel: number, key?: any }) => {
   const audioRef = useRef<HTMLAudioElement>(null);
-  const gainNodeRef = useRef<GainNode | null>(null);
-  const audioContextRef = useRef<AudioContext | null>(null);
   
   useEffect(() => {
-    if (stream && stream.getAudioTracks().length > 0) {
-      const AudioCtx = (window as any).AudioContext || (window as any).webkitAudioContext;
-      if (!AudioCtx) return;
-
-      const audioContext = new AudioCtx();
-      audioContextRef.current = audioContext;
-      
-      const source = audioContext.createMediaStreamSource(stream);
-      const gainNode = audioContext.createGain();
-      const destination = audioContext.createMediaStreamDestination();
-      
-      source.connect(gainNode);
-      gainNode.connect(audioContext.destination);
-      gainNodeRef.current = gainNode;
-
-      if (audioRef.current) {
-        audioRef.current.srcObject = stream;
-        audioRef.current.play().catch(console.error);
+    if (audioRef.current && stream) {
+      if (audioRef.current.srcObject !== stream) {
+         audioRef.current.srcObject = stream;
       }
+      audioRef.current.play().catch(e => console.warn("AutoPlay blocked:", e));
     }
-
-    return () => {
-      audioContextRef.current?.close();
-    };
   }, [stream]);
 
   useEffect(() => {
-    if (gainNodeRef.current) {
-      // Scale 0-200 to 0-2.0
-      gainNodeRef.current.gain.setTargetAtTime(volumeLevel / 100, audioContextRef.current?.currentTime || 0, 0.1);
+    if (audioRef.current) {
+      audioRef.current.volume = Math.min(Math.max(volumeLevel / 100, 0), 1);
     }
   }, [volumeLevel]);
 
