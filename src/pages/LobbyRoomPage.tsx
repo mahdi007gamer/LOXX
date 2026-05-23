@@ -89,8 +89,11 @@ export const LobbyRoomPage = () => {
     sendMessage,
     updateLobbySettings,
     kickPlayer,
-    banPlayer
+    banPlayer,
+    isJoining,
+    joinError
   } = useLobby();
+
   const { user } = useAuth();
   const { openChat, addFriend } = useFriends();
   const { openProfile } = useProfilePopover();
@@ -141,7 +144,7 @@ export const LobbyRoomPage = () => {
     }
   }, [id]);
 
-  // Redirect if lobby becomes null (e.g., closed by host)
+  // Redirect if lobby becomes null (e.g., closed by host) or if joining fails
   const [countdown, setCountdown] = useState(5);
   const [localVolume, setLocalVolume] = useState(0);
   
@@ -153,10 +156,10 @@ export const LobbyRoomPage = () => {
 
   useEffect(() => {
     if (lobby) setWasInLobby(true);
-    if (wasInLobby && !lobby && id) {
+    if ((wasInLobby && !lobby && id) || joinError) {
        navigate("/lobbies");
     }
-  }, [lobby, wasInLobby, id, navigate]);
+  }, [lobby, wasInLobby, id, navigate, joinError]);
 
   const [peerVolumes, setPeerVolumes] = useState<Record<string, number>>({});
   const [peerActivity, setPeerActivity] = useState<Record<string, number>>({});

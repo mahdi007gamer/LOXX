@@ -67,6 +67,8 @@ interface LobbyContextType {
   updateLobbySettings: (settings: { isPrivate?: boolean, micRequired?: boolean }) => void;
   kickPlayer: (userId: string) => void;
   banPlayer: (userId: string) => void;
+  isJoining: string | null;
+  joinError: string | null;
 }
 
 const LobbyContext = createContext<LobbyContextType | undefined>(undefined);
@@ -346,14 +348,17 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [lobby?.id]);
 
   const [isJoining, setIsJoining] = useState<string | null>(null);
+  const [joinError, setJoinError] = useState<string | null>(null);
 
   const joinLobby = (lobbyId: string) => {
     if (lobby?.id === lobbyId || isJoining === lobbyId) return;
     
     setIsJoining(lobbyId);
+    setJoinError(null);
     lobbySocket.emit("lobby.join", { lobbyId }, (ack: any) => {
       setIsJoining(null);
       if (ack?.status === "ok") {
+        setJoinError(null);
         setLobby({
           ...ack.data,
           gameId: ack.data.gameId || null,
@@ -369,7 +374,9 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         chatSocket.once("connect", () => { chatSocket.emit("chat.join", { type: "lobby", id: lobbyId }); });
         voiceSocket.once("connect", () => { voiceSocket.emit("voice.join", { roomId: lobbyId }); });
       } else {
-        toast.error(ack?.error?.message || "Join failed");
+        const errorMsg = ack?.error?.message || "Join failed";
+        setJoinError(errorMsg);
+        toast.error(errorMsg);
       }
     });
   };
@@ -487,7 +494,9 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       sendMessage,
       updateLobbySettings,
       kickPlayer,
-      banPlayer
+      banPlayer,
+      isJoining,
+      joinError
     }}>
       {children}
     </LobbyContext.Provider>

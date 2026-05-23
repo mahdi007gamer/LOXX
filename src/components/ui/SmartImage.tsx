@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { ShieldAlert, RefreshCw } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import { cn } from "../../lib/utils";
 import api from "../../lib/api";
 import { getFileUrl } from "../../lib/constants";
@@ -150,19 +150,21 @@ export const SmartImage: React.FC<SmartImageProps> = ({
   }
 
   if (error || !displaySrc) {
-    const initials = alt ? alt.substring(0, 2).toUpperCase() : "??";
+    const initials = alt ? alt.substring(0, 2).toUpperCase() : "LX";
     const colors = [
-      "bg-blue-500", "bg-purple-500", "bg-pink-500", 
-      "bg-indigo-500", "bg-cyan-500", "bg-teal-500",
-      "bg-emerald-500", "bg-amber-500", "bg-rose-500"
+      "bg-gradient-to-br from-blue-500 to-indigo-600", 
+      "bg-gradient-to-br from-purple-500 to-pink-600", 
+      "bg-gradient-to-br from-emerald-400 to-teal-600",
+      "bg-gradient-to-br from-amber-400 to-orange-600",
+      "bg-gradient-to-br from-rose-400 to-red-600",
+      "bg-gradient-to-br from-cyan-400 to-blue-600"
     ];
     const colorIndex = alt ? alt.length % colors.length : 0;
     const bgColor = colors[colorIndex];
 
     return (
-      <div className={cn("flex flex-col items-center justify-center text-white/40 font-black italic select-none", bgColor, className)}>
-        <span className="text-xl tracking-tighter">{initials}</span>
-        <ShieldAlert size={12} className="mt-1 opacity-50" />
+      <div className={cn("flex items-center justify-center text-white font-black italic select-none !shadow-inner border border-white/10", bgColor, className)}>
+        <span className="tracking-tighter drop-shadow-md text-sm md:text-base">{initials}</span>
       </div>
     );
   }

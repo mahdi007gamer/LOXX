@@ -37,6 +37,58 @@ import { getAvatarFallbacks } from "../lib/avatar";
 import { useProfilePopover } from "../context/ProfilePopoverContext";
 import { MembershipType } from "../types";
 
+const DashboardSkeleton = () => (
+  <div className="container mx-auto max-w-6xl animate-pulse">
+    {/* Promo Banner Skeleton */}
+    <div className="mb-10 w-full h-[160px] md:h-40 rounded-[48px] bg-white/5 border border-white/10 flex items-center p-8 gap-8">
+      <div className="h-24 w-24 rounded-[32px] bg-white/10 shrink-0" />
+      <div className="flex-1 space-y-4 hidden md:block">
+        <div className="h-6 w-1/3 bg-white/10 rounded" />
+        <div className="h-4 w-1/2 bg-white/10 rounded" />
+      </div>
+      <div className="h-16 w-48 bg-white/10 rounded-[24px] hidden lg:block" />
+    </div>
+
+    {/* User Rank Widget Skeleton */}
+    <div className="mb-8 p-6 md:p-8 rounded-[48px] bg-white/5 border border-white/10 shrink-0 flex flex-col md:flex-row items-center justify-between gap-6">
+       <div className="flex items-center gap-6">
+         <div className="h-16 w-16 bg-white/10 rounded-full shrink-0" />
+         <div className="space-y-3">
+           <div className="h-5 w-32 bg-white/10 rounded" />
+           <div className="h-4 w-48 bg-white/10 rounded" />
+         </div>
+       </div>
+       <div className="h-12 w-32 bg-white/10 rounded-[24px] shrink-0" />
+    </div>
+
+    <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+      <div className="lg:col-span-2 space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="h-6 w-32 bg-white/10 rounded" />
+        </div>
+        <ListSkeleton />
+        <ListSkeleton />
+      </div>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between mb-6">
+          <div className="h-6 w-32 bg-white/10 rounded" />
+        </div>
+        <div className="rounded-[32px] bg-white/5 border border-white/10 h-[400px] p-6 space-y-6">
+          {[1,2,3,4].map(i => (
+             <div key={i} className="flex gap-4 items-center">
+                <div className="h-12 w-12 rounded-full bg-white/10 shrink-0" />
+                <div className="space-y-2">
+                   <div className="h-4 w-24 bg-white/10 rounded" />
+                   <div className="h-3 w-16 bg-white/10 rounded" />
+                </div>
+             </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
 export const DashboardPage = () => {
   const navigate = useNavigate();
   const { friends, openChat } = useFriends();
@@ -117,6 +169,17 @@ export const DashboardPage = () => {
   const currentMembership = user?.membership || user?.profile?.membershipType || "NONE";
   const expiryDate = (stats as any).membershipExpiresAt;
   const daysLeft = expiryDate ? Math.max(0, Math.ceil((new Date(expiryDate).getTime() - new Date().getTime()) / (1000 * 3600 * 24))) : 0;
+
+  if (loading) {
+    return (
+      <div className="flex min-h-[calc(100vh-64px)]">
+        <Sidebar />
+        <main className="flex-1 px-4 py-8 md:mr-64 lg:px-8 pb-24 md:pb-8">
+          <DashboardSkeleton />
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-[calc(100vh-64px)]">
@@ -415,10 +478,7 @@ export const DashboardPage = () => {
                 <button className="text-sm text-neon-blue hover:underline">مشاهده همه</button>
               </div>
               <div className="space-y-4">
-                {loading ? (
-                  <ListSkeleton />
-                ) : (
-                  suggestedLobbies.map((item: any, i) => {
+                  {suggestedLobbies.map((item: any, i) => {
                     const isVipLobby = item.host?.profile?.membershipType === 'VIP';
                     return (
                     <motion.div
@@ -457,8 +517,8 @@ export const DashboardPage = () => {
                       </NeonCard>
                     </motion.div>
                   )})
-                )}
-                {!loading && suggestedLobbies.length === 0 && (
+                  }
+                {suggestedLobbies.length === 0 && (
                   <div className="text-center py-8 text-gray-500 italic">لابی فعالی پیدا نشد.</div>
                 )}
               </div>
@@ -471,11 +531,6 @@ export const DashboardPage = () => {
                 <div className="h-1 w-12 rounded-full bg-neon-purple/50" />
               </div>
               <NeonCard variant="purple" className="flex flex-col flex-1 p-2">
-                {loading ? (
-                   <div className="space-y-4">
-                     {[1,2,3].map(i => <div key={i} className="flex gap-3 items-center"><div className="h-10 w-10 rounded-full bg-white/5 animate-pulse" /><div className="space-y-1"><div className="h-4 w-24 bg-white/5 rounded animate-pulse" /><div className="h-3 w-16 bg-white/5 rounded animate-pulse" /></div></div>)}
-                   </div>
-                ) : (
                   <div className="space-y-1">
                     <AnimatePresence>
                       {visibleFriends.map((friend) => (
@@ -550,7 +605,6 @@ export const DashboardPage = () => {
                       <p className="py-8 text-center text-xs text-gray-600">هنوز دوستی ندارید</p>
                     )}
                   </div>
-                )}
                 
                 <GlowButton 
                   variant="purple" 
