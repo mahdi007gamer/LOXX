@@ -32,6 +32,8 @@ import { GamesPage } from "./pages/GamesPage";
 import { MyGamesPage } from "./pages/MyGamesPage";
 import { EliteSettingsPage } from "./pages/EliteSettingsPage";
 import { NotificationHandler } from "./components/NotificationHandler";
+import { DesktopOverlayWidget } from "./pages/DesktopOverlayWidget";
+import { ElectronTitlebar } from "./components/layout/ElectronTitlebar";
 import { cn } from "./lib/utils";
 import NotFoundPage from "./pages/NotFoundPage";
 
@@ -46,23 +48,33 @@ import { PublicProfilePage } from "./pages/PublicProfilePage";
 const AppContent = () => {
   const location = useLocation();
   const isLanding = location.pathname === "/";
+  const isOverlayWidget = location.pathname === "/lobby/overlay-widget";
+  const isElectron = typeof window !== "undefined" && !!(window as any).electronAPI;
 
   return (
-    <div className="min-h-screen bg-dark-bg text-gray-100 selection:bg-neon-pink selection:text-white pb-16 md:pb-0">
+    <div className={cn(
+      "min-h-screen selection:bg-neon-pink selection:text-white pb-16 md:pb-0 relative",
+      isOverlayWidget ? "bg-transparent pb-0" : "bg-dark-bg text-gray-100",
+      isElectron && !isOverlayWidget && "pt-10" // Push the UI below the custom draggable Titlebar
+    )}>
       <NotificationHandler />
-      {/* Abstract background effects */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10">
-        <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-neon-blue/5 rounded-full blur-[120px]" />
-        <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-neon-pink/5 rounded-full blur-[120px]" />
-        <div className="absolute top-[30%] left-[20%] w-[30%] h-[30%] bg-neon-purple/5 rounded-full blur-[120px]" />
-        
-        {/* Subtle Grid */}
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_at_center,black,transparent_80%)]" />
-      </div>
-
-      <Navbar />
+      {!isOverlayWidget && <ElectronTitlebar />}
       
-      <main className={cn("relative", !isLanding && "pt-16")}>
+      {/* Abstract background effects */}
+      {!isOverlayWidget && (
+        <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10">
+          <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-neon-blue/5 rounded-full blur-[120px]" />
+          <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-neon-pink/5 rounded-full blur-[120px]" />
+          <div className="absolute top-[30%] left-[20%] w-[30%] h-[30%] bg-neon-purple/5 rounded-full blur-[120px]" />
+          
+          {/* Subtle Grid */}
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_at_center,black,transparent_80%)]" />
+        </div>
+      )}
+
+      {!isOverlayWidget && <Navbar />}
+      
+      <main className={cn("relative", !isLanding && !isOverlayWidget && "pt-16")}>
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/auth" element={<AuthPage />} />
@@ -72,6 +84,7 @@ const AppContent = () => {
           <Route path="/chat" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
           <Route path="/lobbies" element={<ProtectedRoute><LobbiesPage /></ProtectedRoute>} />
           <Route path="/lobby/:id" element={<ProtectedRoute><LobbyRoomPage /></ProtectedRoute>} />
+          <Route path="/lobby/overlay-widget" element={<DesktopOverlayWidget />} />
           <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
           <Route path="/profile/:username" element={<ProtectedRoute><PublicProfilePage /></ProtectedRoute>} />
           <Route path="/ranking" element={<ProtectedRoute><LeaderboardPage /></ProtectedRoute>} />
@@ -87,7 +100,7 @@ const AppContent = () => {
         </Routes>
       </main>
 
-      {!isLanding && <BottomNav />}
+      {!isLanding && !isOverlayWidget && <BottomNav />}
     </div>
   );
 };

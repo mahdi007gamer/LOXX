@@ -135,6 +135,12 @@ export const LobbyRoomPage = () => {
     refreshAudioDevices,
     transparentOverlayEnabled,
     setTransparentOverlayEnabled,
+    overlayX,
+    overlayY,
+    overlayWidth,
+    overlayHeight,
+    overlayOpacity,
+    overlayClickThrough,
     gameDetected,
     launcherRichPresenceEnabled,
     setLauncherRichPresenceEnabled
@@ -992,23 +998,109 @@ export const LobbyRoomPage = () => {
                       </div>
 
                       {/* True Transparent Game Overlay */}
-                      <div className="flex items-center justify-between p-3 rounded-2xl bg-white/5">
-                        <div>
-                          <p className="text-xs font-black text-white">اورلی ۱۰۰٪ شفاف روی کل تصویر بازی (True Transparent Game Overlay)</p>
-                          <p className="text-[9px] text-gray-500 font-bold font-sans">تزریق مستقیم کادر اورلی شفاف روی محیط داخل بازی‌ها بدون حاشیه (Always-On-Top Layer)</p>
+                      <div className="space-y-3 p-3 rounded-2xl bg-white/5 border border-white/5">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-xs font-black text-white">اورلی ۱۰۰٪ شفاف روی کل تصویر بازی (True Transparent Game Overlay)</p>
+                            <p className="text-[9px] text-gray-500 font-bold font-sans">تزریق مستقیم کادر اورلی شفاف روی محیط داخل بازی‌ها بدون حاشیه (Always-On-Top Layer)</p>
+                          </div>
+                          <div 
+                            onClick={() => setTransparentOverlayEnabled(!transparentOverlayEnabled)}
+                            className={cn(
+                              "w-12 h-6 rounded-full relative cursor-pointer border transition-colors",
+                               transparentOverlayEnabled ? "bg-neon-pink/20 border-neon-pink/30" : "bg-white/5 border-white/10"
+                            )}
+                          >
+                            <div className={cn(
+                              "absolute top-1 h-4 w-4 rounded-full transition-all",
+                              transparentOverlayEnabled ? "right-1 bg-neon-pink shadow-[0_0_10px_rgba(255,0,127,1)]" : "right-7 bg-gray-500"
+                            )} />
+                          </div>
                         </div>
-                        <div 
-                          onClick={() => setTransparentOverlayEnabled(!transparentOverlayEnabled)}
-                          className={cn(
-                            "w-12 h-6 rounded-full relative cursor-pointer border transition-colors",
-                             transparentOverlayEnabled ? "bg-neon-pink/20 border-neon-pink/30" : "bg-white/5 border-white/10"
-                          )}
-                        >
-                          <div className={cn(
-                            "absolute top-1 h-4 w-4 rounded-full transition-all",
-                            transparentOverlayEnabled ? "right-1 bg-neon-pink shadow-[0_0_10px_rgba(255,0,127,1)]" : "right-7 bg-gray-500"
-                          )} />
-                        </div>
+
+                        {transparentOverlayEnabled && isElectron && (
+                          <div className="space-y-4 border-t border-white/5 pt-3.5 mt-2 text-right">
+                            <p className="text-[10px] text-neon-pink font-black uppercase tracking-wider select-none">تنظیمات اورلی شفاف دسکتاپ (مخصوص کلاینت)</p>
+                            
+                            {/* Row 1: Width & Height */}
+                            <div className="grid grid-cols-2 gap-3.5">
+                              <div className="space-y-1">
+                                <label className="text-[9px] font-bold text-gray-400 block">عرض کادر: {overlayWidth}px</label>
+                                <input 
+                                  type="range" 
+                                  min="150" 
+                                  max="800" 
+                                  value={overlayWidth}
+                                  onChange={(e) => updateLauncherSettings({ overlayWidth: parseInt(e.target.value) })}
+                                  className="w-full h-1 bg-white/5 border border-white/5 rounded-lg appearance-none cursor-pointer accent-neon-pink"
+                                />
+                              </div>
+                              <div className="space-y-1">
+                                <label className="text-[9px] font-bold text-gray-400 block">ارتفاع کادر: {overlayHeight}px</label>
+                                <input 
+                                  type="range" 
+                                  min="150" 
+                                  max="1200" 
+                                  value={overlayHeight}
+                                  onChange={(e) => updateLauncherSettings({ overlayHeight: parseInt(e.target.value) })}
+                                  className="w-full h-1 bg-white/5 border border-white/5 rounded-lg appearance-none cursor-pointer accent-neon-pink"
+                                />
+                              </div>
+                            </div>
+
+                            {/* Row 2: X & Y Position */}
+                            <div className="grid grid-cols-2 gap-3.5">
+                              <div className="space-y-1">
+                                <label className="text-[9px] font-bold text-gray-400 block">موقعیت افقی (X): {overlayX}px</label>
+                                <input 
+                                  type="range" 
+                                  min="0" 
+                                  max="2560" 
+                                  value={overlayX}
+                                  onChange={(e) => updateLauncherSettings({ overlayX: parseInt(e.target.value) })}
+                                  className="w-full h-1 bg-white/5 border border-white/5 rounded-lg appearance-none cursor-pointer accent-neon-pink"
+                                />
+                              </div>
+                              <div className="space-y-1">
+                                <label className="text-[9px] font-bold text-gray-400 block">موقعیت عمودی (Y): {overlayY}px</label>
+                                <input 
+                                  type="range" 
+                                  min="0" 
+                                  max="1600" 
+                                  value={overlayY}
+                                  onChange={(e) => updateLauncherSettings({ overlayY: parseInt(e.target.value) })}
+                                  className="w-full h-1 bg-white/5 border border-white/5 rounded-lg appearance-none cursor-pointer accent-neon-pink"
+                                />
+                              </div>
+                            </div>
+
+                            {/* Row 3: Opacity & Click-Through */}
+                            <div className="grid grid-cols-2 gap-3.5 items-center">
+                              <div className="space-y-1">
+                                <label className="text-[9px] font-bold text-gray-400 block">شفافیت کادر (Opacity): {Math.round((overlayOpacity || 0.9) * 100)}%</label>
+                                <input 
+                                  type="range" 
+                                  min="0.1" 
+                                  max="1.0" 
+                                  step="0.05"
+                                  value={overlayOpacity || 0.9}
+                                  onChange={(e) => updateLauncherSettings({ overlayOpacity: parseFloat(e.target.value) })}
+                                  className="w-full h-1 bg-white/5 border border-white/5 rounded-lg appearance-none cursor-pointer accent-neon-pink"
+                                />
+                              </div>
+                              
+                              <div className="flex items-center justify-between p-2 rounded-xl bg-white/5 border border-white/5">
+                                <span className="text-[9px] font-bold text-gray-400">امکان عبور کلیک موس (Click-Through)</span>
+                                <input 
+                                  type="checkbox" 
+                                  checked={overlayClickThrough}
+                                  onChange={(e) => updateLauncherSettings({ overlayClickThrough: e.target.checked })}
+                                  className="h-3.5 w-3.5 rounded border-white/10 bg-white/5 text-neon-pink focus:ring-0 focus:ring-offset-0 cursor-pointer"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
 
                       {/* Native Game Scan & Rich Presence Toggle */}
@@ -1331,18 +1423,20 @@ const Modal = ({ title, children, onClose }: { title: string, children: React.Re
        animate={{ scale: 1, y: 0 }}
        exit={{ scale: 0.9, y: 20 }}
        onClick={(e) => e.stopPropagation()}
-       className="w-full max-w-md bg-[#0a0a0f] rounded-[40px] border border-white/10 p-8 shadow-3xl relative overflow-hidden"
+       className="w-full max-w-md bg-[#0a0a0f] rounded-[40px] border border-white/10 p-8 shadow-3xl relative flex flex-col max-h-[90vh] overflow-hidden"
      >
         {/* Glow Decor */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-1 bg-neon-blue rounded-full blur-sm" />
         
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-6 shrink-0">
            <h2 className="text-xl font-black text-white uppercase tracking-tight">{title}</h2>
            <button onClick={onClose} className="h-10 w-10 flex items-center justify-center rounded-xl bg-white/5 text-gray-500 hover:text-white transition-colors">
              <X size={20} />
            </button>
         </div>
-        {children}
+        <div className="flex-1 overflow-y-auto pr-1 space-y-6 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+          {children}
+        </div>
      </motion.div>
   </motion.div>
 );

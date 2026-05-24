@@ -1,5 +1,6 @@
 import React from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { useLocation } from "react-router-dom";
 import { useLobby } from "../context/LobbyContext";
 import { useAuth } from "../context/AuthContext";
 import { Mic, MicOff, Volume2 } from "lucide-react";
@@ -13,12 +14,18 @@ export const DiscordOverlayHUD = () => {
     overlaySize, 
     overlayOnlyTalking, 
     peerVolumes, 
-    localVolume 
+    localVolume,
+    isElectron
   } = useLobby();
   const { user } = useAuth();
+  const location = useLocation();
+
+  const isLobbyPage = location.pathname.startsWith("/lobby/");
 
   // If overlay is disabled or user is not in any lobby, do not render HUD
+  // Also, hide in browser/web context if inside /lobby/ page
   if (!overlayEnabled || !lobby) return null;
+  if (!isElectron && isLobbyPage) return null;
 
   const currentUserId = user?.id;
 

@@ -13,7 +13,13 @@ let config = {
   startAtLogin: false,
   hardwareAcceleration: true,
   globalPttKey: 'CommandOrControl+Alt+V',
-  globalMuteKey: 'CommandOrControl+Alt+M'
+  globalMuteKey: 'CommandOrControl+Alt+M',
+  overlayX: 24,
+  overlayY: 80,
+  overlayWidth: 320,
+  overlayHeight: 480,
+  overlayOpacity: 0.9,
+  overlayClickThrough: true
 };
 
 // Load persistent configurations
@@ -64,11 +70,13 @@ function createMainWindow() {
     title: 'Loxx Web',
     autoHideMenuBar: true,
     backgroundColor: '#0a0a0f',
+    frame: false, // Custom styled borderless window
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
       contextIsolation: true,
-      webSecurity: true
+      webSecurity: true,
+      backgroundThrottling: false // Continuous background voice/CPU execution
     }
   });
 
@@ -200,6 +208,33 @@ app.whenReady().then(() => {
     applyStartupSetting();
     registerGlobalShortcuts();
     
+    // Dynamically update active overlay window dimensions/style in real-time
+    if (overlayWindow && !overlayWindow.isDestroyed()) {
+      try {
+        if (
+          settings.overlayWidth !== undefined || 
+          settings.overlayHeight !== undefined || 
+          settings.overlayX !== undefined || 
+          settings.overlayY !== undefined
+        ) {
+          overlayWindow.setBounds({
+            x: Math.round(Number(config.overlayX)),
+            y: Math.round(Number(config.overlayY)),
+            width: Math.round(Number(config.overlayWidth)),
+            height: Math.round(Number(config.overlayHeight))
+          });
+        }
+        if (settings.overlayOpacity !== undefined) {
+          overlayWindow.setOpacity(Number(config.overlayOpacity));
+        }
+        if (settings.overlayClickThrough !== undefined) {
+          overlayWindow.setIgnoreMouseEvents(!!config.overlayClickThrough);
+        }
+      } catch (e) {
+        console.error("Failed to dynamically update overlay properties:", e);
+      }
+    }
+
     // Notify if app requires restart for hardware acceleration
     if ('hardwareAcceleration' in settings) {
       if (mainWindow) {
@@ -216,7 +251,33 @@ app.whenReady().then(() => {
     isQuitting = true;
     app.quit();
   });
-  
+
+  // Native Window State Commands
+  ipcMain.on('window-minimize', () => {
+    if (mainWindow) mainWindow.minimize();
+  });
+
+  ipcMain.on('window-maximize', () => {
+    if (mainWindow) {
+      if (mainWindow.isMaximized()) {
+        mainWindow.unmaximize();
+      } else {
+        mainWindow.maximize();
+      }
+    }
+  });
+
+  ipcMain.on('window-close', () => {
+    if (mainWindow) {
+      if (config.closeToTray && !isQuitting) {
+        mainWindow.hide();
+      } else {
+        isQuitting = true;
+        mainWindow.close();
+      }
+    }
+  });
+
   // Game Overlay HUD Window Controller
   let overlayWindow = null;
   ipcMain.on('set-transparent-overlay-active', (event, active) => {
@@ -224,26 +285,36 @@ app.whenReady().then(() => {
       if (active) {
         if (overlayWindow) return;
         overlayWindow = new BrowserWindow({
-          width: 300,
-          height: 500,
-          x: 24,
-          y: 80,
+          width: Math.round(Number(config.overlayWidth || 300)),
+          height: Math.round(Number(config.overlayHeight || 500)),
+          x: Math.round(Number(config.overlayX || 24)),
+          y: Math.round(Number(config.overlayY || 80)),
           frame: false,
           transparent: true,
           alwaysOnTop: true,
           skipTaskbar: true,
           hasShadow: false,
           resizable: false,
+          opacity: Number(config.overlayOpacity !== undefined ? config.overlayOpacity : 0.9),
           webPreferences: {
             nodeIntegration: false,
-            contextIsolation: true
+            contextIsolation: true,
+            backgroundThrottling: false // Keep rendering HUD even if game is focused
           }
         });
         
-        // Make it click-through, sitting perfectly on top of low-level DX9/11/12 screens
-        overlayWindow.setIgnoreMouseEvents(true);
-        // Load the overlay HUD widget standalone URL
-        overlayWindow.loadURL('https://loxx.ir/lobby/overlay-widget');
+        // Make it click-through, sitting perfectly on top of any low-level screen
+        overlayWindow.setIgnoreMouseEvents(!!config.overlayClickThrough);
+        
+        // Compute dynamic local server URL route
+        let baseURL = 'https://loxx.ir';
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          const currentURL = mainWindow.getURL();
+          if (currentURL) {
+            baseURL = currentURL.split('/').slice(0, 3).join('/');
+          }
+        }
+        overlayWindow.loadURL(`${baseURL}/lobby/overlay-widget`);
         
         overlayWindow.on('closed', () => {
           overlayWindow = null;
@@ -256,6 +327,13 @@ app.whenReady().then(() => {
       }
     } catch (e) {
       console.error("Overlay window control failed:", e);
+    }
+  });
+
+  // Cross-Window Desktop Overlay Speaking Player Syncer
+  ipcMain.on('send-overlay-players', (event, players) => {
+    if (overlayWindow && !overlayWindow.isDestroyed()) {
+      overlayWindow.webContents.send('overlay-players-update', players);
     }
   });
 

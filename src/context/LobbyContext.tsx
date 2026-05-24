@@ -109,6 +109,12 @@ interface LobbyContextType {
     hardwareAcceleration?: boolean;
     globalPttKey?: string;
     globalMuteKey?: string;
+    overlayX?: number;
+    overlayY?: number;
+    overlayWidth?: number;
+    overlayHeight?: number;
+    overlayOpacity?: number;
+    overlayClickThrough?: boolean;
   }) => void;
 
   // New Desktop Features
@@ -122,6 +128,12 @@ interface LobbyContextType {
   
   transparentOverlayEnabled: boolean;
   setTransparentOverlayEnabled: (val: boolean) => void;
+  overlayX: number;
+  overlayY: number;
+  overlayWidth: number;
+  overlayHeight: number;
+  overlayOpacity: number;
+  overlayClickThrough: boolean;
   gameDetected: string | null;
   launcherRichPresenceEnabled: boolean;
   setLauncherRichPresenceEnabled: (val: boolean) => void;
@@ -230,6 +242,14 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
     return false;
   });
+
+  const [overlayX, setOverlayX] = useState<number>(24);
+  const [overlayY, setOverlayY] = useState<number>(80);
+  const [overlayWidth, setOverlayWidth] = useState<number>(300);
+  const [overlayHeight, setOverlayHeight] = useState<number>(500);
+  const [overlayOpacity, setOverlayOpacity] = useState<number>(0.9);
+  const [overlayClickThrough, setOverlayClickThrough] = useState<boolean>(true);
+
   const [gameDetected, setGameDetected] = useState<string | null>(null);
   const [launcherRichPresenceEnabled, setLauncherRichPresenceEnabled] = useState<boolean>(() => {
     if (typeof window !== "undefined") {
@@ -298,6 +318,12 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           if (settings.hardwareAcceleration !== undefined) setLauncherHardwareAcceleration(settings.hardwareAcceleration);
           if (settings.globalPttKey !== undefined) setLauncherGlobalPttKey(settings.globalPttKey);
           if (settings.globalMuteKey !== undefined) setLauncherGlobalMuteKey(settings.globalMuteKey);
+          if (settings.overlayX !== undefined) setOverlayX(Number(settings.overlayX));
+          if (settings.overlayY !== undefined) setOverlayY(Number(settings.overlayY));
+          if (settings.overlayWidth !== undefined) setOverlayWidth(Number(settings.overlayWidth));
+          if (settings.overlayHeight !== undefined) setOverlayHeight(Number(settings.overlayHeight));
+          if (settings.overlayOpacity !== undefined) setOverlayOpacity(Number(settings.overlayOpacity));
+          if (settings.overlayClickThrough !== undefined) setOverlayClickThrough(!!settings.overlayClickThrough);
         }
       }).catch((err: any) => console.error("Error loading Electron launcher settings:", err));
 
@@ -321,6 +347,12 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     hardwareAcceleration?: boolean;
     globalPttKey?: string;
     globalMuteKey?: string;
+    overlayX?: number;
+    overlayY?: number;
+    overlayWidth?: number;
+    overlayHeight?: number;
+    overlayOpacity?: number;
+    overlayClickThrough?: boolean;
   }) => {
     const checkElectron = typeof window !== "undefined" && !!(window as any).electronAPI;
     if (checkElectron) {
@@ -329,6 +361,12 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (updated.hardwareAcceleration !== undefined) setLauncherHardwareAcceleration(updated.hardwareAcceleration);
       if (updated.globalPttKey !== undefined) setLauncherGlobalPttKey(updated.globalPttKey);
       if (updated.globalMuteKey !== undefined) setLauncherGlobalMuteKey(updated.globalMuteKey);
+      if (updated.overlayX !== undefined) setOverlayX(updated.overlayX);
+      if (updated.overlayY !== undefined) setOverlayY(updated.overlayY);
+      if (updated.overlayWidth !== undefined) setOverlayWidth(updated.overlayWidth);
+      if (updated.overlayHeight !== undefined) setOverlayHeight(updated.overlayHeight);
+      if (updated.overlayOpacity !== undefined) setOverlayOpacity(updated.overlayOpacity);
+      if (updated.overlayClickThrough !== undefined) setOverlayClickThrough(updated.overlayClickThrough);
       (window as any).electronAPI.updateLauncherSettings(updated);
     }
   }, []);
@@ -341,6 +379,28 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
        api.setVoiceStatus(speakLevel ? 'talking' : (lobby ? 'connected' : 'idle'));
     }
   }, [isElectron, localVolume, lobby]);
+
+  // Synchronize current lobby speaking players state directly to the Electron translucent overlay
+  useEffect(() => {
+    if (isElectron && lobby) {
+      const api = (window as any).electronAPI;
+      if (api.sendOverlayPlayers) {
+        const playersList = (lobby.players || []).map((player: any) => {
+          const isMe = player.userId === user?.id;
+          const vol = isMe ? localVolume : (peerVolumes[player.userId] || 0);
+          const isSpeaking = vol > 15;
+          return {
+            userId: player.userId,
+            username: player.username || "بازیکن",
+            avatarUrl: player.avatarUrl,
+            isSpeaking,
+            isMuted: !!player.micMuted
+          };
+        });
+        api.sendOverlayPlayers(playersList);
+      }
+    }
+  }, [isElectron, lobby, user?.id, localVolume, peerVolumes]);
 
   // Handle native global OS event listeners
   useEffect(() => {
@@ -1004,6 +1064,12 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       refreshAudioDevices,
       transparentOverlayEnabled,
       setTransparentOverlayEnabled,
+      overlayX,
+      overlayY,
+      overlayWidth,
+      overlayHeight,
+      overlayOpacity,
+      overlayClickThrough,
       gameDetected,
       launcherRichPresenceEnabled,
       setLauncherRichPresenceEnabled

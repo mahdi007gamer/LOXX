@@ -27,6 +27,17 @@ contextBridge.exposeInMainWorld('electronAPI', {
   
   // Transparent Overlay settings
   setTransparentOverlayActive: (active) => ipcRenderer.send('set-transparent-overlay-active', active),
+  sendOverlayPlayers: (players) => ipcRenderer.send('send-overlay-players', players),
+  onOverlayPlayersUpdate: (callback) => {
+    const subscription = (event, players) => callback(players);
+    ipcRenderer.on('overlay-players-update', subscription);
+    return () => ipcRenderer.removeListener('overlay-players-update', subscription);
+  },
+  
+  // Custom Window Controls
+  minimizeWindow: () => ipcRenderer.send('window-minimize'),
+  maximizeWindow: () => ipcRenderer.send('window-maximize'),
+  closeWindow: () => ipcRenderer.send('window-close'),
   
   // Native Game Detection & Rich Presence
   updateRichPresence: (gameName) => ipcRenderer.send('update-rich-presence', gameName),
