@@ -101,12 +101,12 @@ export const LobbiesPage = () => {
         <div className="px-4 py-8 md:px-8 lg:px-10 max-w-7xl mx-auto">
           {/* Mobile Header: Beautifully aligned and spaced */}
           <header className="mb-8 md:mb-12">
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-white/5">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
               <div className="text-center md:text-right">
-                <h1 className="text-3xl md:text-5xl font-black text-white italic tracking-tighter uppercase leading-tight">
+                <h1 className="text-3xl md:text-4xl font-black text-white italic tracking-tighter uppercase leading-tight">
                   لابی‌های <span className="text-neon-blue">فعال</span>
                 </h1>
-                <p className="mt-1 text-[10px] md:text-xs text-neon-blue/40 font-black uppercase tracking-[0.2em] italic">LOXX PROFESSIONAL LOBBIES</p>
+                <p className="text-gray-400 mt-2 text-xs md:text-sm">لابی مورد علاقه خود را انتخاب کنید یا خودتان بسازید</p>
               </div>
               
               <GlowButton 
@@ -120,15 +120,23 @@ export const LobbiesPage = () => {
             </div>
             
             {/* Search Bar - Full space below */}
-            <div className="mt-6 md:mt-8 relative">
-              <Search className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
+            <div className="mt-8 md:mt-10 relative">
+              <Search className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
               <input 
                 type="text" 
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="جستجوی لابی بر اساس نام بازی یا عنوان..."
-                className="w-full rounded-2xl border border-white/10 bg-white/5 py-4 md:py-4.5 pr-14 pl-6 text-sm text-white focus:border-neon-blue/50 focus:outline-none transition-all placeholder:text-gray-600 shadow-xl font-bold"
+                className="w-full rounded-2xl border border-white/10 bg-white/5 py-4 md:py-5 pr-14 pl-6 text-sm text-white focus:border-neon-blue/50 focus:outline-none transition-all placeholder:text-gray-600 shadow-xl font-bold"
               />
+              {searchTerm && (
+                <button 
+                  onClick={() => setSearchTerm("")}
+                  className="absolute left-5 top-1/2 -translate-y-1/2 p-2 rounded-full hover:bg-white/10 text-gray-400"
+                >
+                  حذف
+                </button>
+              )}
             </div>
           </header>
 
@@ -182,7 +190,7 @@ export const LobbiesPage = () => {
           </div>
 
           {/* Lobbies Grid */}
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 pb-20">
             {loading ? (
               [1, 2, 3].map(i => <CardSkeleton key={i} />)
             ) : filteredLobbies.length === 0 ? (

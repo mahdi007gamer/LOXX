@@ -1143,9 +1143,10 @@ export const LobbyRoomPage = () => {
                             <span className="text-[10px] font-black text-gray-400">کلید Push to Talk در پس‌زمینه</span>
                             <span className="text-[8px] bg-white/15 px-1.5 py-0.5 rounded text-gray-300 font-mono select-all">{launcherGlobalPttKey}</span>
                           </div>
-                          <div className="flex gap-1.5">
+                          <div className="flex gap-1.5 flex-wrap">
                             {[
                               { label: 'Control+Alt+V', val: 'CommandOrControl+Alt+V' },
+                              { label: 'CapsLock', val: 'Capslock' },
                               { label: 'Alt+C', val: 'Alt+C' },
                               { label: 'Shift+K', val: 'Shift+K' }
                             ].map(opt => (

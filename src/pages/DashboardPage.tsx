@@ -92,7 +92,7 @@ const DashboardSkeleton = () => (
 export const DashboardPage = () => {
   const navigate = useNavigate();
   const { friends, openChat } = useFriends();
-  const { user } = useAuth();
+  const { user, isSidebarCollapsed } = useAuth();
   const { openProfile } = useProfilePopover();
 
   const [loading, setLoading] = useState(true);
@@ -147,7 +147,7 @@ export const DashboardPage = () => {
 
         const rankRes = await api.get("/ranking/me");
         if (rankRes.data.status === "success") {
-           setUserRank(rankRes.data.data);
+          setUserRank(rankRes.data.data);
         }
       } catch (err) {
         console.error("Failed to fetch dashboard data", err);
@@ -174,7 +174,7 @@ export const DashboardPage = () => {
     return (
       <div className="flex min-h-[calc(100vh-64px)]">
         <Sidebar />
-        <main className="flex-1 px-4 py-8 md:mr-64 lg:px-8 pb-24 md:pb-8">
+        <main className={cn("flex-1 px-4 py-8 lg:px-8 pb-24 md:pb-8 transition-all duration-300", !isSidebarCollapsed ? "md:mr-64" : "mr-0")}>
           <DashboardSkeleton />
         </main>
       </div>
@@ -184,7 +184,7 @@ export const DashboardPage = () => {
   return (
     <div className="flex min-h-[calc(100vh-64px)]">
       <Sidebar />
-      <main className="flex-1 px-4 py-8 md:mr-64 lg:px-8 pb-24 md:pb-8">
+      <main className={cn("flex-1 px-4 py-8 lg:px-8 pb-24 md:pb-8 transition-all duration-300", !isSidebarCollapsed ? "md:mr-64" : "mr-0")}>
         <div className="container mx-auto max-w-6xl">
           {/* VIP/PROMO BANNER - HIDDEN FOR MEMBERS */}
           {(currentMembership === "NONE" || currentMembership === "FREE") && (

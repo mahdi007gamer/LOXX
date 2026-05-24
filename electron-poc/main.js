@@ -2,6 +2,11 @@ const { app, BrowserWindow, Menu, Tray, globalShortcut, ipcMain, nativeImage, sc
 const path = require('path');
 const fs = require('fs');
 
+// Append switches to prevent background throttling of voice context & keys
+app.commandLine.appendSwitch('disable-renderer-backgrounding');
+app.commandLine.appendSwitch('disable-background-timer-throttling');
+app.commandLine.appendSwitch('disable-backgrounding-occluded-windows');
+
 let mainWindow = null;
 let tray = null;
 let isQuitting = false;
@@ -159,25 +164,30 @@ function registerGlobalShortcuts() {
   // 1. Push-To-Talk register
   if (config.globalPttKey) {
     try {
+      const isCapsLock = config.globalPttKey.toLowerCase() === 'capslock';
       globalShortcut.register(config.globalPttKey, () => {
         if (mainWindow) {
-          // When the hotkey is triggered, immediately open transmission if idle
-          if (!globalPttActive) {
-            globalPttActive = true;
-            mainWindow.webContents.send('global-ptt-change', true);
-          }
-
-          // Cancel the teardown timer. Since standard Windows continues firing keydown 
-          // repeat events while holding, resetting this timer simulates authentic hold-to-talk.
-          if (pttTimeout) clearTimeout(pttTimeout);
-
-          // If no key-repeat is detected within 1200ms, assume key is released and close mic
-          pttTimeout = setTimeout(() => {
-            globalPttActive = false;
-            if (mainWindow) {
-              mainWindow.webContents.send('global-ptt-change', false);
+          if (isCapsLock) {
+            // CapsLock acts as a perfect gaming toggle (press to status, press again to disable)
+            globalPttActive = !globalPttActive;
+            mainWindow.webContents.send('global-ptt-change', globalPttActive);
+          } else {
+            // Standard held key repeat loop
+            if (!globalPttActive) {
+              globalPttActive = true;
+              mainWindow.webContents.send('global-ptt-change', true);
             }
-          }, 1200);
+
+            if (pttTimeout) clearTimeout(pttTimeout);
+
+            // If no repeat triggers for 250ms, the held key has been released
+            pttTimeout = setTimeout(() => {
+              globalPttActive = false;
+              if (mainWindow) {
+                mainWindow.webContents.send('global-ptt-change', false);
+              }
+            }, 250);
+          }
         }
       });
     } catch (e) {
@@ -332,6 +342,8 @@ app.whenReady().then(() => {
           skipTaskbar: true,
           hasShadow: false,
           resizable: false,
+          type: 'toolbar', // Float above normal windows and fullscreen game interfaces
+          focusable: false, // Prevent taking focus away from active games
           opacity: Number(config.overlayOpacity !== undefined ? config.overlayOpacity : 0.9),
           webPreferences: {
             nodeIntegration: false,
@@ -340,8 +352,13 @@ app.whenReady().then(() => {
           }
         });
         
+        // Elevate display priority band to top tier screen-saver layer
+        overlayWindow.setAlwaysOnTop(true, 'screen-saver', 1);
+        overlayWindow.setVisibleOnAllWorkspaces(true);
+        overlayWindow.setFullScreenable(false);
+
         // Make it click-through, sitting perfectly on top of any low-level screen
-        overlayWindow.setIgnoreMouseEvents(!!config.overlayClickThrough);
+        overlayWindow.setIgnoreMouseEvents(!!config.overlayClickThrough, { forward: true });
         
         // Compute dynamic local server URL route
         let baseURL = 'https://loxx.ir';
