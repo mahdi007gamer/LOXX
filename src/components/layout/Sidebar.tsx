@@ -29,9 +29,17 @@ const menuItems = [
 
 export const Sidebar = () => {
   const { user, logout } = useAuth();
+  const isElectron = typeof window !== "undefined" && !!(window as any).electronAPI;
   
   return (
-    <aside className="fixed right-0 top-16 hidden h-[calc(100vh-64px)] w-64 border-l border-white/10 bg-dark-bg/50 backdrop-blur-lg md:block">
+    <aside 
+      className={cn(
+        "fixed right-0 hidden w-64 border-l border-white/10 bg-dark-[#050507]/50 bg-dark-bg/50 backdrop-blur-lg md:block z-[40]",
+        isElectron 
+          ? "top-[112px] h-[calc(100vh-112px)]" 
+          : "top-16 h-[calc(100vh-64px)]"
+      )}
+    >
       <div className="flex h-full flex-col justify-between py-6">
         <div className="space-y-1 px-4">
           {menuItems.map((item) => (

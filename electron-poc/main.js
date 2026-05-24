@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, Tray, globalShortcut, ipcMain, nativeImage } = require('electron');
+const { app, BrowserWindow, Menu, Tray, globalShortcut, ipcMain, nativeImage, screen } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
@@ -161,27 +161,23 @@ function registerGlobalShortcuts() {
     try {
       globalShortcut.register(config.globalPttKey, () => {
         if (mainWindow) {
-          if (mainWindow.isFocused()) {
-            // When app window is focused, let React handle standard keypress events natively.
+          // When the hotkey is triggered, immediately open transmission if idle
+          if (!globalPttActive) {
+            globalPttActive = true;
             mainWindow.webContents.send('global-ptt-change', true);
-            if (pttTimeout) clearTimeout(pttTimeout);
-            pttTimeout = setTimeout(() => {
-              if (mainWindow) mainWindow.webContents.send('global-ptt-change', false);
-            }, 600);
-          } else {
-            // Background / In-Game mode: Toggle speaking state with visual HUD notice so the user doesn't have to strain their finger.
-            globalPttActive = !globalPttActive;
-            mainWindow.webContents.send('global-ptt-change', globalPttActive);
-            
-            // Auto safety off after 20 seconds of silence to prevent hotmic
-            if (pttTimeout) clearTimeout(pttTimeout);
-            if (globalPttActive) {
-              pttTimeout = setTimeout(() => {
-                globalPttActive = false;
-                if (mainWindow) mainWindow.webContents.send('global-ptt-change', false);
-              }, 20000);
-            }
           }
+
+          // Cancel the teardown timer. Since standard Windows continues firing keydown 
+          // repeat events while holding, resetting this timer simulates authentic hold-to-talk.
+          if (pttTimeout) clearTimeout(pttTimeout);
+
+          // If no key-repeat is detected within 1200ms, assume key is released and close mic
+          pttTimeout = setTimeout(() => {
+            globalPttActive = false;
+            if (mainWindow) {
+              mainWindow.webContents.send('global-ptt-change', false);
+            }
+          }, 1200);
         }
       });
     } catch (e) {
@@ -310,11 +306,26 @@ app.whenReady().then(() => {
     try {
       if (active) {
         if (overlayWindow) return;
+        
+        let overlayX = Math.round(Number(config.overlayX || 24));
+        let overlayY = Math.round(Number(config.overlayY || 80));
+        
+        try {
+          const primaryDisplay = screen.getPrimaryDisplay();
+          if (primaryDisplay && primaryDisplay.bounds) {
+            const { x: displayX, y: displayY } = primaryDisplay.bounds;
+            overlayX = displayX + Math.round(Number(config.overlayX || 24));
+            overlayY = displayY + Math.round(Number(config.overlayY || 80));
+          }
+        } catch (screenErr) {
+          console.warn("[Overlay] Failed to fetch primary display bounds, falling back:", screenErr);
+        }
+
         overlayWindow = new BrowserWindow({
           width: Math.round(Number(config.overlayWidth || 300)),
           height: Math.round(Number(config.overlayHeight || 500)),
-          x: Math.round(Number(config.overlayX || 24)),
-          y: Math.round(Number(config.overlayY || 80)),
+          x: overlayX,
+          y: overlayY,
           frame: false,
           transparent: true,
           alwaysOnTop: true,

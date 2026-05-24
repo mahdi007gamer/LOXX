@@ -63,7 +63,7 @@ export const Navbar = () => {
         className={cn(
           "fixed left-0 right-0 z-[10000] w-full transition-all duration-500 Richie-nav",
           isElectron 
-            ? (isLanding && isScrolled ? "top-[56px] px-4" : "top-10")
+            ? (isLanding && isScrolled ? "top-16 px-4" : "top-12")
             : (!isLanding ? "top-0" : (isScrolled ? "top-4 px-4" : "top-0")),
           !isLanding || isScrolled
             ? "bg-[#050507]/95 border-b border-white/10 backdrop-blur-md"

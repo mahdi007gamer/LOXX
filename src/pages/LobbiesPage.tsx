@@ -178,7 +178,7 @@ export const LobbiesPage = () => {
           </div>
 
           {/* Lobbies Grid */}
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
             {loading ? (
               [1, 2, 3].map(i => <CardSkeleton key={i} />)
             ) : filteredLobbies.length === 0 ? (
@@ -335,7 +335,7 @@ export const LobbiesPage = () => {
                            </div>
 
                            <div className="flex items-center justify-between gap-3">
-                              <div className="flex -space-x-2.5">
+                              <div className="flex -space-x-2.5 shrink-0">
                                  {lobby.members?.slice(0, 4)?.map((m: any) => (
                                    <div key={m.userId} className="h-7 w-7 rounded-full border-2 border-dark-bg bg-white/10 flex items-center justify-center overflow-hidden ring-1 ring-white/5">
                                       <SmartImage 
@@ -353,7 +353,7 @@ export const LobbiesPage = () => {
                               <GlowButton 
                                 variant={lobby.isPrivate ? "purple" : "blue"} 
                                 className={cn(
-                                  "h-10 px-6 !rounded-xl text-[11px] font-black uppercase italic tracking-wider transition-all",
+                                  "h-10 px-6 !rounded-xl text-[11px] font-black uppercase italic tracking-wider transition-all shrink-0",
                                   lobby.isPrivate ? "opacity-50 cursor-not-allowed grayscale" : "hover:scale-105 active:scale-95"
                                 )}
                                 onClick={(e) => {
