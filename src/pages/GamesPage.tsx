@@ -46,7 +46,7 @@ const GameCard: React.FC<{ game: Game; index: number }> = ({ game, index }) => {
       whileHover={{ y: -5 }}
       className="group relative h-[420px] md:h-[400px]"
     >
-      <NeonCard variant={isAdded ? "blue" : "purple"} className="overflow-hidden border-white/5 flex flex-col h-full h-full" hover={true}>
+      <NeonCard variant={isAdded ? "blue" : "purple"} className="overflow-hidden border-white/5 flex flex-col h-full" hover={true}>
         {/* Game Image */}
         <div className="relative h-40 md:h-48 overflow-hidden shrink-0">
           <img 

@@ -109,17 +109,19 @@ export const LobbiesPage = () => {
                 <p className="text-gray-400 mt-2 text-xs md:text-sm">لابی مورد علاقه خود را انتخاب کنید یا خودتان بسازید</p>
               </div>
               
-              <GlowButton 
-                variant="blue" 
-                className="flex items-center justify-center gap-2 h-11 px-6 rounded-xl group transition-all active:scale-95 shadow-lg border-none w-full md:w-auto shrink-0" 
-                onClick={() => setIsModalOpen(true)}
-              >
-                <Plus size={16} className="group-hover:rotate-90 transition-transform" />
-                <span className="text-xs font-black uppercase italic tracking-wider">ساخت لابی جدید</span>
-              </GlowButton>
+              <div className="w-full md:w-auto">
+                <GlowButton 
+                  variant="blue" 
+                  className="flex items-center justify-center gap-2 w-full md:w-auto group transition-all" 
+                  onClick={() => setIsModalOpen(true)}
+                >
+                  <Plus size={18} className="group-hover:rotate-90 transition-transform" />
+                  ساخت لابی جدید
+                </GlowButton>
+              </div>
             </div>
             
-            {/* Search Bar - Full space below */}
+            {/* Search Bar */}
             <div className="mt-8 md:mt-10 relative">
               <Search className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
               <input 
@@ -127,12 +129,12 @@ export const LobbiesPage = () => {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="جستجوی لابی بر اساس نام بازی یا عنوان..."
-                className="w-full rounded-2xl border border-white/10 bg-white/5 py-4 md:py-5 pr-14 pl-6 text-sm text-white focus:border-neon-blue/50 focus:outline-none transition-all placeholder:text-gray-600 shadow-xl font-bold"
+                className="w-full rounded-2xl border border-white/10 bg-white/5 py-4 md:py-5 pr-14 pl-6 text-sm text-white focus:border-neon-blue/50 focus:outline-none transition-all placeholder:text-gray-600 shadow-xl"
               />
               {searchTerm && (
                 <button 
                   onClick={() => setSearchTerm("")}
-                  className="absolute left-5 top-1/2 -translate-y-1/2 p-2 rounded-full hover:bg-white/10 text-gray-400"
+                  className="absolute left-5 top-1/2 -translate-y-1/2 p-2 rounded-full hover:bg-white/10 text-gray-400 cursor-pointer"
                 >
                   حذف
                 </button>
@@ -222,14 +224,13 @@ export const LobbiesPage = () => {
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: i * 0.05 }}
+                    whileHover={{ y: -5 }}
+                    className="group relative h-[460px] md:h-[440px] cursor-pointer"
                   >
                     <NeonCard 
-                      className={cn(
-                        "group relative flex flex-col h-full overflow-hidden p-0 bg-[#0a0a0f] transition-all",
-                        isVipLobby ? "border-yellow-400/20 hover:border-yellow-400/60 bg-yellow-400/5 bg-blend-soft-light" : "border-white/5 hover:border-neon-blue/20",
-                        lobby.isPrivate && "opacity-80 grayscale-[0.5]",
-                        isVipLobby && "bg-[#0d0d12] shadow-[0_0_30px_rgba(250,204,21,0.05)]"
-                      )}
+                      variant={isVipLobby ? "gold" : (lobby.isPrivate ? "purple" : "blue")} 
+                      className="overflow-hidden border-white/5 flex flex-col h-full p-0 bg-[#0a0a0f] relative"
+                      hover={true}
                       onClick={() => !lobby.isPrivate && navigate(`/lobby/${lobby.id}`)}
                     >
                       {/* VIP Badge */}
@@ -256,7 +257,7 @@ export const LobbiesPage = () => {
                       )}
 
                       {/* Game Banner */}
-                      <div className="relative h-40 md:h-44 w-full shrink-0">
+                      <div className="relative h-40 md:h-48 w-full shrink-0">
                         <div className="absolute inset-0 overflow-hidden">
                           {lobby.isPrivate && (
                             <div className="absolute inset-0 z-10 bg-black/60 backdrop-blur-[2px] flex items-center justify-center">
@@ -281,75 +282,69 @@ export const LobbiesPage = () => {
                         </div>
 
                         <div className={cn("absolute -bottom-4 left-4 h-10 w-10 md:h-12 md:w-12 flex items-center justify-center rounded-xl border shadow-2xl z-20 text-white overflow-hidden", isVipLobby ? "bg-[#18181b] border-yellow-400/30 shadow-yellow-400/10" : "bg-[#0a0a0f] border-white/10")}>
-                          {lobby.game?.iconUrl ? (
-                            <SmartImage src={lobby.game.iconUrl} className="w-6 h-6 md:w-8 md:h-8 object-contain" />
-                          ) : (lobby.game?.title?.[0] || "🎮")}
+                           {lobby.game?.iconUrl ? (
+                             <SmartImage src={lobby.game.iconUrl} className="w-6 h-6 md:w-8 md:h-8 object-contain" />
+                           ) : (lobby.game?.title?.[0] || "🎮")}
                         </div>
                       </div>
 
-                      <div className="p-4 md:p-5 pt-8 md:pt-10 flex-1 flex flex-col">
-                        <div className="mb-3 md:mb-4 flex items-center justify-between">
-                          <div className={cn("rounded-full px-2.5 py-1 text-[9px] md:text-[10px] font-black uppercase tracking-tight border truncate max-w-[120px] md:max-w-[130px] transition-all", isVipLobby ? "bg-yellow-400/5 text-yellow-500/80 border-yellow-400/20 group-hover:border-yellow-400/50 group-hover:text-yellow-400" : "bg-white/5 text-gray-500 border-white/10 group-hover:border-neon-blue/20 group-hover:text-neon-blue")}>
-                            {lobby.game?.title}
+                      {/* Card Body content */}
+                      <div className="p-5 flex-grow flex flex-col justify-between">
+                        {/* Top layout */}
+                        <div>
+                          <div className="mb-3 flex items-center justify-between">
+                            <span className={cn("rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-tight border truncate max-w-[120px] md:max-w-[130px] transition-all", isVipLobby ? "bg-yellow-400/5 text-yellow-500/80 border-yellow-400/20 group-hover:border-yellow-400/50 group-hover:text-yellow-400" : "bg-white/5 text-gray-500 border-white/10 group-hover:border-neon-blue/20 group-hover:text-neon-blue")}>
+                              {lobby.game?.title}
+                            </span>
+                            <span className="flex items-center gap-1.5 text-white text-xs font-bold font-mono shrink-0">
+                              <Users size={14} className={isVipLobby ? "text-yellow-400" : "text-neon-blue"} />
+                              {lobby.members?.length || 0} / {lobby.maxPlayers}
+                            </span>
                           </div>
-                          <div className="flex items-center gap-2 text-white shrink-0">
-                            <Users size={14} className={isVipLobby ? "text-yellow-400" : "text-neon-blue"} />
-                            <span className="text-[11px] font-black">{lobby.members?.length || 0} / {lobby.maxPlayers}</span>
-                          </div>
-                        </div>
-                        
-                        <h3 className={cn("mb-4 text-lg md:text-xl font-black text-white line-clamp-1 transition-colors", isVipLobby ? "group-hover:text-yellow-400" : "group-hover:text-neon-blue")}>
-                          {lobby.title}
-                        </h3>
+                          
+                          <h3 className={cn("mb-2 text-lg font-black text-white line-clamp-1 transition-colors leading-snug", isVipLobby ? "group-hover:text-yellow-400" : "group-hover:text-neon-blue")}>
+                            {lobby.title}
+                          </h3>
 
-                        {/* Dynamic Metadata / Features */}
-                        <div className="mb-6 flex flex-wrap gap-2 text-right" dir="rtl">
-                          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/5 text-[10px] font-black text-gray-500">
-                            <Globe size={12} className="text-neon-pink" />
-                            <span>{lobby.region}</span>
-                          </div>
-                          {lobby.isPrivate && (
-                             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neon-purple/10 border border-neon-purple/20 text-[10px] font-black text-neon-purple">
-                               <Lock size={12} /> خصوصی
-                             </div>
-                          )}
-                          {lobby.micRequired && (
-                             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neon-blue/10 border border-neon-blue/20 text-[10px] font-black text-neon-blue">
-                               <Mic size={12} /> میکروفون
-                             </div>
-                          )}
-                          {meta.discordRequired && (
-                             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#5865F2]/10 border border-[#5865F2]/20 text-[10px] font-black text-[#5865F2]">
-                               <svg width="12" height="12" viewBox="0 0 127.14 96.36" fill="currentColor"><path d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.7,77.7,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1A105.25,105.25,0,0,0,126.6,80.22h0C129.24,52.84,122.09,29.11,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53s5-12.74,11.43-12.74S54,46,53.89,53,48.84,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.31,60,73.31,53s5-12.74,11.43-12.74S96.2,46,96.1,53,91.08,65.69,84.69,65.69Z"/></svg>
-                               دیسکورد
-                             </div>
-                          )}
-                          {meta.ageRestricted && (
-                             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/20 text-[10px] font-black text-red-500">
-                               +18
-                             </div>
-                          )}
-                          {Object.entries(meta).filter(([k]) => !['discordRequired', 'ageRestricted', 'autoClose', 'autoArchive'].includes(k)).map(([key, val]) => (
-                            <div key={key} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/5 text-[10px] font-black text-gray-400">
-                              {val as string}
+                          {/* Dynamic Metadata / Features */}
+                          <div className="mb-4 flex flex-wrap gap-1.5 text-right" dir="rtl">
+                            <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-white/5 border border-white/5 text-[9px] font-bold text-gray-400">
+                              <Globe size={11} className="text-neon-pink" />
+                              <span>{lobby.region}</span>
                             </div>
-                          ))}
+                            {lobby.micRequired && (
+                               <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-neon-blue/10 border border-neon-blue/20 text-[9px] font-bold text-neon-blue">
+                                 <Mic size={11} /> میکروفون
+                               </div>
+                            )}
+                            {meta.discordRequired && (
+                               <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-[#5865F2]/10 border border-[#5865F2]/20 text-[9px] font-bold text-[#5865F2]">
+                                 دیسکورد
+                               </div>
+                            )}
+                            {meta.ageRestricted && (
+                               <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-red-500/10 border border-red-500/20 text-[9px] font-bold text-red-500">
+                                 +18
+                               </div>
+                            )}
+                          </div>
                         </div>
 
-                        <div className="space-y-4 mt-auto">
+                        {/* Bottom layout */}
+                        <div className="mt-auto space-y-3.5">
                            <div className="flex items-center gap-3">
-                              <div className="h-0.5 flex-1 bg-white/5" />
-                              <div className="flex items-center gap-2 text-[10px] font-black text-gray-600 uppercase tracking-widest">
-                                 <ShieldCheck size={14} className="text-green-500" />
+                              <div className="h-[1px] flex-1 bg-white/5" />
+                              <div className="flex items-center gap-2 text-[9px] font-black text-gray-500 uppercase tracking-widest">
+                                 <ShieldCheck size={13} className="text-green-500" />
                                  Skill: <span className="text-white">{lobby.skillLevel}</span>
                               </div>
-                              <div className="h-0.5 flex-1 bg-white/5" />
+                              <div className="h-[1px] flex-1 bg-white/5" />
                            </div>
 
                            <div className="flex items-center justify-between gap-3">
-                              <div className="flex -space-x-2.5 shrink-0">
+                              <div className="flex -space-x-2 shrink-0">
                                  {lobby.members?.slice(0, 4)?.map((m: any) => (
-                                   <div key={m.userId} className="h-7 w-7 rounded-full border-2 border-dark-bg bg-white/10 flex items-center justify-center overflow-hidden ring-1 ring-white/5">
+                                   <div key={m.userId} className="h-7 w-7 rounded-full border border-dark-bg bg-white/10 flex items-center justify-center overflow-hidden ring-1 ring-white/5">
                                       <SmartImage 
                                         src={m.user?.profile?.avatarUrl || m.user?.avatarUrl || ""} 
                                         className="w-full h-full object-cover"
@@ -358,15 +353,16 @@ export const LobbiesPage = () => {
                                    </div>
                                  ))}
                                 {lobby.members?.length > 4 && (
-                                   <div className="h-7 w-7 rounded-full border-2 border-dark-bg bg-white/5 flex items-center justify-center text-[9px] font-black text-gray-500">+{(lobby.members.length - 4)}</div>
+                                   <div className="h-7 w-7 rounded-full border border-dark-bg bg-white/5 flex items-center justify-center text-[9px] font-black text-gray-500">+{(lobby.members.length - 4)}</div>
                                 )}
                               </div>
                               
                               <GlowButton 
                                 variant={lobby.isPrivate ? "purple" : "blue"} 
+                                size="sm"
                                 className={cn(
-                                  "h-10 px-6 !rounded-xl text-[11px] font-black uppercase italic tracking-wider transition-all shrink-0",
-                                  lobby.isPrivate ? "opacity-50 cursor-not-allowed grayscale" : "hover:scale-105 active:scale-95"
+                                  "px-5 py-2.5 rounded-xl text-xs font-bold transition-all shrink-0",
+                                  lobby.isPrivate ? "opacity-50 cursor-not-allowed grayscale" : ""
                                 )}
                                 onClick={(e) => {
                                   e.stopPropagation();

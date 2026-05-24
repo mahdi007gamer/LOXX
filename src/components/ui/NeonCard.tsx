@@ -51,7 +51,7 @@ export const NeonCard = ({
       {...props}
     >
       {/* Content wrapper */}
-      <div className="relative z-20 h-full">
+      <div className="relative z-20 h-full flex flex-col">
         {children}
       </div>
 
