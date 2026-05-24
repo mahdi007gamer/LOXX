@@ -71,6 +71,8 @@ function createMainWindow() {
     autoHideMenuBar: true,
     backgroundColor: '#0a0a0f',
     frame: false, // Custom styled borderless window
+    thickFrame: true, // Enable native operating system shadows & smooth edge resizing
+    resizable: true, // Allow custom border/edge stretching
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
@@ -83,6 +85,14 @@ function createMainWindow() {
   // Provide custom User-Agent to easily identify Launcher on the server
   const defaultUA = mainWindow.webContents.getUserAgent();
   mainWindow.webContents.setUserAgent(`${defaultUA} LoxxLauncher/1.0.0`);
+
+  // Listen for maximize / restore updates
+  mainWindow.on('maximize', () => {
+    mainWindow.webContents.send('window-maximize-status', true);
+  });
+  mainWindow.on('unmaximize', () => {
+    mainWindow.webContents.send('window-maximize-status', false);
+  });
 
   // Load production application
   mainWindow.loadURL('https://loxx.ir/dashboard');
@@ -137,25 +147,38 @@ function setupTray() {
 }
 
 // Global OS key listeners handling
+let pttTimeout = null;
+let globalPttActive = false;
+
 function registerGlobalShortcuts() {
   globalShortcut.unregisterAll();
 
   // 1. Push-To-Talk register
   if (config.globalPttKey) {
     try {
-      // Monitor both keydown and keyup. 
-      // Note: Electron's globalShortcut detects triggering of keystroke but does not natively support "keyup".
-      // Therefore, professional clients use separate listeners or handle key-up on key release intervals.
-      // For reliable push-to-talk in full-screen games, we capture triggering clicks or use toggles,
-      // and we support registering key combos.
       globalShortcut.register(config.globalPttKey, () => {
         if (mainWindow) {
-          mainWindow.webContents.send('global-ptt-change', true);
-          // Auto release after 3 seconds safety margin if no refresher sent
-          clearTimeout(this.pttTimeout);
-          this.pttTimeout = setTimeout(() => {
-            if (mainWindow) mainWindow.webContents.send('global-ptt-change', false);
-          }, 450);
+          if (mainWindow.isFocused()) {
+            // When app window is focused, let React handle standard keypress events natively.
+            mainWindow.webContents.send('global-ptt-change', true);
+            if (pttTimeout) clearTimeout(pttTimeout);
+            pttTimeout = setTimeout(() => {
+              if (mainWindow) mainWindow.webContents.send('global-ptt-change', false);
+            }, 600);
+          } else {
+            // Background / In-Game mode: Toggle speaking state with visual HUD notice so the user doesn't have to strain their finger.
+            globalPttActive = !globalPttActive;
+            mainWindow.webContents.send('global-ptt-change', globalPttActive);
+            
+            // Auto safety off after 20 seconds of silence to prevent hotmic
+            if (pttTimeout) clearTimeout(pttTimeout);
+            if (globalPttActive) {
+              pttTimeout = setTimeout(() => {
+                globalPttActive = false;
+                if (mainWindow) mainWindow.webContents.send('global-ptt-change', false);
+              }, 20000);
+            }
+          }
         }
       });
     } catch (e) {

@@ -38,6 +38,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   minimizeWindow: () => ipcRenderer.send('window-minimize'),
   maximizeWindow: () => ipcRenderer.send('window-maximize'),
   closeWindow: () => ipcRenderer.send('window-close'),
+  onMaximizeStatusChange: (callback) => {
+    const subscription = (event, isMaximized) => callback(isMaximized);
+    ipcRenderer.on('window-maximize-status', subscription);
+    return () => ipcRenderer.removeListener('window-maximize-status', subscription);
+  },
   
   // Native Game Detection & Rich Presence
   updateRichPresence: (gameName) => ipcRenderer.send('update-rich-presence', gameName),

@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
 import { Navbar } from "./components/layout/Navbar";
 import { BottomNav } from "./components/layout/BottomNav";
@@ -50,6 +51,20 @@ const AppContent = () => {
   const isLanding = location.pathname === "/";
   const isOverlayWidget = location.pathname === "/lobby/overlay-widget";
   const isElectron = typeof window !== "undefined" && !!(window as any).electronAPI;
+  const [isMaximized, setIsMaximized] = useState(false);
+
+  useEffect(() => {
+    if (!isElectron) return;
+    const api = (window as any).electronAPI;
+    if (api && api.onMaximizeStatusChange) {
+      const unsubscribe = api.onMaximizeStatusChange((status: boolean) => {
+        setIsMaximized(status);
+      });
+      return () => {
+        if (unsubscribe) unsubscribe();
+      };
+    }
+  }, [isElectron]);
 
   return (
     <div className={cn(
@@ -57,6 +72,9 @@ const AppContent = () => {
       isOverlayWidget ? "bg-transparent pb-0" : "bg-dark-bg text-gray-100",
       isElectron && !isOverlayWidget && "pt-10" // Push the UI below the custom draggable Titlebar
     )}>
+      {isElectron && !isOverlayWidget && !isMaximized && (
+        <div className="fixed inset-0 border border-white/10 pointer-events-none z-[100000] rounded-none shadow-[inset_0_0_15px_rgba(255,0,127,0.02)]" />
+      )}
       <NotificationHandler />
       {!isOverlayWidget && <ElectronTitlebar />}
       
