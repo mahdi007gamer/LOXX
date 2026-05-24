@@ -5,6 +5,8 @@
 
 import { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
+import { motion, AnimatePresence } from "motion/react";
+import { ScreenSplash } from "./components/layout/ScreenSplash";
 import { Navbar } from "./components/layout/Navbar";
 import { BottomNav } from "./components/layout/BottomNav";
 import { LandingPage } from "./pages/LandingPage";
@@ -52,6 +54,20 @@ const AppContent = () => {
   const isOverlayWidget = location.pathname === "/lobby/overlay-widget";
   const isElectron = typeof window !== "undefined" && !!(window as any).electronAPI;
   const [isMaximized, setIsMaximized] = useState(false);
+  const [showSplash, setShowSplash] = useState(() => {
+    if (!isElectron) return false;
+    if (typeof sessionStorage !== "undefined" && sessionStorage.getItem("loxx_splash_shown")) {
+      return false;
+    }
+    return true;
+  });
+
+  const handleSplashComplete = () => {
+    setShowSplash(false);
+    if (typeof sessionStorage !== "undefined") {
+      sessionStorage.setItem("loxx_splash_shown", "true");
+    }
+  };
 
   useEffect(() => {
     if (!isElectron) return;
@@ -67,11 +83,26 @@ const AppContent = () => {
   }, [isElectron]);
 
   return (
-    <div className={cn(
-      "min-h-screen selection:bg-neon-pink selection:text-white pb-16 md:pb-0 relative",
-      isOverlayWidget ? "bg-transparent pb-0" : "bg-dark-bg text-gray-100",
-      isElectron && !isOverlayWidget && "pt-10" // Push the UI below the custom draggable Titlebar
-    )}>
+    <>
+      <AnimatePresence mode="wait">
+        {showSplash && (
+          <motion.div
+            key="splash"
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0, scale: 1.05 }}
+            transition={{ duration: 0.45, ease: "easeInOut" }}
+            className="fixed inset-0 z-[999999]"
+          >
+            <ScreenSplash onComplete={handleSplashComplete} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div className={cn(
+        "min-h-screen selection:bg-neon-pink selection:text-white pb-16 md:pb-0 relative",
+        isOverlayWidget ? "bg-transparent pb-0" : "bg-dark-bg text-gray-100",
+        isElectron && !isOverlayWidget && "pt-10" // Push the UI below the custom draggable Titlebar
+      )}>
       {isElectron && !isOverlayWidget && !isMaximized && (
         <div className="fixed inset-0 border border-white/10 pointer-events-none z-[100000] rounded-none shadow-[inset_0_0_15px_rgba(255,0,127,0.02)]" />
       )}
@@ -120,6 +151,7 @@ const AppContent = () => {
 
       {!isLanding && !isOverlayWidget && <BottomNav />}
     </div>
+    </>
   );
 };
 

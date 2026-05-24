@@ -37,8 +37,8 @@ export const ElectronTitlebar = () => {
 
   return (
     <div 
-      className="h-10 w-full bg-[#07070c] border-b border-white/5 flex items-center justify-between px-4 select-none fixed top-0 left-0 right-0 z-[99999] shrink-0 titlebar-drag relative overflow-hidden"
-      dir="rtl"
+      className="h-10 w-full bg-[#07070c] border-b border-white/5 fixed top-0 left-0 right-0 z-[99999] shrink-0 titlebar-drag select-none overflow-hidden"
+      dir="ltr"
     >
       {/* Sleek Neon Accent Reflection Line */}
       <div className="absolute bottom-0 left-0 right-0 h-[1.5px] bg-gradient-to-r from-neon-pink/70 via-neon-blue/60 to-transparent opacity-80" />
@@ -46,32 +46,35 @@ export const ElectronTitlebar = () => {
       {/* Back glow decoration */}
       <div className="absolute -top-[10px] left-1/2 -translate-x-1/2 w-80 h-10 bg-neon-pink/5 blur-xl pointer-events-none rounded-full" />
 
-      {/* App Branding & Logo */}
-      <div className="flex items-center gap-2.5 pointer-events-none select-none relative z-10 animate-fade-in">
+      {/* App Branding & Logo (Absolute Left for reliable Windows style integration) */}
+      <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2.5 pointer-events-none select-none z-10 animate-fade-in">
         <div className="h-5 w-5 bg-gradient-to-tr from-neon-pink to-neon-blue rounded-lg flex items-center justify-center p-0.5 shadow-[0_0_12px_rgba(255,0,153,0.35)]">
           <img src="/logo.png" className="h-full w-auto object-contain" alt="L" />
         </div>
-        <div className="flex flex-col text-right">
+        <div className="flex flex-col text-left">
           <span className="text-[11px] font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-white via-gray-100 to-gray-300 uppercase font-sans leading-none">
             LOXX CLIENT
           </span>
-          <span className="text-[7.5px] text-gray-500 font-bold tracking-wider uppercase font-sans mt-0.5">
+          <span className="text-[7px] text-gray-500 font-bold tracking-wider uppercase font-sans mt-0.5">
             کلاینت اختصاصی لوکس
           </span>
         </div>
-        <span className="text-[8px] bg-neon-pink/10 text-neon-pink border border-neon-pink/20 px-1.5 py-0.5 rounded-md font-mono font-bold ml-1.5">
+        <span className="text-[8px] bg-neon-pink/10 text-neon-pink border border-neon-pink/20 px-1.5 py-0.5 rounded-md font-mono font-bold ml-1">
           ELITE LAUNCHER
         </span>
       </div>
 
-      {/* Client Status Info (Subtle decorative middle element) */}
-      <div className="hidden md:flex items-center gap-2 pointer-events-none select-none text-[9px] text-gray-400 font-bold bg-white/5 border border-white/5 px-2.5 py-1 rounded-full relative z-10">
-        <span className="h-1.5 w-1.5 rounded-full bg-[#00E5FF] animate-pulse" />
-        <span>بستر امن چت صوتی و لابی بازی</span>
+      {/* Client Status Info (Absolute Center - fully centered on Windows) */}
+      <div 
+        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden md:flex items-center gap-2 pointer-events-none select-none text-[10px] text-gray-300 font-black bg-white/5 border border-white/5 px-4.5 py-1.5 rounded-full z-10 shadow-[0_0_12px_rgba(255,0,127,0.03)]"
+        dir="rtl"
+      >
+        <span className="h-1 w-1 rounded-full bg-neon-pink animate-pulse shrink-0" />
+        <span className="tracking-tight text-white/90">لوکس | اولین پلتفرم پیشرفته گیمینگ فارسی</span>
       </div>
 
-      {/* Windows Style Control Buttons */}
-      <div className="flex items-center titlebar-nodrag shrink-0 relative z-10" dir="ltr">
+      {/* Windows Style Control Buttons (Absolute Right for standard Windows positioning) */}
+      <div className="absolute right-0 top-0 h-full flex items-center titlebar-nodrag z-10">
         {/* Minimize */}
         <button 
           onClick={handleMinimize} 

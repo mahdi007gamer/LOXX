@@ -30,6 +30,7 @@ export const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const location = useLocation();
   const isLanding = location.pathname === "/";
+  const isElectron = typeof window !== "undefined" && !!(window as any).electronAPI;
 
   useMotionValueEvent(scrollY, "change", (latest) => {
     setIsScrolled(latest > 50);
@@ -61,11 +62,12 @@ export const Navbar = () => {
       <nav 
         className={cn(
           "fixed left-0 right-0 z-[10000] w-full transition-all duration-500 Richie-nav",
-          !isLanding 
-            ? "top-0 bg-[#050507]/95 border-b border-white/10 backdrop-blur-md"
-            : isScrolled 
-              ? "top-4 px-4" 
-              : "top-0 bg-transparent"
+          isElectron 
+            ? (isLanding && isScrolled ? "top-[56px] px-4" : "top-10")
+            : (!isLanding ? "top-0" : (isScrolled ? "top-4 px-4" : "top-0")),
+          !isLanding || isScrolled
+            ? "bg-[#050507]/95 border-b border-white/10 backdrop-blur-md"
+            : "bg-transparent"
         )}
       >
         <div 
@@ -108,12 +110,14 @@ export const Navbar = () => {
             </Link>
           </div>
 
-          {/* Middle: Centered Navigation */}
-          <div className="hidden md:flex items-center gap-8 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-            <NavLink to="/lobbies" className={({ isActive }) => cn("transition-all font-black text-[10px] uppercase tracking-[0.2em] italic", isActive ? "text-neon-blue drop-shadow-[0_0_8px_rgba(0,229,255,0.5)]" : "text-gray-400 hover:text-white ripple-active")}>لابی‌ها</NavLink>
-            <NavLink to="/chat" className={({ isActive }) => cn("transition-all font-black text-[10px] uppercase tracking-[0.2em] italic", isActive ? "text-neon-blue drop-shadow-[0_0_8px_rgba(0,229,255,0.5)]" : "text-gray-400 hover:text-white ripple-active")}>چت سراسری</NavLink>
-            <NavLink to="/games" className={({ isActive }) => cn("transition-all font-black text-[10px] uppercase tracking-[0.2em] italic", isActive ? "text-neon-blue drop-shadow-[0_0_8px_rgba(0,229,255,0.5)]" : "text-gray-400 hover:text-white ripple-active")}>بازی‌ها</NavLink>
-          </div>
+          {/* Middle: Centered Navigation (OMITTED entirely on Desktop Client as requested) */}
+          {!isElectron && (
+            <div className="hidden md:flex items-center gap-8 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+              <NavLink to="/lobbies" className={({ isActive }) => cn("transition-all font-black text-[10px] uppercase tracking-[0.2em] italic", isActive ? "text-neon-blue drop-shadow-[0_0_8px_rgba(0,229,255,0.5)]" : "text-gray-400 hover:text-white ripple-active")}>لابی‌ها</NavLink>
+              <NavLink to="/chat" className={({ isActive }) => cn("transition-all font-black text-[10px] uppercase tracking-[0.2em] italic", isActive ? "text-neon-blue drop-shadow-[0_0_8px_rgba(0,229,255,0.5)]" : "text-gray-400 hover:text-white ripple-active")}>چت سراسری</NavLink>
+              <NavLink to="/games" className={({ isActive }) => cn("transition-all font-black text-[10px] uppercase tracking-[0.2em] italic", isActive ? "text-neon-blue drop-shadow-[0_0_8px_rgba(0,229,255,0.5)]" : "text-gray-400 hover:text-white ripple-active")}>بازی‌ها</NavLink>
+            </div>
+          )}
 
           {/* Right: Actions */}
           <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">

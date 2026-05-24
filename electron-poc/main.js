@@ -67,7 +67,10 @@ function createMainWindow() {
     height: 800,
     minWidth: 1000,
     minHeight: 650,
-    title: 'Loxx Web',
+    title: 'LOXX',
+    icon: fs.existsSync(path.join(__dirname, '../public/logo_square.png')) 
+      ? path.join(__dirname, '../public/logo_square.png') 
+      : path.join(__dirname, '../public/logo.png'),
     autoHideMenuBar: true,
     backgroundColor: '#0a0a0f',
     frame: false, // Custom styled borderless window
