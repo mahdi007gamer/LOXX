@@ -123,7 +123,21 @@ export const LobbyRoomPage = () => {
     launcherHardwareAcceleration,
     launcherGlobalPttKey,
     launcherGlobalMuteKey,
-    updateLauncherSettings
+    updateLauncherSettings,
+
+    // New Desktop bindings
+    audioInputDevices,
+    audioOutputDevices,
+    selectedAudioInput,
+    setSelectedAudioInput,
+    selectedAudioOutput,
+    setSelectedAudioOutput,
+    refreshAudioDevices,
+    transparentOverlayEnabled,
+    setTransparentOverlayEnabled,
+    gameDetected,
+    launcherRichPresenceEnabled,
+    setLauncherRichPresenceEnabled
   } = useLobby();
 
   const { user } = useAuth();
@@ -862,6 +876,46 @@ export const LobbyRoomPage = () => {
                   </button>
                 </div>
 
+                {/* Input/Output Audio Selector (Hardware integrations) */}
+                <div className="space-y-3 p-3.5 rounded-2xl bg-white/5 border border-white/5">
+                  <p className="text-xs font-black text-white border-b border-white/5 pb-1.5 flex items-center gap-2">
+                    <span className="h-1.5 w-1.5 rounded-full bg-neon-pink shadow-[0_0_8px_rgba(255,0,127,1)]" />
+                    تنظیمات ورودی و خروجی صدا (Hardware Audio Routing)
+                  </p>
+
+                  <div className="space-y-1">
+                    <label className="text-[9px] text-gray-400 font-bold block">دستگاه ورودی میکروفون (Input Microphone)</label>
+                    <select
+                      value={selectedAudioInput}
+                      onChange={(e) => setSelectedAudioInput(e.target.value)}
+                      className="w-full py-2 px-3 rounded-xl bg-black/40 border border-white/10 text-xs text-white focus:outline-none focus:border-neon-blue font-bold font-sans transition appearance-none cursor-pointer"
+                    >
+                      <option value="default" className="bg-zinc-950 text-gray-300">Default Device (میکروفون پیش‌فرض سیستم)</option>
+                      {audioInputDevices.map((d) => (
+                        <option key={d.deviceId} value={d.deviceId} className="bg-zinc-950 text-white">
+                          {d.label || `Microphone (${d.deviceId.slice(0, 5)}...)`}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[9px] text-gray-400 font-bold block">دستگاه خروجی هدفون / بلندگو (Output Destination)</label>
+                    <select
+                      value={selectedAudioOutput}
+                      onChange={(e) => setSelectedAudioOutput(e.target.value)}
+                      className="w-full py-2 px-3 rounded-xl bg-black/40 border border-white/10 text-xs text-white focus:outline-none focus:border-neon-pink font-bold font-sans transition appearance-none cursor-pointer"
+                    >
+                      <option value="default" className="bg-zinc-950 text-gray-300">Default Device (بلندگوی پیش‌فرض سیستم)</option>
+                      {audioOutputDevices.map((d) => (
+                        <option key={d.deviceId} value={d.deviceId} className="bg-zinc-950 text-white">
+                          {d.label || `Output Speaker (${d.deviceId.slice(0, 5)}...)`}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
                 {/* Desktop & Live Discord Overlay Panel */}
                 <div className="space-y-4 pt-4 border-t border-white/10">
                   <h4 className="text-sm font-black text-neon-blue uppercase tracking-widest border-b border-white/10 pb-2 flex items-center gap-1.5">
@@ -936,6 +990,57 @@ export const LobbyRoomPage = () => {
                           )} />
                         </div>
                       </div>
+
+                      {/* True Transparent Game Overlay */}
+                      <div className="flex items-center justify-between p-3 rounded-2xl bg-white/5">
+                        <div>
+                          <p className="text-xs font-black text-white">اورلی ۱۰۰٪ شفاف روی کل تصویر بازی (True Transparent Game Overlay)</p>
+                          <p className="text-[9px] text-gray-500 font-bold font-sans">تزریق مستقیم کادر اورلی شفاف روی محیط داخل بازی‌ها بدون حاشیه (Always-On-Top Layer)</p>
+                        </div>
+                        <div 
+                          onClick={() => setTransparentOverlayEnabled(!transparentOverlayEnabled)}
+                          className={cn(
+                            "w-12 h-6 rounded-full relative cursor-pointer border transition-colors",
+                             transparentOverlayEnabled ? "bg-neon-pink/20 border-neon-pink/30" : "bg-white/5 border-white/10"
+                          )}
+                        >
+                          <div className={cn(
+                            "absolute top-1 h-4 w-4 rounded-full transition-all",
+                            transparentOverlayEnabled ? "right-1 bg-neon-pink shadow-[0_0_10px_rgba(255,0,127,1)]" : "right-7 bg-gray-500"
+                          )} />
+                        </div>
+                      </div>
+
+                      {/* Native Game Scan & Rich Presence Toggle */}
+                      <div className="flex items-center justify-between p-3 rounded-2xl bg-white/5">
+                        <div>
+                          <p className="text-xs font-black text-white">شناسایی هوشمندِ اتوماتیک بازی‌ها (Native Game detection)</p>
+                          <p className="text-[9px] text-gray-500 font-bold font-sans">اسکن لحظه‌ای بازی‌های فعال (مانند Dota2 / Counter-Strike) جهت درج خودکار وضعیت در پروفایل</p>
+                        </div>
+                        <div 
+                          onClick={() => setLauncherRichPresenceEnabled(!launcherRichPresenceEnabled)}
+                          className={cn(
+                            "w-12 h-6 rounded-full relative cursor-pointer border transition-colors",
+                             launcherRichPresenceEnabled ? "bg-neon-blue/20 border-neon-blue/30" : "bg-white/5 border-white/10"
+                          )}
+                        >
+                          <div className={cn(
+                            "absolute top-1 h-4 w-4 rounded-full transition-all",
+                            launcherRichPresenceEnabled ? "right-1 bg-neon-blue shadow-[0_0_10px_rgba(0,229,255,1)]" : "right-7 bg-gray-500"
+                          )} />
+                        </div>
+                      </div>
+
+                      {/* Detected Game Banner HUD */}
+                      {gameDetected && launcherRichPresenceEnabled && (
+                        <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 text-xs text-white flex items-center justify-between animate-pulse">
+                          <div className="flex items-center gap-2">
+                            <span className="h-2 w-2 rounded-full bg-emerald-400 shrink-0" />
+                            <span>لانچر وضعیت بازی شما را مخابره می‌کند: <strong className="text-emerald-300 font-sans">{gameDetected}</strong></span>
+                          </div>
+                          <span className="text-[8px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-lg border border-emerald-500/20 font-mono font-bold">Rich Presence Sync</span>
+                        </div>
+                      )}
 
                       {/* Global Key Shortcuts Form */}
                       <div className="space-y-3 p-3 rounded-2xl bg-white/5 border border-white/5">

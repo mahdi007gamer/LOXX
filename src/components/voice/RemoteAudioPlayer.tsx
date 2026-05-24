@@ -5,9 +5,10 @@ interface RemoteAudioPlayerProps {
   stream: MediaStream;
   onVolumeChange: (vol: number) => void;
   volumeLevel: number;
+  outputDeviceId?: string;
 }
 
-export const RemoteAudioPlayer: React.FC<RemoteAudioPlayerProps> = ({ stream, onVolumeChange, volumeLevel }) => {
+export const RemoteAudioPlayer: React.FC<RemoteAudioPlayerProps> = ({ stream, onVolumeChange, volumeLevel, outputDeviceId }) => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
@@ -18,6 +19,16 @@ export const RemoteAudioPlayer: React.FC<RemoteAudioPlayerProps> = ({ stream, on
       audioRef.current.play().catch(e => console.warn("AutoPlay blocked:", e));
     }
   }, [stream]);
+
+  useEffect(() => {
+    if (audioRef.current && outputDeviceId) {
+      const audioEl = audioRef.current as any;
+      if (typeof audioEl.setSinkId === "function") {
+        audioEl.setSinkId(outputDeviceId === "default" ? "" : outputDeviceId)
+          .catch((e: any) => console.error("Failed to set audio output device target (SinkID):", e));
+      }
+    }
+  }, [outputDeviceId]);
 
   useEffect(() => {
     if (audioRef.current) {

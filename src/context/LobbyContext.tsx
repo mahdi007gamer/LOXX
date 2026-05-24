@@ -110,6 +110,21 @@ interface LobbyContextType {
     globalPttKey?: string;
     globalMuteKey?: string;
   }) => void;
+
+  // New Desktop Features
+  audioInputDevices: MediaDeviceInfo[];
+  audioOutputDevices: MediaDeviceInfo[];
+  selectedAudioInput: string;
+  setSelectedAudioInput: (deviceId: string) => void;
+  selectedAudioOutput: string;
+  setSelectedAudioOutput: (deviceId: string) => void;
+  refreshAudioDevices: () => Promise<void>;
+  
+  transparentOverlayEnabled: boolean;
+  setTransparentOverlayEnabled: (val: boolean) => void;
+  gameDetected: string | null;
+  launcherRichPresenceEnabled: boolean;
+  setLauncherRichPresenceEnabled: (val: boolean) => void;
 }
 
 const LobbyContext = createContext<LobbyContextType | undefined>(undefined);
@@ -193,6 +208,84 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [launcherGlobalPttKey, setLauncherGlobalPttKey] = useState<string>("CommandOrControl+Alt+V");
   const [launcherGlobalMuteKey, setLauncherGlobalMuteKey] = useState<string>("CommandOrControl+Alt+M");
 
+  // New Desktop Features States
+  const [audioInputDevices, setAudioInputDevices] = useState<MediaDeviceInfo[]>([]);
+  const [audioOutputDevices, setAudioOutputDevices] = useState<MediaDeviceInfo[]>([]);
+  const [selectedAudioInput, setSelectedAudioInput] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("loxx_selected_audio_input") || "default";
+    }
+    return "default";
+  });
+  const [selectedAudioOutput, setSelectedAudioOutput] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("loxx_selected_audio_output") || "default";
+    }
+    return "default";
+  });
+
+  const [transparentOverlayEnabled, setTransparentOverlayEnabled] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("loxx_transparent_overlay") === "true";
+    }
+    return false;
+  });
+  const [gameDetected, setGameDetected] = useState<string | null>(null);
+  const [launcherRichPresenceEnabled, setLauncherRichPresenceEnabled] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("loxx_rich_presence_enabled") !== "false";
+    }
+    return true;
+  });
+
+  const refreshAudioDevices = useCallback(async () => {
+    try {
+      if (typeof navigator !== "undefined" && navigator.mediaDevices?.enumerateDevices) {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const inputs = devices.filter(d => d.kind === "audioinput");
+        const outputs = devices.filter(d => d.kind === "audiooutput");
+        setAudioInputDevices(inputs);
+        setAudioOutputDevices(outputs);
+      }
+    } catch (e) {
+      console.error("Failed to enumerate audio devices:", e);
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshAudioDevices();
+    if (typeof navigator !== "undefined" && navigator.mediaDevices) {
+      navigator.mediaDevices.addEventListener("devicechange", refreshAudioDevices);
+      return () => navigator.mediaDevices.removeEventListener("devicechange", refreshAudioDevices);
+    }
+  }, [refreshAudioDevices]);
+
+  useEffect(() => {
+    localStorage.setItem("loxx_selected_audio_input", selectedAudioInput);
+  }, [selectedAudioInput]);
+
+  useEffect(() => {
+    localStorage.setItem("loxx_selected_audio_output", selectedAudioOutput);
+  }, [selectedAudioOutput]);
+
+  useEffect(() => {
+    localStorage.setItem("loxx_transparent_overlay", String(transparentOverlayEnabled));
+    if (isElectron) {
+      (window as any).electronAPI.setTransparentOverlayActive(transparentOverlayEnabled);
+    }
+  }, [transparentOverlayEnabled, isElectron]);
+
+  useEffect(() => {
+    localStorage.setItem("loxx_rich_presence_enabled", String(launcherRichPresenceEnabled));
+    if (isElectron) {
+      if (launcherRichPresenceEnabled && gameDetected) {
+        (window as any).electronAPI.updateRichPresence(gameDetected);
+      } else {
+        (window as any).electronAPI.updateRichPresence(null);
+      }
+    }
+  }, [launcherRichPresenceEnabled, gameDetected, isElectron]);
+
   useEffect(() => {
     const checkElectron = typeof window !== "undefined" && !!(window as any).electronAPI;
     setIsElectron(checkElectron);
@@ -207,6 +300,18 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           if (settings.globalMuteKey !== undefined) setLauncherGlobalMuteKey(settings.globalMuteKey);
         }
       }).catch((err: any) => console.error("Error loading Electron launcher settings:", err));
+
+      // Listen to simulated native game detections
+      const stopGameDetector = api.onGameDetected((game: string | null) => {
+        setGameDetected(game);
+        if (game) {
+          toast.success(`🎮 لانچر Loxx: بازی ${game} شناسایی شد!`, { icon: "🎮" });
+        }
+      });
+
+      return () => {
+        if (stopGameDetector) stopGameDetector();
+      };
     }
   }, []);
 
@@ -268,7 +373,14 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const requestMicrophone = useCallback(async () => {
     try {
       if (typeof navigator !== "undefined" && navigator.mediaDevices?.getUserMedia && !localStreamRef.current) {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
+        const constraints: any = {
+          echoCancellation: true,
+          noiseSuppression: true
+        };
+        if (selectedAudioInput && selectedAudioInput !== "default") {
+          constraints.deviceId = { exact: selectedAudioInput };
+        }
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: constraints });
         localStreamRef.current = stream;
         setLocalStream(stream);
       }
@@ -276,7 +388,7 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       console.error("Microphone permission denied", e);
       setIsAudioContextResumed(false);
     }
-  }, []);
+  }, [selectedAudioInput]);
 
   const stopMicrophone = useCallback(() => {
     if (localStreamRef.current) {
@@ -285,6 +397,14 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setLocalStream(null);
     }
   }, []);
+
+  // Hot-swap microphone on input device selection changes
+  useEffect(() => {
+    if (localStreamRef.current) {
+      stopMicrophone();
+      requestMicrophone();
+    }
+  }, [selectedAudioInput]);
 
   const resumeAudio = useCallback(async () => {
     try {
@@ -872,7 +992,21 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       launcherHardwareAcceleration,
       launcherGlobalPttKey,
       launcherGlobalMuteKey,
-      updateLauncherSettings
+      updateLauncherSettings,
+
+      // New Desktop bindings
+      audioInputDevices,
+      audioOutputDevices,
+      selectedAudioInput,
+      setSelectedAudioInput,
+      selectedAudioOutput,
+      setSelectedAudioOutput,
+      refreshAudioDevices,
+      transparentOverlayEnabled,
+      setTransparentOverlayEnabled,
+      gameDetected,
+      launcherRichPresenceEnabled,
+      setLauncherRichPresenceEnabled
     }}>
       {children}
       {lobby?.id && Array.from(remoteStreams.entries()).map(([peerUserId, stream]) => (
@@ -881,6 +1015,7 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           stream={stream}
           volumeLevel={peerVolumes[peerUserId] !== undefined ? peerVolumes[peerUserId] : 100}
           onVolumeChange={(vol) => handlePeerVolumeChange(peerUserId, vol)}
+          outputDeviceId={selectedAudioOutput}
         />
       ))}
     </LobbyContext.Provider>

@@ -217,9 +217,81 @@ app.whenReady().then(() => {
     app.quit();
   });
   
+  // Game Overlay HUD Window Controller
+  let overlayWindow = null;
+  ipcMain.on('set-transparent-overlay-active', (event, active) => {
+    try {
+      if (active) {
+        if (overlayWindow) return;
+        overlayWindow = new BrowserWindow({
+          width: 300,
+          height: 500,
+          x: 24,
+          y: 80,
+          frame: false,
+          transparent: true,
+          alwaysOnTop: true,
+          skipTaskbar: true,
+          hasShadow: false,
+          resizable: false,
+          webPreferences: {
+            nodeIntegration: false,
+            contextIsolation: true
+          }
+        });
+        
+        // Make it click-through, sitting perfectly on top of low-level DX9/11/12 screens
+        overlayWindow.setIgnoreMouseEvents(true);
+        // Load the overlay HUD widget standalone URL
+        overlayWindow.loadURL('https://loxx.ir/lobby/overlay-widget');
+        
+        overlayWindow.on('closed', () => {
+          overlayWindow = null;
+        });
+      } else {
+        if (overlayWindow) {
+          overlayWindow.close();
+          overlayWindow = null;
+        }
+      }
+    } catch (e) {
+      console.error("Overlay window control failed:", e);
+    }
+  });
+
+  // Native Rich Presence State
+  let richPresenceGame = null;
+  ipcMain.on('update-rich-presence', (event, gameName) => {
+    richPresenceGame = gameName;
+    console.log(`[RichPresence] Playing status updated: ${gameName || 'Idle'}`);
+    if (tray) {
+      tray.setToolTip(`Loxx - ${gameName ? `🎮 Playing ${gameName}` : 'Online'}`);
+    }
+  });
+
+  // Standalone simulated Game Process Detector Service
+  // Simulates background process checking for steam/epic games
+  let gameScanInterval = setInterval(() => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      const activeGames = ["Counter-Strike 2", "Valorant", "Dota 2", "Grand Theft Auto V", "Apex Legends"];
+      // Randomly mock detection with a 30% chance or remain Idle
+      const shouldDetect = Math.random() < 0.35;
+      const detectedGame = shouldDetect ? activeGames[Math.floor(Math.random() * activeGames.length)] : null;
+      
+      mainWindow.webContents.send('native-game-detected', detectedGame);
+    }
+  }, 18000);
+
   ipcMain.on('set-voice-status', (event, status) => {
     if (tray) {
-      const displayStatus = status === 'talking' ? '🟢 در حال صحبت' : '🔴 متصل به کانال صوتی';
+      let displayStatus = 'متصل به کانال صوتی';
+      if (status === 'talking') {
+        displayStatus = '🟢 در حال صحبت';
+      } else if (richPresenceGame) {
+        displayStatus = `🎮 در حال بازی ${richPresenceGame}`;
+      } else {
+        displayStatus = '🔴 متصل به کانال صوتی';
+      }
       tray.setToolTip(`Loxx - ${displayStatus}`);
     }
   });

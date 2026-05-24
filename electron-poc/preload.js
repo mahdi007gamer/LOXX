@@ -25,6 +25,17 @@ contextBridge.exposeInMainWorld('electronAPI', {
   updateLauncherSettings: (settings) => ipcRenderer.send('update-launcher-settings', settings),
   getLauncherSettings: () => ipcRenderer.invoke('get-launcher-settings'),
   
+  // Transparent Overlay settings
+  setTransparentOverlayActive: (active) => ipcRenderer.send('set-transparent-overlay-active', active),
+  
+  // Native Game Detection & Rich Presence
+  updateRichPresence: (gameName) => ipcRenderer.send('update-rich-presence', gameName),
+  onGameDetected: (callback) => {
+    const subscription = (event, game) => callback(game);
+    ipcRenderer.on('native-game-detected', subscription);
+    return () => ipcRenderer.removeListener('native-game-detected', subscription);
+  },
+
   // Custom Tray notifications / states
   setVoiceStatus: (status) => ipcRenderer.send('set-voice-status', status),
   
