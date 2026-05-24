@@ -1220,101 +1220,103 @@ export const LobbyRoomPage = () => {
                     </div>
                   )}
 
-                  {/* Shared Overlay appearance settings (always available) */}
-                  <div className="border-t border-white/5 pt-4 space-y-3">
-                    <p className="text-xs font-black text-white select-none">تنظیمات ظاهر ویترین زنده (HUD Overlay Appearance)</p>
+                  {/* Shared Web-Only Overlay appearance settings (redundant in Desktop) */}
+                  {!isElectron && (
+                    <div className="border-t border-white/5 pt-4 space-y-3">
+                      <p className="text-xs font-black text-white select-none">تنظیمات ظاهر ویترین زنده (HUD Overlay Appearance)</p>
 
-                    {/* Overlay Toggle Switch */}
-                    <div className="flex items-center justify-between p-3 rounded-2xl bg-white/5">
-                      <div>
-                        <p className="text-xs font-black text-white">طرح زنده روی بازی‌ها (Discord Live Overlay)</p>
-                        <p className="text-[9px] text-gray-500 font-bold font-sans">نمایش لیست فعال کانال صوتی روی گوشه تصویر بقیه برنامه‌ها</p>
+                      {/* Overlay Toggle Switch */}
+                      <div className="flex items-center justify-between p-3 rounded-2xl bg-white/5">
+                        <div>
+                          <p className="text-xs font-black text-white">طرح زنده روی بازی‌ها (Discord Live Overlay)</p>
+                          <p className="text-[9px] text-gray-500 font-bold font-sans">نمایش لیست فعال کانال صوتی روی گوشه تصویر بقیه برنامه‌ها</p>
+                        </div>
+                        <div 
+                          onClick={() => setOverlayEnabled(!overlayEnabled)}
+                          className={cn(
+                            "w-12 h-6 rounded-full relative cursor-pointer border transition-colors",
+                             overlayEnabled ? "bg-neon-blue/20 border-neon-blue/30" : "bg-white/5 border-white/10"
+                          )}
+                        >
+                          <div className={cn(
+                            "absolute top-1 h-4 w-4 rounded-full transition-all",
+                            overlayEnabled ? "right-1 bg-neon-blue shadow-[0_0_10px_rgba(0,229,255,1)]" : "right-7 bg-gray-500"
+                          )} />
+                        </div>
                       </div>
-                      <div 
-                        onClick={() => setOverlayEnabled(!overlayEnabled)}
-                        className={cn(
-                          "w-12 h-6 rounded-full relative cursor-pointer border transition-colors",
-                           overlayEnabled ? "bg-neon-blue/20 border-neon-blue/30" : "bg-white/5 border-white/10"
-                        )}
-                      >
-                        <div className={cn(
-                          "absolute top-1 h-4 w-4 rounded-full transition-all",
-                          overlayEnabled ? "right-1 bg-neon-blue shadow-[0_0_10px_rgba(0,229,255,1)]" : "right-7 bg-gray-500"
-                        )} />
+
+                      {/* Hide non-talking toggle */}
+                      <div className={cn("flex items-center justify-between p-3 rounded-2xl bg-white/5 transition-opacity", !overlayEnabled && "opacity-50 pointer-events-none")}>
+                        <div>
+                          <p className="text-xs font-black text-white">فقط نمایش کاربران در حال صحبت</p>
+                          <p className="text-[9px] text-gray-500 font-bold font-sans">مخفی کردن اعضای ساکت از کادر روی صفحه زمان سکوت</p>
+                        </div>
+                        <div 
+                          onClick={() => setOverlayOnlyTalking(!overlayOnlyTalking)}
+                          className={cn(
+                            "w-12 h-6 rounded-full relative cursor-pointer border transition-colors",
+                             overlayOnlyTalking ? "bg-neon-blue/20 border-neon-blue/30" : "bg-white/5 border-white/10"
+                          )}
+                        >
+                          <div className={cn(
+                            "absolute top-1 h-4 w-4 rounded-full transition-all",
+                            overlayOnlyTalking ? "right-1 bg-neon-blue shadow-[0_0_10px_rgba(0,229,255,1)]" : "right-7 bg-gray-500"
+                          )} />
+                        </div>
+                      </div>
+
+                      {/* Overlay Position selector */}
+                      <div className={cn("space-y-2 transition-opacity", !overlayEnabled && "opacity-50 pointer-events-none")}>
+                        <label className="text-xs font-black text-gray-400">موقعیت قرارگیری اورلی روی صفحه</label>
+                        <div className="grid grid-cols-2 gap-2">
+                          {[
+                            { id: "top-left", name: "بالا چپ" },
+                            { id: "top-right", name: "بالا راست" },
+                            { id: "bottom-left", name: "پایین چپ" },
+                            { id: "bottom-right", name: "پایین راست" }
+                          ].map(pos => (
+                            <button 
+                              key={pos.id}
+                              onClick={() => setOverlayPosition(pos.id as any)}
+                              className={cn(
+                                "py-2 rounded-xl text-xs font-black transition border",
+                                overlayPosition === pos.id 
+                                  ? "bg-neon-blue/15 border-neon-blue/30 text-neon-blue" 
+                                  : "bg-white/5 border-white/5 text-gray-400 hover:bg-white/10"
+                              )}
+                            >
+                              {pos.name}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Overlay Size selector */}
+                      <div className={cn("space-y-2 transition-opacity", !overlayEnabled && "opacity-50 pointer-events-none")}>
+                        <label className="text-xs font-black text-gray-400">اندازه نمایشگر اورلی دسکتاپ</label>
+                        <div className="flex gap-2">
+                          {[
+                            { id: "small", name: "کوچک" },
+                            { id: "medium", name: "متوسط" },
+                            { id: "large", name: "بزرگ" }
+                          ].map(sz => (
+                            <button 
+                              key={sz.id}
+                              onClick={() => setOverlaySize(sz.id as any)}
+                              className={cn(
+                                "flex-1 py-1.5 rounded-xl text-xs font-black transition border",
+                                overlaySize === sz.id 
+                                  ? "bg-neon-blue/15 border-neon-blue/35 text-neon-blue" 
+                                  : "bg-white/5 border-white/5 text-gray-400 hover:bg-white/10"
+                              )}
+                            >
+                              {sz.name}
+                            </button>
+                          ))}
+                        </div>
                       </div>
                     </div>
-
-                    {/* Hide non-talking toggle */}
-                    <div className={cn("flex items-center justify-between p-3 rounded-2xl bg-white/5 transition-opacity", !overlayEnabled && "opacity-50 pointer-events-none")}>
-                      <div>
-                        <p className="text-xs font-black text-white">فقط نمایش کاربران در حال صحبت</p>
-                        <p className="text-[9px] text-gray-500 font-bold font-sans">مخفی کردن اعضای ساکت از کادر روی صفحه زمان سکوت</p>
-                      </div>
-                      <div 
-                        onClick={() => setOverlayOnlyTalking(!overlayOnlyTalking)}
-                        className={cn(
-                          "w-12 h-6 rounded-full relative cursor-pointer border transition-colors",
-                           overlayOnlyTalking ? "bg-neon-blue/20 border-neon-blue/30" : "bg-white/5 border-white/10"
-                        )}
-                      >
-                        <div className={cn(
-                          "absolute top-1 h-4 w-4 rounded-full transition-all",
-                          overlayOnlyTalking ? "right-1 bg-neon-blue shadow-[0_0_10px_rgba(0,229,255,1)]" : "right-7 bg-gray-500"
-                        )} />
-                      </div>
-                    </div>
-
-                    {/* Overlay Position selector */}
-                    <div className={cn("space-y-2 transition-opacity", !overlayEnabled && "opacity-50 pointer-events-none")}>
-                      <label className="text-xs font-black text-gray-400">موقعیت قرارگیری اورلی روی صفحه</label>
-                      <div className="grid grid-cols-2 gap-2">
-                        {[
-                          { id: "top-left", name: "بالا چپ" },
-                          { id: "top-right", name: "بالا راست" },
-                          { id: "bottom-left", name: "پایین چپ" },
-                          { id: "bottom-right", name: "پایین راست" }
-                        ].map(pos => (
-                          <button 
-                            key={pos.id}
-                            onClick={() => setOverlayPosition(pos.id as any)}
-                            className={cn(
-                              "py-2 rounded-xl text-xs font-black transition border",
-                              overlayPosition === pos.id 
-                                ? "bg-neon-blue/15 border-neon-blue/30 text-neon-blue" 
-                                : "bg-white/5 border-white/5 text-gray-400 hover:bg-white/10"
-                            )}
-                          >
-                            {pos.name}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Overlay Size selector */}
-                    <div className={cn("space-y-2 transition-opacity", !overlayEnabled && "opacity-50 pointer-events-none")}>
-                      <label className="text-xs font-black text-gray-400">اندازه نمایشگر اورلی دسکتاپ</label>
-                      <div className="flex gap-2">
-                        {[
-                          { id: "small", name: "کوچک" },
-                          { id: "medium", name: "متوسط" },
-                          { id: "large", name: "بزرگ" }
-                        ].map(sz => (
-                          <button 
-                            key={sz.id}
-                            onClick={() => setOverlaySize(sz.id as any)}
-                            className={cn(
-                              "flex-1 py-1.5 rounded-xl text-xs font-black transition border",
-                              overlaySize === sz.id 
-                                ? "bg-neon-blue/15 border-neon-blue/35 text-neon-blue" 
-                                : "bg-white/5 border-white/5 text-gray-400 hover:bg-white/10"
-                            )}
-                          >
-                            {sz.name}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
+                  )}
                 </div>
               </div>
             </div>

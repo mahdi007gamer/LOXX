@@ -18,13 +18,24 @@ export const DesktopOverlayWidget = () => {
     document.body.style.background = "transparent";
 
     const api = (window as any).electronAPI;
-    if (api && api.onOverlayPlayersUpdate) {
-      const unsubscribe = api.onOverlayPlayersUpdate((updatedPlayers: OverlayPlayer[]) => {
-        setPlayers(updatedPlayers || []);
-      });
-      return () => {
-        if (unsubscribe) unsubscribe();
-      };
+    
+    if (api) {
+      if (api.getOverlayPlayers) {
+        api.getOverlayPlayers().then((initialPlayers: OverlayPlayer[]) => {
+          if (initialPlayers && Array.isArray(initialPlayers)) {
+            setPlayers(initialPlayers);
+          }
+        });
+      }
+
+      if (api.onOverlayPlayersUpdate) {
+        const unsubscribe = api.onOverlayPlayersUpdate((updatedPlayers: OverlayPlayer[]) => {
+          setPlayers(updatedPlayers || []);
+        });
+        return () => {
+          if (unsubscribe) unsubscribe();
+        };
+      }
     }
   }, []);
 

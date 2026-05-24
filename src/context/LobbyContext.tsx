@@ -327,12 +327,17 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         }
       }).catch((err: any) => console.error("Error loading Electron launcher settings:", err));
 
-      // Listen to simulated native game detections
+      // Listen to native game detections
       const stopGameDetector = api.onGameDetected((game: string | null) => {
-        setGameDetected(game);
-        if (game) {
-          toast.success(`🎮 لانچر Loxx: بازی ${game} شناسایی شد!`, { icon: "🎮" });
-        }
+        setGameDetected(prevGame => {
+          if (game && game !== prevGame) {
+            toast.success(`🎮 لانچر Loxx: بازی ${game} شناسایی شد!`, { icon: "🎮" });
+            
+            // Automatically enable the Transparent Windows Overlay when a game is launched
+            setTransparentOverlayEnabled(true);
+          }
+          return game;
+        });
       });
 
       return () => {

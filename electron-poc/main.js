@@ -155,39 +155,20 @@ function setupTray() {
 }
 
 // Global OS key listeners handling
-let pttTimeout = null;
 let globalPttActive = false;
 
 function registerGlobalShortcuts() {
   globalShortcut.unregisterAll();
 
-  // 1. Push-To-Talk register
+  // 1. Push-To-Talk register (Toggle Mode to prevent OS repeat lag)
   if (config.globalPttKey) {
     try {
-      const isCapsLock = config.globalPttKey.toLowerCase() === 'capslock';
       globalShortcut.register(config.globalPttKey, () => {
         if (mainWindow) {
-          if (isCapsLock) {
-            // CapsLock acts as a perfect gaming toggle (press to status, press again to disable)
-            globalPttActive = !globalPttActive;
-            mainWindow.webContents.send('global-ptt-change', globalPttActive);
-          } else {
-            // Standard held key repeat loop
-            if (!globalPttActive) {
-              globalPttActive = true;
-              mainWindow.webContents.send('global-ptt-change', true);
-            }
-
-            if (pttTimeout) clearTimeout(pttTimeout);
-
-            // If no repeat triggers for 250ms, the held key has been released
-            pttTimeout = setTimeout(() => {
-              globalPttActive = false;
-              if (mainWindow) {
-                mainWindow.webContents.send('global-ptt-change', false);
-              }
-            }, 250);
-          }
+          // Because Electron's globalShortcut only fires on keypress (without keyup), 
+          // we treat ALL shortcuts as a toggle for Voice Activity / PTT behavior.
+          globalPttActive = !globalPttActive;
+          mainWindow.webContents.send('global-ptt-change', globalPttActive);
         }
       });
     } catch (e) {
@@ -385,10 +366,16 @@ app.whenReady().then(() => {
   });
 
   // Cross-Window Desktop Overlay Speaking Player Syncer
+  let lastOverlayPlayers = [];
   ipcMain.on('send-overlay-players', (event, players) => {
+    lastOverlayPlayers = players;
     if (overlayWindow && !overlayWindow.isDestroyed()) {
       overlayWindow.webContents.send('overlay-players-update', players);
     }
+  });
+
+  ipcMain.handle('get-overlay-players', () => {
+    return lastOverlayPlayers;
   });
 
   // Native Rich Presence State
@@ -401,18 +388,39 @@ app.whenReady().then(() => {
     }
   });
 
-  // Standalone simulated Game Process Detector Service
-  // Simulates background process checking for steam/epic games
+  // Native Game Process Detector Service
+  // Scans background process checking for steam/epic games
+  const { exec } = require('child_process');
   let gameScanInterval = setInterval(() => {
     if (mainWindow && !mainWindow.isDestroyed()) {
-      const activeGames = ["Counter-Strike 2", "Valorant", "Dota 2", "Grand Theft Auto V", "Apex Legends"];
-      // Randomly mock detection with a 30% chance or remain Idle
-      const shouldDetect = Math.random() < 0.35;
-      const detectedGame = shouldDetect ? activeGames[Math.floor(Math.random() * activeGames.length)] : null;
-      
-      mainWindow.webContents.send('native-game-detected', detectedGame);
+      exec('tasklist /FO CSV', (err, stdout, stderr) => {
+        if (err) return;
+        const gameMatches = [
+          { title: "Cities Skylines II", exe: "Cities2.exe" },
+          { title: "Cities Skylines", exe: "Cities.exe" },
+          { title: "Counter-Strike 2", exe: "cs2.exe" },
+          { title: "Valorant", exe: "VALORANT-Win64-Shipping.exe" },
+          { title: "Dota 2", exe: "dota2.exe" },
+          { title: "Grand Theft Auto V", exe: "GTA5.exe" },
+          { title: "Apex Legends", exe: "r5apex.exe" },
+          { title: "Rainbow Six Siege", exe: "RainbowSix.exe" },
+          { title: "League of Legends", exe: "League of Legends.exe" }
+        ];
+
+        let detectedGame = null;
+        const lowerStdout = stdout.toLowerCase();
+        
+        for (let game of gameMatches) {
+          if (lowerStdout.includes(game.exe.toLowerCase())) {
+            detectedGame = game.title;
+            break;
+          }
+        }
+        
+        mainWindow.webContents.send('native-game-detected', detectedGame);
+      });
     }
-  }, 18000);
+  }, 10000); // Check every 10 seconds
 
   ipcMain.on('set-voice-status', (event, status) => {
     if (tray) {

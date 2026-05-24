@@ -28,6 +28,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Transparent Overlay settings
   setTransparentOverlayActive: (active) => ipcRenderer.send('set-transparent-overlay-active', active),
   sendOverlayPlayers: (players) => ipcRenderer.send('send-overlay-players', players),
+  getOverlayPlayers: () => ipcRenderer.invoke('get-overlay-players'),
   onOverlayPlayersUpdate: (callback) => {
     const subscription = (event, players) => callback(players);
     ipcRenderer.on('overlay-players-update', subscription);
