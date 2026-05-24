@@ -23,7 +23,7 @@ const menuItems = [
 ];
 
 export const Navbar = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, isSidebarCollapsed, setIsSidebarCollapsed } = useAuth();
   const { openProfile } = useProfilePopover();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { scrollY } = useScroll();
@@ -63,7 +63,7 @@ export const Navbar = () => {
         className={cn(
           "fixed left-0 right-0 z-[10000] w-full transition-all duration-500 Richie-nav",
           isElectron 
-            ? (isLanding && isScrolled ? "top-16 px-4" : "top-12")
+            ? (isLanding && isScrolled ? "top-16 px-4" : "top-9")
             : (!isLanding ? "top-0" : (isScrolled ? "top-4 px-4" : "top-0")),
           !isLanding || isScrolled
             ? "bg-[#050507]/95 border-b border-white/10 backdrop-blur-md"
@@ -79,10 +79,17 @@ export const Navbar = () => {
           {/* Left: Logo & Mobile Toggle */}
           <div className="flex items-center gap-4 flex-shrink-0">
             <button 
-              className="p-2 text-gray-400 hover:text-white md:hidden"
+              className="p-2 text-gray-400 hover:text-white md:hidden animate-fade-in"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
             >
               {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
+            <button 
+              className="p-2 text-gray-400 hover:text-white hidden md:block cursor-pointer transition-colors hover:bg-white/5 rounded-lg"
+              onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+              title={isSidebarCollapsed ? "نمایش منوی اصلی" : "پنهان کردن منوی اصلی"}
+            >
+              <Menu size={21} className={cn("transition-transform duration-300", isSidebarCollapsed && "rotate-180")} />
             </button>
             <Link to="/" className="flex items-center gap-4 group">
               <img 

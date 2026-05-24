@@ -21,6 +21,8 @@ interface AuthContextType {
   logout: () => Promise<void>;
   updateUser: (newData: Partial<User>) => void;
   refreshUser: () => Promise<void>;
+  isSidebarCollapsed: boolean;
+  setIsSidebarCollapsed: (collapsed: boolean) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -30,6 +32,14 @@ import { presenceSocket, lobbySocket, chatSocket, notifySocket, rankingSocket, v
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isSidebarCollapsed, setIsSidebarCollapsedState] = useState<boolean>(() => {
+    return localStorage.getItem("loxx_sidebar_collapsed") === "true";
+  });
+
+  const setIsSidebarCollapsed = (collapsed: boolean) => {
+    setIsSidebarCollapsedState(collapsed);
+    localStorage.setItem("loxx_sidebar_collapsed", String(collapsed));
+  };
 
   const refreshUser = async () => {
     try {
@@ -109,7 +119,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, updateUser, refreshUser }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, updateUser, refreshUser, isSidebarCollapsed, setIsSidebarCollapsed }}>
       {children}
     </AuthContext.Provider>
   );

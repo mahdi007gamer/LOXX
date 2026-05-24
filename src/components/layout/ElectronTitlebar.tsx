@@ -37,7 +37,7 @@ export const ElectronTitlebar = () => {
 
   return (
     <div 
-      className="h-12 w-full bg-[#07070c] border-b border-white/5 fixed top-0 left-0 right-0 z-[99999] shrink-0 titlebar-drag select-none overflow-hidden"
+      className="h-9 w-full bg-[#07070c] border-b border-white/5 fixed top-0 left-0 right-0 z-[99999] shrink-0 titlebar-drag select-none overflow-hidden"
       dir="ltr"
     >
       {/* Sleek Neon Accent Reflection Line */}
@@ -66,7 +66,7 @@ export const ElectronTitlebar = () => {
 
       {/* Client Status Info (Absolute Center - fully centered on Windows) */}
       <div 
-        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden md:flex items-center gap-2 pointer-events-none select-none text-[10px] text-gray-400 font-normal bg-white/5 border border-white/5 px-4.5 py-1.5 rounded-full z-10 shadow-[0_0_12px_rgba(255,0,127,0.03)]"
+        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden md:flex items-center gap-2 pointer-events-none select-none text-[9px] text-gray-400 font-normal bg-white/5 border border-white/5 px-3 py-1 rounded-full z-10 shadow-[0_0_12px_rgba(255,0,127,0.03)]"
         dir="rtl"
       >
         <span className="h-1 w-1 rounded-full bg-neon-pink animate-pulse shrink-0" />
@@ -78,7 +78,7 @@ export const ElectronTitlebar = () => {
         {/* Minimize */}
         <button 
           onClick={handleMinimize} 
-          className="h-12 w-11 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/5 cursor-pointer transition-all duration-150"
+          className="h-9 w-11 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/5 cursor-pointer transition-all duration-150"
           title="کمینه کردن (Minimize)"
         >
           <Minus size={13} className="stroke-[2.5]" />
@@ -87,7 +87,7 @@ export const ElectronTitlebar = () => {
         {/* Maximize / Restore */}
         <button 
           onClick={handleMaximize} 
-          className="h-12 w-11 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/5 cursor-pointer transition-all duration-150"
+          className="h-9 w-11 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/5 cursor-pointer transition-all duration-150"
           title={isMaximized ? "بازگردانی پنجره (Restore)" : "بزرگنمایی (Maximize)"}
         >
           {isMaximized ? (
@@ -100,7 +100,7 @@ export const ElectronTitlebar = () => {
         {/* Close */}
         <button 
           onClick={handleClose} 
-          className="h-12 w-12 flex items-center justify-center text-gray-400 hover:text-white hover:bg-red-500 hover:shadow-[inset_0_0_8px_rgba(255,255,255,0.2)] transition-all duration-150 cursor-pointer"
+          className="h-9 w-12 flex items-center justify-center text-gray-400 hover:text-white hover:bg-red-500 hover:shadow-[inset_0_0_8px_rgba(255,255,255,0.2)] transition-all duration-150 cursor-pointer"
           title="بستن (Close)"
         >
           <X size={14} className="stroke-[2.5]" />

@@ -30,11 +30,13 @@ import { motion } from "motion/react";
 import { cn } from "../lib/utils";
 import { CreateLobbyModal } from "../components/modals/CreateLobbyModal";
 import { useGames } from "../context/GamesContext";
+import { useAuth } from "../context/AuthContext";
 import { SmartImage } from "../components/ui/SmartImage";
 
 export const LobbiesPage = () => {
   const navigate = useNavigate();
   const { allGames: games } = useGames();
+  const { isSidebarCollapsed } = useAuth();
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showToast, setShowToast] = useState(false);
@@ -95,36 +97,38 @@ export const LobbiesPage = () => {
   return (
     <div className="flex min-h-screen bg-[#0a0a0f] overflow-x-hidden">
       <Sidebar />
-      <main className="flex-1 w-full md:mr-64 relative pb-24 md:pb-8">
-        <div className="px-4 py-8 md:px-8 lg:px-12 max-w-7xl mx-auto">
-          {/* Mobile Header: More compact but powerful */}
-          <header className="mb-6 flex flex-col items-center md:items-start gap-5 md:flex-row md:justify-between md:mb-12">
-            <div className="text-center md:text-right">
-              <h1 className="text-2xl md:text-6xl font-black text-white italic tracking-tighter uppercase leading-tight">
-                لابی‌های <span className="text-neon-blue">فعال</span>
-              </h1>
-              <p className="mt-1 text-[9px] md:text-xs text-neon-blue/40 font-black uppercase tracking-[0.2em] italic">LOXX PROFESSIONAL LOBBIES</p>
-            </div>
-            
-            <div className="flex flex-col w-full sm:flex-row items-stretch sm:items-center gap-3 md:w-auto">
-               <div className="relative flex-1 sm:w-64 lg:w-80 h-11 md:h-12">
-                <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600" size={14} />
-                <input 
-                   type="text" 
-                   value={searchTerm}
-                   onChange={(e) => setSearchTerm(e.target.value)}
-                   placeholder="جستجوی لابی..."
-                   className="w-full h-full rounded-xl border border-white/5 bg-white/5 pr-11 pl-4 text-xs text-white focus:border-neon-blue/40 focus:bg-white/10 focus:outline-none transition-all placeholder:text-gray-700 font-bold"
-                 />
+      <main className={cn("flex-1 w-full relative pb-24 md:pb-8 transition-all duration-300", !isSidebarCollapsed ? "md:mr-64" : "mr-0")}>
+        <div className="px-4 py-8 md:px-8 lg:px-10 max-w-7xl mx-auto">
+          {/* Mobile Header: Beautifully aligned and spaced */}
+          <header className="mb-8 md:mb-12">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-white/5">
+              <div className="text-center md:text-right">
+                <h1 className="text-3xl md:text-5xl font-black text-white italic tracking-tighter uppercase leading-tight">
+                  لابی‌های <span className="text-neon-blue">فعال</span>
+                </h1>
+                <p className="mt-1 text-[10px] md:text-xs text-neon-blue/40 font-black uppercase tracking-[0.2em] italic">LOXX PROFESSIONAL LOBBIES</p>
               </div>
+              
               <GlowButton 
                 variant="blue" 
-                className="flex items-center justify-center gap-2 h-11 px-6 rounded-xl group transition-all active:scale-95 shadow-lg border-none" 
+                className="flex items-center justify-center gap-2 h-11 px-6 rounded-xl group transition-all active:scale-95 shadow-lg border-none w-full md:w-auto shrink-0" 
                 onClick={() => setIsModalOpen(true)}
               >
                 <Plus size={16} className="group-hover:rotate-90 transition-transform" />
-                <span className="text-[10px] md:text-[12px] font-black uppercase italic tracking-wider">ساخت لابی جدید</span>
+                <span className="text-xs font-black uppercase italic tracking-wider">ساخت لابی جدید</span>
               </GlowButton>
+            </div>
+            
+            {/* Search Bar - Full space below */}
+            <div className="mt-6 md:mt-8 relative">
+              <Search className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
+              <input 
+                type="text" 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="جستجوی لابی بر اساس نام بازی یا عنوان..."
+                className="w-full rounded-2xl border border-white/10 bg-white/5 py-4 md:py-4.5 pr-14 pl-6 text-sm text-white focus:border-neon-blue/50 focus:outline-none transition-all placeholder:text-gray-600 shadow-xl font-bold"
+              />
             </div>
           </header>
 

@@ -18,6 +18,7 @@ import {
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
 import { Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 const GameCardSkeleton = () => (
   <div className="rounded-3xl bg-white/5 border border-white/10 overflow-hidden animate-pulse">
@@ -135,6 +136,7 @@ const GameCard: React.FC<{ game: Game; index: number }> = ({ game, index }) => {
 
 export const GamesPage = () => {
   const { allGames, loading } = useGames();
+  const { isSidebarCollapsed } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
 
   const filteredGames = useMemo(() => {
@@ -147,7 +149,7 @@ export const GamesPage = () => {
   return (
     <div className="flex min-h-[calc(100vh-64px)] overflow-x-hidden">
       <Sidebar />
-      <main className="flex-1 px-4 py-8 md:mr-64 lg:px-8 pb-32 md:pb-8 w-full" dir="rtl">
+      <main className={cn("flex-1 px-4 py-8 lg:px-8 pb-32 md:pb-8 w-full transition-all duration-300", !isSidebarCollapsed ? "md:mr-64" : "mr-0")} dir="rtl">
         <div className="container mx-auto max-w-7xl">
           <header className="mb-8 md:mb-12">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">

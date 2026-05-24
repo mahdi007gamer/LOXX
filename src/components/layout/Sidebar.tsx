@@ -28,15 +28,17 @@ const menuItems = [
 ];
 
 export const Sidebar = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, isSidebarCollapsed } = useAuth();
   const isElectron = typeof window !== "undefined" && !!(window as any).electronAPI;
+  
+  if (isSidebarCollapsed) return null;
   
   return (
     <aside 
       className={cn(
         "fixed right-0 hidden w-64 border-l border-white/10 bg-dark-[#050507]/50 bg-dark-bg/50 backdrop-blur-lg md:block z-[40]",
         isElectron 
-          ? "top-[112px] h-[calc(100vh-112px)]" 
+          ? "top-[100px] h-[calc(100vh-100px)]" 
           : "top-16 h-[calc(100vh-64px)]"
       )}
     >
