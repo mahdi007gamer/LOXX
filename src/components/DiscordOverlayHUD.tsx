@@ -23,9 +23,10 @@ export const DiscordOverlayHUD = () => {
   const isLobbyPage = location.pathname.startsWith("/lobby/");
 
   // If overlay is disabled or user is not in any lobby, do not render HUD
-  // Also, hide in browser/web context if inside /lobby/ page
+  // In Electron, we use a separate transparent DesktopOverlayWidget window, so do not render this HUD in the main window
   if (!overlayEnabled || !lobby) return null;
-  if (!isElectron && isLobbyPage) return null;
+  if (isElectron) return null;
+  if (isLobbyPage) return null;
 
   const currentUserId = user?.id;
 

@@ -170,9 +170,11 @@ export const DashboardPage = () => {
   const expiryDate = (stats as any).membershipExpiresAt;
   const daysLeft = expiryDate ? Math.max(0, Math.ceil((new Date(expiryDate).getTime() - new Date().getTime()) / (1000 * 3600 * 24))) : 0;
 
+  const isElectron = typeof window !== "undefined" && !!(window as any).electronAPI;
+
   if (loading) {
     return (
-      <div className="flex min-h-[calc(100vh-64px)]">
+      <div className={cn("flex", isElectron ? "min-h-[calc(100vh-100px)]" : "min-h-[calc(100vh-64px)]")}>
         <Sidebar />
         <main className={cn("flex-1 px-4 py-8 lg:px-8 pb-24 md:pb-8 transition-all duration-300", !isSidebarCollapsed ? "md:mr-64" : "mr-0")}>
           <DashboardSkeleton />
@@ -182,7 +184,7 @@ export const DashboardPage = () => {
   }
 
   return (
-    <div className="flex min-h-[calc(100vh-64px)]">
+    <div className={cn("flex", isElectron ? "min-h-[calc(100vh-100px)]" : "min-h-[calc(100vh-64px)]")}>
       <Sidebar />
       <main className={cn("flex-1 px-4 py-8 lg:px-8 pb-24 md:pb-8 transition-all duration-300", !isSidebarCollapsed ? "md:mr-64" : "mr-0")}>
         <div className="container mx-auto max-w-6xl">

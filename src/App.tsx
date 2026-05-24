@@ -100,8 +100,7 @@ const AppContent = () => {
 
       <div className={cn(
         "min-h-screen selection:bg-neon-pink selection:text-white pb-16 md:pb-0 relative",
-        isOverlayWidget ? "bg-transparent pb-0" : "bg-dark-bg text-gray-100",
-        isElectron && !isOverlayWidget && "pt-9" // Push the UI below the custom draggable Titlebar
+        isOverlayWidget ? "bg-transparent pb-0" : "bg-dark-bg text-gray-100"
       )}>
       {isElectron && !isOverlayWidget && !isMaximized && (
         <div className="fixed inset-0 border border-white/10 pointer-events-none z-[100000] rounded-none shadow-[inset_0_0_15px_rgba(255,0,127,0.02)]" />
@@ -123,7 +122,7 @@ const AppContent = () => {
 
       {!isOverlayWidget && <Navbar />}
       
-      <main className={cn("relative", !isLanding && !isOverlayWidget && "pt-16")}>
+      <main className={cn("relative", !isLanding && !isOverlayWidget && (isElectron ? "pt-[100px]" : "pt-16"))}>
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/auth" element={<AuthPage />} />

@@ -102,25 +102,25 @@ const GameCard: React.FC<{ game: Game; index: number }> = ({ game, index }) => {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 mt-auto">
+          <div className="flex items-center justify-between gap-2 mt-auto">
             <GlowButton 
               variant={isAdded ? "blue" : "purple"} 
               size="sm" 
-              className="flex-1 py-4 text-xs font-bold"
+              className="flex-1 py-3 text-[10px] md:text-[11px] font-bold"
               onClick={() => toggleMyGame(game.id)}
             >
               {isAdded ? (
-                <span className="flex items-center gap-2"><Check size={14} /> در لیست من</span>
+                <span className="flex items-center justify-center gap-1.5"><Check size={14} className="shrink-0" /> <span className="truncate">در لیست من</span></span>
               ) : (
-                <span className="flex items-center gap-2"><Plus size={14} /> افزودن به لیست</span>
+                <span className="flex items-center justify-center gap-1.5"><Plus size={14} className="shrink-0" /> <span className="truncate">افزودن به لیست</span></span>
               )}
             </GlowButton>
             <Link 
               to="/lobbies" 
-              className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:bg-white/10 transition-all group/btn"
+              className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:bg-white/10 transition-all group/btn shrink-0"
               title="مشاهده لابی‌ها"
             >
-              <ExternalLink size={18} className="group-hover/btn:scale-110 transition-transform" />
+              <ExternalLink size={16} className="group-hover/btn:scale-110 transition-transform" />
             </Link>
           </div>
         </div>
@@ -146,8 +146,10 @@ export const GamesPage = () => {
     );
   }, [allGames, searchTerm]);
 
+  const isElectron = typeof window !== "undefined" && !!(window as any).electronAPI;
+
   return (
-    <div className="flex min-h-[calc(100vh-64px)] overflow-x-hidden">
+    <div className={cn("flex overflow-x-hidden", isElectron ? "min-h-[calc(100vh-100px)]" : "min-h-[calc(100vh-64px)]")}>
       <Sidebar />
       <main className={cn("flex-1 px-4 py-8 lg:px-8 pb-32 md:pb-8 w-full transition-all duration-300", !isSidebarCollapsed ? "md:mr-64" : "mr-0")} dir="rtl">
         <div className="container mx-auto max-w-7xl">
@@ -193,7 +195,7 @@ export const GamesPage = () => {
             </div>
           </header>
 
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 pb-20">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 pb-20">
             {loading ? (
               Array.from({ length: 8 }).map((_, i) => <GameCardSkeleton key={i} />)
             ) : (

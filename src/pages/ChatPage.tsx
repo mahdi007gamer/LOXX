@@ -616,6 +616,8 @@ export const ChatPage: React.FC = () => {
   const [showChannelMenu, setShowChannelMenu] = useState(false);
   const [chatTheme, setChatTheme] = useState<keyof typeof CHAT_THEMES>((localStorage.getItem("loxx-chat-theme") as any) || "aura");
   
+  const isElectron = typeof window !== "undefined" && !!(window as any).electronAPI;
+  
   const [isSocketConnected, setIsSocketConnected] = useState(chatSocket.connected);
 
   useEffect(() => {
@@ -1288,7 +1290,10 @@ export const ChatPage: React.FC = () => {
 
   return (
     <div 
-      className="flex h-[calc(100dvh-128px)] md:h-[calc(100vh-64px)] overflow-hidden bg-dark-bg rtl text-right relative overscroll-none" 
+      className={cn(
+        "flex overflow-hidden bg-dark-bg rtl text-right relative overscroll-none",
+        isElectron ? "h-[calc(100dvh-164px)] md:h-[calc(100vh-100px)]" : "h-[calc(100dvh-128px)] md:h-[calc(100vh-64px)]"
+      )}
       style={{ overscrollBehavior: 'none' }} 
       onDragOver={(e) => {
         if (activeChannelId === 'news' && (user as any)?.role === 'ADMIN') {
