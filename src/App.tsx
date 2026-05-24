@@ -14,6 +14,7 @@ import { GamesProvider } from "./context/GamesContext";
 import { ProfilePopoverProvider } from "./context/ProfilePopoverContext";
 import { LobbyOverlay } from "./components/LobbyOverlay";
 import { FriendChatOverlay } from "./components/ui/FriendChatOverlay";
+import { DiscordOverlayHUD } from "./components/DiscordOverlayHUD";
 import ScrollToTop from "./components/ScrollToTop";
 import { DashboardPage } from "./pages/DashboardPage";
 import { ChatPage } from "./pages/ChatPage";
@@ -103,6 +104,7 @@ function App() {
                 <AppContent />
                 <LobbyOverlay />
                 <FriendChatOverlay />
+                <DiscordOverlayHUD />
                 <Toaster 
                   position="bottom-left" 
                   gutter={12}

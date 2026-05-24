@@ -91,7 +91,39 @@ export const LobbyRoomPage = () => {
     kickPlayer,
     banPlayer,
     isJoining,
-    joinError
+    joinError,
+
+    // Voice states fetched globally
+    localStream,
+    voiceMode,
+    setVoiceMode,
+    pttKey,
+    setPttKey,
+    isPttPressed,
+    setIsPttPressed,
+    isAudioContextResumed,
+    resumeAudio,
+    peerVolumes,
+    localVolume,
+
+    // Overlay settings fetched globally
+    overlayEnabled,
+    setOverlayEnabled,
+    overlayPosition,
+    setOverlayPosition,
+    overlaySize,
+    setOverlaySize,
+    overlayOnlyTalking,
+    setOverlayOnlyTalking,
+
+    // Electron bindings
+    isElectron,
+    launcherCloseToTray,
+    launcherStartAtLogin,
+    launcherHardwareAcceleration,
+    launcherGlobalPttKey,
+    launcherGlobalMuteKey,
+    updateLauncherSettings
   } = useLobby();
 
   const { user } = useAuth();
@@ -105,49 +137,7 @@ export const LobbyRoomPage = () => {
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [activeProfileUserId, setActiveProfileUserId] = useState<string | null>(null);
 
-  const [isAudioContextResumed, setIsAudioContextResumed] = useState(true);
   const [wasInLobby, setWasInLobby] = useState(false);
-  const localStreamRef = useRef<MediaStream | null>(null);
-  const [localStream, setLocalStream] = useState<MediaStream | null>(null);
-
-  const requestMicrophone = useCallback(async () => {
-    try {
-      if (navigator.mediaDevices?.getUserMedia && !localStreamRef.current) {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
-        localStreamRef.current = stream;
-        setLocalStream(stream);
-      }
-    } catch (e) {
-      console.error("Microphone permission denied", e);
-      setIsAudioContextResumed(false);
-    }
-  }, []);
-
-  const resumeAudio = useCallback(async () => {
-    try {
-      await requestMicrophone();
-      const resumed = await resumeSharedAudioContext();
-      if (resumed) {
-        setIsAudioContextResumed(true);
-        toast.success("سیستم صوتی فعال شد", { id: 'audio-resume' });
-      } else {
-        throw new Error("Failed to resume shared context");
-      }
-    } catch (e) {
-      console.error("Audio resume failed", e);
-      toast.error("دسترسی به میکروفون داده نشد");
-    }
-  }, [requestMicrophone]);
-
-  useEffect(() => {
-    const ctx = getSharedAudioContext();
-    if (ctx.state === "suspended") {
-      setIsAudioContextResumed(false);
-    } else {
-      setIsAudioContextResumed(true);
-    }
-    requestMicrophone();
-  }, [requestMicrophone]);
 
   // Join lobby on mount
   useEffect(() => {
@@ -158,12 +148,6 @@ export const LobbyRoomPage = () => {
 
   // Redirect if lobby becomes null (e.g., closed by host) or if joining fails
   const [countdown, setCountdown] = useState(5);
-  const [localVolume, setLocalVolume] = useState(0);
-  
-  // Voice Settings
-  const [voiceMode, setVoiceMode] = useState<"activation" | "ptt">("activation");
-  const [pttKey, setPttKey] = useState<string>("v");
-  const [isPttPressed, setIsPttPressed] = useState(false);
   const [isListeningForKey, setIsListeningForKey] = useState(false);
 
   useEffect(() => {
@@ -173,7 +157,6 @@ export const LobbyRoomPage = () => {
     }
   }, [lobby, wasInLobby, id, navigate, joinError]);
 
-  const [peerVolumes, setPeerVolumes] = useState<Record<string, number>>({});
   const [peerActivity, setPeerActivity] = useState<Record<string, number>>({});
 
   const handlePeerVolumeChange = useCallback((peerUserId: string, vol: number) => {
@@ -253,107 +236,12 @@ export const LobbyRoomPage = () => {
   const allReadyPulse = lobby?.status === "READY" || (activePlayersCount > 1 && readyCountValue === activePlayersCount);
 
 
-  useEffect(() => {
-    let audioContext: AudioContext;
-    let analyzer: AnalyserNode;
-    let microphone: MediaStreamAudioSourceNode;
-    let rafId: number;
-    let isTalking = false;
-    let lastVol = 0;
-
-    if (lobby && user && localStream && isAudioContextResumed) {
-      try {
-        audioContext = new AudioContext();
-        analyzer = audioContext.createAnalyser();
-        microphone = audioContext.createMediaStreamSource(localStream);
-        microphone.connect(analyzer);
+  // Audio context and mic loop handled globally by LobbyProvider
         
-        analyzer.fftSize = 256;
-        const bufferLength = analyzer.frequencyBinCount;
-        const dataArray = new Uint8Array(bufferLength);
+  // Deleted redundant loop
 
-        const analyzeVoice = () => {
-           if (localStream.getAudioTracks().length > 0 && localStream.getAudioTracks()[0].enabled) {
-             analyzer.getByteFrequencyData(dataArray);
-             let sum = 0;
-             for(let i = 0; i < bufferLength; i++) {
-               sum += dataArray[i];
-             }
-             const avg = sum / bufferLength;
-             const newVol = Math.min(100, Math.round(avg * 2));
-             
-             // Only update local state if change is very significant
-             if (Math.abs(newVol - lastVol) > 20 || (newVol === 0 && lastVol !== 0)) {
-               lastVol = newVol;
-               setLocalVolume(newVol);
-             }
 
-             const talkingNow = avg > 20; 
-             if (talkingNow !== isTalking) {
-               isTalking = talkingNow;
-               voiceSocket.emit("voice.talking", { roomId: lobby.id, isTalking });
-             }
-           } else {
-             if (lastVol !== 0) {
-               lastVol = 0;
-               setLocalVolume(0);
-             }
-             if (isTalking) {
-               isTalking = false;
-               voiceSocket.emit("voice.talking", { roomId: lobby.id, isTalking: false });
-             }
-           }
-           rafId = requestAnimationFrame(analyzeVoice);
-        };
-        analyzeVoice();
-      } catch (err) {
-        console.error("Mic analysis init failed", err);
-      }
-    }
-
-    return () => {
-      if (rafId) cancelAnimationFrame(rafId);
-      if (audioContext && audioContext.state !== "closed") audioContext.close();
-      setLocalVolume(0);
-    };
-  }, [lobby?.id, user?.id, localStream, isAudioContextResumed]);
-
-  useEffect(() => {
-    if (localStream && localStream.getAudioTracks().length > 0) {
-      if (isMicMuted) {
-        localStream.getAudioTracks()[0].enabled = false;
-      } else if (voiceMode === "ptt") {
-        localStream.getAudioTracks()[0].enabled = isPttPressed;
-      } else {
-        localStream.getAudioTracks()[0].enabled = true;
-      }
-    }
-  }, [isMicMuted, localStream, voiceMode, isPttPressed]);
-
-  useEffect(() => {
-    if (voiceMode !== "ptt") return;
-    
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-      if (e.key.toLowerCase() === pttKey.toLowerCase()) {
-        if (!isPttPressed) setIsPttPressed(true);
-      }
-    };
-    const handleKeyUp = (e: KeyboardEvent) => {
-      if (e.key.toLowerCase() === pttKey.toLowerCase()) {
-        setIsPttPressed(false);
-      }
-    };
-    
-    window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("keyup", handleKeyUp);
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("keyup", handleKeyUp);
-    };
-  }, [voiceMode, pttKey, isPttPressed]);
-
-  const { remoteStreams } = useWebRTC(lobby?.id || null, localStream, user?.id);
+  // Stream states and key shortcuts are handled globally by LobbyProvider
 
   const toggleMic = () => {
     if (lobby) {
@@ -589,15 +477,7 @@ export const LobbyRoomPage = () => {
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col gap-4 md:gap-6 overflow-y-auto overflow-x-hidden custom-scrollbar pb-24 md:pb-8 px-1 md:px-4">
           
-          {/* Remote Audio Streams */}
-          {Array.from(remoteStreams.entries()).map(([peerUserId, stream]) => (
-            <RemoteAudioPlayer 
-              key={peerUserId}
-              stream={stream}
-              volumeLevel={peerVolumes[peerUserId] !== undefined ? peerVolumes[peerUserId] : 100}
-              onVolumeChange={(vol) => handlePeerVolumeChange(peerUserId, vol)}
-            />
-          ))}
+          {/* Remote Audio Streams handled globally */}
 
           {/* Top Status Panel */}
           <MatchInfoPanel 
@@ -980,6 +860,263 @@ export const LobbyRoomPage = () => {
                   >
                      {isListeningForKey ? "Press any key..." : "Click to set keybinding..."}
                   </button>
+                </div>
+
+                {/* Desktop & Live Discord Overlay Panel */}
+                <div className="space-y-4 pt-4 border-t border-white/10">
+                  <h4 className="text-sm font-black text-neon-blue uppercase tracking-widest border-b border-white/10 pb-2 flex items-center gap-1.5">
+                    <span className="h-1.5 w-1.5 rounded-full bg-neon-blue shadow-[0_0_8px_rgba(0,229,255,1)]" />
+                    تنظیمات اختصاصی دسکتاپ و سیستم صوتی
+                  </h4>
+
+                  {isElectron ? (
+                    <div className="space-y-4">
+                      {/* Active Launcher Banner */}
+                      <div className="p-3 rounded-2xl bg-neon-blue/10 border border-neon-blue/25 text-xs text-white flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-neon-blue animate-pulse shrink-0" />
+                        <span>شما در حال استفاده از <strong>کلاینت اختصاصی دسکتاپ Loxx Launcher</strong> هستید. ویژگی‌های سیستمی زیر کاملاً فعال هستند.</span>
+                      </div>
+
+                      {/* Close to Tray Toggle */}
+                      <div className="flex items-center justify-between p-3 rounded-2xl bg-white/5">
+                        <div>
+                          <p className="text-xs font-black text-white">کمینه به بخش تسک‌بار (Close to System Tray)</p>
+                          <p className="text-[9px] text-gray-500 font-bold font-sans">با کلیک روی دکمه ضربدر، برنامه باز می‌ماند و به منوی مخفی Tray منتقل می‌شود</p>
+                        </div>
+                        <div 
+                          onClick={() => updateLauncherSettings({ closeToTray: !launcherCloseToTray })}
+                          className={cn(
+                            "w-12 h-6 rounded-full relative cursor-pointer border transition-colors",
+                             launcherCloseToTray ? "bg-neon-blue/20 border-neon-blue/30" : "bg-white/5 border-white/10"
+                          )}
+                        >
+                          <div className={cn(
+                            "absolute top-1 h-4 w-4 rounded-full transition-all",
+                            launcherCloseToTray ? "right-1 bg-neon-blue shadow-[0_0_10px_rgba(0,229,255,1)]" : "right-7 bg-gray-500"
+                          )} />
+                        </div>
+                      </div>
+
+                      {/* Start at Login Toggle */}
+                      <div className="flex items-center justify-between p-3 rounded-2xl bg-white/5">
+                        <div>
+                          <p className="text-xs font-black text-white">اجرای خودکار با بالا آمدن ویندوز (Auto-Start at Login)</p>
+                          <p className="text-[9px] text-gray-500 font-bold font-sans">اجرای اتوماتیک و اتصال بدون دردسر همزمان با روشن کردن رایانه شما</p>
+                        </div>
+                        <div 
+                          onClick={() => updateLauncherSettings({ startAtLogin: !launcherStartAtLogin })}
+                          className={cn(
+                            "w-12 h-6 rounded-full relative cursor-pointer border transition-colors",
+                             launcherStartAtLogin ? "bg-neon-blue/20 border-neon-blue/30" : "bg-white/5 border-white/10"
+                          )}
+                        >
+                          <div className={cn(
+                            "absolute top-1 h-4 w-4 rounded-full transition-all",
+                            launcherStartAtLogin ? "right-1 bg-neon-blue shadow-[0_0_10px_rgba(0,229,255,1)]" : "right-7 bg-gray-500"
+                          )} />
+                        </div>
+                      </div>
+
+                      {/* Hardware Acceleration Toggle */}
+                      <div className="flex items-center justify-between p-3 rounded-2xl bg-white/5">
+                        <div>
+                          <p className="text-xs font-black text-white">شتاب‌دهنده سخت‌افزاری کارت گرافیک (Hardware Acceleration)</p>
+                          <p className="text-[9px] text-gray-500 font-bold font-sans">برای بهینه‌سازی CPU در بازی‌های سنگین، می‌توانید شتاب‌دهنده‌ را خاموش کنید (نیاز به راه‌اندازی مجدد دارد)</p>
+                        </div>
+                        <div 
+                          onClick={() => updateLauncherSettings({ hardwareAcceleration: !launcherHardwareAcceleration })}
+                          className={cn(
+                            "w-12 h-6 rounded-full relative cursor-pointer border transition-colors",
+                             launcherHardwareAcceleration ? "bg-neon-blue/20 border-neon-blue/30" : "bg-white/5 border-white/10"
+                          )}
+                        >
+                          <div className={cn(
+                            "absolute top-1 h-4 w-4 rounded-full transition-all",
+                            launcherHardwareAcceleration ? "right-1 bg-neon-blue shadow-[0_0_10px_rgba(0,229,255,1)]" : "right-7 bg-gray-500"
+                          )} />
+                        </div>
+                      </div>
+
+                      {/* Global Key Shortcuts Form */}
+                      <div className="space-y-3 p-3 rounded-2xl bg-white/5 border border-white/5">
+                        <p className="text-xs font-black text-white border-b border-white/5 pb-1 select-none">کلیدهای میانبر سیستمی (OS Global Shortcuts)</p>
+                        
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-black text-gray-400">کلید Push to Talk در پس‌زمینه</span>
+                            <span className="text-[8px] bg-white/15 px-1.5 py-0.5 rounded text-gray-300 font-mono select-all">{launcherGlobalPttKey}</span>
+                          </div>
+                          <div className="flex gap-1.5">
+                            {[
+                              { label: 'Control+Alt+V', val: 'CommandOrControl+Alt+V' },
+                              { label: 'Alt+C', val: 'Alt+C' },
+                              { label: 'Shift+K', val: 'Shift+K' }
+                            ].map(opt => (
+                              <button
+                                key={opt.val}
+                                onClick={() => updateLauncherSettings({ globalPttKey: opt.val })}
+                                className={cn(
+                                  "flex-1 py-1 rounded-lg text-[10px] font-bold font-mono transition border",
+                                  launcherGlobalPttKey === opt.val 
+                                    ? "bg-neon-blue/15 border-neon-blue/35 text-neon-blue" 
+                                    : "bg-white/5 border-white/5 text-gray-400 hover:bg-white/10"
+                                )}
+                              >
+                                {opt.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-black text-gray-400">کلید میانبر گلوبال قطع صدا (Mute Toggle)</span>
+                            <span className="text-[8px] bg-white/15 px-1.5 py-0.5 rounded text-gray-300 font-mono select-all">{launcherGlobalMuteKey}</span>
+                          </div>
+                          <div className="flex gap-1.5">
+                            {[
+                              { label: 'Control+Alt+M', val: 'CommandOrControl+Alt+M' },
+                              { label: 'Alt+M', val: 'Alt+M' },
+                              { label: 'Control+Alt+X', val: 'CommandOrControl+Alt+X' }
+                            ].map(opt => (
+                              <button
+                                key={opt.val}
+                                onClick={() => updateLauncherSettings({ globalMuteKey: opt.val })}
+                                className={cn(
+                                  "flex-1 py-1 rounded-lg text-[10px] font-bold font-mono transition border",
+                                  launcherGlobalMuteKey === opt.val 
+                                    ? "bg-neon-pink/15 border-neon-pink/35 text-neon-pink" 
+                                    : "bg-white/5 border-white/5 text-gray-400 hover:bg-white/10"
+                                )}
+                              >
+                                {opt.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    /* Web Browser Showcase for Desktop Client */
+                    <div className="p-4 rounded-2xl bg-gradient-to-br from-neon-blue/10 via-transparent to-neon-pink/10 border border-white/5 space-y-3">
+                      <p className="text-xs font-black text-white">🔥 پتانسیل واقعی سیستم صوتی Loxx را آزاد کنید!</p>
+                      <p className="text-[10px] text-gray-400 leading-relaxed font-bold">
+                        آیا می‌دانستید با استفاده از کلاینت دسکتاپ (Windows / macOS / Linux)، قابلیت‌هایی در اختیارتان قرار می‌گیرد که در مرورگر وب ممکن نیستند؟
+                      </p>
+                      <ul className="text-[9px] text-[#00e5ff] space-y-1 font-bold list-disc list-inside">
+                        <li>کلید Push to Talk سیستمی (حتی زمانی که داخل بازی‌های سنگین مانند CS:GO و Valorant آلت‌تب هستید)</li>
+                        <li>منوی هوشمند تسک‌بار (System Tray) به همراه کلید قطع صدای گلوبال</li>
+                        <li>اجرای اتوماتیک و اتصال بدون دردسر همزمان با روشن کردن رایانه شخصی شما</li>
+                        <li>قابلیت Hardware Acceleration برای کاهش فشار روی CPU</li>
+                      </ul>
+                      <div className="pt-1 select-all">
+                        <button 
+                          onClick={() => {
+                            toast.success("درخواست دانلود کلاینت دسکتاپ ثبت شد. به زودی نسخه لانچر برای شما ارسال می‌شود!");
+                          }}
+                          className="w-full py-2.5 rounded-xl bg-neon-blue hover:bg-neon-blue/80 text-black text-xs font-black transition-all shadow-[0_0_12px_rgba(0,229,255,0.4)]"
+                        >
+                          دریافت لانچر دسکتاپ (Loxx Desktop Launcher)
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Shared Overlay appearance settings (always available) */}
+                  <div className="border-t border-white/5 pt-4 space-y-3">
+                    <p className="text-xs font-black text-white select-none">تنظیمات ظاهر ویترین زنده (HUD Overlay Appearance)</p>
+
+                    {/* Overlay Toggle Switch */}
+                    <div className="flex items-center justify-between p-3 rounded-2xl bg-white/5">
+                      <div>
+                        <p className="text-xs font-black text-white">طرح زنده روی بازی‌ها (Discord Live Overlay)</p>
+                        <p className="text-[9px] text-gray-500 font-bold font-sans">نمایش لیست فعال کانال صوتی روی گوشه تصویر بقیه برنامه‌ها</p>
+                      </div>
+                      <div 
+                        onClick={() => setOverlayEnabled(!overlayEnabled)}
+                        className={cn(
+                          "w-12 h-6 rounded-full relative cursor-pointer border transition-colors",
+                           overlayEnabled ? "bg-neon-blue/20 border-neon-blue/30" : "bg-white/5 border-white/10"
+                        )}
+                      >
+                        <div className={cn(
+                          "absolute top-1 h-4 w-4 rounded-full transition-all",
+                          overlayEnabled ? "right-1 bg-neon-blue shadow-[0_0_10px_rgba(0,229,255,1)]" : "right-7 bg-gray-500"
+                        )} />
+                      </div>
+                    </div>
+
+                    {/* Hide non-talking toggle */}
+                    <div className={cn("flex items-center justify-between p-3 rounded-2xl bg-white/5 transition-opacity", !overlayEnabled && "opacity-50 pointer-events-none")}>
+                      <div>
+                        <p className="text-xs font-black text-white">فقط نمایش کاربران در حال صحبت</p>
+                        <p className="text-[9px] text-gray-500 font-bold font-sans">مخفی کردن اعضای ساکت از کادر روی صفحه زمان سکوت</p>
+                      </div>
+                      <div 
+                        onClick={() => setOverlayOnlyTalking(!overlayOnlyTalking)}
+                        className={cn(
+                          "w-12 h-6 rounded-full relative cursor-pointer border transition-colors",
+                           overlayOnlyTalking ? "bg-neon-blue/20 border-neon-blue/30" : "bg-white/5 border-white/10"
+                        )}
+                      >
+                        <div className={cn(
+                          "absolute top-1 h-4 w-4 rounded-full transition-all",
+                          overlayOnlyTalking ? "right-1 bg-neon-blue shadow-[0_0_10px_rgba(0,229,255,1)]" : "right-7 bg-gray-500"
+                        )} />
+                      </div>
+                    </div>
+
+                    {/* Overlay Position selector */}
+                    <div className={cn("space-y-2 transition-opacity", !overlayEnabled && "opacity-50 pointer-events-none")}>
+                      <label className="text-xs font-black text-gray-400">موقعیت قرارگیری اورلی روی صفحه</label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {[
+                          { id: "top-left", name: "بالا چپ" },
+                          { id: "top-right", name: "بالا راست" },
+                          { id: "bottom-left", name: "پایین چپ" },
+                          { id: "bottom-right", name: "پایین راست" }
+                        ].map(pos => (
+                          <button 
+                            key={pos.id}
+                            onClick={() => setOverlayPosition(pos.id as any)}
+                            className={cn(
+                              "py-2 rounded-xl text-xs font-black transition border",
+                              overlayPosition === pos.id 
+                                ? "bg-neon-blue/15 border-neon-blue/30 text-neon-blue" 
+                                : "bg-white/5 border-white/5 text-gray-400 hover:bg-white/10"
+                            )}
+                          >
+                            {pos.name}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Overlay Size selector */}
+                    <div className={cn("space-y-2 transition-opacity", !overlayEnabled && "opacity-50 pointer-events-none")}>
+                      <label className="text-xs font-black text-gray-400">اندازه نمایشگر اورلی دسکتاپ</label>
+                      <div className="flex gap-2">
+                        {[
+                          { id: "small", name: "کوچک" },
+                          { id: "medium", name: "متوسط" },
+                          { id: "large", name: "بزرگ" }
+                        ].map(sz => (
+                          <button 
+                            key={sz.id}
+                            onClick={() => setOverlaySize(sz.id as any)}
+                            className={cn(
+                              "flex-1 py-1.5 rounded-xl text-xs font-black transition border",
+                              overlaySize === sz.id 
+                                ? "bg-neon-blue/15 border-neon-blue/35 text-neon-blue" 
+                                : "bg-white/5 border-white/5 text-gray-400 hover:bg-white/10"
+                            )}
+                          >
+                            {sz.name}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

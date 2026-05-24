@@ -1,7 +1,9 @@
-import React, { createContext, useContext, useState, useEffect, useRef } from "react";
-import { lobbySocket, chatSocket, voiceSocket } from "../lib/socket";
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from "react";
+import { lobbySocket, chatSocket, voiceSocket, getSharedAudioContext, resumeSharedAudioContext } from "../lib/socket";
 import { toast } from "react-hot-toast";
 import { useAuth } from "./AuthContext";
+import { useWebRTC } from "../hooks/useWebRTC";
+import { RemoteAudioPlayer } from "../components/voice/RemoteAudioPlayer";
 
 export type LobbyStatus = "WAITING" | "READY" | "STARTING" | "IN_PROGRESS" | "FINISHED";
 
@@ -69,6 +71,45 @@ interface LobbyContextType {
   banPlayer: (userId: string) => void;
   isJoining: string | null;
   joinError: string | null;
+
+  // Voice states & functions
+  localStream: MediaStream | null;
+  voiceMode: "activation" | "ptt";
+  setVoiceMode: (mode: "activation" | "ptt") => void;
+  pttKey: string;
+  setPttKey: (key: string) => void;
+  isPttPressed: boolean;
+  setIsPttPressed: (pressed: boolean) => void;
+  isAudioContextResumed: boolean;
+  resumeAudio: () => Promise<void>;
+  peerVolumes: Record<string, number>;
+  setPeerVolume: (userId: string, volume: number) => void;
+  localVolume: number;
+
+  // Overlay Settings
+  overlayEnabled: boolean;
+  setOverlayEnabled: (val: boolean) => void;
+  overlayPosition: "top-left" | "top-right" | "bottom-left" | "bottom-right";
+  setOverlayPosition: (val: "top-left" | "top-right" | "bottom-left" | "bottom-right") => void;
+  overlaySize: "small" | "medium" | "large";
+  setOverlaySize: (val: "small" | "medium" | "large") => void;
+  overlayOnlyTalking: boolean;
+  setOverlayOnlyTalking: (val: boolean) => void;
+
+  // Electron Launcher Specific Settings
+  isElectron: boolean;
+  launcherCloseToTray: boolean;
+  launcherStartAtLogin: boolean;
+  launcherHardwareAcceleration: boolean;
+  launcherGlobalPttKey: string;
+  launcherGlobalMuteKey: string;
+  updateLauncherSettings: (settings: {
+    closeToTray?: boolean;
+    startAtLogin?: boolean;
+    hardwareAcceleration?: boolean;
+    globalPttKey?: string;
+    globalMuteKey?: string;
+  }) => void;
 }
 
 const LobbyContext = createContext<LobbyContextType | undefined>(undefined);
@@ -77,6 +118,61 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [lobby, setLobby] = useState<LobbyState | null>(null);
   const { user } = useAuth();
   
+  // Voice integration states
+  const [localStream, setLocalStream] = useState<MediaStream | null>(null);
+  const localStreamRef = useRef<MediaStream | null>(null);
+  const [voiceMode, setVoiceMode] = useState<"activation" | "ptt">("activation");
+  const [pttKey, setPttKey] = useState<string>("v");
+  const [isPttPressed, setIsPttPressed] = useState<boolean>(false);
+  const [isAudioContextResumed, setIsAudioContextResumed] = useState<boolean>(true);
+  const [peerVolumes, setPeerVolumes] = useState<Record<string, number>>({});
+  const [localVolume, setLocalVolume] = useState<number>(0);
+
+  // Overlay state definitions synced to localStorage
+  const [overlayEnabled, setOverlayEnabled] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      const val = localStorage.getItem("loxx_overlay_enabled");
+      return val !== null ? val === "true" : true;
+    }
+    return true;
+  });
+  const [overlayPosition, setOverlayPosition] = useState<"top-left" | "top-right" | "bottom-left" | "bottom-right">(() => {
+    if (typeof window !== "undefined") {
+      return (localStorage.getItem("loxx_overlay_position") as any) || "top-left";
+    }
+    return "top-left";
+  });
+  const [overlaySize, setOverlaySize] = useState<"small" | "medium" | "large">(() => {
+    if (typeof window !== "undefined") {
+      return (localStorage.getItem("loxx_overlay_size") as any) || "medium";
+    }
+    return "medium";
+  });
+  const [overlayOnlyTalking, setOverlayOnlyTalking] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      const val = localStorage.getItem("loxx_overlay_only_talking");
+      return val !== null ? val === "true" : false;
+    }
+    return false;
+  });
+
+  // Sync state changes to localStorage
+  useEffect(() => {
+    localStorage.setItem("loxx_overlay_enabled", String(overlayEnabled));
+  }, [overlayEnabled]);
+
+  useEffect(() => {
+    localStorage.setItem("loxx_overlay_position", overlayPosition);
+  }, [overlayPosition]);
+
+  useEffect(() => {
+    localStorage.setItem("loxx_overlay_size", overlaySize);
+  }, [overlaySize]);
+
+  useEffect(() => {
+    localStorage.setItem("loxx_overlay_only_talking", String(overlayOnlyTalking));
+  }, [overlayOnlyTalking]);
+
   // Use refs to track latest state for socket listeners
   const lobbyRef = useRef<LobbyState | null>(null);
   const userRef = useRef<any>(null);
@@ -88,6 +184,262 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => {
     userRef.current = user;
   }, [user]);
+
+  // Electron Specific States & Global Listeners
+  const [isElectron, setIsElectron] = useState<boolean>(false);
+  const [launcherCloseToTray, setLauncherCloseToTray] = useState<boolean>(true);
+  const [launcherStartAtLogin, setLauncherStartAtLogin] = useState<boolean>(false);
+  const [launcherHardwareAcceleration, setLauncherHardwareAcceleration] = useState<boolean>(true);
+  const [launcherGlobalPttKey, setLauncherGlobalPttKey] = useState<string>("CommandOrControl+Alt+V");
+  const [launcherGlobalMuteKey, setLauncherGlobalMuteKey] = useState<string>("CommandOrControl+Alt+M");
+
+  useEffect(() => {
+    const checkElectron = typeof window !== "undefined" && !!(window as any).electronAPI;
+    setIsElectron(checkElectron);
+    if (checkElectron) {
+      const api = (window as any).electronAPI;
+      api.getLauncherSettings().then((settings: any) => {
+        if (settings) {
+          if (settings.closeToTray !== undefined) setLauncherCloseToTray(settings.closeToTray);
+          if (settings.startAtLogin !== undefined) setLauncherStartAtLogin(settings.startAtLogin);
+          if (settings.hardwareAcceleration !== undefined) setLauncherHardwareAcceleration(settings.hardwareAcceleration);
+          if (settings.globalPttKey !== undefined) setLauncherGlobalPttKey(settings.globalPttKey);
+          if (settings.globalMuteKey !== undefined) setLauncherGlobalMuteKey(settings.globalMuteKey);
+        }
+      }).catch((err: any) => console.error("Error loading Electron launcher settings:", err));
+    }
+  }, []);
+
+  const updateLauncherSettings = useCallback((updated: {
+    closeToTray?: boolean;
+    startAtLogin?: boolean;
+    hardwareAcceleration?: boolean;
+    globalPttKey?: string;
+    globalMuteKey?: string;
+  }) => {
+    const checkElectron = typeof window !== "undefined" && !!(window as any).electronAPI;
+    if (checkElectron) {
+      if (updated.closeToTray !== undefined) setLauncherCloseToTray(updated.closeToTray);
+      if (updated.startAtLogin !== undefined) setLauncherStartAtLogin(updated.startAtLogin);
+      if (updated.hardwareAcceleration !== undefined) setLauncherHardwareAcceleration(updated.hardwareAcceleration);
+      if (updated.globalPttKey !== undefined) setLauncherGlobalPttKey(updated.globalPttKey);
+      if (updated.globalMuteKey !== undefined) setLauncherGlobalMuteKey(updated.globalMuteKey);
+      (window as any).electronAPI.updateLauncherSettings(updated);
+    }
+  }, []);
+
+  // Sync PTT status and speaking indicator to Electron
+  useEffect(() => {
+    if (isElectron) {
+       const api = (window as any).electronAPI;
+       const speakLevel = localVolume > 20;
+       api.setVoiceStatus(speakLevel ? 'talking' : (lobby ? 'connected' : 'idle'));
+    }
+  }, [isElectron, localVolume, lobby]);
+
+  // Handle native global OS event listeners
+  useEffect(() => {
+    if (!isElectron) return;
+    const api = (window as any).electronAPI;
+
+    const stopPttListener = api.onGlobalPttChange((pressed: boolean) => {
+      if (voiceMode === "ptt") {
+        setIsPttPressed(pressed);
+      }
+    });
+
+    const stopMuteListener = api.onGlobalMuteToggle(() => {
+      if (lobbyRef.current && userRef.current) {
+        const myPlayer = lobbyRef.current.players?.find((p: any) => p.userId === userRef.current?.id);
+        const currentMuted = myPlayer ? !!(myPlayer as any).micMuted : false;
+        // Toggle Mic
+        lobbySocket.emit("lobby.mic", { lobbyId: lobbyRef.current.id, muted: !currentMuted });
+        setLobby((prev: any) => prev ? { ...prev, isMuted: !currentMuted } : null);
+        toast.success(!currentMuted ? "میکروفون قطع شد (Muted)" : "میکروفون فعال شد (Unmuted)");
+      }
+    });
+
+    return () => {
+      if (stopPttListener) stopPttListener();
+      if (stopMuteListener) stopMuteListener();
+    };
+  }, [isElectron, voiceMode]);
+
+  const requestMicrophone = useCallback(async () => {
+    try {
+      if (typeof navigator !== "undefined" && navigator.mediaDevices?.getUserMedia && !localStreamRef.current) {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
+        localStreamRef.current = stream;
+        setLocalStream(stream);
+      }
+    } catch (e) {
+      console.error("Microphone permission denied", e);
+      setIsAudioContextResumed(false);
+    }
+  }, []);
+
+  const stopMicrophone = useCallback(() => {
+    if (localStreamRef.current) {
+      localStreamRef.current.getTracks().forEach(track => track.stop());
+      localStreamRef.current = null;
+      setLocalStream(null);
+    }
+  }, []);
+
+  const resumeAudio = useCallback(async () => {
+    try {
+      await requestMicrophone();
+      const resumed = await resumeSharedAudioContext();
+      if (resumed) {
+        setIsAudioContextResumed(true);
+        toast.success("سیستم صوتی فعال شد", { id: 'audio-resume' });
+      } else {
+        throw new Error("Failed to resume shared context");
+      }
+    } catch (err) {
+      console.error("Failed to resume AudioContext", err);
+      toast.error("خطا در فعال‌سازی سیستم صوتی");
+    }
+  }, [requestMicrophone]);
+
+  const setPeerVolume = useCallback((userId: string, volume: number) => {
+    setPeerVolumes(prev => ({ ...prev, [userId]: volume }));
+  }, []);
+
+  useEffect(() => {
+    const ctx = getSharedAudioContext();
+    if (ctx.state === "suspended") {
+      setIsAudioContextResumed(false);
+    } else {
+      setIsAudioContextResumed(true);
+    }
+  }, []);
+
+  // Sync mic on lobby join / leave
+  useEffect(() => {
+    if (lobby?.id) {
+      requestMicrophone();
+    } else {
+      stopMicrophone();
+    }
+  }, [lobby?.id, requestMicrophone, stopMicrophone]);
+
+  // Manage stream enabled/disabled state based on mic status & PTT keys
+  useEffect(() => {
+    const isMicMuted = !!(lobby?.players?.find(p => p.userId === user?.id) as any)?.micMuted;
+    if (localStream && localStream.getAudioTracks().length > 0) {
+      if (isMicMuted) {
+        localStream.getAudioTracks()[0].enabled = false;
+      } else if (voiceMode === "ptt") {
+        localStream.getAudioTracks()[0].enabled = isPttPressed;
+      } else {
+        localStream.getAudioTracks()[0].enabled = true;
+      }
+    }
+  }, [lobby?.players, user?.id, localStream, voiceMode, isPttPressed]);
+
+  // Window keyboard PTT listeners
+  useEffect(() => {
+    if (voiceMode !== "ptt") return;
+    
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if (e.key.toLowerCase() === pttKey.toLowerCase()) {
+        if (!isPttPressed) setIsPttPressed(true);
+      }
+    };
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() === pttKey.toLowerCase()) {
+        setIsPttPressed(false);
+      }
+    };
+    
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+    };
+  }, [voiceMode, pttKey, isPttPressed]);
+
+  // Handle local voice analysis globally
+  useEffect(() => {
+    let audioContext: AudioContext;
+    let analyzer: AnalyserNode;
+    let microphone: MediaStreamAudioSourceNode;
+    let rafId: number;
+    let isTalking = false;
+    let lastVol = 0;
+
+    if (lobby && user && localStream && isAudioContextResumed) {
+      try {
+        audioContext = getSharedAudioContext();
+        analyzer = audioContext.createAnalyser();
+        microphone = audioContext.createMediaStreamSource(localStream);
+        microphone.connect(analyzer);
+        
+        analyzer.fftSize = 256;
+        const bufferLength = analyzer.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
+
+        const analyzeVoice = () => {
+          if (localStream.getAudioTracks().length > 0 && localStream.getAudioTracks()[0].enabled) {
+            analyzer.getByteFrequencyData(dataArray);
+            let sum = 0;
+            for(let i = 0; i < bufferLength; i++) {
+              sum += dataArray[i];
+            }
+            const avg = sum / bufferLength;
+            const newVol = Math.min(100, Math.round(avg * 2));
+            
+            if (Math.abs(newVol - lastVol) > 20 || (newVol === 0 && lastVol !== 0)) {
+              lastVol = newVol;
+              setLocalVolume(newVol);
+            }
+
+            const talkingNow = avg > 20; 
+            if (talkingNow !== isTalking) {
+              isTalking = talkingNow;
+              voiceSocket.emit("voice.talking", { roomId: lobby.id, isTalking });
+            }
+          } else {
+            if (lastVol !== 0) {
+              lastVol = 0;
+              setLocalVolume(0);
+            }
+            if (isTalking) {
+              isTalking = false;
+              voiceSocket.emit("voice.talking", { roomId: lobby.id, isTalking: false });
+            }
+          }
+          rafId = requestAnimationFrame(analyzeVoice);
+        };
+        analyzeVoice();
+      } catch (err) {
+        console.error("Local stream analyzer error:", err);
+      }
+    }
+
+    return () => {
+      if (rafId) cancelAnimationFrame(rafId);
+      try {
+        if (microphone) microphone.disconnect();
+        if (analyzer) analyzer.disconnect();
+      } catch (e) {}
+    };
+  }, [lobby?.id, user?.id, localStream, isAudioContextResumed]);
+
+  // Connect globally using our WebRTC signaling hook
+  const { remoteStreams } = useWebRTC(lobby?.id || null, localStream, user?.id);
+
+  // Monitor speaking volumes for glowing effects
+  const handlePeerVolumeChange = useCallback((peerUserId: string, vol: number) => {
+    // Save to global state so elements can use it
+    setPeerVolumes(prev => {
+      if (prev[peerUserId] === vol) return prev;
+      return { ...prev, [peerUserId]: vol };
+    });
+  }, []);
 
   // SFX Helper
   const playSFX = (type: 'message' | 'join' | 'leave' | 'notification' | 'action' | 'pop') => {
@@ -487,9 +839,50 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       kickPlayer,
       banPlayer,
       isJoining,
-      joinError
+      joinError,
+      
+      // Voice bindings
+      localStream,
+      voiceMode,
+      setVoiceMode,
+      pttKey,
+      setPttKey,
+      isPttPressed,
+      setIsPttPressed,
+      isAudioContextResumed,
+      resumeAudio,
+      peerVolumes,
+      setPeerVolume,
+      localVolume,
+
+      // Overlay bindings
+      overlayEnabled,
+      setOverlayEnabled,
+      overlayPosition,
+      setOverlayPosition,
+      overlaySize,
+      setOverlaySize,
+      overlayOnlyTalking,
+      setOverlayOnlyTalking,
+
+      // Electron bindings
+      isElectron,
+      launcherCloseToTray,
+      launcherStartAtLogin,
+      launcherHardwareAcceleration,
+      launcherGlobalPttKey,
+      launcherGlobalMuteKey,
+      updateLauncherSettings
     }}>
       {children}
+      {lobby?.id && Array.from(remoteStreams.entries()).map(([peerUserId, stream]) => (
+        <RemoteAudioPlayer 
+          key={peerUserId}
+          stream={stream}
+          volumeLevel={peerVolumes[peerUserId] !== undefined ? peerVolumes[peerUserId] : 100}
+          onVolumeChange={(vol) => handlePeerVolumeChange(peerUserId, vol)}
+        />
+      ))}
     </LobbyContext.Provider>
   );
 };
