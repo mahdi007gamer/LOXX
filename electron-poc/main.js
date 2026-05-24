@@ -155,20 +155,32 @@ function setupTray() {
 }
 
 // Global OS key listeners handling
+let pttTimeout = null;
 let globalPttActive = false;
 
 function registerGlobalShortcuts() {
   globalShortcut.unregisterAll();
 
-  // 1. Push-To-Talk register (Toggle Mode to prevent OS repeat lag)
+  // 1. Push-To-Talk register - Hold mode via timeout
   if (config.globalPttKey) {
     try {
       globalShortcut.register(config.globalPttKey, () => {
         if (mainWindow) {
-          // Because Electron's globalShortcut only fires on keypress (without keyup), 
-          // we treat ALL shortcuts as a toggle for Voice Activity / PTT behavior.
-          globalPttActive = !globalPttActive;
-          mainWindow.webContents.send('global-ptt-change', globalPttActive);
+          // Standard held key repeat loop
+          if (!globalPttActive) {
+            globalPttActive = true;
+            mainWindow.webContents.send('global-ptt-change', true);
+          }
+
+          if (pttTimeout) clearTimeout(pttTimeout);
+
+          // If no repeat triggers for 250ms, the held key has been released
+          pttTimeout = setTimeout(() => {
+            globalPttActive = false;
+            if (mainWindow && !mainWindow.isDestroyed()) {
+              mainWindow.webContents.send('global-ptt-change', false);
+            }
+          }, 350);
         }
       });
     } catch (e) {
@@ -404,7 +416,20 @@ app.whenReady().then(() => {
           { title: "Grand Theft Auto V", exe: "GTA5.exe" },
           { title: "Apex Legends", exe: "r5apex.exe" },
           { title: "Rainbow Six Siege", exe: "RainbowSix.exe" },
-          { title: "League of Legends", exe: "League of Legends.exe" }
+          { title: "League of Legends", exe: "League of Legends.exe" },
+          { title: "Overwatch 2", exe: "Overwatch.exe" },
+          { title: "Minecraft", exe: "javaw.exe" },
+          { title: "Cyberpunk 2077", exe: "Cyberpunk2077.exe" },
+          { title: "Call of Duty", exe: "cod.exe" },
+          { title: "The Witcher 3", exe: "witcher3.exe" },
+          { title: "Rust", exe: "RustClient.exe" },
+          { title: "Elden Ring", exe: "eldenring.exe" },
+          { title: "Red Dead Redemption 2", exe: "RDR2.exe" },
+          { title: "Baldur's Gate 3", exe: "bg3.exe" },
+          { title: "Fortnite", exe: "FortniteClient-Win64-Shipping.exe" },
+          { title: "PUBG: BATTLEGROUNDS", exe: "TslGame.exe" },
+          { title: "World of Warcraft", exe: "wow.exe" },
+          { title: "Rocket League", exe: "RocketLeague.exe" }
         ];
 
         let detectedGame = null;

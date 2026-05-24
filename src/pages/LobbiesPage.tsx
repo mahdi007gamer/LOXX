@@ -100,19 +100,19 @@ export const LobbiesPage = () => {
       <main className={cn("flex-1 w-full relative pb-24 md:pb-8 transition-all duration-300", !isSidebarCollapsed ? "md:mr-64" : "mr-0")}>
         <div className="px-4 py-8 md:px-8 lg:px-10 max-w-7xl mx-auto">
           {/* Mobile Header: Beautifully aligned and spaced */}
-          <header className="mb-8 md:mb-12">
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-              <div className="text-center md:text-right">
-                <h1 className="text-3xl md:text-4xl font-black text-white italic tracking-tighter uppercase leading-tight">
+          <header className="mb-6 md:mb-12 space-y-6 md:space-y-0">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 md:gap-6">
+              <div className="text-center md:text-right w-full md:w-auto">
+                <h1 className="text-2xl md:text-3xl lg:text-4xl font-black text-white italic tracking-tighter uppercase leading-tight">
                   لابی‌های <span className="text-neon-blue">فعال</span>
                 </h1>
-                <p className="text-gray-400 mt-2 text-xs md:text-sm">لابی مورد علاقه خود را انتخاب کنید یا خودتان بسازید</p>
+                <p className="text-gray-400 mt-2 text-[10px] md:text-sm">لابی مورد علاقه خود را انتخاب کنید یا خودتان بسازید</p>
               </div>
               
-              <div className="w-full md:w-auto">
+              <div className="w-full md:w-auto shrink-0">
                 <GlowButton 
                   variant="blue" 
-                  className="flex items-center justify-center gap-2 w-full md:w-auto group transition-all" 
+                  className="flex items-center justify-center gap-2 w-full md:w-auto h-12 md:h-auto px-6 whitespace-nowrap group transition-all" 
                   onClick={() => setIsModalOpen(true)}
                 >
                   <Plus size={18} className="group-hover:rotate-90 transition-transform" />
@@ -122,19 +122,19 @@ export const LobbiesPage = () => {
             </div>
             
             {/* Search Bar */}
-            <div className="mt-8 md:mt-10 relative">
-              <Search className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+            <div className="mt-4 md:mt-10 relative w-full">
+              <Search className="absolute right-4 md:right-5 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
               <input 
                 type="text" 
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="جستجوی لابی بر اساس نام بازی یا عنوان..."
-                className="w-full rounded-2xl border border-white/10 bg-white/5 py-4 md:py-5 pr-14 pl-6 text-sm text-white focus:border-neon-blue/50 focus:outline-none transition-all placeholder:text-gray-600 shadow-xl"
+                placeholder="جستجوی لابی..."
+                className="w-full rounded-xl md:rounded-2xl border border-white/10 bg-white/5 py-3 md:py-5 pr-12 md:pr-14 pl-14 md:pl-20 text-xs md:text-sm text-white focus:border-neon-blue/50 focus:outline-none transition-all placeholder:text-gray-600 shadow-xl"
               />
               {searchTerm && (
                 <button 
                   onClick={() => setSearchTerm("")}
-                  className="absolute left-5 top-1/2 -translate-y-1/2 p-2 rounded-full hover:bg-white/10 text-gray-400 cursor-pointer"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 p-1.5 md:p-2 rounded-lg hover:bg-white/10 text-[10px] md:text-xs font-bold text-gray-400 cursor-pointer"
                 >
                   حذف
                 </button>
@@ -143,17 +143,17 @@ export const LobbiesPage = () => {
           </header>
 
           {/* Game Filters - Better padding and mask for mobile */}
-          <div className="mb-8 relative">
+          <div className="mb-6 md:mb-8 relative w-full overflow-hidden">
             <div className="flex items-center justify-between mb-3 px-1">
-               <div className="flex items-center gap-2">
-                 <Filter size={12} className="text-neon-blue" />
-                 <span className="text-[9px] font-black text-white/30 uppercase tracking-[0.2em]">فیلتر بر اساس بازی</span>
+               <div className="flex items-center gap-1.5 md:gap-2">
+                 <Filter size={12} className="text-neon-blue shrink-0" />
+                 <span className="text-[9px] font-black text-white/30 uppercase tracking-[0.2em] truncate">فیلتر بازی</span>
                </div>
                {activeFilter !== 'all' && (
-                 <button onClick={() => setActiveFilter('all')} className="text-[9px] font-bold text-neon-blue hover:text-white transition-colors uppercase tracking-widest">CLEAR ALL</button>
+                 <button onClick={() => setActiveFilter('all')} className="text-[9px] font-bold text-neon-blue hover:text-white transition-colors uppercase tracking-widest shrink-0">پاک کردن</button>
                )}
             </div>
-            <div className="flex items-center gap-2 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent snap-x snap-mandatory mask-fade-edges">
+            <div className="flex items-center gap-2 overflow-x-auto pb-4 scrollbar-none snap-x snap-mandatory mask-fade-edges w-full">
                <button 
                   onClick={() => setActiveFilter("all")}
                   className={cn(

@@ -824,64 +824,6 @@ export const LobbyRoomPage = () => {
 
               {/* General User settings */}
               <div className="space-y-4">
-                <h4 className="text-sm font-black text-neon-pink uppercase tracking-widest border-b border-white/10 pb-2">تنظیمات صوتی بازیکن</h4>
-                
-                <div className="space-y-2">
-                  <label className="text-xs font-black text-gray-400">حالت صحبت (Voice Mode)</label>
-                  <div className="flex gap-2">
-                    <button 
-                      onClick={() => setVoiceMode("activation")}
-                      className={cn(
-                        "flex-1 py-2 rounded-xl text-xs font-black transition",
-                        voiceMode === "activation" 
-                          ? "bg-neon-pink/10 border border-neon-pink/20 text-neon-pink" 
-                          : "bg-white/5 border border-white/5 text-gray-400 hover:bg-white/10"
-                      )}
-                    >
-                      Voice Activation
-                    </button>
-                    <button 
-                      onClick={() => setVoiceMode("ptt")}
-                      className={cn(
-                        "flex-1 py-2 rounded-xl text-xs font-black transition",
-                        voiceMode === "ptt" 
-                          ? "bg-neon-pink/10 border border-neon-pink/20 text-neon-pink" 
-                          : "bg-white/5 border border-white/5 text-gray-400 hover:bg-white/10"
-                      )}
-                    >
-                      Push to Talk
-                    </button>
-                  </div>
-                </div>
-                
-                <div className={cn("space-y-2 transition-opacity", voiceMode !== "ptt" && "opacity-50 pointer-events-none")}>
-                  <label className="text-xs font-black text-gray-400 flex items-center justify-between">
-                    کلید Push to Talk
-                    <span className="text-[9px] bg-white/10 px-2 py-0.5 rounded text-white font-mono uppercase">{pttKey}</span>
-                  </label>
-                  <button 
-                    onClick={() => {
-                        setIsListeningForKey(true);
-                    }}
-                    onKeyDown={(e) => {
-                        if (isListeningForKey) {
-                            e.preventDefault();
-                            if (e.key !== "Escape") {
-                                setPttKey(e.key);
-                            }
-                            setIsListeningForKey(false);
-                        }
-                    }}
-                    onBlur={() => setIsListeningForKey(false)}
-                    className={cn(
-                       "w-full py-2 rounded-xl bg-white/5 border border-white/10 text-gray-500 text-xs font-black text-left pl-4 focus:outline-none transition-colors",
-                       isListeningForKey && "border-neon-pink text-neon-pink"
-                    )}
-                  >
-                     {isListeningForKey ? "Press any key..." : "Click to set keybinding..."}
-                  </button>
-                </div>
-
                 {/* Input/Output Audio Selector (Hardware integrations) */}
                 <div className="space-y-3 p-3.5 rounded-2xl bg-white/5 border border-white/5">
                   <p className="text-xs font-black text-white border-b border-white/5 pb-1.5 flex items-center gap-2">
@@ -1135,41 +1077,89 @@ export const LobbyRoomPage = () => {
                       )}
 
                       {/* Global Key Shortcuts Form */}
-                      <div className="space-y-3 p-3 rounded-2xl bg-white/5 border border-white/5">
-                        <p className="text-xs font-black text-white border-b border-white/5 pb-1 select-none">کلیدهای میانبر سیستمی (OS Global Shortcuts)</p>
+                      <div className="space-y-4 p-4 rounded-2xl bg-white/5 border border-white/5 mt-4">
+                        <p className="text-sm font-black text-neon-blue border-b border-white/5 pb-2 select-none">تنظیمات صحبت و کلیدهای میانبر (OS Global Shortcuts)</p>
                         
-                        <div className="space-y-1.5">
-                          <div className="flex items-center justify-between">
-                            <span className="text-[10px] font-black text-gray-400">کلید Push to Talk در پس‌زمینه</span>
-                            <span className="text-[8px] bg-white/15 px-1.5 py-0.5 rounded text-gray-300 font-mono select-all">{launcherGlobalPttKey}</span>
-                          </div>
-                          <div className="flex gap-1.5 flex-wrap">
-                            {[
-                              { label: 'Control+Alt+V', val: 'CommandOrControl+Alt+V' },
-                              { label: 'CapsLock', val: 'Capslock' },
-                              { label: 'Alt+C', val: 'Alt+C' },
-                              { label: 'Shift+K', val: 'Shift+K' }
-                            ].map(opt => (
-                              <button
-                                key={opt.val}
-                                onClick={() => updateLauncherSettings({ globalPttKey: opt.val })}
-                                className={cn(
-                                  "flex-1 py-1 rounded-lg text-[10px] font-bold font-mono transition border",
-                                  launcherGlobalPttKey === opt.val 
-                                    ? "bg-neon-blue/15 border-neon-blue/35 text-neon-blue" 
-                                    : "bg-white/5 border-white/5 text-gray-400 hover:bg-white/10"
-                                )}
-                              >
-                                {opt.label}
-                              </button>
-                            ))}
+                        <div className="space-y-2">
+                          <label className="text-xs font-black text-gray-400">حالت صحبت (Voice Mode)</label>
+                          <div className="flex gap-2">
+                            <button 
+                              onClick={() => setVoiceMode("activation")}
+                              className={cn(
+                                "flex-1 py-2 rounded-xl text-xs font-black transition",
+                                voiceMode === "activation" 
+                                  ? "bg-neon-blue/15 border border-neon-blue/30 text-neon-blue shadow-[0_0_10px_rgba(0,229,255,0.2)]" 
+                                  : "bg-black/20 border border-white/5 text-gray-400 hover:bg-white/5"
+                              )}
+                            >
+                              Voice Activation
+                            </button>
+                            <button 
+                              onClick={() => setVoiceMode("ptt")}
+                              className={cn(
+                                "flex-1 py-2 rounded-xl text-xs font-black transition",
+                                voiceMode === "ptt" 
+                                  ? "bg-neon-blue/15 border border-neon-blue/30 text-neon-blue shadow-[0_0_10px_rgba(0,229,255,0.2)]" 
+                                  : "bg-black/20 border border-white/5 text-gray-400 hover:bg-white/5"
+                              )}
+                            >
+                              Push to Talk
+                            </button>
                           </div>
                         </div>
 
-                        <div className="space-y-1.5">
+                        <div className={cn("space-y-2 transition-opacity duration-300", voiceMode !== "ptt" && "opacity-50 pointer-events-none")}>
                           <div className="flex items-center justify-between">
-                            <span className="text-[10px] font-black text-gray-400">کلید میانبر گلوبال قطع صدا (Mute Toggle)</span>
-                            <span className="text-[8px] bg-white/15 px-1.5 py-0.5 rounded text-gray-300 font-mono select-all">{launcherGlobalMuteKey}</span>
+                            <span className="text-[10px] font-black text-gray-400">کلید Push to Talk در پس‌زمینه (Hold)</span>
+                            <span className="text-[9px] bg-white/10 px-2 py-0.5 rounded text-white font-mono uppercase">{launcherGlobalPttKey}</span>
+                          </div>
+                          <button 
+                            onClick={() => setIsListeningForKey(true)}
+                            onKeyDown={(e) => {
+                                if (isListeningForKey) {
+                                    e.preventDefault();
+                                    if (e.key !== "Escape") {
+                                        let keyCombo = [];
+                                        if (e.ctrlKey) keyCombo.push("CommandOrControl");
+                                        if (e.altKey) keyCombo.push("Alt");
+                                        if (e.shiftKey) keyCombo.push("Shift");
+                                        if (e.key !== "Control" && e.key !== "Alt" && e.key !== "Shift" && e.key !== "Meta") {
+                                            const code = e.code;
+                                            if (code.startsWith("Key")) {
+                                              keyCombo.push(code.replace("Key", ""));
+                                            } else {
+                                              keyCombo.push(e.key.toUpperCase());
+                                            }
+                                        }
+                                        if (keyCombo.length > 0 && e.key !== "Control" && e.key !== "Alt" && e.key !== "Shift" && e.key !== "Meta") {
+                                          const finalKey = keyCombo.join("+");
+                                          updateLauncherSettings({ globalPttKey: finalKey });
+                                          setPttKey(finalKey); // keep web logic synced just in case
+                                          setIsListeningForKey(false);
+                                        }
+                                    } else {
+                                        setIsListeningForKey(false);
+                                    }
+                                }
+                            }}
+                            onBlur={() => setIsListeningForKey(false)}
+                            className={cn(
+                              "w-full py-2.5 rounded-xl bg-black/40 border text-xs font-black text-center focus:outline-none transition-colors",
+                              isListeningForKey 
+                                ? "border-neon-blue text-neon-blue shadow-[0_0_15px_rgba(0,229,255,0.3)] animate-pulse" 
+                                : "border-white/10 text-gray-400 hover:bg-white/5"
+                            )}
+                          >
+                             {isListeningForKey ? "Press any key combination..." : "...Click to set custom keybinding"}
+                          </button>
+                        </div>
+
+                        <div className="space-y-1.5 pt-2 border-t border-white/5">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-black text-gray-400">کلید میانبر گلوبال قطع میکروفون (Mute Toggle)</span>
+                            <span className="text-[8px] bg-white/15 px-1.5 py-0.5 rounded text-gray-300 font-mono flex items-center justify-center">
+                              {launcherGlobalMuteKey}
+                            </span>
                           </div>
                           <div className="flex gap-1.5">
                             {[
@@ -1181,10 +1171,10 @@ export const LobbyRoomPage = () => {
                                 key={opt.val}
                                 onClick={() => updateLauncherSettings({ globalMuteKey: opt.val })}
                                 className={cn(
-                                  "flex-1 py-1 rounded-lg text-[10px] font-bold font-mono transition border",
+                                  "flex-1 py-1.5 rounded-lg text-[10px] font-bold font-mono transition border",
                                   launcherGlobalMuteKey === opt.val 
-                                    ? "bg-neon-pink/15 border-neon-pink/35 text-neon-pink" 
-                                    : "bg-white/5 border-white/5 text-gray-400 hover:bg-white/10"
+                                    ? "bg-neon-pink/15 border-neon-pink/35 text-neon-pink shadow-[0_0_10px_rgba(255,0,127,0.2)]" 
+                                    : "bg-black/20 border-white/5 text-gray-400 hover:bg-white/10"
                                 )}
                               >
                                 {opt.label}
