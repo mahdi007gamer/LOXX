@@ -260,7 +260,7 @@ app.whenReady().then(() => {
           overlayWindow.setOpacity(Number(config.overlayOpacity));
         }
         if (settings.overlayClickThrough !== undefined) {
-          overlayWindow.setIgnoreMouseEvents(!!config.overlayClickThrough);
+          overlayWindow.setIgnoreMouseEvents(true, { forward: true });
         }
       } catch (e) {
         console.error("Failed to dynamically update overlay properties:", e);
@@ -358,7 +358,7 @@ app.whenReady().then(() => {
         overlayWindow.setFullScreenable(false);
 
         // Make it click-through, sitting perfectly on top of any low-level screen
-        overlayWindow.setIgnoreMouseEvents(!!config.overlayClickThrough, { forward: true });
+        overlayWindow.setIgnoreMouseEvents(true, { forward: true });
         
         // Compute dynamic local server URL route
         let baseURL = 'https://loxx.ir';
