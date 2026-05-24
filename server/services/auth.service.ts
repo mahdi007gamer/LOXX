@@ -211,6 +211,14 @@ export class AuthService {
     return jwt.verify(token, REFRESH_TOKEN_SECRET) as { userId: string };
   }
 
+  static generateStatusToken(userId: string) {
+    return jwt.sign({ userId }, JWT_SECRET, { expiresIn: "15m" });
+  }
+
+  static verifyStatusToken(token: string) {
+    return jwt.verify(token, JWT_SECRET) as { userId: string };
+  }
+
   static async forgotPassword(phone: string) {
     const user = await prisma.user.findUnique({
       where: { phone }

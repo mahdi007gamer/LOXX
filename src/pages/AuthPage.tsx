@@ -17,6 +17,7 @@ export const AuthPage = () => {
   const [step, setStep] = useState<AuthStep>("AUTH");
   const [tempUserId, setTempUserId] = useState<string | null>(null);
   const [verificationToken, setVerificationToken] = useState<string | null>(null);
+  const [statusToken, setStatusToken] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     username: "",
     phone: "",
@@ -48,7 +49,9 @@ export const AuthPage = () => {
     if (step === "VERIFY_BALE" && formData.phone) {
       interval = setInterval(async () => {
         try {
-          const response = await api.get(`/auth/status/${formData.phone}`);
+          const response = await api.get(`/auth/status/${formData.phone}`, {
+            params: { token: statusToken || "" }
+          });
           if (response.data.verified) {
             login(response.data.token, response.data.user);
             toast.success("حساب شما با موفقیت تایید شد!");
@@ -60,7 +63,7 @@ export const AuthPage = () => {
       }, 3000); // Poll every 3 seconds
     }
     return () => clearInterval(interval);
-  }, [step, formData.phone, login, navigate]);
+  }, [step, formData.phone, statusToken, login, navigate]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -90,6 +93,8 @@ export const AuthPage = () => {
             toast.success("خوش آمدید!");
           } catch (err: any) {
              if (err.response?.data?.error?.code === "VERIFICATION_REQUIRED") {
+                const token = err.response?.data?.error?.statusToken;
+                setStatusToken(token);
                 setStep("VERIFY_BALE");
                 toast.error("حساب شما هنوز تایید نشده است.");
              } else {
@@ -105,6 +110,7 @@ export const AuthPage = () => {
           });
           
           setVerificationToken(registerResponse.data.user.verificationToken);
+          setStatusToken(registerResponse.data.user.statusToken);
           setStep("VERIFY_BALE");
           toast.success("ثبت‌نام با موفقیت انجام شد.");
         }

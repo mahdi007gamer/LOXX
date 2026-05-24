@@ -1,0 +1,12 @@
+{
+  "name": "loxx-electron-poc",
+  "version": "1.0.0",
+  "description": "Electron POC for Loxx",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "^30.0.0"
+  }
+}

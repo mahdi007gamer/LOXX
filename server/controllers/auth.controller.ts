@@ -7,13 +7,17 @@ export class AuthController {
     try {
       console.log(`[AUTH_CTRL] Registering user: ${req.body.username}, phone: ${req.body.phone}`);
       const user = await AuthService.register(req.body);
+      
+      const statusToken = AuthService.generateStatusToken(user.id);
+
       res.status(201).json({
         status: "success",
         message: "User registered successfully",
         user: { 
           id: user.id, 
           username: user.username,
-          verificationToken: user.verificationToken
+          verificationToken: user.verificationToken,
+          statusToken
         }
       });
     } catch (error: any) {
@@ -92,7 +96,17 @@ export class AuthController {
     } catch (error: any) {
       console.log(`[AUTH_CTRL] Login failed for ${req.body.phone}: ${error.message}`);
       if (error.message === "VERIFICATION_REQUIRED") {
-        return res.status(403).json({ status: "error", error: { code: "VERIFICATION_REQUIRED", message: "VERIFICATION_REQUIRED" } });
+        const normalizedPhone = AuthService.normalizePhone(req.body.phone);
+        const user = await prisma.user.findFirst({ where: { OR: [{ phone: normalizedPhone }, { username: req.body.phone }] } });
+        const statusToken = user ? AuthService.generateStatusToken(user.id) : null;
+        return res.status(403).json({ 
+          status: "error", 
+          error: { 
+            code: "VERIFICATION_REQUIRED", 
+            message: "VERIFICATION_REQUIRED",
+            statusToken
+          } 
+        });
       }
       res.status(401).json({ status: "error", error: { code: "INVALID_CREDENTIALS", message: error.message } });
     }
@@ -238,6 +252,7 @@ export class AuthController {
   static async checkStatus(req: Request, res: Response) {
     try {
       const { phone } = req.params;
+      const token = (req.query.token as string) || (req.headers["x-status-token"] as string);
       const normalizedPhone = AuthService.normalizePhone(phone);
 
       const user = await prisma.user.findFirst({
@@ -253,6 +268,19 @@ export class AuthController {
       if (!user) return res.status(404).json({ status: "error", message: "User not found" });
 
       if (user.isVerified) {
+         if (!token) {
+           return res.status(401).json({ status: "error", message: "توکن امنیتی الزامی است" });
+         }
+         
+         try {
+           const decoded = AuthService.verifyStatusToken(token);
+           if (decoded.userId !== user.id) {
+             return res.status(403).json({ status: "error", message: "دسترسی غیرمجاز" });
+           }
+         } catch (e) {
+           return res.status(401).json({ status: "error", message: "توکن نامعتبر یا منقضی شده است" });
+         }
+
          const accessToken = AuthService.generateAccessToken(user.id);
          const refreshToken = AuthService.generateRefreshToken(user.id);
 
