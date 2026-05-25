@@ -82,27 +82,51 @@ const AppContent = () => {
   };
 
   const getDynamicToasterStyle = () => {
-    if (!isOverlayWidget) {
-      return {
-        bottom: 80,
-        right: getToasterRight(),
-        left: "auto",
-        zIndex: 999999999,
-      };
-    }
+    const isMobile = typeof window !== "undefined" ? window.innerWidth < 768 : false;
+    const width = typeof window !== "undefined" ? window.innerWidth : 1000;
+    const height = typeof window !== "undefined" ? window.innerHeight : 800;
 
-    // Clamp values dynamically based on viewport/window size to ensure visibility
-    const safeX = typeof window !== 'undefined' ? Math.max(10, Math.min(window.innerWidth - 320, overlayToastXOffset)) : overlayToastXOffset;
-    const safeY = typeof window !== 'undefined' ? Math.max(10, Math.min(window.innerHeight - 100, overlayToastYOffset)) : overlayToastYOffset;
+    const limitX = 16; // 16px safety distance from left/right edges
+    const limitY = 16;
 
     const style: any = {
       zIndex: 999999999,
+      position: "fixed" as const,
+      pointerEvents: "none" as const,
     };
+
+    if (!isOverlayWidget) {
+      // Normal application mode
+      let targetRight = 24; // default offset
+      if (!hideSidebar && isDesktop) {
+        targetRight = isSidebarCollapsed ? 96 : 300;
+      }
+
+      // Ensure the toast won't clip on the left/right boundaries of the screen
+      const toastWidth = isMobile ? 310 : 380;
+      const maxAllowedRight = Math.max(limitX, width - toastWidth - limitX);
+      const safeRight = Math.min(targetRight, maxAllowedRight);
+
+      style.bottom = isMobile ? 80 : 24; // Safe padding from bottom/Navbar
+      style.right = safeRight;
+      style.left = "auto";
+      
+      return style;
+    }
+
+    // Overlay Widget mode - we use dragged offsets but clamp them to the safe screen area!
+    const toastWidth = 360; 
+    const toastHeight = 160;
+
+    const safeX = Math.max(15, Math.min(width - toastWidth - 15, overlayToastXOffset));
+    const safeY = Math.max(15, Math.min(height - toastHeight - 15, overlayToastYOffset));
 
     if (overlayToastPosition.includes("top")) {
       style.top = safeY;
+      style.bottom = "auto";
     } else {
       style.bottom = safeY;
+      style.top = "auto";
     }
 
     if (overlayToastPosition.includes("left")) {

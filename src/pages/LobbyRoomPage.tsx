@@ -351,10 +351,10 @@ export const LobbyRoomPage = () => {
   const { friends } = useFriends();
 
   return (
-    <div className={cn("flex min-h-[calc(100vh-64px)] bg-[#050508] overflow-x-hidden", isElectron ? "min-h-[calc(100vh-100px)]" : "min-h-[calc(100vh-64px)]")} dir="rtl">
+    <div className={cn("flex bg-[#050508] overflow-hidden", isElectron ? "h-[calc(100vh-100px)] min-h-[calc(100vh-100px)] max-h-[calc(100vh-100px)]" : "h-[calc(100vh-64px)] min-h-[calc(100vh-64px)] max-h-[calc(100vh-64px)]")} dir="rtl">
       <Sidebar />
-      <main className={cn("flex-1 min-w-0 relative transition-all duration-300", !isSidebarCollapsed ? "md:mr-64" : "md:mr-20")}>
-        <div className="h-full min-h-[calc(100vh-64px)] bg-[#050508] text-white p-2 md:p-6 lg:p-8 flex flex-col gap-4 md:gap-6 relative overflow-hidden font-sans">
+      <main className={cn("flex-1 min-w-0 relative h-full max-h-full overflow-hidden transition-all duration-300", !isSidebarCollapsed ? "md:mr-64" : "md:mr-20")}>
+        <div className="h-full w-full bg-[#050508] text-white p-2 md:p-6 lg:p-8 flex flex-col gap-4 md:gap-6 relative overflow-hidden font-sans">
       {!user?.isVerified && (
         <div className="fixed top-20 left-4 right-4 z-[100] bg-neon-pink/20 backdrop-blur-md border border-neon-pink/30 rounded-2xl p-4 flex items-center justify-between">
           <div className="flex items-center gap-3">

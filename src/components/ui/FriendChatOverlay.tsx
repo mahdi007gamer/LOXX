@@ -90,11 +90,31 @@ export const FriendChatOverlay = () => {
   const dragControls = useDragControls();
 
   useEffect(() => {
+    let unsubscribe: any = null;
     if (isOverlayWidget && (window as any).electronAPI?.onOverlayInteractionMode) {
-      return (window as any).electronAPI.onOverlayInteractionMode((interactive: boolean) => {
+      unsubscribe = (window as any).electronAPI.onOverlayInteractionMode((interactive: boolean) => {
         setIsOverlayInteractive(interactive);
       });
     }
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.altKey && e.key === "F2") {
+        e.preventDefault();
+        setIsOverlayInteractive(prev => {
+          const nextVal = !prev;
+          if ((window as any).electronAPI?.toggleOverlayInteraction) {
+            (window as any).electronAPI.toggleOverlayInteraction();
+          }
+          return nextVal;
+        });
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      if (unsubscribe) unsubscribe();
+      window.removeEventListener("keydown", handleKeyDown);
+    };
   }, [isOverlayWidget]);
 
   // Un-minimize when a new chat is opened or current one is triggered
@@ -121,21 +141,29 @@ export const FriendChatOverlay = () => {
     }
   }, [activeChat?.messages.length]);
 
-  if (chats.length === 0 && !(isOverlayWidget && isOverlayInteractive)) return null;
+  if (chats.length === 0 && !isOverlayInteractive && !isOverlayWidget) return null;
 
   return (
     <>
-      {/* Interactive Backdrop when Alt+F2 is active in Overlay Widget */}
+      {/* Interactive Backdrop when Alt+F2 is active */}
       <AnimatePresence>
-        {isOverlayWidget && isOverlayInteractive && (
+        {isOverlayInteractive && (
           <motion.div
+            id="OverlayBackdrop"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-[6px] z-[9900] flex flex-col items-center justify-start pt-8 pointer-events-auto select-none transition-all duration-300 border-4 border-neon-blue/20"
+            transition={{ duration: 0.2, ease: "easeInOut" }}
+            style={{ 
+              width: "100vw", 
+              height: "100vh", 
+              background: "rgba(0, 0, 0, 0.7)", 
+              zIndex: 99999999 
+            }}
+            className="fixed inset-0 flex flex-col items-center justify-start pt-8 pointer-events-auto select-none border-4 border-neon-blue/20 transition-opacity duration-200 ease-in-out"
             dir="rtl"
           >
-            <div className="bg-black/80 border border-white/10 px-6 py-2.5 rounded-full backdrop-blur-md shadow-[0_0_30px_rgba(0,0,0,0.8)] flex items-center gap-3">
+            <div className="bg-black/90 border border-white/10 px-6 py-2.5 rounded-full backdrop-blur-md shadow-[0_0_30px_rgba(0,0,0,0.8)] flex items-center gap-3 relative z-[999999999]">
               <div className="h-2 w-2 rounded-full bg-neon-pink animate-ping"></div>
               <p className="text-white text-sm font-bold flex items-center gap-2">
                 حالت تعاملی لوکس فعال است. برای خروج از این حالت دکمه

@@ -94,9 +94,25 @@ export const DesktopOverlayWidget = () => {
       }
     }
 
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.altKey && e.key === "F2") {
+        e.preventDefault();
+        setIsOverlayInteractive(prev => {
+          const nextVal = !prev;
+          if ((window as any).electronAPI?.toggleOverlayInteraction) {
+            (window as any).electronAPI.toggleOverlayInteraction();
+          }
+          return nextVal;
+        });
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
     return () => {
       if (unsubscribePlayers) unsubscribePlayers();
       if (unsubscribeInteractive) unsubscribeInteractive();
+      window.removeEventListener("keydown", handleKeyDown);
     };
   }, []);
 
@@ -106,10 +122,18 @@ export const DesktopOverlayWidget = () => {
       <AnimatePresence>
         {isOverlayInteractive && (
           <motion.div
+            id="OverlayBackdrop"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-[6px] z-[9900] pointer-events-auto select-none transition-all duration-300 border-4 border-neon-blue/20"
+            transition={{ duration: 0.2, ease: "easeInOut" }}
+            style={{ 
+              width: "100vw", 
+              height: "100vh", 
+              background: "rgba(0, 0, 0, 0.7)", 
+              zIndex: 99999999 
+            }}
+            className="fixed inset-0 pointer-events-auto select-none border-4 border-neon-blue/20 transition-opacity duration-200 ease-in-out"
           />
         )}
       </AnimatePresence>
