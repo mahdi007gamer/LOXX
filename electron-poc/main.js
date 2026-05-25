@@ -385,7 +385,7 @@ app.whenReady().then(() => {
             baseURL = currentURL.split('/').slice(0, 3).join('/');
           }
         }
-        overlayWindow.loadURL(`${baseURL}/overlay`);
+        overlayWindow.loadURL(`${baseURL}/#/overlay`);
         
         overlayWindow.on('closed', () => {
           overlayWindow = null;

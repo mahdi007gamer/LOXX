@@ -20,7 +20,11 @@ const InviteToast = ({ t, inviteData, navigate }: { t: any, inviteData: any, nav
     toast.dismiss(t.id);
     
     const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
-    const isOverlayWidget = isElectron && (window.location.pathname === '/overlay' || window.location.pathname === '/lobby/overlay-widget');
+    const isOverlayWidget = isElectron && (
+      window.location.pathname === '/overlay' || 
+      window.location.pathname === '/lobby/overlay-widget' ||
+      window.location.hash.includes('/overlay')
+    );
 
     if (isOverlayWidget && (window as any).electronAPI?.sendOverlayAction) {
       toast.dismiss(t.id);

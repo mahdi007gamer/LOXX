@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from "react-router-dom";
+import { HashRouter as Router, Routes, Route, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { ScreenSplash } from "./components/layout/ScreenSplash";
 import { Navbar } from "./components/layout/Navbar";
@@ -250,7 +250,6 @@ const AppContent = () => {
   if (isOverlayWidget) {
     return (
       <div 
-        style={{ display: isOverlayInteractive ? "block" : "none" }}
         className="min-h-screen bg-transparent pb-0 relative selection:bg-neon-pink selection:text-white"
       >
         <NotificationHandler />
@@ -462,7 +461,8 @@ const AppContent = () => {
 };
 
 function App() {
-  const isOverlayWidget = typeof window !== 'undefined' && window.location.pathname === '/overlay';
+  const isOverlayWidget = typeof window !== 'undefined' && 
+    (window.location.pathname === '/overlay' || window.location.hash.includes('/overlay'));
   
   return (
     <AuthProvider>

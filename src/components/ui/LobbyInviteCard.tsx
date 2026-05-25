@@ -49,7 +49,11 @@ export const LobbyInviteCard: React.FC<LobbyInviteCardProps> = ({ initialData })
   const handleJoin = () => {
     if (!btnDisabled) {
       const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
-      const isOverlayWidget = isElectron && (window.location.pathname === '/overlay' || window.location.pathname === '/lobby/overlay-widget');
+      const isOverlayWidget = isElectron && (
+        window.location.pathname === '/overlay' || 
+        window.location.pathname === '/lobby/overlay-widget' ||
+        window.location.hash.includes('/overlay')
+      );
       
       if (isOverlayWidget && (window as any).electronAPI?.sendOverlayAction) {
         (window as any).electronAPI.sendOverlayAction({ type: 'join-lobby', lobbyId: initialData.lobbyId });

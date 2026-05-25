@@ -35,7 +35,11 @@ export const FriendChatOverlay = () => {
   const [isOverlayInteractive, setIsOverlayInteractive] = useState(false);
   const [friendSearch, setFriendSearch] = useState("");
   const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
-  const isOverlayWidget = isElectron && (window.location.pathname === '/overlay' || window.location.pathname === '/lobby/overlay-widget');
+  const isOverlayWidget = isElectron && (
+    window.location.pathname === '/overlay' || 
+    window.location.pathname === '/lobby/overlay-widget' ||
+    window.location.hash.includes('/overlay')
+  );
 
   const [testingCompatibility, setTestingCompatibility] = useState(false);
   const [testResult, setTestResult] = useState<null | 'ok' | 'fail'>(null);
