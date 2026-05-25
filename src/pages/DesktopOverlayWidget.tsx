@@ -19,12 +19,12 @@ interface OverlayPlayer {
 
 export const DesktopOverlayWidget = () => {
   const [players, setPlayers] = useState<OverlayPlayer[]>([]);
+  const [isOverlayInteractive, setIsOverlayInteractive] = useState(false);
 
   const { 
     overlayPosition, 
     overlaySize, 
-    overlayOnlyTalking, 
-    isOverlayInteractive
+    overlayOnlyTalking
   } = useLobby();
   const { user } = useAuth();
   
@@ -69,6 +69,8 @@ export const DesktopOverlayWidget = () => {
     }
 
     const api = (window as any).electronAPI;
+    let unsubscribePlayers: any = null;
+    let unsubscribeInteractive: any = null;
     
     if (api) {
       if (api.getOverlayPlayers) {
@@ -80,24 +82,44 @@ export const DesktopOverlayWidget = () => {
       }
 
       if (api.onOverlayPlayersUpdate) {
-        const unsubscribe = api.onOverlayPlayersUpdate((updatedPlayers: OverlayPlayer[]) => {
+        unsubscribePlayers = api.onOverlayPlayersUpdate((updatedPlayers: OverlayPlayer[]) => {
           setPlayers(updatedPlayers || []);
         });
-        return () => {
-          if (unsubscribe) unsubscribe();
-        };
+      }
+
+      if (api.onOverlayInteractionMode) {
+        unsubscribeInteractive = api.onOverlayInteractionMode((interactive: boolean) => {
+          setIsOverlayInteractive(interactive);
+        });
       }
     }
+
+    return () => {
+      if (unsubscribePlayers) unsubscribePlayers();
+      if (unsubscribeInteractive) unsubscribeInteractive();
+    };
   }, []);
 
   return (
     <>
+      {/* Full solid black background when interactive / focused */}
+      <AnimatePresence>
+        {isOverlayInteractive && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-[#000000] z-[9900] pointer-events-auto select-none transition-all duration-300"
+          />
+        )}
+      </AnimatePresence>
+
       <div className={cn("fixed z-[9999] flex flex-col gap-3 pointer-events-none select-none", positionClasses)}>
         {/* Title tag - minimal, matches Discord Overlay appearance */}
         {players && players.length > 0 && (
           <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/75 border border-white/5 backdrop-blur-md mb-1 shadow-lg shadow-black/30">
             <span className="h-2 w-2 rounded-full bg-[#22c55e] animate-ping" />
-            <span className="text-[10px] font-black tracking-wider text-white uppercase font-sans">LOXX DISCORD OVERLAY</span>
+            <span className="text-[10px] font-black tracking-wider text-white uppercase font-sans">LOXX LOBBY</span>
             <span className="text-[9px] text-gray-400 font-mono">({players.length})</span>
           </div>
         )}

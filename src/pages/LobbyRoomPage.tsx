@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { useLobby } from "../context/LobbyContext";
 import { useAuth } from "../context/AuthContext";
+import { Sidebar } from "../components/layout/Sidebar";
 import { useWebRTC } from "../hooks/useWebRTC";
 import { chatSocket, lobbySocket, voiceSocket, getSharedAudioContext, resumeSharedAudioContext } from "../lib/socket";
 import { toast } from "react-hot-toast";
@@ -147,7 +148,7 @@ export const LobbyRoomPage = () => {
     setLauncherRichPresenceEnabled
   } = useLobby();
 
-  const { user } = useAuth();
+  const { user, isSidebarCollapsed } = useAuth();
   const { openChat, addFriend } = useFriends();
   const { openProfile } = useProfilePopover();
   
@@ -350,7 +351,10 @@ export const LobbyRoomPage = () => {
   const { friends } = useFriends();
 
   return (
-    <div className="h-[calc(100vh-64px)] bg-[#050508] text-white p-2 md:p-6 lg:p-8 flex flex-col gap-4 md:gap-6 relative overflow-hidden font-sans" dir="rtl">
+    <div className={cn("flex min-h-[calc(100vh-64px)] bg-[#050508] overflow-x-hidden", isElectron ? "min-h-[calc(100vh-100px)]" : "min-h-[calc(100vh-64px)]")} dir="rtl">
+      <Sidebar />
+      <main className={cn("flex-1 min-w-0 relative transition-all duration-300", !isSidebarCollapsed ? "md:mr-64" : "md:mr-20")}>
+        <div className="h-full min-h-[calc(100vh-64px)] bg-[#050508] text-white p-2 md:p-6 lg:p-8 flex flex-col gap-4 md:gap-6 relative overflow-hidden font-sans">
       {!user?.isVerified && (
         <div className="fixed top-20 left-4 right-4 z-[100] bg-neon-pink/20 backdrop-blur-md border border-neon-pink/30 rounded-2xl p-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -1015,6 +1019,8 @@ export const LobbyRoomPage = () => {
           </Modal>
         )}
       </AnimatePresence>
+        </div>
+      </main>
     </div>
   );
 };

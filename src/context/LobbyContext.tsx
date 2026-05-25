@@ -95,6 +95,12 @@ interface LobbyContextType {
   setOverlaySize: (val: "small" | "medium" | "large") => void;
   overlayOnlyTalking: boolean;
   setOverlayOnlyTalking: (val: boolean) => void;
+  overlayToastPosition: "top-left" | "top-right" | "bottom-left" | "bottom-right";
+  setOverlayToastPosition: (val: "top-left" | "top-right" | "bottom-left" | "bottom-right") => void;
+  overlayToastXOffset: number;
+  setOverlayToastXOffset: (val: number) => void;
+  overlayToastYOffset: number;
+  setOverlayToastYOffset: (val: number) => void;
 
   // Electron Launcher Specific Settings
   isElectron: boolean;
@@ -183,6 +189,29 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return false;
   });
 
+  const [overlayToastPosition, setOverlayToastPosition] = useState<"top-left" | "top-right" | "bottom-left" | "bottom-right">(() => {
+    if (typeof window !== "undefined") {
+      return (localStorage.getItem("loxx_overlay_toast_position") as any) || "bottom-right";
+    }
+    return "bottom-right";
+  });
+
+  const [overlayToastXOffset, setOverlayToastXOffset] = useState<number>(() => {
+    if (typeof window !== "undefined") {
+      const val = localStorage.getItem("loxx_overlay_toast_x_offset");
+      return val !== null ? parseInt(val, 10) : 40;
+    }
+    return 40;
+  });
+
+  const [overlayToastYOffset, setOverlayToastYOffset] = useState<number>(() => {
+    if (typeof window !== "undefined") {
+      const val = localStorage.getItem("loxx_overlay_toast_y_offset");
+      return val !== null ? parseInt(val, 10) : 40;
+    }
+    return 40;
+  });
+
   // Sync state changes to localStorage
   useEffect(() => {
     localStorage.setItem("loxx_overlay_enabled", String(overlayEnabled));
@@ -199,6 +228,18 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => {
     localStorage.setItem("loxx_overlay_only_talking", String(overlayOnlyTalking));
   }, [overlayOnlyTalking]);
+
+  useEffect(() => {
+    localStorage.setItem("loxx_overlay_toast_position", overlayToastPosition);
+  }, [overlayToastPosition]);
+
+  useEffect(() => {
+    localStorage.setItem("loxx_overlay_toast_x_offset", String(overlayToastXOffset));
+  }, [overlayToastXOffset]);
+
+  useEffect(() => {
+    localStorage.setItem("loxx_overlay_toast_y_offset", String(overlayToastYOffset));
+  }, [overlayToastYOffset]);
 
   // Use refs to track latest state for socket listeners
   const lobbyRef = useRef<LobbyState | null>(null);
@@ -1056,6 +1097,12 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setOverlaySize,
       overlayOnlyTalking,
       setOverlayOnlyTalking,
+      overlayToastPosition,
+      setOverlayToastPosition,
+      overlayToastXOffset,
+      setOverlayToastXOffset,
+      overlayToastYOffset,
+      setOverlayToastYOffset,
 
       // Electron bindings
       isElectron,

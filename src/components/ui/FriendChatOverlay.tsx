@@ -1,16 +1,31 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence, useDragControls } from "motion/react";
 import { useFriends } from "../../context/FriendsContext";
-import { MessageSquare, X, Minus, Send, MessageCircle, Crown, Info, Users } from "lucide-react";
+import { MessageSquare, X, Minus, Send, MessageCircle, Crown, Info, Users, Settings, Sliders, Layout } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { LobbyInviteCard } from "./LobbyInviteCard";
 import { FriendStatus } from "../../types";
 import { UserBadges } from "./UserBadges";
 import { useAuth } from "../../context/AuthContext";
+import { useLobby } from "../../context/LobbyContext";
 
 export const FriendChatOverlay = () => {
   const { chats, friends, sendMessage, markAsRead, closeChat, activeChatId, setActiveChatId, chatTrigger, openChat } = useFriends();
   const { user } = useAuth();
+  const { 
+    overlayPosition, 
+    setOverlayPosition,
+    overlaySize,
+    setOverlaySize,
+    overlayOnlyTalking,
+    setOverlayOnlyTalking,
+    overlayToastPosition,
+    setOverlayToastPosition,
+    overlayToastXOffset,
+    setOverlayToastXOffset,
+    overlayToastYOffset,
+    setOverlayToastYOffset
+  } = useLobby();
   const [isMinimized, setIsMinimized] = useState(false);
   const [inputMessage, setInputMessage] = useState("");
   const [chatDirection, setChatDirection] = useState<"up" | "down">("up");
@@ -68,7 +83,7 @@ export const FriendChatOverlay = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 z-[9900] flex flex-col items-center justify-start pt-8 pointer-events-auto select-none"
+            className="fixed inset-0 bg-[#000000] z-[9900] flex flex-col items-center justify-start pt-8 pointer-events-auto select-none transition-all duration-300"
             dir="rtl"
           >
             <div className="bg-black/80 border border-white/10 px-6 py-2.5 rounded-full backdrop-blur-md shadow-[0_0_30px_rgba(0,0,0,0.8)] flex items-center gap-3">
@@ -78,6 +93,173 @@ export const FriendChatOverlay = () => {
                 <kbd className="bg-white/10 border border-white/20 rounded px-2 text-neon-blue font-mono text-xs mx-1 leading-none shadow-inner h-6 flex items-center justify-center">Alt+F2</kbd> 
                 را بفشارید.
               </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Friends list sidebar panel in the Interactive Overlay */}
+      <AnimatePresence>
+        {isOverlayWidget && isOverlayInteractive && (
+          <motion.div
+            initial={{ opacity: 0, x: -50, scale: 0.95 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: -50, scale: 0.95 }}
+            transition={{ type: "spring", damping: 20 }}
+            className="fixed left-6 top-24 bottom-24 w-[300px] bg-[#0a0a0f]/95 border border-white/10 rounded-2xl flex flex-col shadow-[0_20px_50px_rgba(0,0,0,0.8)] backdrop-blur-xl z-[9999] pointer-events-auto overflow-hidden text-right"
+            dir="rtl"
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-white/5 bg-white/5 px-4 py-3">
+              <span className="font-black text-xs text-white uppercase italic tracking-wider">تنظیمات لایو لابی و اعلانات</span>
+              <Settings size={14} className="text-neon-pink" />
+            </div>
+
+            {/* Scrollable Settings Form */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-5 custom-scrollbar text-xs">
+              
+              {/* Placement Setup HUD */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-white font-bold mb-1">
+                  <Layout size={13} className="text-neon-blue" />
+                  <span>موقعیت نمایشگر اعضا (HUD)</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { id: "top-left", name: "بالا چپ" },
+                    { id: "top-right", name: "بالا راست" },
+                    { id: "bottom-left", name: "پایین چپ" },
+                    { id: "bottom-right", name: "پایین راست" }
+                  ].map((p) => (
+                    <button
+                      key={p.id}
+                      onClick={() => setOverlayPosition(p.id as any)}
+                      className={cn(
+                        "py-2 px-3 rounded-xl border font-bold text-center transition-all",
+                        overlayPosition === p.id 
+                          ? "bg-neon-blue/10 border-neon-blue text-white shadow-[0_0_10px_rgba(0,195,255,0.2)]"
+                          : "bg-white/5 border-white/5 text-gray-400 hover:bg-white/10 hover:border-white/10"
+                      )}
+                    >
+                      {p.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Display Size HUD */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-white font-bold mb-1">
+                  <Sliders size={13} className="text-neon-blue" />
+                  <span>اندازه نمایشگر اعضا (HUD)</span>
+                </div>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {[
+                    { id: "small", name: "کوچک" },
+                    { id: "medium", name: "متوسط" },
+                    { id: "large", name: "بزرگ" }
+                  ].map((s) => (
+                    <button
+                      key={s.id}
+                      onClick={() => setOverlaySize(s.id as any)}
+                      className={cn(
+                        "py-1.5 rounded-lg border font-bold text-center transition-all text-[11px]",
+                        overlaySize === s.id 
+                          ? "bg-neon-blue/10 border-neon-blue text-white"
+                          : "bg-white/5 border-white/5 text-gray-400 hover:bg-white/10"
+                      )}
+                    >
+                      {s.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Speech Filter */}
+              <div className="flex items-center justify-between bg-white/5 border border-white/5 rounded-xl p-3">
+                <div className="flex flex-col gap-0.5 text-right">
+                  <span className="font-bold text-white">فقط در حال صحبت</span>
+                  <span className="text-[10px] text-gray-500">مخفی کردن اعضای ساکت</span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={overlayOnlyTalking}
+                  onChange={(e) => setOverlayOnlyTalking(e.target.checked)}
+                  className="w-4 h-4 rounded border-gray-300 text-neon-blue focus:ring-neon-blue/50 accent-neon-blue"
+                />
+              </div>
+
+              <div className="border-t border-white/5 my-2"></div>
+
+              {/* Notification Position */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-white font-bold mb-1">
+                  <Layout size={13} className="text-neon-pink" />
+                  <span>موقعیت نمایش اعلانات</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { id: "top-left", name: "بالا چپ" },
+                    { id: "top-right", name: "بالا راست" },
+                    { id: "bottom-left", name: "پایین چپ" },
+                    { id: "bottom-right", name: "پایین راست" }
+                  ].map((p) => (
+                    <button
+                      key={p.id}
+                      onClick={() => setOverlayToastPosition(p.id as any)}
+                      className={cn(
+                        "py-2 px-3 rounded-xl border font-bold text-center transition-all",
+                        overlayToastPosition === p.id 
+                          ? "bg-neon-pink/10 border-neon-pink text-white shadow-[0_0_10px_rgba(255,0,127,0.2)]"
+                          : "bg-white/5 border-white/5 text-gray-400 hover:bg-white/10 hover:border-white/10"
+                      )}
+                    >
+                      {p.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Notification Offsets */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 text-white font-bold">
+                  <Sliders size={13} className="text-neon-pink" />
+                  <span>تنظیم دقیق حاشیه اعلانات (پیکسل)</span>
+                </div>
+                
+                {/* X OFFSET */}
+                <div className="space-y-1">
+                  <div className="flex justify-between text-gray-400 text-[10px]">
+                    <span className="font-mono text-neon-pink">{overlayToastXOffset}px</span>
+                    <span>فاصله افقی (X)</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="300"
+                    value={overlayToastXOffset}
+                    onChange={(e) => setOverlayToastXOffset(parseInt(e.target.value, 10))}
+                    className="w-full accent-neon-pink bg-white/5 h-1 rounded-lg cursor-pointer animate-none"
+                  />
+                </div>
+
+                {/* Y OFFSET */}
+                <div className="space-y-1">
+                  <div className="flex justify-between text-gray-400 text-[10px]">
+                    <span className="font-mono text-neon-pink">{overlayToastYOffset}px</span>
+                    <span>فاصله عمودی (Y)</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="300"
+                    value={overlayToastYOffset}
+                    onChange={(e) => setOverlayToastYOffset(parseInt(e.target.value, 10))}
+                    className="w-full accent-neon-pink bg-white/5 h-1 rounded-lg cursor-pointer animate-none"
+                  />
+                </div>
+              </div>
+
             </div>
           </motion.div>
         )}

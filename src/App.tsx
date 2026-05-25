@@ -11,7 +11,7 @@ import { Navbar } from "./components/layout/Navbar";
 import { BottomNav } from "./components/layout/BottomNav";
 import { LandingPage } from "./pages/LandingPage";
 import { AuthPage } from "./pages/AuthPage";
-import { LobbyProvider } from "./context/LobbyContext";
+import { LobbyProvider, useLobby } from "./context/LobbyContext";
 import { FriendsProvider } from "./context/FriendsContext";
 import { GamesProvider } from "./context/GamesContext";
 import { ProfilePopoverProvider } from "./context/ProfilePopoverContext";
@@ -51,6 +51,7 @@ import { ElectronSettingsPage } from "./pages/ElectronSettingsPage";
 
 const AppContent = () => {
   const { isSidebarCollapsed } = useAuth();
+  const { overlayToastPosition, overlayToastXOffset, overlayToastYOffset } = useLobby();
   const location = useLocation();
   const isLanding = location.pathname === "/";
   const isOverlayWidget = location.pathname === "/lobby/overlay-widget";
@@ -78,6 +79,37 @@ const AppContent = () => {
     if (isOverlayWidget) return 40;
     if (hideSidebar || !isDesktop) return 24; // standard margin
     return isSidebarCollapsed ? 96 : 280; // on desktop, clear collapsed/expanded sidebar
+  };
+
+  const getDynamicToasterStyle = () => {
+    if (!isOverlayWidget) {
+      return {
+        bottom: 80,
+        right: getToasterRight(),
+        left: "auto",
+        zIndex: 999999999,
+      };
+    }
+
+    const style: any = {
+      zIndex: 999999999,
+    };
+
+    if (overlayToastPosition.includes("top")) {
+      style.top = overlayToastYOffset;
+    } else {
+      style.bottom = overlayToastYOffset;
+    }
+
+    if (overlayToastPosition.includes("left")) {
+      style.left = overlayToastXOffset;
+      style.right = "auto";
+    } else {
+      style.right = overlayToastXOffset;
+      style.left = "auto";
+    }
+
+    return style;
   };
 
   const handleSplashComplete = () => {
@@ -221,14 +253,9 @@ const AppContent = () => {
       <FriendChatOverlay />
       
       <Toaster 
-        position="bottom-right" 
+        position={isOverlayWidget ? overlayToastPosition : "bottom-right"} 
         gutter={12}
-        containerStyle={{
-          bottom: isOverlayWidget ? 40 : 80,
-          right: getToasterRight(),
-          left: "auto",
-          zIndex: 999999999,
-        }}
+        containerStyle={getDynamicToasterStyle()}
         containerClassName="pointer-events-none"
         toastOptions={{
           className: 'modern-glass-toast pointer-events-auto',

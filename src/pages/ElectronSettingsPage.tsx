@@ -5,9 +5,24 @@ import { toast } from "react-hot-toast";
 import { useAuth } from "../context/AuthContext";
 import { cn } from "../lib/utils";
 import { Sidebar } from "../components/layout/Sidebar";
+import { useLobby } from "../context/LobbyContext";
 
 export const ElectronSettingsPage = () => {
   const { user, isSidebarCollapsed } = useAuth();
+  const { 
+    overlayPosition, 
+    setOverlayPosition,
+    overlaySize,
+    setOverlaySize,
+    overlayOnlyTalking,
+    setOverlayOnlyTalking,
+    overlayToastPosition,
+    setOverlayToastPosition,
+    overlayToastXOffset,
+    setOverlayToastXOffset,
+    overlayToastYOffset,
+    setOverlayToastYOffset
+  } = useLobby();
   const [config, setConfig] = useState<any>({});
   const [recordingKey, setRecordingKey] = useState<string | null>(null);
 
@@ -138,6 +153,113 @@ export const ElectronSettingsPage = () => {
                       type="range" min="0" max="1" step="0.1" 
                       value={config.overlayOpacity !== undefined ? config.overlayOpacity : 0.9} 
                       onChange={e => updateSetting("overlayOpacity", parseFloat(e.target.value))} 
+                      className="w-full accent-[#00e5ff]" 
+                    />
+                  </div>
+
+                  {/* Position HUD */}
+                  <div>
+                    <label className="text-sm text-gray-400 font-bold block mb-2">موقعیت صفحه اعضا (HUD)</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {[
+                        { id: "top-left", name: "بالا چپ" },
+                        { id: "top-right", name: "بالا راست" },
+                        { id: "bottom-left", name: "پایین چپ" },
+                        { id: "bottom-right", name: "پایین راست" }
+                      ].map((p) => (
+                        <button
+                          key={p.id}
+                          onClick={() => setOverlayPosition(p.id as any)}
+                          className={cn(
+                            "py-2 px-3 rounded-lg border font-bold text-center transition-all text-xs",
+                            overlayPosition === p.id 
+                              ? "bg-[#00e5ff]/20 border-[#00e5ff] text-[#00e5ff]"
+                              : "bg-white/5 border-white/10 text-gray-400 hover:bg-white/10"
+                          )}
+                        >
+                          {p.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Size HUD */}
+                  <div>
+                    <label className="text-sm text-gray-400 font-bold block mb-2">اندازه آواتارها و اسامی</label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[
+                        { id: "small", name: "کوچک" },
+                        { id: "medium", name: "متوسط" },
+                        { id: "large", name: "بزرگ" }
+                      ].map((s) => (
+                        <button
+                          key={s.id}
+                          onClick={() => setOverlaySize(s.id as any)}
+                          className={cn(
+                            "py-2 rounded-lg border font-bold text-center transition-all text-xs",
+                            overlaySize === s.id 
+                              ? "bg-[#00e5ff]/20 border-[#00e5ff] text-[#00e5ff]"
+                              : "bg-white/5 border-white/10 text-gray-400 hover:bg-white/10"
+                          )}
+                        >
+                          {s.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="border-t border-white/5 my-3"></div>
+
+                  {/* Toast placement */}
+                  <div>
+                    <label className="text-sm text-gray-400 font-bold block mb-2">موقعیت نمایش اعلانات (Toasts)</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {[
+                        { id: "top-left", name: "بالا چپ" },
+                        { id: "top-right", name: "بالا راست" },
+                        { id: "bottom-left", name: "پایین چپ" },
+                        { id: "bottom-right", name: "پایین راست" }
+                      ].map((p) => (
+                        <button
+                          key={p.id}
+                          onClick={() => setOverlayToastPosition(p.id as any)}
+                          className={cn(
+                            "py-2 px-3 rounded-lg border font-bold text-center transition-all text-xs",
+                            overlayToastPosition === p.id 
+                              ? "bg-[#00e5ff]/20 border-[#00e5ff] text-[#00e5ff]"
+                              : "bg-white/5 border-white/10 text-gray-400 hover:bg-white/10"
+                          )}
+                        >
+                          {p.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Offset X Slider */}
+                  <div>
+                    <div className="flex justify-between text-gray-400 text-xs mb-1">
+                      <span className="font-mono text-[#00e5ff]">{overlayToastXOffset}px</span>
+                      <span>فاصله افقی اعلانات از حاشیه (X)</span>
+                    </div>
+                    <input 
+                      type="range" min="0" max="300" 
+                      value={overlayToastXOffset} 
+                      onChange={e => setOverlayToastXOffset(parseInt(e.target.value, 10))} 
+                      className="w-full accent-[#00e5ff]" 
+                    />
+                  </div>
+
+                  {/* Offset Y Slider */}
+                  <div>
+                    <div className="flex justify-between text-gray-400 text-xs mb-1">
+                      <span className="font-mono text-[#00e5ff]">{overlayToastYOffset}px</span>
+                      <span>فاصله عمودی اعلانات از حاشیه (Y)</span>
+                    </div>
+                    <input 
+                      type="range" min="0" max="300" 
+                      value={overlayToastYOffset} 
+                      onChange={e => setOverlayToastYOffset(parseInt(e.target.value, 10))} 
                       className="w-full accent-[#00e5ff]" 
                     />
                   </div>

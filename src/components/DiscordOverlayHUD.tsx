@@ -56,7 +56,7 @@ export const DiscordOverlayHUD = () => {
       {/* Title tag - minimal, matches Discord Overlay appearance */}
       <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/75 border border-white/5 backdrop-blur-md mb-1 shadow-lg shadow-black/30">
         <span className="h-2 w-2 rounded-full bg-[#22c55e] animate-ping" />
-        <span className="text-[10px] font-black tracking-wider text-white uppercase font-sans">LOXX DISCORD OVERLAY</span>
+        <span className="text-[10px] font-black tracking-wider text-white uppercase font-sans">LOXX LOBBY</span>
         <span className="text-[9px] text-gray-400 font-mono">({lobby.players?.length || 0})</span>
       </div>
 
