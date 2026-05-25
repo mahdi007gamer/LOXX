@@ -362,8 +362,10 @@ app.whenReady().then(() => {
           focusable: true, // Needs focusability for interactive mode
           opacity: Number(config.overlayOpacity !== undefined ? config.overlayOpacity : 0.9),
           webPreferences: {
+            preload: path.join(__dirname, 'preload.js'),
             nodeIntegration: false,
             contextIsolation: true,
+            webSecurity: true,
             backgroundThrottling: false // Keep rendering HUD even if game is focused
           }
         });
@@ -510,6 +512,10 @@ app.whenReady().then(() => {
       } catch (err) {
         console.error("Failed to show/focus main window on action:", err);
       }
+    }
+    // Automatically turn off overlay interactive mode on action to hide/reset Alt+F2 state
+    if (isOverlayInteractive) {
+      toggleOverlayInteraction();
     }
   });
 
