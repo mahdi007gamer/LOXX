@@ -32,7 +32,25 @@ export const useWebRTC = (roomId: string | null, localStream: MediaStream | null
   useEffect(() => {
     if (!roomId || !userId) return;
 
-    voiceSocket.emit('voice.join', { roomId });
+    voiceSocket.emit('voice.join', { roomId }, (response?: { users: string[] }) => {
+      if (response && response.users) {
+        response.users.forEach((existingUserId: string) => {
+          if (!peersRef.current.has(existingUserId)) {
+            const pc = createPeer(existingUserId);
+            peersRef.current.set(existingUserId, pc);
+          }
+        });
+      }
+    });
+
+    const handleExistingUsers = ({ users }: { users: string[] }) => {
+      users.forEach((existingUserId: string) => {
+        if (!peersRef.current.has(existingUserId)) {
+          const pc = createPeer(existingUserId);
+          peersRef.current.set(existingUserId, pc);
+        }
+      });
+    };
 
     const createPeer = (targetUserId: string) => {
       const pc = new RTCPeerConnection({
@@ -161,12 +179,14 @@ export const useWebRTC = (roomId: string | null, localStream: MediaStream | null
     };
 
     voiceSocket.on('voice.user_joined', handleUserJoined);
+    voiceSocket.on('voice.existing_users', handleExistingUsers);
     voiceSocket.on('voice.user_left', handleUserLeft);
     voiceSocket.on('voice.signal', handleSignal);
 
     return () => {
       voiceSocket.emit('voice.leave', { roomId });
       voiceSocket.off('voice.user_joined', handleUserJoined);
+      voiceSocket.off('voice.existing_users', handleExistingUsers);
       voiceSocket.off('voice.user_left', handleUserLeft);
       voiceSocket.off('voice.signal', handleSignal);
 

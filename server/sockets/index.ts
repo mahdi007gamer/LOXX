@@ -170,10 +170,26 @@ export function setupWebSockets(io: Server) {
     socket.join(`user:${userId}`);
     trackUser(userId, socket.id);
 
-    socket.on("voice.join", (data: { roomId: string }) => {
+    socket.on("voice.join", async (data: { roomId: string }, ack?: any) => {
       socket.join(`voice:${data.roomId}`);
       // Notify others in the room
       socket.to(`voice:${data.roomId}`).emit("voice.user_joined", { userId });
+      
+      // Get existing sockets in this voice room
+      try {
+         const sockets = await voiceNs.in(`voice:${data.roomId}`).fetchSockets();
+         const existingUserIds = sockets
+           .map((s: any) => s.userId)
+           .filter((id: string) => id && id !== userId);
+         
+         // Remove duplicates
+         const uniqueUsers = Array.from(new Set(existingUserIds));
+         if (ack) {
+           ack({ users: uniqueUsers });
+         } else {
+           socket.emit("voice.existing_users", { users: uniqueUsers });
+         }
+      } catch(e) {}
     });
 
     socket.on("voice.signal", (data: { targetUserId: string, signal: any }) => {

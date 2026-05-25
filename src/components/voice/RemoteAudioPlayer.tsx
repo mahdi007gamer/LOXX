@@ -16,7 +16,31 @@ export const RemoteAudioPlayer: React.FC<RemoteAudioPlayerProps> = ({ stream, on
       if (audioRef.current.srcObject !== stream) {
         audioRef.current.srcObject = stream;
       }
-      audioRef.current.play().catch(e => console.warn("AutoPlay blocked:", e));
+      
+      const attemptPlay = () => {
+        if (audioRef.current) {
+          audioRef.current.play().catch(e => console.warn("AutoPlay blocked, waiting for interaction..."));
+        }
+      };
+      
+      attemptPlay();
+      
+      // If AutoPlay is blocked, user interacting with the page usually unlocks it.
+      const handleInteraction = () => {
+        if (audioRef.current && audioRef.current.paused) {
+          audioRef.current.play().catch(() => {});
+        }
+        document.removeEventListener("click", handleInteraction);
+        document.removeEventListener("touchstart", handleInteraction);
+      };
+      
+      document.addEventListener("click", handleInteraction);
+      document.addEventListener("touchstart", handleInteraction);
+      
+      return () => {
+        document.removeEventListener("click", handleInteraction);
+        document.removeEventListener("touchstart", handleInteraction);
+      };
     }
   }, [stream]);
 
