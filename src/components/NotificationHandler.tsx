@@ -150,6 +150,9 @@ export const NotificationHandler = () => {
     notifySocket.on("notification", (data: any) => {
       if (data.type === "LOBBY_INVITE") {
         handleLobbyInvite(data);
+      } else if (data.type === "MESSAGE_RECEIVED") {
+        // Ignored to avoid duplicate toasts as FriendsContext handles DM rendering beautifully with sender and body
+        return;
       } else {
         playNotifySFX();
         toast(data.message || "اطلاعیه جدید دریافت شد");

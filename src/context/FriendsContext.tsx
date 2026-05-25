@@ -241,11 +241,10 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
         });
 
         if (!isSelf) {
-          // If the message is not self, we show a toast
-          // and if this chat is not the active one, we might notify differently
-          // No need to forcefully open chat if not requested by user, but user said message icon not working.
+          // If the message is not self, we show a toast with unified sender and content (respecting length limit)
           if (activeChatId !== friendId) {
-            toast(`پیام جدید از ${from.username}`, { icon: '💬' });
+            const displayContent = content.length > 50 ? content.slice(0, 50) + "..." : content;
+            toast(`${from.username}: ${displayContent}`, { icon: '💬' });
           }
         }
       });

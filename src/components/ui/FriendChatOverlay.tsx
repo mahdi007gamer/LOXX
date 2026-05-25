@@ -10,6 +10,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useLobby } from "../../context/LobbyContext";
 import { useProfilePopover } from "../../context/ProfilePopoverContext";
 import { toast } from "react-hot-toast";
+import { chatSocket } from "../../lib/socket";
 
 export const FriendChatOverlay = () => {
   const { chats, friends, sendMessage, markAsRead, closeChat, activeChatId, setActiveChatId, chatTrigger, openChat } = useFriends();
@@ -33,6 +34,7 @@ export const FriendChatOverlay = () => {
   const [inputMessage, setInputMessage] = useState("");
   const [chatDirection, setChatDirection] = useState<"up" | "down">("up");
   const [isOverlayInteractive, setIsOverlayInteractive] = useState(false);
+  const [showDmPrompt, setShowDmPrompt] = useState(false);
   const [friendSearch, setFriendSearch] = useState("");
   const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
   const isOverlayWidget = isElectron && (
@@ -128,6 +130,31 @@ export const FriendChatOverlay = () => {
     }
   }, [activeChatId, chatTrigger]);
 
+  // Handle DM incoming prompt top banner with 5s auto-hide on Windows client
+  useEffect(() => {
+    if (!isOverlayWidget) return;
+
+    let timer: NodeJS.Timeout;
+    const handleMessage = (data: any) => {
+      // Ignore messages from self and non-direct chats
+      if (data.from?.userId === user?.id) return;
+      if (data.targetType === "lobby" || data.targetType === "channel") return;
+
+      setShowDmPrompt(true);
+
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        setShowDmPrompt(false);
+      }, 5000);
+    };
+
+    chatSocket.on("chat.message", handleMessage);
+    return () => {
+      chatSocket.off("chat.message", handleMessage);
+      if (timer) clearTimeout(timer);
+    };
+  }, [isOverlayWidget, user?.id]);
+
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputMessage.trim() || !activeChatId) return;
@@ -176,6 +203,31 @@ export const FriendChatOverlay = () => {
                 حالت تعاملی لوکس فعال است. برای خروج از این حالت دکمه
                 <kbd className="bg-white/10 border border-white/20 rounded px-2 text-neon-blue font-mono text-xs mx-1 leading-none shadow-inner h-6 flex items-center justify-center">Alt+F2</kbd> 
                 را بفشارید.
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* DM Incoming Prompt Banner when not in interactive mode on Windows version */}
+      <AnimatePresence>
+        {isOverlayWidget && !isOverlayInteractive && showDmPrompt && (
+          <motion.div
+            key="dm-incoming-overlay-prompt-banner"
+            initial={{ opacity: 0, y: -50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -50 }}
+            transition={{ type: "spring", damping: 15 }}
+            style={{ zIndex: 99999999 }}
+            className="fixed top-8 left-0 right-0 flex justify-center pointer-events-none select-none"
+            dir="rtl"
+          >
+            <div className="bg-[#0c0c14]/95 border border-neon-pink/30 px-6 py-2.5 rounded-full backdrop-blur-md shadow-[0_0_30px_rgba(255,0,127,0.25)] flex items-center gap-3 pointer-events-auto">
+              <MessageSquare size={16} className="text-neon-pink animate-bounce" />
+              <p className="text-white text-xs font-bold flex items-center gap-2">
+                پیام جدید؛ برای گفتگو دکمه
+                <kbd className="bg-white/10 border border-white/20 rounded px-2 text-neon-pink font-mono text-xs mx-1 leading-none shadow-inner h-6 flex items-center justify-center">Alt+F2</kbd> 
+                را فشار دهید.
               </p>
             </div>
           </motion.div>
