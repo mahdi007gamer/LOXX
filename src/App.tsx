@@ -97,10 +97,9 @@ const AppContent = () => {
 
     if (!isOverlayWidget) {
       // Normal application mode
-      let targetRight = 24; // default offset
-      if (!hideSidebar && isDesktop) {
-        targetRight = isSidebarCollapsed ? 96 : 300;
-      }
+      // User requested it to be placed fully to the right (راست تر), not too far inside the center.
+      // So on desktop, we use a constant 24px from the right, identical to mobile / standard margin.
+      const targetRight = 24; 
 
       // Ensure the toast won't clip on the left/right boundaries of the screen
       const toastWidth = isMobile ? 310 : 380;
@@ -121,6 +120,7 @@ const AppContent = () => {
     const toastWidth = 360; 
     const toastHeight = 160;
 
+    // Strict clamping to guard against clipping and sticking out of the right side (limit at least 15px inside)
     const safeX = Math.max(15, Math.min(width - toastWidth - 15, overlayToastXOffset));
     const safeY = Math.max(15, Math.min(height - toastHeight - 15, overlayToastYOffset));
 
@@ -139,6 +139,11 @@ const AppContent = () => {
       style.right = safeX;
       style.left = "auto";
     }
+
+    // Enforce the size directly on the toaster container so that react-hot-toast's inner layout aligns flawlessly
+    style.width = `${toastWidth}px`;
+    style.maxWidth = `${toastWidth}px`;
+    style.minWidth = `${toastWidth}px`;
 
     return style;
   };

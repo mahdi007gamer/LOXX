@@ -407,16 +407,16 @@ export const FriendChatOverlay = () => {
               
               let newX = overlayToastXOffset;
               if (overlayToastPosition.includes("left")) {
-                newX = Math.round(Math.max(10, Math.min(width - 320, info.point.x - 140)));
+                newX = Math.round(Math.max(10, Math.min(width - 380, info.point.x - 180)));
               } else {
-                newX = Math.round(Math.max(10, Math.min(width - 320, width - info.point.x - 140)));
+                newX = Math.round(Math.max(10, Math.min(width - 380, width - info.point.x - 180)));
               }
 
               let newY = overlayToastYOffset;
               if (overlayToastPosition.includes("top")) {
-                newY = Math.round(Math.max(10, Math.min(height - 100, info.point.y - 25)));
+                newY = Math.round(Math.max(10, Math.min(height - 120, info.point.y - 45)));
               } else {
-                newY = Math.round(Math.max(10, Math.min(height - 100, height - info.point.y - 25)));
+                newY = Math.round(Math.max(10, Math.min(height - 120, height - info.point.y - 45)));
               }
 
               setOverlayToastXOffset(newX);
@@ -432,7 +432,7 @@ export const FriendChatOverlay = () => {
               left: overlayToastPosition.includes("left") ? overlayToastXOffset : "auto",
               right: overlayToastPosition.includes("right") ? overlayToastXOffset : "auto",
             }}
-            className="bg-[#0a0a14]/90 border-2 border-dashed border-neon-pink p-3 rounded-2xl shadow-[0_0_25px_rgba(255,0,127,0.35)] pointer-events-auto select-none flex items-center gap-3 text-white w-[280px] hover:border-solid hover:bg-[#0a0a14] transition-all"
+            className="bg-[#0a0a14]/90 border-2 border-dashed border-neon-pink p-3 rounded-2xl shadow-[0_0_25px_rgba(255,0,127,0.35)] pointer-events-auto select-none flex items-center gap-3 text-white w-[360px] hover:border-solid hover:bg-[#0a0a14] transition-all"
           >
             <div className="h-2 w-2 rounded-full bg-neon-pink animate-pulse shrink-0" />
             <div className="flex-1 flex flex-col text-right text-[10px]" dir="rtl">
