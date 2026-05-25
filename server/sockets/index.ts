@@ -1219,6 +1219,15 @@ export function setupWebSockets(io: Server) {
           };
           chatNs.to(`user:${target.id}`).emit("chat.message", msgPayload);
           chatNs.to(`user:${userId}`).emit("chat.message", msgPayload);
+
+          // Emit notification for the DM
+          const { emitNotification } = await import("../utils/socket");
+          emitNotification(target.id, "MESSAGE_RECEIVED", {
+             senderId: userId,
+             username: user.username,
+             message: safeContent.substring(0, 50) + (safeContent.length > 50 ? "..." : "")
+          });
+
           if (ack) ack({ status: "ok", data: { tempId, messageId: msg.id.toString(), createdAt: msg.createdAt.getTime() } });
           return;
         }

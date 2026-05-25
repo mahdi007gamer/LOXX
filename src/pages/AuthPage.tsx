@@ -244,17 +244,6 @@ export const AuthPage = () => {
                       icon={<Lock size={18} />} 
                       required
                     />
-
-                    {!isLogin && (
-                      <Input 
-                        label="کد معرف (هدیه شروع)" 
-                        placeholder="Invite Code" 
-                        name="referralCode"
-                        value={formData.referralCode}
-                        onChange={handleInputChange}
-                        icon={<Users size={18} />} 
-                      />
-                    )}
                     
                     {isLogin && (
                       <div className="flex justify-end">
@@ -338,20 +327,25 @@ export const AuthPage = () => {
                     )}
                   </GlowButton>
                 </div>
+
+                {step === "AUTH" && (
+                  <div className="pt-4 mt-4 border-t border-white/5">
+                    <button 
+                      type="button"
+                      onClick={() => setIsLogin(!isLogin)}
+                      className={`w-full py-4 text-sm font-black italic uppercase tracking-widest rounded-2xl border transition-all ${
+                        isLogin 
+                          ? 'bg-neon-pink/10 border-neon-pink/30 text-neon-pink hover:bg-neon-pink/20 shadow-[0_0_15px_rgba(255,0,127,0.15)]' 
+                          : 'bg-neon-blue/10 border-neon-blue/30 text-neon-blue hover:bg-neon-blue/20 shadow-[0_0_15px_rgba(0,229,255,0.15)]'
+                      }`}
+                    >
+                      {isLogin ? "ثبت‌نام در سرزمین لوکس" : "ورود به سرزمین لوکس"}
+                    </button>
+                  </div>
+                )}
               </form>
             </motion.div>
           </AnimatePresence>
-
-          {step === "AUTH" && (
-            <div className="mt-8 text-center">
-              <button 
-                onClick={() => setIsLogin(!isLogin)}
-                className={`text-xs font-black italic uppercase tracking-tighter transition-colors ${isLogin ? 'text-neon-pink hover:text-white' : 'text-neon-blue hover:text-white'}`}
-              >
-                {isLogin ? "هنوز اکانت نداری؟ همین حالا بساز" : "قبلاً ثبت‌نام کردی؟ وارد شو"}
-              </button>
-            </div>
-          )}
         </NeonCard>
       </div>
     </div>

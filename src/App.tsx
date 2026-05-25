@@ -47,6 +47,7 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AdminPage } from "./pages/AdminPage";
 
 import { PublicProfilePage } from "./pages/PublicProfilePage";
+import { ElectronSettingsPage } from "./pages/ElectronSettingsPage";
 
 const AppContent = () => {
   const location = useLocation();
@@ -138,6 +139,7 @@ const AppContent = () => {
           <Route path="/ranking" element={<ProtectedRoute><LeaderboardPage /></ProtectedRoute>} />
           <Route path="/premium" element={<ProtectedRoute><PremiumPage /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+          <Route path="/electron-settings" element={<ProtectedRoute><ElectronSettingsPage /></ProtectedRoute>} />
           <Route path="/friends" element={<ProtectedRoute><FriendsPage /></ProtectedRoute>} />
           <Route path="/invite/:code" element={<InviteRedirectPage />} />
           <Route path="/games" element={<ProtectedRoute><GamesPage /></ProtectedRoute>} />

@@ -7,6 +7,7 @@ import { cn } from "../../lib/utils";
 import { SmartImage } from "./SmartImage";
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "react-hot-toast";
+import { useFriends } from "../../context/FriendsContext";
 
 interface AppNotification {
   id: string;
@@ -28,6 +29,7 @@ export const NotificationCenter = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [specialRewardModal, setSpecialRewardModal] = useState<AppNotification | null>(null);
   const navigate = useNavigate();
+  const { openChat } = useFriends();
 
   const fetchNotifications = async () => {
     try {
@@ -99,6 +101,9 @@ export const NotificationCenter = () => {
     } else if (n.type === 'GROUP_INVITE') {
       const channelId = n.data?.channelId;
       if (channelId) navigate(`/chat`);
+    } else if (n.type === 'MESSAGE_RECEIVED' || n.type === 'FRIEND_ACTIVITY') {
+      const senderId = n.data?.senderId || n.sender?.id;
+      if (senderId) openChat(senderId, n.data?.username || n.sender?.username);
     } else {
       navigate('/dashboard');
     }

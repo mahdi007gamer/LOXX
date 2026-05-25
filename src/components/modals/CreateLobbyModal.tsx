@@ -29,6 +29,7 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
     maxPlayers: 5,
     region: "",
     isPrivate: false,
+    isLanMode: false,
     micRequired: false,
     metadata: {} as Record<string, string>,
     skillLevel: "متوسط",
@@ -391,11 +392,16 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
               {step === 3 && (
                 <motion.div key="step3" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="space-y-6">
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <button type="button" onClick={() => setFormData(p => ({...p, isPrivate: !p.isPrivate}))} className={`border rounded-2xl p-4 flex flex-col items-center justify-center gap-2 transition-all ${formData.isPrivate ? "border-white/20 bg-white/5 text-white" : "border-white/5 bg-[#16181c] text-gray-500 hover:border-white/10"}`}>
                        <Globe size={20} className={formData.isPrivate ? "text-white" : ""} />
                        <span className="font-bold text-sm text-white">لابی خصوصی</span>
                        <span className="text-[10px]">فقط با کد دعوت یا لینک</span>
+                    </button>
+                    <button type="button" onClick={() => setFormData(p => ({...p, isLanMode: !p.isLanMode}))} className={`border rounded-2xl p-4 flex flex-col items-center justify-center gap-2 transition-all ${formData.isLanMode ? "border-[#00e5ff]/50 bg-[#00e5ff]/10 text-white" : "border-white/5 bg-[#16181c] text-gray-500 hover:border-white/10"}`}>
+                       <Globe size={20} className={formData.isLanMode ? "text-[#00e5ff]" : ""} />
+                       <span className="font-bold text-sm text-white">حالت Lan (آفلاین)</span>
+                       <span className="text-[10px]">مستقیم بین بازیکنان</span>
                     </button>
                     <button type="button" onClick={() => setFormData(p => ({...p, micRequired: !p.micRequired}))} className={`border rounded-2xl p-4 flex flex-col items-center justify-center gap-2 transition-all ${formData.micRequired ? "border-white/20 bg-white/5 text-white" : "border-white/5 bg-[#16181c] text-gray-500 hover:border-white/10"}`}>
                        <Mic size={20} className={formData.micRequired ? "text-white" : ""} />

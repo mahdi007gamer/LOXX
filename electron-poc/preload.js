@@ -47,6 +47,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   
   // Native Game Detection & Rich Presence
   updateRichPresence: (gameName) => ipcRenderer.send('update-rich-presence', gameName),
+  sendGameDetectedReply: (isPlayingHeavyGame) => ipcRenderer.send('native-game-detected-reply', isPlayingHeavyGame),
   onGameDetected: (callback) => {
     const subscription = (event, game) => callback(game);
     ipcRenderer.on('native-game-detected', subscription);

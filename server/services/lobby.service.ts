@@ -21,6 +21,7 @@ export class LobbyService {
         skillLevel: data.skillLevel || data.rankRange,
         micRequired: !!data.micRequired,
         isPrivate: !!data.isPrivate,
+        isLanMode: !!data.isLanMode,
         members: {
           create: {
             userId,

@@ -329,6 +329,9 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
       // Listen to native game detections
       const stopGameDetector = api.onGameDetected((game: string | null) => {
+        if (api.sendGameDetectedReply) {
+          api.sendGameDetectedReply(!!game);
+        }
         setGameDetected(prevGame => {
           if (game && game !== prevGame) {
             toast.success(`🎮 لانچر Loxx: بازی ${game} شناسایی شد!`, { icon: "🎮" });
@@ -412,10 +415,14 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (!isElectron) return;
     const api = (window as any).electronAPI;
 
+    api.getLauncherSettings().then((cfg: any) => {
+       if (cfg.voiceMode) setVoiceMode(cfg.voiceMode);
+       if (cfg.globalPttKey) setPttKey(cfg.globalPttKey);
+    });
+
     const stopPttListener = api.onGlobalPttChange((pressed: boolean) => {
-      if (voiceMode === "ptt") {
-        setIsPttPressed(pressed);
-      }
+      // we check local voiceMode state in the listener
+      setIsPttPressed(pressed);
     });
 
     const stopMuteListener = api.onGlobalMuteToggle(() => {

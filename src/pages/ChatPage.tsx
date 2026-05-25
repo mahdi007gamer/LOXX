@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Sidebar } from "../components/layout/Sidebar";
 import { NeonCard } from "../components/ui/NeonCard";
 import { GlowButton } from "../components/ui/GlowButton";
@@ -599,6 +599,7 @@ export const ChatPage: React.FC = () => {
   const { allGames: games, myGames } = useGames();
   const { user, isSidebarCollapsed } = useAuth();
   const { lobby } = useLobby();
+  const [searchParams] = useSearchParams();
   const [activeChannelId, setActiveChannelId] = useState("general");
   const [messages, setMessages] = useState<Record<string, ChatMessage[]>>({});
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
@@ -700,6 +701,22 @@ export const ChatPage: React.FC = () => {
   
   const { friends, chats, activeChatId, openChat, sendMessage: sendFriendMessage } = useFriends();
   const [isFriendsLoading, setIsFriendsLoading] = useState(false);
+
+  useEffect(() => {
+    const targetUserId = searchParams.get("user");
+    if (targetUserId) {
+      // Find friend by id to open chat
+      const targetFriend = friends.find(f => f.id === targetUserId);
+      if (targetFriend) {
+        openChat(targetUserId);
+        setActiveChannelId("DMs"); // Ensure DM view is active if applicable
+      } else {
+        // Optimistic open in case friend isn't loaded yet?
+        openChat(targetUserId); 
+        setActiveChannelId("DMs");
+      }
+    }
+  }, [searchParams, friends, openChat]);
 
   useEffect(() => {
     if (showFriendsSidebar) {

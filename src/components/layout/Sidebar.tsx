@@ -60,6 +60,21 @@ export const Sidebar = () => {
             </NavLink>
           ))}
           
+          {isElectron && (
+            <NavLink
+              to="/electron-settings"
+              className={({ isActive }) => cn(
+                "flex items-center gap-3 rounded-lg px-4 py-3 transition-all duration-300",
+                isActive 
+                  ? "bg-neon-blue/10 text-neon-blue shadow-[inset_0_0_10px_rgba(0,229,255,0.1)] border-r-2 border-neon-blue" 
+                  : "text-indigo-400/80 hover:bg-white/5 hover:text-indigo-400"
+              )}
+            >
+              <Settings size={20} />
+              <span className="font-medium">تنظیمات ویندوز</span>
+            </NavLink>
+          )}
+          
           {(user?.role === "ADMIN" || user?.email === "admin@loxx.ir" || user?.email === "admin@test.com") && (
             <NavLink
               to="/admin"

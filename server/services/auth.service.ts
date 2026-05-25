@@ -11,6 +11,17 @@ const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET || "refresh_secret
 export class AuthService {
   static async register(data: RegisterDTO & { referralCode?: string }) {
     const normalizedPhone = this.normalizePhone(data.phone);
+    
+    // Check for existing users to return friendly messages
+    const existingUsername = await prisma.user.findUnique({ where: { username: data.username } });
+    if (existingUsername) {
+      throw new Error("این نام کاربری قبلاً در سیستم ثبت شده است.");
+    }
+    const existingPhone = await prisma.user.findUnique({ where: { phone: normalizedPhone } });
+    if (existingPhone) {
+      throw new Error("این شماره موبایل قبلاً در سیستم ثبت شده است.");
+    }
+
     const passwordHash = await argon2.hash(data.password);
     const verificationToken = uuidv4();
     const isAdmin = normalizedPhone === "13781378" || data.username === "admin";

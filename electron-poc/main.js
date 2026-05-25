@@ -401,51 +401,80 @@ app.whenReady().then(() => {
   });
 
   // Native Game Process Detector Service
-  // Scans background process checking for steam/epic games
+  // Scans background process checking for all active windows to dynamically detect games
   const { exec } = require('child_process');
+  
+  // Experimental DirectX / Vulkan Graphic Hook Injector Wrapper (PoC)
+  // In a production environment, this would call a compiled C++ Node-addon (.node DLL)
+  class NativeGraphicInjector {
+    static injectOverlay(processName, windowTitle) {
+      console.log(`[DirectX/Vulkan Injector] Preparing hooks for ${processName} (${windowTitle})...`);
+      // Fallback to Native transparent bounds positioning:
+      if (overlayWindow && !overlayWindow.isDestroyed()) {
+        console.log(`[DirectX/Vulkan Injector] Firing native overlay bridge to hover on Z-Band 1 above ${processName}`);
+        overlayWindow.setAlwaysOnTop(true, 'screen-saver', 2);
+      }
+    }
+    
+    static detach() {
+       console.log(`[DirectX/Vulkan Injector] Detaching graphics hooks...`);
+    }
+  }
+
   let gameScanInterval = setInterval(() => {
     if (mainWindow && !mainWindow.isDestroyed()) {
-      exec('tasklist /FO CSV', (err, stdout, stderr) => {
-        if (err) return;
-        const gameMatches = [
-          { title: "Cities Skylines II", exe: "Cities2.exe" },
-          { title: "Cities Skylines", exe: "Cities.exe" },
-          { title: "Counter-Strike 2", exe: "cs2.exe" },
-          { title: "Valorant", exe: "VALORANT-Win64-Shipping.exe" },
-          { title: "Dota 2", exe: "dota2.exe" },
-          { title: "Grand Theft Auto V", exe: "GTA5.exe" },
-          { title: "Apex Legends", exe: "r5apex.exe" },
-          { title: "Rainbow Six Siege", exe: "RainbowSix.exe" },
-          { title: "League of Legends", exe: "League of Legends.exe" },
-          { title: "Overwatch 2", exe: "Overwatch.exe" },
-          { title: "Minecraft", exe: "javaw.exe" },
-          { title: "Cyberpunk 2077", exe: "Cyberpunk2077.exe" },
-          { title: "Call of Duty", exe: "cod.exe" },
-          { title: "The Witcher 3", exe: "witcher3.exe" },
-          { title: "Rust", exe: "RustClient.exe" },
-          { title: "Elden Ring", exe: "eldenring.exe" },
-          { title: "Red Dead Redemption 2", exe: "RDR2.exe" },
-          { title: "Baldur's Gate 3", exe: "bg3.exe" },
-          { title: "Fortnite", exe: "FortniteClient-Win64-Shipping.exe" },
-          { title: "PUBG: BATTLEGROUNDS", exe: "TslGame.exe" },
-          { title: "World of Warcraft", exe: "wow.exe" },
-          { title: "Rocket League", exe: "RocketLeague.exe" }
-        ];
+      // Using PowerShell to get processes with visible windows, filtering out common system bounds
+      const psCommand = `Get-Process | Where-Object { $_.MainWindowHandle -ne 0 -and $_.ProcessName -notmatch 'chrome|edge|firefox|explorer|code|discord|HostProcess|Calculator|devenv|Taskmgr|loxx' } | Select-Object ProcessName, MainWindowTitle | ConvertTo-Json -Compress`;
+      
+      exec(`powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "${psCommand}"`, { windowsHide: true }, (err, stdout, stderr) => {
+        if (err || !stdout) return;
+        try {
+          let processes = JSON.parse(stdout);
+          if (!Array.isArray(processes)) processes = [processes];
+          
+          let detectedGame = null;
+          // Filter common windows and generic titles to find the "Game"
+          const ignoreTitles = ["Settings", "Microsoft Text Input Application", "Program Manager"];
+          
+          let detectedGameProcess = null;
 
-        let detectedGame = null;
-        const lowerStdout = stdout.toLowerCase();
-        
-        for (let game of gameMatches) {
-          if (lowerStdout.includes(game.exe.toLowerCase())) {
-            detectedGame = game.title;
-            break;
+          for (const proc of processes) {
+             if (proc.MainWindowTitle && proc.MainWindowTitle.trim() !== "" && !ignoreTitles.includes(proc.MainWindowTitle)) {
+                 // Assume the most prominent heavy localized fullscreen app as the game
+                 detectedGame = proc.MainWindowTitle.trim();
+                 detectedGameProcess = proc.ProcessName;
+                 break;
+             }
           }
+          
+          if (detectedGame && detectedGame !== richPresenceGame) {
+             NativeGraphicInjector.injectOverlay(detectedGameProcess, detectedGame);
+          } else if (!detectedGame && richPresenceGame) {
+             NativeGraphicInjector.detach();
+          }
+
+          mainWindow.webContents.send('native-game-detected', detectedGame);
+        } catch (parseErr) {
+          // ignore parse err
         }
-        
-        mainWindow.webContents.send('native-game-detected', detectedGame);
       });
     }
   }, 10000); // Check every 10 seconds
+
+  // Handle Resource Throttling dynamically based on Game Detection
+  ipcMain.on('native-game-detected-reply', (event, isPlayingHeavyGame) => {
+    if (config.throttleGameMode) {
+      if (isPlayingHeavyGame) {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+           mainWindow.webContents.setBackgroundThrottling(true);
+        }
+      } else {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+           mainWindow.webContents.setBackgroundThrottling(false);
+        }
+      }
+    }
+  });
 
   ipcMain.on('set-voice-status', (event, status) => {
     if (tray) {

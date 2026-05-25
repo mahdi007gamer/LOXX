@@ -105,6 +105,7 @@ export const LobbyRoomPage = () => {
     resumeAudio,
     peerVolumes,
     localVolume,
+    setPeerVolume,
 
     // Overlay settings fetched globally
     overlayEnabled,
@@ -343,7 +344,7 @@ export const LobbyRoomPage = () => {
   }, [isStarting]);
 
   const handlePlayerVolume = (id: string, vol: number) => {
-    // Local volume state if needed
+    setPeerVolume(id, vol);
   };
 
   const { friends } = useFriends();
@@ -581,31 +582,31 @@ export const LobbyRoomPage = () => {
       </div>
 
       {/* Mobile Chat Trigger & Bottom Actions - Fixed and Styled */}
-      <div className="lg:hidden fixed bottom-20 left-4 right-4 z-50 p-2 glass rounded-[24px] border border-white/10 flex items-center justify-between gap-2 shadow-2xl overflow-hidden">
-        <div className="flex items-center gap-1 shrink-0">
+      <div className="lg:hidden fixed bottom-20 left-4 right-4 z-50 p-3 glass rounded-[28px] border border-white/10 flex items-center justify-between gap-3 shadow-2xl overflow-hidden pb-[calc(1rem+env(safe-area-inset-bottom))]">
+        <div className="flex items-center gap-2 shrink-0">
           <button 
             onClick={() => {
               leaveLobby();
               navigate("/lobbies");
             }}
-            className="h-10 w-10 rounded-xl bg-neon-pink/10 text-neon-pink flex items-center justify-center border border-neon-pink/20"
+            className="h-12 w-12 rounded-[14px] bg-neon-pink/10 text-neon-pink flex items-center justify-center border border-neon-pink/20"
             title="خروج"
           >
-            <LogOut size={18} />
+            <LogOut size={20} />
           </button>
           <button 
             onClick={() => setIsChatOpen(true)}
-            className="h-10 w-10 rounded-xl bg-white/5 flex items-center justify-center text-neon-blue relative border border-white/10"
+            className="h-12 w-12 rounded-[14px] bg-white/5 flex items-center justify-center text-neon-blue relative border border-white/10"
           >
-            <MessageSquare size={18} />
-            <div className="absolute top-2 right-2 h-1.5 w-1.5 rounded-full bg-neon-pink" />
+            <MessageSquare size={20} />
+            <div className="absolute top-2.5 right-2.5 h-2 w-2 rounded-full bg-neon-pink" />
           </button>
         </div>
 
-        <div className="flex items-center gap-1 overflow-x-auto scrollbar-none px-1 py-1">
-           <ControlButton icon={isMicMuted ? <MicOff size={18} /> : <Mic size={18} />} active={!isMicMuted} onClick={toggleMic} className="h-10 w-10 rounded-xl shrink-0" />
-           <ControlButton icon={<UserPlus size={18} />} onClick={() => setIsInviteModalOpen(true)} className="h-10 w-10 rounded-xl shrink-0" />
-           <ControlButton icon={<Settings size={18} />} className="h-10 w-10 rounded-xl shrink-0" />
+        <div className="flex items-center gap-2 overflow-x-auto scrollbar-none px-1 py-1">
+           <ControlButton icon={isMicMuted ? <MicOff size={20} /> : <Mic size={20} />} active={!isMicMuted} onClick={toggleMic} className="h-12 w-12 rounded-[14px] shrink-0" />
+           <ControlButton icon={<UserPlus size={20} />} onClick={() => setIsInviteModalOpen(true)} className="h-12 w-12 rounded-[14px] shrink-0" />
+           <ControlButton icon={<Settings size={20} />} onClick={() => setIsSettingsModalOpen(true)} className="h-12 w-12 rounded-[14px] shrink-0" />
         </div>
 
         <GlowButton 
@@ -613,7 +614,7 @@ export const LobbyRoomPage = () => {
           onClick={onToggleReady}
           disabled={isMatchStarted || isStarting}
           className={cn(
-            "h-10 px-3 min-w-[70px] text-[9px] uppercase font-black italic rounded-xl shrink-0",
+            "h-12 px-4 min-w-[85px] text-[12px] uppercase font-black italic rounded-[14px] shrink-0",
             (isMatchStarted || isStarting) && "opacity-50 grayscale cursor-not-allowed"
           )}
         >
@@ -872,317 +873,18 @@ export const LobbyRoomPage = () => {
                   </h4>
 
                   {isElectron ? (
-                    <div className="space-y-4">
-                      {/* Active Launcher Banner */}
-                      <div className="p-3 rounded-2xl bg-neon-blue/10 border border-neon-blue/25 text-xs text-white flex items-center gap-2">
-                        <span className="h-2 w-2 rounded-full bg-neon-blue animate-pulse shrink-0" />
-                        <span>شما در حال استفاده از <strong>کلاینت اختصاصی دسکتاپ Loxx Launcher</strong> هستید. ویژگی‌های سیستمی زیر کاملاً فعال هستند.</span>
-                      </div>
-
-                      {/* Close to Tray Toggle */}
-                      <div className="flex items-center justify-between p-3 rounded-2xl bg-white/5">
-                        <div>
-                          <p className="text-xs font-black text-white">کمینه به بخش تسک‌بار (Close to System Tray)</p>
-                          <p className="text-[9px] text-gray-500 font-bold font-sans">با کلیک روی دکمه ضربدر، برنامه باز می‌ماند و به منوی مخفی Tray منتقل می‌شود</p>
-                        </div>
-                        <div 
-                          onClick={() => updateLauncherSettings({ closeToTray: !launcherCloseToTray })}
-                          className={cn(
-                            "w-12 h-6 rounded-full relative cursor-pointer border transition-colors",
-                             launcherCloseToTray ? "bg-neon-blue/20 border-neon-blue/30" : "bg-white/5 border-white/10"
-                          )}
-                        >
-                          <div className={cn(
-                            "absolute top-1 h-4 w-4 rounded-full transition-all",
-                            launcherCloseToTray ? "right-1 bg-neon-blue shadow-[0_0_10px_rgba(0,229,255,1)]" : "right-7 bg-gray-500"
-                          )} />
-                        </div>
-                      </div>
-
-                      {/* Start at Login Toggle */}
-                      <div className="flex items-center justify-between p-3 rounded-2xl bg-white/5">
-                        <div>
-                          <p className="text-xs font-black text-white">اجرای خودکار با بالا آمدن ویندوز (Auto-Start at Login)</p>
-                          <p className="text-[9px] text-gray-500 font-bold font-sans">اجرای اتوماتیک و اتصال بدون دردسر همزمان با روشن کردن رایانه شما</p>
-                        </div>
-                        <div 
-                          onClick={() => updateLauncherSettings({ startAtLogin: !launcherStartAtLogin })}
-                          className={cn(
-                            "w-12 h-6 rounded-full relative cursor-pointer border transition-colors",
-                             launcherStartAtLogin ? "bg-neon-blue/20 border-neon-blue/30" : "bg-white/5 border-white/10"
-                          )}
-                        >
-                          <div className={cn(
-                            "absolute top-1 h-4 w-4 rounded-full transition-all",
-                            launcherStartAtLogin ? "right-1 bg-neon-blue shadow-[0_0_10px_rgba(0,229,255,1)]" : "right-7 bg-gray-500"
-                          )} />
-                        </div>
-                      </div>
-
-                      {/* Hardware Acceleration Toggle */}
-                      <div className="flex items-center justify-between p-3 rounded-2xl bg-white/5">
-                        <div>
-                          <p className="text-xs font-black text-white">شتاب‌دهنده سخت‌افزاری کارت گرافیک (Hardware Acceleration)</p>
-                          <p className="text-[9px] text-gray-500 font-bold font-sans">برای بهینه‌سازی CPU در بازی‌های سنگین، می‌توانید شتاب‌دهنده‌ را خاموش کنید (نیاز به راه‌اندازی مجدد دارد)</p>
-                        </div>
-                        <div 
-                          onClick={() => updateLauncherSettings({ hardwareAcceleration: !launcherHardwareAcceleration })}
-                          className={cn(
-                            "w-12 h-6 rounded-full relative cursor-pointer border transition-colors",
-                             launcherHardwareAcceleration ? "bg-neon-blue/20 border-neon-blue/30" : "bg-white/5 border-white/10"
-                          )}
-                        >
-                          <div className={cn(
-                            "absolute top-1 h-4 w-4 rounded-full transition-all",
-                            launcherHardwareAcceleration ? "right-1 bg-neon-blue shadow-[0_0_10px_rgba(0,229,255,1)]" : "right-7 bg-gray-500"
-                          )} />
-                        </div>
-                      </div>
-
-                      {/* True Transparent Game Overlay */}
-                      <div className="space-y-3 p-3 rounded-2xl bg-white/5 border border-white/5">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-xs font-black text-white">اورلی ۱۰۰٪ شفاف روی کل تصویر بازی (True Transparent Game Overlay)</p>
-                            <p className="text-[9px] text-gray-500 font-bold font-sans">تزریق مستقیم کادر اورلی شفاف روی محیط داخل بازی‌ها بدون حاشیه (Always-On-Top Layer)</p>
-                          </div>
-                          <div 
-                            onClick={() => setTransparentOverlayEnabled(!transparentOverlayEnabled)}
-                            className={cn(
-                              "w-12 h-6 rounded-full relative cursor-pointer border transition-colors",
-                               transparentOverlayEnabled ? "bg-neon-pink/20 border-neon-pink/30" : "bg-white/5 border-white/10"
-                            )}
-                          >
-                            <div className={cn(
-                              "absolute top-1 h-4 w-4 rounded-full transition-all",
-                              transparentOverlayEnabled ? "right-1 bg-neon-pink shadow-[0_0_10px_rgba(255,0,127,1)]" : "right-7 bg-gray-500"
-                            )} />
-                          </div>
-                        </div>
-
-                        {transparentOverlayEnabled && isElectron && (
-                          <div className="space-y-4 border-t border-white/5 pt-3.5 mt-2 text-right">
-                            <p className="text-[10px] text-neon-pink font-black uppercase tracking-wider select-none">تنظیمات اورلی شفاف دسکتاپ (مخصوص کلاینت)</p>
-                            
-                            {/* Row 1: Width & Height */}
-                            <div className="grid grid-cols-2 gap-3.5">
-                              <div className="space-y-1">
-                                <label className="text-[9px] font-bold text-gray-400 block">عرض کادر: {overlayWidth}px</label>
-                                <input 
-                                  type="range" 
-                                  min="150" 
-                                  max="800" 
-                                  value={overlayWidth}
-                                  onChange={(e) => updateLauncherSettings({ overlayWidth: parseInt(e.target.value) })}
-                                  className="w-full h-1 bg-white/5 border border-white/5 rounded-lg appearance-none cursor-pointer accent-neon-pink"
-                                />
-                              </div>
-                              <div className="space-y-1">
-                                <label className="text-[9px] font-bold text-gray-400 block">ارتفاع کادر: {overlayHeight}px</label>
-                                <input 
-                                  type="range" 
-                                  min="150" 
-                                  max="1200" 
-                                  value={overlayHeight}
-                                  onChange={(e) => updateLauncherSettings({ overlayHeight: parseInt(e.target.value) })}
-                                  className="w-full h-1 bg-white/5 border border-white/5 rounded-lg appearance-none cursor-pointer accent-neon-pink"
-                                />
-                              </div>
-                            </div>
-
-                            {/* Row 2: X & Y Position */}
-                            <div className="grid grid-cols-2 gap-3.5">
-                              <div className="space-y-1">
-                                <label className="text-[9px] font-bold text-gray-400 block">موقعیت افقی (X): {overlayX}px</label>
-                                <input 
-                                  type="range" 
-                                  min="0" 
-                                  max="2560" 
-                                  value={overlayX}
-                                  onChange={(e) => updateLauncherSettings({ overlayX: parseInt(e.target.value) })}
-                                  className="w-full h-1 bg-white/5 border border-white/5 rounded-lg appearance-none cursor-pointer accent-neon-pink"
-                                />
-                              </div>
-                              <div className="space-y-1">
-                                <label className="text-[9px] font-bold text-gray-400 block">موقعیت عمودی (Y): {overlayY}px</label>
-                                <input 
-                                  type="range" 
-                                  min="0" 
-                                  max="1600" 
-                                  value={overlayY}
-                                  onChange={(e) => updateLauncherSettings({ overlayY: parseInt(e.target.value) })}
-                                  className="w-full h-1 bg-white/5 border border-white/5 rounded-lg appearance-none cursor-pointer accent-neon-pink"
-                                />
-                              </div>
-                            </div>
-
-                            {/* Row 3: Opacity & Click-Through */}
-                            <div className="grid grid-cols-2 gap-3.5 items-center">
-                              <div className="space-y-1">
-                                <label className="text-[9px] font-bold text-gray-400 block">شفافیت کادر (Opacity): {Math.round((overlayOpacity || 0.9) * 100)}%</label>
-                                <input 
-                                  type="range" 
-                                  min="0.1" 
-                                  max="1.0" 
-                                  step="0.05"
-                                  value={overlayOpacity || 0.9}
-                                  onChange={(e) => updateLauncherSettings({ overlayOpacity: parseFloat(e.target.value) })}
-                                  className="w-full h-1 bg-white/5 border border-white/5 rounded-lg appearance-none cursor-pointer accent-neon-pink"
-                                />
-                              </div>
-                              
-                              <div className="flex items-center justify-between p-2 rounded-xl bg-white/5 border border-white/5">
-                                <span className="text-[9px] font-bold text-gray-400">امکان عبور کلیک موس (Click-Through)</span>
-                                <input 
-                                  type="checkbox" 
-                                  checked={overlayClickThrough}
-                                  onChange={(e) => updateLauncherSettings({ overlayClickThrough: e.target.checked })}
-                                  className="h-3.5 w-3.5 rounded border-white/10 bg-white/5 text-neon-pink focus:ring-0 focus:ring-offset-0 cursor-pointer"
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Native Game Scan & Rich Presence Toggle */}
-                      <div className="flex items-center justify-between p-3 rounded-2xl bg-white/5">
-                        <div>
-                          <p className="text-xs font-black text-white">شناسایی هوشمندِ اتوماتیک بازی‌ها (Native Game detection)</p>
-                          <p className="text-[9px] text-gray-500 font-bold font-sans">اسکن لحظه‌ای بازی‌های فعال (مانند Dota2 / Counter-Strike) جهت درج خودکار وضعیت در پروفایل</p>
-                        </div>
-                        <div 
-                          onClick={() => setLauncherRichPresenceEnabled(!launcherRichPresenceEnabled)}
-                          className={cn(
-                            "w-12 h-6 rounded-full relative cursor-pointer border transition-colors",
-                             launcherRichPresenceEnabled ? "bg-neon-blue/20 border-neon-blue/30" : "bg-white/5 border-white/10"
-                          )}
-                        >
-                          <div className={cn(
-                            "absolute top-1 h-4 w-4 rounded-full transition-all",
-                            launcherRichPresenceEnabled ? "right-1 bg-neon-blue shadow-[0_0_10px_rgba(0,229,255,1)]" : "right-7 bg-gray-500"
-                          )} />
-                        </div>
-                      </div>
-
-                      {/* Detected Game Banner HUD */}
-                      {gameDetected && launcherRichPresenceEnabled && (
-                        <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 text-xs text-white flex items-center justify-between animate-pulse">
-                          <div className="flex items-center gap-2">
-                            <span className="h-2 w-2 rounded-full bg-emerald-400 shrink-0" />
-                            <span>لانچر وضعیت بازی شما را مخابره می‌کند: <strong className="text-emerald-300 font-sans">{gameDetected}</strong></span>
-                          </div>
-                          <span className="text-[8px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-lg border border-emerald-500/20 font-mono font-bold">Rich Presence Sync</span>
-                        </div>
-                      )}
-
-                      {/* Global Key Shortcuts Form */}
-                      <div className="space-y-4 p-4 rounded-2xl bg-white/5 border border-white/5 mt-4">
-                        <p className="text-sm font-black text-neon-blue border-b border-white/5 pb-2 select-none">تنظیمات صحبت و کلیدهای میانبر (OS Global Shortcuts)</p>
-                        
-                        <div className="space-y-2">
-                          <label className="text-xs font-black text-gray-400">حالت صحبت (Voice Mode)</label>
-                          <div className="flex gap-2">
-                            <button 
-                              onClick={() => setVoiceMode("activation")}
-                              className={cn(
-                                "flex-1 py-2 rounded-xl text-xs font-black transition",
-                                voiceMode === "activation" 
-                                  ? "bg-neon-blue/15 border border-neon-blue/30 text-neon-blue shadow-[0_0_10px_rgba(0,229,255,0.2)]" 
-                                  : "bg-black/20 border border-white/5 text-gray-400 hover:bg-white/5"
-                              )}
-                            >
-                              Voice Activation
-                            </button>
-                            <button 
-                              onClick={() => setVoiceMode("ptt")}
-                              className={cn(
-                                "flex-1 py-2 rounded-xl text-xs font-black transition",
-                                voiceMode === "ptt" 
-                                  ? "bg-neon-blue/15 border border-neon-blue/30 text-neon-blue shadow-[0_0_10px_rgba(0,229,255,0.2)]" 
-                                  : "bg-black/20 border border-white/5 text-gray-400 hover:bg-white/5"
-                              )}
-                            >
-                              Push to Talk
-                            </button>
-                          </div>
-                        </div>
-
-                        <div className={cn("space-y-2 transition-opacity duration-300", voiceMode !== "ptt" && "opacity-50 pointer-events-none")}>
-                          <div className="flex items-center justify-between">
-                            <span className="text-[10px] font-black text-gray-400">کلید Push to Talk در پس‌زمینه (Hold)</span>
-                            <span className="text-[9px] bg-white/10 px-2 py-0.5 rounded text-white font-mono uppercase">{launcherGlobalPttKey}</span>
-                          </div>
-                          <button 
-                            onClick={() => setIsListeningForKey(true)}
-                            onKeyDown={(e) => {
-                                if (isListeningForKey) {
-                                    e.preventDefault();
-                                    if (e.key !== "Escape") {
-                                        let keyCombo = [];
-                                        if (e.ctrlKey) keyCombo.push("CommandOrControl");
-                                        if (e.altKey) keyCombo.push("Alt");
-                                        if (e.shiftKey) keyCombo.push("Shift");
-                                        if (e.key !== "Control" && e.key !== "Alt" && e.key !== "Shift" && e.key !== "Meta") {
-                                            const code = e.code;
-                                            if (code.startsWith("Key")) {
-                                              keyCombo.push(code.replace("Key", ""));
-                                            } else {
-                                              keyCombo.push(e.key.toUpperCase());
-                                            }
-                                        }
-                                        if (keyCombo.length > 0 && e.key !== "Control" && e.key !== "Alt" && e.key !== "Shift" && e.key !== "Meta") {
-                                          const finalKey = keyCombo.join("+");
-                                          updateLauncherSettings({ globalPttKey: finalKey });
-                                          setPttKey(finalKey); // keep web logic synced just in case
-                                          setIsListeningForKey(false);
-                                        }
-                                    } else {
-                                        setIsListeningForKey(false);
-                                    }
-                                }
-                            }}
-                            onBlur={() => setIsListeningForKey(false)}
-                            className={cn(
-                              "w-full py-2.5 rounded-xl bg-black/40 border text-xs font-black text-center focus:outline-none transition-colors",
-                              isListeningForKey 
-                                ? "border-neon-blue text-neon-blue shadow-[0_0_15px_rgba(0,229,255,0.3)] animate-pulse" 
-                                : "border-white/10 text-gray-400 hover:bg-white/5"
-                            )}
-                          >
-                             {isListeningForKey ? "Press any key combination..." : "...Click to set custom keybinding"}
-                          </button>
-                        </div>
-
-                        <div className="space-y-1.5 pt-2 border-t border-white/5">
-                          <div className="flex items-center justify-between">
-                            <span className="text-[10px] font-black text-gray-400">کلید میانبر گلوبال قطع میکروفون (Mute Toggle)</span>
-                            <span className="text-[8px] bg-white/15 px-1.5 py-0.5 rounded text-gray-300 font-mono flex items-center justify-center">
-                              {launcherGlobalMuteKey}
-                            </span>
-                          </div>
-                          <div className="flex gap-1.5">
-                            {[
-                              { label: 'Control+Alt+M', val: 'CommandOrControl+Alt+M' },
-                              { label: 'Alt+M', val: 'Alt+M' },
-                              { label: 'Control+Alt+X', val: 'CommandOrControl+Alt+X' }
-                            ].map(opt => (
-                              <button
-                                key={opt.val}
-                                onClick={() => updateLauncherSettings({ globalMuteKey: opt.val })}
-                                className={cn(
-                                  "flex-1 py-1.5 rounded-lg text-[10px] font-bold font-mono transition border",
-                                  launcherGlobalMuteKey === opt.val 
-                                    ? "bg-neon-pink/15 border-neon-pink/35 text-neon-pink shadow-[0_0_10px_rgba(255,0,127,0.2)]" 
-                                    : "bg-black/20 border-white/5 text-gray-400 hover:bg-white/10"
-                                )}
-                              >
-                                {opt.label}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
+                    <div className="p-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/25 text-xs text-white flex flex-col items-center gap-3 text-center">
+                      <Settings size={32} className="text-indigo-400" />
+                      <p>تنظیمات لابی مخصوص ویندوز (Push to Talk، Overlay، Performance) به بخش جدیدی منتقل شده است.</p>
+                      <button 
+                        onClick={() => {
+                          setIsSettingsModalOpen(false);
+                          navigate("/electron-settings");
+                        }}
+                        className="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 rounded-xl text-white font-bold transition"
+                      >
+                         باز کردن تنظیمات ویندوز
+                      </button>
                     </div>
                   ) : (
                     /* Web Browser Showcase for Desktop Client */
