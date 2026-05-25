@@ -57,6 +57,7 @@ const AppContent = () => {
   const hideSidebar = isLanding || location.pathname === "/auth" || isOverlayWidget;
   const isElectron = typeof window !== "undefined" && !!(window as any).electronAPI;
   const [isMaximized, setIsMaximized] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(typeof window !== "undefined" ? window.innerWidth >= 768 : false);
   const [showSplash, setShowSplash] = useState(() => {
     if (!isElectron) return false;
     if (typeof sessionStorage !== "undefined" && sessionStorage.getItem("loxx_splash_shown")) {
@@ -64,6 +65,20 @@ const AppContent = () => {
     }
     return true;
   });
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsDesktop(typeof window !== "undefined" ? window.innerWidth >= 768 : false);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const getToasterRight = () => {
+    if (isOverlayWidget) return 40;
+    if (hideSidebar || !isDesktop) return 24; // standard margin
+    return isSidebarCollapsed ? 96 : 280; // on desktop, clear collapsed/expanded sidebar
+  };
 
   const handleSplashComplete = () => {
     setShowSplash(false);
@@ -78,19 +93,36 @@ const AppContent = () => {
         const customEvent = e as CustomEvent;
         const updateFn = customEvent.detail?.update;
         if (updateFn) {
-          toast.success(
-            <div className="flex flex-col gap-2 w-full text-right" dir="rtl">
-              <span className="font-bold text-sm text-[#00e5ff]">نسخه جدید لوکس در دسترس است!</span>
-              <span className="text-xs text-gray-300">برای اعمال تغییرات و دریافت آخرین امکانات دکمه زیر را کلیک کنید.</span>
-              <button 
-                onClick={() => updateFn()} 
-                className="mt-1 bg-[#00e5ff] text-[#0a0a0f] px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-white transition-colors self-start shadow-[0_0_15px_rgba(0,229,255,0.4)]"
-              >
-                بروزرسانی تغییرات
-              </button>
-            </div>,
-            { duration: 60000, position: 'bottom-center' }
-          );
+          toast.custom((t) => (
+            <div className={`${t.visible ? 'animate-fade-in' : 'animate-fade-out'} bg-[#0a0a0f]/95 border border-[#00e5ff]/20 p-5 rounded-2xl shadow-[0_0_50px_rgba(0,229,255,0.15)] flex flex-col gap-3 min-w-[320px] max-w-[400px] pointer-events-auto backdrop-blur-xl transition-all`} dir="rtl">
+              <div className="flex items-center gap-3">
+                <div className="h-2 w-2 rounded-full bg-[#00e5ff] animate-ping"></div>
+                <span className="font-bold text-[13px] text-[#00e5ff]">کلاینت لوکس در حال بروزرسانی است</span>
+              </div>
+              <p className="text-[11px] text-gray-400 font-bold leading-relaxed">
+                در حال دریافت و اعمال تغییرات لوکس... کلاینت به صورت خودکار رفرش خواهد شد.
+              </p>
+              
+              {/* Animated Progress Bar */}
+              <div className="relative w-full h-1.5 bg-white/5 rounded-full overflow-hidden mt-1 border border-white/5">
+                <motion.div 
+                  initial={{ width: "0%" }}
+                  animate={{ width: "100%" }}
+                  transition={{ duration: 4.5, ease: "easeInOut" }}
+                  className="absolute inset-y-0 right-0 bg-gradient-to-l from-[#00e5ff] to-[#0088ff]"
+                  onAnimationComplete={() => {
+                    setTimeout(() => {
+                      updateFn();
+                    }, 500);
+                  }}
+                />
+              </div>
+              <div className="flex justify-between items-center text-[10px] text-gray-500 font-bold font-mono">
+                <span>%100</span>
+                <span>%0</span>
+              </div>
+            </div>
+          ), { duration: 15000, position: 'bottom-right' });
         }
       };
       window.addEventListener('app-update-available', handleAppUpdate);
@@ -189,12 +221,12 @@ const AppContent = () => {
       <FriendChatOverlay />
       
       <Toaster 
-        position="bottom-left" 
+        position="bottom-right" 
         gutter={12}
         containerStyle={{
           bottom: isOverlayWidget ? 40 : 80,
-          left: isOverlayWidget ? 40 : 24,
-          right: "auto",
+          right: getToasterRight(),
+          left: "auto",
           zIndex: 999999999,
         }}
         containerClassName="pointer-events-none"

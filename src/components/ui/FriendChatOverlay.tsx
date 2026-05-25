@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence, useDragControls } from "motion/react";
 import { useFriends } from "../../context/FriendsContext";
-import { MessageSquare, X, Minus, Send, MessageCircle, Crown, Info } from "lucide-react";
+import { MessageSquare, X, Minus, Send, MessageCircle, Crown, Info, Users } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { LobbyInviteCard } from "./LobbyInviteCard";
 import { FriendStatus } from "../../types";
@@ -9,12 +9,13 @@ import { UserBadges } from "./UserBadges";
 import { useAuth } from "../../context/AuthContext";
 
 export const FriendChatOverlay = () => {
-  const { chats, friends, sendMessage, markAsRead, closeChat, activeChatId, setActiveChatId, chatTrigger } = useFriends();
+  const { chats, friends, sendMessage, markAsRead, closeChat, activeChatId, setActiveChatId, chatTrigger, openChat } = useFriends();
   const { user } = useAuth();
   const [isMinimized, setIsMinimized] = useState(false);
   const [inputMessage, setInputMessage] = useState("");
   const [chatDirection, setChatDirection] = useState<"up" | "down">("up");
   const [isOverlayInteractive, setIsOverlayInteractive] = useState(false);
+  const [friendSearch, setFriendSearch] = useState("");
   const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
   const isOverlayWidget = isElectron && window.location.pathname === '/lobby/overlay-widget';
 
@@ -56,7 +57,7 @@ export const FriendChatOverlay = () => {
     }
   }, [activeChat?.messages.length]);
 
-  if (chats.length === 0) return null;
+  if (chats.length === 0 && !(isOverlayWidget && isOverlayInteractive)) return null;
 
   return (
     <>
@@ -77,6 +78,113 @@ export const FriendChatOverlay = () => {
                 <kbd className="bg-white/10 border border-white/20 rounded px-2 text-neon-blue font-mono text-xs mx-1 leading-none shadow-inner h-6 flex items-center justify-center">Alt+F2</kbd> 
                 را بفشارید.
               </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Friends list sidebar panel in the Interactive Overlay */}
+      <AnimatePresence>
+        {isOverlayWidget && isOverlayInteractive && (
+          <motion.div
+            initial={{ opacity: 0, x: 50, scale: 0.95 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: 50, scale: 0.95 }}
+            transition={{ type: "spring", damping: 20 }}
+            className="fixed right-6 top-24 bottom-24 w-[280px] bg-[#0a0a0f]/95 border border-white/10 rounded-2xl flex flex-col shadow-[0_20px_50px_rgba(0,0,0,0.8)] backdrop-blur-xl z-[9999] pointer-events-auto overflow-hidden text-right"
+            dir="rtl"
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-white/5 bg-white/5 px-4 py-3">
+              <span className="font-black text-xs text-white uppercase italic tracking-wider">گفتگوی دوستان (DM)</span>
+              <Users size={14} className="text-neon-blue" />
+            </div>
+
+            {/* Search Box */}
+            <div className="p-3 border-b border-white/5 bg-black/20">
+              <div className="flex items-center gap-2 rounded-xl bg-white/5 border border-white/5 px-2 py-1.5 focus-within:border-neon-blue/40 transition-all">
+                <input 
+                  type="text" 
+                  placeholder="جستجوی دوستان..." 
+                  value={friendSearch}
+                  onChange={(e) => setFriendSearch(e.target.value)}
+                  className="flex-1 bg-transparent text-[11px] text-white focus:outline-none placeholder:text-gray-600 w-full"
+                />
+              </div>
+            </div>
+
+            {/* Friends list scrollable */}
+            <div className="flex-1 overflow-y-auto p-2 space-y-1.5 custom-scrollbar">
+              {friends.filter(f => f.displayName.toLowerCase().includes(friendSearch.toLowerCase())).length === 0 ? (
+                <div className="text-center py-8 text-gray-500 text-xs font-bold">هیچ دوستی یافت نشد</div>
+              ) : (
+                friends
+                  .filter(f => f.displayName.toLowerCase().includes(friendSearch.toLowerCase()))
+                  .sort((a, b) => {
+                    // Sort by status activity (ONLINE/IN_GAME/IN_LOBBY first)
+                    const statusVal = (status: FriendStatus) => {
+                      if (status === FriendStatus.IN_GAME) return 3;
+                      if (status === FriendStatus.IN_LOBBY) return 2;
+                      if (status === FriendStatus.ONLINE) return 1;
+                      return 0;
+                    };
+                    return statusVal(b.status) - statusVal(a.status);
+                  })
+                  .map(friend => (
+                    <button
+                      key={friend.id}
+                      onClick={() => {
+                        openChat(friend.id, friend.displayName, friend.avatar);
+                        setActiveChatId(friend.id);
+                        setIsMinimized(false);
+                      }}
+                      className={cn(
+                        "w-full flex items-center justify-between p-2 rounded-xl hover:bg-white/5 transition-colors text-right group/friend",
+                        activeChatId === friend.id && "bg-white/5 border border-white/5"
+                      )}
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="relative shrink-0">
+                          <div className="h-8 w-8 rounded-xl bg-white/10 border border-white/5 overflow-hidden flex items-center justify-center">
+                            {friend.avatar ? (
+                              <img src={friend.avatar} alt="" className="h-full w-full object-cover" referrerPolicy="no-referrer" />
+                            ) : (
+                              <div className="h-full w-full bg-gradient-to-br from-white/10 to-white/5 flex items-center justify-center text-xs text-gray-400">👤</div>
+                            )}
+                          </div>
+                          <div className={cn(
+                            "absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border border-dark-bg z-10",
+                            friend.status === FriendStatus.ONLINE ? "bg-green-500" :
+                            friend.status === FriendStatus.IN_LOBBY ? "bg-neon-blue" :
+                            friend.status === FriendStatus.IN_GAME ? "bg-neon-purple animate-pulse" :
+                            "bg-gray-500"
+                          )} />
+                        </div>
+                        <div className="flex flex-col items-start min-w-0">
+                          <div className="flex items-center gap-1">
+                            {friend.badges?.find((b: any) => b?.isSpecial && b?.name === "VIP" || b?.type === "VIP") && <Crown className="w-2.5 h-2.5 text-yellow-500 drop-shadow-[0_0_5px_rgba(250,204,21,0.5)]" />}
+                            <span className="text-xs font-black text-white truncate max-w-[125px]">{friend.displayName}</span>
+                          </div>
+                          <span className={cn(
+                            "text-[9px] font-bold uppercase",
+                            friend.status === FriendStatus.IN_GAME ? "text-neon-purple" :
+                            friend.status === FriendStatus.IN_LOBBY ? "text-neon-blue" :
+                            friend.status === FriendStatus.ONLINE ? "text-green-500" :
+                            "text-gray-500"
+                          )}>
+                            {friend.status === FriendStatus.IN_GAME ? "در حال بازی" :
+                             friend.status === FriendStatus.IN_LOBBY ? "داخل لابی" :
+                             friend.status === FriendStatus.ONLINE ? "آنلاین" : "آفلاین"}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      <div className="p-1.5 rounded-lg bg-white/5 text-neon-blue group-hover/friend:bg-neon-blue group-hover/friend:text-dark-bg transition-colors">
+                        <MessageCircle size={12} />
+                      </div>
+                    </button>
+                  ))
+              )}
             </div>
           </motion.div>
         )}
