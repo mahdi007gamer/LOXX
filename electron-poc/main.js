@@ -103,7 +103,7 @@ function createMainWindow() {
   });
 
   // Load production application
-  mainWindow.loadURL('http://localhost:3000/#/dashboard');
+  mainWindow.loadURL('https://loxx.ir/#/dashboard');
 
   // Handle Close event (Close to System Tray)
   mainWindow.on('close', (event) => {
@@ -522,7 +522,7 @@ app.whenReady().then(() => {
   // Handle navigation requests from overlay window to main window
   ipcMain.on('navigate-main-window', (event, pathStr) => {
     if (mainWindow && !mainWindow.isDestroyed()) {
-      let baseURL = 'http://localhost:3000';
+      let baseURL = 'https://loxx.ir';
       try {
         const currentURL = mainWindow.getURL();
         if (currentURL) {
