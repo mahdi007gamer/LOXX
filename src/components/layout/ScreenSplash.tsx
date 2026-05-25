@@ -6,7 +6,15 @@ export const ScreenSplash = ({ onComplete }: { onComplete: () => void }) => {
   const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
-    const handleUpdate = () => setIsUpdating(true);
+    let hasUpdated = false;
+    const handleUpdate = (e: Event) => {
+      setIsUpdating(true);
+      hasUpdated = true;
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail && customEvent.detail.update) {
+        setTimeout(() => customEvent.detail.update(), 1000);
+      }
+    };
     window.addEventListener('app-update-available', handleUpdate);
 
     // Animate progress bar smoothly over 2 seconds
@@ -24,7 +32,7 @@ export const ScreenSplash = ({ onComplete }: { onComplete: () => void }) => {
 
     // Fade out splash screen after progress completes
     const timeout = setTimeout(() => {
-      if (!isUpdating) {
+      if (!hasUpdated) {
         onComplete();
       }
     }, 2800);
@@ -34,7 +42,7 @@ export const ScreenSplash = ({ onComplete }: { onComplete: () => void }) => {
       clearTimeout(timeout);
       window.removeEventListener('app-update-available', handleUpdate);
     };
-  }, [onComplete, isUpdating]);
+  }, [onComplete]);
 
   return (
     <div 

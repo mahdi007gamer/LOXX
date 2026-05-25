@@ -41,7 +41,7 @@ import { cn } from "./lib/utils";
 import NotFoundPage from "./pages/NotFoundPage";
 
 import { AuthProvider } from "./context/AuthContext";
-import { Toaster } from "react-hot-toast";
+import { Toaster, toast } from "react-hot-toast";
 
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AdminPage } from "./pages/AdminPage";
@@ -69,6 +69,32 @@ const AppContent = () => {
       sessionStorage.setItem("loxx_splash_shown", "true");
     }
   };
+
+  useEffect(() => {
+    if (!showSplash) {
+      const handleAppUpdate = (e: Event) => {
+        const customEvent = e as CustomEvent;
+        const updateFn = customEvent.detail?.update;
+        if (updateFn) {
+          toast.success(
+            <div className="flex flex-col gap-2 w-full text-right" dir="rtl">
+              <span className="font-bold text-sm text-[#00e5ff]">نسخه جدید لوکس در دسترس است!</span>
+              <span className="text-xs text-gray-300">برای اعمال تغییرات و دریافت آخرین امکانات دکمه زیر را کلیک کنید.</span>
+              <button 
+                onClick={() => updateFn()} 
+                className="mt-1 bg-[#00e5ff] text-[#0a0a0f] px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-white transition-colors self-start shadow-[0_0_15px_rgba(0,229,255,0.4)]"
+              >
+                بروزرسانی تغییرات
+              </button>
+            </div>,
+            { duration: 60000, position: 'bottom-center' }
+          );
+        }
+      };
+      window.addEventListener('app-update-available', handleAppUpdate);
+      return () => window.removeEventListener('app-update-available', handleAppUpdate);
+    }
+  }, [showSplash]);
 
   useEffect(() => {
     if (!isElectron) return;
@@ -180,12 +206,11 @@ function App() {
                 <AppContent />
                 <DiscordOverlayHUD />
                 <Toaster 
-                  position={isOverlayWidget ? "bottom-right" : "bottom-left"} 
+                  position="bottom-right" 
                   gutter={12}
                   containerStyle={{
                     bottom: isOverlayWidget ? 40 : 80,
-                    right: isOverlayWidget ? 40 : undefined,
-                    left: isOverlayWidget ? undefined : 20,
+                    right: 40,
                     zIndex: 999999999,
                   }}
                   toastOptions={{
@@ -201,7 +226,9 @@ function App() {
                       fontSize: '13px',
                       fontWeight: '700',
                       boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.8)',
-                      maxWidth: '400px',
+                      maxWidth: '350px',
+                      minWidth: '250px',
+                      width: 'auto',
                       display: 'flex',
                       alignItems: 'center',
                       gap: '12px',
