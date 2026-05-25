@@ -69,17 +69,8 @@ autoUpdater.on('update-downloaded', (info) => {
     buttons: ['نصب و راه‌اندازی مجدد']
   }).then(() => {
     isQuitting = true;
-    app.removeAllListeners('window-all-closed');
-    try {
-      if (mainWindow && !mainWindow.isDestroyed()) mainWindow.destroy();
-      if (splashWindow && !splashWindow.isDestroyed()) splashWindow.destroy();
-      if (typeof overlayWindow !== "undefined" && overlayWindow && !overlayWindow.isDestroyed()) overlayWindow.destroy();
-    } catch(e) {}
-    
-    // Slight timeout allows electron to cleanly destroy window handles before firing update installer
-    setTimeout(() => {
-      autoUpdater.quitAndInstall(false, true);
-    }, 500);
+    // Let electron-updater handle the graceful shutdown and spawn.
+    autoUpdater.quitAndInstall(false, true);
   });
 });
 
@@ -829,7 +820,9 @@ app.whenReady().then(() => {
     }
     // Automatically turn off overlay interactive mode on action to hide/reset Alt+F2 state
     if (isOverlayInteractive) {
-      toggleOverlayInteraction();
+      if (typeof global.toggleOverlayInteraction === 'function') {
+        global.toggleOverlayInteraction();
+      }
     }
   });
 

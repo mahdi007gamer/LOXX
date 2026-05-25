@@ -93,7 +93,15 @@ export const GameAdminModal = ({
 
   useEffect(() => {
     if (game) {
-      const metadata = game.metadata || { features: [] };
+      let parsedMetadata = game.metadata;
+      if (typeof parsedMetadata === 'string') {
+        try {
+          parsedMetadata = JSON.parse(parsedMetadata);
+        } catch (e) {
+          parsedMetadata = { features: [] };
+        }
+      }
+      const metadata = parsedMetadata || { features: [] };
       const features = Array.isArray(metadata.features) ? metadata.features : [];
 
       setFormData({

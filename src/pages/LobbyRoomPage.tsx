@@ -105,6 +105,7 @@ export const LobbyRoomPage = () => {
     isAudioContextResumed,
     resumeAudio,
     peerVolumes,
+    peerActivity,
     localVolume,
     setPeerVolume,
 
@@ -178,17 +179,6 @@ export const LobbyRoomPage = () => {
        navigate("/lobbies");
     }
   }, [lobby, wasInLobby, id, navigate, joinError]);
-
-  const [peerActivity, setPeerActivity] = useState<Record<string, number>>({});
-
-  const handlePeerVolumeChange = useCallback((peerUserId: string, vol: number) => {
-    setPeerActivity(prev => {
-      // Very strict threshold to minimize re-renders
-      if (Math.abs((prev[peerUserId] || 0) - vol) < 25 && vol !== 0 && prev[peerUserId] !== 0) return prev;
-      if (prev[peerUserId] === vol) return prev;
-      return { ...prev, [peerUserId]: vol };
-    });
-  }, []);
 
   const players = useMemo(() => {
     const list = lobby?.players?.map(p => ({
@@ -924,7 +914,7 @@ export const LobbyRoomPage = () => {
                       {/* Overlay Toggle Switch */}
                       <div className="flex items-center justify-between p-3 rounded-2xl bg-white/5">
                         <div>
-                          <p className="text-xs font-black text-white">طرح زنده روی بازی‌ها (Discord Live Overlay)</p>
+                          <p className="text-xs font-black text-white">طرح زنده روی بازی‌ها (Live Overlay)</p>
                           <p className="text-[9px] text-gray-500 font-bold font-sans">نمایش لیست فعال کانال صوتی روی گوشه تصویر بقیه برنامه‌ها</p>
                         </div>
                         <div 

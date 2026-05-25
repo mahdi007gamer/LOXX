@@ -83,6 +83,7 @@ interface LobbyContextType {
   isAudioContextResumed: boolean;
   resumeAudio: () => Promise<void>;
   peerVolumes: Record<string, number>;
+  peerActivity: Record<string, number>;
   setPeerVolume: (userId: string, volume: number) => void;
   localVolume: number;
 
@@ -159,6 +160,7 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [isPttPressed, setIsPttPressed] = useState<boolean>(false);
   const [isAudioContextResumed, setIsAudioContextResumed] = useState<boolean>(true);
   const [peerVolumes, setPeerVolumes] = useState<Record<string, number>>({});
+  const [peerActivity, setPeerActivity] = useState<Record<string, number>>({});
   const [localVolume, setLocalVolume] = useState<number>(0);
 
   // Overlay state definitions synced to localStorage
@@ -668,7 +670,8 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // Monitor speaking volumes for glowing effects
   const handlePeerVolumeChange = useCallback((peerUserId: string, vol: number) => {
     // Save to global state so elements can use it
-    setPeerVolumes(prev => {
+    setPeerActivity(prev => {
+      if (Math.abs((prev[peerUserId] || 0) - vol) < 25 && vol !== 0 && prev[peerUserId] !== 0) return prev;
       if (prev[peerUserId] === vol) return prev;
       return { ...prev, [peerUserId]: vol };
     });
@@ -1085,6 +1088,7 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       isAudioContextResumed,
       resumeAudio,
       peerVolumes,
+      peerActivity,
       setPeerVolume,
       localVolume,
 

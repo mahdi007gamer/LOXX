@@ -237,6 +237,12 @@ export const getGameById = async (req: Request, res: Response) => {
       }
       
       parsedGame.metadata.features = features;
+      
+      // Remove legacy fields so when admin saves it overrides them into features
+      delete parsedGame.metadata.modes;
+      delete parsedGame.metadata.maps;
+      delete parsedGame.metadata.sides;
+      delete parsedGame.metadata.levels;
     }
     
     res.json({ status: "success", data: parsedGame });

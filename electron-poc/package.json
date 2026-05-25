@@ -1,6 +1,6 @@
 {
   "name": "loxx-electron-poc",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Electron POC for Loxx",
   "author": "Loxx",
   "homepage": "https://loxx.ir",
@@ -23,6 +23,10 @@
     "directories": {
       "output": "dist"
     },
+    "files": [
+      "**/*",
+      "build/logo.png"
+    ],
     "win": {
       "publisherName": "Loxx",
       "target": [
