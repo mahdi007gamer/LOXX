@@ -182,11 +182,9 @@ const AppContent = () => {
       {!isOverlayWidget && <LobbyOverlay />}
       
       {/* FriendChatOverlay logic:
-          - Web: Everywhere
-          - Electron Main Window: Hidden (transferred to overlay)
-          - Electron Overlay Widget: Rendered 
+          - Rendered everywhere so DM chat works in main window too
       */}
-      {(!isElectron || isOverlayWidget) && <FriendChatOverlay />}
+      <FriendChatOverlay />
     </div>
     </>
   );
@@ -211,6 +209,7 @@ function App() {
                   containerStyle={{
                     bottom: isOverlayWidget ? 40 : 80,
                     right: 40,
+                    left: "auto",
                     zIndex: 999999999,
                   }}
                   toastOptions={{
@@ -226,9 +225,9 @@ function App() {
                       fontSize: '13px',
                       fontWeight: '700',
                       boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.8)',
-                      maxWidth: '350px',
-                      minWidth: '250px',
-                      width: 'auto',
+                      maxWidth: '400px',
+                      minWidth: '280px',
+                      width: 'max-content',
                       display: 'flex',
                       alignItems: 'center',
                       gap: '12px',

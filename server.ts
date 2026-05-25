@@ -121,14 +121,13 @@ async function startServer() {
   setInterval(async () => {
     try {
       const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      const eliteChannels = await prisma.channel.findMany({ where: { type: "ELITE" }, select: { id: true } });
+      const eliteChannelIds = eliteChannels.map(c => c.id);
+      
       await prisma.message.deleteMany({
         where: {
-          channel: {
-            type: "ELITE"
-          },
-          createdAt: {
-            lt: sevenDaysAgo
-          }
+          channelId: { in: eliteChannelIds },
+          createdAt: { lt: sevenDaysAgo }
         }
       });
       console.log("[CRON] Cleaned up older Elite group messages");

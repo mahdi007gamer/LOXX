@@ -50,13 +50,20 @@ export const getAllUsers = async (req: Request, res: Response) => {
 export const deleteUser = async (req: Request, res: Response) => {
   const { id } = req.params;
   try {
-    // 1. Cleanup all related records using deleteMany to avoid errors if they don't exist
+    // 1. Resolve messages that need to be updated to detach replyTo 
+    const messagesToUpdate = await prisma.message.findMany({
+      where: { replyTo: { OR: [{ senderId: id }, { receiverId: id }] } },
+      select: { id: true }
+    });
+    const messageIdsToUpdate = messagesToUpdate.map(m => m.id);
+
+    // 2. Cleanup all related records using deleteMany to avoid errors if they don't exist
     // This handles foreign key constraints manually since onDelete: Cascade might not be active
     await prisma.$transaction([
       prisma.userBadge.deleteMany({ where: { userId: id } }),
       prisma.friendship.deleteMany({ where: { OR: [{ requesterId: id }, { targetId: id }] } }),
       prisma.channelMember.deleteMany({ where: { userId: id } }),
-      prisma.message.updateMany({ where: { replyTo: { OR: [{ senderId: id }, { receiverId: id }] } }, data: { replyToId: null } }),
+      prisma.message.updateMany({ where: { id: { in: messageIdsToUpdate } }, data: { replyToId: null } }),
       prisma.message.deleteMany({ where: { OR: [{ senderId: id }, { receiverId: id }] } }),
       prisma.lobbyMember.deleteMany({ where: { userId: id } }),
       prisma.xPLog.deleteMany({ where: { userId: id } }),
