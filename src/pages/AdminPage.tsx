@@ -16,10 +16,12 @@ import { BadgeAdminModal } from "../components/modals/BadgeAdminModal";
 import { UserEditModal } from "../components/modals/UserEditModal";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
+import { useAuth } from "../context/AuthContext";
 import { getFileUrl } from "../lib/constants";
 import { AuthorizedImage } from "../components/ui/AuthorizedImage";
 
 export const AdminPage = () => {
+  const { isSidebarCollapsed } = useAuth();
   const [activeTab, setActiveTab] = useState<"users" | "games" | "payments" | "paymentsHistory" | "genres" | "badges" | "reports">("users");
   const [users, setUsers] = useState<any[]>([]);
   const [games, setGames] = useState<any[]>([]);
@@ -149,7 +151,7 @@ export const AdminPage = () => {
   return (
     <div className="flex min-h-screen bg-dark-bg">
       <Sidebar />
-      <div className="flex-1 p-4 md:p-8 overflow-y-auto custom-scrollbar">
+      <div className={cn("flex-1 p-4 md:p-8 overflow-y-auto custom-scrollbar transition-all duration-300", !isSidebarCollapsed ? "md:mr-64 mr-0" : "md:mr-20 mr-0")}>
         <div className="max-w-6xl mx-auto space-y-8" dir="rtl">
           <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div>

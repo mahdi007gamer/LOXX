@@ -1626,7 +1626,7 @@ export const ChatPage: React.FC = () => {
       </AnimatePresence>
       
       {/* Channels Sidebar */}
-      <div className={cn("hidden w-80 border-r border-white/5 bg-black/20 backdrop-blur-3xl lg:flex flex-col relative z-20 transition-all duration-300", !isSidebarCollapsed ? "md:mr-64 mr-0" : "mr-0")}>
+      <div className={cn("hidden w-80 border-r border-white/5 bg-black/20 backdrop-blur-3xl lg:flex flex-col relative z-20 transition-all duration-300", !isSidebarCollapsed ? "md:mr-64 mr-0" : "md:mr-20 mr-0")}>
         <div className="p-6 border-b border-white/5">
           <div className="flex items-center justify-between mb-2">
             <h2 className="text-xl font-black text-white tracking-widest uppercase">کانال‌ها</h2>
@@ -1869,7 +1869,7 @@ export const ChatPage: React.FC = () => {
       </div>
 
       {/* Main Chat Area */}
-      <div className={cn("relative flex flex-1 flex-col min-w-0 overflow-hidden transition-all duration-300 transition-colors", CHAT_THEMES[chatTheme].bgClass, !isSidebarCollapsed ? "md:mr-64 lg:mr-0" : "mr-0")}>
+      <div className={cn("relative flex flex-1 flex-col min-w-0 overflow-hidden transition-all duration-300 transition-colors", CHAT_THEMES[chatTheme].bgClass, !isSidebarCollapsed ? "md:mr-64 lg:mr-0" : "md:mr-20 lg:mr-0")}>
         {/* Themes Overlays */}
         {CHAT_THEMES[chatTheme].radial}
         {CHAT_THEMES[chatTheme].overlay}

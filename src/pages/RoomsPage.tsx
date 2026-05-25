@@ -5,6 +5,7 @@ import { GlowButton } from "../components/ui/GlowButton";
 import { Gamepad2, Users, Star, Target, Zap, Swords } from "lucide-react";
 import { motion } from "motion/react";
 import { cn } from "@/src/lib/utils";
+import { useAuth } from "../context/AuthContext";
 
 const GAMES = [
   { name: "Counter Strike 2", players: "۱۲.۴k", category: "Shooter", variant: "blue", icon: "🔫" },
@@ -18,10 +19,11 @@ const GAMES = [
 ];
 
 export const RoomsPage = () => {
+  const { isSidebarCollapsed } = useAuth();
   return (
     <div className="flex min-h-[calc(100vh-64px)]">
       <Sidebar />
-      <main className="flex-1 px-4 py-8 md:mr-64 lg:px-8 pb-24 md:pb-8">
+      <main className={cn("flex-1 px-4 py-8 lg:px-8 pb-24 md:pb-8 transition-all duration-300", !isSidebarCollapsed ? "md:mr-64" : "md:mr-20")}>
         <div className="container mx-auto max-w-6xl">
           <header className="mb-8 md:mb-12 text-center md:text-right">
             <h1 className="text-2xl md:text-4xl font-black text-white">اتاق‌های بازی</h1>

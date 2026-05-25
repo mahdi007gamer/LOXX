@@ -1,5 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { cn } from "../lib/utils";
 import { Sidebar } from "../components/layout/Sidebar";
 import { GlowButton } from "../components/ui/GlowButton";
 import { 
@@ -15,11 +17,12 @@ import { motion } from "motion/react";
 
 const NotFoundPage = () => {
     const navigate = useNavigate();
+    const { isSidebarCollapsed } = useAuth();
 
     return (
         <div className="flex min-h-[calc(100vh-64px)] overflow-x-hidden pt-16 md:pt-0">
             <Sidebar />
-            <main className="flex-1 flex items-center justify-center p-6 md:mr-64 relative overflow-hidden">
+            <main className={cn("flex-1 flex items-center justify-center p-6 relative overflow-hidden transition-all duration-300", !isSidebarCollapsed ? "md:mr-64 mr-0" : "md:mr-20 mr-0")}>
                 {/* Background Decor */}
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-neon-blue/10 rounded-full blur-[120px] pointer-events-none" />
                 <div className="absolute top-1/4 right-1/4 w-[300px] h-[300px] bg-neon-purple/10 rounded-full blur-[80px] pointer-events-none" />

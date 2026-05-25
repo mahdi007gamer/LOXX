@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { motion } from "motion/react";
 import { cn } from "../lib/utils";
+import { useAuth } from "../context/AuthContext";
 import axios from "axios";
 import { rankingSocket } from "../lib/socket";
 import api from "../lib/api";
@@ -27,6 +28,7 @@ const SCORING_RULES = [
 ];
 
 export const LeaderboardPage = () => {
+  const { isSidebarCollapsed } = useAuth();
   const [timeLeftStr, setTimeLeftStr] = useState("0d 0h 0m");
   const [topUsers, setTopUsers] = useState<any[]>([]);
   const [showAll, setShowAll] = useState(false);
@@ -95,7 +97,7 @@ export const LeaderboardPage = () => {
   return (
     <div className="flex min-h-[calc(100vh-64px)] bg-[#050507]">
       <Sidebar />
-      <main className="flex-1 px-4 py-8 md:mr-64 lg:px-8 pb-32 md:pb-8">
+      <main className={cn("flex-1 px-4 py-8 lg:px-8 pb-32 md:pb-8 transition-all duration-300", !isSidebarCollapsed ? "md:mr-64" : "md:mr-20")}>
         <div className="container mx-auto max-w-6xl">
           <header className="mb-12 flex flex-col items-center justify-between gap-8 md:flex-row md:mb-16">
             <div className="text-center md:text-right">

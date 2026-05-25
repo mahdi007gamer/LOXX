@@ -17,6 +17,8 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { cn } from "../lib/utils";
 
 const MyGameCard: React.FC<{ game: Game }> = ({ game }) => {
   const { toggleMyGame } = useGames();
@@ -93,6 +95,7 @@ const MyGameCard: React.FC<{ game: Game }> = ({ game }) => {
 };
 
 export const MyGamesPage = () => {
+  const { isSidebarCollapsed } = useAuth();
   const { allGames, myGames, loading } = useGames();
 
   const favoriteGames = useMemo(() => 
@@ -106,7 +109,7 @@ export const MyGamesPage = () => {
   return (
     <div className="flex min-h-[calc(100vh-64px)] overflow-x-hidden">
       <Sidebar />
-      <main className="flex-1 px-4 py-8 md:mr-64 lg:px-8 pb-32 md:pb-8 w-full" dir="rtl">
+      <main className={cn("flex-1 px-4 py-8 lg:px-8 pb-32 md:pb-8 w-full transition-all duration-300", !isSidebarCollapsed ? "md:mr-64" : "md:mr-20")} dir="rtl">
         <div className="container mx-auto max-w-5xl">
           <header className="mb-8 md:mb-12">
             <div className="flex items-center gap-4 text-[10px] md:text-xs font-bold text-gray-500 mb-2 uppercase tracking-widest justify-center md:justify-start">

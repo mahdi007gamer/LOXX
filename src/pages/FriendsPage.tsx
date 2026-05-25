@@ -285,7 +285,7 @@ export const FriendsPage = () => {
     toggleMute,
     openChat
   } = useFriends();
-  const { user } = useAuth();
+  const { user, isSidebarCollapsed } = useAuth();
   const { openProfile } = useProfilePopover();
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -364,7 +364,7 @@ export const FriendsPage = () => {
   return (
     <div className="flex min-h-[calc(100vh-64px)] overflow-x-hidden">
       <Sidebar />
-      <main className="flex-1 px-4 py-8 md:mr-64 lg:px-8 pb-24 md:pb-8 w-full" dir="rtl">
+      <main className={cn("flex-1 px-4 py-8 lg:px-8 pb-24 md:pb-8 w-full transition-all duration-300", !isSidebarCollapsed ? "md:mr-64" : "md:mr-20")} dir="rtl">
         <div className="container mx-auto max-w-6xl">
           <header className="mb-8 md:mb-10 text-center md:text-right">
             <h1 className="text-2xl md:text-3xl font-black text-white">دوستان و اجتماعی</h1>

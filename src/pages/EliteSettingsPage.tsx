@@ -74,7 +74,7 @@ interface VIPMetadata {
 }
 
 export const EliteSettingsPage = () => {
-  const { user, updateUser } = useAuth();
+  const { user, updateUser, isSidebarCollapsed } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -391,7 +391,7 @@ export const EliteSettingsPage = () => {
       <input type="file" ref={bannerInputRef} className="hidden" accept="image/png, image/jpeg, image/gif, image/webp" onChange={(e) => handleFileUpload(e, 'banner')} />
       <input type="file" ref={bgImageInputRef} className="hidden" accept="image/png, image/jpeg, image/gif, image/webp" onChange={(e) => handleFileUpload(e, 'bg')} />
       
-      <main className="flex-1 px-4 py-8 md:mr-64 lg:px-8">
+      <main className={cn("flex-1 px-4 py-8 lg:px-8 transition-all duration-300", !isSidebarCollapsed ? "md:mr-64" : "md:mr-20")}>
         <div className="container mx-auto max-w-6xl">
           <header className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div className="text-right">

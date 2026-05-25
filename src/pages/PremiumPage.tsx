@@ -61,7 +61,7 @@ const PLAN_DATA = {
 };
 
 export const PremiumPage = () => {
-  const { user } = useAuth();
+  const { user, isSidebarCollapsed } = useAuth();
   const navigate = useNavigate();
   const [step, setStep] = useState<Step>("SELECT");
   const [selectedPlan, setSelectedPlan] = useState<PlanType | null>(null);
@@ -254,7 +254,7 @@ export const PremiumPage = () => {
   return (
     <div className="flex min-h-[calc(100vh-64px)] bg-[#050507]">
       <Sidebar />
-      <main className="flex-1 px-4 py-8 md:mr-64 lg:px-8 pb-32 md:pb-8">
+      <main className={cn("flex-1 px-4 py-8 lg:px-8 pb-32 md:pb-8 transition-all duration-300", !isSidebarCollapsed ? "md:mr-64" : "md:mr-20")}>
         <div className="container mx-auto max-w-6xl">
           <AnimatePresence mode="wait">
             {step === "SELECT" && (

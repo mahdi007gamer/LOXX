@@ -151,7 +151,7 @@ export const GamesPage = () => {
   return (
     <div className={cn("flex overflow-x-hidden", isElectron ? "min-h-[calc(100vh-100px)]" : "min-h-[calc(100vh-64px)]")}>
       <Sidebar />
-      <main className={cn("flex-1 px-4 py-8 lg:px-8 pb-32 md:pb-8 w-full transition-all duration-300", !isSidebarCollapsed ? "md:mr-64" : "mr-0")} dir="rtl">
+      <main className={cn("flex-1 px-4 py-8 lg:px-8 pb-32 md:pb-8 w-full transition-all duration-300", !isSidebarCollapsed ? "md:mr-64" : "md:mr-20")} dir="rtl">
         <div className="container mx-auto max-w-7xl">
           <header className="mb-8 md:mb-12">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
