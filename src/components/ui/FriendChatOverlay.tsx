@@ -189,9 +189,9 @@ export const FriendChatOverlay = () => {
             style={{ 
               width: "100vw", 
               height: "100vh", 
-              background: "rgba(10, 10, 15, 0.65)", 
-              backdropFilter: "blur(20px)",
-              WebkitBackdropFilter: "blur(20px)",
+              background: "rgba(4, 4, 8, 0.42)", 
+              backdropFilter: "blur(24px) saturate(180%)",
+              WebkitBackdropFilter: "blur(24px) saturate(180%)",
               zIndex: 8000 
             }}
             className="fixed inset-0 flex flex-col items-center justify-start pt-8 pointer-events-auto select-none border-4 border-neon-blue/20"
@@ -242,7 +242,7 @@ export const FriendChatOverlay = () => {
             animate={{ opacity: 1, x: 0, scale: 1 }}
             exit={{ opacity: 0, x: 50, scale: 0.95 }}
             transition={{ type: "spring", damping: 20 }}
-            className="fixed right-6 top-24 bottom-24 w-[300px] bg-[#0c0c16] border border-white/15 rounded-2xl flex flex-col shadow-[0_30px_70px_rgba(0,0,0,0.95)] z-[9999] pointer-events-auto overflow-hidden text-right"
+            className="fixed right-6 top-24 bottom-24 w-[300px] bg-[#07070d] border-2 border-neon-blue/30 rounded-2xl flex flex-col shadow-[0_0_50px_rgba(0,0,0,0.95)] z-[9999] pointer-events-auto overflow-hidden text-right"
             dir="rtl"
           >
             {/* Header */}
@@ -513,7 +513,7 @@ export const FriendChatOverlay = () => {
             animate={{ opacity: 1, x: 0, scale: 1 }}
             exit={{ opacity: 0, x: -50, scale: 0.95 }}
             transition={{ type: "spring", damping: 20 }}
-            className="fixed left-6 top-24 bottom-24 w-[280px] bg-[#0c0c16] border border-white/15 rounded-2xl flex flex-col shadow-[0_30px_70px_rgba(0,0,0,0.95)] z-[9999] pointer-events-auto overflow-hidden text-right"
+            className="fixed left-6 top-24 bottom-24 w-[280px] bg-[#07070d] border-2 border-neon-blue/30 rounded-2xl flex flex-col shadow-[0_0_50px_rgba(0,0,0,0.95)] z-[9999] pointer-events-auto overflow-hidden text-right"
             dir="rtl"
           >
             {/* Header */}
@@ -653,7 +653,7 @@ export const FriendChatOverlay = () => {
             dragConstraints={containerRef}
             whileDrag={{ scale: 1.02, zIndex: 100 }}
             className={cn(
-              "absolute w-full max-w-[320px] sm:max-w-[350px] overflow-hidden rounded-2xl bg-[#0c0c16] border border-white/15 shadow-[0_30px_70px_rgba(0,0,0,0.8)] z-[100] pointer-events-auto touch-none transition-shadow duration-300",
+              "absolute w-full max-w-[320px] sm:max-w-[350px] overflow-hidden rounded-2xl bg-[#07070d] border-2 border-neon-pink/30 shadow-[0_0_50px_rgba(0,0,0,0.9)] z-[100] pointer-events-auto touch-none transition-shadow duration-300",
               chatDirection === "up" ? "bottom-20" : "top-20",
               isOverlayWidget ? "left-1/2 -ml-[160px] sm:-ml-[175px]" : "right-6 sm:right-auto"
             )}

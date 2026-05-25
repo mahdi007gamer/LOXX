@@ -79,5 +79,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   quitApp: () => ipcRenderer.send('quit-app'),
   
   // Dynamic version query
-  getAppVersion: () => ipcRenderer.invoke('get-app-version')
+  getAppVersion: () => ipcRenderer.invoke('get-app-version'),
+
+  // Listen for launcher update events inside splash
+  onUpdateStatus: (callback) => {
+    const subscription = (event, status, percent) => callback(status, percent);
+    ipcRenderer.on('update-status', subscription);
+    return () => ipcRenderer.removeListener('update-status', subscription);
+  }
 });

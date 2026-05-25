@@ -32,32 +32,40 @@ try {
 // Auto-updater event configurations for Persian-localized error/success feedback
 autoUpdater.on('error', (err) => {
   console.error('AutoUpdater Error:', err);
-  // Silently bypass errors on launch so they can always play!
-  if (!mainWindow && gotTheLock) {
-    createMainWindow();
-  }
+  sendUpdateStatus('error', 100);
+  setTimeout(() => {
+    launchMainWindow();
+  }, 1200);
+});
+
+autoUpdater.on('checking-for-update', () => {
+  sendUpdateStatus('checking', 25);
 });
 
 autoUpdater.on('update-available', (info) => {
   console.log('Update available, downloading in background:', info.version);
-  if (!mainWindow) {
-    createMainWindow();
-  }
+  sendUpdateStatus('downloading', 45);
 });
 
 autoUpdater.on('update-not-available', (info) => {
   console.log('No update available. Launching app.');
-  if (!mainWindow) {
-    createMainWindow();
-  }
+  sendUpdateStatus('not-available', 100);
+  setTimeout(() => {
+    launchMainWindow();
+  }, 1000);
+});
+
+autoUpdater.on('download-progress', (progressObj) => {
+  sendUpdateStatus('downloading', Math.round(progressObj.percent));
 });
 
 autoUpdater.on('update-downloaded', (info) => {
+  sendUpdateStatus('ready', 100);
   dialog.showMessageBox({
     type: 'info',
     title: 'بروزرسانی آماده نصب',
-    message: `نسخه جدید لایکس (${info.version}) با موفقیت دانلود شد!`,
-    detail: 'برنامه به صورت خودکار بسته شده و بروزرسانی جدید اعمال خواهد شد تا لایکس با امکانات جدید اجرا شود.',
+    message: `نسخه جدید لوکس (${info.version}) با موفقیت دانلود شد!`,
+    detail: 'برنامه به صورت خودکار بسته شده و بروزرسانی جدید اعمال خواهد شد تا لوکس با امکانات جدید اجرا شود.',
     buttons: ['نصب و راه‌اندازی مجدد']
   }).then(() => {
     isQuitting = true;
@@ -71,8 +79,65 @@ app.commandLine.appendSwitch('disable-background-timer-throttling');
 app.commandLine.appendSwitch('disable-backgrounding-occluded-windows');
 
 let mainWindow = null;
+let splashWindow = null;
 let tray = null;
 let isQuitting = false;
+
+function sendUpdateStatus(status, percent) {
+  if (splashWindow && !splashWindow.isDestroyed()) {
+    splashWindow.webContents.send('update-status', status, percent);
+  }
+}
+
+function createSplashWindow() {
+  splashWindow = new BrowserWindow({
+    width: 450,
+    height: 450,
+    frame: false,
+    transparent: true,
+    alwaysOnTop: true,
+    resizable: false,
+    show: false,
+    backgroundColor: '#040408',
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      nodeIntegration: false,
+      contextIsolation: true,
+      webSecurity: true
+    }
+  });
+
+  splashWindow.loadFile(path.join(__dirname, 'splash.html'));
+  splashWindow.once('ready-to-show', () => {
+    if (splashWindow) splashWindow.show();
+  });
+
+  splashWindow.on('closed', () => {
+    splashWindow = null;
+  });
+}
+
+let isMainAppLaunched = false;
+function launchMainWindow() {
+  if (isMainAppLaunched) return;
+  isMainAppLaunched = true;
+
+  createMainWindow();
+
+  if (mainWindow) {
+    mainWindow.once('ready-to-show', () => {
+      setTimeout(() => {
+        if (splashWindow && !splashWindow.isDestroyed()) {
+          splashWindow.close();
+        }
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.show();
+          mainWindow.focus();
+        }
+      }, 1500);
+    });
+  }
+}
 
 // Default client configuration
 const configPath = path.join(app.getPath('userData'), 'loxx-config.json');
@@ -144,6 +209,7 @@ function createMainWindow() {
     minWidth: 1000,
     minHeight: 650,
     title: 'LOXX',
+    show: false, // Solid background loaded first under splash
     icon: fs.existsSync(path.join(__dirname, '../public/logo_square.png')) 
       ? path.join(__dirname, '../public/logo_square.png') 
       : path.join(__dirname, '../public/logo.png'),
@@ -158,6 +224,13 @@ function createMainWindow() {
       contextIsolation: true,
       webSecurity: true,
       backgroundThrottling: false // Continuous background voice/CPU execution
+    }
+  });
+
+  // Handle redundant graceful fallback shows
+  mainWindow.once('ready-to-show', () => {
+    if (!splashWindow) {
+      mainWindow.show();
     }
   });
 
@@ -225,11 +298,11 @@ function setupTray() {
     const rebuildTrayMenu = () => {
       if (!tray) return;
       const contextMenu = Menu.buildFromTemplate([
-        { label: 'لایکس | Loxx Client', enabled: false },
+        { label: 'لوکس | Loxx Client', enabled: false },
         { label: `نسخه ${app.getVersion()}`, enabled: false },
         { type: 'separator' },
         { 
-          label: 'نمایش پنجره اصلی لایکس', 
+          label: 'نمایش پنجره اصلی لوکس', 
           click: () => { if (mainWindow) { mainWindow.show(); mainWindow.focus(); } } 
         },
         { 
@@ -273,7 +346,7 @@ function setupTray() {
             dialog.showMessageBox({
               type: 'info',
               title: 'سامانه شتاب‌دهنده گرافیکی',
-              message: 'تغییر وضعیت شتاب‌دهنده گرافیکی نیاز به راه‌اندازی مجدد لایکس دارد.',
+              message: 'تغییر وضعیت شتاب‌دهنده گرافیکی نیاز به راه‌اندازی مجدد لوکس دارد.',
               buttons: ['متوجه شدم']
             });
             rebuildTrayMenu();
@@ -281,12 +354,12 @@ function setupTray() {
         },
         { type: 'separator' },
         { 
-          label: 'بررسی بروزرسانی نسخه لایکس (Check for Update)', 
+          label: 'بررسی بروزرسانی نسخه لوکس (Check for Update)', 
           click: () => {
             dialog.showMessageBox({
               type: 'info',
-              title: 'جستجوی بروزرسانی لایکس',
-              message: 'جستجو برای نسخه جدید لایکس در پس‌زمینه آغاز شد. در صورت وجود، نسخه جدید دانلود و آماده نصب می‌شود.',
+              title: 'جستجوی بروزرسانی لوکس',
+              message: 'جستجو برای نسخه جدید لوکس در پس‌زمینه آغاز شد. در صورت وجود، نسخه جدید دانلود و آماده نصب می‌شود.',
               buttons: ['تایید']
             });
             try {
@@ -302,7 +375,7 @@ function setupTray() {
         },
         { type: 'separator' },
         { 
-          label: 'خروج کامل از لایکس (Quit)', 
+          label: 'خروج کامل از لوکس (Quit)', 
           click: () => { isQuitting = true; app.quit(); } 
         }
       ]);
@@ -377,6 +450,7 @@ app.whenReady().then(() => {
     return;
   }
 
+  createSplashWindow();
   setupTray();
   applyStartupSetting();
   registerGlobalShortcuts();
@@ -386,24 +460,31 @@ app.whenReady().then(() => {
     return app.getVersion();
   });
 
-  // Load browser window immediately so the player gets into the app instantly!
-  createMainWindow();
-
   if (app.isPackaged) {
     console.log('Production mode: Initiating silent background update check...');
     try {
       autoUpdater.checkForUpdatesAndNotify();
     } catch (err) {
       console.warn('Background update check failed to start:', err);
+      launchMainWindow();
     }
   } else {
-    // In development mode, check update silently for testing
-    try {
-      autoUpdater.checkForUpdatesAndNotify();
-    } catch (err) {
-      console.warn('Update check bypassed/failed in dev:', err);
-    }
+    // In development mode, mock update search on splash, then load main
+    setTimeout(() => {
+      sendUpdateStatus('checking', 35);
+      setTimeout(() => {
+        sendUpdateStatus('not-available', 100);
+        setTimeout(() => {
+          launchMainWindow();
+        }, 1000);
+      }, 1000);
+    }, 500);
   }
+
+  // Safe fallback to prevent freeze under any network / updater failures
+  setTimeout(() => {
+    launchMainWindow();
+  }, 10000);
 
   // IPC communication handlers
   ipcMain.on('register-ptt-shortcut', (event, key) => {

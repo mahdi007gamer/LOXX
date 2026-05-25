@@ -130,9 +130,9 @@ export const DesktopOverlayWidget = () => {
             style={{ 
               width: "100vw", 
               height: "100vh", 
-              background: "rgba(10, 10, 15, 0.65)", 
-              backdropFilter: "blur(20px)",
-              WebkitBackdropFilter: "blur(20px)",
+              background: "rgba(4, 4, 8, 0.42)", 
+              backdropFilter: "blur(24px) saturate(180%)",
+              WebkitBackdropFilter: "blur(24px) saturate(180%)",
               zIndex: 8000 
             }}
             className="fixed inset-0 pointer-events-auto select-none border-4 border-neon-blue/20"
