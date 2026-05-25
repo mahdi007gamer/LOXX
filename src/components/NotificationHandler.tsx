@@ -19,18 +19,18 @@ const InviteToast = ({ t, inviteData, navigate }: { t: any, inviteData: any, nav
     // Dismiss immediately to give immediate feedback
     toast.dismiss(t.id);
     
+    const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
+    const isOverlayWidget = isElectron && (window.location.pathname === '/overlay' || window.location.pathname === '/lobby/overlay-widget');
+
+    if (isOverlayWidget && (window as any).electronAPI?.sendOverlayAction) {
+      toast.dismiss(t.id);
+      (window as any).electronAPI.sendOverlayAction({ type: 'join-lobby', lobbyId });
+      return;
+    }
+
     try {
       await api.post(`/lobby/${lobbyId}/join`);
-      
-      const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
-      const isOverlayWidget = isElectron && window.location.pathname === '/lobby/overlay-widget';
-      
-      if (isOverlayWidget && (window as any).electronAPI?.navigateMainWindow) {
-        (window as any).electronAPI.navigateMainWindow(`/lobby/${lobbyId}`);
-      } else {
-        navigate(`/lobby/${lobbyId}`);
-      }
-      
+      navigate(`/lobby/${lobbyId}`);
       toast.success("وارد لابی شدید", { id: 'join-success' });
     } catch (err) {
       toast.error("لابی در دسترس نیست یا بسته شده است");

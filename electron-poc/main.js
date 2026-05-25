@@ -385,7 +385,7 @@ app.whenReady().then(() => {
             baseURL = currentURL.split('/').slice(0, 3).join('/');
           }
         }
-        overlayWindow.loadURL(`${baseURL}/lobby/overlay-widget`);
+        overlayWindow.loadURL(`${baseURL}/overlay`);
         
         overlayWindow.on('closed', () => {
           overlayWindow = null;
@@ -496,6 +496,19 @@ app.whenReady().then(() => {
         if (mainWindow && !mainWindow.isDestroyed()) {
            mainWindow.webContents.setBackgroundThrottling(false);
         }
+      }
+    }
+  });
+
+  // Handle actions sent from Overlay to Main Window
+  ipcMain.on('overlay-action', (event, action) => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('overlay-action-to-main', action);
+      try {
+        mainWindow.show();
+        mainWindow.focus();
+      } catch (err) {
+        console.error("Failed to show/focus main window on action:", err);
       }
     }
   });

@@ -35,7 +35,7 @@ export const FriendChatOverlay = () => {
   const [isOverlayInteractive, setIsOverlayInteractive] = useState(false);
   const [friendSearch, setFriendSearch] = useState("");
   const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
-  const isOverlayWidget = isElectron && window.location.pathname === '/lobby/overlay-widget';
+  const isOverlayWidget = isElectron && (window.location.pathname === '/overlay' || window.location.pathname === '/lobby/overlay-widget');
 
   const [testingCompatibility, setTestingCompatibility] = useState(false);
   const [testResult, setTestResult] = useState<null | 'ok' | 'fail'>(null);
@@ -504,15 +504,25 @@ export const FriendChatOverlay = () => {
                     >
                       {/* Clicking on the profile photo / avatar / name opens their mini-profile */}
                       <button
-                        onClick={() => openProfile({
-                          senderName: friend.displayName,
-                          displayName: friend.displayName,
-                          senderAvatar: friend.avatar,
-                          avatarUrl: friend.avatar,
-                          senderLevel: (friend as any).level || 1,
-                          senderBadges: friend.badges || [],
-                          id: friend.id
-                        }, false)}
+                        onClick={() => {
+                          const profileUser = {
+                            senderName: friend.displayName,
+                            displayName: friend.displayName,
+                            senderAvatar: friend.avatar,
+                            avatarUrl: friend.avatar,
+                            senderLevel: (friend as any).level || 1,
+                            senderBadges: friend.badges || [],
+                            id: friend.id
+                          };
+                          if (isOverlayWidget && (window as any).electronAPI?.sendOverlayAction) {
+                            (window as any).electronAPI.sendOverlayAction({
+                              type: 'open-profile',
+                              user: profileUser
+                            });
+                          } else {
+                            openProfile(profileUser, false);
+                          }
+                        }}
                         className="flex items-center gap-2.5 min-w-0 flex-1 hover:opacity-80 transition-opacity text-right cursor-pointer"
                       >
                         <div className="relative shrink-0">

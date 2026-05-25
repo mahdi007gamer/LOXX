@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { ScreenSplash } from "./components/layout/ScreenSplash";
 import { Navbar } from "./components/layout/Navbar";
@@ -14,7 +14,7 @@ import { AuthPage } from "./pages/AuthPage";
 import { LobbyProvider, useLobby } from "./context/LobbyContext";
 import { FriendsProvider } from "./context/FriendsContext";
 import { GamesProvider } from "./context/GamesContext";
-import { ProfilePopoverProvider } from "./context/ProfilePopoverContext";
+import { ProfilePopoverProvider, useProfilePopover } from "./context/ProfilePopoverContext";
 import { LobbyOverlay } from "./components/LobbyOverlay";
 import { FriendChatOverlay } from "./components/ui/FriendChatOverlay";
 import { DiscordOverlayHUD } from "./components/DiscordOverlayHUD";
@@ -51,10 +51,12 @@ import { ElectronSettingsPage } from "./pages/ElectronSettingsPage";
 
 const AppContent = () => {
   const { isSidebarCollapsed } = useAuth();
-  const { overlayToastPosition, overlayToastXOffset, overlayToastYOffset } = useLobby();
+  const { overlayToastPosition, overlayToastXOffset, overlayToastYOffset, joinLobby } = useLobby();
+  const { openProfile } = useProfilePopover();
+  const navigate = useNavigate();
   const location = useLocation();
   const isLanding = location.pathname === "/";
-  const isOverlayWidget = location.pathname === "/lobby/overlay-widget";
+  const isOverlayWidget = location.pathname === "/overlay";
   const hideSidebar = isLanding || location.pathname === "/auth" || isOverlayWidget;
   const isElectron = typeof window !== "undefined" && !!(window as any).electronAPI;
   const [isMaximized, setIsMaximized] = useState(false);
@@ -66,6 +68,40 @@ const AppContent = () => {
     }
     return true;
   });
+
+  const [isOverlayInteractive, setIsOverlayInteractive] = useState(false);
+
+  useEffect(() => {
+    if (!isElectron || !isOverlayWidget) return;
+    const api = (window as any).electronAPI;
+    if (api && api.onOverlayInteractionMode) {
+      const unsubscribe = api.onOverlayInteractionMode((interactive: boolean) => {
+        setIsOverlayInteractive(interactive);
+      });
+      return () => {
+        if (unsubscribe) unsubscribe();
+      };
+    }
+  }, [isElectron, isOverlayWidget]);
+
+  useEffect(() => {
+    if (!isElectron || isOverlayWidget) return;
+    const api = (window as any).electronAPI;
+    if (api && api.onOverlayAction) {
+      const unsubscribe = api.onOverlayAction((action: { type: string, lobbyId?: string, user?: any }) => {
+        if (!action) return;
+        if (action.type === 'join-lobby' && action.lobbyId) {
+          joinLobby(action.lobbyId);
+          navigate(`/lobby/${action.lobbyId}`);
+        } else if (action.type === 'open-profile' && action.user) {
+          openProfile(action.user, false);
+        }
+      });
+      return () => {
+        if (unsubscribe) unsubscribe();
+      };
+    }
+  }, [isElectron, isOverlayWidget, openProfile, joinLobby, navigate]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -213,7 +249,10 @@ const AppContent = () => {
 
   if (isOverlayWidget) {
     return (
-      <div className="min-h-screen bg-transparent pb-0 relative selection:bg-neon-pink selection:text-white">
+      <div 
+        style={{ display: isOverlayInteractive ? "block" : "none" }}
+        className="min-h-screen bg-transparent pb-0 relative selection:bg-neon-pink selection:text-white"
+      >
         <NotificationHandler />
         <DesktopOverlayWidget />
         <FriendChatOverlay />
@@ -327,7 +366,7 @@ const AppContent = () => {
           <Route path="/chat" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
           <Route path="/lobbies" element={<ProtectedRoute><LobbiesPage /></ProtectedRoute>} />
           <Route path="/lobby/:id" element={<ProtectedRoute><LobbyRoomPage /></ProtectedRoute>} />
-          <Route path="/lobby/overlay-widget" element={<DesktopOverlayWidget />} />
+          <Route path="/overlay" element={<DesktopOverlayWidget />} />
           <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
           <Route path="/profile/:username" element={<ProtectedRoute><PublicProfilePage /></ProtectedRoute>} />
           <Route path="/ranking" element={<ProtectedRoute><LeaderboardPage /></ProtectedRoute>} />
@@ -423,7 +462,7 @@ const AppContent = () => {
 };
 
 function App() {
-  const isOverlayWidget = typeof window !== 'undefined' && window.location.pathname === '/lobby/overlay-widget';
+  const isOverlayWidget = typeof window !== 'undefined' && window.location.pathname === '/overlay';
   
   return (
     <AuthProvider>

@@ -65,6 +65,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Navigate the main window from the overlay window
   navigateMainWindow: (url) => ipcRenderer.send('navigate-main-window', url),
   
+  // Send Action from Overlay to Main Window
+  sendOverlayAction: (action) => ipcRenderer.send('overlay-action', action),
+  
+  // Listen for actions from Overlay to Main Window (subscribed in Main Window)
+  onOverlayAction: (callback) => {
+    const subscription = (event, action) => callback(action);
+    ipcRenderer.on('overlay-action-to-main', subscription);
+    return () => ipcRenderer.removeListener('overlay-action-to-main', subscription);
+  },
+  
   // Relaunch utility or quit
   quitApp: () => ipcRenderer.send('quit-app')
 });
