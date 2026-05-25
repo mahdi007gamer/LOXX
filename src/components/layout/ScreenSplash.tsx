@@ -3,8 +3,12 @@ import { motion, AnimatePresence } from "motion/react";
 
 export const ScreenSplash = ({ onComplete }: { onComplete: () => void }) => {
   const [progress, setProgress] = useState(0);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
+    const handleUpdate = () => setIsUpdating(true);
+    window.addEventListener('app-update-available', handleUpdate);
+
     // Animate progress bar smoothly over 2 seconds
     const interval = setInterval(() => {
       setProgress((prev) => {
@@ -20,14 +24,17 @@ export const ScreenSplash = ({ onComplete }: { onComplete: () => void }) => {
 
     // Fade out splash screen after progress completes
     const timeout = setTimeout(() => {
-      onComplete();
+      if (!isUpdating) {
+        onComplete();
+      }
     }, 2800);
 
     return () => {
       clearInterval(interval);
       clearTimeout(timeout);
+      window.removeEventListener('app-update-available', handleUpdate);
     };
-  }, [onComplete]);
+  }, [onComplete, isUpdating]);
 
   return (
     <div 
@@ -100,8 +107,8 @@ export const ScreenSplash = ({ onComplete }: { onComplete: () => void }) => {
           </div>
           
           <div className="flex items-center justify-between text-[9px] text-gray-400 font-black font-sans uppercase">
-            <span className="text-neon-pink">{progress}%</span>
-            <span className="animate-pulse">در حال اتصال به شبکه لوکس...</span>
+            <span className={isUpdating ? "text-neon-blue animate-pulse" : "text-neon-pink"}>{isUpdating ? "UPDATING" : `${progress}%`}</span>
+            <span className="animate-pulse">{isUpdating ? "در حال دریافت آپدیت جدید لوکس..." : "در حال اتصال به شبکه لوکس..."}</span>
           </div>
         </motion.div>
       </div>

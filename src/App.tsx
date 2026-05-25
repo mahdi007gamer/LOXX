@@ -183,8 +183,8 @@ function App() {
                   position={isOverlayWidget ? "bottom-right" : "bottom-left"} 
                   gutter={12}
                   containerStyle={{
-                    bottom: isOverlayWidget ? 24 : 80,
-                    right: isOverlayWidget ? 24 : undefined,
+                    bottom: isOverlayWidget ? 40 : 80,
+                    right: isOverlayWidget ? 40 : undefined,
                     left: isOverlayWidget ? undefined : 20,
                     zIndex: 999999999,
                   }}
@@ -197,14 +197,19 @@ function App() {
                       border: '1px solid rgba(255, 255, 255, 0.1)',
                       color: '#fff',
                       borderRadius: '20px',
-                      padding: '12px 24px',
-                      fontSize: '14px',
+                      padding: '16px 20px',
+                      fontSize: '13px',
                       fontWeight: '700',
                       boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.8)',
                       maxWidth: '400px',
                       display: 'flex',
                       alignItems: 'center',
                       gap: '12px',
+                      direction: 'rtl',
+                    },
+                    iconTheme: {
+                      primary: '#00e5ff',
+                      secondary: '#0a0a0f',
                     },
                   }}
                 />

@@ -59,8 +59,31 @@ export const FriendChatOverlay = () => {
   if (chats.length === 0) return null;
 
   return (
-    <div ref={containerRef} className="fixed inset-0 z-[9999] pointer-events-none flex flex-col items-center justify-end pb-4">
-      {/* Active Chat Window */}
+    <>
+      {/* Interactive Backdrop when Alt+F2 is active in Overlay Widget */}
+      <AnimatePresence>
+        {isOverlayWidget && isOverlayInteractive && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 z-[9900] flex flex-col items-center justify-start pt-8 pointer-events-auto select-none"
+            dir="rtl"
+          >
+            <div className="bg-black/80 border border-white/10 px-6 py-2.5 rounded-full backdrop-blur-md shadow-[0_0_30px_rgba(0,0,0,0.8)] flex items-center gap-3">
+              <div className="h-2 w-2 rounded-full bg-neon-pink animate-ping"></div>
+              <p className="text-white text-sm font-bold flex items-center gap-2">
+                حالت تعاملی لوکس فعال است. برای خروج از این حالت دکمه
+                <kbd className="bg-white/10 border border-white/20 rounded px-2 text-neon-blue font-mono text-xs mx-1 leading-none shadow-inner h-6 flex items-center justify-center">Alt+F2</kbd> 
+                را بفشارید.
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div ref={containerRef} className="fixed inset-0 z-[9999] pointer-events-none flex flex-col items-center justify-end pb-4">
+        {/* Active Chat Window */}
       <AnimatePresence>
         {activeChatId && !isMinimized && (!isOverlayWidget || isOverlayInteractive) && (
           <motion.div
@@ -343,5 +366,6 @@ export const FriendChatOverlay = () => {
         })}
       </div>
     </div>
+    </>
   );
 };
