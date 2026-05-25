@@ -1,6 +1,7 @@
 const { app, BrowserWindow, Menu, Tray, globalShortcut, ipcMain, nativeImage, screen } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const { autoUpdater } = require('electron-updater');
 
 // Append switches to prevent background throttling of voice context & keys
 app.commandLine.appendSwitch('disable-renderer-backgrounding');
@@ -207,6 +208,13 @@ app.whenReady().then(() => {
   setupTray();
   registerGlobalShortcuts();
   applyStartupSetting();
+
+  // Handle background auto-update checks from VPS
+  try {
+    autoUpdater.checkForUpdatesAndNotify();
+  } catch (err) {
+    console.error('Update check failed on launch:', err);
+  }
 
   // IPC communication handlers
   ipcMain.on('register-ptt-shortcut', (event, key) => {
