@@ -20,25 +20,21 @@ if (!gotTheLock) {
 // Configure autoUpdater to not automatically show silent errors or prompt on default
 autoUpdater.autoDownload = true;
 autoUpdater.autoInstallOnAppQuit = true;
+try {
+  autoUpdater.setFeedURL({
+    provider: 'generic',
+    url: 'https://loxx.ir/updater/'
+  });
+} catch (feedErr) {
+  console.error('Failed to configure AutoUpdater Feed URL:', feedErr);
+}
 
 // Auto-updater event configurations for Persian-localized error/success feedback
 autoUpdater.on('error', (err) => {
   console.error('AutoUpdater Error:', err);
-  if (app.isPackaged) {
-    dialog.showMessageBoxSync({
-      type: 'error',
-      title: 'بروزرسانی لایکس (Loxx)',
-      message: 'خطا در برقراری ارتباط با پلتفرم لایکس!',
-      detail: 'سیستم قادر به بررسی نسخه یا دریافت بروزرسانی جدید نیست. این مشکل معمولاً به دلیل فعال بودن پروکسی، فیلترشکن (VPN)، قطعی اینترنت یا تنظیمات فیلترینگ DNS رخ می‌دهد.\n\nلطفاً فیلترشکن/پروکسی خود را خاموش کرده، در صورت داشتن DNS اختصاصی آن را قطع کنید و مجدداً برنامه را باز نمایید.',
-      buttons: ['خروج از لایکس']
-    });
-    isQuitting = true;
-    app.quit();
-  } else {
-    console.log('[Dev Mode] Bypassing update error.');
-    if (!mainWindow) {
-      createMainWindow();
-    }
+  // Silently bypass errors on launch so they can always play!
+  if (!mainWindow && gotTheLock) {
+    createMainWindow();
   }
 });
 
@@ -134,6 +130,14 @@ if (!config.hardwareAcceleration) {
 }
 
 function createMainWindow() {
+  if (!gotTheLock) return;
+  if (mainWindow) {
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.show();
+    mainWindow.focus();
+    return;
+  }
+
   mainWindow = new BrowserWindow({
     width: 1280,
     height: 800,
@@ -382,26 +386,18 @@ app.whenReady().then(() => {
     return app.getVersion();
   });
 
+  // Load browser window immediately so the player gets into the app instantly!
+  createMainWindow();
+
   if (app.isPackaged) {
-    // In production, force connection and update check before loading main window
-    console.log('Production mode: Verifying updates and server connection on startup...');
+    console.log('Production mode: Initiating silent background update check...');
     try {
       autoUpdater.checkForUpdatesAndNotify();
     } catch (err) {
-      console.error('Update check failed on launch root trigger:', err);
-      dialog.showMessageBoxSync({
-        type: 'error',
-        title: 'بروزرسانی لایکس (Loxx)',
-        message: 'خطا در بررسی نسخه لایکس!',
-        detail: 'برقراری ارتباط با سرویس آنلاین لایکس با خطا مواجه شد. لطفاً اتصال اینترنت یا ابزارهای تحریم‌شکن خود را بررسی نمایید.',
-        buttons: ['خروج']
-      });
-      isQuitting = true;
-      app.quit();
+      console.warn('Background update check failed to start:', err);
     }
   } else {
-    // In development mode, load browser window immediately
-    createMainWindow();
+    // In development mode, check update silently for testing
     try {
       autoUpdater.checkForUpdatesAndNotify();
     } catch (err) {

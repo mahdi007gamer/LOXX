@@ -151,7 +151,7 @@ export const AdminPage = () => {
   return (
     <div className="flex min-h-screen bg-dark-bg">
       <Sidebar />
-      <div className={cn("flex-1 p-4 md:p-8 overflow-y-auto custom-scrollbar transition-all duration-300", !isSidebarCollapsed ? "md:mr-64 mr-0" : "md:mr-20 mr-0")}>
+      <div className={cn("flex-1 min-w-0 p-4 md:p-8 overflow-y-auto custom-scrollbar transition-all duration-300", !isSidebarCollapsed ? "md:mr-64" : "md:mr-20")}>
         <div className="max-w-6xl mx-auto space-y-8" dir="rtl">
           <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div>
