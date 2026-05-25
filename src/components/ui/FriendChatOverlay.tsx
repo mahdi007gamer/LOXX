@@ -162,8 +162,10 @@ export const FriendChatOverlay = () => {
             style={{ 
               width: "100vw", 
               height: "100vh", 
-              background: isOverlayWidget ? "transparent" : "rgba(0, 0, 0, 0.6)", 
-              zIndex: 99999999 
+              background: "rgba(10, 10, 15, 0.45)", 
+              backdropFilter: "blur(12px)",
+              WebkitBackdropFilter: "blur(12px)",
+              zIndex: 8000 
             }}
             className="fixed inset-0 flex flex-col items-center justify-start pt-8 pointer-events-auto select-none border-4 border-neon-blue/20"
             dir="rtl"
