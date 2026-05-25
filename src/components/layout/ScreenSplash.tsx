@@ -4,6 +4,21 @@ import { motion, AnimatePresence } from "motion/react";
 export const ScreenSplash = ({ onComplete }: { onComplete: () => void }) => {
   const [progress, setProgress] = useState(0);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [appVersion, setAppVersion] = useState("1.0.1");
+
+  useEffect(() => {
+    // Determine live launcher version dynamically in desktop mode
+    const win = window as any;
+    if (win.electronAPI && typeof win.electronAPI.getAppVersion === 'function') {
+      win.electronAPI.getAppVersion()
+        .then((ver: string) => {
+          if (ver) {
+            setAppVersion(ver);
+          }
+        })
+        .catch((err: any) => console.log("Failed to fetch launcher version:", err));
+    }
+  }, []);
 
   useEffect(() => {
     let hasUpdated = false;
@@ -126,7 +141,7 @@ export const ScreenSplash = ({ onComplete }: { onComplete: () => void }) => {
         CONNECTING GATEWAY: LIVE
       </div>
       <div className="absolute bottom-4 left-6 text-[8px] text-gray-600 font-mono select-none pointer-events-none">
-        VERSION 1.0.0 (ELITE)
+        VERSION {appVersion} (ELITE)
       </div>
     </div>
   );

@@ -3,6 +3,20 @@ const path = require('path');
 const fs = require('fs');
 const { autoUpdater } = require('electron-updater');
 
+// Single Instance Lock
+const gotTheLock = app.requestSingleInstanceLock();
+if (!gotTheLock) {
+  app.quit();
+} else {
+  app.on('second-instance', (event, commandLine, workingDirectory) => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.show();
+      mainWindow.focus();
+    }
+  });
+}
+
 // Configure autoUpdater to not automatically show silent errors or prompt on default
 autoUpdater.autoDownload = true;
 autoUpdater.autoInstallOnAppQuit = true;
@@ -10,18 +24,36 @@ autoUpdater.autoInstallOnAppQuit = true;
 // Auto-updater event configurations for Persian-localized error/success feedback
 autoUpdater.on('error', (err) => {
   console.error('AutoUpdater Error:', err);
-  // Show error box advising user to close VPN/DNS
-  dialog.showMessageBox({
-    type: 'warning',
-    title: 'بروزرسانی لایکس (Loxx)',
-    message: 'خطا در دریافت یا بررسی نسخه جدید!',
-    detail: 'سیستم قادر به بررسی یا دریافت بروزرسانی جدید نیست. این مشکل معمولاً به دلیل فعال بودن پروکسی، فیلترشکن (VPN) یا تنظیمات فیلترینگ DNS رخ می‌دهد.\nلطفاً فیلترشکن خود را خاموش کرده، در صورت داشتن DNS اختصاصی آن را قطع کنید و مجدداً تلاش نمایید.',
-    buttons: ['متوجه شدم']
-  });
+  if (app.isPackaged) {
+    dialog.showMessageBoxSync({
+      type: 'error',
+      title: 'بروزرسانی لایکس (Loxx)',
+      message: 'خطا در برقراری ارتباط با پلتفرم لایکس!',
+      detail: 'سیستم قادر به بررسی نسخه یا دریافت بروزرسانی جدید نیست. این مشکل معمولاً به دلیل فعال بودن پروکسی، فیلترشکن (VPN)، قطعی اینترنت یا تنظیمات فیلترینگ DNS رخ می‌دهد.\n\nلطفاً فیلترشکن/پروکسی خود را خاموش کرده، در صورت داشتن DNS اختصاصی آن را قطع کنید و مجدداً برنامه را باز نمایید.',
+      buttons: ['خروج از لایکس']
+    });
+    isQuitting = true;
+    app.quit();
+  } else {
+    console.log('[Dev Mode] Bypassing update error.');
+    if (!mainWindow) {
+      createMainWindow();
+    }
+  }
 });
 
 autoUpdater.on('update-available', (info) => {
-  console.log('Update available:', info.version);
+  console.log('Update available, downloading in background:', info.version);
+  if (!mainWindow) {
+    createMainWindow();
+  }
+});
+
+autoUpdater.on('update-not-available', (info) => {
+  console.log('No update available. Launching app.');
+  if (!mainWindow) {
+    createMainWindow();
+  }
 });
 
 autoUpdater.on('update-downloaded', (info) => {
@@ -336,16 +368,45 @@ function registerGlobalShortcuts() {
 }
 
 app.whenReady().then(() => {
-  createMainWindow();
-  setupTray();
-  registerGlobalShortcuts();
-  applyStartupSetting();
+  if (!gotTheLock) {
+    app.quit();
+    return;
+  }
 
-  // Handle background auto-update checks from VPS
-  try {
-    autoUpdater.checkForUpdatesAndNotify();
-  } catch (err) {
-    console.error('Update check failed on launch:', err);
+  setupTray();
+  applyStartupSetting();
+  registerGlobalShortcuts();
+
+  // Handle get-app-version IPC handler
+  ipcMain.handle('get-app-version', () => {
+    return app.getVersion();
+  });
+
+  if (app.isPackaged) {
+    // In production, force connection and update check before loading main window
+    console.log('Production mode: Verifying updates and server connection on startup...');
+    try {
+      autoUpdater.checkForUpdatesAndNotify();
+    } catch (err) {
+      console.error('Update check failed on launch root trigger:', err);
+      dialog.showMessageBoxSync({
+        type: 'error',
+        title: 'بروزرسانی لایکس (Loxx)',
+        message: 'خطا در بررسی نسخه لایکس!',
+        detail: 'برقراری ارتباط با سرویس آنلاین لایکس با خطا مواجه شد. لطفاً اتصال اینترنت یا ابزارهای تحریم‌شکن خود را بررسی نمایید.',
+        buttons: ['خروج']
+      });
+      isQuitting = true;
+      app.quit();
+    }
+  } else {
+    // In development mode, load browser window immediately
+    createMainWindow();
+    try {
+      autoUpdater.checkForUpdatesAndNotify();
+    } catch (err) {
+      console.warn('Update check bypassed/failed in dev:', err);
+    }
   }
 
   // IPC communication handlers

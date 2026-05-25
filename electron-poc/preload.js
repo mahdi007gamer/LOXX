@@ -76,5 +76,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
   
   // Relaunch utility or quit
-  quitApp: () => ipcRenderer.send('quit-app')
+  quitApp: () => ipcRenderer.send('quit-app'),
+  
+  // Dynamic version query
+  getAppVersion: () => ipcRenderer.invoke('get-app-version')
 });
