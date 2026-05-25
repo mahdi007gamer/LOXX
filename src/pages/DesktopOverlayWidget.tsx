@@ -97,13 +97,12 @@ export const DesktopOverlayWidget = () => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.altKey && e.key === "F2") {
         e.preventDefault();
-        setIsOverlayInteractive(prev => {
-          const nextVal = !prev;
-          if ((window as any).electronAPI?.toggleOverlayInteraction) {
-            (window as any).electronAPI.toggleOverlayInteraction();
-          }
-          return nextVal;
-        });
+        // If running in Electron, the globalShortcut handles it.
+        // We only toggle locally when running in a standard web browser.
+        const isElectron = typeof window !== "undefined" && !!(window as any).electronAPI;
+        if (!isElectron) {
+          setIsOverlayInteractive(prev => !prev);
+        }
       }
     };
 
@@ -123,6 +122,7 @@ export const DesktopOverlayWidget = () => {
         {isOverlayInteractive && (
           <motion.div
             id="OverlayBackdrop"
+            key="overlay-widget-backdrop"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -133,7 +133,7 @@ export const DesktopOverlayWidget = () => {
               background: "rgba(0, 0, 0, 0.7)", 
               zIndex: 99999999 
             }}
-            className="fixed inset-0 pointer-events-auto select-none border-4 border-neon-blue/20 transition-opacity duration-200 ease-in-out"
+            className="fixed inset-0 pointer-events-auto select-none border-4 border-neon-blue/20"
           />
         )}
       </AnimatePresence>

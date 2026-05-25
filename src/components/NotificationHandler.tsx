@@ -48,7 +48,7 @@ const InviteToast = ({ t, inviteData, navigate }: { t: any, inviteData: any, nav
         stiffness: 300,
         opacity: { duration: 0.15 }
       }}
-      className="modern-glass-toast relative flex flex-col gap-5 w-[calc(100vw-32px)] sm:w-[360px] max-w-[360px] p-6 bg-[#0d0d14]/80 backdrop-blur-3xl rounded-[28px] border border-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.8)] overflow-hidden group" 
+      className="modern-glass-toast relative flex flex-col gap-5 w-[calc(100vw-32px)] sm:w-[360px] max-w-[360px] min-w-[280px] sm:min-w-[360px] shrink-0 p-6 bg-[#0d0d14]/80 backdrop-blur-3xl rounded-[28px] border border-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.8)] overflow-hidden group" 
       dir="rtl"
     >
       {/* Top Accent Line */}

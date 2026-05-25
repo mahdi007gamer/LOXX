@@ -41,7 +41,7 @@ import { cn } from "./lib/utils";
 import NotFoundPage from "./pages/NotFoundPage";
 
 import { AuthProvider, useAuth } from "./context/AuthContext";
-import { Toaster, toast } from "react-hot-toast";
+import { Toaster, toast, ToastBar, resolveValue } from "react-hot-toast";
 
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AdminPage } from "./pages/AdminPage";
@@ -110,6 +110,9 @@ const AppContent = () => {
       style.bottom = isMobile ? 80 : 24; // Safe padding from bottom/Navbar
       style.right = safeRight;
       style.left = "auto";
+      style.width = isMobile ? "calc(100vw - 32px)" : `${toastWidth}px`;
+      style.maxWidth = isMobile ? "calc(100vw - 32px)" : `${toastWidth}px`;
+      style.minWidth = isMobile ? "280px" : `${toastWidth}px`;
       
       return style;
     }
@@ -311,7 +314,38 @@ const AppContent = () => {
             secondary: '#0a0a0f',
           },
         }}
-      />
+      >
+        {(t) => {
+          // If in Electron main window, only allow lobby invitations
+          if (isElectron && !isOverlayWidget) {
+            const isLobbyInvite = t.id && (t.id.startsWith("invite-") || t.id.toLowerCase().includes("invite"));
+            if (!isLobbyInvite) {
+              return null; // Suppress notification in standard app window while keeping it in overlay
+            }
+          }
+
+          return t.type === 'custom' ? (
+            resolveValue(t.message, t)
+          ) : (
+            <ToastBar toast={t}>
+              {({ icon, message }) => (
+                <>
+                  {icon}
+                  {message}
+                  {t.type !== 'loading' && (
+                    <button 
+                      onClick={() => toast.dismiss(t.id)} 
+                      className="mr-2 opacity-50 hover:opacity-100 transition-opacity"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </>
+              )}
+            </ToastBar>
+          );
+        }}
+      </Toaster>
     </div>
     </>
   );

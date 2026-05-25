@@ -100,13 +100,11 @@ export const FriendChatOverlay = () => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.altKey && e.key === "F2") {
         e.preventDefault();
-        setIsOverlayInteractive(prev => {
-          const nextVal = !prev;
-          if ((window as any).electronAPI?.toggleOverlayInteraction) {
-            (window as any).electronAPI.toggleOverlayInteraction();
-          }
-          return nextVal;
-        });
+        // If running in Electron, the globalShortcut handles it.
+        // We only toggle locally when running in a standard web browser.
+        if (!isElectron) {
+          setIsOverlayInteractive(prev => !prev);
+        }
       }
     };
 
@@ -150,6 +148,7 @@ export const FriendChatOverlay = () => {
         {isOverlayInteractive && (
           <motion.div
             id="OverlayBackdrop"
+            key="friend-chat-overlay-backdrop"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -160,7 +159,7 @@ export const FriendChatOverlay = () => {
               background: "rgba(0, 0, 0, 0.7)", 
               zIndex: 99999999 
             }}
-            className="fixed inset-0 flex flex-col items-center justify-start pt-8 pointer-events-auto select-none border-4 border-neon-blue/20 transition-opacity duration-200 ease-in-out"
+            className="fixed inset-0 flex flex-col items-center justify-start pt-8 pointer-events-auto select-none border-4 border-neon-blue/20"
             dir="rtl"
           >
             <div className="bg-black/90 border border-white/10 px-6 py-2.5 rounded-full backdrop-blur-md shadow-[0_0_30px_rgba(0,0,0,0.8)] flex items-center gap-3 relative z-[999999999]">

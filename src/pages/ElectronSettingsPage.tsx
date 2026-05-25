@@ -56,7 +56,7 @@ export const ElectronSettingsPage = () => {
   const triggerPreviewToast = () => {
     toast.custom((t) => (
       <div className={cn(
-        "bg-[#0a0a14]/95 border border-[#00e5ff]/40 shadow-[0_0_20px_rgba(0,195,255,0.3)] rounded-xl p-4 flex flex-col gap-1 items-start text-right max-w-xs backdrop-blur-xl transition-all duration-300",
+        "bg-[#0a0a14]/95 border border-[#00e5ff]/40 shadow-[0_0_20px_rgba(0,195,255,0.3)] rounded-xl p-4 flex flex-col gap-1 items-start text-right w-[320px] max-w-xs min-w-[280px] shrink-0 backdrop-blur-xl transition-all duration-300",
         t.visible ? "opacity-100 scale-100" : "opacity-0 scale-95"
       )} dir="rtl">
         <div className="flex items-center gap-2">
