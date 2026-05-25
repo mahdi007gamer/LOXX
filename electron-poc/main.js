@@ -44,6 +44,10 @@ autoUpdater.on('checking-for-update', () => {
 
 autoUpdater.on('update-available', (info) => {
   console.log('Update available, downloading in background:', info.version);
+  if (typeof updateCheckTimeout !== 'undefined') {
+    clearTimeout(updateCheckTimeout);
+  }
+  global.isUpdateDownloading = true; // Use global to traverse scopes just in case
   sendUpdateStatus('downloading', 45);
 });
 
@@ -487,31 +491,37 @@ app.whenReady().then(() => {
     return app.getVersion();
   });
 
-  if (app.isPackaged) {
-    console.log('Production mode: Initiating silent background update check...');
-    try {
-      autoUpdater.checkForUpdatesAndNotify();
-    } catch (err) {
-      console.warn('Background update check failed to start:', err);
-      launchMainWindow();
-    }
-  } else {
-    // In development mode, mock update search on splash, then load main
-    setTimeout(() => {
-      sendUpdateStatus('checking', 35);
-      setTimeout(() => {
-        sendUpdateStatus('not-available', 100);
-        setTimeout(() => {
-          launchMainWindow();
-        }, 1000);
-      }, 1000);
-    }, 500);
-  }
+let isUpdateDownloading = false;
+let updateCheckTimeout;
 
-  // Safe fallback to prevent freeze under any network / updater failures
-  setTimeout(() => {
+if (app.isPackaged) {
+  console.log('Production mode: Initiating silent background update check...');
+  try {
+    autoUpdater.checkForUpdatesAndNotify();
+  } catch (err) {
+    console.warn('Background update check failed to start:', err);
     launchMainWindow();
-  }, 10000);
+  }
+} else {
+  // In development mode, mock update search on splash, then load main
+  setTimeout(() => {
+    sendUpdateStatus('checking', 35);
+    setTimeout(() => {
+      sendUpdateStatus('not-available', 100);
+      setTimeout(() => {
+        launchMainWindow();
+      }, 1000);
+    }, 1000);
+  }, 500);
+}
+
+// Safe fallback to prevent freeze under any network / updater failures
+updateCheckTimeout = setTimeout(() => {
+  if (!global.isUpdateDownloading) {
+    launchMainWindow();
+  }
+}, 7000);
+
 
   // IPC communication handlers
   ipcMain.on('register-ptt-shortcut', (event, key) => {

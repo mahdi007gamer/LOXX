@@ -8,6 +8,7 @@ import { PlatformStats } from "../components/landing/PlatformStats";
 import { LiveActivity } from "../components/landing/LiveActivity";
 import { Footer } from "../components/landing/Footer";
 import { ScrollFlameEffect } from "../components/landing/ScrollFlameEffect";
+import { DownloadSection } from "../components/landing/DownloadSection";
 import { ChevronUp } from "lucide-react";
 
 const SectionReveal = ({ children }: { children: React.ReactNode }) => (
@@ -67,6 +68,10 @@ export const LandingPage = () => {
 
         <SectionReveal>
           <GamerShowcase />
+        </SectionReveal>
+
+        <SectionReveal>
+          <DownloadSection />
         </SectionReveal>
 
         <Footer />
