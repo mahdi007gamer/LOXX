@@ -126,7 +126,7 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
       <motion.div 
         initial={{ opacity: 0, y: 20, scale: 0.95 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
-        className="bg-[#0b0c10] border border-white/5 rounded-3xl w-full max-w-[1000px] overflow-hidden shadow-2xl flex h-full md:h-auto md:max-h-[90vh] md:flex-row flex-col relative"
+        className="bg-[#0b0c10] border border-white/5 rounded-3xl w-full max-w-[1000px] overflow-hidden shadow-2xl flex max-h-[calc(100vh-2rem)] md:h-auto md:max-h-[90vh] md:flex-row flex-col relative"
       >
         {/* Left Panel: Live Preview (Hidden on Mobile) */}
         <div className="hidden lg:flex w-[350px] bg-[#111216] border-l border-white/5 p-6 flex-col shrink-0 relative overflow-y-auto">

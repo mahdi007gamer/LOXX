@@ -31,15 +31,16 @@ export const Sidebar = () => {
   const { user, logout, isSidebarCollapsed } = useAuth();
   const isElectron = typeof window !== "undefined" && !!(window as any).electronAPI;
   
-  if (isSidebarCollapsed) return null;
+  // if (isSidebarCollapsed) return null; // Removed so it can render as tiny
   
   return (
     <aside 
       className={cn(
-        "fixed right-0 hidden w-64 border-l border-white/10 bg-dark-[#050507]/50 bg-dark-bg/50 backdrop-blur-lg md:block z-[40]",
+        "fixed right-0 hidden border-l border-white/10 bg-dark-[#050507]/50 bg-dark-bg/50 backdrop-blur-lg md:block z-[40] transition-all duration-300",
         isElectron 
           ? "top-[100px] h-[calc(100vh-100px)]" 
-          : "top-16 h-[calc(100vh-64px)]"
+          : "top-16 h-[calc(100vh-64px)]",
+        isSidebarCollapsed ? "w-20" : "w-64"
       )}
     >
       <div className="flex h-full flex-col justify-between py-6">
@@ -48,45 +49,51 @@ export const Sidebar = () => {
             <NavLink
               key={item.path}
               to={item.path}
+              title={isSidebarCollapsed ? item.label : undefined}
               className={({ isActive }) => cn(
-                "flex items-center gap-3 rounded-lg px-4 py-3 transition-all duration-300",
+                "flex items-center rounded-lg py-3 transition-all duration-300 overflow-hidden",
                 isActive 
                   ? "bg-neon-blue/10 text-neon-blue shadow-[inset_0_0_10px_rgba(0,229,255,0.1)] border-r-2 border-neon-blue" 
-                  : "text-gray-400 hover:bg-white/5 hover:text-gray-100"
+                  : "text-gray-400 hover:bg-white/5 hover:text-gray-100",
+                isSidebarCollapsed ? "justify-center px-0" : "gap-3 px-4"
               )}
             >
-              <item.icon size={20} />
-              <span className="font-medium">{item.label}</span>
+              <item.icon size={20} className="shrink-0" />
+              {!isSidebarCollapsed && <span className="font-medium whitespace-nowrap">{item.label}</span>}
             </NavLink>
           ))}
           
           {isElectron && (
             <NavLink
               to="/electron-settings"
+              title={isSidebarCollapsed ? "تنظیمات ویندوز" : undefined}
               className={({ isActive }) => cn(
-                "flex items-center gap-3 rounded-lg px-4 py-3 transition-all duration-300",
+                "flex items-center rounded-lg py-3 transition-all duration-300 overflow-hidden",
                 isActive 
                   ? "bg-neon-blue/10 text-neon-blue shadow-[inset_0_0_10px_rgba(0,229,255,0.1)] border-r-2 border-neon-blue" 
-                  : "text-indigo-400/80 hover:bg-white/5 hover:text-indigo-400"
+                  : "text-indigo-400/80 hover:bg-white/5 hover:text-indigo-400",
+                isSidebarCollapsed ? "justify-center px-0" : "gap-3 px-4"
               )}
             >
-              <Settings size={20} />
-              <span className="font-medium">تنظیمات ویندوز</span>
+              <Settings size={20} className="shrink-0" />
+              {!isSidebarCollapsed && <span className="font-medium whitespace-nowrap">تنظیمات ویندوز</span>}
             </NavLink>
           )}
           
           {(user?.role === "ADMIN" || user?.email === "admin@loxx.ir" || user?.email === "admin@test.com") && (
             <NavLink
               to="/admin"
+              title={isSidebarCollapsed ? "پنل مدیریت" : undefined}
               className={({ isActive }) => cn(
-                "flex items-center gap-3 rounded-lg px-4 py-3 transition-all duration-300",
+                "flex items-center rounded-lg py-3 transition-all duration-300 overflow-hidden",
                 isActive 
                   ? "bg-neon-blue/10 text-neon-blue shadow-[inset_0_0_10px_rgba(0,229,255,0.1)] border-r-2 border-neon-blue" 
-                  : "text-amber-400/80 hover:bg-white/5 hover:text-amber-400"
+                  : "text-amber-400/80 hover:bg-white/5 hover:text-amber-400",
+                isSidebarCollapsed ? "justify-center px-0" : "gap-3 px-4"
               )}
             >
-              <Shield size={20} />
-              <span className="font-medium">پنل مدیریت</span>
+              <Shield size={20} className="shrink-0" />
+              {!isSidebarCollapsed && <span className="font-medium whitespace-nowrap">پنل مدیریت</span>}
             </NavLink>
           )}
         </div>
@@ -94,10 +101,14 @@ export const Sidebar = () => {
         <div className="px-4">
           <button 
             onClick={logout}
-            className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-neon-pink/10 hover:text-neon-pink transition-all"
+            title={isSidebarCollapsed ? "خروج" : undefined}
+            className={cn(
+              "flex w-full items-center rounded-lg py-3 text-gray-400 hover:bg-neon-pink/10 hover:text-neon-pink transition-all overflow-hidden",
+               isSidebarCollapsed ? "justify-center px-0" : "gap-3 px-4"
+            )}
           >
-            <LogOut size={20} />
-            <span className="font-medium">خروج</span>
+            <LogOut size={20} className="shrink-0" />
+            {!isSidebarCollapsed && <span className="font-medium whitespace-nowrap">خروج</span>}
           </button>
         </div>
       </div>

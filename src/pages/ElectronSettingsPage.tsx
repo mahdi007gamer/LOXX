@@ -4,9 +4,10 @@ import { GlowButton } from "../components/ui/GlowButton";
 import { toast } from "react-hot-toast";
 import { useAuth } from "../context/AuthContext";
 import { cn } from "../lib/utils";
+import { Sidebar } from "../components/layout/Sidebar";
 
 export const ElectronSettingsPage = () => {
-  const { user } = useAuth();
+  const { user, isSidebarCollapsed } = useAuth();
   const [config, setConfig] = useState<any>({});
   const [recordingKey, setRecordingKey] = useState<string | null>(null);
 
@@ -59,13 +60,17 @@ export const ElectronSettingsPage = () => {
   };
 
   return (
-    <div className="p-6 md:p-8 space-y-8 animate-fade-in custom-scrollbar max-w-4xl mx-auto" dir="rtl">
-      <div>
-         <h1 className="text-3xl font-black text-white tracking-tighter flex items-center gap-3">
-           <MonitorPlay className="text-indigo-400" size={32} /> تنظیمات ویندوز <span className="text-sm bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded border border-indigo-500/30">Loxx Client</span>
-         </h1>
-         <p className="text-gray-400 mt-2 text-sm">این تنظیمات مخصوص نسخه ویندوز می‌باشند و روی مرورگر تاثیری ندارند.</p>
-      </div>
+    <div className="flex bg-dark-bg min-h-screen custom-scrollbar">
+      <Sidebar />
+      <main className={cn("flex-1 p-6 md:p-8 space-y-8 animate-fade-in custom-scrollbar transition-all duration-300 min-w-0 w-full", !isSidebarCollapsed ? "md:mr-64" : "md:mr-20")}>
+        <div className="max-w-4xl mx-auto" dir="rtl">
+          <div>
+            <h1 className="text-3xl font-black text-white tracking-tighter flex items-center gap-3">
+              <MonitorPlay className="text-indigo-400" size={32} /> تنظیمات ویندوز <span className="text-sm bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded border border-indigo-500/30">Loxx Client</span>
+            </h1>
+            <p className="text-gray-400 mt-2 text-sm">این تنظیمات مخصوص نسخه ویندوز می‌باشند و روی مرورگر تاثیری ندارند.</p>
+          </div>
+
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
          {/* Push To Talk & Audio */}
@@ -188,6 +193,8 @@ export const ElectronSettingsPage = () => {
             </div>
          </div>
       </div>
-    </div>
+     </div>
+    </main>
+   </div>
   );
 };

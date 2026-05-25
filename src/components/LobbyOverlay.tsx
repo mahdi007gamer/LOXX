@@ -19,7 +19,7 @@ export const LobbyOverlay = () => {
         initial={{ y: 100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 100, opacity: 0 }}
-        className="fixed bottom-6 right-6 z-[999] flex items-center justify-end group"
+        className="fixed bottom-24 md:bottom-6 right-6 z-[999] flex items-center justify-end group"
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >

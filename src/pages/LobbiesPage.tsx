@@ -95,10 +95,10 @@ export const LobbiesPage = () => {
     });
 
   return (
-    <div className="flex min-h-screen bg-[#0a0a0f] overflow-x-hidden">
+    <div className={cn("flex min-h-screen bg-[#0a0a0f] overflow-x-hidden", isElectron ? "min-h-[calc(100vh-100px)]" : "min-h-[calc(100vh-64px)]")}>
       <Sidebar />
-      <main className={cn("flex-1 w-full relative pb-24 md:pb-8 transition-all duration-300", !isSidebarCollapsed ? "md:mr-64" : "mr-0")}>
-        <div className="px-4 py-8 md:px-8 lg:px-10 max-w-7xl mx-auto">
+      <main className={cn("flex-1 min-w-0 relative pb-24 md:pb-8 transition-all duration-300", !isSidebarCollapsed ? "md:mr-64" : "md:mr-20")}>
+        <div className="px-4 py-8 md:px-8 lg:px-10 max-w-7xl mx-auto w-full">
           {/* Mobile Header: Beautifully aligned and spaced */}
           <header className="mb-6 md:mb-12 space-y-6 md:space-y-0">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 md:gap-6">
