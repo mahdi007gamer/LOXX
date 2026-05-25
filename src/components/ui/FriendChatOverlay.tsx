@@ -242,7 +242,7 @@ export const FriendChatOverlay = () => {
             animate={{ opacity: 1, x: 0, scale: 1 }}
             exit={{ opacity: 0, x: 50, scale: 0.95 }}
             transition={{ type: "spring", damping: 20 }}
-            className="fixed right-6 top-24 bottom-24 w-[300px] bg-[#07070d] border-2 border-neon-blue/30 rounded-2xl flex flex-col shadow-[0_0_50px_rgba(0,0,0,0.95)] z-[9999] pointer-events-auto overflow-hidden text-right"
+            className="fixed right-6 top-24 bottom-24 w-[300px] bg-[#020205] border-2 border-neon-blue/30 rounded-2xl flex flex-col shadow-[0_0_50px_rgba(0,0,0,0.95)] z-[9999] pointer-events-auto overflow-hidden text-right"
             dir="rtl"
           >
             {/* Header */}
@@ -513,7 +513,7 @@ export const FriendChatOverlay = () => {
             animate={{ opacity: 1, x: 0, scale: 1 }}
             exit={{ opacity: 0, x: -50, scale: 0.95 }}
             transition={{ type: "spring", damping: 20 }}
-            className="fixed left-6 top-24 bottom-24 w-[280px] bg-[#07070d] border-2 border-neon-blue/30 rounded-2xl flex flex-col shadow-[0_0_50px_rgba(0,0,0,0.95)] z-[9999] pointer-events-auto overflow-hidden text-right"
+            className="fixed left-6 top-24 bottom-24 w-[280px] bg-[#020205] border-2 border-neon-blue/30 rounded-2xl flex flex-col shadow-[0_0_50px_rgba(0,0,0,0.95)] z-[9999] pointer-events-auto overflow-hidden text-right"
             dir="rtl"
           >
             {/* Header */}

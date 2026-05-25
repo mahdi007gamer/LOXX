@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "motion/react";
 export const ScreenSplash = ({ onComplete }: { onComplete: () => void }) => {
   const [progress, setProgress] = useState(0);
   const [isUpdating, setIsUpdating] = useState(false);
-  const [appVersion, setAppVersion] = useState("1.0.2");
+  const [appVersion, setAppVersion] = useState("1.0.4");
 
   useEffect(() => {
     // Determine live launcher version dynamically in desktop mode

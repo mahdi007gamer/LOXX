@@ -18,7 +18,7 @@
     }
 
     body {
-      background: #040408;
+      background: transparent;
       color: #ffffff;
       font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
       overflow: hidden;
@@ -27,6 +27,20 @@
       align-items: center;
       justify-content: center;
       position: relative;
+    }
+
+    .window-frame {
+      position: absolute;
+      inset: 8px; /* Leave margin for shadow or rounded edges */
+      background: #040408;
+      border-radius: 24px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
     }
 
     /* Ambient background glows */
@@ -211,35 +225,36 @@
   </style>
 </head>
 <body>
-  <div class="app-border"></div>
-  <div class="glow-blue"></div>
-  <div class="glow-pink"></div>
+  <div class="window-frame">
+    <div class="glow-blue"></div>
+    <div class="glow-pink"></div>
 
-  <div class="splash-container">
-    <div class="logo-wrapper">
-      <div class="logo-glow"></div>
-      <div class="logo-card">
-        <img src="../public/logo.png" alt="Loxx" class="logo-image">
+    <div class="splash-container">
+      <div class="logo-wrapper">
+        <div class="logo-glow"></div>
+        <div class="logo-card">
+          <img src="./build/logo.png" onerror="this.onerror=null; this.src='../public/logo.png';" alt="Loxx" class="logo-image">
+        </div>
+      </div>
+
+      <div class="brand-title">LOXX LAUNCHER</div>
+      <div class="brand-subtitle">پلتفرم گیمینگ و چت صوتی لوکس</div>
+
+      <div class="progress-box">
+        <div class="progress-track">
+          <div class="progress-fill" id="fill-element"></div>
+        </div>
+        <div class="status-labels">
+          <span id="percent-text">0%</span>
+          <span id="status-text">بررسی بروزرسانی لوکس...</span>
+        </div>
       </div>
     </div>
 
-    <div class="brand-title">LOXX LAUNCHER</div>
-    <div class="brand-subtitle">پلتفرم گیمینگ و چت صوتی لوکس</div>
-
-    <div class="progress-box">
-      <div class="progress-track">
-        <div class="progress-fill" id="fill-element"></div>
-      </div>
-      <div class="status-labels">
-        <span id="percent-text">0%</span>
-        <span id="status-text">بررسی بروزرسانی لوکس...</span>
-      </div>
+    <div class="footer-stamp">
+      <span>STATION-GATEWAY: READY</span>
+      <span>SECURITY ENCRYPTION: SECURE_CORE_AES256</span>
     </div>
-  </div>
-
-  <div class="footer-stamp">
-    <span>STATION-GATEWAY: READY</span>
-    <span>SECURITY ENCRYPTION: SECURE_CORE_AES256</span>
   </div>
 
   <script>

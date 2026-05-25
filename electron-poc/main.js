@@ -98,7 +98,6 @@ function createSplashWindow() {
     alwaysOnTop: true,
     resizable: false,
     show: false,
-    backgroundColor: '#040408',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
@@ -590,11 +589,13 @@ app.whenReady().then(() => {
     isOverlayInteractive = !isOverlayInteractive;
     if (isOverlayInteractive) {
       overlayWindow.setIgnoreMouseEvents(false);
+      overlayWindow.setOpacity(1.0); // Make the entire window solid of high-readability in focus mode
       overlayWindow.focus();
       overlayWindow.webContents.send('overlay-interaction-mode', true);
     } else {
       let clickThrough = config.overlayClickThrough !== false;
       overlayWindow.setIgnoreMouseEvents(clickThrough, { forward: true });
+      overlayWindow.setOpacity(Number(config.overlayOpacity !== undefined ? config.overlayOpacity : 0.9)); // Restore to beautiful transparent HUD opacity
       overlayWindow.webContents.send('overlay-interaction-mode', false);
     }
   };

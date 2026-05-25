@@ -117,29 +117,6 @@ export const DesktopOverlayWidget = () => {
 
   return (
     <>
-      {/* Full blurred backdrop when interactive / focused */}
-      <AnimatePresence>
-        {isOverlayInteractive && (
-          <motion.div
-            id="OverlayBackdrop"
-            key="overlay-widget-backdrop"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2, ease: "easeInOut" }}
-            style={{ 
-              width: "100vw", 
-              height: "100vh", 
-              background: "rgba(4, 4, 8, 0.42)", 
-              backdropFilter: "blur(24px) saturate(180%)",
-              WebkitBackdropFilter: "blur(24px) saturate(180%)",
-              zIndex: 8000 
-            }}
-            className="fixed inset-0 pointer-events-auto select-none border-4 border-neon-blue/20"
-          />
-        )}
-      </AnimatePresence>
-
       <div className={cn("fixed z-[9999] flex flex-col gap-3 pointer-events-none select-none", positionClasses)}>
         {/* Title tag - minimal, matches Discord Overlay appearance */}
         {players && players.length > 0 && (
