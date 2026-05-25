@@ -45,6 +45,9 @@ import { Toaster, toast, ToastBar, resolveValue } from "react-hot-toast";
 
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AdminPage } from "./pages/AdminPage";
+import { FAQPage } from "./pages/FAQPage";
+import { TermsPage } from "./pages/TermsPage";
+import { PrivacyPage } from "./pages/PrivacyPage";
 
 import { PublicProfilePage } from "./pages/PublicProfilePage";
 import { ElectronSettingsPage } from "./pages/ElectronSettingsPage";
@@ -378,6 +381,11 @@ const AppContent = () => {
           <Route path="/my-games" element={<ProtectedRoute><MyGamesPage /></ProtectedRoute>} />
           <Route path="/settings/elite" element={<ProtectedRoute><EliteSettingsPage /></ProtectedRoute>} />
           <Route path="/admin" element={<ProtectedRoute adminOnly={true}><AdminPage /></ProtectedRoute>} />
+          
+          <Route path="/faq" element={<FAQPage />} />
+          <Route path="/terms" element={<TermsPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
+
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </main>

@@ -63,9 +63,9 @@ export const HeroSection = () => {
            </p>
         </div>
 
-        <div className="flex flex-col items-center justify-center gap-6 sm:flex-row">
-          <Link to="/auth">
-            <GlowButton variant="pink" size="lg" className="group relative min-w-[200px] overflow-hidden !rounded-2xl">
+        <div className="flex flex-col items-center justify-center gap-6 sm:flex-row mb-6 mt-12 w-full max-w-lg mx-auto">
+          <Link to="/auth" className="w-full sm:w-1/2">
+            <GlowButton variant="pink" size="lg" className="group relative w-full overflow-hidden !rounded-2xl justify-center">
               <span className="relative z-10 flex items-center gap-3">
                 <Play size={20} fill="currentColor" />
                 <span className="text-lg">همین حالا شروع کنید</span>
@@ -78,12 +78,20 @@ export const HeroSection = () => {
               />
             </GlowButton>
           </Link>
-          <Link to="/lobbies">
-            <GlowButton variant="blue" size="lg" className="group min-w-[200px] !rounded-2xl text-lg backdrop-blur-md">
+          <Link to="/lobbies" className="w-full sm:w-1/2">
+            <GlowButton variant="blue" size="lg" className="group w-full !rounded-2xl text-lg backdrop-blur-md justify-center mt-4 sm:mt-0">
               <Gamepad2 size={24} className="ml-2 group-hover:rotate-12 transition-transform" />
               <span>اتاق‌های بازی</span>
             </GlowButton>
           </Link>
+        </div>
+
+        <div className="w-full max-w-lg mx-auto px-4 sm:px-0">
+          <a href="#download" className="block w-full">
+             <GlowButton variant="ghost" size="lg" className="w-full !rounded-2xl text-lg border border-white/20 bg-white/5 hover:bg-white/10 hover:border-white/40 justify-center">
+                دانلود اپلیکیشن لوکس
+             </GlowButton>
+          </a>
         </div>
       </motion.div>
 

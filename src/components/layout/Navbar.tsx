@@ -61,19 +61,21 @@ export const Navbar = () => {
     <>
       <nav 
         className={cn(
-          "fixed left-0 right-0 z-[10000] w-full transition-all duration-500 Richie-nav",
+          "fixed left-0 right-0 z-[10000] w-full transition-all duration-500 Richie-nav pointer-events-none",
           isElectron 
             ? (isLanding && isScrolled ? "top-16 px-4" : "top-9")
             : (!isLanding ? "top-0" : (isScrolled ? "top-4 px-4" : "top-0")),
-          !isLanding || isScrolled
+          !isLanding
             ? "bg-[#050507]/95 border-b border-white/10 backdrop-blur-md"
             : "bg-transparent"
         )}
       >
         <div 
           className={cn(
-            "mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8 transition-all duration-500 relative",
-            isLanding && isScrolled && "max-w-4xl rounded-2xl bg-[#050507]/90 px-8 shadow-[0_20px_50px_rgba(0,0,0,0.8),0_0_15px_rgba(0,229,255,0.2)] backdrop-blur-xl border border-white/10"
+            "mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8 transition-all duration-500 relative pointer-events-auto",
+            isLanding && isScrolled ? "max-w-4xl rounded-2xl bg-[#050507]/90 px-8 shadow-[0_20px_50px_rgba(0,0,0,0.8),0_0_15px_rgba(0,229,255,0.2)] backdrop-blur-xl border border-white/10"
+            : isLanding && !isScrolled ? ""
+            : "max-w-none px-4 sm:px-6 lg:px-8" // Reset when not landing
           )}
         >
           {/* Left: Logo & Mobile Toggle */}
@@ -123,6 +125,9 @@ export const Navbar = () => {
               <NavLink to="/lobbies" className={({ isActive }) => cn("transition-all font-black text-[10px] uppercase tracking-[0.2em] italic", isActive ? "text-neon-blue drop-shadow-[0_0_8px_rgba(0,229,255,0.5)]" : "text-gray-400 hover:text-white ripple-active")}>لابی‌ها</NavLink>
               <NavLink to="/chat" className={({ isActive }) => cn("transition-all font-black text-[10px] uppercase tracking-[0.2em] italic", isActive ? "text-neon-blue drop-shadow-[0_0_8px_rgba(0,229,255,0.5)]" : "text-gray-400 hover:text-white ripple-active")}>چت سراسری</NavLink>
               <NavLink to="/games" className={({ isActive }) => cn("transition-all font-black text-[10px] uppercase tracking-[0.2em] italic", isActive ? "text-neon-blue drop-shadow-[0_0_8px_rgba(0,229,255,0.5)]" : "text-gray-400 hover:text-white ripple-active")}>بازی‌ها</NavLink>
+              {isLanding && (
+                <a href="#download" className="transition-all font-black text-[10px] uppercase tracking-[0.2em] italic text-gray-400 hover:text-white ripple-active">دانلود</a>
+              )}
             </div>
           )}
 

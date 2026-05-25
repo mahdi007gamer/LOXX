@@ -2,24 +2,30 @@ import { io } from "socket.io-client";
 
 const SOCKET_URL = window.location.origin;
 
-export const createNamespaceSocket = (namespace: string) => {
+export const createNamespaceSocket = (namespace: string, withAuth = true) => {
   // Determine if we should force WSS (useful if Runflare configures HTTP but forwards to HTTPS)
   // By using location.origin, we respect the current protocol (HTTP vs HTTPS)
   // Force websocket transport to fix session unknown errors in VPS/Runflare load balancers
+  
+  const authConfig = withAuth ? {
+    auth: (cb: any) => {
+      const token = localStorage.getItem("loxx_token");
+      cb({ token: `Bearer ${token}` });
+    }
+  } : {};
+
   return io(`${SOCKET_URL}/${namespace}`, {
     path: '/api/v1/socket.io',
     autoConnect: false,
     transports: ['polling', 'websocket'], // Use polling fallback for reverse proxies
     reconnectionDelay: 1000,
     reconnectionDelayMax: 5000,
-    auth: (cb) => {
-      const token = localStorage.getItem("loxx_token");
-      cb({ token: `Bearer ${token}` });
-    }
+    ...authConfig
   });
 };
 
 // Global sockets that can be reused
+export const publicSocket = createNamespaceSocket("public", false);
 export const presenceSocket = createNamespaceSocket("presence");
 export const lobbySocket = createNamespaceSocket("lobby");
 export const chatSocket = createNamespaceSocket("chat");

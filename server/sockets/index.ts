@@ -63,6 +63,7 @@ export function setupWebSockets(io: Server) {
   });
 
   // Namespaces
+  const publicNs = io.of("/public");
   const presenceNs = io.of("/presence");
   const lobbyNs = io.of("/lobby");
   const chatNs = io.of("/chat");
@@ -70,6 +71,23 @@ export function setupWebSockets(io: Server) {
   const voiceNs = io.of("/voice");
 
   globalNotifyNs = notifyNs;
+
+  presenceNs.use(authMiddleware);
+  lobbyNs.use(authMiddleware);
+  chatNs.use(authMiddleware);
+  notifyNs.use(authMiddleware);
+  voiceNs.use(authMiddleware);
+
+  // We export a helper to broadcast public activities
+  const broadcastPublicActivity = (user: string, action: string, type: 'LOBBY_CREATE' | 'LOBBY_JOIN' | 'CHAT_MESSAGE' | 'LEVEL_UP') => {
+    publicNs.emit("public.activity", {
+      id: Date.now().toString() + Math.random(),
+      user,
+      action,
+      type
+    });
+  };
+  global.broadcastPublicActivity = broadcastPublicActivity;
 
   // Periodically update lastActivity for all connected users (every 2 minutes)
   // This keeps them "online" in FriendshipService which checks for lastActivity < 5 mins

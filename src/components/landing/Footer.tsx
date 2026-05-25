@@ -33,10 +33,10 @@ export const Footer = () => {
           <div>
             <h4 className="mb-6 font-bold text-white">پلتفرم</h4>
             <ul className="space-y-4 text-sm text-gray-500">
-              <li><Link to="/rooms" className="hover:text-neon-blue transition-colors">اتاق‌های بازی</Link></li>
+              <li><Link to="/lobbies" className="hover:text-neon-blue transition-colors">اتاق‌های بازی</Link></li>
               <li><Link to="/lobbies" className="hover:text-neon-blue transition-colors">لابی‌های فعال</Link></li>
               <li><Link to="/chat" className="hover:text-neon-blue transition-colors">چت سراسری</Link></li>
-              <li><Link to="/leaderboard" className="hover:text-neon-blue transition-colors">رتبه‌بندی کاربران</Link></li>
+              <li><Link to="/ranking" className="hover:text-neon-blue transition-colors">رتبه‌بندی کاربران</Link></li>
             </ul>
           </div>
 
@@ -44,10 +44,10 @@ export const Footer = () => {
           <div>
             <h4 className="mb-6 font-bold text-white">پشتیبانی</h4>
              <ul className="space-y-4 text-sm text-gray-500">
-              <li><Link to="#" className="hover:text-neon-pink transition-colors">سوالات متداول</Link></li>
-              <li><Link to="#" className="hover:text-neon-pink transition-colors">گزارش خطا</Link></li>
-              <li><Link to="#" className="hover:text-neon-pink transition-colors">قوانین و مقررات</Link></li>
-              <li><Link to="#" className="hover:text-neon-pink transition-colors">تماس با ما</Link></li>
+              <li><Link to="/faq" className="hover:text-neon-pink transition-colors">سوالات متداول</Link></li>
+              <li><Link to="/settings/support" className="hover:text-neon-pink transition-colors">گزارش خطا</Link></li>
+              <li><Link to="/terms" className="hover:text-neon-pink transition-colors">قوانین و مقررات</Link></li>
+              <li><Link to="/settings/support" className="hover:text-neon-pink transition-colors">تماس با ما</Link></li>
             </ul>
           </div>
 
@@ -70,8 +70,8 @@ export const Footer = () => {
         <div className="mt-20 flex flex-col items-center justify-between gap-6 border-t border-white/5 pt-8 sm:flex-row">
            <p className="text-xs text-gray-600">© ۲۰۲۶ تمامی حقوق برای پلتفرم لوکس محفوظ است.</p>
            <div className="flex items-center gap-6">
-              <Link to="#" className="text-xs text-gray-600 hover:text-white">حریم خصوصی</Link>
-              <Link to="#" className="text-xs text-gray-600 hover:text-white">امنیت</Link>
+              <Link to="/privacy" className="text-xs text-gray-600 hover:text-white">حریم خصوصی</Link>
+              <Link to="/privacy" className="text-xs text-gray-600 hover:text-white">امنیت</Link>
            </div>
         </div>
       </div>
