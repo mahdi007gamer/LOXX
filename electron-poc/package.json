@@ -1,7 +1,9 @@
 {
   "name": "loxx-electron-poc",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Electron POC for Loxx",
+  "author": "Loxx",
+  "homepage": "https://loxx.ir",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
@@ -22,6 +24,7 @@
       "output": "dist"
     },
     "win": {
+      "publisherName": "Loxx",
       "target": [
         {
           "target": "nsis",
@@ -32,17 +35,15 @@
       ]
     },
     "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
+      "oneClick": true,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": false,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "Loxx",
       "runAfterFinish": true,
       "installerIcon": "build/icon.ico",
       "uninstallerIcon": "build/icon.ico",
-      "installerHeaderIcon": "build/icon.ico",
-      "installerSidebar": "build/installerSidebar.bmp",
-      "installerHeader": "build/installerHeader.bmp",
       "uninstallDisplayName": "Loxx",
       "unicode": true
     },

@@ -156,27 +156,125 @@ function createMainWindow() {
 // Setup task system tray standard icon layout
 function setupTray() {
   try {
-    // Generate an in-memory 16x16 icon to avoid broken paths inside bundles
-    // A fully functional crisp green/blue indicator ring
-    const iconBuffer = Buffer.from(
-      'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAmklEQVQ4T2NkoBAwUqifaXSDgYGBgYGRgYFB8p8P778DxfYxwEX/7WbYgG6CAn6LgQEo6E0MDHBhFAH0m8NMoZ99VvD+AwMjI8P/78An6P8bL4wNMMAMIs0IDYVAsQUY/v8HCjH8Xz0fWRCYIsD0b8hM2N8HbyD+/g0pDky9Iclh/6mI9B/YUPC9vR2YfR79IUEfHhI2jOIAAP2YIcsF8+5gAAAAAElFTkSuQmCC',
-      'base64'
-    );
-    const trayIcon = nativeImage.createFromBuffer(iconBuffer);
+    let trayIcon = null;
+
+    // List of probable paths for the tray icon across development and packaged versions
+    const pathsToSearch = [
+      path.join(__dirname, 'assets', 'tray.png'),     // Best practice: Subfolder assets/
+      path.join(__dirname, 'tray.png'),               // Fallback: Root folder
+      path.join(__dirname, 'build', 'tray.png'),       // Dev mode fallback
+      path.join(__dirname, 'build', 'icon.ico'),       // Installer source fallback
+      path.join(__dirname, '../public/logo_square.png') // Web client resource fallback
+    ];
+
+    for (const imgPath of pathsToSearch) {
+      if (fs.existsSync(imgPath)) {
+        trayIcon = nativeImage.createFromPath(imgPath);
+        break;
+      }
+    }
+
+    // Default to in-memory Base64 ring icon if no image file is found
+    if (!trayIcon || trayIcon.isEmpty()) {
+      const iconBuffer = Buffer.from(
+        'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAmklEQVQ4T2NkoBAwUqifaXSDgYGBgYGRgYFB8p8P778DxfYxwEX/7WbYgG6CAn6LgQEo6E0MDHBhFAH0m8NMoZ99VvD+AwMjI8P/78An6P8bL4wNMMAMIs0IDYVAsQUY/v8HCjH8Xz0fWRCYIsD0b8hM2N8HbyD+/g0pDky9Iclh/6mI9B/YUPC9vR2YfR79IUEfHhI2jOIAAP2YIcsF8+5gAAAAAElFTkSuQmCC',
+        'base64'
+      );
+      trayIcon = nativeImage.createFromBuffer(iconBuffer);
+    }
     
     tray = new Tray(trayIcon.resize({ width: 16, height: 16 }));
-    const contextMenu = Menu.buildFromTemplate([
-      { label: 'Loxx Web Launcher v1.0', enabled: false },
-      { type: 'separator' },
-      { label: 'نمایش برنامه (Restore Window)', click: () => { if (mainWindow) { mainWindow.show(); mainWindow.focus(); } } },
-      { type: 'separator' },
-      { label: 'غیرفعال‌سازی موقت میکروفون (Global Mute)', click: () => { if (mainWindow) mainWindow.webContents.send('global-mute-toggle'); } },
-      { type: 'separator' },
-      { label: 'خروج کامل (Exit)', click: () => { isQuitting = true; app.quit(); } }
-    ]);
+    
+    // Auxiliary helper to generate dynamic interactive tray options inside runtime
+    const rebuildTrayMenu = () => {
+      if (!tray) return;
+      const contextMenu = Menu.buildFromTemplate([
+        { label: 'لایکس | Loxx Client', enabled: false },
+        { label: `نسخه ${app.getVersion()}`, enabled: false },
+        { type: 'separator' },
+        { 
+          label: 'نمایش پنجره اصلی لایکس', 
+          click: () => { if (mainWindow) { mainWindow.show(); mainWindow.focus(); } } 
+        },
+        { 
+          label: 'پنهان کردن پنجره', 
+          click: () => { if (mainWindow) { mainWindow.hide(); } } 
+        },
+        { type: 'separator' },
+        { 
+          label: 'غیرفعال‌سازی موقت میکروفون (Global Mute)', 
+          click: () => { if (mainWindow) mainWindow.webContents.send('global-mute-toggle'); } 
+        },
+        { type: 'separator' },
+        { 
+          label: 'اجرا همزمان با شروع ویندوز (Autostart)', 
+          type: 'checkbox',
+          checked: config.startAtLogin,
+          click: (menuItem) => {
+            config.startAtLogin = menuItem.checked;
+            saveConfig();
+            applyStartupSetting();
+            rebuildTrayMenu();
+          }
+        },
+        { 
+          label: 'خروج از برنامه با دکمه بستن (Close to Tray)', 
+          type: 'checkbox',
+          checked: config.closeToTray,
+          click: (menuItem) => {
+            config.closeToTray = menuItem.checked;
+            saveConfig();
+            rebuildTrayMenu();
+          }
+        },
+        { 
+          label: 'شتاب‌دهنده سخت‌افزاری گرافیک (GPU)', 
+          type: 'checkbox',
+          checked: config.hardwareAcceleration,
+          click: (menuItem) => {
+            config.hardwareAcceleration = menuItem.checked;
+            saveConfig();
+            dialog.showMessageBox({
+              type: 'info',
+              title: 'سامانه شتاب‌دهنده گرافیکی',
+              message: 'تغییر وضعیت شتاب‌دهنده گرافیکی نیاز به راه‌اندازی مجدد لایکس دارد.',
+              buttons: ['متوجه شدم']
+            });
+            rebuildTrayMenu();
+          }
+        },
+        { type: 'separator' },
+        { 
+          label: 'بررسی بروزرسانی نسخه لایکس (Check for Update)', 
+          click: () => {
+            dialog.showMessageBox({
+              type: 'info',
+              title: 'جستجوی بروزرسانی لایکس',
+              message: 'جستجو برای نسخه جدید لایکس در پس‌زمینه آغاز شد. در صورت وجود، نسخه جدید دانلود و آماده نصب می‌شود.',
+              buttons: ['تایید']
+            });
+            try {
+              autoUpdater.checkForUpdatesAndNotify();
+            } catch (err) {
+              console.error('Manual update check failed:', err);
+            }
+          } 
+        },
+        { 
+          label: 'بارگذاری مجدد صفحه اصلی (Reload Client)', 
+          click: () => { if (mainWindow) mainWindow.reload(); } 
+        },
+        { type: 'separator' },
+        { 
+          label: 'خروج کامل از لایکس (Quit)', 
+          click: () => { isQuitting = true; app.quit(); } 
+        }
+      ]);
+      tray.setContextMenu(contextMenu);
+    };
 
+    rebuildTrayMenu();
     tray.setToolTip('Loxx Client');
-    tray.setContextMenu(contextMenu);
 
     tray.on('double-click', () => {
       if (mainWindow) {
