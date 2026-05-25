@@ -8,10 +8,12 @@ import { FriendStatus } from "../../types";
 import { UserBadges } from "./UserBadges";
 import { useAuth } from "../../context/AuthContext";
 import { useLobby } from "../../context/LobbyContext";
+import { useProfilePopover } from "../../context/ProfilePopoverContext";
 import { toast } from "react-hot-toast";
 
 export const FriendChatOverlay = () => {
   const { chats, friends, sendMessage, markAsRead, closeChat, activeChatId, setActiveChatId, chatTrigger, openChat } = useFriends();
+  const { openProfile } = useProfilePopover();
   const { user } = useAuth();
   const { 
     overlayPosition, 
@@ -156,7 +158,7 @@ export const FriendChatOverlay = () => {
             style={{ 
               width: "100vw", 
               height: "100vh", 
-              background: "rgba(0, 0, 0, 0.98)", 
+              background: isOverlayWidget ? "transparent" : "rgba(0, 0, 0, 0.6)", 
               zIndex: 99999999 
             }}
             className="fixed inset-0 flex flex-col items-center justify-start pt-8 pointer-events-auto select-none border-4 border-neon-blue/20"
@@ -178,11 +180,11 @@ export const FriendChatOverlay = () => {
       <AnimatePresence>
         {isOverlayWidget && isOverlayInteractive && (
           <motion.div
-            initial={{ opacity: 0, x: -50, scale: 0.95 }}
+            initial={{ opacity: 0, x: 50, scale: 0.95 }}
             animate={{ opacity: 1, x: 0, scale: 1 }}
-            exit={{ opacity: 0, x: -50, scale: 0.95 }}
+            exit={{ opacity: 0, x: 50, scale: 0.95 }}
             transition={{ type: "spring", damping: 20 }}
-            className="fixed left-6 top-24 bottom-24 w-[300px] bg-[#0a0a0f]/95 border border-white/10 rounded-2xl flex flex-col shadow-[0_20px_50px_rgba(0,0,0,0.8)] backdrop-blur-xl z-[9999] pointer-events-auto overflow-hidden text-right"
+            className="fixed right-6 top-24 bottom-24 w-[300px] bg-[#0a0a0f]/95 border border-white/10 rounded-2xl flex flex-col shadow-[0_20px_50px_rgba(0,0,0,0.8)] backdrop-blur-xl z-[9999] pointer-events-auto overflow-hidden text-right"
             dir="rtl"
           >
             {/* Header */}
@@ -449,11 +451,11 @@ export const FriendChatOverlay = () => {
       <AnimatePresence>
         {isOverlayWidget && isOverlayInteractive && (
           <motion.div
-            initial={{ opacity: 0, x: 50, scale: 0.95 }}
+            initial={{ opacity: 0, x: -50, scale: 0.95 }}
             animate={{ opacity: 1, x: 0, scale: 1 }}
-            exit={{ opacity: 0, x: 50, scale: 0.95 }}
+            exit={{ opacity: 0, x: -50, scale: 0.95 }}
             transition={{ type: "spring", damping: 20 }}
-            className="fixed right-6 top-24 bottom-24 w-[280px] bg-[#0a0a0f]/95 border border-white/10 rounded-2xl flex flex-col shadow-[0_20px_50px_rgba(0,0,0,0.8)] backdrop-blur-xl z-[9999] pointer-events-auto overflow-hidden text-right"
+            className="fixed left-6 top-24 bottom-24 w-[280px] bg-[#0a0a0f]/95 border border-white/10 rounded-2xl flex flex-col shadow-[0_20px_50px_rgba(0,0,0,0.8)] backdrop-blur-xl z-[9999] pointer-events-auto overflow-hidden text-right"
             dir="rtl"
           >
             {/* Header */}
@@ -493,19 +495,26 @@ export const FriendChatOverlay = () => {
                     return statusVal(b.status) - statusVal(a.status);
                   })
                   .map(friend => (
-                    <button
+                    <div
                       key={friend.id}
-                      onClick={() => {
-                        openChat(friend.id, friend.displayName, friend.avatar);
-                        setActiveChatId(friend.id);
-                        setIsMinimized(false);
-                      }}
                       className={cn(
-                        "w-full flex items-center justify-between p-2 rounded-xl hover:bg-white/5 transition-colors text-right group/friend",
-                        activeChatId === friend.id && "bg-white/5 border border-white/5"
+                        "w-full flex items-center justify-between p-2 rounded-xl transition-colors text-right group/friend border border-transparent",
+                        activeChatId === friend.id && "bg-white/5 border-white/5"
                       )}
                     >
-                      <div className="flex items-center gap-2.5 min-w-0">
+                      {/* Clicking on the profile photo / avatar / name opens their mini-profile */}
+                      <button
+                        onClick={() => openProfile({
+                          senderName: friend.displayName,
+                          displayName: friend.displayName,
+                          senderAvatar: friend.avatar,
+                          avatarUrl: friend.avatar,
+                          senderLevel: (friend as any).level || 1,
+                          senderBadges: friend.badges || [],
+                          id: friend.id
+                        }, false)}
+                        className="flex items-center gap-2.5 min-w-0 flex-1 hover:opacity-80 transition-opacity text-right cursor-pointer"
+                      >
                         <div className="relative shrink-0">
                           <div className="h-8 w-8 rounded-xl bg-white/10 border border-white/5 overflow-hidden flex items-center justify-center">
                             {friend.avatar ? (
@@ -525,7 +534,7 @@ export const FriendChatOverlay = () => {
                         <div className="flex flex-col items-start min-w-0">
                           <div className="flex items-center gap-1">
                             {friend.badges?.find((b: any) => b?.isSpecial && b?.name === "VIP" || b?.type === "VIP") && <Crown className="w-2.5 h-2.5 text-yellow-500 drop-shadow-[0_0_5px_rgba(250,204,21,0.5)]" />}
-                            <span className="text-xs font-black text-white truncate max-w-[125px]">{friend.displayName}</span>
+                            <span className="text-xs font-black text-white truncate max-w-[125px] text-right">{friend.displayName}</span>
                           </div>
                           <span className={cn(
                             "text-[9px] font-bold uppercase",
@@ -539,12 +548,20 @@ export const FriendChatOverlay = () => {
                              friend.status === FriendStatus.ONLINE ? "آنلاین" : "آفلاین"}
                           </span>
                         </div>
-                      </div>
+                      </button>
                       
-                      <div className="p-1.5 rounded-lg bg-white/5 text-neon-blue group-hover/friend:bg-neon-blue group-hover/friend:text-dark-bg transition-colors">
+                      {/* Clicking on the chat icon of each friend opens the DM tab inside Overlay */}
+                      <button 
+                        onClick={() => {
+                          openChat(friend.id, friend.displayName, friend.avatar);
+                          setActiveChatId(friend.id);
+                          setIsMinimized(false);
+                        }}
+                        className="p-1.5 rounded-lg bg-white/5 text-neon-blue hover:bg-neon-blue hover:text-dark-bg transition-colors cursor-pointer shrink-0"
+                      >
                         <MessageCircle size={12} />
-                      </div>
-                    </button>
+                      </button>
+                    </div>
                   ))
               )}
             </div>

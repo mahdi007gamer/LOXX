@@ -211,6 +211,72 @@ const AppContent = () => {
     }
   }, [isElectron]);
 
+  if (isOverlayWidget) {
+    return (
+      <div className="min-h-screen bg-transparent pb-0 relative selection:bg-neon-pink selection:text-white">
+        <NotificationHandler />
+        <DesktopOverlayWidget />
+        <FriendChatOverlay />
+        
+        <Toaster 
+          position={overlayToastPosition || "bottom-right"} 
+          gutter={12}
+          containerStyle={getDynamicToasterStyle()}
+          containerClassName="pointer-events-none"
+          toastOptions={{
+            className: 'modern-glass-toast pointer-events-auto',
+            style: {
+              background: 'rgba(13, 13, 20, 0.4)',
+              backdropFilter: 'blur(16px) saturate(200%)',
+              WebkitBackdropFilter: 'blur(16px) saturate(200%)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              color: '#fff',
+              borderRadius: '20px',
+              padding: '16px 20px',
+              fontSize: '13px',
+              fontWeight: '700',
+              boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.8)',
+              maxWidth: '400px',
+              minWidth: '280px',
+              width: 'max-content',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              direction: 'rtl',
+            },
+            iconTheme: {
+              primary: '#00e5ff',
+              secondary: '#0a0a0f',
+            },
+          }}
+        >
+          {(t) => (
+            t.type === 'custom' ? (
+              resolveValue(t.message, t)
+            ) : (
+              <ToastBar toast={t}>
+                {({ icon, message }) => (
+                  <>
+                    {icon}
+                    {message}
+                    {t.type !== 'loading' && (
+                      <button 
+                        onClick={() => toast.dismiss(t.id)} 
+                        className="mr-2 opacity-50 hover:opacity-100 transition-opacity"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </>
+                )}
+              </ToastBar>
+            )
+          )}
+        </Toaster>
+      </div>
+    );
+  }
+
   return (
     <>
       <AnimatePresence mode="wait">
@@ -229,7 +295,7 @@ const AppContent = () => {
 
       <div className={cn(
         "min-h-screen selection:bg-neon-pink selection:text-white pb-16 md:pb-0 relative",
-        isOverlayWidget ? "bg-transparent pb-0" : "bg-dark-bg text-gray-100"
+        "bg-dark-bg text-gray-100"
       )}>
       {isElectron && !isOverlayWidget && !isMaximized && (
         <div className="fixed inset-0 border border-white/10 pointer-events-none z-[100000] rounded-none shadow-[inset_0_0_15px_rgba(255,0,127,0.02)]" />
