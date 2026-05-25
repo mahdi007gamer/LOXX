@@ -69,7 +69,17 @@ autoUpdater.on('update-downloaded', (info) => {
     buttons: ['نصب و راه‌اندازی مجدد']
   }).then(() => {
     isQuitting = true;
-    autoUpdater.quitAndInstall(false, true);
+    app.removeAllListeners('window-all-closed');
+    try {
+      if (mainWindow && !mainWindow.isDestroyed()) mainWindow.destroy();
+      if (splashWindow && !splashWindow.isDestroyed()) splashWindow.destroy();
+      if (typeof overlayWindow !== "undefined" && overlayWindow && !overlayWindow.isDestroyed()) overlayWindow.destroy();
+    } catch(e) {}
+    
+    // Slight timeout allows electron to cleanly destroy window handles before firing update installer
+    setTimeout(() => {
+      autoUpdater.quitAndInstall(false, true);
+    }, 500);
   });
 });
 
@@ -108,7 +118,21 @@ function createSplashWindow() {
 
   splashWindow.loadFile(path.join(__dirname, 'splash.html'));
   splashWindow.once('ready-to-show', () => {
-    if (splashWindow) splashWindow.show();
+    // Inject correct absolute image URL from Node context into the splash screen to avoid relative path resolution bugs
+    let logoPath = path.join(__dirname, 'build', 'logo.png').replace(/\\/g, '/');
+    let fallbackPath = path.join(__dirname, '..', 'public', 'logo.png').replace(/\\/g, '/');
+    if (splashWindow && !splashWindow.isDestroyed()) {
+      splashWindow.webContents.executeJavaScript(`
+        try {
+          let img = document.querySelector('.logo-image');
+          if (img) {
+            img.src = "file:///${logoPath}";
+            img.onerror = () => { img.src = "file:///${fallbackPath}"; };
+          }
+        } catch(e) {}
+      `);
+      splashWindow.show();
+    }
   });
 
   splashWindow.on('closed', () => {
@@ -441,7 +465,20 @@ function registerGlobalShortcuts() {
       console.warn('Error registering global Mute shortcut:', e);
     }
   }
+
+  // 3. Overlay Interaction Toggle
+  try {
+    globalShortcut.register('Alt+F2', () => {
+      // Must be defined somewhere accessible, will fix toggle function ref
+      if (typeof global.toggleOverlayInteraction === 'function') {
+        global.toggleOverlayInteraction();
+      }
+    });
+  } catch (e) {
+    console.warn('Error registering Alt+F2 shortcut:', e);
+  }
 }
+
 
 app.whenReady().then(() => {
   if (!gotTheLock) {
@@ -584,7 +621,7 @@ app.whenReady().then(() => {
   let overlayWindow = null;
   let isOverlayInteractive = false;
 
-  const toggleOverlayInteraction = () => {
+  global.toggleOverlayInteraction = () => {
     if (!overlayWindow || overlayWindow.isDestroyed()) return;
     isOverlayInteractive = !isOverlayInteractive;
     if (isOverlayInteractive) {
@@ -599,8 +636,6 @@ app.whenReady().then(() => {
       overlayWindow.webContents.send('overlay-interaction-mode', false);
     }
   };
-
-  globalShortcut.register('Alt+F2', toggleOverlayInteraction);
 
   ipcMain.on('set-transparent-overlay-active', (event, active) => {
     try {
