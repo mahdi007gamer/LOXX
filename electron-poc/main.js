@@ -1,7 +1,41 @@
-const { app, BrowserWindow, Menu, Tray, globalShortcut, ipcMain, nativeImage, screen } = require('electron');
+const { app, BrowserWindow, Menu, Tray, globalShortcut, ipcMain, nativeImage, screen, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { autoUpdater } = require('electron-updater');
+
+// Configure autoUpdater to not automatically show silent errors or prompt on default
+autoUpdater.autoDownload = true;
+autoUpdater.autoInstallOnAppQuit = true;
+
+// Auto-updater event configurations for Persian-localized error/success feedback
+autoUpdater.on('error', (err) => {
+  console.error('AutoUpdater Error:', err);
+  // Show error box advising user to close VPN/DNS
+  dialog.showMessageBox({
+    type: 'warning',
+    title: 'بروزرسانی لایکس (Loxx)',
+    message: 'خطا در دریافت یا بررسی نسخه جدید!',
+    detail: 'سیستم قادر به بررسی یا دریافت بروزرسانی جدید نیست. این مشکل معمولاً به دلیل فعال بودن پروکسی، فیلترشکن (VPN) یا تنظیمات فیلترینگ DNS رخ می‌دهد.\nلطفاً فیلترشکن خود را خاموش کرده، در صورت داشتن DNS اختصاصی آن را قطع کنید و مجدداً تلاش نمایید.',
+    buttons: ['متوجه شدم']
+  });
+});
+
+autoUpdater.on('update-available', (info) => {
+  console.log('Update available:', info.version);
+});
+
+autoUpdater.on('update-downloaded', (info) => {
+  dialog.showMessageBox({
+    type: 'info',
+    title: 'بروزرسانی آماده نصب',
+    message: `نسخه جدید لایکس (${info.version}) با موفقیت دانلود شد!`,
+    detail: 'برنامه به صورت خودکار بسته شده و بروزرسانی جدید اعمال خواهد شد تا لایکس با امکانات جدید اجرا شود.',
+    buttons: ['نصب و راه‌اندازی مجدد']
+  }).then(() => {
+    isQuitting = true;
+    autoUpdater.quitAndInstall(false, true);
+  });
+});
 
 // Append switches to prevent background throttling of voice context & keys
 app.commandLine.appendSwitch('disable-renderer-backgrounding');
@@ -16,7 +50,7 @@ let isQuitting = false;
 const configPath = path.join(app.getPath('userData'), 'loxx-config.json');
 let config = {
   closeToTray: true,
-  startAtLogin: false,
+  startAtLogin: true,
   hardwareAcceleration: true,
   globalPttKey: 'CommandOrControl+Alt+V',
   globalMuteKey: 'CommandOrControl+Alt+M',
