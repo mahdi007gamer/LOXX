@@ -65,12 +65,12 @@ autoUpdater.on('update-downloaded', (info) => {
     type: 'info',
     title: 'بروزرسانی آماده نصب',
     message: `نسخه جدید لوکس (${info.version}) با موفقیت دانلود شد!`,
-    detail: 'برنامه به صورت خودکار بسته شده و بروزرسانی جدید اعمال خواهد شد تا لوکس با امکانات جدید اجرا شود.',
+    detail: 'برنامه به صورت خودکار بسته شده و بروزرسانی جدید در حالت بی‌صدا نصب خواهد شد تا لوکس مجددا با امکانات جدید اجرا شود.',
     buttons: ['نصب و راه‌اندازی مجدد']
   }).then(() => {
     isQuitting = true;
-    // Let electron-updater handle the graceful shutdown and spawn.
-    autoUpdater.quitAndInstall(false, true);
+    // Let electron-updater handle the graceful shutdown and spawn in silent mode.
+    autoUpdater.quitAndInstall(true, true);
   });
 });
 
