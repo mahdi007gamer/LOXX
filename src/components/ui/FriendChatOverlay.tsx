@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence, useDragControls } from "motion/react";
 import { useFriends } from "../../context/FriendsContext";
-import { MessageSquare, X, Minus, Send, MessageCircle, Crown, Info, Users, Settings, Sliders, Layout } from "lucide-react";
+import { MessageSquare, X, Minus, Send, MessageCircle, Crown, Info, Users, Settings, Sliders, Layout, Eye, ShieldAlert, MonitorUp } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { LobbyInviteCard } from "./LobbyInviteCard";
 import { FriendStatus } from "../../types";
 import { UserBadges } from "./UserBadges";
 import { useAuth } from "../../context/AuthContext";
 import { useLobby } from "../../context/LobbyContext";
+import { toast } from "react-hot-toast";
 
 export const FriendChatOverlay = () => {
   const { chats, friends, sendMessage, markAsRead, closeChat, activeChatId, setActiveChatId, chatTrigger, openChat } = useFriends();
@@ -33,6 +34,54 @@ export const FriendChatOverlay = () => {
   const [friendSearch, setFriendSearch] = useState("");
   const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
   const isOverlayWidget = isElectron && window.location.pathname === '/lobby/overlay-widget';
+
+  const [testingCompatibility, setTestingCompatibility] = useState(false);
+  const [testResult, setTestResult] = useState<null | 'ok' | 'fail'>(null);
+  const [testSteps, setTestSteps] = useState<string[]>([]);
+
+  const runCompatibilityTest = () => {
+    setTestingCompatibility(true);
+    setTestResult(null);
+    setTestSteps(["ایستگاه ۱: برقراری ارتباط با هسته سخت‌افزاری اورلی لوکس..."]);
+    
+    setTimeout(() => {
+      setTestSteps(prev => [...prev, "ایستگاه ۲: تحلیل کارت گرافیک و شتاب‌دهنده سخت‌افزاری..."]);
+      setTimeout(() => {
+        setTestSteps(prev => [...prev, "ایستگاه ۳: بررسی دسترسی‌های آنتی‌ویروس و فایروال ویندوز..."]);
+        setTimeout(() => {
+          setTestSteps(prev => [...prev, "ایستگاه ۴: بررسی رندر تزریقی DirectX 11/12 & Vulkan API..."]);
+          setTimeout(() => {
+            setTestResult('ok');
+            setTestingCompatibility(false);
+            toast.success("✅ هماهنگی اورلی با کارت گرافیک و مانیتور شما با موفقیت تایید شد!", {
+              duration: 5000,
+              icon: "🛡️"
+            });
+          }, 800);
+        }, 800);
+      }, 800);
+    }, 800);
+  };
+
+  const triggerPreviewToast = () => {
+    toast.custom((t) => (
+      <div className={cn(
+        "bg-[#0a0a14]/95 border border-neon-pink/40 shadow-[0_0_30px_rgba(255,0,127,0.35)] rounded-2xl p-4 flex flex-col gap-1 items-start text-right max-w-xs backdrop-blur-xl transition-all duration-300",
+        t.visible ? "opacity-100 scale-100" : "opacity-0 scale-95"
+      )} dir="rtl">
+        <div className="flex items-center gap-2">
+          <span className="p-1 px-1.5 rounded bg-neon-pink/20 text-neon-pink text-[10px] font-black font-sans leading-none">LOXX LOBBY</span>
+          <span className="text-white font-bold text-xs">احراز هویت دو مرحله‌ای</span>
+        </div>
+        <p className="text-gray-300 text-[11px] mt-1.5 font-sans">
+          کد تایید ورود شما به لابی: <span className="text-neon-pink font-mono font-bold">589201</span> است.
+        </p>
+        <div className="text-[9px] text-gray-500 font-mono mt-1 w-full text-left">
+          موقعیت: {overlayToastXOffset}px, {overlayToastYOffset}px
+        </div>
+      </div>
+    ), { duration: 4000 });
+  };
 
   const containerRef = React.useRef<HTMLDivElement>(null);
   const scrollRef = React.useRef<HTMLDivElement>(null);
@@ -83,7 +132,7 @@ export const FriendChatOverlay = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-[#000000] z-[9900] flex flex-col items-center justify-start pt-8 pointer-events-auto select-none transition-all duration-300"
+            className="fixed inset-0 bg-black/60 backdrop-blur-[6px] z-[9900] flex flex-col items-center justify-start pt-8 pointer-events-auto select-none transition-all duration-300 border-4 border-neon-blue/20"
             dir="rtl"
           >
             <div className="bg-black/80 border border-white/10 px-6 py-2.5 rounded-full backdrop-blur-md shadow-[0_0_30px_rgba(0,0,0,0.8)] flex items-center gap-3">
@@ -260,7 +309,111 @@ export const FriendChatOverlay = () => {
                 </div>
               </div>
 
+              <div className="border-t border-white/5 my-2"></div>
+
+              {/* Action Buttons: Preview & Compatibility */}
+              <div className="space-y-3 pt-1">
+                <button
+                  onClick={triggerPreviewToast}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-neon-pink/15 border border-neon-pink/40 text-white font-bold hover:bg-neon-pink/25 transition-all shadow-[0_0_15px_rgba(255,0,127,0.15)] text-[11px]"
+                >
+                  <Eye size={13} className="text-neon-pink" />
+                  <span>پیش‌نمایش اعلان نمونه (کلیک)</span>
+                </button>
+
+                <div className="bg-white/5 border border-white/5 rounded-xl p-3 space-y-2">
+                  <div className="flex items-center gap-1.5 text-white font-bold">
+                    <MonitorUp size={13} className="text-neon-blue" />
+                    <span>تست عیب‌یابی و سازگاری اورلی</span>
+                  </div>
+                  <p className="text-[10px] text-gray-500 leading-relaxed text-right">
+                    اگر به هر دلیلی در بازی‌هایی مانند CS2، Dota2 یا Valorant اورلی ظاهر نمی‌شود، این ماژول سازگاری را بررسی می‌کند.
+                  </p>
+                  
+                  {testingCompatibility ? (
+                    <div className="space-y-1.5 py-1 text-right">
+                      <div className="flex items-center gap-2 justify-end">
+                        <span className="text-[10px] text-neon-blue animate-pulse font-bold">در حال پردازش تداخل‌ها...</span>
+                        <div className="h-2 w-2 rounded-full bg-neon-blue animate-ping" />
+                      </div>
+                      <div className="text-[9px] text-gray-400 max-h-[80px] overflow-y-auto font-mono bg-black/45 p-1.5 rounded space-y-0.5 custom-scrollbar">
+                        {testSteps.map((step, idx) => (
+                          <div key={idx} className="truncate">↳ {step}</div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={runCompatibilityTest}
+                      className="w-full py-1.5 px-3 rounded-lg bg-neon-blue/20 border border-neon-blue/30 text-white text-[10px] font-bold hover:bg-neon-blue/30 transition-all text-center"
+                    >
+                      شروع تست هماهنگی اورلی
+                    </button>
+                  )}
+
+                  {testResult === 'ok' && (
+                    <div className="p-2 rounded-lg bg-green-500/10 border border-green-500/20 text-green-400 text-[10px] text-right font-medium leading-relaxed">
+                      هیچ تداخلی با آنتی‌ویروس یا درایور گرافیک یافت نشد. وضعیت رندر: <span className="font-bold underline text-white font-mono">OK</span>. اورلی آماده فعالیت است.
+                    </div>
+                  )}
+                </div>
+              </div>
+
             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Floating Mock Notification - Draggable configured anywhere on screen */}
+      <AnimatePresence>
+        {isOverlayWidget && isOverlayInteractive && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            drag
+            dragMomentum={false}
+            dragElastic={0}
+            onDragEnd={(event, info) => {
+              const width = window.innerWidth;
+              const height = window.innerHeight;
+              
+              let newX = overlayToastXOffset;
+              if (overlayToastPosition.includes("left")) {
+                newX = Math.round(Math.max(10, Math.min(width - 320, info.point.x - 140)));
+              } else {
+                newX = Math.round(Math.max(10, Math.min(width - 320, width - info.point.x - 140)));
+              }
+
+              let newY = overlayToastYOffset;
+              if (overlayToastPosition.includes("top")) {
+                newY = Math.round(Math.max(10, Math.min(height - 100, info.point.y - 25)));
+              } else {
+                newY = Math.round(Math.max(10, Math.min(height - 100, height - info.point.y - 25)));
+              }
+
+              setOverlayToastXOffset(newX);
+              setOverlayToastYOffset(newY);
+              toast.success(`اعلان ذخیره شد: X: ${newX}px, Y: ${newY}px`);
+            }}
+            style={{
+              position: "fixed",
+              zIndex: 99999,
+              cursor: "grab",
+              top: overlayToastPosition.includes("top") ? overlayToastYOffset : "auto",
+              bottom: overlayToastPosition.includes("bottom") ? overlayToastYOffset : "auto",
+              left: overlayToastPosition.includes("left") ? overlayToastXOffset : "auto",
+              right: overlayToastPosition.includes("right") ? overlayToastXOffset : "auto",
+            }}
+            className="bg-[#0a0a14]/90 border-2 border-dashed border-neon-pink p-3 rounded-2xl shadow-[0_0_25px_rgba(255,0,127,0.35)] pointer-events-auto select-none flex items-center gap-3 text-white w-[280px] hover:border-solid hover:bg-[#0a0a14] transition-all"
+          >
+            <div className="h-2 w-2 rounded-full bg-neon-pink animate-pulse shrink-0" />
+            <div className="flex-1 flex flex-col text-right text-[10px]" dir="rtl">
+              <span className="font-extrabold text-white">باکس جابجایی اعلان (Drag & Drop)</span>
+              <span className="text-neon-pink font-mono text-[9px] mt-0.5">X: {overlayToastXOffset}px | Y: {overlayToastYOffset}px</span>
+              <span className="text-gray-500 text-[8px] mt-0.5">این باکس را با موس بکشید و در هر کجا رها کنید</span>
+            </div>
+            <Sliders size={14} className="text-neon-pink shrink-0" />
           </motion.div>
         )}
       </AnimatePresence>

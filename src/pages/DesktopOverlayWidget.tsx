@@ -102,14 +102,14 @@ export const DesktopOverlayWidget = () => {
 
   return (
     <>
-      {/* Full solid black background when interactive / focused */}
+      {/* Full blurred backdrop when interactive / focused */}
       <AnimatePresence>
         {isOverlayInteractive && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-[#000000] z-[9900] pointer-events-auto select-none transition-all duration-300"
+            className="fixed inset-0 bg-black/60 backdrop-blur-[6px] z-[9900] pointer-events-auto select-none transition-all duration-300 border-4 border-neon-blue/20"
           />
         )}
       </AnimatePresence>

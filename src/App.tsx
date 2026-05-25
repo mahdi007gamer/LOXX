@@ -91,21 +91,25 @@ const AppContent = () => {
       };
     }
 
+    // Clamp values dynamically based on viewport/window size to ensure visibility
+    const safeX = typeof window !== 'undefined' ? Math.max(10, Math.min(window.innerWidth - 320, overlayToastXOffset)) : overlayToastXOffset;
+    const safeY = typeof window !== 'undefined' ? Math.max(10, Math.min(window.innerHeight - 100, overlayToastYOffset)) : overlayToastYOffset;
+
     const style: any = {
       zIndex: 999999999,
     };
 
     if (overlayToastPosition.includes("top")) {
-      style.top = overlayToastYOffset;
+      style.top = safeY;
     } else {
-      style.bottom = overlayToastYOffset;
+      style.bottom = safeY;
     }
 
     if (overlayToastPosition.includes("left")) {
-      style.left = overlayToastXOffset;
+      style.left = safeX;
       style.right = "auto";
     } else {
-      style.right = overlayToastXOffset;
+      style.right = safeX;
       style.left = "auto";
     }
 
