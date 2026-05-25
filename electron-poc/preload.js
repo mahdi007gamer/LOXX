@@ -62,6 +62,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Custom Tray notifications / states
   setVoiceStatus: (status) => ipcRenderer.send('set-voice-status', status),
   
+  // Navigate the main window from the overlay window
+  navigateMainWindow: (url) => ipcRenderer.send('navigate-main-window', url),
+  
   // Relaunch utility or quit
   quitApp: () => ipcRenderer.send('quit-app')
 });

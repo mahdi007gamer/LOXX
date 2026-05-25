@@ -156,7 +156,7 @@ export const FriendChatOverlay = () => {
             style={{ 
               width: "100vw", 
               height: "100vh", 
-              background: "rgba(0, 0, 0, 0.7)", 
+              background: "rgba(0, 0, 0, 0.98)", 
               zIndex: 99999999 
             }}
             className="fixed inset-0 flex flex-col items-center justify-start pt-8 pointer-events-auto select-none border-4 border-neon-blue/20"

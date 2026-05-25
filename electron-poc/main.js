@@ -500,6 +500,26 @@ app.whenReady().then(() => {
     }
   });
 
+  // Handle navigation requests from overlay window to main window
+  ipcMain.on('navigate-main-window', (event, pathStr) => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      let baseURL = 'https://loxx.ir';
+      try {
+        const currentURL = mainWindow.getURL();
+        if (currentURL) {
+          baseURL = currentURL.split('/').slice(0, 3).join('/');
+        }
+      } catch (e) {
+        console.error("Failed to parse main window URL:", e);
+      }
+      
+      const targetURL = `${baseURL}${pathStr}`;
+      mainWindow.loadURL(targetURL);
+      mainWindow.show();
+      mainWindow.focus();
+    }
+  });
+
   ipcMain.on('set-voice-status', (event, status) => {
     if (tray) {
       let displayStatus = 'متصل به کانال صوتی';
