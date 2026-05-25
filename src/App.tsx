@@ -40,7 +40,7 @@ import { ElectronTitlebar } from "./components/layout/ElectronTitlebar";
 import { cn } from "./lib/utils";
 import NotFoundPage from "./pages/NotFoundPage";
 
-import { AuthProvider } from "./context/AuthContext";
+import { AuthProvider, useAuth } from "./context/AuthContext";
 import { Toaster, toast } from "react-hot-toast";
 
 import { ProtectedRoute } from "./components/ProtectedRoute";
@@ -50,9 +50,11 @@ import { PublicProfilePage } from "./pages/PublicProfilePage";
 import { ElectronSettingsPage } from "./pages/ElectronSettingsPage";
 
 const AppContent = () => {
+  const { isSidebarCollapsed } = useAuth();
   const location = useLocation();
   const isLanding = location.pathname === "/";
   const isOverlayWidget = location.pathname === "/lobby/overlay-widget";
+  const hideSidebar = isLanding || location.pathname === "/auth" || isOverlayWidget;
   const isElectron = typeof window !== "undefined" && !!(window as any).electronAPI;
   const [isMaximized, setIsMaximized] = useState(false);
   const [showSplash, setShowSplash] = useState(() => {
@@ -182,9 +184,47 @@ const AppContent = () => {
       {!isOverlayWidget && <LobbyOverlay />}
       
       {/* FriendChatOverlay logic:
-          - Rendered everywhere so DM chat works in main window too
+          - Rendered everywhere so DM chat works in main window too, handles overlay state internally
       */}
       <FriendChatOverlay />
+      
+      <Toaster 
+        position="bottom-right" 
+        gutter={12}
+        containerStyle={{
+          bottom: isOverlayWidget ? 40 : 80,
+          right: isOverlayWidget ? 40 : 24,
+          left: "auto",
+          zIndex: 999999999,
+        }}
+        containerClassName="pointer-events-none"
+        toastOptions={{
+          className: 'modern-glass-toast pointer-events-auto',
+          style: {
+            background: 'rgba(13, 13, 20, 0.4)',
+            backdropFilter: 'blur(16px) saturate(200%)',
+            WebkitBackdropFilter: 'blur(16px) saturate(200%)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            color: '#fff',
+            borderRadius: '20px',
+            padding: '16px 20px',
+            fontSize: '13px',
+            fontWeight: '700',
+            boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.8)',
+            maxWidth: '400px',
+            minWidth: '280px',
+            width: 'max-content',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            direction: 'rtl',
+          },
+          iconTheme: {
+            primary: '#00e5ff',
+            secondary: '#0a0a0f',
+          },
+        }}
+      />
     </div>
     </>
   );
@@ -203,42 +243,6 @@ function App() {
                 <ScrollToTop />
                 <AppContent />
                 <DiscordOverlayHUD />
-                <Toaster 
-                  position="bottom-right" 
-                  gutter={12}
-                  containerStyle={{
-                    bottom: isOverlayWidget ? 40 : 80,
-                    right: 40,
-                    left: "auto",
-                    zIndex: 999999999,
-                  }}
-                  toastOptions={{
-                    className: 'modern-glass-toast',
-                    style: {
-                      background: 'rgba(13, 13, 20, 0.4)',
-                      backdropFilter: 'blur(16px) saturate(200%)',
-                      WebkitBackdropFilter: 'blur(16px) saturate(200%)',
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
-                      color: '#fff',
-                      borderRadius: '20px',
-                      padding: '16px 20px',
-                      fontSize: '13px',
-                      fontWeight: '700',
-                      boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.8)',
-                      maxWidth: '400px',
-                      minWidth: '280px',
-                      width: 'max-content',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '12px',
-                      direction: 'rtl',
-                    },
-                    iconTheme: {
-                      primary: '#00e5ff',
-                      secondary: '#0a0a0f',
-                    },
-                  }}
-                />
               </Router>
             </ProfilePopoverProvider>
           </LobbyProvider>

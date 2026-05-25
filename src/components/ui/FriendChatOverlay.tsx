@@ -58,6 +58,12 @@ export const FriendChatOverlay = () => {
 
   if (chats.length === 0) return null;
 
+  // In the Desktop Overlay Widget, we ONLY want to render the chat if the user explicitly triggered Interactive Mode (Alt+F2). 
+  // Otherwise, it duplicates the tabs from the main window because the overlay is transparent and always on top.
+  if (isOverlayWidget && !isOverlayInteractive) {
+    return null;
+  }
+
   return (
     <>
       {/* Interactive Backdrop when Alt+F2 is active in Overlay Widget */}
@@ -67,7 +73,7 @@ export const FriendChatOverlay = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/60 z-[9900] flex flex-col items-center justify-start pt-8 pointer-events-auto select-none"
+            className="fixed inset-0 bg-black/50 z-[9900] flex flex-col items-center justify-start pt-8 pointer-events-auto select-none"
             dir="rtl"
           >
             <div className="bg-black/80 border border-white/10 px-6 py-2.5 rounded-full backdrop-blur-md shadow-[0_0_30px_rgba(0,0,0,0.8)] flex items-center gap-3">

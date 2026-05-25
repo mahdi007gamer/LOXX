@@ -92,8 +92,6 @@ export const DesktopOverlayWidget = () => {
 
   return (
     <>
-      <FriendChatOverlay />
-      
       <div className={cn("fixed z-[9999] flex flex-col gap-3 pointer-events-none select-none", positionClasses)}>
         {/* Title tag - minimal, matches Discord Overlay appearance */}
         {players && players.length > 0 && (
