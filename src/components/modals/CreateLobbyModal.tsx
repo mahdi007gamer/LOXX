@@ -227,7 +227,7 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
         </div>
 
         {/* Right Panel: Content */}
-        <div className="flex-1 flex flex-col h-full md:max-h-[90vh] overflow-hidden relative">
+        <div className="flex-1 flex flex-col h-full min-h-0 md:max-h-[90vh] overflow-hidden relative">
           <button onClick={onClose} className="absolute left-4 top-4 md:left-6 md:top-6 h-8 w-8 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:text-white transition-all hover:bg-white/10 z-50">
             <X size={16} />
           </button>
@@ -246,7 +246,7 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-6 md:p-8 pt-4 custom-scrollbar">
+          <div className="flex-1 min-h-0 overflow-y-auto p-6 md:p-8 pt-4 custom-scrollbar">
             <AnimatePresence mode="wait">
               {step === 1 && (
                 <motion.div key="step1" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="space-y-6">

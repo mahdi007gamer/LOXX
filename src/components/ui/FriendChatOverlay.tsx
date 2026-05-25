@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence, useDragControls } from "motion/react";
 import { useFriends } from "../../context/FriendsContext";
-import { MessageSquare, X, Minus, Send, MessageCircle, Crown } from "lucide-react";
+import { MessageSquare, X, Minus, Send, MessageCircle, Crown, Info } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { LobbyInviteCard } from "./LobbyInviteCard";
 import { FriendStatus } from "../../types";
@@ -14,12 +14,23 @@ export const FriendChatOverlay = () => {
   const [isMinimized, setIsMinimized] = useState(false);
   const [inputMessage, setInputMessage] = useState("");
   const [chatDirection, setChatDirection] = useState<"up" | "down">("up");
+  const [isOverlayInteractive, setIsOverlayInteractive] = useState(false);
+  const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
+  const isOverlayWidget = isElectron && window.location.pathname === '/lobby/overlay-widget';
 
   const containerRef = React.useRef<HTMLDivElement>(null);
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const activeChat = chats.find(c => c.friendId === activeChatId);
   const activeFriend = friends.find(f => f.id === activeChatId);
   const dragControls = useDragControls();
+
+  useEffect(() => {
+    if (isOverlayWidget && (window as any).electronAPI?.onOverlayInteractionMode) {
+      return (window as any).electronAPI.onOverlayInteractionMode((interactive: boolean) => {
+        setIsOverlayInteractive(interactive);
+      });
+    }
+  }, [isOverlayWidget]);
 
   // Un-minimize when a new chat is opened or current one is triggered
   useEffect(() => {
@@ -51,7 +62,7 @@ export const FriendChatOverlay = () => {
     <div ref={containerRef} className="fixed inset-0 z-[9999] pointer-events-none flex flex-col items-center justify-end pb-4">
       {/* Active Chat Window */}
       <AnimatePresence>
-        {activeChatId && !isMinimized && (
+        {activeChatId && !isMinimized && (!isOverlayWidget || isOverlayInteractive) && (
           <motion.div
             initial={{ opacity: 0, y: chatDirection === "up" ? 20 : -20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -65,7 +76,8 @@ export const FriendChatOverlay = () => {
             whileDrag={{ scale: 1.02, zIndex: 100 }}
             className={cn(
               "absolute w-full max-w-[320px] sm:max-w-[350px] overflow-hidden rounded-2xl bg-[#0a0a0f]/98 border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] backdrop-blur-xl z-[100] pointer-events-auto touch-none transition-shadow duration-300",
-              chatDirection === "up" ? "bottom-20" : "top-20"
+              chatDirection === "up" ? "bottom-20" : "top-20",
+              isOverlayWidget ? "left-1/2 -ml-[160px] sm:-ml-[175px]" : "right-6 sm:right-auto"
             )}
           >
             {/* Chat Header - Drag Handle */}
@@ -232,6 +244,8 @@ export const FriendChatOverlay = () => {
           const status = friend?.status || FriendStatus.OFFLINE;
           
           const isActive = activeChatId === chat.friendId;
+          const isUnread = chat.unreadCount > 0;
+          const needsAttention = isOverlayWidget && !isOverlayInteractive && isUnread;
 
           return (
             <motion.div 
@@ -252,6 +266,15 @@ export const FriendChatOverlay = () => {
               whileDrag={{ scale: 1.1, zIndex: 100 }}
               className="relative group/tab flex items-center touch-none"
             >
+              {needsAttention && (
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="absolute -top-12 left-1/2 -translate-x-1/2 whitespace-nowrap bg-yellow-500 text-black text-[10px] font-black px-3 py-1.5 rounded-lg shadow-[0_0_15px_rgba(234,179,8,0.5)] pointer-events-none before:content-[''] before:absolute before:-bottom-1.5 before:left-1/2 before:-translate-x-1/2 before:border-4 before:border-transparent before:border-t-yellow-500"
+                >
+                  برای باز کردن گفتگو دکمه Alt+F2 را بزنید
+                </motion.div>
+              )}
               <button 
                 onClick={() => {
                   if (activeChatId === chat.friendId) {
@@ -263,9 +286,11 @@ export const FriendChatOverlay = () => {
                 }}
                 className={cn(
                   "flex items-center gap-2.5 rounded-t-2xl pl-10 pr-4 py-2.5 border-x border-t transition-all duration-300 backdrop-blur-md min-w-[120px] max-w-[180px] justify-center relative select-none",
-                  isActive && !isMinimized
-                    ? "bg-neon-blue text-dark-bg border-neon-blue shadow-[0_-4px_15px_rgba(0,229,255,0.3)] -translate-y-1" 
-                    : "bg-[#0a0a0f]/90 border-white/10 text-gray-400 hover:bg-white/10 hover:text-white"
+                  needsAttention 
+                    ? "bg-yellow-500/20 text-yellow-400 border-yellow-500 animate-pulse shadow-[0_-4px_15px_rgba(234,179,8,0.3)]"
+                    : isActive && !isMinimized
+                      ? "bg-neon-blue text-dark-bg border-neon-blue shadow-[0_-4px_15px_rgba(0,229,255,0.3)] -translate-y-1" 
+                      : "bg-[#0a0a0f]/90 border-white/10 text-gray-400 hover:bg-white/10 hover:text-white"
                 )}
               >
                 <div className="relative shrink-0">

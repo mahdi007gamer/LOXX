@@ -15,7 +15,7 @@ export const DesktopOverlayWidget = () => {
   // We need to fetch position/size configs from local storage or IPC. 
   // Let's assume standard for now or read from localStorage if accessible 
   // (Note: localStorage in another window might be different but let's try reading it)
-  const posStr = localStorage.getItem("loxx_overlay_position") || "top-left";
+  const posStr = "top-left";
   const sizeStr = localStorage.getItem("loxx_overlay_size") || "medium";
   
   const positionClasses = {
@@ -40,7 +40,14 @@ export const DesktopOverlayWidget = () => {
   useEffect(() => {
     // Elegant system-tray or background HUD layout settings
     document.documentElement.style.background = "transparent";
+    document.documentElement.style.backgroundColor = "transparent";
     document.body.style.background = "transparent";
+    document.body.style.backgroundColor = "transparent";
+    const rootEl = document.getElementById('root');
+    if (rootEl) {
+      rootEl.style.background = "transparent";
+      rootEl.style.backgroundColor = "transparent";
+    }
 
     const api = (window as any).electronAPI;
     

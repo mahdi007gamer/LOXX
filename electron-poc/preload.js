@@ -45,7 +45,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return () => ipcRenderer.removeListener('window-maximize-status', subscription);
   },
   
-  // Native Game Detection & Rich Presence
+  // Overlay state
+  onOverlayInteractionMode: (callback) => {
+    const subscription = (event, interactive) => callback(interactive);
+    ipcRenderer.on('overlay-interaction-mode', subscription);
+    return () => ipcRenderer.removeListener('overlay-interaction-mode', subscription);
+  },
   updateRichPresence: (gameName) => ipcRenderer.send('update-rich-presence', gameName),
   sendGameDetectedReply: (isPlayingHeavyGame) => ipcRenderer.send('native-game-detected-reply', isPlayingHeavyGame),
   onGameDetected: (callback) => {

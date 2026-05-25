@@ -151,12 +151,24 @@ const AppContent = () => {
       </main>
 
       {!isLanding && !isOverlayWidget && <BottomNav />}
+      
+      {/* We only render LobbyOverlay in main window, not overlay widget */}
+      {!isOverlayWidget && <LobbyOverlay />}
+      
+      {/* FriendChatOverlay logic:
+          - Web: Everywhere
+          - Electron Main Window: Hidden (transferred to overlay)
+          - Electron Overlay Widget: Rendered 
+      */}
+      {(!isElectron || isOverlayWidget) && <FriendChatOverlay />}
     </div>
     </>
   );
 };
 
 function App() {
+  const isOverlayWidget = typeof window !== 'undefined' && window.location.pathname === '/lobby/overlay-widget';
+  
   return (
     <AuthProvider>
       <GamesProvider>
@@ -166,15 +178,14 @@ function App() {
               <Router>
                 <ScrollToTop />
                 <AppContent />
-                <LobbyOverlay />
-                <FriendChatOverlay />
                 <DiscordOverlayHUD />
                 <Toaster 
-                  position="bottom-left" 
+                  position={isOverlayWidget ? "bottom-right" : "bottom-left"} 
                   gutter={12}
                   containerStyle={{
-                    bottom: 80,
-                    left: 20,
+                    bottom: isOverlayWidget ? 24 : 80,
+                    right: isOverlayWidget ? 24 : undefined,
+                    left: isOverlayWidget ? undefined : 20,
                     zIndex: 999999999,
                   }}
                   toastOptions={{

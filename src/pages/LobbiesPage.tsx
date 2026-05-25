@@ -37,6 +37,7 @@ export const LobbiesPage = () => {
   const navigate = useNavigate();
   const { allGames: games } = useGames();
   const { isSidebarCollapsed } = useAuth();
+  const isElectron = typeof window !== "undefined" && !!(window as any).electronAPI;
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showToast, setShowToast] = useState(false);
@@ -100,41 +101,41 @@ export const LobbiesPage = () => {
       <main className={cn("flex-1 min-w-0 relative pb-24 md:pb-8 transition-all duration-300", !isSidebarCollapsed ? "md:mr-64" : "md:mr-20")}>
         <div className="px-4 py-8 md:px-8 lg:px-10 max-w-7xl mx-auto w-full">
           {/* Mobile Header: Beautifully aligned and spaced */}
-          <header className="mb-6 md:mb-12 space-y-6 md:space-y-0">
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 md:gap-6">
-              <div className="text-center md:text-right w-full md:w-auto">
+          <header className="mb-6 md:mb-12 space-y-6 md:space-y-8 w-full max-w-full">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 w-full">
+              <div className="text-right sm:text-right w-full sm:w-auto">
                 <h1 className="text-2xl md:text-3xl lg:text-4xl font-black text-white italic tracking-tighter uppercase leading-tight">
                   لابی‌های <span className="text-neon-blue">فعال</span>
                 </h1>
                 <p className="text-gray-400 mt-2 text-[10px] md:text-sm">لابی مورد علاقه خود را انتخاب کنید یا خودتان بسازید</p>
               </div>
               
-              <div className="w-full md:w-auto shrink-0">
+              <div className="w-full sm:w-auto shrink-0 flex">
                 <GlowButton 
                   variant="blue" 
-                  className="flex items-center justify-center gap-2 w-full md:w-auto h-12 md:h-auto px-6 whitespace-nowrap group transition-all" 
+                  className="flex-1 sm:flex-none flex items-center justify-center gap-2 h-12 md:h-14 px-6 whitespace-nowrap group transition-all text-sm font-bold" 
                   onClick={() => setIsModalOpen(true)}
                 >
-                  <Plus size={18} className="group-hover:rotate-90 transition-transform" />
+                  <Plus size={18} className="group-hover:rotate-90 transition-transform shrink-0" />
                   ساخت لابی جدید
                 </GlowButton>
               </div>
             </div>
             
             {/* Search Bar */}
-            <div className="mt-4 md:mt-10 relative w-full">
-              <Search className="absolute right-4 md:right-5 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+            <div className="relative w-full max-w-full">
+              <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 shrink-0" size={18} />
               <input 
                 type="text" 
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="جستجوی لابی..."
-                className="w-full rounded-xl md:rounded-2xl border border-white/10 bg-white/5 py-3 md:py-5 pr-12 md:pr-14 pl-14 md:pl-20 text-xs md:text-sm text-white focus:border-neon-blue/50 focus:outline-none transition-all placeholder:text-gray-600 shadow-xl"
+                className="w-full rounded-xl md:rounded-2xl border border-white/10 bg-white/5 py-3 md:py-4 pr-12 pl-16 text-xs md:text-sm text-white focus:border-neon-blue/50 focus:outline-none transition-all placeholder:text-gray-600 shadow-xl"
               />
               {searchTerm && (
                 <button 
                   onClick={() => setSearchTerm("")}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 p-1.5 md:p-2 rounded-lg hover:bg-white/10 text-[10px] md:text-xs font-bold text-gray-400 cursor-pointer"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 p-1.5 md:p-2 rounded-lg bg-white/5 hover:bg-white/10 text-[10px] md:text-xs font-bold text-gray-400 cursor-pointer transition-colors"
                 >
                   حذف
                 </button>

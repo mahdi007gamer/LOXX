@@ -305,38 +305,61 @@ app.whenReady().then(() => {
 
   // Game Overlay HUD Window Controller
   let overlayWindow = null;
+  let isOverlayInteractive = false;
+
+  const toggleOverlayInteraction = () => {
+    if (!overlayWindow || overlayWindow.isDestroyed()) return;
+    isOverlayInteractive = !isOverlayInteractive;
+    if (isOverlayInteractive) {
+      overlayWindow.setIgnoreMouseEvents(false);
+      overlayWindow.focus();
+      overlayWindow.webContents.send('overlay-interaction-mode', true);
+    } else {
+      let clickThrough = config.overlayClickThrough !== false;
+      overlayWindow.setIgnoreMouseEvents(clickThrough, { forward: true });
+      overlayWindow.webContents.send('overlay-interaction-mode', false);
+    }
+  };
+
+  globalShortcut.register('Alt+F2', toggleOverlayInteraction);
+
   ipcMain.on('set-transparent-overlay-active', (event, active) => {
     try {
       if (active) {
         if (overlayWindow) return;
         
-        let overlayX = Math.round(Number(config.overlayX || 24));
-        let overlayY = Math.round(Number(config.overlayY || 80));
+        let screenWidth = 800;
+        let screenHeight = 600;
+        let screenX = 0;
+        let screenY = 0;
         
         try {
           const primaryDisplay = screen.getPrimaryDisplay();
           if (primaryDisplay && primaryDisplay.bounds) {
-            const { x: displayX, y: displayY } = primaryDisplay.bounds;
-            overlayX = displayX + Math.round(Number(config.overlayX || 24));
-            overlayY = displayY + Math.round(Number(config.overlayY || 80));
+            screenWidth = primaryDisplay.bounds.width;
+            screenHeight = primaryDisplay.bounds.height;
+            screenX = primaryDisplay.bounds.x;
+            screenY = primaryDisplay.bounds.y;
           }
         } catch (screenErr) {
-          console.warn("[Overlay] Failed to fetch primary display bounds, falling back:", screenErr);
+          console.warn("[Overlay] Failed to fetch primary display bounds:", screenErr);
         }
 
+        isOverlayInteractive = false;
+
         overlayWindow = new BrowserWindow({
-          width: Math.round(Number(config.overlayWidth || 300)),
-          height: Math.round(Number(config.overlayHeight || 500)),
-          x: overlayX,
-          y: overlayY,
+          width: screenWidth,
+          height: screenHeight,
+          x: screenX,
+          y: screenY,
           frame: false,
           transparent: true,
           alwaysOnTop: true,
           skipTaskbar: true,
           hasShadow: false,
           resizable: false,
-          type: 'toolbar', // Float above normal windows and fullscreen game interfaces
-          focusable: false, // Prevent taking focus away from active games
+          type: 'toolbar', // Float above normal windows
+          focusable: true, // Needs focusability for interactive mode
           opacity: Number(config.overlayOpacity !== undefined ? config.overlayOpacity : 0.9),
           webPreferences: {
             nodeIntegration: false,
@@ -351,7 +374,8 @@ app.whenReady().then(() => {
         overlayWindow.setFullScreenable(false);
 
         // Make it click-through, sitting perfectly on top of any low-level screen
-        overlayWindow.setIgnoreMouseEvents(true, { forward: true });
+        let clickThrough = config.overlayClickThrough !== false;
+        overlayWindow.setIgnoreMouseEvents(true, { forward: clickThrough });
         
         // Compute dynamic local server URL route
         let baseURL = 'https://loxx.ir';
