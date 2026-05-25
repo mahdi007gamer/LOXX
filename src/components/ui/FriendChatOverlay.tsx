@@ -815,7 +815,15 @@ export const FriendChatOverlay = () => {
 
       {/* Active Chats Tabs Container */}
       <div className="flex items-end gap-2 pointer-events-auto px-4 max-w-full pb-0 overflow-x-visible">
-        {chats.map(chat => {
+        {chats
+          .filter(chat => {
+            // In Windows launcher overlay, when not interactive, only show tabs with unread messages
+            if (isOverlayWidget && !isOverlayInteractive) {
+              return chat.unreadCount > 0;
+            }
+            return true;
+          })
+          .map(chat => {
           const friend = friends.find(f => f.id === chat.friendId);
           const displayName = friend?.displayName || chat.tempDisplayName || "کاربر";
           const avatar = friend?.avatar;
