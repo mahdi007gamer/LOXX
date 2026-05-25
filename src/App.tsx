@@ -189,12 +189,12 @@ const AppContent = () => {
       <FriendChatOverlay />
       
       <Toaster 
-        position="bottom-right" 
+        position="bottom-left" 
         gutter={12}
         containerStyle={{
           bottom: isOverlayWidget ? 40 : 80,
-          right: isOverlayWidget ? 40 : 24,
-          left: "auto",
+          left: isOverlayWidget ? 40 : 24,
+          right: "auto",
           zIndex: 999999999,
         }}
         containerClassName="pointer-events-none"

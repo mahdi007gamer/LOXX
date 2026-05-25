@@ -112,7 +112,7 @@ export const NotificationHandler = () => {
         <InviteToast t={t} inviteData={inviteData} navigate={navigate} />
       ), { 
         duration: 15000,
-        position: "bottom-right",
+        position: "bottom-left",
         id: `invite-${lobbyId}-${senderId}`,
       });
     };
