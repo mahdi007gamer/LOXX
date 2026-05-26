@@ -51,7 +51,7 @@
       "uninstallerIcon": "build/icon.ico",
       "uninstallDisplayName": "Loxx",
       "unicode": true,
-      "include": "build/installer.nsh"
+      "include": "installer.nsh"
     },
     "publish": {
       "provider": "generic",
