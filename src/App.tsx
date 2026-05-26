@@ -59,8 +59,30 @@ const AppContent = () => {
   const { openProfile } = useProfilePopover();
   const navigate = useNavigate();
   const location = useLocation();
-  const isLanding = location.pathname === "/";
-  const isOverlayWidget = location.pathname === "/overlay";
+
+  // Resolve hash routing on initial load/mount to coordinate with Electron
+  const [currentHash, setCurrentHash] = useState(() => (typeof window !== "undefined" ? window.location.hash : ""));
+
+  useEffect(() => {
+    const handleHashChange = () => {
+      setCurrentHash(typeof window !== "undefined" ? window.location.hash : "");
+    };
+    window.addEventListener("hashchange", handleHashChange);
+    return () => window.removeEventListener("hashchange", handleHashChange);
+  }, []);
+
+  // Support Electron deep linking / hash routing in standard BrowserRouter
+  useEffect(() => {
+    if (currentHash && currentHash.startsWith("#/")) {
+      const targetPath = currentHash.substring(1); // e.g. "/dashboard"
+      if (targetPath !== location.pathname) {
+        navigate(targetPath, { replace: true });
+      }
+    }
+  }, [currentHash, location.pathname, navigate]);
+
+  const isOverlayWidget = location.pathname === "/overlay" || currentHash.includes("/overlay");
+  const isLanding = location.pathname === "/" && !currentHash.startsWith("#/");
   const hideSidebar = isLanding || location.pathname === "/auth" || isOverlayWidget;
   const isElectron = typeof window !== "undefined" && !!(window as any).electronAPI;
   const [isMaximized, setIsMaximized] = useState(false);
