@@ -74,18 +74,51 @@ autoUpdater.on('update-downloaded', (info) => {
     type: 'info',
     title: 'بروزرسانی آماده نصب',
     message: `نسخه جدید لوکس (${info.version}) با موفقیت دانلود شد!`,
-    detail: 'برنامه به صورت خودکار بسته شده و بروزرسانی جدید در حالت بی‌صدا نصب خواهد شد تا لوکس مجددا با امکانات جدید اجرا شود.',
+    detail: 'برنامه به صورت خودکار بسته شده و بروزرسانی جدید نصب خواهد شد تا لوکس مجددا با امکانات جدید اجرا شود.',
     buttons: ['نصب و راه‌اندازی مجدد']
   }).then(() => {
     isQuitting = true;
-    if (tray) tray.destroy();
-    // Explicitly destroy all windows before triggering updater to avoid lock/blocking
-    BrowserWindow.getAllWindows().forEach(win => win.destroy());
     
-    // Let electron-updater handle the graceful shutdown and spawn in silent mode.
+    // Safely destroy system tray to release resources
+    if (tray) {
+      try {
+        tray.destroy();
+        tray = null;
+      } catch (e) {
+        console.error('Failed to destroy tray:', e);
+      }
+    }
+
+    // Crucial: Remove standard 'window-all-closed' handler to prevent it from calling app.quit() 
+    // before the installer process can be spawned and configured by electron-updater.
+    app.removeAllListeners('window-all-closed');
+    app.on('window-all-closed', () => {
+      // Do nothing, let autoUpdater.quitAndInstall() manage the exit sequence
+    });
+
+    // Destroy all windows to completely unlock files/scripts in the Electron app
+    BrowserWindow.getAllWindows().forEach((win) => {
+      try {
+        if (!win.isDestroyed()) {
+          win.destroy();
+        }
+      } catch (e) {
+        console.error('Error destroying window:', e);
+      }
+    });
+
+    // Wait 1.2 seconds for the operating system to completely release file locks on processes and resources
     setTimeout(() => {
-      autoUpdater.quitAndInstall(true, true);
-    }, 500);
+      try {
+        console.log('Replacing process via autoUpdater.quitAndInstall...');
+        // quitAndInstall(isSilent, isForceRunAfter)
+        // using (true, true) to run silently and relaunch, or false if the installer needs to show progress
+        autoUpdater.quitAndInstall(true, true);
+      } catch (err) {
+        console.error('Failed to trigger quitAndInstall, performing fallback app.quit:', err);
+        app.quit();
+      }
+    }, 1200);
   });
 });
 

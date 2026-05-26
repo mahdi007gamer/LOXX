@@ -20,6 +20,7 @@
     "appId": "ir.loxx.launcher",
     "productName": "loxx",
     "copyright": "Copyright © 2026 Loxx",
+    "icon": "build/icon.ico",
     "directories": {
       "output": "dist"
     },
@@ -28,6 +29,7 @@
       "build/logo.png"
     ],
     "win": {
+      "icon": "build/icon.ico",
       "publisherName": "Loxx",
       "target": [
         {
