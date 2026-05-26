@@ -31,6 +31,7 @@
     "win": {
       "icon": "build/icon.ico",
       "requestedExecutionLevel": "requireAdministrator",
+      "artifactName": "loxx-Setup-${version}.${ext}",
       "target": [
         {
           "target": "nsis",

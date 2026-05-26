@@ -23,9 +23,11 @@ export const DownloadSection = () => {
           };
 
           // parse version
+          let version = "1.1.0";
           const versionMatch = text.match(/version:\s*(.+)/);
           if (versionMatch && versionMatch[1]) {
-            setWindowsVersion(cleanYamlValue(versionMatch[1]));
+            version = cleanYamlValue(versionMatch[1]);
+            setWindowsVersion(version);
           }
 
           // parse path (with fallback to url)
@@ -40,17 +42,74 @@ export const DownloadSection = () => {
             }
           }
 
+          // Gather candidate URLs to probe which one actually exists on the production server
+          const candidates: string[] = [];
+          const addCandidate = (urlStr: string) => {
+            if (urlStr && !candidates.includes(urlStr)) {
+              candidates.push(urlStr);
+            }
+          };
+
+          // 1. Exact path specified in latest.yml
           if (finalPath) {
             if (finalPath.startsWith("http://") || finalPath.startsWith("https://")) {
-              setWindowsUrl(finalPath);
+              addCandidate(finalPath);
             } else {
-              // Properly URL encode space and other characters in path segments
               const encodedPath = finalPath.split('/')
                 .map(segment => encodeURIComponent(segment))
                 .join('/');
-              setWindowsUrl(`https://loxx.ir/updater/${encodedPath}`);
+              addCandidate(`https://loxx.ir/updater/${encodedPath}`);
             }
           }
+
+          // 2. Dash version setups (standardized name formats)
+          addCandidate(`https://loxx.ir/updater/loxx-Setup-${version}.exe`);
+          addCandidate(`https://loxx.ir/updater/loxx-setup-${version}.exe`);
+          addCandidate(`https://loxx.ir/updater/Loxx-Setup-${version}.exe`);
+          addCandidate(`https://loxx.ir/updater/Loxx-setup-${version}.exe`);
+
+          // 3. Space based setups (traditional electron-builder formats)
+          addCandidate(`https://loxx.ir/updater/loxx%20Setup%20${version}.exe`);
+          addCandidate(`https://loxx.ir/updater/Loxx%20Setup%20${version}.exe`);
+
+          // 4. Fallbacks without version numbers
+          addCandidate("https://loxx.ir/updater/loxx-setup.exe");
+          addCandidate("https://loxx.ir/updater/loxx-Setup.exe");
+          addCandidate("https://loxx.ir/updater/Loxx-Setup.exe");
+          addCandidate("https://loxx.ir/updater/loxx%20Setup.exe");
+          addCandidate("https://loxx.ir/updater/Loxx%20Setup.exe");
+
+          // Keep the first candidate as the default fallback in case all probe tests fail
+          let selectedUrl = candidates[0] || "https://loxx.ir/updater/loxx-setup.exe";
+
+          // Probe candidates asynchronously to find the first 200 OK URL
+          const probeUrls = async () => {
+            for (const cand of candidates) {
+              try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 1800); // 1.8 seconds timeout per check
+
+                const probeRes = await fetch(cand, {
+                  method: "HEAD",
+                  signal: controller.signal,
+                  mode: "cors"
+                });
+
+                clearTimeout(timeoutId);
+
+                if (probeRes.status === 200) {
+                  selectedUrl = cand;
+                  console.log("[Loxx Updater Resilient Sniffer] Successfully found live URL:", cand);
+                  break; // Found working URL! Exit loop
+                }
+              } catch (e) {
+                // Ignore errors and probe next candidate (could be CORS limit or 404)
+              }
+            }
+            setWindowsUrl(selectedUrl);
+          };
+
+          probeUrls();
         }
       } catch (err) {
         console.warn("Could not fetch latest.yml for download section", err);
