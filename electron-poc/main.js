@@ -997,6 +997,91 @@ updateCheckTimeout = setTimeout(() => {
       tray.setToolTip(`Loxx - ${displayStatus}`);
     }
   });
+
+  // LAN Bridge Connection and Signal Mapping
+  const lanBridge = require('./lan-bridge.js');
+
+  lanBridge.setLogger((level, ...args) => {
+    logMsg(level, '[LAN]', ...args);
+  });
+
+  lanBridge.on('packet-broadcast', (data) => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('lan-packet-captured', data);
+    }
+  });
+
+  lanBridge.on('tcp-connect', (data) => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('lan-tcp-connect-req', data);
+    }
+  });
+
+  lanBridge.on('tcp-data', (data) => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('lan-tcp-data', data);
+    }
+  });
+
+  lanBridge.on('tcp-close', (data) => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('lan-tcp-close-req', data);
+    }
+  });
+
+  lanBridge.on('udp-data', (data) => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('lan-udp-data', data);
+    }
+  });
+
+  lanBridge.on('lan-status', (data) => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('lan-status-change', data);
+    }
+  });
+
+  lanBridge.on('lan-error', (data) => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('lan-error-occurred', data);
+    }
+  });
+
+  ipcMain.on('start-lan-relay', (event, { role, lobbyId, customPorts }) => {
+    lanBridge.start(role, lobbyId, customPorts);
+  });
+
+  ipcMain.on('stop-lan-relay', () => {
+    lanBridge.stopAndCleanup();
+  });
+
+  ipcMain.on('inject-lan-udp-packet', (event, { port, data }) => {
+    lanBridge.injectUdpPacket(port, data);
+  });
+
+  ipcMain.on('remote-tcp-connect', (event, { connectionId, port }) => {
+    lanBridge.handleHostTcpConnect(connectionId, port);
+  });
+
+  ipcMain.on('remote-tcp-data', (event, { connectionId, data }) => {
+    if (lanBridge.role === 'host') {
+      lanBridge.handleHostTcpData(connectionId, data);
+    } else {
+      lanBridge.handleClientTcpData(connectionId, data);
+    }
+  });
+
+  ipcMain.on('remote-tcp-close', (event, { connectionId }) => {
+    if (lanBridge.role === 'host') {
+      lanBridge.handleHostTcpClose(connectionId);
+    } else {
+      lanBridge.handleClientTcpClose(connectionId);
+    }
+  });
+
+  ipcMain.on('remote-udp-data', (event, { connectionId, port, data, isResponse, clientAddress, clientPort }) => {
+    lanBridge.handleUdpData(connectionId, port, data, isResponse, clientAddress, clientPort);
+  });
 });
 
 app.on('activate', () => {
@@ -1006,6 +1091,10 @@ app.on('activate', () => {
 });
 
 app.on('will-quit', () => {
+  try {
+    const lb = require('./lan-bridge.js');
+    lb.stopAndCleanup();
+  } catch (e) {}
   globalShortcut.unregisterAll();
 });
 

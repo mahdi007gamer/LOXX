@@ -12,7 +12,7 @@ export const LobbiesPreview = () => {
   useEffect(() => {
     const fetchLobbies = async () => {
       try {
-        const res = await fetch("/api/lobbies");
+        const res = await fetch("/api/v1/lobbies");
         if (res.ok) {
           const json = await res.json();
           if (json.data && json.data.items) {

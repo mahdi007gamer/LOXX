@@ -791,6 +791,15 @@ export function setupWebSockets(io: Server) {
       } catch (err) {}
     });
 
+    socket.on("lobby.lan.relay", (data: { lobbyId: string, event: string, payload: any }) => {
+      if (!data?.lobbyId || !data?.event) return;
+      socket.to(`lobby:${data.lobbyId}`).emit("lobby.lan.event", {
+        senderUserId: userId,
+        event: data.event,
+        payload: data.payload
+      });
+    });
+
     socket.on("disconnect", async () => {
       untrackUser(userId, socket.id);
     });

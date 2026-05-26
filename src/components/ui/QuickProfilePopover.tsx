@@ -10,6 +10,7 @@ import api from "../../lib/api";
 import { toast } from "react-hot-toast";
 import { SmartImage } from "./SmartImage";
 import { VIPMetadata } from "../../types";
+import { useNavigate } from "react-router-dom";
 
 export interface QuickProfileUser {
   senderName: string;
@@ -38,6 +39,7 @@ interface QuickProfilePopoverProps {
 }
 
 export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClose, user: initialUser, isSelf }) => {
+  const navigate = useNavigate();
   const { addFriend, openChat } = useFriends();
   const [sentRequest, setSentRequest] = useState(false);
   const [userData, setUserData] = useState<QuickProfileUser>(initialUser);
@@ -528,7 +530,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
                 <GlowButton 
                   variant={isVIP ? "gold" : "blue"} 
                   className="w-full h-16 !rounded-3xl font-black text-base uppercase italic tracking-[0.2em] shadow-xl hover:scale-[1.02] transition-all"
-                  onClick={() => window.location.href = "/settings"}
+                  onClick={() => { onClose(); navigate("/settings"); }}
                 >
                   ویرایش اطلاعات پروفایل
                 </GlowButton>

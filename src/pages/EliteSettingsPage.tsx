@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { motion, AnimatePresence } from "motion/react";
+import { useNavigate } from "react-router-dom";
 
 type FrameType = "none" | "lightning" | "glitch" | "fire" | "anime" | "neon_pulse" | "cyber" | "cosmic" | "shield" | "gold_aura" | "diamond";
 type GradientType = "linear" | "radial" | "conic";
@@ -74,6 +75,7 @@ interface VIPMetadata {
 }
 
 export const EliteSettingsPage = () => {
+  const navigate = useNavigate();
   const { user, updateUser, isSidebarCollapsed } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -375,7 +377,7 @@ export const EliteSettingsPage = () => {
           <GlowButton 
             variant="gold" 
             className="w-full h-12 uppercase italic font-black"
-            onClick={() => window.location.href = "/premium"}
+            onClick={() => navigate("/premium")}
           >
             مشاهده پنل اشتراک
           </GlowButton>
@@ -412,7 +414,7 @@ export const EliteSettingsPage = () => {
                 <Trash2 size={16} />
               </button>
               <button 
-                onClick={() => window.location.href = "/settings"}
+                onClick={() => navigate("/settings")}
                 className="h-12 px-6 rounded-2xl bg-white/5 border border-white/10 text-xs font-black text-white italic hover:bg-white/10 transition-all flex items-center gap-2"
               >
                 <ArrowRight size={16} /> بازگشت به تنظیمات

@@ -926,6 +926,138 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, [lobby?.id]);
 
+  // LAN Tunneling Relay Controller
+  useEffect(() => {
+    const isElectronAvailable = typeof window !== "undefined" && !!(window as any).electronAPI;
+    if (!isElectronAvailable || !lobby?.id || !lobby?.isLanMode) {
+      if (isElectronAvailable) {
+        (window as any).electronAPI.stopLanRelay();
+      }
+      return;
+    }
+
+    const api = (window as any).electronAPI;
+    const isHost = lobby.hostId === user?.id;
+    const role = isHost ? 'host' : 'client';
+
+    console.log(`[LAN] Starting local zero-TUN proxy as [${role}] for lobby [${lobby.id}]`);
+    api.startLanRelay(role, lobby.id);
+
+    // 1. Send captured host discovery broadcasts to other players in the lobby
+    const stopUdpBroadcaster = api.onLanPacketCaptured(({ port, data }: { port: number, data: string }) => {
+      console.log(`[LAN] Capturing host local broadcast announcement on port ${port}...`);
+      lobbySocket.emit("lobby.lan.relay", {
+        lobbyId: lobby.id,
+        event: "udp_broadcast",
+        payload: { port, data }
+      });
+    });
+
+    // 2. Handle outbound TCP initialization request from client to host
+    const stopTcpConnectHandler = api.onLanTcpConnectReq(({ connectionId, port }: { connectionId: string, port: number }) => {
+      console.log(`[LAN] Client requesting tunnel connection [${connectionId}]...`);
+      lobbySocket.emit("lobby.lan.relay", {
+        lobbyId: lobby.id,
+        event: "tcp_connect",
+        payload: { targetUserId: lobby.hostId, connectionId, port }
+      });
+    });
+
+    // 3. Handle outbound TCP stream packets from client to host (and vice versa)
+    const stopTcpDataSender = api.onLanTcpDataReceived(({ connectionId, data }: { connectionId: string, data: string }) => {
+      const targetUser = isHost ? null : lobby.hostId;
+      lobbySocket.emit("lobby.lan.relay", {
+        lobbyId: lobby.id,
+        event: "tcp_data",
+        payload: { targetUserId: targetUser, connectionId, data }
+      });
+    });
+
+    // 4. Handle connection terminations
+    const stopTcpCloseSender = api.onLanTcpCloseReq(({ connectionId }: { connectionId: string }) => {
+      const targetUser = isHost ? null : lobby.hostId;
+      lobbySocket.emit("lobby.lan.relay", {
+        lobbyId: lobby.id,
+        event: "tcp_close",
+        payload: { targetUserId: targetUser, connectionId }
+      });
+    });
+
+    // 5. Handle pure UDP multiplayer packets
+    const stopUdpDataSender = api.onLanUdpDataReceived((payload: any) => {
+      const targetUser = isHost ? null : lobby.hostId;
+      lobbySocket.emit("lobby.lan.relay", {
+        lobbyId: lobby.id,
+        event: "udp_data",
+        payload: { ...payload, targetUserId: targetUser }
+      });
+    });
+
+    // 6. Handle LAN status transitions
+    const stopStatusListener = api.onLanStatusChange((data: any) => {
+      console.log("[LAN] Status code received:", data);
+    });
+
+    // 7. Handle LAN errors beautifully
+    const stopErrorListener = api.onLanError((err: { type: string, port: number, message: string }) => {
+      console.error("[LAN] Bridge internal error:", err);
+      if (err.type === "TCP_PROXY_BIND_FAILED" || err.type === "UDP_BIND_FAILED") {
+        toast.error(`⚠️ خطای شبکه LAN: پورت بازی ${err.port} اشغال است! لطفاً مطمئن شوید خودِ بازی در حالت هاستینگ قرار ندارد و پورت آن آزاد است.`, { id: `lan-port-conflict-${err.port}` });
+      }
+    });
+
+    // RECEIVE LAN RELAYS FROM OTHER PLAYERS VIA SOCKET.IO AND INJECT
+    const handleRemoteLanEvent = (msg: { senderUserId: string, event: string, payload: any }) => {
+      if (msg.senderUserId === user?.id) return;
+      const { event, payload } = msg;
+
+      if (event === "udp_broadcast") {
+        if (role === 'client') {
+          api.injectLanUdpPacket(payload.port, payload.data);
+        }
+      } 
+      else if (event === "tcp_connect") {
+        if (role === 'host') {
+          api.sendRemoteTcpConnect(payload.connectionId, payload.port);
+        }
+      } 
+      else if (event === "tcp_data") {
+        if (payload.targetUserId && payload.targetUserId !== user?.id) return;
+        api.sendRemoteTcpData(payload.connectionId, payload.data);
+      } 
+      else if (event === "tcp_close") {
+        if (payload.targetUserId && payload.targetUserId !== user?.id) return;
+        api.sendRemoteTcpClose(payload.connectionId);
+      } 
+      else if (event === "udp_data") {
+        if (payload.targetUserId && payload.targetUserId !== user?.id) return;
+        api.sendRemoteUdpData(
+          payload.connectionId, 
+          payload.port, 
+          payload.data, 
+          !!payload.isResponse, 
+          payload.clientAddress, 
+          payload.clientPort
+        );
+      }
+    };
+
+    lobbySocket.on("lobby.lan.event", handleRemoteLanEvent);
+
+    return () => {
+      console.log("[LAN] Leaving room, cleaning up LAN-bridge events and bindings.");
+      lobbySocket.off("lobby.lan.event", handleRemoteLanEvent);
+      if (stopUdpBroadcaster) stopUdpBroadcaster();
+      if (stopTcpConnectHandler) stopTcpConnectHandler();
+      if (stopTcpDataSender) stopTcpDataSender();
+      if (stopTcpCloseSender) stopTcpCloseSender();
+      if (stopUdpDataSender) stopUdpDataSender();
+      if (stopStatusListener) stopStatusListener();
+      if (stopErrorListener) stopErrorListener();
+      api.stopLanRelay();
+    };
+  }, [lobby?.id, lobby?.isLanMode, lobby?.hostId, user?.id]);
+
   const [isJoining, setIsJoining] = useState<string | null>(null);
   const [joinError, setJoinError] = useState<string | null>(null);
 

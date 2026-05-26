@@ -358,6 +358,47 @@ export const LobbyRoomPage = () => {
           </Link>
         </div>
       )}
+
+      {/* LAN mode banners & assistance */}
+      {lobby?.isLanMode && !isElectron && (
+        <div className="relative z-10 bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 flex flex-col md:flex-row items-center justify-between gap-3 animate-enter shrink-0">
+          <div className="flex items-center gap-3 text-right">
+            <ShieldAlert size={20} className="text-amber-400 shrink-0" />
+            <div>
+              <p className="text-sm font-black text-white">⚠️ جهت بازی در حالت Lan، استفاده از اپلیکیشن ویندوز لوکس الزامی است!</p>
+              <p className="text-xs text-gray-400 mt-0.5">شما هم‌اکنون این لابی را روی مرورگر وب مشاهده می‌کنید. سیستم انتقال ترافیک خودکار Lan (بدون نیاز به برنامه جانبی) فقط روی اپلیکیشن کلاینت ویندوز فعال می‌شود.</p>
+            </div>
+          </div>
+          <a href="/download" className="px-5 py-2 rounded-xl bg-amber-500 text-black text-xs font-black transition-all hover:bg-amber-400 shrink-0 font-sans">
+            دانلود کلاینت ویندوز
+          </a>
+        </div>
+      )}
+
+      {lobby?.isLanMode && isElectron && (
+        <div className="relative z-10 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-4 flex items-center justify-between gap-3 animate-enter shrink-0">
+          <div className="flex items-center gap-3 text-right font-sans">
+            <span className="relative flex h-2 w-2 shrink-0">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            <div>
+              <p className="text-sm font-black text-white">⚡ سیستم پل ارتباطی لوکس (Zero-TUN) فعال است</p>
+              <p className="text-xs text-gray-400 mt-0.5">
+                {isHost ? (
+                  "به عنوان هاست لابی، بازی خود را در حالت LAN / Offline برای دیگران بسازید. لانچر لوکس به صورت خودکار پورت‌های شبکه بازی را برای کلاینت‌ها پروکسی کرده و پل می‌زند."
+                ) : (
+                  "به عنوان کلاینت لابی، به محض شروع، مستقیماً وارد بازی شده و به بخش Local LAN بروید. به لطف سیستم Zero-TUN لوکس، سرور هم‌تیمی‌تان خودکار نمایش داده می‌شود!"
+                )}
+              </p>
+            </div>
+          </div>
+          <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded border border-emerald-500/20">
+            Zero-TUN Engine v1.1.0
+          </span>
+        </div>
+      )}
+
       {/* Background Elements */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className={cn(
@@ -431,6 +472,15 @@ export const LobbyRoomPage = () => {
            
            <div className="min-w-0 flex-1">
              <div className="flex items-center gap-2 md:gap-3 mb-0.5 md:mb-1">
+               {lobby?.isLanMode && (
+                 <div className="mb-1 md:mb-2 self-start px-2 py-0.5 rounded-full border border-emerald-500/50 bg-emerald-500/20 text-emerald-300 text-[8px] md:text-[10px] font-black uppercase tracking-tighter flex items-center gap-1 font-sans">
+                   <span className="relative flex h-1.5 w-1.5 font-sans">
+                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                     <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                   </span>
+                   <span>LAN Zero-TUN v1.1.0</span>
+                 </div>
+               )}
                <h1 className="text-sm md:text-3xl font-black tracking-tight text-white truncate max-w-[150px] md:max-w-none">
                  {lobby ? (lobby.title || "Elite Lobby") : "در حال بارگذاری..."}
                </h1>

@@ -35,10 +35,12 @@ import {
 import { cn } from "../lib/utils";
 import { motion, AnimatePresence } from "motion/react";
 import { SmartImage } from "../components/ui/SmartImage";
+import { useNavigate } from "react-router-dom";
 
 type SettingsTab = "profile" | "security" | "notifications" | "ui" | "region" | "badges" | "elite" | "support";
 
 export const SettingsPage = () => {
+  const navigate = useNavigate();
   const { user: authUser, refreshUser, isSidebarCollapsed } = useAuth();
   const [activeTab, setActiveTab] = useState<SettingsTab>("profile");
   const [loading, setLoading] = useState(true);
@@ -252,7 +254,7 @@ export const SettingsPage = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="relative group cursor-pointer mb-8"
-          onClick={() => window.location.href = "/settings/elite"}
+          onClick={() => navigate("/settings/elite")}
         >
           <div className="absolute -inset-0.5 bg-gradient-to-r from-yellow-400 via-orange-500 to-yellow-600 rounded-3xl blur opacity-30 group-hover:opacity-100 transition duration-1000 group-hover:duration-200" />
           <NeonCard variant="gold" className="relative transition-transform group-hover:scale-[1.01] overflow-hidden">
@@ -834,7 +836,7 @@ export const SettingsPage = () => {
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         className="relative group cursor-pointer"
-        onClick={() => window.location.href = "/settings/elite"}
+        onClick={() => navigate("/settings/elite")}
       >
         <div className="absolute -inset-1 bg-gradient-to-r from-yellow-400 via-orange-500 to-yellow-600 rounded-[32px] blur-xl opacity-40 group-hover:opacity-60 transition duration-1000" />
         <NeonCard variant="gold" className="relative p-10 overflow-hidden border-none bg-black/60 backdrop-blur-3xl">

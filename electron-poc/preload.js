@@ -86,5 +86,51 @@ contextBridge.exposeInMainWorld('electronAPI', {
     const subscription = (event, status, percent) => callback(status, percent);
     ipcRenderer.on('update-status', subscription);
     return () => ipcRenderer.removeListener('update-status', subscription);
+  },
+
+  // LAN Bridge Tunneling APIs
+  startLanRelay: (role, lobbyId, customPorts) => ipcRenderer.send('start-lan-relay', { role, lobbyId, customPorts }),
+  stopLanRelay: () => ipcRenderer.send('stop-lan-relay'),
+  injectLanUdpPacket: (port, data) => ipcRenderer.send('inject-lan-udp-packet', { port, data }),
+  sendRemoteTcpConnect: (connectionId, port) => ipcRenderer.send('remote-tcp-connect', { connectionId, port }),
+  sendRemoteTcpData: (connectionId, data) => ipcRenderer.send('remote-tcp-data', { connectionId, data }),
+  sendRemoteTcpClose: (connectionId) => ipcRenderer.send('remote-tcp-close', { connectionId }),
+  sendRemoteUdpData: (connectionId, port, data, isResponse, clientAddress, clientPort) => ipcRenderer.send('remote-udp-data', { connectionId, port, data, isResponse, clientAddress, clientPort }),
+
+  // LAN Bridge Listeners
+  onLanPacketCaptured: (callback) => {
+    const subscription = (event, payload) => callback(payload);
+    ipcRenderer.on('lan-packet-captured', subscription);
+    return () => ipcRenderer.removeListener('lan-packet-captured', subscription);
+  },
+  onLanTcpConnectReq: (callback) => {
+    const subscription = (event, payload) => callback(payload);
+    ipcRenderer.on('lan-tcp-connect-req', subscription);
+    return () => ipcRenderer.removeListener('lan-tcp-connect-req', subscription);
+  },
+  onLanTcpDataReceived: (callback) => {
+    const subscription = (event, payload) => callback(payload);
+    ipcRenderer.on('lan-tcp-data', subscription);
+    return () => ipcRenderer.removeListener('lan-tcp-data', subscription);
+  },
+  onLanTcpCloseReq: (callback) => {
+    const subscription = (event, payload) => callback(payload);
+    ipcRenderer.on('lan-tcp-close-req', subscription);
+    return () => ipcRenderer.removeListener('lan-tcp-close-req', subscription);
+  },
+  onLanUdpDataReceived: (callback) => {
+    const subscription = (event, payload) => callback(payload);
+    ipcRenderer.on('lan-udp-data', subscription);
+    return () => ipcRenderer.removeListener('lan-udp-data', subscription);
+  },
+  onLanStatusChange: (callback) => {
+    const subscription = (event, payload) => callback(payload);
+    ipcRenderer.on('lan-status-change', subscription);
+    return () => ipcRenderer.removeListener('lan-status-change', subscription);
+  },
+  onLanError: (callback) => {
+    const subscription = (event, payload) => callback(payload);
+    ipcRenderer.on('lan-error-occurred', subscription);
+    return () => ipcRenderer.removeListener('lan-error-occurred', subscription);
   }
 });

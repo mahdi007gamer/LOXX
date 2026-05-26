@@ -21,7 +21,12 @@ export const ElectronSettingsPage = () => {
     overlayToastXOffset,
     setOverlayToastXOffset,
     overlayToastYOffset,
-    setOverlayToastYOffset
+    setOverlayToastYOffset,
+    overlayEnabled,
+    setOverlayEnabled,
+    transparentOverlayEnabled,
+    setTransparentOverlayEnabled,
+    updateLauncherSettings
   } = useLobby();
   const [config, setConfig] = useState<any>({});
   const [recordingKey, setRecordingKey] = useState<string | null>(null);
@@ -82,9 +87,7 @@ export const ElectronSettingsPage = () => {
   const updateSetting = (key: string, value: any) => {
     const updated = { ...config, [key]: value };
     setConfig(updated);
-    if ((window as any).electronAPI) {
-      (window as any).electronAPI.updateLauncherSettings({ [key]: value });
-    }
+    updateLauncherSettings({ [key]: value });
   };
 
   const listenForKey = (settingKey: string) => {
@@ -184,6 +187,33 @@ export const ElectronSettingsPage = () => {
                <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2"><Maximize className="text-[#00e5ff]" /> اورلی درون‌بازی (Overlay)</h3>
                
                <div className="space-y-4">
+                  {/* Translucent Window Overlay Toggle */}
+                  <div className="flex items-center justify-between bg-black/45 p-4 rounded-xl border border-emerald-500/35 bg-emerald-500/5 shadow-[0_0_15px_rgba(16,185,129,0.05)]">
+                      <div className="flex flex-col text-right">
+                         <span className="text-sm font-bold text-white flex items-center gap-2">
+                            <MonitorPlay size={16} className="text-emerald-400 animate-pulse" /> اورلی شفاف سراسری (کلاینت ویندوز)
+                         </span>
+                         <span className="text-[10px] text-gray-400 mt-1">قرار دادن آواتار، مدالیون‌ها و بلندگوی هم‌تیمی‌ها مستقیماً روی پنجره کل بازی‌های ویندوز</span>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" className="sr-only peer" checked={transparentOverlayEnabled} onChange={(e) => setTransparentOverlayEnabled(e.target.checked)} />
+                        <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                      </label>
+                  </div>
+
+                  {/* Local App/HUD Overlay Toggle */}
+                  <div className="flex items-center justify-between bg-black/40 p-4 rounded-xl border border-[#00e5ff]/20 bg-[#00e5ff]/5">
+                      <div className="flex flex-col text-right">
+                         <span className="text-sm font-bold text-white flex items-center gap-2">
+                            <Maximize size={16} className="text-[#00e5ff]" /> اورلی وب / کلاینت (HUD لوکس)
+                         </span>
+                         <span className="text-[10px] text-gray-400 mt-1">نمایش پنل شناور متحرک در گوشه صفحه در وب و داخل کلاینت لوکس</span>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" className="sr-only peer" checked={overlayEnabled} onChange={(e) => setOverlayEnabled(e.target.checked)} />
+                        <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#00e5ff]"></div>
+                      </label>
+                  </div>
                   <div className="flex items-center justify-between bg-black/40 p-3 rounded-xl">
                       <span className="text-sm font-bold text-white flex items-center gap-2"><MousePointerClick size={16} className="text-[#00e5ff]" /> عبور کلیک از اورلی</span>
                       <label className="relative inline-flex items-center cursor-pointer">
