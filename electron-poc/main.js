@@ -8,6 +8,11 @@ const gotTheLock = app.requestSingleInstanceLock();
 if (!gotTheLock) {
   app.quit();
 } else {
+  // Set App User Model ID for Windows Taskbar & Notifications
+  if (process.platform === 'win32') {
+    app.setAppUserModelId(app.isPackaged ? 'ir.loxx.launcher' : process.execPath);
+  }
+
   app.on('second-instance', (event, commandLine, workingDirectory) => {
     if (mainWindow) {
       if (mainWindow.isMinimized()) mainWindow.restore();
@@ -19,7 +24,7 @@ if (!gotTheLock) {
 
 // Configure autoUpdater to not automatically show silent errors or prompt on default
 autoUpdater.autoDownload = true;
-autoUpdater.autoInstallOnAppQuit = true;
+autoUpdater.autoInstallOnAppQuit = false;
 try {
   autoUpdater.setFeedURL({
     provider: 'generic',
@@ -73,8 +78,14 @@ autoUpdater.on('update-downloaded', (info) => {
     buttons: ['نصب و راه‌اندازی مجدد']
   }).then(() => {
     isQuitting = true;
+    if (tray) tray.destroy();
+    // Explicitly destroy all windows before triggering updater to avoid lock/blocking
+    BrowserWindow.getAllWindows().forEach(win => win.destroy());
+    
     // Let electron-updater handle the graceful shutdown and spawn in silent mode.
-    autoUpdater.quitAndInstall(true, true);
+    setTimeout(() => {
+      autoUpdater.quitAndInstall(true, true);
+    }, 500);
   });
 });
 
@@ -103,6 +114,7 @@ function createSplashWindow() {
     alwaysOnTop: true,
     resizable: false,
     show: false,
+    icon: path.join(__dirname, 'logo.png'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
@@ -228,9 +240,7 @@ function createMainWindow() {
     minHeight: 650,
     title: 'LOXX',
     show: false, // Solid background loaded first under splash
-    icon: fs.existsSync(path.join(__dirname, '../public/logo_square.png')) 
-      ? path.join(__dirname, '../public/logo_square.png') 
-      : path.join(__dirname, '../public/logo.png'),
+    icon: path.join(__dirname, 'logo.png'),
     autoHideMenuBar: true,
     backgroundColor: '#0a0a0f',
     frame: false, // Custom styled borderless window
@@ -287,6 +297,7 @@ function setupTray() {
 
     // List of probable paths for the tray icon across development and packaged versions
     const pathsToSearch = [
+      path.join(__dirname, 'logo.png'),
       path.join(__dirname, 'assets', 'tray.png'),     // Best practice: Subfolder assets/
       path.join(__dirname, 'tray.png'),               // Fallback: Root folder
       path.join(__dirname, 'build', 'tray.png'),       // Dev mode fallback

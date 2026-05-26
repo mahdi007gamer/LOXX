@@ -126,7 +126,7 @@ export const Navbar = () => {
               <NavLink to="/chat" className={({ isActive }) => cn("transition-all font-black text-[10px] uppercase tracking-[0.2em] italic", isActive ? "text-neon-blue drop-shadow-[0_0_8px_rgba(0,229,255,0.5)]" : "text-gray-400 hover:text-white ripple-active")}>چت سراسری</NavLink>
               <NavLink to="/games" className={({ isActive }) => cn("transition-all font-black text-[10px] uppercase tracking-[0.2em] italic", isActive ? "text-neon-blue drop-shadow-[0_0_8px_rgba(0,229,255,0.5)]" : "text-gray-400 hover:text-white ripple-active")}>بازی‌ها</NavLink>
               {isLanding && (
-                <a href="#download" className="transition-all font-black text-[10px] uppercase tracking-[0.2em] italic text-gray-400 hover:text-white ripple-active">دانلود</a>
+                <button onClick={() => document.getElementById('download')?.scrollIntoView({ behavior: 'smooth' })} className="transition-all font-black text-[10px] uppercase tracking-[0.2em] italic text-gray-400 hover:text-white ripple-active">دانلود</button>
               )}
             </div>
           )}

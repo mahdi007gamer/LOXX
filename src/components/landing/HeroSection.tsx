@@ -87,11 +87,11 @@ export const HeroSection = () => {
         </div>
 
         <div className="w-full max-w-lg mx-auto px-4 sm:px-0">
-          <a href="#download" className="block w-full">
+          <div onClick={() => document.getElementById('download')?.scrollIntoView({ behavior: 'smooth' })} className="block w-full cursor-pointer">
              <GlowButton variant="ghost" size="lg" className="w-full !rounded-2xl text-lg border border-white/20 bg-white/5 hover:bg-white/10 hover:border-white/40 justify-center">
                 دانلود اپلیکیشن لوکس
              </GlowButton>
-          </a>
+          </div>
         </div>
       </motion.div>
 
