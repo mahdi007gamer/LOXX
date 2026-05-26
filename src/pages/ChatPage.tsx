@@ -611,8 +611,11 @@ export const ChatPage: React.FC = () => {
   const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null);
   const [showNewMessageButton, setShowNewMessageButton] = useState(false);
   const [showGifPicker, setShowGifPicker] = useState(false);
+  const [gifTab, setGifTab] = useState("emojis");
+  const [isUploadingGif, setIsUploadingGif] = useState(false);
   const [savedGifs, setSavedGifs] = useState<string[]>([]);
   const [showSaveFeedback, setShowSaveFeedback] = useState(false);
+  const gifUploadRef = useRef<HTMLInputElement>(null);
   const [showFriendsSidebar, setShowFriendsSidebar] = useState(false);
   const [showChannelMenu, setShowChannelMenu] = useState(false);
   const [chatTheme, setChatTheme] = useState<keyof typeof CHAT_THEMES>((localStorage.getItem("loxx-chat-theme") as any) || "aura");
@@ -1220,11 +1223,129 @@ export const ChatPage: React.FC = () => {
     });
   };
 
+  useEffect(() => {
+    if (user) {
+      const stored = localStorage.getItem(`loxx_saved_gifs_${user.id}`);
+      if (stored) {
+        try {
+          setSavedGifs(JSON.parse(stored));
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    }
+  }, [user]);
+
   const handleSaveGif = (url: string) => {
-    if (savedGifs.includes(url)) return;
-    setSavedGifs(prev => [url, ...prev]);
-    setShowSaveFeedback(true);
-    setTimeout(() => setShowSaveFeedback(false), 2000);
+    const membership = (user as any)?.profile?.membershipType;
+    if (membership !== "PLUS" && membership !== "VIP") {
+      toast.error("ذخیره کردن پیام گیف مخصوص کاربران دارای اشتراک VIP یا Plus است.");
+      return;
+    }
+    if (savedGifs.includes(url)) {
+      toast.success("این گیف قبلاً ذخیره شده است.");
+      return;
+    }
+    const updated = [url, ...savedGifs];
+    setSavedGifs(updated);
+    if (user) {
+      localStorage.setItem(`loxx_saved_gifs_${user.id}`, JSON.stringify(updated));
+    }
+    toast.success("گیف با موفقیت در علاقه‌مندی‌ها ذخیره شد!");
+  };
+
+  const handleSendGif = (gifUrl: string) => {
+    const tempId = `temp-${Date.now()}`;
+    const newMsgObj: ChatMessage = {
+       id: tempId,
+       senderId: user?.id || "me",
+       senderName: user?.username || "شما",
+       senderAvatar: user?.avatarUrl || "",
+       bannerUrl: user?.bannerUrl,
+       vipMetadata: user?.vipMetadata,
+       senderLevel: 1,
+       text: "",
+       gif: gifUrl,
+       timestamp: new Date().toLocaleTimeString("fa-IR", { hour: "2-digit", minute: "2-digit" }),
+       isRead: true,
+       self: true,
+       replyTo: replyingTo ? { id: replyingTo.id, user: replyingTo.senderName, text: replyingTo.text } : undefined
+    };
+
+    setMessages(prev => ({
+       ...prev,
+       [activeChannelId]: [...(prev[activeChannelId] || []), newMsgObj]
+    }));
+    setReplyingTo(null);
+    setShowGifPicker(false);
+
+    const getTargetType = () => {
+      if (!activeChannel) return "channel";
+      if (activeChannel.type === 'dm') return "user";
+      if (activeChannel.type === 'game') return "channel";
+      return "channel"; 
+    };
+
+    chatSocket.emit("chat.send", {
+      target: { type: getTargetType(), id: activeChannelId },
+      content: `[GIF]:${gifUrl}`,
+      tempId,
+      replyToId: replyingTo?.id
+    }, (res: any) => {
+       if (res.status === "error") {
+          toast.error(res.error?.message || "Error sending message");
+          setMessages(prev => ({
+             ...prev,
+             [activeChannelId]: prev[activeChannelId].filter(m => m.id !== tempId)
+          }));
+       } else {
+          setMessages(prev => {
+             const channelMsgs = prev[activeChannelId] || [];
+             return {
+               ...prev,
+               [activeChannelId]: channelMsgs.map(m => m.id === tempId ? { ...m, id: res.data.messageId } : m)
+             };
+          });
+       }
+    });
+  };
+
+  const handleGifUploadAction = async (file: File) => {
+    if (file.type !== "image/gif") {
+      toast.error("لطفاً فقط فایل‌های با فرمت GIF ارسال کنید.");
+      return;
+    }
+    setIsUploadingGif(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      
+      const res = await api.post("/upload/gif", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data"
+        }
+      });
+      
+      if (res.data && res.data.url) {
+        handleSendGif(res.data.url);
+        
+        const url = res.data.url;
+        if (!savedGifs.includes(url)) {
+          const updated = [url, ...savedGifs];
+          setSavedGifs(updated);
+          if (user) {
+            localStorage.setItem(`loxx_saved_gifs_${user.id}`, JSON.stringify(updated));
+          }
+        }
+        
+        toast.success(res.data.status === "duplicate" ? "گیف قبلا آپلود شده بود و فورا متصل شد!" : "گیف جدید با موفقیت آپلود شد!");
+      }
+    } catch (e: any) {
+      console.error(e);
+      toast.error(e.response?.data?.error?.message || "خطا در آپلود فایل گیف.");
+    } finally {
+      setIsUploadingGif(false);
+    }
   };
 
   const sendLobbyInvite = () => {
@@ -2281,13 +2402,203 @@ export const ChatPage: React.FC = () => {
                 )}
               </AnimatePresence>
   
-              {/* GIF Picker Popover Removed */}
+              <AnimatePresence>
+                {showGifPicker && (
+                  <motion.div 
+                    initial={{ opacity: 0, scale: 0.95, y: 15 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, y: 15 }}
+                    className="absolute bottom-20 left-0 right-0 md:left-auto md:right-0 z-40 bg-[#0d0d14]/95 border border-white/10 rounded-[28px] shadow-[0_10px_50px_rgba(0,0,0,0.8)] backdrop-blur-2xl p-4 w-full md:w-[480px] h-[380px] flex flex-col font-sans"
+                    dir="rtl"
+                  >
+                    {/* Tabs row */}
+                    <div className="flex gap-2 border-b border-white/5 pb-2 mb-3 text-xs md:text-sm overflow-x-auto shrink-0 scrollbar-none">
+                      {["emojis", "saved", "builtin", "upload"].map((tab) => {
+                        const labels: Record<string, string> = {
+                          emojis: "😀 شکلک‌ها",
+                          saved: "⭐ ذخیره شده",
+                          builtin: "🔥 آماده لوکس",
+                          upload: "🚀 آپلود GIF"
+                        };
+                        const isActive = gifTab === tab;
+                        return (
+                          <button
+                            key={tab}
+                            onClick={() => setGifTab(tab)}
+                            className={cn(
+                              "px-3 py-1.5 rounded-full transition-all shrink-0 font-bold text-xs md:text-sm",
+                              isActive ? "bg-neon-pink text-white font-black" : "text-gray-400 hover:text-white hover:bg-white/5"
+                            )}
+                          >
+                            {labels[tab]}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Content Area */}
+                    <div className="flex-1 overflow-y-auto pr-1">
+                      {gifTab === "emojis" && (
+                        <div className="grid grid-cols-6 sm:grid-cols-7 gap-2.5 p-1">
+                          {["😄", "😂", "😭", "😍", "😎", "👍", "🔥", "🎮", "🏆", "👑", "✨", "💔", "💀", "💩", "😮", "😡", "🚀", "💡", "🤫", "🤝", "💯", "👏", "🎉", "⚡", "😈", "🤡", "👾", "🛡️", "🎯", "⚔️", "🍿", "💖", "🌟", "👀", "🥱", "🤖", "🍕", "🍔", "☕", "🍺", "🎈", "🎁"].map((emoji, index) => (
+                            <button
+                              key={index}
+                              onClick={() => setInput(prev => prev + emoji)}
+                              className="text-2xl h-11 w-11 rounded-xl bg-white/[0.02] border border-white/5 hover:border-neon-blue/30 hover:bg-neon-blue/5 flex items-center justify-center transition-all hover:scale-110 active:scale-95"
+                            >
+                              {emoji}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      {gifTab === "saved" && (
+                        <div className="h-full">
+                          {((user as any)?.profile?.membershipType === "PLUS" || (user as any)?.profile?.membershipType === "VIP") ? (
+                            savedGifs.length === 0 ? (
+                              <div className="h-48 flex flex-col items-center justify-center text-center opacity-60">
+                                <Star size={24} className="text-gray-500 mb-2" />
+                                <p className="text-xs text-gray-400">گیف ذخیره شده‌ای ندارید.</p>
+                                <p className="text-[10px] text-gray-500 mt-1">توی چت، روی ستاره‌ی بالای گیف کلیک کنید تا ذخیره بشه!</p>
+                              </div>
+                            ) : (
+                              <div className="grid grid-cols-2 gap-3 p-1">
+                                {savedGifs.map((gif, index) => (
+                                  <div key={index} className="relative rounded-xl overflow-hidden border border-white/5 bg-white/[0.01] hover:border-neon-blue/40 group/saveditem transition-all h-28 flex items-center justify-center">
+                                    <img 
+                                      src={gif} 
+                                      alt="Saved GIF" 
+                                      className="max-h-full max-w-full object-contain cursor-pointer" 
+                                      onClick={() => handleSendGif(gif)} 
+                                    />
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        const updated = savedGifs.filter(g => g !== gif);
+                                        setSavedGifs(updated);
+                                        if (user) {
+                                          localStorage.setItem(`loxx_saved_gifs_${user.id}`, JSON.stringify(updated));
+                                        }
+                                        toast.success("گیف از علاقه‌مندی‌ها حذف شد.");
+                                      }}
+                                      className="absolute top-1 right-1 p-1 bg-black/85 hover:bg-red-500/20 rounded-md text-red-500 opacity-0 group-hover/saveditem:opacity-100 transition-opacity"
+                                      title="حذف از علاقه‌مندی‌ها"
+                                    >
+                                      <Trash size={12} />
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            )
+                          ) : (
+                            <div className="h-48 flex flex-col items-center justify-center text-center px-4">
+                              <Crown size={32} className="text-[#00e5ff] mb-2 animate-pulse" />
+                              <p className="text-xs text-gray-300 font-bold">بخش مخصوص کاربران Plus و VIP</p>
+                              <p className="text-[10px] text-gray-500 leading-relaxed mt-2">
+                                ذخیره گیف‌های بقیه کاربران و ارسال مجدد آن‌ها فقط برای کاربران دارای VIP یا Plus فعال است.
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {gifTab === "builtin" && (
+                        <div className="grid grid-cols-3 gap-2 p-1">
+                          {[
+                            { name: "بازی عالی (GG)", url: "https://media.giphy.com/media/2sXFov3LclhDIFP7o0/giphy.gif" },
+                            { name: "خنده زامبی", url: "https://media.giphy.com/media/10yXFYdbFrk2T6/giphy.gif" },
+                            { name: "عالیه", url: "https://media.giphy.com/media/l41YmQjdoKs4hg3tK/giphy.gif" },
+                            { name: "پشمام", url: "https://media.giphy.com/media/tfUW8mhiFk8NlJhgEh/giphy.gif" },
+                            { name: "شد شد", url: "https://media.giphy.com/media/X9ndB7gOInIn2D6RVK/giphy.gif" },
+                            { name: "خشم گیمر", url: "https://media.giphy.com/media/3xz2BLBOKhb9s56R68/giphy.gif" },
+                            { name: "پیروزی رقص", url: "https://media.giphy.com/media/t3sXe4LbW6aozMLVKb/giphy.gif" },
+                            { name: "دست زدن", url: "https://media.giphy.com/media/nbvFVgPrUE68uB6Ig3/giphy.gif" },
+                            { name: "گریه گیمینگ", url: "https://media.giphy.com/media/3o6wrvdHFbwBrUFenu/giphy.gif" }
+                          ].map((item, index) => (
+                            <div key={index} className="rounded-xl overflow-hidden border border-white/5 bg-white/[0.01] hover:border-neon-pink/40 hover:bg-neon-pink/[0.02] flex flex-col items-center p-1 transition-all">
+                              <div className="h-20 w-full flex items-center justify-center bg-black/40 rounded-lg overflow-hidden">
+                                <img 
+                                  src={item.url} 
+                                  alt={item.name} 
+                                  className="max-h-full max-w-full object-contain cursor-pointer" 
+                                  onClick={() => handleSendGif(item.url)} 
+                                />
+                              </div>
+                              <span className="text-[10px] text-gray-400 mt-1 text-center font-bold">{item.name}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {gifTab === "upload" && (
+                        <div className="h-full">
+                          {(user as any)?.profile?.membershipType === "VIP" ? (
+                            <div className="p-1 h-full">
+                              <div 
+                                className="border-2 border-dashed border-white/10 hover:border-neon-pink/40 rounded-2xl p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-all hover:bg-neon-pink/[0.01] h-48 relative"
+                                onDragOver={(e) => e.preventDefault()}
+                                onDrop={async (e) => {
+                                  e.preventDefault();
+                                  const file = e.dataTransfer.files?.[0];
+                                  if (file) await handleGifUploadAction(file);
+                                }}
+                                onClick={() => gifUploadRef.current?.click()}
+                              >
+                                <input 
+                                  type="file" 
+                                  ref={gifUploadRef} 
+                                  accept="image/gif" 
+                                  className="hidden" 
+                                  onChange={async (e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) await handleGifUploadAction(file);
+                                  }} 
+                                />
+                                {isUploadingGif ? (
+                                  <div className="flex flex-col items-center gap-2 justify-center">
+                                    <div className="w-8 h-8 border-2 border-t-neon-pink border-white/10 rounded-full animate-spin" />
+                                    <p className="text-xs text-gray-400">در حال فشرده‌سازی و آپلود گیف...</p>
+                                    <p className="text-[10px] text-gray-500">جلوگیری از آپلود تکراری فعال است</p>
+                                  </div>
+                                ) : (
+                                  <div className="flex flex-col items-center">
+                                    <Plus size={32} className="text-neon-pink mb-2 animate-bounce" />
+                                    <p className="text-xs text-gray-300 font-bold">انتخاب یا رها کردن فایل GIF (گیف)</p>
+                                    <p className="text-[10px] text-gray-500 mt-2">
+                                      حداکثر حجم ۱۰ مگابایت. گیف شما بهینه‌سازی و ذخیره می‌شود.
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="h-full flex flex-col items-center justify-center text-center px-4">
+                              <Crown size={32} className="text-yellow-400 mb-2 animate-bounce" />
+                              <p className="text-xs text-yellow-400 font-black">قابلیت طلایی مخصوص کاربران VIP</p>
+                              <p className="text-[11px] text-gray-300 leading-relaxed mt-2 text-right" dir="rtl">
+                                هم‌اکنون شما مجاز به آپلود گیف‌های اختصاصی جدید نیستید. برای دریافت <strong className="text-yellow-400">VIP رایگان</strong> نام کاربری خود را به دوستانتان بدهید تا زمان ثبت‌نام وارد کنند و هردو پاداش بگیرید!
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
   
             <div className="relative group flex flex-row-reverse">
               <div className="absolute inset-0 bg-neon-blue/5 rounded-[24px] blur-2xl group-focus-within:bg-neon-blue/10 transition-all"></div>
               <div className="relative flex flex-1 items-center p-2 rounded-[24px] border border-white/5 bg-black/40 backdrop-blur-2xl shadow-2xl focus-within:border-neon-blue/30 transition-all">
                 <div className="flex items-center gap-1 px-2 border-l border-white/5">
-                  <button className="p-2 text-gray-500 hover:text-neon-blue hover:bg-neon-blue/5 rounded-xl transition-all">
+                  <button 
+                    onClick={() => setShowGifPicker(!showGifPicker)}
+                    className={cn(
+                      "p-2 rounded-xl transition-all outline-none",
+                      showGifPicker ? "text-neon-pink bg-neon-pink/10" : "text-gray-500 hover:text-neon-blue hover:bg-neon-blue/5"
+                    )}
+                    title="شکلک‌ها و گیف"
+                  >
                     <Smile size={20} />
                   </button>
                   {activeChannelId === 'news' && isAdmin && (

@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect } from "react";
-import { HashRouter as Router, Routes, Route, useLocation, useNavigate } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { ScreenSplash } from "./components/layout/ScreenSplash";
 import { Navbar } from "./components/layout/Navbar";
@@ -374,6 +374,7 @@ const AppContent = () => {
           <Route path="/ranking" element={<ProtectedRoute><LeaderboardPage /></ProtectedRoute>} />
           <Route path="/premium" element={<ProtectedRoute><PremiumPage /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+          <Route path="/settings/:tab" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
           <Route path="/electron-settings" element={<ProtectedRoute><ElectronSettingsPage /></ProtectedRoute>} />
           <Route path="/friends" element={<ProtectedRoute><FriendsPage /></ProtectedRoute>} />
           <Route path="/invite/:code" element={<InviteRedirectPage />} />

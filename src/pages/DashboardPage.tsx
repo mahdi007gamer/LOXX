@@ -8,6 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { useFriends } from "../context/FriendsContext";
 import { useAuth } from "../context/AuthContext";
 import api from "../lib/api";
+import { toast } from "react-hot-toast";
 import { FriendStatus } from "../types";
 import { 
   Trophy, 
@@ -28,6 +29,10 @@ import {
   Zap,
   Flame,
   User,
+  Check,
+  Copy,
+  Share2,
+  Gift,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
@@ -116,12 +121,40 @@ export const DashboardPage = () => {
   });
 
   const [rewardNotification, setRewardNotification] = useState<any>(null);
+  const [showReferralModal, setShowReferralModal] = useState(false);
+  const [copiedType, setCopiedType] = useState<"username" | "link" | null>(null);
   
   useEffect(() => {
     if (user && (user as any).rewardNotification) {
       setRewardNotification((user as any).rewardNotification);
     }
   }, [user]);
+
+  useEffect(() => {
+    if (user && !loading) {
+      const key = `has_seen_referral_promo_${user.id}`;
+      if (localStorage.getItem(key) !== "true") {
+        const timer = setTimeout(() => {
+          setShowReferralModal(true);
+        }, 1500);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [user, loading]);
+
+  const handleCloseReferralModal = () => {
+    if (user) {
+      localStorage.setItem(`has_seen_referral_promo_${user.id}`, "true");
+    }
+    setShowReferralModal(false);
+  };
+
+  const handleCopyText = (text: string, type: "username" | "link") => {
+    navigator.clipboard.writeText(text);
+    setCopiedType(type);
+    toast.success(type === "username" ? "نام کاربری شما کپی شد!" : "لینک دعوت کپی شد!");
+    setTimeout(() => setCopiedType(null), 2000);
+  };
 
   const handleDismissReward = async () => {
     if (!rewardNotification) return;
@@ -665,6 +698,87 @@ export const DashboardPage = () => {
                     className="h-12 px-8 rounded-full bg-yellow-400 text-[#0a0a0f] font-black uppercase tracking-widest text-sm hover:bg-yellow-300 transition-colors shadow-[0_0_20px_rgba(250,204,21,0.4)]"
                   >
                     دریافت پاداش و ورود
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+
+          {showReferralModal && (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-lg"
+            >
+              <motion.div 
+                initial={{ scale: 0.9, opacity: 0, y: 30 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.9, opacity: 0, y: 30 }}
+                className="bg-[#09090e] border border-neon-pink/40 shadow-[0_0_80px_rgba(236,72,153,0.15)] rounded-[32px] p-6 md:p-10 max-w-lg w-full text-center relative overflow-hidden"
+              >
+                <div className="absolute top-0 right-0 w-48 h-48 bg-neon-pink/10 rounded-full blur-[100px] pointer-events-none" />
+                <div className="absolute bottom-0 left-0 w-48 h-48 bg-neon-blue/5 rounded-full blur-[100px] pointer-events-none" />
+                
+                <div className="relative z-10 flex flex-col items-center">
+                  <div className="h-16 w-16 rounded-2xl bg-neon-pink/10 border border-neon-pink/20 flex items-center justify-center text-neon-pink mb-5 shadow-lg shadow-neon-pink/10">
+                     <Gift size={32} className="animate-bounce" />
+                  </div>
+                  
+                  <h2 className="text-2xl md:text-3xl font-black text-white italic tracking-tight mb-2">
+                    دعوت از رفقا، هدیه <span className="text-neon-pink font-sans">VIP</span> دوجانبه!
+                  </h2>
+                  <p className="text-gray-400 font-sans text-xs md:text-sm leading-relaxed mb-6">
+                    سیستم جدید و شگفت‌انگیز معرف لوکس فعال شد! با دعوت از هم‌تیمی‌ها و دوستانتان به پلتفرم، بازی را هیجان‌انگیزتر کنید و پاداش بگیرید.
+                  </p>
+                  
+                  {/* How it works */}
+                  <div className="w-full space-y-3 mb-6 text-right font-sans" dir="rtl">
+                    <div className="p-3.5 rounded-2xl bg-white/[0.02] border border-white/5 flex gap-3.5 items-start">
+                      <span className="h-6 w-6 rounded-full bg-neon-pink/10 text-neon-pink border border-neon-pink/10 flex items-center justify-center text-xs font-black shrink-0">۱</span>
+                      <p className="text-xs text-gray-300 leading-relaxed">
+                        نام کاربری شما (<strong className="text-white bg-white/5 px-2 py-0.5 rounded-md border border-white/10">{user?.username}</strong>) کد معرف شماست.
+                      </p>
+                    </div>
+                    
+                    <div className="p-3.5 rounded-2xl bg-white/[0.02] border border-white/5 flex gap-3.5 items-start">
+                      <span className="h-6 w-6 rounded-full bg-neon-pink/10 text-neon-pink border border-neon-pink/10 flex items-center justify-center text-xs font-black shrink-0">۲</span>
+                      <p className="text-xs text-gray-300 leading-relaxed">
+                        دوستتان در زمان ثبت‌نام، نام کاربری شما را در بخش <strong className="text-neon-pink">نام کاربری معرف</strong> وارد می‌کند.
+                      </p>
+                    </div>
+
+                    <div className="p-3.5 rounded-2xl bg-neon-pink/[0.02] border border-neon-pink/10 flex gap-3.5 items-start">
+                      <span className="h-6 w-6 rounded-full bg-neon-pink/20 text-neon-pink border border-neon-pink/20 flex items-center justify-center text-xs font-black shrink-0">✨</span>
+                      <p className="text-xs text-neon-pink leading-relaxed font-black">
+                        بوم! هر ۲ نفر شما ۳ روز اشتراک کاملاً رایگان VIP لوکس به محض تایید حساب رفیقتان دریافت می‌کنید! (۱۰ دوست = ۳۰ روز VIP رایگان بدون محدودیت!)
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Share actions */}
+                  <div className="w-full grid grid-cols-2 gap-3 mb-8">
+                    <button 
+                      onClick={() => handleCopyText(user?.username || "", "username")}
+                      className="h-12 rounded-xl bg-white/[0.02] border border-white/10 text-xs font-bold text-gray-300 hover:text-white hover:bg-white/[0.05] transition-all flex items-center justify-center gap-2"
+                    >
+                      {copiedType === "username" ? <Check size={16} className="text-green-400" /> : <Copy size={16} />}
+                      <span>کپی نام کاربری</span>
+                    </button>
+                    <button 
+                      onClick={() => handleCopyText(`${window.location.origin}/auth`, "link")}
+                      className="h-12 rounded-xl bg-neon-pink/10 border border-neon-pink/20 text-xs font-black text-neon-pink hover:bg-neon-pink/20 transition-all flex items-center justify-center gap-2 shadow-lg shadow-neon-pink/5"
+                    >
+                      {copiedType === "link" ? <Check size={16} className="text-green-400" /> : <Share2 size={16} />}
+                      <span>کپی لینک دعوت</span>
+                    </button>
+                  </div>
+                  
+                  <button 
+                    onClick={handleCloseReferralModal}
+                    className="h-12 px-8 w-full rounded-2xl bg-white text-[#0a0a0f] font-black uppercase tracking-widest text-xs hover:bg-white/90 transition-colors shadow-lg shadow-white/5 font-sans"
+                  >
+                    متوجه شدم، بزن بریم!
                   </button>
                 </div>
               </motion.div>

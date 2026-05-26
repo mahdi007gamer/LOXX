@@ -13,6 +13,7 @@ export default defineConfig(({mode}) => {
       VitePWA({
         registerType: 'prompt',
         workbox: {
+          maximumFileSizeToCacheInBytes: 4194304, // Increase default limit to 4MiB to allow larger application bundle precaching
           cleanupOutdatedCaches: true,
           clientsClaim: true,
           skipWaiting: false,

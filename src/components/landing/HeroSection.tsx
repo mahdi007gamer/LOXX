@@ -63,12 +63,12 @@ export const HeroSection = () => {
            </p>
         </div>
 
-        <div className="flex flex-col items-center justify-center gap-6 sm:flex-row mb-6 mt-12 w-full max-w-lg mx-auto">
-          <Link to="/auth" className="w-full sm:w-1/2">
-            <GlowButton variant="pink" size="lg" className="group relative w-full overflow-hidden !rounded-2xl justify-center">
-              <span className="relative z-10 flex items-center gap-3">
-                <Play size={20} fill="currentColor" />
-                <span className="text-lg">همین حالا شروع کنید</span>
+        <div className="flex flex-col items-center justify-center gap-6 sm:flex-row mb-6 mt-12 w-full max-w-lg mx-auto whitespace-nowrap flex-nowrap">
+          <Link to="/auth" className="w-full sm:w-1/2 shrink-0 whitespace-nowrap flex-nowrap">
+            <GlowButton variant="pink" size="lg" className="group relative w-full overflow-hidden !rounded-2xl justify-center whitespace-nowrap flex-nowrap shrink-0">
+              <span className="relative z-10 flex items-center gap-3 whitespace-nowrap flex-nowrap shrink-0">
+                <Play size={20} fill="currentColor" className="shrink-0" />
+                <span className="text-lg whitespace-nowrap shrink-0">همین حالا شروع کنید</span>
               </span>
               <motion.div 
                 className="absolute inset-0 bg-white/20"
@@ -78,10 +78,10 @@ export const HeroSection = () => {
               />
             </GlowButton>
           </Link>
-          <Link to="/lobbies" className="w-full sm:w-1/2">
-            <GlowButton variant="blue" size="lg" className="group w-full !rounded-2xl text-lg backdrop-blur-md justify-center mt-4 sm:mt-0">
-              <Gamepad2 size={24} className="ml-2 group-hover:rotate-12 transition-transform" />
-              <span>اتاق‌های بازی</span>
+          <Link to="/lobbies" className="w-full sm:w-1/2 shrink-0 whitespace-nowrap flex-nowrap">
+            <GlowButton variant="blue" size="lg" className="group w-full !rounded-2xl text-lg backdrop-blur-md justify-center mt-4 sm:mt-0 whitespace-nowrap flex-nowrap shrink-0">
+              <Gamepad2 size={24} className="ml-2 group-hover:rotate-12 transition-transform shrink-0" />
+              <span className="whitespace-nowrap shrink-0">اتاق‌های بازی</span>
             </GlowButton>
           </Link>
         </div>

@@ -117,6 +117,121 @@ export class UploadController {
     }
   }
 
+  static async uploadGif(req: any, res: Response) {
+    try {
+      if (!req.file) {
+        return res.status(400).json({
+          error: {
+            message: "گیف ارسال نشده است"
+          }
+        });
+      }
+
+      const userId = req.user?.userId;
+      if (!userId) {
+        return res.status(401).json({ error: "کاربر تایید صلاحیت نشده است" });
+      }
+
+      // Check user VIP status
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        include: { profile: true }
+      });
+
+      if (!user || user.profile?.membershipType !== "VIP") {
+        // Delete uploaded file to avoid waste
+        const tempPath = path.join(process.cwd(), "uploads", req.file.filename);
+        if (fs.existsSync(tempPath)) {
+          fs.unlinkSync(tempPath);
+        }
+        return res.status(403).json({
+          error: {
+            message: "تنها کاربران دارای اشتراک VIP مجاز به آپلود گیف‌های جدید هستند."
+          }
+        });
+      }
+
+      const { originalname, size, filename } = req.file;
+
+      // Deduplication / Spam prevention check
+      const existing = await prisma.uploadedGif.findFirst({
+        where: { originalName: originalname, size: size }
+      });
+
+      if (existing) {
+        // Delete the newly uploaded temporary file
+        const tempPath = path.join(process.cwd(), "uploads", filename);
+        if (fs.existsSync(tempPath)) {
+          fs.unlinkSync(tempPath);
+        }
+        return res.status(200).json({
+          url: existing.url,
+          filename: existing.url.split("/").pop(),
+          size: existing.size,
+          mimetype: "image/gif",
+          status: "duplicate"
+        });
+      }
+
+      // If it doesn't exist, process and compress
+      const gifsDir = path.join(process.cwd(), "uploads", "gifs");
+      if (!fs.existsSync(gifsDir)) {
+        fs.mkdirSync(gifsDir, { recursive: true });
+      }
+
+      const sourcePath = path.join(process.cwd(), "uploads", filename);
+      const destPath = path.join(gifsDir, filename);
+
+      // Move file to /uploads/gifs
+      fs.renameSync(sourcePath, destPath);
+
+      // Compress/resize the GIF using our existing helper in the new folder
+      await UploadController.compressImage(destPath, "chat");
+
+      const finalSize = fs.statSync(destPath).size;
+      const url = `/api/v1/upload/file/gifs/${filename}`;
+
+      // Create record
+      const dbGif = await prisma.uploadedGif.create({
+        data: {
+          originalName: originalname,
+          size: finalSize,
+          url
+        }
+      });
+
+      return res.status(200).json({
+        url: dbGif.url,
+        filename,
+        mimetype: "image/gif",
+        size: finalSize,
+        status: "new"
+      });
+
+    } catch (error: any) {
+      return res.status(500).json({
+        error: {
+          message: error.message || "خطا در آپلود گیف"
+        }
+      });
+    }
+  }
+
+  static async getGifFile(req: Request, res: Response) {
+    try {
+      const { filename } = req.params;
+      const filePath = path.join(process.cwd(), "uploads", "gifs", filename);
+      
+      if (!fs.existsSync(filePath)) {
+        return res.status(404).json({ error: "File not found" });
+      }
+
+      return res.sendFile(filePath);
+    } catch (error: any) {
+      return res.status(500).json({ error: error.message });
+    }
+  }
+
   static async uploadReceipt(req: any, res: Response) {
     try {
       if (!req.file) {

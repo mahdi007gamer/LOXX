@@ -461,3 +461,23 @@ export const exportDatabase = async (req: Request, res: Response) => {
     res.status(500).json({ status: "error", message: error.message });
   }
 };
+
+export const getAdminAlerts = async (req: Request, res: Response) => {
+  try {
+    const pendingPaymentsCount = await prisma.paymentRequest.count({
+      where: { status: "PENDING" }
+    });
+    const pendingReportsCount = await prisma.report.count({
+      where: { status: "PENDING" }
+    });
+    res.json({
+      status: "success",
+      data: {
+        pendingPaymentsCount,
+        pendingReportsCount
+      }
+    });
+  } catch (error: any) {
+    res.status(500).json({ status: "error", message: error.message });
+  }
+};

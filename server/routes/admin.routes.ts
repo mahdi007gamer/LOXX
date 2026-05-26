@@ -7,6 +7,8 @@ const router = Router();
 
 router.use(authenticate, authorizeAdmin);
 
+router.get("/alerts", adminController.getAdminAlerts);
+
 router.get("/users", adminController.getAllUsers);
 router.patch("/users/:id", adminController.updateUserDetails);
 router.get("/backup", adminController.exportDatabase);

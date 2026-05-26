@@ -101,7 +101,7 @@ export class EliteGroupController {
       }
 
       const membership = channel.owner?.profile?.membershipType || "PLUS";
-      const maxMembers = membership === "VIP" ? 50 : 5;
+      const maxMembers = (membership === "VIP" || channel.type === "ELITE") ? 50 : 5;
 
       if (channel.members.length + (userIds?.length || 1) > maxMembers) {
         return res.status(400).json({ status: "error", error: { message: `این گروه نمی‌تواند بیش از ${maxMembers} عضو داشته باشد` } });
@@ -176,7 +176,7 @@ export class EliteGroupController {
       }
 
       const membership = channel.owner?.profile?.membershipType || "PLUS";
-      const maxMembers = membership === "VIP" ? 50 : 5;
+      const maxMembers = (membership === "VIP" || channel.type === "ELITE") ? 50 : 5;
 
       if (channel.members.length >= maxMembers) {
         return res.status(400).json({ status: "error", error: { message: "ظرفیت گروه پر شده است" } });
@@ -261,7 +261,7 @@ export class EliteGroupController {
       }
 
       const membership = channel.owner?.profile?.membershipType || "PLUS";
-      const maxMembers = membership === "VIP" ? 50 : 5;
+      const maxMembers = (membership === "VIP" || channel.type === "ELITE") ? 50 : 5;
 
       if (channel.members.length >= maxMembers) {
         return res.status(400).json({ status: "error", error: { message: `گروه نمی‌تواند بیش از ${maxMembers} عضو داشته باشد` } });

@@ -6,11 +6,15 @@ import { UploadController } from "../controllers/upload.controller.ts";
 import { authenticate } from "../middleware/auth.middleware.ts";
 
 const uploadDir = path.join(process.cwd(), "uploads");
+const gifsDir = path.join(process.cwd(), "uploads", "gifs");
 const privateUploadDir = path.join(process.cwd(), "uploads_private", "receipts");
 
 // Ensure upload directories exist
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
+}
+if (!fs.existsSync(gifsDir)) {
+  fs.mkdirSync(gifsDir, { recursive: true });
 }
 if (!fs.existsSync(privateUploadDir)) {
   fs.mkdirSync(privateUploadDir, { recursive: true });
@@ -90,8 +94,10 @@ const bannerUpload = multer({
 const router = Router();
 
 router.post("/", authenticate, upload.single("file"), UploadController.uploadFile);
+router.post("/gif", authenticate, upload.single("file"), UploadController.uploadGif);
 router.post("/banner", authenticate, bannerUpload.single("file"), UploadController.uploadFile);
 router.post("/receipt", authenticate, receiptUpload.single("file"), UploadController.uploadReceipt);
+router.get("/file/gifs/:filename", UploadController.getGifFile);
 router.get("/file/:filename", UploadController.getFile);
 router.get("/receipt/:filename", authenticate, UploadController.getReceipt);
 

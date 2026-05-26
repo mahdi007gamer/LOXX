@@ -9,7 +9,7 @@ const JWT_SECRET = process.env.JWT_SECRET || "secret";
 const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET || "refresh_secret";
 
 export class AuthService {
-  static async register(data: RegisterDTO & { referralCode?: string }) {
+  static async register(data: RegisterDTO & { referralCode?: string; referralUsername?: string }) {
     const normalizedPhone = this.normalizePhone(data.phone);
     
     // Check for existing users to return friendly messages
@@ -20,6 +20,16 @@ export class AuthService {
     const existingPhone = await prisma.user.findUnique({ where: { phone: normalizedPhone } });
     if (existingPhone) {
       throw new Error("این شماره موبایل قبلاً در سیستم ثبت شده است.");
+    }
+
+    if (data.referralUsername) {
+      const referrer = await prisma.user.findUnique({ where: { username: data.referralUsername } });
+      if (!referrer) {
+        throw new Error("نام کاربری معرف وارد شده معتبر نیست یا وجود ندارد.");
+      }
+      if (referrer.username === data.username) {
+        throw new Error("نمی‌توانید نام کاربری خودتان را به عنوان معرف وارد کنید.");
+      }
     }
 
     const passwordHash = await argon2.hash(data.password);
@@ -51,6 +61,57 @@ export class AuthService {
 
     console.log(`[BALE] Verification link: ble.ir/loxxbot?start=${verificationToken}`);
     
+    if (data.referralUsername) {
+      const referrer = await prisma.user.findUnique({ where: { username: data.referralUsername } });
+      if (referrer) {
+        const now = new Date();
+        const expiresAt = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
+
+        // Grant VIP to new user
+        await prisma.profile.update({
+          where: { userId: user.id },
+          data: { membershipType: "VIP" }
+        });
+        await prisma.subscription.create({
+          data: {
+            userId: user.id,
+            type: "VIP",
+            expiresAt
+          }
+        });
+
+        // Grant VIP to referrer
+        await prisma.profile.update({
+          where: { userId: referrer.id },
+          data: { membershipType: "VIP" }
+        });
+
+        const existingSub = await prisma.subscription.findFirst({
+          where: { userId: referrer.id }
+        });
+        if (existingSub) {
+          let newExpires = existingSub.expiresAt > now 
+            ? new Date(existingSub.expiresAt.getTime() + 3 * 24 * 60 * 60 * 1000) 
+            : expiresAt;
+          await prisma.subscription.update({
+            where: { id: existingSub.id },
+            data: {
+              type: "VIP",
+              expiresAt: newExpires
+            }
+          });
+        } else {
+          await prisma.subscription.create({
+            data: {
+              userId: referrer.id,
+              type: "VIP",
+              expiresAt
+            }
+          });
+        }
+      }
+    }
+
     if (data.referralCode) {
       // ... existing referral logic
     }

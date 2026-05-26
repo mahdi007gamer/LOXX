@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -402,4 +402,12 @@ model Penalty {
   createdAt DateTime @default(now())
   
   @@index([userId, expiresAt])
+}
+
+model UploadedGif {
+  id           String   @id @default(uuid())
+  originalName String
+  size         Int
+  url          String
+  createdAt    DateTime @default(now())
 }

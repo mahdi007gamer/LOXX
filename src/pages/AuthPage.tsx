@@ -4,7 +4,7 @@ import { NeonCard } from "../components/ui/NeonCard";
 import { Input } from "../components/ui/Input";
 import { GlowButton } from "../components/ui/GlowButton";
 import { Gamepad2, MessageCircle, Lock, User, ArrowRight, Loader2, Users, Phone, ArrowLeft, ShieldCheck, KeyRound } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import api from "../lib/api";
 import { toast } from "react-hot-toast";
@@ -18,11 +18,13 @@ export const AuthPage = () => {
   const [tempUserId, setTempUserId] = useState<string | null>(null);
   const [verificationToken, setVerificationToken] = useState<string | null>(null);
   const [statusToken, setStatusToken] = useState<string | null>(null);
+  const [acceptedTerms, setAcceptedTerms] = useState(true);
   const [formData, setFormData] = useState({
     username: "",
     phone: "",
     password: "",
     referralCode: "",
+    referralUsername: "",
     otpCode: "",
     newPassword: "",
     twoFactorCode: ""
@@ -102,17 +104,22 @@ export const AuthPage = () => {
              }
           }
         } else {
-          const registerResponse = await api.post("/auth/register", {
-            username: formData.username,
-            phone: formData.phone,
-            password: formData.password,
-            referralCode: formData.referralCode || undefined
-          });
-          
-          setVerificationToken(registerResponse.data.user.verificationToken);
-          setStatusToken(registerResponse.data.user.statusToken);
-          setStep("VERIFY_BALE");
-          toast.success("ثبت‌نام با موفقیت انجام شد.");
+          try {
+            const registerResponse = await api.post("/auth/register", {
+              username: formData.username,
+              phone: formData.phone,
+              password: formData.password,
+              referralCode: formData.referralCode || undefined,
+              referralUsername: formData.referralUsername || undefined
+            });
+            
+            setVerificationToken(registerResponse.data.user.verificationToken);
+            setStatusToken(registerResponse.data.user.statusToken);
+            setStep("VERIFY_BALE");
+            toast.success("ثبت‌نام با موفقیت انجام شد.");
+          } catch (err: any) {
+            toast.error(err.response?.data?.error?.message || "خطا در ثبت‌نام. لطفاً مجدداً تلاش کنید.");
+          }
         }
       } else if (step === "VERIFY_BALE") {
         setIsLogin(true);
@@ -245,6 +252,44 @@ export const AuthPage = () => {
                       required
                     />
                     
+                    {!isLogin && (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="p-4 rounded-2xl bg-neon-pink/5 border border-neon-pink/20 shadow-lg shadow-neon-pink/5 relative overflow-hidden text-right"
+                        dir="rtl"
+                      >
+                        <div className="absolute top-0 right-0 w-24 h-24 bg-neon-pink/10 rounded-full blur-2xl pointer-events-none" />
+                        <Input 
+                          label="نام کاربری معرف (اختیاری)" 
+                          placeholder="مثال: lo_coder" 
+                          name="referralUsername"
+                          value={formData.referralUsername}
+                          onChange={handleInputChange}
+                          icon={<Users size={18} />} 
+                        />
+                        <div className="mt-2.5 flex items-start gap-1.5 text-[10px] text-gray-300 font-sans leading-relaxed">
+                          <span className="inline-block mt-1 w-1.5 h-1.5 rounded-full bg-neon-pink shrink-0" />
+                          <span>با وارد کردن نام کاربری دوستتان، هر دو نفر شما <strong className="text-neon-pink">۳ روز اشتراک VIP رایگان</strong> به عنوان هدیه دریافت خواهید کرد! ✨</span>
+                        </div>
+                      </motion.div>
+                    )}
+                    
+                    {!isLogin && (
+                      <div className="flex items-start gap-3 mt-3 bg-white/[0.01] border border-white/5 rounded-2xl p-4 transition-all hover:bg-white/[0.02]">
+                        <input 
+                          type="checkbox"
+                          id="acceptTermsCheckbox"
+                          checked={acceptedTerms}
+                          onChange={(e) => setAcceptedTerms(e.target.checked)}
+                          className="h-5 w-5 rounded border-white/10 bg-black/40 text-neon-pink focus:ring-0 cursor-pointer accent-neon-pink shrink-0 mt-0.5"
+                        />
+                        <label htmlFor="acceptTermsCheckbox" className="text-xs text-gray-300 select-none cursor-pointer leading-relaxed text-right">
+                          من همه <Link to="/terms" target="_blank" className="text-neon-pink hover:underline font-black">قوانین و مقررات</Link> لوکس را مطالعه کرده و قبول دارم.
+                        </label>
+                      </div>
+                    )}
+
                     {isLogin && (
                       <div className="flex justify-end">
                         <button 
@@ -316,16 +361,26 @@ export const AuthPage = () => {
                 )}
 
                 <div className="space-y-4 pt-4">
-                  <GlowButton 
-                    variant={isLogin ? "blue" : "pink"} 
-                    className="w-full h-14 !rounded-2xl font-black uppercase italic tracking-widest"
-                    disabled={loading}
-                  >
-                    {loading ? <Loader2 className="animate-spin" /> : (
-                      step === "AUTH" ? (isLogin ? "ورود به سرزمین لوکس" : "ثبت‌نام در لوکس") :
-                      step === "VERIFY_BALE" ? "بازگشت به ورود" : "تایید نهایی"
+                  <div className="relative group/btn w-full">
+                    <GlowButton 
+                      variant={isLogin ? "blue" : "pink"} 
+                      className="w-full h-14 !rounded-2xl font-black uppercase italic tracking-widest disabled:opacity-50 disabled:pointer-events-none"
+                      disabled={loading || (step === "AUTH" && !isLogin && !acceptedTerms)}
+                    >
+                      {loading ? <Loader2 className="animate-spin" /> : (
+                        step === "AUTH" ? (isLogin ? "ورود به سرزمین لوکس" : "ثبت‌نام در لوکس") :
+                        step === "VERIFY_BALE" ? "بازگشت به ورود" : "تایید نهایی"
+                      )}
+                    </GlowButton>
+                    {step === "AUTH" && !isLogin && !acceptedTerms && (
+                      <div className="absolute inset-0 z-20 cursor-not-allowed group-hover/btn:opacity-100 opacity-0 pointer-events-auto flex items-center justify-center transition-opacity">
+                        <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-neon-pink/95 backdrop-blur-md px-4 py-2 rounded-2xl border border-neon-pink/30 text-xs text-white font-black whitespace-nowrap shadow-xl flex items-center gap-2 pointer-events-none">
+                          <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
+                          جهت ثبت‌نام باید قوانین و مقررات را بپذیرید!
+                        </div>
+                      </div>
                     )}
-                  </GlowButton>
+                  </div>
                 </div>
 
                 {step === "AUTH" && (

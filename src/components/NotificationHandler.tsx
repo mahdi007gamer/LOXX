@@ -1,9 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { notifySocket } from "../lib/socket";
 import { toast } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import api from "../lib/api";
 import { motion } from "motion/react";
+import { useAuth } from "../context/AuthContext";
+import { Shield } from "lucide-react";
 
 const InviteToast = ({ t, inviteData, navigate }: { t: any, inviteData: any, navigate: any }) => {
   const [status, setStatus] = useState<'idle' | 'joining' | 'rejected'>('idle');
@@ -109,6 +111,83 @@ const InviteToast = ({ t, inviteData, navigate }: { t: any, inviteData: any, nav
 
 export const NotificationHandler = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const checkedAdminAlerts = useRef<string | null>(null);
+
+  const isAdmin = !!(user && (user.role === "ADMIN" || user.email === "admin@loxx.ir" || user.email === "admin@test.com"));
+
+  useEffect(() => {
+    if (isAdmin && user && checkedAdminAlerts.current !== user.id) {
+      checkedAdminAlerts.current = user.id;
+      api.get("/admin/alerts")
+        .then((res) => {
+          if (res.data && res.data.status === "success") {
+            const { pendingPaymentsCount, pendingReportsCount } = res.data.data;
+            if (pendingPaymentsCount > 0 || pendingReportsCount > 0) {
+              toast.custom((t) => (
+                <div 
+                  className="modern-glass-toast p-6 bg-[#0c0c12]/95 border border-red-500/30 rounded-[24px] flex flex-col gap-4 text-white hover:border-red-500/60 transition-all duration-300 w-[360px] md:w-[380px] shadow-[0_20px_50px_rgba(0,0,0,0.9)] relative overflow-hidden group" 
+                  dir="rtl"
+                >
+                  <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-red-500/50 to-transparent" />
+                  <div className="absolute -top-12 -right-12 w-32 h-32 bg-red-500/5 rounded-full blur-[40px] pointer-events-none" />
+                  
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center border border-red-500/30 text-red-100 shrink-0">
+                      <Shield size={20} className="text-red-400 animate-pulse" />
+                    </div>
+                    <div className="text-right">
+                      <h4 className="font-black text-sm text-white">مدیریت گرامی لوکس</h4>
+                      <p className="text-[10px] text-gray-400 font-bold mt-0.5">بخش‌های معلق منتظر بررسی شما:</p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-2 mt-1">
+                    {pendingPaymentsCount > 0 && (
+                      <div className="flex items-center justify-between bg-white/[0.02] border border-white/5 p-2 px-3 rounded-xl text-xs text-right">
+                        <span className="text-gray-300 font-bold">💰 تراکنش‌های معلق تأیید اشتراک</span>
+                        <span className="bg-red-500/20 text-red-400 border border-red-500/30 text-[10px] px-2 py-0.5 rounded-full font-black animate-pulse">
+                          {pendingPaymentsCount} مورد
+                        </span>
+                      </div>
+                    )}
+                    {pendingReportsCount > 0 && (
+                      <div className="flex items-center justify-between bg-white/[0.02] border border-white/5 p-2 px-3 rounded-xl text-xs text-right">
+                        <span className="text-gray-300 font-bold">🚨 گزارش‌های تخلف جدید کاربران</span>
+                        <span className="bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[10px] px-2 py-0.5 rounded-full font-black animate-pulse">
+                          {pendingReportsCount} مورد
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex gap-2.5 mt-2">
+                    <button
+                      onClick={() => {
+                        toast.dismiss(t.id);
+                        navigate("/admin");
+                      }}
+                      className="flex-1 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white font-black text-xs hover:scale-[1.02] active:scale-95 transition-all shadow-[0_4px_15px_rgba(239,68,68,0.3)] cursor-pointer text-center"
+                    >
+                      ورود به پنل مدیریت
+                    </button>
+                    <button
+                      onClick={() => toast.dismiss(t.id)}
+                      className="px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:text-white text-gray-400 font-medium text-xs cursor-pointer"
+                    >
+                      بستن
+                    </button>
+                  </div>
+                </div>
+              ), { id: "admin-alert", duration: 15000, position: "top-center" });
+            }
+          }
+        })
+        .catch((e) => console.error("Error fetching admin alerts:", e));
+    } else if (!user) {
+      checkedAdminAlerts.current = null;
+    }
+  }, [user, isAdmin, navigate]);
 
   useEffect(() => {
     const playNotifySFX = () => {

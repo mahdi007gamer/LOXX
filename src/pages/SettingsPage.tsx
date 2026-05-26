@@ -32,19 +32,21 @@ import {
   Mail,
   ChevronDown,
   HelpCircle,
+  BookOpen,
   ShieldAlert as SecurityAlert
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { motion, AnimatePresence } from "motion/react";
 import { SmartImage } from "../components/ui/SmartImage";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
-type SettingsTab = "profile" | "security" | "notifications" | "ui" | "region" | "badges" | "elite" | "support";
+type SettingsTab = "profile" | "security" | "notifications" | "ui" | "region" | "badges" | "elite" | "support" | "rules";
 
 export const SettingsPage = () => {
   const navigate = useNavigate();
+  const { tab } = useParams();
   const { user: authUser, refreshUser, isSidebarCollapsed } = useAuth();
-  const [activeTab, setActiveTab] = useState<SettingsTab>("profile");
+  const [activeTab, setActiveTab] = useState<SettingsTab>((tab as SettingsTab) || "profile");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -93,6 +95,12 @@ export const SettingsPage = () => {
     fetchUserBadges();
     fetchChoiceBadges();
   }, []);
+
+  useEffect(() => {
+    if (tab && ["profile", "security", "notifications", "ui", "region", "badges", "elite", "support", "rules"].includes(tab)) {
+      setActiveTab(tab as SettingsTab);
+    }
+  }, [tab]);
 
   const fetchChoiceBadges = async () => {
     try {
@@ -248,6 +256,7 @@ export const SettingsPage = () => {
     { id: "ui" as const, icon: Monitor, label: "رابط کاربری" },
     { id: "region" as const, icon: Globe, label: "زبان و منطقه" },
     { id: "support" as const, icon: MessageSquare, label: "تماس با مدیریت" },
+    { id: "rules" as const, icon: BookOpen, label: "قوانین و مقررات" },
   ] as const;
 
   const renderProfile = () => (
@@ -1209,6 +1218,278 @@ export const SettingsPage = () => {
     </div>
   );
 
+  const renderRules = () => (
+    <div className="space-y-8 animate-fade-in" dir="rtl">
+      <NeonCard className="relative overflow-hidden border-none bg-black/40 backdrop-blur-2xl">
+        {/* Glow decoration */}
+        <div className="absolute top-0 right-0 w-80 h-80 bg-neon-blue/5 rounded-full blur-[100px] pointer-events-none" />
+        
+        <header className="border-b border-white/5 pb-6 mb-8 text-right relative z-10">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="h-12 w-12 rounded-xl bg-neon-blue/10 flex items-center justify-center text-neon-blue">
+              <BookOpen size={24} />
+            </div>
+            <div>
+              <h1 className="text-2xl md:text-3xl font-black text-white italic tracking-tight">قوانین و مقررات جامع استفاده از پلتفرم لوکس (LOXX)</h1>
+              <p className="text-xs text-gray-400 mt-1 font-sans">آخرین بروزرسانی: ۲۶ اردیبهشت ۱۴۰۵ (۱۵ می ۲۰۲۶)</p>
+            </div>
+          </div>
+          <p className="text-sm text-gray-300 leading-relaxed font-sans">
+            با احترام به کاربران گرامی، مطالعه دقیق قوانین و مقررات زیر پیش از استفاده از خدمات پلتفرم گیمینگ لوکس (LOXX) الزامی است. ورود شما به پلتفرم و استفاده از هر یک از خدمات آن، به منزله آگاهی کامل و پذیرش تمامی موارد ذکر شده در این سند تلقی می‌شود.
+          </p>
+        </header>
+
+        <main className="space-y-8 relative z-10 font-sans text-right">
+          {/* Section 1 */}
+          <section className="space-y-3">
+            <h3 className="text-lg font-black text-neon-blue border-r-4 border-neon-blue pr-3 mb-2 flex items-center gap-2">
+              <span>ماده ۱: تعاریف</span>
+            </h3>
+            <ul className="space-y-2.5 text-sm text-gray-300 pr-2">
+              <li className="leading-relaxed">
+                <strong className="text-white">پلتفرم لوکس:</strong> شامل وبسایت، کلاینت دسکتاپ ویندوز، اپلیکیشنهای موبایل (در صورت ارائه آتی) و کلیه خدمات مرتبط با میزبانی، اتصال، ارتباط و مدیریت بازیهای آنلاین و تحت شبکه.
+              </li>
+              <li className="leading-relaxed">
+                <strong className="text-white">کاربر:</strong> شخص حقیقی یا حقوقی که در پلتفرم لوکس ثبتنام کرده و از خدمات آن استفاده مینماید.
+              </li>
+              <li className="leading-relaxed">
+                <strong className="text-white">کلاینت ویندوز:</strong> نرمافزار اختصاصی لوکس برای سیستمعامل ویندوز که امکاناتی نظیر تونلینگ LAN با تکنولوژی Zero-TUN را فراهم میآورد.
+              </li>
+              <li className="leading-relaxed">
+                <strong className="text-white">Zero-TUN:</strong> تکنولوژی اختصاصی لوکس برای ایجاد اتصالات کمتأخیر در بازیهای تحت شبکه (LAN) از طریق هدایت هوشمند ترافیک.
+              </li>
+              <li className="leading-relaxed">
+                <strong className="text-white">اشتراک VIP/PLUS:</strong> سطوح کاربری ویژه با امکانات و مزایای افزوده که با پرداخت هزینه در اختیار کاربر قرار میگیرد.
+              </li>
+              <li className="leading-relaxed">
+                <strong className="text-white">محتوای تولید شده توسط کاربر (UGC):</strong> شامل اطلاعات پروفایل، آواتار، نام کاربری، پیامهای چت و سایر اطلاعاتی که توسط کاربر در پلتفرم بارگذاری یا ایجاد میشود.
+              </li>
+            </ul>
+          </section>
+
+          {/* Section 2 */}
+          <section className="space-y-3">
+            <h3 className="text-lg font-black text-neon-blue border-r-4 border-neon-blue pr-3 mb-2">
+              ماده ۲: شرایط عمومی ثبت‌نام و حساب کاربری
+            </h3>
+            <div className="space-y-2 text-sm text-gray-300 pr-2">
+              <p className="leading-relaxed">
+                <strong className="text-white">۲.۱.</strong> کاربران موظفند اطلاعات صحیح، کامل و بروز در زمان ثبتنام ارائه دهند. مسئولیت هرگونه اشتباه در ارائه اطلاعات به عهده کاربر است.
+              </p>
+              <p className="leading-relaxed">
+                <strong className="text-white">۲.۲.</strong> هر کاربر مجاز به داشتن تنها یک حساب کاربری اصلی است. ایجاد حسابهای متعدد با هدف سوءاستفاده یا دور زدن محدودیتها ممنوع است.
+              </p>
+              <p className="leading-relaxed">
+                <strong className="text-white">۲.۳.</strong> حفظ و امنیت اطلاعات حساب کاربری (نام کاربری و رمز عبور) به عهده کاربر است. هرگونه مسئولیت ناشی از افشای اطلاعات حساب به شخص ثالث بر عهده کاربر خواهد بود.
+              </p>
+              <p className="leading-relaxed">
+                <strong className="text-white">۲.۴.</strong> پلتفرم لوکس حق رد درخواست ثبتنام، تعلیق یا حذف حساب کاربری در صورت تشخیص عدم رعایت قوانین یا رفتار غیرمتعارف را برای خود محفوظ میدارد.
+              </p>
+            </div>
+          </section>
+
+          {/* Section 3 */}
+          <section className="space-y-4">
+            <h3 className="text-lg font-black text-neon-blue border-r-4 border-neon-blue pr-3 mb-2">
+              ماده ۳: قوانین مربوط به خدمات و پلتفرم
+            </h3>
+            <div className="space-y-3.5 pr-2">
+              <div className="space-y-2">
+                <h4 className="text-sm font-black text-white">۳.۱. سیستم Zero-TUN و کلاینت ویندوز:</h4>
+                <p className="text-sm text-gray-300 leading-relaxed pr-3">
+                  الف) کلاینت ویندوز لوکس صرفاً برای تسهیل اتصال در بازیهای مجاز طراحی شده است. هرگونه تلاش برای مهندسی معکوس، هک، تزریق کد مخرب یا استفاده غیرمجاز از این سیستم اکیداً ممنوع است.
+                </p>
+                <p className="text-sm text-gray-300 leading-relaxed pr-3">
+                  ب) مسئولیت انطباق پورتهای مورد استفاده بازی با قوانین آنتیویروس یا فایروال سیستم کاربر، به عهده کاربر است. لوکس راهنماییهای لازم را در صورت بروز تداخل ارائه خواهد داد.
+                </p>
+                <p className="text-sm text-gray-300 leading-relaxed pr-3">
+                  پ) استفاده از سیستم Zero-TUN صرفاً برای اتصال به بازیهای قانونی مجاز است. هرگونه استفاده برای مقاصد تجاری، دسترسی غیرمجاز به شبکهها یا فعالیتهای غیرقانونی، منجر به پیگرد قانونی خواهد شد.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <h4 className="text-sm font-black text-white">۳.۲. محتوای چت و ارتباطات:</h4>
+                <p className="text-sm text-gray-300 leading-relaxed pr-3 font-sans">
+                  الف) استفاده از زبان توهینآمیز، نژادپرستانه، تبعیضآمیز، تهدیدآمیز، حاوی محتوای جنسی یا نفرتپراکنی در تمامی بخشهای ارتباطی پلتفرم (چت لابی، چت سراسری، پیام خصوصی) ممنوع است.
+                </p>
+                <p className="text-sm text-gray-300 leading-relaxed pr-3 font-sans">
+                  ب) انتشار اطلاعات خصوصی دیگران بدون رضایت آنها، ممنوع است.
+                </p>
+                <p className="text-sm text-gray-300 leading-relaxed pr-3 font-sans">
+                  پ) اسپم کردن، ارسال پیامهای تکراری یا تبلیغات غیرمجاز در چتها ممنوع است.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <h4 className="text-sm font-black text-white">۳.۳. سیستم اشتراک VIP/PLUS:</h4>
+                <p className="text-sm text-gray-300 leading-relaxed pr-3 font-sans">
+                  الف) اشتراکهای VIP و PLUS پس از فعالسازی، غیرقابل استرداد (Non-refundable) هستند، مگر در مواردی که پلتفرم لوکس قادر به ارائه خدمات نباشد.
+                </p>
+                <p className="text-sm text-gray-300 leading-relaxed pr-3 font-sans">
+                  ب) فروش، انتقال یا اشتراکگذاری حساب کاربری یا اشتراک ویژه با دیگران بدون مجوز رسمی، تخلف محسوب میشود.
+                </p>
+                <p className="text-sm text-gray-300 leading-relaxed pr-3 font-sans">
+                  پ) لوکس حق تغییر، تعدیل یا حذف برخی از امکانات اشتراکها را با اطلاعرسانی قبلی برای خود محفوظ میدارد.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <h4 className="text-sm font-black text-white">۳.۴. حفظ حریم خصوصی و داده‌ها:</h4>
+                <p className="text-sm text-gray-300 leading-relaxed pr-3 font-sans">
+                  الف) اطلاعات کاربری شما مطابق با «سیاست حفظ حریم خصوصی لوکس» (که به صورت مجزا در دسترس است) جمعآوری، استفاده و محافظت میشود.
+                </p>
+                <p className="text-sm text-gray-300 leading-relaxed pr-3 font-sans">
+                  ب) مکالمات صوتی (Voice Chat) از طریق پروتکل P2P (Peer-to-Peer) و به صورت End-to-End Encrypted انجام شده و در سرورهای لوکس ذخیره یا شنود نمیشوند.
+                </p>
+                <p className="text-sm text-gray-300 leading-relaxed pr-3 font-sans">
+                  پ) لوکس از کوکیها و توکنهای امنیتی برای بهبود تجربه کاربری و حفظ امنیت جلسات استفاده میکند.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          {/* Section 4 */}
+          <section className="space-y-3">
+            <h3 className="text-lg font-black text-neon-blue border-r-4 border-neon-blue pr-3 mb-2">
+              ماده ۴: حقوق مالکیت معنوی
+            </h3>
+            <div className="space-y-2 text-sm text-gray-300 pr-2">
+              <p className="leading-relaxed font-sans">
+                <strong className="text-white">۴.۱.</strong> کلیه حقوق مادی و معنوی مربوط به پلتفرم لوکس، شامل طراحی رابط کاربری، کدها، لوگوها، نام تجاری، محتوای متنی و گرافیکی اختصاصی، متعلق به شرکت یا تیم توسعهدهنده لوکس است.
+              </p>
+              <p className="leading-relaxed font-sans">
+                <strong className="text-white">۴.۲.</strong> ایجاد هرگونه کپی، توزیع، تغییر یا استفاده تجاری از بخشهایی از پلتفرم بدون کسب اجازه کتبی ممنوع است.
+              </p>
+              <p className="leading-relaxed font-sans">
+                <strong className="text-white">۴.۳.</strong> امتیاز و حق استفاده از فونتهای فارسی (مانند فونت کلامه) و سایر داراییهای گرافیکی مطابق با لایسنسهای مربوطه رعایت خواهد شد.
+              </p>
+            </div>
+          </section>
+
+          {/* Section 5 */}
+          <section className="space-y-3">
+            <h3 className="text-lg font-black text-neon-blue border-r-4 border-neon-blue pr-3 mb-2">
+              ماده ۵: مسئولیت‌ها و محدودیت‌ها
+            </h3>
+            <div className="space-y-2 text-sm text-gray-300 pr-2">
+              <p className="leading-relaxed font-sans">
+                <strong className="text-white">۵.۱.</strong> پلتفرم لوکس تلاش میکند تا حداکثر پایداری و در دسترس بودن خدمات را فراهم آورد، اما هیچ تضمینی در خصوص عدم قطعی یا خطاهای احتمالی در سرویسها، بهویژه در شرایط فورس ماژور (مانند حملات DDoS، قطعی اینترنت جهانی، بلایای طبیعی) ارائه نمیدهد.
+              </p>
+              <p className="leading-relaxed font-sans">
+                <strong className="text-white">۵.۲.</strong> لوکس هیچگونه مسئولیتی در قبال محتوای تولید شده توسط کاربران، از جمله صحت، کامل بودن یا قانونی بودن آن ندارد.
+              </p>
+              <p className="leading-relaxed font-sans">
+                <strong className="text-white">۵.۳.</strong> لوکس مسئولیتی در قبال خسارات احتمالی ناشی از استفاده نادرست کاربر از پلتفرم، نقص در سیستمهای کاربر (مانند آنتیویروس) یا استفاده از نسخههای دستکاری شده کلاینت یا پلتفرم ندارد.
+              </p>
+              <p className="leading-relaxed font-sans">
+                <strong className="text-white">۵.۴.</strong> در صورت نیاز به ارتقاء یا نگهداری فنی، ممکن است دسترسی موقت به بخشی از خدمات محدود شود. لوکس تلاش خواهد کرد این محدودیتها را در ساعات کمترافیک اعمال و اطلاعرسانی نماید.
+              </p>
+            </div>
+          </section>
+
+          {/* Section 6 */}
+          <section className="space-y-3">
+            <h3 className="text-lg font-black text-neon-blue border-r-4 border-neon-blue pr-3 mb-2">
+              ماده ۶: قوانین مربوط به پرداخت و اشتراک
+            </h3>
+            <div className="space-y-2 text-sm text-gray-300 pr-2">
+              <p className="leading-relaxed font-sans">
+                <strong className="text-white">۶.۱.</strong> تمامی پرداختها از طریق درگاههای امن بانکی و با رعایت استانداردهای امنیتی صورت میگیرد.
+              </p>
+              <p className="leading-relaxed font-sans">
+                <strong className="text-white">۶.۲.</strong> اطلاعات کارت بانکی کاربران در سرورهای لوکس ذخیره نمیشود.
+              </p>
+              <p className="leading-relaxed font-sans">
+                <strong className="text-white">۶.۳.</strong> کاربران موظفند از کارتهای بانکی معتبر و متعلق به خود برای انجام تراکنشها استفاده نمایند. هرگونه تراکنش از طریق کارتهای سرقتی یا غیرمجاز، پیگرد قانونی دارد.
+              </p>
+              <p className="leading-relaxed font-sans">
+                <strong className="text-white">۶.۴.</strong> قوانین مربوط به بازگشت وجه (در صورت وجود) صرفاً در شرایطی که در ماده ۳.۳.الف ذکر شده، اعمال خواهد شد.
+              </p>
+            </div>
+          </section>
+
+          {/* Section 7 */}
+          <section className="space-y-3">
+            <h3 className="text-lg font-black text-neon-blue border-r-4 border-neon-blue pr-3 mb-2">
+              ماده ۷: رسیدگی به تخلفات و جرائم
+            </h3>
+            <div className="space-y-2 text-sm text-gray-300 pr-2">
+              <p className="leading-relaxed font-sans">
+                <strong className="text-white">۷.۱.</strong> در صورت نقض هر یک از مواد این توافقنامه، لوکس حق دارد به صلاحدید خود، اقدامات زیر را انجام دهد:
+              </p>
+              <p className="leading-relaxed pr-3 font-sans">الف) اخطار کتبی یا شفاهی به کاربر.</p>
+              <p className="leading-relaxed pr-3 font-sans">ب) محدودسازی موقت دسترسی به بخشی از خدمات.</p>
+              <p className="leading-relaxed pr-3 font-sans">ج) تعلیق دائم حساب کاربری.</p>
+              <p className="leading-relaxed pr-3 font-sans">د) حذف کامل حساب کاربری و تمامی اطلاعات مرتبط با آن.</p>
+              <p className="leading-relaxed pr-3 font-sans">ه) پیگیری حقوقی و قضایی در مراجع ذیصلاح در صورت ارتکاب جرائم سایبری یا نقض حقوق مالکیت معنوی.</p>
+              <p className="leading-relaxed font-sans">
+                <strong className="text-white">۷.۲.</strong> لوکس با نهادهای قضایی و امنیتی در چارچوب قوانین جمهوری اسلامی ایران همکاری خواهد کرد.
+              </p>
+            </div>
+          </section>
+
+          {/* Section 8 */}
+          <section className="space-y-3">
+            <h3 className="text-lg font-black text-neon-blue border-r-4 border-neon-blue pr-3 mb-2">
+              ماده ۸: تغییرات در قوانین
+            </h3>
+            <div className="space-y-2 text-sm text-gray-300 pr-2">
+              <p className="leading-relaxed font-sans">
+                <strong className="text-white">۸.۱.</strong> لوکس حق بازنگری و اعمال تغییرات در این قوانین را در هر زمان برای خود محفوظ میدارد. تغییرات پس از انتشار در صفحه قوانین و مقررات پلتفرم، لازمالاجرا خواهند بود.
+              </p>
+              <p className="leading-relaxed font-sans">
+                <strong className="text-white">۸.۲.</strong> ادامه استفاده شما از پلتفرم پس از اعمال تغییرات، به منزله پذیرش قوانین جدید است. توصیه میشود به صورت دورهای این صفحه را مطالعه فرمایید.
+              </p>
+            </div>
+          </section>
+
+          {/* Section 9 */}
+          <section className="space-y-3">
+            <h3 className="text-lg font-black text-neon-blue border-r-4 border-neon-blue pr-3 mb-2">
+              ماده ۹: قوانین مربوط به به‌روزرسانی خودکار (Auto-Updater)
+            </h3>
+            <div className="space-y-2 text-sm text-gray-300 pr-2">
+              <p className="leading-relaxed font-sans">
+                <strong className="text-white">۹.۱.</strong> سیستم بهروزرسانی خودکار برای کلاینت ویندوز لوکس طراحی شده است تا تجربه کاربری بدون وقفه را تضمین کند.
+              </p>
+              <p className="leading-relaxed font-sans">
+                <strong className="text-white">۹.۲.</strong> فرآیند دانلود و نصب بهروزرسانیها ممکن است نیازمند دسترسی ادمین (Administrator Privileges) باشد. در صورت بروز خطا در نصب، کاربر موظف است برنامه را با دسترسی ادمین اجرا کند.
+              </p>
+              <p className="leading-relaxed font-sans">
+                <strong className="text-white">۹.۳.</strong> لوکس هیچ مسئولیتی در قبال اختلال در فرآیند بهروزرسانی به دلیل مشکلات سیستمعامل کاربر، تداخل نرمافزاری یا قطع ناگهانی اینترنت ندارد.
+              </p>
+              <p className="leading-relaxed font-sans">
+                <strong className="text-white">۹.۴.</strong> در صورت بروز مشکل حاد در فرآیند بهروزرسانی، کاربر میتواند آخرین نسخه را از وبسایت رسمی لوکس دانلود و به صورت دستی نصب نماید.
+              </p>
+            </div>
+          </section>
+
+          {/* Section 10 */}
+          <section className="space-y-3 border-b border-white/5 pb-8">
+            <h3 className="text-lg font-black text-neon-blue border-r-4 border-neon-blue pr-3 mb-2">
+              ماده ۱۰: قوانین متفرقه
+            </h3>
+            <div className="space-y-2 text-sm text-gray-300 pr-2">
+              <p className="leading-relaxed font-sans">
+                <strong className="text-white">۱۰.۱.</strong> این قوانین تابع قوانین جمهوری اسلامی ایران هستند.
+              </p>
+              <p className="leading-relaxed font-sans">
+                <strong className="text-white">۱۰.۲.</strong> در صورت بروز هرگونه اختلاف در تفسیر یا اجرای این قوانین، ابتدا تلاش خواهد شد تا از طریق مذاکره و توافق حل و فصل شود. در صورت عدم حصول نتیجه، مرجع قضایی صالح، دادگاههای عمومی و انقلاب محل استقرار شرکت یا تیم توسعه لوکس خواهد بود.
+              </p>
+            </div>
+          </section>
+        </main>
+        
+        <footer className="mt-8 text-center text-gray-400 font-sans border-t border-white/5 pt-6 flex flex-col items-center justify-center gap-2">
+          <p className="text-sm font-bold">با تشکر از همراهی شما با پلتفرم لوکس.</p>
+          <div className="px-6 py-2 rounded-2xl bg-neon-blue/5 border border-neon-blue/20 text-xs font-black text-neon-blue tracking-widest uppercase">
+            تیم توسعه لوکس
+          </div>
+        </footer>
+      </NeonCard>
+    </div>
+  );
+
   return (
     <div className="flex min-h-[calc(100vh-64px)] pb-20 md:pb-0">
       <Sidebar />
@@ -1249,6 +1530,7 @@ export const SettingsPage = () => {
                 {activeTab === "ui" && renderUI()}
                 {activeTab === "region" && renderRegion()}
                 {activeTab === "support" && renderSupport()}
+                {activeTab === "rules" && renderRules()}
               </div>
           </div>
         </div>
