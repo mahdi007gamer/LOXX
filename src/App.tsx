@@ -77,6 +77,14 @@ const AppContent = () => {
       const targetPath = currentHash.substring(1); // e.g. "/dashboard"
       if (targetPath !== location.pathname) {
         navigate(targetPath, { replace: true });
+        
+        // Clear the hash from browser history to prevent navigation lock loops
+        try {
+          window.history.replaceState(null, "", window.location.pathname + window.location.search);
+          setCurrentHash("");
+        } catch (e) {
+          console.error("Failed to clear location hash:", e);
+        }
       }
     }
   }, [currentHash, location.pathname, navigate]);

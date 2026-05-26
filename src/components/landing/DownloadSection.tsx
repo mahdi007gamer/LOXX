@@ -14,15 +14,42 @@ export const DownloadSection = () => {
         const res = await fetch("https://loxx.ir/updater/latest.yml", { cache: "no-store" });
         if (res.ok) {
           const text = await res.text();
+          
+          const cleanYamlValue = (val: string) => {
+            if (!val) return "";
+            let cleaned = val.split("#")[0] || ""; // remove trailing comments
+            cleaned = cleaned.trim().replace(/^['"]|['"]$/g, "").trim(); // strip single/double quotes
+            return cleaned;
+          };
+
           // parse version
           const versionMatch = text.match(/version:\s*(.+)/);
           if (versionMatch && versionMatch[1]) {
-            setWindowsVersion(versionMatch[1].trim());
+            setWindowsVersion(cleanYamlValue(versionMatch[1]));
           }
-          // parse path
+
+          // parse path (with fallback to url)
+          let finalPath = "";
           const pathMatch = text.match(/path:\s*(.+)/);
           if (pathMatch && pathMatch[1]) {
-            setWindowsUrl(`https://loxx.ir/updater/${pathMatch[1].trim()}`);
+            finalPath = cleanYamlValue(pathMatch[1]);
+          } else {
+            const urlMatch = text.match(/url:\s*(.+)/);
+            if (urlMatch && urlMatch[1]) {
+              finalPath = cleanYamlValue(urlMatch[1]);
+            }
+          }
+
+          if (finalPath) {
+            if (finalPath.startsWith("http://") || finalPath.startsWith("https://")) {
+              setWindowsUrl(finalPath);
+            } else {
+              // Properly URL encode space and other characters in path segments
+              const encodedPath = finalPath.split('/')
+                .map(segment => encodeURIComponent(segment))
+                .join('/');
+              setWindowsUrl(`https://loxx.ir/updater/${encodedPath}`);
+            }
           }
         }
       } catch (err) {
