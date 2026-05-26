@@ -17,15 +17,29 @@ export const Footer = () => {
               <img src="/logo.png" alt="LOXX" className="h-10 w-auto drop-shadow-[0_0_10px_rgba(0,229,255,0.3)] transition-transform group-hover:scale-110" />
               <span className="text-2xl font-black tracking-tighter text-white">LOXX</span>
             </Link>
-            <p className="text-sm leading-relaxed text-gray-500">
-              اولین و بزرگترین پلتفرم اجتماعی اختصاصی برای گیمرهای ایرانی. تجربه یک بازی حرفه‌ای با هماهنگی دقیق.
+            <p className="text-sm leading-relaxed text-gray-400 font-medium">
+              لوکس اولین و پیشرفته ترین پلتفرم فارسی گیمینگ
             </p>
-            <div className="flex gap-4">
-              {[Twitter, Instagram, Github].map((Icon, i) => (
-                <button key={i} className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 text-gray-500 transition-all hover:border-pink-500 hover:text-pink-500">
-                  <Icon size={20} />
-                </button>
-              ))}
+            <div className="flex flex-col gap-3 pt-2">
+              <span className="text-[10px] text-gray-600 font-extrabold tracking-wider uppercase">شبکه‌های اجتماعی ما</span>
+              <div className="flex gap-3">
+                <a 
+                  href="https://ble.ir/loxxir" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2.5 px-4 py-3 rounded-2xl border border-emerald-500/30 bg-emerald-500/5 hover:bg-emerald-500/10 text-emerald-400 hover:text-emerald-300 hover:border-emerald-500/50 hover:shadow-[0_0_20px_rgba(16,185,129,0.25)] transition-all duration-300 group/bale cursor-pointer"
+                  title="کانال بله لوکس"
+                >
+                  <svg 
+                    viewBox="0 0 24 24" 
+                    fill="currentColor" 
+                    className="w-5 h-5 shrink-0 transition-transform duration-300 group-hover/bale:scale-110"
+                  >
+                    <path d="M12 2C6.48 2 2 6.48 2 12c0 1.54.36 2.98.98 4.27L1.15 21.8c-.28.82.55 1.65 1.37 1.37l5.53-1.83C9.35 21.78 10.66 22 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm1 14h-2v-2h2v2zm0-4h-2V7h2v5z"/>
+                  </svg>
+                  <span className="text-xs font-black tracking-tight">کانال رسمی بله (loxxir)</span>
+                </a>
+              </div>
             </div>
           </div>
 

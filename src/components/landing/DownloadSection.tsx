@@ -50,21 +50,72 @@ export const DownloadSection = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             
-            {/* Windows */}
-            <div className="bg-black/40 border border-neon-blue/30 rounded-3xl p-8 flex flex-col items-center justify-between hover:bg-black/80 hover:shadow-[0_0_40px_rgba(0,229,255,0.3)] transition-all group overflow-hidden relative">
-              <div className="absolute inset-0 bg-gradient-to-b from-neon-blue/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-              <div className="mb-6 h-20 w-20 rounded-2xl bg-neon-blue/10 flex items-center justify-center text-neon-blue shadow-[0_0_20px_rgba(0,229,255,0.2)] group-hover:scale-110 transition-transform z-10">
-                <Monitor size={36} />
+            {/* Windows (Featured - Ultra Eye-catching Client) */}
+            <div className="bg-gradient-to-b from-[#101428] to-[#040612] border-2 border-neon-blue rounded-3xl p-8 flex flex-col items-center justify-between shadow-[0_0_50px_rgba(0,229,255,0.25)] hover:shadow-[0_0_70px_rgba(0,229,255,0.45)] hover:border-neon-pink transition-all duration-500 group overflow-hidden relative col-span-1 transform lg:scale-105 z-20">
+              
+              {/* Rotating background aura */}
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(0,229,255,0.15),transparent_60%)] pointer-events-none" />
+              <div className="absolute -inset-[10px] bg-gradient-to-r from-neon-blue/10 via-neon-pink/10 to-neon-purple/10 opacity-30 blur-xl group-hover:opacity-60 transition-opacity duration-700 pointer-events-none" />
+              
+              {/* Special Badge */}
+              <div className="absolute top-3 right-3 bg-gradient-to-r from-neon-pink to-neon-purple text-dark-bg text-[10px] font-black px-3 py-1 rounded-full flex items-center gap-1.5 shadow-[0_0_15px_rgba(255,0,153,0.5)] z-20 animate-bounce">
+                <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
+                <span>نسخه پیشنهادی و رسمی</span>
               </div>
-              <h3 className="text-xl font-bold text-white mb-2 z-10">ویندوز</h3>
-              <p className="text-gray-400 text-sm mb-6 h-10 z-10">نسخه پایدار برای ویندوز ۱۰ و ۱۱</p>
+
+              {/* Icon Container with glowing ring & audio wave effect */}
+              <div className="mb-6 h-24 w-24 rounded-2xl bg-neon-blue/15 flex items-center justify-center text-neon-blue border border-neon-blue/40 shadow-[0_0_30px_rgba(0,229,255,0.3)] group-hover:scale-110 group-hover:border-neon-pink group-hover:text-neon-pink group-hover:shadow-[0_0_40px_rgba(255,0,153,0.4)] transition-all duration-500 z-10 relative">
+                
+                {/* Visual Audio Waves Decors */}
+                <span className="absolute -left-2 bottom-4 w-1 h-6 bg-neon-blue/40 rounded-full group-hover:bg-neon-pink/60 animate-[pulse_1.2s_infinite]" />
+                <span className="absolute -right-2 bottom-6 w-1 h-8 bg-neon-blue/40 rounded-full group-hover:bg-neon-pink/60 animate-[pulse_1s_infinite_0.2s]" />
+                <span className="absolute -top-1 left-8 w-6 h-1 bg-neon-blue/30 rounded-full group-hover:bg-neon-pink/50 animate-ping" />
+                
+                <Monitor size={42} className="transition-transform duration-500 group-hover:rotate-1" />
+              </div>
+              
+              <h3 className="text-2xl font-black text-white mb-2 z-10 tracking-tight flex items-center gap-2">
+                کلاینت ویندوز Loxx
+              </h3>
+              
+              <p className="text-gray-300 text-xs mb-6 h-12 z-10 font-bold max-w-xs leading-relaxed text-center px-2">
+                روان‌ترین تجربه تماس صوتی ریل‌تایم درون بازی + سیستم هوشمند ضد لگ و پینگ کم
+              </p>
               
               <a href={windowsUrl} target="_blank" rel="noreferrer" className="w-full z-10">
-                <GlowButton variant="blue" className="w-full justify-center">
-                  <Download size={18} className="ml-2" />
-                  دانلود {windowsVersion ? `(v${windowsVersion})` : 'مستقیم'}
-                </GlowButton>
+                <motion.div
+                  whileHover={{ scale: 1.04 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="w-full"
+                >
+                  <button className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-neon-blue via-teal-400 to-neon-blue bg-[length:200%_auto] text-dark-bg font-black text-sm tracking-widest hover:bg-[right_center] transition-all duration-500 shadow-[0_10px_35px_rgba(0,229,255,0.4)] hover:shadow-[0_15px_45px_rgba(0,229,255,0.6)] cursor-pointer relative overflow-hidden flex items-center justify-center gap-2.5">
+                    
+                    {/* Metallic Shine Sweep with Framer Motion */}
+                    <motion.div
+                      className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -skew-x-12 pointer-events-none"
+                      animate={{
+                        x: ['-100%', '200%'],
+                      }}
+                      transition={{
+                        repeat: Infinity,
+                        duration: 2.2,
+                        ease: "linear"
+                      }}
+                    />
+                    
+                    <Download size={20} className="animate-bounce shrink-0" />
+                    <span className="font-extrabold text-base">
+                      دریافت نسخه ویندوز {windowsVersion ? `(v${windowsVersion})` : 'مستقیم'}
+                    </span>
+                  </button>
+                </motion.div>
               </a>
+              
+              {/* Extra micro labels underneath button */}
+              <span className="mt-3 text-[10px] text-neon-blue font-black tracking-widest uppercase z-10 group-hover:text-neon-pink transition-colors">
+                حجم فایل کمتر از ۱۰۰ مگابایت
+              </span>
+
             </div>
 
             {/* Android */}

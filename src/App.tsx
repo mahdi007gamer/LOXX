@@ -35,6 +35,7 @@ import { GamesPage } from "./pages/GamesPage";
 import { MyGamesPage } from "./pages/MyGamesPage";
 import { EliteSettingsPage } from "./pages/EliteSettingsPage";
 import { NotificationHandler } from "./components/NotificationHandler";
+import { PwaInstaller } from "./components/PwaInstaller";
 import { DesktopOverlayWidget } from "./pages/DesktopOverlayWidget";
 import { ElectronTitlebar } from "./components/layout/ElectronTitlebar";
 import { cn } from "./lib/utils";
@@ -342,6 +343,7 @@ const AppContent = () => {
         <div className="fixed inset-0 border border-white/10 pointer-events-none z-[100000] rounded-none shadow-[inset_0_0_15px_rgba(255,0,127,0.02)]" />
       )}
       <NotificationHandler />
+      <PwaInstaller />
       {!isOverlayWidget && <ElectronTitlebar />}
       
       {/* Abstract background effects */}
