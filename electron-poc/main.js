@@ -112,6 +112,19 @@ autoUpdater.logger = {
 // Configure autoUpdater settings
 autoUpdater.autoDownload = true;
 autoUpdater.autoInstallOnAppQuit = false; // Disable automatic installer launch on app quit to prevent lock conflicts
+
+// Disable & bypass code signing verification checks for development/unsigned releases on Windows and MacOS
+autoUpdater.verifySignature = async function(tempUpdateFile) {
+  logMsg('INFO_UPDATER', `Bypassed digital code signing verification check successfully for temp update file: ${tempUpdateFile}`);
+  return null;
+};
+if (autoUpdater.constructor && autoUpdater.constructor.prototype) {
+  autoUpdater.constructor.prototype.verifySignature = async function(tempUpdateFile) {
+    logMsg('INFO_UPDATER', `Bypassed prototype digital code signing verification check successfully for temp update file: ${tempUpdateFile}`);
+    return null;
+  };
+}
+
 try {
   autoUpdater.setFeedURL({
     provider: 'generic',

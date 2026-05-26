@@ -1,6 +1,6 @@
 {
   "name": "loxx",
-  "version": "1.0.11",
+  "version": "1.0.12",
   "description": "Electron POC for Loxx",
   "author": "Loxx",
   "homepage": "https://loxx.ir",
@@ -30,7 +30,6 @@
     ],
     "win": {
       "icon": "build/icon.ico",
-      "publisherName": "Loxx",
       "target": [
         {
           "target": "nsis",
