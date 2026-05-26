@@ -473,21 +473,21 @@ function App() {
     (window.location.pathname === '/overlay' || window.location.hash.includes('/overlay'));
   
   return (
-    <AuthProvider>
-      <GamesProvider>
-        <FriendsProvider>
-          <LobbyProvider>
-            <ProfilePopoverProvider>
-              <Router>
+    <Router>
+      <AuthProvider>
+        <GamesProvider>
+          <FriendsProvider>
+            <LobbyProvider>
+              <ProfilePopoverProvider>
                 <ScrollToTop />
                 <AppContent />
                 <DiscordOverlayHUD />
-              </Router>
-            </ProfilePopoverProvider>
-          </LobbyProvider>
-        </FriendsProvider>
-      </GamesProvider>
-    </AuthProvider>
+              </ProfilePopoverProvider>
+            </LobbyProvider>
+          </FriendsProvider>
+        </GamesProvider>
+      </AuthProvider>
+    </Router>
   );
 }
 
