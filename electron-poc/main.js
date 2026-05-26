@@ -3,17 +3,97 @@ const path = require('path');
 const fs = require('fs');
 const { autoUpdater } = require('electron-updater');
 
+// Setup logging directory and file path
+const userDataPath = app.getPath('userData');
+const logDir = path.join(userDataPath, 'Logs');
+if (!fs.existsSync(logDir)) {
+  fs.mkdirSync(logDir, { recursive: true });
+}
+const logFile = path.join(logDir, 'updater.log');
+
+// Define a unified logging helper
+function logMsg(level, ...args) {
+  const time = new Date().toISOString();
+  const text = `[${time}] [${level}] ${args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ')}`;
+  try {
+    fs.appendFileSync(logFile, text + '\r\n');
+  } catch (err) {
+    // silently fail
+  }
+  console.log(text);
+}
+
+// Inter-process logs
+logMsg('INFO', 'Starting LOXX process sequence...');
+
+// Dynamic Application Icon Resolving
+let appIconPath = null;
+const iconSearchPaths = [
+  path.join(__dirname, 'build', 'logo.png'),
+  path.join(__dirname, 'build', 'icon.ico'),
+  path.join(__dirname, 'logo.png'),
+  path.join(__dirname, '..', 'public', 'logo.png')
+];
+for (const p of iconSearchPaths) {
+  if (fs.existsSync(p)) {
+    appIconPath = p;
+    logMsg('INFO', `Custom application icon resolved at: ${p}`);
+    break;
+  }
+}
+if (!appIconPath) {
+  logMsg('WARN', 'No custom application icon found on disk. Resorting to standard system defaults.');
+}
+
 // Single Instance Lock
 const gotTheLock = app.requestSingleInstanceLock();
 if (!gotTheLock) {
+  logMsg('WARN', 'Another instance of LOXX is already running. Quitting.');
   app.quit();
 } else {
   // Set App User Model ID for Windows Taskbar & Notifications
   if (process.platform === 'win32') {
     app.setAppUserModelId(app.isPackaged ? 'ir.loxx.launcher' : process.execPath);
+    
+    // Create/Truncate log file for clean session debugging and setup visual PowerShell log console
+    const startBanner = `[${new Date().toISOString()}] [INFO] ===================================================\r\n` +
+                        `[${new Date().toISOString()}] [INFO]     LOXX CLIENT LIFECYCLE MONITOR ACTIVE\r\n` +
+                        `[${new Date().toISOString()}] [INFO]     Version: ${app.getVersion()}\r\n` +
+                        `[${new Date().toISOString()}] [INFO]     Executable: ${process.execPath}\r\n` +
+                        `[${new Date().toISOString()}] [INFO]     User Data Path: ${userDataPath}\r\n` +
+                        `[${new Date().toISOString()}] [INFO]     Log File: ${logFile}\r\n` +
+                        `[${new Date().toISOString()}] [INFO] ===================================================\r\n`;
+    try {
+      fs.writeFileSync(logFile, startBanner, 'utf8');
+      
+      const psScript = `
+Clear-Host
+$host.UI.RawUI.WindowTitle = 'LOXX CLI Monitor & Package Updater'
+Write-Host '===========================================================' -ForegroundColor Cyan
+Write-Host '          LOXX CLIENT UPDATER & DIAGNOSTIC CONSOLE         ' -ForegroundColor Green
+Write-Host '===========================================================' -ForegroundColor Cyan
+Write-Host 'This terminal logs the entire update lifecycle and process events.' -ForegroundColor Gray
+Write-Host 'Log Path: ${logFile}' -ForegroundColor DarkGray
+Write-Host '-----------------------------------------------------------' -ForegroundColor Yellow
+Get-Content -Path '${logFile.replace(/'/g, "''")}' -Wait -Tail 15
+`;
+      const tempPs1 = path.join(app.getPath('temp'), 'loxx-logger.ps1');
+      fs.writeFileSync(tempPs1, psScript, 'utf8');
+
+      const { spawn } = require('child_process');
+      spawn('cmd.exe', ['/c', 'start', 'LOXX LOG MONITOR', 'powershell', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', tempPs1], {
+        detached: true,
+        stdio: 'ignore'
+      }).unref();
+      
+      logMsg('INFO', 'Launched real-time interactive logging terminal for update session.');
+    } catch (err) {
+      console.error('Failed to configure visual upgrader terminal overlay:', err);
+    }
   }
 
   app.on('second-instance', (event, commandLine, workingDirectory) => {
+    logMsg('INFO', 'Detected second instance launch attempt. Focusing primary app window.');
     if (mainWindow) {
       if (mainWindow.isMinimized()) mainWindow.restore();
       mainWindow.show();
@@ -22,21 +102,29 @@ if (!gotTheLock) {
   });
 }
 
-// Configure autoUpdater to not automatically show silent errors or prompt on default
+// Redirect electron-updater default logs to our file
+autoUpdater.logger = {
+  info: (msg) => logMsg('INFO_UPDATER', msg),
+  warn: (msg) => logMsg('WARN_UPDATER', msg),
+  error: (msg) => logMsg('ERROR_UPDATER', msg)
+};
+
+// Configure autoUpdater settings
 autoUpdater.autoDownload = true;
-autoUpdater.autoInstallOnAppQuit = false;
+autoUpdater.autoInstallOnAppQuit = false; // Disable automatic installer launch on app quit to prevent lock conflicts
 try {
   autoUpdater.setFeedURL({
     provider: 'generic',
     url: 'https://loxx.ir/updater/'
   });
+  logMsg('INFO', 'Configuring updater feed target to: https://loxx.ir/updater/');
 } catch (feedErr) {
-  console.error('Failed to configure AutoUpdater Feed URL:', feedErr);
+  logMsg('ERROR', 'Failed to configure AutoUpdater Feed URL:', feedErr);
 }
 
-// Auto-updater event configurations for Persian-localized error/success feedback
+// Auto-updater events
 autoUpdater.on('error', (err) => {
-  console.error('AutoUpdater Error:', err);
+  logMsg('ERROR', 'Updater failed with error structure:', err);
   sendUpdateStatus('error', 100);
   setTimeout(() => {
     launchMainWindow();
@@ -44,20 +132,21 @@ autoUpdater.on('error', (err) => {
 });
 
 autoUpdater.on('checking-for-update', () => {
+  logMsg('INFO', 'Checking for update packages on remote feed...');
   sendUpdateStatus('checking', 25);
 });
 
 autoUpdater.on('update-available', (info) => {
-  console.log('Update available, downloading in background:', info.version);
+  logMsg('INFO', `New package version ${info.version} is available. Initiating automatic background download...`);
   if (typeof updateCheckTimeout !== 'undefined') {
     clearTimeout(updateCheckTimeout);
   }
-  global.isUpdateDownloading = true; // Use global to traverse scopes just in case
+  global.isUpdateDownloading = true;
   sendUpdateStatus('downloading', 45);
 });
 
 autoUpdater.on('update-not-available', (info) => {
-  console.log('No update available. Launching app.');
+  logMsg('INFO', `Platform is fully up-to-date. Current version: ${app.getVersion()}. Launching LOXX UI.`);
   sendUpdateStatus('not-available', 100);
   setTimeout(() => {
     launchMainWindow();
@@ -65,11 +154,15 @@ autoUpdater.on('update-not-available', (info) => {
 });
 
 autoUpdater.on('download-progress', (progressObj) => {
+  logMsg('INFO', `Downloading package chunk: Progress ${Math.round(progressObj.percent)}% - Speed: ${Math.round(progressObj.bytesPerSecond / 1024)} KB/s`);
   sendUpdateStatus('downloading', Math.round(progressObj.percent));
 });
 
 autoUpdater.on('update-downloaded', (info) => {
+  logMsg('INFO', `--- UPDATE PACKAGE DOWNLOAD COMPLETE ---`);
+  logMsg('INFO', `Downloaded version details:`, info);
   sendUpdateStatus('ready', 100);
+  
   dialog.showMessageBox({
     type: 'info',
     title: 'بروزرسانی آماده نصب',
@@ -77,48 +170,52 @@ autoUpdater.on('update-downloaded', (info) => {
     detail: 'برنامه به صورت خودکار بسته شده و بروزرسانی جدید نصب خواهد شد تا لوکس مجددا با امکانات جدید اجرا شود.',
     buttons: ['نصب و راه‌اندازی مجدد']
   }).then(() => {
+    logMsg('INFO', 'User accepted update installation. Commencing forceful process shutdown sequences...');
     isQuitting = true;
     
-    // Safely destroy system tray to release resources
+    // Safely destroy system tray to release resource handles
     if (tray) {
       try {
+        logMsg('INFO', 'Destroying system tray object references...');
         tray.destroy();
         tray = null;
       } catch (e) {
-        console.error('Failed to destroy tray:', e);
+        logMsg('ERROR', 'Failed during system tray destruction:', e);
       }
     }
 
-    // Crucial: Remove standard 'window-all-closed' handler to prevent it from calling app.quit() 
-    // before the installer process can be spawned and configured by electron-updater.
+    // Crucial: Detach standard 'window-all-closed' lifecycle handler so it doesn't interrupt the transition
+    logMsg('INFO', 'Deregistering general close listeners...');
     app.removeAllListeners('window-all-closed');
     app.on('window-all-closed', () => {
-      // Do nothing, let autoUpdater.quitAndInstall() manage the exit sequence
+      logMsg('INFO', 'Inhibited automatic app.quit on window closing to delegate control to autoUpdater.');
     });
 
-    // Destroy all windows to completely unlock files/scripts in the Electron app
+    // Close and destroy all standard render windows to release all dynamic file handles
+    logMsg('INFO', 'Destroying all active Electron BrowserWindow objects...');
     BrowserWindow.getAllWindows().forEach((win) => {
       try {
         if (!win.isDestroyed()) {
+          logMsg('INFO', `Closing window instance: ${win.getTitle()}`);
           win.destroy();
         }
       } catch (e) {
-        console.error('Error destroying window:', e);
+        logMsg('ERROR', 'Error encountered during window force shutdown:', e);
       }
     });
 
-    // Wait 1.2 seconds for the operating system to completely release file locks on processes and resources
+    // Wait exactly 1.5 seconds to guarantee OS level release of files, DLL locks, and child processes
+    logMsg('INFO', 'Waiting for file locks to clear (grace-period active: 1500ms)...');
     setTimeout(() => {
       try {
-        console.log('Replacing process via autoUpdater.quitAndInstall...');
-        // quitAndInstall(isSilent, isForceRunAfter)
-        // using (true, true) to run silently and relaunch, or false if the installer needs to show progress
-        autoUpdater.quitAndInstall(true, true);
+        logMsg('INFO', 'Invoking installer execute sequence: autoUpdater.quitAndInstall(isSilent=false, isForceRunAfter=true)...');
+        // By using isSilent = false, we run with normal UI which requests UAC beautifully and avoids silent Windows blocks
+        autoUpdater.quitAndInstall(false, true);
       } catch (err) {
-        console.error('Failed to trigger quitAndInstall, performing fallback app.quit:', err);
+        logMsg('ERROR', 'Severe failure during quitAndInstall invoke. Attempting application quit fallback:', err);
         app.quit();
       }
-    }, 1200);
+    }, 1500);
   });
 });
 
@@ -147,7 +244,7 @@ function createSplashWindow() {
     alwaysOnTop: true,
     resizable: false,
     show: false,
-    icon: path.join(__dirname, 'logo.png'),
+    icon: appIconPath || undefined,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
@@ -273,7 +370,7 @@ function createMainWindow() {
     minHeight: 650,
     title: 'LOXX',
     show: false, // Solid background loaded first under splash
-    icon: path.join(__dirname, 'logo.png'),
+    icon: appIconPath || undefined,
     autoHideMenuBar: true,
     backgroundColor: '#0a0a0f',
     frame: false, // Custom styled borderless window
@@ -329,14 +426,15 @@ function setupTray() {
     let trayIcon = null;
 
     // List of probable paths for the tray icon across development and packaged versions
-    const pathsToSearch = [
-      path.join(__dirname, 'logo.png'),
+    const pathsToSearch = [];
+    if (appIconPath) pathsToSearch.push(appIconPath);
+    pathsToSearch.push(
       path.join(__dirname, 'assets', 'tray.png'),     // Best practice: Subfolder assets/
       path.join(__dirname, 'tray.png'),               // Fallback: Root folder
       path.join(__dirname, 'build', 'tray.png'),       // Dev mode fallback
       path.join(__dirname, 'build', 'icon.ico'),       // Installer source fallback
       path.join(__dirname, '../public/logo_square.png') // Web client resource fallback
-    ];
+    );
 
     for (const imgPath of pathsToSearch) {
       if (fs.existsSync(imgPath)) {
