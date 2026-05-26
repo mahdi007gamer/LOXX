@@ -55,7 +55,7 @@ if (!gotTheLock) {
   if (process.platform === 'win32') {
     app.setAppUserModelId(app.isPackaged ? 'ir.loxx.launcher' : process.execPath);
     
-    // Create/Truncate log file for clean session debugging and setup visual PowerShell log console
+    // Create/Truncate log file for clean troubleshooting diagnostics silently without launching PowerShell
     const startBanner = `[${new Date().toISOString()}] [INFO] ===================================================\r\n` +
                         `[${new Date().toISOString()}] [INFO]     LOXX CLIENT LIFECYCLE MONITOR ACTIVE\r\n` +
                         `[${new Date().toISOString()}] [INFO]     Version: ${app.getVersion()}\r\n` +
@@ -65,30 +65,9 @@ if (!gotTheLock) {
                         `[${new Date().toISOString()}] [INFO] ===================================================\r\n`;
     try {
       fs.writeFileSync(logFile, startBanner, 'utf8');
-      
-      const psScript = `
-Clear-Host
-$host.UI.RawUI.WindowTitle = 'LOXX CLI Monitor & Package Updater'
-Write-Host '===========================================================' -ForegroundColor Cyan
-Write-Host '          LOXX CLIENT UPDATER & DIAGNOSTIC CONSOLE         ' -ForegroundColor Green
-Write-Host '===========================================================' -ForegroundColor Cyan
-Write-Host 'This terminal logs the entire update lifecycle and process events.' -ForegroundColor Gray
-Write-Host 'Log Path: ${logFile}' -ForegroundColor DarkGray
-Write-Host '-----------------------------------------------------------' -ForegroundColor Yellow
-Get-Content -Path '${logFile.replace(/'/g, "''")}' -Wait -Tail 15
-`;
-      const tempPs1 = path.join(app.getPath('temp'), 'loxx-logger.ps1');
-      fs.writeFileSync(tempPs1, psScript, 'utf8');
-
-      const { spawn } = require('child_process');
-      spawn('cmd.exe', ['/c', 'start', 'LOXX LOG MONITOR', 'powershell', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', tempPs1], {
-        detached: true,
-        stdio: 'ignore'
-      }).unref();
-      
-      logMsg('INFO', 'Launched real-time interactive logging terminal for update session.');
+      logMsg('INFO', 'Initialized silent diagnostics lifecycle log targets.');
     } catch (err) {
-      console.error('Failed to configure visual upgrader terminal overlay:', err);
+      console.error('Failed to initialize session event log format:', err);
     }
   }
 
@@ -177,60 +156,53 @@ autoUpdater.on('update-downloaded', (info) => {
   logMsg('INFO', `Downloaded version details:`, info);
   sendUpdateStatus('ready', 100);
   
-  dialog.showMessageBox({
-    type: 'info',
-    title: 'بروزرسانی آماده نصب',
-    message: `نسخه جدید لوکس (${info.version}) با موفقیت دانلود شد!`,
-    detail: 'برنامه به صورت خودکار بسته شده و بروزرسانی جدید نصب خواهد شد تا لوکس مجددا با امکانات جدید اجرا شود.',
-    buttons: ['نصب و راه‌اندازی مجدد']
-  }).then(() => {
-    logMsg('INFO', 'User accepted update installation. Commencing forceful process shutdown sequences...');
-    isQuitting = true;
-    
-    // Safely destroy system tray to release resource handles
-    if (tray) {
-      try {
-        logMsg('INFO', 'Destroying system tray object references...');
-        tray.destroy();
-        tray = null;
-      } catch (e) {
-        logMsg('ERROR', 'Failed during system tray destruction:', e);
-      }
+  // Launch seamless background automatic update & restart without a dialog prompt
+  logMsg('INFO', 'Automatic background install sequence initiated. Commencing forceful process shutdown sequences...');
+  isQuitting = true;
+  
+  // Safely destroy system tray to release resource handles
+  if (tray) {
+    try {
+      logMsg('INFO', 'Destroying system tray object references...');
+      tray.destroy();
+      tray = null;
+    } catch (e) {
+      logMsg('ERROR', 'Failed during system tray destruction:', e);
     }
+  }
 
-    // Crucial: Detach standard 'window-all-closed' lifecycle handler so it doesn't interrupt the transition
-    logMsg('INFO', 'Deregistering general close listeners...');
-    app.removeAllListeners('window-all-closed');
-    app.on('window-all-closed', () => {
-      logMsg('INFO', 'Inhibited automatic app.quit on window closing to delegate control to autoUpdater.');
-    });
-
-    // Close and destroy all standard render windows to release all dynamic file handles
-    logMsg('INFO', 'Destroying all active Electron BrowserWindow objects...');
-    BrowserWindow.getAllWindows().forEach((win) => {
-      try {
-        if (!win.isDestroyed()) {
-          logMsg('INFO', `Closing window instance: ${win.getTitle()}`);
-          win.destroy();
-        }
-      } catch (e) {
-        logMsg('ERROR', 'Error encountered during window force shutdown:', e);
-      }
-    });
-
-    // Wait exactly 1.5 seconds to guarantee OS level release of files, DLL locks, and child processes
-    logMsg('INFO', 'Waiting for file locks to clear (grace-period active: 1500ms)...');
-    setTimeout(() => {
-      try {
-        logMsg('INFO', 'Invoking installer execute sequence: autoUpdater.quitAndInstall(isSilent=false, isForceRunAfter=true)...');
-        // By using isSilent = false, we run with normal UI which requests UAC beautifully and avoids silent Windows blocks
-        autoUpdater.quitAndInstall(false, true);
-      } catch (err) {
-        logMsg('ERROR', 'Severe failure during quitAndInstall invoke. Attempting application quit fallback:', err);
-        app.quit();
-      }
-    }, 1500);
+  // Crucial: Detach standard 'window-all-closed' lifecycle handler so it doesn't interrupt the transition
+  logMsg('INFO', 'Deregistering general close listeners...');
+  app.removeAllListeners('window-all-closed');
+  app.on('window-all-closed', () => {
+    logMsg('INFO', 'Inhibited automatic app.quit on window closing to delegate control to autoUpdater.');
   });
+
+  // Close and destroy all standard render windows to release all dynamic file handles
+  logMsg('INFO', 'Destroying all active Electron BrowserWindow objects...');
+  BrowserWindow.getAllWindows().forEach((win) => {
+    try {
+      if (!win.isDestroyed()) {
+        logMsg('INFO', `Closing window instance: ${win.getTitle()}`);
+        win.destroy();
+      }
+    } catch (e) {
+      logMsg('ERROR', 'Error encountered during window force shutdown:', e);
+    }
+  });
+
+  // Wait exactly 1.5 seconds to guarantee OS level release of files, DLL locks, and child processes
+  logMsg('INFO', 'Waiting for file locks to clear (grace-period active: 1500ms)...');
+  setTimeout(() => {
+    try {
+      logMsg('INFO', 'Invoking installer execute sequence: autoUpdater.quitAndInstall(isSilent=false, isForceRunAfter=true)...');
+      // By using isSilent = false, we run with normal UI which requests UAC beautifully and avoids silent Windows blocks
+      autoUpdater.quitAndInstall(false, true);
+    } catch (err) {
+      logMsg('ERROR', 'Severe failure during quitAndInstall invoke. Attempting application quit fallback:', err);
+      app.quit();
+    }
+  }, 1500);
 });
 
 // Append switches to prevent background throttling of voice context & keys
