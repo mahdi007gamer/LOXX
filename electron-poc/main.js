@@ -112,6 +112,7 @@ autoUpdater.logger = {
 // Configure autoUpdater settings
 autoUpdater.autoDownload = true;
 autoUpdater.autoInstallOnAppQuit = false; // Disable automatic installer launch on app quit to prevent lock conflicts
+autoUpdater.disableDifferentialDownload = true; // Use full installer download to prevent blockmap matching issues & ENOENT helper cache exceptions
 
 // Disable & bypass code signing verification checks for development/unsigned releases on Windows and MacOS
 autoUpdater.verifySignature = async function(tempUpdateFile) {
