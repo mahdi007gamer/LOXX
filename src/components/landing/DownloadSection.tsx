@@ -82,7 +82,7 @@ export const DownloadSection = () => {
           // Keep the first candidate as the default fallback in case all probe tests fail
           let selectedUrl = candidates[0] || "https://loxx.ir/updater/loxx-setup.exe";
 
-          // Probe candidates asynchronously to find the first 200 OK URL
+          // Probe candidates asynchronously to find the first 200 OK URL that is not HTML
           const probeUrls = async () => {
             for (const cand of candidates) {
               try {
@@ -97,7 +97,11 @@ export const DownloadSection = () => {
 
                 clearTimeout(timeoutId);
 
-                if (probeRes.status === 200) {
+                const contentType = probeRes.headers.get("content-type") || "";
+                
+                // If it returns 200 but it's HTML, Nginx is fallback-routing to index.html (SPA).
+                // A real installer executable will NOT have text/html in Content-Type.
+                if (probeRes.status === 200 && !contentType.toLowerCase().includes("text/html")) {
                   selectedUrl = cand;
                   console.log("[Loxx Updater Resilient Sniffer] Successfully found live URL:", cand);
                   break; // Found working URL! Exit loop
