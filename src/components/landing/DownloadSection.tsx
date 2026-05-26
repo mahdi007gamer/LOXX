@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { motion } from "motion/react";
 import { Monitor, Apple, Smartphone, Download } from "lucide-react";
 import { GlowButton } from "../ui/GlowButton";
 
 export const DownloadSection = () => {
   const [windowsVersion, setWindowsVersion] = useState<string | null>(null);
-  const [windowsUrl, setWindowsUrl] = useState<string>("https://loxx.ir/updater/loxx-setup.exe");
+  const [windowsUrl, setWindowsUrl] = useState<string>("https://cdn.imgurl.ir/uploads/o691335_loxx_Setup_1.1.0.exe");
 
   useEffect(() => {
     // Attempt to fetch latest.yml to get the exact version/url
@@ -79,8 +80,8 @@ export const DownloadSection = () => {
           addCandidate("https://loxx.ir/updater/loxx%20Setup.exe");
           addCandidate("https://loxx.ir/updater/Loxx%20Setup.exe");
 
-          // Keep the first candidate as the default fallback in case all probe tests fail
-          let selectedUrl = candidates[0] || "https://loxx.ir/updater/loxx-setup.exe";
+          // Keep the temporary stable link as the default fallback in case all probe tests fail
+          let selectedUrl = "https://cdn.imgurl.ir/uploads/o691335_loxx_Setup_1.1.0.exe";
 
           // Probe candidates asynchronously to find the first 200 OK URL that is not HTML
           const probeUrls = async () => {
@@ -172,7 +173,7 @@ export const DownloadSection = () => {
                 روان‌ترین تجربه تماس صوتی ریل‌تایم درون بازی + سیستم هوشمند ضد لگ و پینگ کم
               </p>
               
-              <a href={windowsUrl} target="_blank" rel="noreferrer" className="w-full z-10">
+              <Link to="/download" className="w-full z-10">
                 <motion.div
                   whileHover={{ scale: 1.04 }}
                   whileTap={{ scale: 0.98 }}
@@ -199,7 +200,7 @@ export const DownloadSection = () => {
                     </span>
                   </button>
                 </motion.div>
-              </a>
+              </Link>
               
               {/* Extra micro labels underneath button */}
               <span className="mt-3 text-[10px] text-neon-blue font-black tracking-widest uppercase z-10 group-hover:text-neon-pink transition-colors">

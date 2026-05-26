@@ -52,6 +52,7 @@ import { PrivacyPage } from "./pages/PrivacyPage";
 
 import { PublicProfilePage } from "./pages/PublicProfilePage";
 import { ElectronSettingsPage } from "./pages/ElectronSettingsPage";
+import { DownloadPage } from "./pages/DownloadPage";
 
 const AppContent = () => {
   const { isSidebarCollapsed } = useAuth();
@@ -90,7 +91,7 @@ const AppContent = () => {
   }, [currentHash, location.pathname, navigate]);
 
   const isOverlayWidget = location.pathname === "/overlay" || currentHash.includes("/overlay");
-  const isLanding = location.pathname === "/" && !currentHash.startsWith("#/");
+  const isLanding = (location.pathname === "/" || location.pathname === "/download") && !currentHash.startsWith("#/");
   const hideSidebar = isLanding || location.pathname === "/auth" || isOverlayWidget;
   const isElectron = typeof window !== "undefined" && !!(window as any).electronAPI;
   const [isMaximized, setIsMaximized] = useState(false);
@@ -393,6 +394,7 @@ const AppContent = () => {
       <main className={cn("relative", !isLanding && !isOverlayWidget && (isElectron ? "pt-[100px]" : "pt-16"))}>
         <Routes>
           <Route path="/" element={<LandingPage />} />
+          <Route path="/download" element={<DownloadPage />} />
           <Route path="/auth" element={<AuthPage />} />
           <Route path="/auth/bale/callback" element={<BaleCallbackPage />} />
           

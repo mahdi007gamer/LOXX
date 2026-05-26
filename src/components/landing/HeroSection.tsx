@@ -87,40 +87,40 @@ export const HeroSection = () => {
         </div>
 
         <div className="w-full max-w-lg mx-auto px-4 sm:px-0 mt-2">
-          <motion.div 
-            onClick={() => document.getElementById('download')?.scrollIntoView({ behavior: 'smooth' })} 
-            className="block w-full cursor-pointer group"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-             <div className="relative w-full py-4 px-6 rounded-2xl bg-[#090b14]/90 border border-neon-blue/40 text-white font-black text-lg flex items-center justify-center gap-3 shadow-[0_4px_30px_rgba(0,229,255,0.15)] hover:shadow-[0_4px_45px_rgba(0,229,255,0.35)] hover:border-neon-pink transition-all duration-300 overflow-hidden">
-                {/* Glowing subtle ambient behind button */}
-                <div className="absolute inset-0 bg-gradient-to-r from-neon-blue/10 via-transparent to-neon-blue/10 opacity-50 group-hover:opacity-100 transition-opacity" />
-                
-                {/* Shiny Sweep Overlay */}
-                <motion.div
-                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/15 to-transparent -skew-x-12 pointer-events-none"
-                  animate={{
-                    x: ['-100%', '200%'],
-                  }}
-                  transition={{
-                    repeat: Infinity,
-                    duration: 2.8,
-                    ease: "linear"
-                  }}
-                />
+          <Link to="/download" className="block w-full group">
+            <motion.div 
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+               <div className="relative w-full py-4 px-6 rounded-2xl bg-[#090b14]/90 border border-neon-blue/40 text-white font-black text-lg flex items-center justify-center gap-3 shadow-[0_4px_30px_rgba(0,229,255,0.15)] hover:shadow-[0_4px_45px_rgba(0,229,255,0.35)] hover:border-neon-pink transition-all duration-300 overflow-hidden">
+                  {/* Glowing subtle ambient behind button */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-neon-blue/10 via-transparent to-neon-blue/10 opacity-50 group-hover:opacity-100 transition-opacity" />
+                  
+                  {/* Shiny Sweep Overlay */}
+                  <motion.div
+                    className="absolute inset-0 bg-gradient-to-r from-transparent via-white/15 to-transparent -skew-x-12 pointer-events-none"
+                    animate={{
+                      x: ['-100%', '200%'],
+                    }}
+                    transition={{
+                      repeat: Infinity,
+                      duration: 2.8,
+                      ease: "linear"
+                    }}
+                  />
 
-                <Download size={20} className="text-neon-blue animate-bounce group-hover:text-neon-pink transition-colors duration-300" />
-                
-                <span className="bg-gradient-to-r from-white to-gray-200 bg-clip-text text-transparent group-hover:from-neon-blue group-hover:to-teal-300 transition-all duration-500">
-                  دریافت و دانلود اپلیکیشن لوکس
-                </span>
-                
-                <span className="text-[10px] bg-neon-blue/15 border border-neon-blue/30 text-neon-blue px-2 py-0.5 rounded-md font-bold group-hover:bg-neon-pink/15 group-hover:border-neon-pink/30 group-hover:text-neon-pink transition-colors">
-                  آخرین نسخه
-                </span>
-             </div>
-          </motion.div>
+                  <Download size={20} className="text-neon-blue animate-bounce group-hover:text-neon-pink transition-colors duration-300" />
+                  
+                  <span className="bg-gradient-to-r from-white to-gray-200 bg-clip-text text-transparent group-hover:from-neon-blue group-hover:to-teal-300 transition-all duration-500">
+                    دریافت و دانلود اپلیکیشن لوکس
+                  </span>
+                  
+                  <span className="text-[10px] bg-neon-blue/15 border border-neon-blue/30 text-neon-blue px-2 py-0.5 rounded-md font-bold group-hover:bg-neon-pink/15 group-hover:border-neon-pink/30 group-hover:text-neon-pink transition-colors">
+                    آخرین نسخه
+                  </span>
+               </div>
+            </motion.div>
+          </Link>
         </div>
       </motion.div>
 
