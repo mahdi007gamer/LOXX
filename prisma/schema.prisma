@@ -406,6 +406,8 @@ model Penalty {
 
 model UploadedGif {
   id           String   @id @default(uuid())
+  title        String   @default("")
+  tags         String   @default("")
   originalName String
   size         Int
   url          String

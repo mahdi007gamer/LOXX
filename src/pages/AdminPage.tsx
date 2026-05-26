@@ -22,7 +22,7 @@ import { AuthorizedImage } from "../components/ui/AuthorizedImage";
 
 export const AdminPage = () => {
   const { isSidebarCollapsed } = useAuth();
-  const [activeTab, setActiveTab] = useState<"users" | "games" | "payments" | "paymentsHistory" | "genres" | "badges" | "reports">("users");
+  const [activeTab, setActiveTab] = useState<"users" | "games" | "payments" | "paymentsHistory" | "genres" | "badges" | "reports" | "gifs">("users");
   const [users, setUsers] = useState<any[]>([]);
   const [games, setGames] = useState<any[]>([]);
   const [payments, setPayments] = useState<any[]>([]);
@@ -30,6 +30,20 @@ export const AdminPage = () => {
   const [genres, setGenres] = useState<any[]>([]);
   const [badges, setBadges] = useState<any[]>([]);
   const [reports, setReports] = useState<any[]>([]);
+  const [gifs, setGifs] = useState<any[]>([]);
+  
+  // New Admin GIF States
+  const [newGifFile, setNewGifFile] = useState<File | null>(null);
+  const [newGifTitle, setNewGifTitle] = useState("");
+  const [newGifTags, setNewGifTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState("");
+  const [isUploadingGif, setIsUploadingGif] = useState(false);
+  
+  // Editing states
+  const [editingGifId, setEditingGifId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editTags, setEditTags] = useState("");
+
   const [loading, setLoading] = useState(true);
   const [isGameModalOpen, setIsGameModalOpen] = useState(false);
   const [isGenreModalOpen, setIsGenreModalOpen] = useState(false);
@@ -74,6 +88,9 @@ export const AdminPage = () => {
       } else if (activeTab === "reports") {
         const res = await api.get("/reports/admin").catch(() => ({ data: { data: [] } }));
         setReports(res.data.data || []);
+      } else if (activeTab === "gifs") {
+        const res = await api.get(`/upload/gifs?q=${searchTerm}`).catch(() => ({ data: [] }));
+        setGifs(res.data || []);
       }
     } catch (err) {
       toast.error("خطا در بارگذاری داده‌ها");
@@ -239,6 +256,15 @@ export const AdminPage = () => {
                گزارش‌های تخلف
                {activeTab === "reports" && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-neon-blue shadow-[0_0_15px_#00E5FF]" />}
              </button>
+              <button
+                onClick={() => setActiveTab("gifs")}
+                className={`pb-4 px-6 text-sm font-black uppercase tracking-widest transition-all relative ${
+                  activeTab === "gifs" ? "text-neon-blue" : "text-gray-500 hover:text-gray-300"
+                }`}
+              >
+                گیف‌ها (گالری)
+                {activeTab === "gifs" && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-neon-blue shadow-[0_0_15px_#00E5FF]" />}
+              </button>
           </div>
 
           {activeTab === "users" ? (
@@ -1002,6 +1028,271 @@ export const AdminPage = () => {
                       </motion.div>
                    )}
                 </AnimatePresence>
+             </div>
+          ) : activeTab === "gifs" ? (
+             <div className="space-y-6">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-[#0d0d12] p-8 rounded-[40px] border border-white/5 shadow-2xl relative overflow-hidden group">
+                   <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                      <Icons.Image size={120} />
+                   </div>
+                   <div className="text-center md:text-right relative z-10">
+                     <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter mb-1">گالری گیف‌های آماده لوکس</h2>
+                     <p className="text-[10px] text-gray-400 font-bold uppercase tracking-[0.2em] italic">گیف‌های آماده‌ای که کاربران در چت به آن‌ها دسترسی دارند را مدیریت کنید</p>
+                   </div>
+                   <div className="flex flex-wrap justify-center gap-3 relative z-10">
+                      <div className="h-10 w-10 rounded-2xl bg-neon-blue/10 flex items-center justify-center text-neon-blue border border-neon-blue/20">
+                         <Icons.Flame size={20} />
+                      </div>
+                      <span className="text-white font-black italic">{gifs.length} گیف در سیستم</span>
+                   </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                  <div className="lg:col-span-1 bg-[#0d0d12]/60 border border-white/5 p-6 rounded-[32px] space-y-6 h-fit">
+                    <h3 className="text-lg font-black text-white italic">آپلود گیف جدید</h3>
+                    <div 
+                      className={`border-2 border-dashed rounded-2xl p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-all hover:bg-white/[0.01] h-40 relative group ${newGifFile ? "border-neon-blue/50" : "border-white/10 hover:border-white/20"}`}
+                      onClick={() => document.getElementById("admin-gif-file-picker")?.click()}
+                    >
+                      <input 
+                        id="admin-gif-file-picker"
+                        type="file" 
+                        accept="image/gif"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            if (file.type !== "image/gif") {
+                              toast.error("فقط فایل‌های گیف مجاز هستند.");
+                              return;
+                            }
+                            setNewGifFile(file);
+                            if (!newGifTitle) {
+                              setNewGifTitle(file.name.replace(/\\.gif$/i, ''));
+                            }
+                          }
+                        }}
+                      />
+                      {newGifFile ? (
+                        <div className="text-center space-y-2">
+                          <Icons.FileCheck className="text-neon-blue mx-auto" size={36} />
+                          <p className="text-xs text-white font-bold w-48 truncate">{newGifFile.name}</p>
+                          <p className="text-[10px] text-gray-500 font-mono">{(newGifFile.size / (1024 * 1024)).toFixed(2)} MB</p>
+                        </div>
+                      ) : (
+                        <div className="text-center space-y-1">
+                          <Icons.UploadCloud className="text-gray-400 group-hover:text-white transition-colors mx-auto" size={36} />
+                          <p className="text-xs text-gray-300 font-bold">انتخاب فایل گیف</p>
+                          <p className="text-[10px] text-gray-500">یا فایل را اینجا بکشید و رها کنید</p>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs text-gray-400 font-bold">عنوان گیف</label>
+                      <input 
+                        type="text" 
+                        value={newGifTitle}
+                        onChange={(e) => setNewGifTitle(e.target.value)}
+                        placeholder="با این گیف چه احساسی بروز داده میشه؟"
+                        className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-neon-blue/40 font-bold"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-xs text-gray-400 font-bold flex justify-between">
+                        <span>تگ‌ها / کلمات کلیدی (فارسی/انگلیسی)</span>
+                        <span className="text-[9px] text-gray-500">برای ثبت اینتر بزنید</span>
+                      </label>
+                      <input 
+                        type="text" 
+                        value={tagInput}
+                        onChange={(e) => setTagInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            const val = tagInput.trim().toLowerCase();
+                            if (val && !newGifTags.includes(val)) {
+                              setNewGifTags(prev => [...prev, val]);
+                            }
+                            setTagInput("");
+                          }
+                        }}
+                        placeholder="ثبت با اینتر... (مثلا: خنده، شادی)"
+                        className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-neon-blue/40 font-bold"
+                      />
+                      <div className="flex flex-wrap gap-1.5 mt-2">
+                        {newGifTags.map((tag, idx) => (
+                          <span 
+                            key={idx} 
+                            onClick={() => setNewGifTags(prev => prev.filter(t => t !== tag))}
+                            className="text-[10px] bg-neon-blue/10 text-neon-blue border border-neon-blue/20 hover:bg-neon-red/10 hover:text-neon-red hover:border-neon-red/20 font-bold px-2.5 py-1 rounded-full flex items-center gap-1 cursor-pointer transition-colors"
+                          >
+                            <span>#{tag}</span>
+                            <X size={10} />
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    <GlowButton 
+                      variant="blue" 
+                      className="w-full h-12 text-xs font-black"
+                      disabled={isUploadingGif || !newGifFile}
+                      onClick={async () => {
+                        if (!newGifFile) return;
+                        setIsUploadingGif(true);
+                        const formData = new FormData();
+                        formData.append("file", newGifFile);
+                        formData.append("title", newGifTitle);
+                        formData.append("tags", newGifTags.join(","));
+
+                        try {
+                          await api.post("/upload/gifs/store", formData, {
+                            headers: { "Content-Type": "multipart/form-data" }
+                          });
+                          toast.success("گیف گالری با موفقیت ثبت شد.");
+                          setNewGifFile(null);
+                          setNewGifTitle("");
+                          setNewGifTags([]);
+                          fetchData();
+                        } catch (err: any) {
+                          toast.error(err.response?.data?.error || "خطا در آپلود گیف");
+                        } finally {
+                          setIsUploadingGif(false);
+                        }
+                      }}
+                    >
+                      {isUploadingGif ? "در حال آپلود و بهینه‌سازی..." : "آپلود و ذخیره در گالری"}
+                    </GlowButton>
+                  </div>
+
+                  <div className="lg:col-span-2 space-y-4">
+                     <div className="flex justify-between items-center bg-[#0d0d12]/40 border border-white/5 px-6 py-4 rounded-2xl">
+                        <span className="text-xs text-gray-400 font-bold">برای جستجو از کادر بالا استفاده کنید...</span>
+                     </div>
+                     
+                     {gifs.length === 0 ? (
+                       <div className="py-24 text-center text-gray-500 font-bold text-sm bg-[#0d0d12]/30 border border-white/5 rounded-3xl">
+                         گیفی یافت نشد. تگ یا عنوان متفاوتی جستجو کنید یا گیف جدید بسازید.
+                       </div>
+                     ) : (
+                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                         {gifs.map((gif) => {
+                           const isEditing = editingGifId === gif.id;
+                           return (
+                             <motion.div 
+                               key={gif.id}
+                               layout
+                               className="bg-[#0d0d12] border border-white/5 rounded-2xl overflow-hidden shadow-xl p-3 relative group flex flex-col gap-2 transition-all hover:border-white/10"
+                             >
+                               <div className="h-32 rounded-xl bg-black/40 border border-white/5 overflow-hidden flex items-center justify-center relative">
+                                 <img 
+                                   src={gif.url} 
+                                   alt={gif.title || gif.originalName} 
+                                   className="max-h-full max-w-full object-contain" 
+                                 />
+                               </div>
+
+                               {isEditing ? (
+                                 <div className="space-y-2 mt-1">
+                                    <input 
+                                      type="text" 
+                                      value={editTitle}
+                                      onChange={(e) => setEditTitle(e.target.value)} 
+                                      placeholder="عنوان" 
+                                      className="w-full bg-white/5 border border-white/10 text-xs px-2 py-1.5 rounded text-white font-bold"
+                                    />
+                                    <input 
+                                      type="text" 
+                                      value={editTags}
+                                      onChange={(e) => setEditTags(e.target.value)} 
+                                      placeholder="تگ‌ها (با کاما جدا کنید)" 
+                                      className="w-full bg-white/5 border border-white/10 text-[10px] px-2 py-1.5 rounded text-gray-300 font-mono"
+                                    />
+                                    <div className="flex gap-1.5">
+                                      <button 
+                                        className="flex-1 bg-neon-blue/20 hover:bg-neon-blue/30 text-neon-blue border border-neon-blue/20 rounded py-1 text-[10px] font-bold"
+                                        onClick={async () => {
+                                          try {
+                                            await api.put(`/upload/gifs/${gif.id}`, { title: editTitle, tags: editTags });
+                                            toast.success("ویرایش ذخیره شد");
+                                            setEditingGifId(null);
+                                            fetchData();
+                                          } catch {
+                                            toast.error("خطا در ذخیره ویرایش");
+                                          }
+                                        }}
+                                      >
+                                        ذخیره
+                                      </button>
+                                      <button 
+                                        className="flex-1 bg-white/5 hover:bg-white/10 text-gray-400 rounded py-1 text-[10px]"
+                                        onClick={() => setEditingGifId(null)}
+                                      >
+                                        انصراف
+                                      </button>
+                                    </div>
+                                 </div>
+                               ) : (
+                                 <div className="flex-1 flex flex-col justify-between mt-1 min-h-[50px]">
+                                   <div>
+                                      <h4 className="text-xs font-black text-white truncate w-full" title={gif.title}>
+                                        {gif.title || "بدون عنوان"}
+                                      </h4>
+                                      <p className="text-[9px] text-gray-500 truncate font-mono mt-0.5">{gif.originalName}</p>
+                                   </div>
+                                   
+                                   <div className="flex flex-wrap gap-1 mt-1.5 h-6 overflow-hidden">
+                                     {gif.tags ? gif.tags.split(",").map((tag, idx) => (
+                                        <span key={idx} className="text-[8px] bg-white/[0.04] text-gray-400 px-1.5 py-0.5 rounded-md">
+                                          #{tag}
+                                        </span>
+                                     )) : (
+                                       <span className="text-[8px] text-gray-600 italic">بدون تگ</span>
+                                     )}
+                                   </div>
+                                 </div>
+                               )}
+
+                               {!isEditing && (
+                                 <div className="absolute top-4 right-4 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button 
+                                      onClick={() => {
+                                        setEditingGifId(gif.id);
+                                        setEditTitle(gif.title || "");
+                                        setEditTags(gif.tags || "");
+                                      }}
+                                      className="h-8 w-8 rounded-lg bg-black/80 text-gray-400 hover:text-neon-blue hover:bg-black transition-all flex items-center justify-center border border-white/10"
+                                      title="ویرایش تگ‌ها و عنوان"
+                                    >
+                                       <Edit2 size={12} />
+                                    </button>
+                                    <button 
+                                      onClick={async () => {
+                                        if (!confirm("آیا از حذف این گیف از سیستم دیتابیس و دیسک اطمینان دارید؟")) return;
+                                        try {
+                                          await api.delete(`/upload/gifs/${gif.id}`);
+                                          toast.success("با موفقیت حذف شد");
+                                          fetchData();
+                                        } catch {
+                                          toast.error("خطا رخ داد");
+                                        }
+                                      }}
+                                      className="h-8 w-8 rounded-lg bg-black/80 text-gray-400 hover:text-neon-red hover:bg-black transition-all flex items-center justify-center border border-white/10"
+                                      title="حذف گیف"
+                                    >
+                                       <Trash2 size={12} />
+                                    </button>
+                                 </div>
+                               )}
+                             </motion.div>
+                           );
+                         })}
+                       </div>
+                     )}
+                  </div>
+                </div>
              </div>
           ) : null}
         </div>

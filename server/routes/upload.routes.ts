@@ -101,4 +101,10 @@ router.get("/file/gifs/:filename", UploadController.getGifFile);
 router.get("/file/:filename", UploadController.getFile);
 router.get("/receipt/:filename", authenticate, UploadController.getReceipt);
 
+// Dynamic GIFs Gallery endpoints
+router.get("/gifs", authenticate, UploadController.listGifs);
+router.put("/gifs/:id", authenticate, UploadController.updateGif);
+router.delete("/gifs/:id", authenticate, UploadController.deleteGif);
+router.post("/gifs/store", authenticate, upload.single("file"), UploadController.adminUploadGif);
+
 export default router;

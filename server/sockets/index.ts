@@ -1132,7 +1132,9 @@ export function setupWebSockets(io: Server) {
 
       // Profanity & Link Filter
       const hasLink = /(https?:\/\/[^\s]+)|(www\.[^\s]+)|([a-zA-Z0-9-]+\.[a-zA-Z]{2,})/i.test(content);
-      if (hasLink && user.role !== "ADMIN") {
+      const isGifOrImage = content.includes("[GIF]:") || content.includes("[IMAGE]:");
+      const isVip = user.profile?.membershipType === "VIP";
+      if (hasLink && user.role !== "ADMIN" && !isGifOrImage && !isVip) {
          if (ack) ack({ status: "error", error: { code: "FORBIDDEN_LINK", message: "ارسال لینک در چت عمومی ممنوع است." } });
          return;
       }

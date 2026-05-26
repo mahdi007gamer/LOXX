@@ -645,6 +645,22 @@ export const ChatPage: React.FC = () => {
   const [reportingMessage, setReportingMessage] = useState<ChatMessage | null>(null);
   const [reportReason, setReportReason] = useState("");
 
+  // Builtin GIF gallery states
+  const [builtinGifs, setBuiltinGifs] = useState<any[]>([]);
+  const [builtinSearch, setBuiltinSearch] = useState("");
+
+  useEffect(() => {
+    if (showGifPicker && gifTab === "builtin") {
+      api.get(`/upload/gifs?q=${builtinSearch}`)
+        .then(res => {
+          setBuiltinGifs(res.data || []);
+        })
+        .catch(err => {
+          console.error("[CHAT] Failed to load builtin gallery gifs:", err);
+        });
+    }
+  }, [showGifPicker, gifTab, builtinSearch]);
+
   const handleGroupAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -2417,7 +2433,7 @@ export const ChatPage: React.FC = () => {
                         const labels: Record<string, string> = {
                           emojis: "😀 شکلک‌ها",
                           saved: "⭐ ذخیره شده",
-                          builtin: "🔥 آماده لوکس",
+                          builtin: "🔥 گالری گیف‌ها",
                           upload: "🚀 آپلود GIF"
                         };
                         const isActive = gifTab === tab;
@@ -2503,30 +2519,52 @@ export const ChatPage: React.FC = () => {
                       )}
 
                       {gifTab === "builtin" && (
-                        <div className="grid grid-cols-3 gap-2 p-1">
-                          {[
-                            { name: "بازی عالی (GG)", url: "https://media.giphy.com/media/2sXFov3LclhDIFP7o0/giphy.gif" },
-                            { name: "خنده زامبی", url: "https://media.giphy.com/media/10yXFYdbFrk2T6/giphy.gif" },
-                            { name: "عالیه", url: "https://media.giphy.com/media/l41YmQjdoKs4hg3tK/giphy.gif" },
-                            { name: "پشمام", url: "https://media.giphy.com/media/tfUW8mhiFk8NlJhgEh/giphy.gif" },
-                            { name: "شد شد", url: "https://media.giphy.com/media/X9ndB7gOInIn2D6RVK/giphy.gif" },
-                            { name: "خشم گیمر", url: "https://media.giphy.com/media/3xz2BLBOKhb9s56R68/giphy.gif" },
-                            { name: "پیروزی رقص", url: "https://media.giphy.com/media/t3sXe4LbW6aozMLVKb/giphy.gif" },
-                            { name: "دست زدن", url: "https://media.giphy.com/media/nbvFVgPrUE68uB6Ig3/giphy.gif" },
-                            { name: "گریه گیمینگ", url: "https://media.giphy.com/media/3o6wrvdHFbwBrUFenu/giphy.gif" }
-                          ].map((item, index) => (
-                            <div key={index} className="rounded-xl overflow-hidden border border-white/5 bg-white/[0.01] hover:border-neon-pink/40 hover:bg-neon-pink/[0.02] flex flex-col items-center p-1 transition-all">
-                              <div className="h-20 w-full flex items-center justify-center bg-black/40 rounded-lg overflow-hidden">
-                                <img 
-                                  src={item.url} 
-                                  alt={item.name} 
-                                  className="max-h-full max-w-full object-contain cursor-pointer" 
-                                  onClick={() => handleSendGif(item.url)} 
-                                />
-                              </div>
-                              <span className="text-[10px] text-gray-400 mt-1 text-center font-bold">{item.name}</span>
+                        <div className="space-y-3 font-sans" dir="rtl">
+                          {/* Search box inside GIF tab */}
+                          <div className="relative">
+                            <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500" size={14} />
+                            <input 
+                              type="text" 
+                              value={builtinSearch}
+                              onChange={(e) => setBuiltinSearch(e.target.value)}
+                              placeholder="جستجو در گالری گیف‌ها با عنوان یا هشتگ..."
+                              className="w-full bg-white/5 border border-white/5 rounded-xl pr-9 pl-4 py-2 text-xs text-white focus:outline-none focus:border-neon-pink/40 font-bold"
+                            />
+                            {builtinSearch && (
+                              <button 
+                                onClick={() => setBuiltinSearch("")}
+                                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white"
+                              >
+                                <X size={12} />
+                              </button>
+                            )}
+                          </div>
+
+                          {builtinGifs.length === 0 ? (
+                            <div className="h-40 flex flex-col items-center justify-center text-center opacity-60">
+                              <ImageIcon size={24} className="text-gray-500 mb-2" />
+                              <p className="text-xs text-gray-400">گیفی یافت نشد.</p>
+                              <p className="text-[10px] text-gray-500 mt-1">با مدیریت لوکس هماهنگ کنید تا گیف‌های جدید آپلود کند.</p>
                             </div>
-                          ))}
+                          ) : (
+                            <div className="grid grid-cols-3 gap-2">
+                              {builtinGifs.map((gif) => (
+                                <div key={gif.id} className="rounded-xl overflow-hidden border border-white/5 bg-white/[0.01] hover:border-neon-pink/40 hover:bg-neon-pink/[0.02] flex flex-col items-center p-1 transition-all">
+                                  <div className="h-20 w-full flex items-center justify-center bg-black/40 rounded-lg overflow-hidden relative group/pickericon">
+                                    <img 
+                                      src={gif.url} 
+                                      alt={gif.title || gif.originalName} 
+                                      className="max-h-full max-w-full object-contain cursor-pointer" 
+                                      onClick={() => handleSendGif(gif.url)} 
+                                    />
+                                  </div>
+                                  <span className="text-[9px] text-gray-400 mt-1 text-center font-bold truncate w-full px-0.5" title={gif.title}>
+                                    {gif.title || "بدون عنوان"}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       )}
 

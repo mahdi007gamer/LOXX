@@ -298,4 +298,139 @@ export class UploadController {
       return res.status(500).json({ error: error.message });
     }
   }
+
+  static async listGifs(req: Request, res: Response) {
+    try {
+      const q = req.query.q as string || "";
+      const query = q.trim();
+
+      let whereClause = {};
+      if (query) {
+        whereClause = {
+          OR: [
+            { title: { contains: query, mode: "insensitive" } },
+            { tags: { contains: query, mode: "insensitive" } },
+            { originalName: { contains: query, mode: "insensitive" } }
+          ]
+        };
+      }
+
+      const gifs = await prisma.uploadedGif.findMany({
+        where: whereClause,
+        orderBy: { createdAt: "desc" }
+      });
+
+      return res.status(200).json(gifs);
+    } catch (error: any) {
+      return res.status(500).json({ error: error.message || "خطا در دریافت لیست گیف‌ها" });
+    }
+  }
+
+  static async updateGif(req: any, res: Response) {
+    try {
+      const userId = req.user?.userId;
+      if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+      const adminUser = await prisma.user.findUnique({ where: { id: userId } });
+      if (!adminUser || adminUser.role !== "ADMIN") {
+        return res.status(403).json({ error: "شما دسترسی به این بخش را ندارید." });
+      }
+
+      const { id } = req.params;
+      const { title, tags } = req.body;
+
+      const updated = await prisma.uploadedGif.update({
+        where: { id },
+        data: {
+          title: title || "",
+          tags: tags || ""
+        }
+      });
+
+      return res.status(200).json(updated);
+    } catch (error: any) {
+      return res.status(500).json({ error: error.message || "خطا در ویرایش گیف" });
+    }
+  }
+
+  static async deleteGif(req: any, res: Response) {
+    try {
+      const userId = req.user?.userId;
+      if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+      const adminUser = await prisma.user.findUnique({ where: { id: userId } });
+      if (!adminUser || adminUser.role !== "ADMIN") {
+        return res.status(403).json({ error: "شما دسترسی به این بخش را ندارید." });
+      }
+
+      const { id } = req.params;
+      const gif = await prisma.uploadedGif.findUnique({ where: { id } });
+      if (!gif) {
+        return res.status(404).json({ error: "گیف پیدا نشد." });
+      }
+
+      // Try to remove from disk if possible
+      const filename = gif.url.split("/").pop();
+      if (filename) {
+        const filePath = path.join(process.cwd(), "uploads", "gifs", filename);
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
+      }
+
+      await prisma.uploadedGif.delete({ where: { id } });
+
+      return res.status(200).json({ success: true, message: "گیف با موفقیت حذف شد." });
+    } catch (error: any) {
+      return res.status(500).json({ error: error.message || "خطا در حذف گیف" });
+    }
+  }
+
+  static async adminUploadGif(req: any, res: Response) {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "گیف گالری ارسال نشده است" });
+      }
+
+      const userId = req.user?.userId;
+      if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+      const adminUser = await prisma.user.findUnique({ where: { id: userId } });
+      if (!adminUser || adminUser.role !== "ADMIN") {
+        return res.status(403).json({ error: "تنها ادمین‌ها مجاز به اضافه کردن گیف به گالری هستند." });
+      }
+
+      const { title, tags } = req.body;
+      const { originalname, size, filename } = req.file;
+
+      const gifsDir = path.join(process.cwd(), "uploads", "gifs");
+      if (!fs.existsSync(gifsDir)) {
+        fs.mkdirSync(gifsDir, { recursive: true });
+      }
+
+      const sourcePath = path.join(process.cwd(), "uploads", filename);
+      const destPath = path.join(gifsDir, filename);
+
+      fs.renameSync(sourcePath, destPath);
+
+      await UploadController.compressImage(destPath, "chat");
+
+      const finalSize = fs.statSync(destPath).size;
+      const url = `/api/v1/upload/file/gifs/${filename}`;
+
+      const dbGif = await prisma.uploadedGif.create({
+        data: {
+          originalName: originalname,
+          title: title || "",
+          tags: tags || "",
+          size: finalSize,
+          url
+        }
+      });
+
+      return res.status(200).json(dbGif);
+    } catch (error: any) {
+      return res.status(500).json({ error: error.message || "خطا در آپلود گیف گالری" });
+    }
+  }
 }
