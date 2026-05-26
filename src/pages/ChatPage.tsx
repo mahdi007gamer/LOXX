@@ -597,7 +597,10 @@ const GIF_GALLERY = [
 
 export const ChatPage: React.FC = () => {
   const { allGames: games, myGames } = useGames();
-  const { user, isSidebarCollapsed } = useAuth();
+  const { user, isSidebarCollapsed: authIsSidebarCollapsed } = useAuth();
+  const isSidebarCollapsed = authIsSidebarCollapsed;
+  const isVipOrPlus = ((user as any)?.membership === "VIP" || (user as any)?.membership === "PLUS" || (user as any)?.profile?.membershipType === "VIP" || (user as any)?.profile?.membershipType === "PLUS");
+  const isVipUser = ((user as any)?.membership === "VIP" || (user as any)?.profile?.membershipType === "VIP");
   const { lobby } = useLobby();
   const [searchParams] = useSearchParams();
   const [activeChannelId, setActiveChannelId] = useState("general");
@@ -1253,11 +1256,11 @@ export const ChatPage: React.FC = () => {
   }, [user]);
 
   const handleSaveGif = (url: string) => {
-    const membership = (user as any)?.profile?.membershipType;
-    if (membership !== "PLUS" && membership !== "VIP") {
+    if (!isVipOrPlus) {
       toast.error("ذخیره کردن پیام گیف مخصوص کاربران دارای اشتراک VIP یا Plus است.");
       return;
     }
+
     if (savedGifs.includes(url)) {
       toast.success("این گیف قبلاً ذخیره شده است.");
       return;
@@ -1450,17 +1453,26 @@ export const ChatPage: React.FC = () => {
       )}
       style={{ overscrollBehavior: 'none' }} 
       onDragOver={(e) => {
-        if (activeChannelId === 'news' && (user as any)?.role === 'ADMIN') {
-          e.preventDefault();
-          e.stopPropagation();
-        }
+        e.preventDefault();
+        e.stopPropagation();
       }}
       onDrop={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const file = e.dataTransfer.files?.[0];
+        if (!file) return;
+
         if (activeChannelId === 'news' && (user as any)?.role === 'ADMIN') {
-          e.preventDefault();
-          e.stopPropagation();
-          const file = e.dataTransfer.files?.[0];
-          if (file) handleFileUpload(file);
+          handleFileUpload(file);
+        } else if (file.type === "image/gif") {
+          if (((user as any)?.membership === "VIP" || (user as any)?.profile?.membershipType === "VIP")) {
+            handleGifUploadAction(file);
+            setShowGifPicker(false);
+          } else {
+            toast.error("برای آپلود گیف‌های اختصاصی به اشتراک VIP نیاز دارید!");
+            setShowGifPicker(true);
+            setGifTab("upload");
+          }
         }
       }}
     >
@@ -1510,7 +1522,7 @@ export const ChatPage: React.FC = () => {
                 </div>
                 
                 {/* Invite Link Section for VIP */}
-                {user?.membershipType === 'VIP' && (
+                {isVipUser && (
                   <div className="pt-4 border-t border-white/5 space-y-3">
                     <label className="text-xs font-bold text-gray-400 block">لینک دعوت اختصاصی</label>
                     <div className="flex gap-2">
@@ -2470,7 +2482,7 @@ export const ChatPage: React.FC = () => {
 
                       {gifTab === "saved" && (
                         <div className="h-full">
-                          {((user as any)?.profile?.membershipType === "PLUS" || (user as any)?.profile?.membershipType === "VIP") ? (
+                          {isVipOrPlus ? (
                             savedGifs.length === 0 ? (
                               <div className="h-48 flex flex-col items-center justify-center text-center opacity-60">
                                 <Star size={24} className="text-gray-500 mb-2" />
@@ -2510,8 +2522,8 @@ export const ChatPage: React.FC = () => {
                             <div className="h-48 flex flex-col items-center justify-center text-center px-4">
                               <Crown size={32} className="text-[#00e5ff] mb-2 animate-pulse" />
                               <p className="text-xs text-gray-300 font-bold">بخش مخصوص کاربران Plus و VIP</p>
-                              <p className="text-[10px] text-gray-500 leading-relaxed mt-2">
-                                ذخیره گیف‌های بقیه کاربران و ارسال مجدد آن‌ها فقط برای کاربران دارای VIP یا Plus فعال است.
+                              <p className="text-[10px] text-gray-500 leading-relaxed mt-2" dir="rtl">
+                                برای ارسال گیف و یا استفاده از بانک هوشمند گیف‌های لوکس اشتراک Plus و یا VIP تهیه کنید.
                               </p>
                             </div>
                           )}
@@ -2519,50 +2531,62 @@ export const ChatPage: React.FC = () => {
                       )}
 
                       {gifTab === "builtin" && (
-                        <div className="space-y-3 font-sans" dir="rtl">
-                          {/* Search box inside GIF tab */}
-                          <div className="relative">
-                            <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500" size={14} />
-                            <input 
-                              type="text" 
-                              value={builtinSearch}
-                              onChange={(e) => setBuiltinSearch(e.target.value)}
-                              placeholder="جستجو در گالری گیف‌ها با عنوان یا هشتگ..."
-                              className="w-full bg-white/5 border border-white/5 rounded-xl pr-9 pl-4 py-2 text-xs text-white focus:outline-none focus:border-neon-pink/40 font-bold"
-                            />
-                            {builtinSearch && (
-                              <button 
-                                onClick={() => setBuiltinSearch("")}
-                                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white"
-                              >
-                                <X size={12} />
-                              </button>
-                            )}
-                          </div>
+                        <div className="space-y-3 font-sans h-full min-h-[200px]" dir="rtl">
+                          {isVipOrPlus ? (
+                            <>
+                              {/* Search box inside GIF tab */}
+                              <div className="relative">
+                                <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500" size={14} />
+                                <input 
+                                  type="text" 
+                                  value={builtinSearch}
+                                  onChange={(e) => setBuiltinSearch(e.target.value)}
+                                  placeholder="جستجو در گالری گیف‌ها با عنوان یا هشتگ..."
+                                  className="w-full bg-white/5 border border-white/5 rounded-xl pr-9 pl-4 py-2 text-xs text-white focus:outline-none focus:border-neon-pink/40 font-bold"
+                                />
+                                {builtinSearch && (
+                                  <button 
+                                    onClick={() => setBuiltinSearch("")}
+                                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white"
+                                  >
+                                    <X size={12} />
+                                  </button>
+                                )}
+                              </div>
 
-                          {builtinGifs.length === 0 ? (
-                            <div className="h-40 flex flex-col items-center justify-center text-center opacity-60">
-                              <ImageIcon size={24} className="text-gray-500 mb-2" />
-                              <p className="text-xs text-gray-400">گیفی یافت نشد.</p>
-                              <p className="text-[10px] text-gray-500 mt-1">با مدیریت لوکس هماهنگ کنید تا گیف‌های جدید آپلود کند.</p>
-                            </div>
-                          ) : (
-                            <div className="grid grid-cols-3 gap-2">
-                              {builtinGifs.map((gif) => (
-                                <div key={gif.id} className="rounded-xl overflow-hidden border border-white/5 bg-white/[0.01] hover:border-neon-pink/40 hover:bg-neon-pink/[0.02] flex flex-col items-center p-1 transition-all">
-                                  <div className="h-20 w-full flex items-center justify-center bg-black/40 rounded-lg overflow-hidden relative group/pickericon">
-                                    <img 
-                                      src={gif.url} 
-                                      alt={gif.title || gif.originalName} 
-                                      className="max-h-full max-w-full object-contain cursor-pointer" 
-                                      onClick={() => handleSendGif(gif.url)} 
-                                    />
-                                  </div>
-                                  <span className="text-[9px] text-gray-400 mt-1 text-center font-bold truncate w-full px-0.5" title={gif.title}>
-                                    {gif.title || "بدون عنوان"}
-                                  </span>
+                              {builtinGifs.length === 0 ? (
+                                <div className="h-40 flex flex-col items-center justify-center text-center opacity-60">
+                                  <ImageIcon size={24} className="text-gray-500 mb-2" />
+                                  <p className="text-xs text-gray-400">گیفی یافت نشد.</p>
+                                  <p className="text-[10px] text-gray-500 mt-1">با مدیریت لوکس هماهنگ کنید تا گیف‌های جدید آپلود کند.</p>
                                 </div>
-                              ))}
+                              ) : (
+                                <div className="grid grid-cols-3 gap-2">
+                                  {builtinGifs.map((gif) => (
+                                    <div key={gif.id} className="rounded-xl overflow-hidden border border-white/5 bg-white/[0.01] hover:border-neon-pink/40 hover:bg-neon-pink/[0.02] flex flex-col items-center p-1 transition-all">
+                                      <div className="h-20 w-full flex items-center justify-center bg-black/40 rounded-lg overflow-hidden relative group/pickericon">
+                                        <img 
+                                          src={gif.url} 
+                                          alt={gif.title || gif.originalName} 
+                                          className="max-h-full max-w-full object-contain cursor-pointer" 
+                                          onClick={() => handleSendGif(gif.url)} 
+                                        />
+                                      </div>
+                                      <span className="text-[9px] text-gray-400 mt-1 text-center font-bold truncate w-full px-0.5" title={gif.title}>
+                                        {gif.title || "بدون عنوان"}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            <div className="h-48 flex flex-col items-center justify-center text-center px-4">
+                              <Crown size={32} className="text-[#00e5ff] mb-2 animate-pulse" />
+                              <p className="text-xs text-gray-300 font-bold">بخش مخصوص کاربران Plus و VIP</p>
+                              <p className="text-[10px] text-gray-500 leading-relaxed mt-2" dir="rtl">
+                                برای ارسال گیف و یا استفاده از بانک هوشمند گیف‌های لوکس اشتراک Plus و یا VIP تهیه کنید.
+                              </p>
                             </div>
                           )}
                         </div>
@@ -2570,7 +2594,7 @@ export const ChatPage: React.FC = () => {
 
                       {gifTab === "upload" && (
                         <div className="h-full">
-                          {(user as any)?.profile?.membershipType === "VIP" ? (
+                          {isVipUser ? (
                             <div className="p-1 h-full">
                               <div 
                                 className="border-2 border-dashed border-white/10 hover:border-neon-pink/40 rounded-2xl p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-all hover:bg-neon-pink/[0.01] h-48 relative"
