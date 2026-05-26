@@ -30,6 +30,8 @@ import {
   Sparkles,
   Star,
   Mail,
+  ChevronDown,
+  HelpCircle,
   ShieldAlert as SecurityAlert
 } from "lucide-react";
 import { cn } from "../lib/utils";
@@ -55,6 +57,7 @@ export const SettingsPage = () => {
   
   const [showVerificationModal, setShowVerificationModal] = useState(false);
   const [verificationCode, setVerificationCode] = useState("");
+  const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
 
   const [settings, setSettings] = useState({
     receiveFriendRequests: true,
@@ -1079,8 +1082,98 @@ export const SettingsPage = () => {
     finally { setSaving(false); }
   };
 
+  const faqItems = [
+    {
+      q: "۱. پلتفرم لوکس دقیقاً چیست و چه تفاوتی با نمونه‌های مشابه دارد؟",
+      a: "لوکس (LOXX) اولین و پیشرفته‌ترین پلتفرم گیمینگ جامع فارسی است که با تکیه بر دانش بومی و هزینه شخصی، برای رفع محدودیت‌های گیمرهای ایرانی طراحی شده است. تفاوت اصلی ما در سیستم اختصاصی Zero-TUN است که اجازه می‌دهد بازی‌های تحت شبکه (LAN) را بدون نیاز به هیچ نرم‌افزار جانبی یا تنظیمات پیچیده، با کمترین پینگ ممکن تجربه کنید."
+    },
+    {
+      q: "۲. سیستم تونلینگ LAN در کلاینت ویندوز چگونه کار می‌کند؟",
+      a: "ما یک معماری انحصاری TCP/UDP Relay پیاده‌سازی کرده‌ایم. کلاینت لوکس به صورت خودکار پورت‌های استاندارد بازی‌ها (مثل Minecraft، Warcraft III، CS و…) را رصد کرده و بسته‌های دیسکاوری را مستقیماً در شبکه محلی شما تزریق می‌کند. این یعنی به محض ورود به یک لابی در لوکس، بازی شما در لیست LAN ویندوز ظاهر می‌شود؛ بدون هاماچی، بدون درایور مجازی و بدون دردسر."
+    },
+    {
+      q: "۳. چرا بخش لابی‌های آفلاین (LAN) در نسخه وب نمایش داده نمی‌شود؟",
+      a: "به دلیل محدودیت‌های امنیتی مرورگرها در دسترسی به لایه‌های زیرین شبکه، سیستم پیشرفته Tunneling فقط در نسخه کلاینت ویندوز فعال است. کلاینت لوکس با تشخیص پلتفرم، تمامی امکانات لازم برای اتصال مستقیم را در اختیار شما قرار می‌دهد، در حالی که نسخه وب برای مدیریت حساب و چت سراسری بهینه شده است."
+    },
+    {
+      q: "۴. تفاوت اشتراک‌های VIP و +LOXX در چیست؟",
+      a: "همانطور که در بخش «ارتقای سطح کاربری» مشاهده می‌کنید:\n\nLOXX PLUS: مخصوص کاربرانی است که به دنبال شخصی‌سازی پروفایل (آواتار متحرک، استیکرهای اختصاصی، نشان مخصوص) و اولویت در لیست لابی‌ها هستند.\nLOXX VIP: سطح نخبگان لوکس است که علاوه بر تمام قابلیت‌های پلاس، به تنظیمات پیشرفته Elite، ظرفیت XP دوبرابر، گروه‌های چت VIP و تم‌های طلایی اختصاصی دسترسی دارند."
+    },
+    {
+      q: "۵. چطور می‌توانم در لیست «قهرمانان هفته» قرار بگیرم؟",
+      a: "سیستم رتبه‌بندی لوکس بر اساس فعالیت‌های شما (ایجاد لابی، تکمیل بازی‌ها و تعامل در پلتفرم) امتیاز XP محاسبه می‌کند. ۳ نفر برتر لیست رتبه‌بندی در پایان هر هفته، جوایز ویژه و اشتراک‌های رایگان دریافت می‌کنند. زمان باقیمانده تا ریست امتیازات را می‌توانید در صفحه «رتبه‌بندی» مشاهده کنید."
+    },
+    {
+      q: "۶. امنیت مکالمات صوتی (Voice Chat) چگونه تضمین می‌شود؟",
+      a: "ویس‌چت لوکس بر بستر پروتکل WebRTC و به صورت Peer-to-Peer عمل می‌کند. این یعنی ترافیک صوتی شما مستقیماً بین کلاینت‌ها جابه‌جا شده و هیچ صدایی در سرورهای ما ذخیره نمی‌شود. امنیت شما اولویت اصلی معماری لوکس است."
+    },
+    {
+      q: "۷. چرا باید اشتراک تهیه کنیم؟",
+      a: "پلتفرم لوکس یک پروژه کاملاً مستقل است که با هزینه‌های شخصی سنگین جهت خرید سرورهای باکیفیت و توسعه فنی لانچ شده است. تهیه اشتراک VIP توسط شما، تنها منبع درآمدی ما برای سرپا نگه داشتن سرورها، رفع باگ‌ها و افزودن قابلیت‌های جدید (مانند نسخه موبایل) است. شما با این کار، مستقیم از رشد جامعه گیمینگ فارسی حمایت می‌کنید."
+    },
+    {
+      q: "۸. در صورت تداخل پورت یا خطا در اتصال چه کار کنم؟",
+      a: "کلاینت هوشمند لوکس در صورت مسدود بودن پورت‌های بازی توسط آنتی‌ویروس یا برنامه‌های دیگر، بلافاصله از طریق اعلان‌های فارسی به شما هشدار داده و راهنمای رفع مشکل را نمایش می‌دهد. همچنین تیم پشتیبانی در چت سراسری همیشه آماده راهنمایی شماست."
+    }
+  ];
+
   const renderSupport = () => (
     <div className="space-y-6">
+      {/* FAQ Section */}
+      <NeonCard className="space-y-6">
+        <div className="flex items-center gap-4 border-b border-white/5 pb-4">
+          <div className="h-12 w-12 rounded-xl bg-neon-blue/10 flex items-center justify-center text-neon-blue">
+             <HelpCircle size={24} />
+          </div>
+          <div>
+            <h3 className="text-xl font-black italic uppercase tracking-tighter">سوالات متداول (FAQ) - پلتفرم لوکس</h3>
+            <p className="text-[10px] uppercase font-bold tracking-widest text-gray-500">پاسخ به سوالات و مشکلات متداول کاربران</p>
+          </div>
+        </div>
+
+        <div className="space-y-3" dir="rtl">
+          {faqItems.map((item, idx) => {
+            const isExpanded = expandedFaq === idx;
+            return (
+              <div 
+                key={idx} 
+                className="rounded-2xl border border-white/5 bg-white/[0.01] overflow-hidden transition-all duration-300 hover:border-white/10"
+              >
+                <button
+                  onClick={() => setExpandedFaq(isExpanded ? null : idx)}
+                  className="w-full text-right px-5 py-4 flex items-center justify-between gap-4 text-white font-bold text-sm md:text-base hover:bg-white/[0.02] transition-colors"
+                >
+                  <span className="text-right leading-relaxed font-black">{item.q}</span>
+                  <ChevronDown 
+                    size={18} 
+                    className={cn(
+                      "text-gray-400 transition-transform duration-300 shrink-0", 
+                      isExpanded && "rotate-180 text-neon-blue"
+                    )} 
+                  />
+                </button>
+                
+                <AnimatePresence initial={false}>
+                  {isExpanded && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2, ease: "easeInOut" }}
+                    >
+                      <div className="px-5 pb-5 pt-1 text-xs md:text-sm text-gray-400 leading-relaxed border-t border-white/5 bg-white/[0.01] whitespace-pre-wrap font-sans">
+                        {item.a}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            );
+          })}
+        </div>
+      </NeonCard>
+
+      {/* Ticket Box */}
       <NeonCard className="space-y-6">
         <div className="flex items-center gap-4 border-b border-white/5 pb-4">
           <div className="h-12 w-12 rounded-xl bg-neon-blue/10 flex items-center justify-center text-neon-blue">
