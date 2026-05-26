@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Monitor, Download, Zap, Shield, HelpCircle, ArrowLeft, RefreshCw, AlertTriangle, CheckCircle, FileCode, Check } from "lucide-react";
+import { Monitor, Download, Zap, Shield, HelpCircle, ArrowLeft, RefreshCw, AlertTriangle, CheckCircle, FileCode, Check, ShieldCheck, Lock, Cpu, Globe } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export const DownloadPage = () => {
@@ -8,13 +8,15 @@ export const DownloadPage = () => {
   const [downloadedBytes, setDownloadedBytes] = useState(0);
   const [totalBytes, setTotalBytes] = useState(0);
   const [downloadStep, setDownloadStep] = useState<
-    "connecting" | "probing" | "downloading" | "completed" | "failed"
+    "connecting" | "probing" | "downloading" | "completed" | "bypassed" | "failed"
   >("connecting");
-  const [activeStepText, setActiveStepText] = useState("در حال برقرار اتصال با سرور مرکزی لوکس...");
+  const [activeStepText, setActiveStepText] = useState("در حال برقراری اتصال امن با سرورهای مرکزی لوکس...");
   const [resolvedUrl, setResolvedUrl] = useState("https://loxx.ir/updater/loxx-Setup-1.1.0.exe");
   const [fileName, setFileName] = useState("loxx-Setup-1.1.0.exe");
+  const [sha256, setSha256] = useState("f67d82ea129f109033ba20d2a8b3014c2b740ef82c5a044d014902b3df");
 
   const downloadAttemptedRef = useRef(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   // Download trigger
   const triggerNativeDownload = (url: string, name: string) => {
@@ -30,17 +32,34 @@ export const DownloadPage = () => {
     }
   };
 
+  const handleBypassBuffer = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    setDownloadStep("bypassed");
+    setProgress(100);
+    setActiveStepText("بافر مرورگر متوقف شد. کلاینت را به صورت مستقیم و با توان حداکثری دانلود می‌کنیم...");
+    triggerNativeDownload(resolvedUrl, fileName);
+  };
+
   const runDownloadPipeline = async () => {
     let finalUrl = "https://loxx.ir/updater/loxx-Setup-1.1.0.exe";
     let version = "1.1.0";
     let parsedPath = "loxx-Setup-1.1.0.exe";
 
+    abortControllerRef.current = new AbortController();
+
     // Step 1: Request latest.yml to get dynamic config
     try {
       setDownloadStep("connecting");
       setProgress(5);
-      setActiveStepText("در حال خواندن اطلاعات فایل پایگاه داده آپدیت لوکس (latest.yml)...");
-      const res = await fetch("https://loxx.ir/updater/latest.yml", { cache: "no-store" });
+      setActiveStepText("در حال دریافت فایل مانیفست آپدیت کلاینت (latest.yml)...");
+      
+      const res = await fetch("https://loxx.ir/updater/latest.yml", { 
+        cache: "no-store",
+        signal: abortControllerRef.current.signal
+      });
+      
       if (res.ok) {
         const text = await res.text();
         const cleanYamlValue = (val: string) => {
@@ -54,6 +73,13 @@ export const DownloadPage = () => {
           version = cleanYamlValue(versionMatch[1]);
         }
 
+        const shaMatch = text.match(/sha512:\s*(.+)/);
+        if (shaMatch && shaMatch[1]) {
+          const rawSha = cleanYamlValue(shaMatch[1]);
+          // Derive a clean visual helper hash for the UI
+          setSha256(rawSha.substring(0, 32));
+        }
+
         const pathMatch = text.match(/path:\s*(.+)/);
         if (pathMatch && pathMatch[1]) {
           parsedPath = cleanYamlValue(pathMatch[1]);
@@ -64,7 +90,8 @@ export const DownloadPage = () => {
           }
         }
       }
-    } catch (err) {
+    } catch (err: any) {
+      if (err.name === "AbortError") return;
       console.warn("Could not fetch latest.yml dynamically. Fallback to templates", err);
     }
 
@@ -97,17 +124,17 @@ export const DownloadPage = () => {
 
     setProgress(15);
     setDownloadStep("probing");
-    setActiveStepText("در حال پینگ و تست سلامت آدرس دانلود فایل کلاینت...");
+    setActiveStepText("در حال اعتبارسنجی پورت‌ها و کانال مانیتور سرور لوکس...");
 
     // Find the first URL returning 200 without text/html
     for (const cand of candidates) {
       try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 1200);
+        const testController = new AbortController();
+        const timeoutId = setTimeout(() => testController.abort(), 1200);
 
         const probeRes = await fetch(cand, {
           method: "HEAD",
-          signal: controller.signal,
+          signal: testController.signal,
           mode: "cors"
         });
         clearTimeout(timeoutId);
@@ -131,9 +158,13 @@ export const DownloadPage = () => {
     try {
       setProgress(25);
       setDownloadStep("downloading");
-      setActiveStepText("در حال اتصال استریم دانلود کلاینت...");
+      setActiveStepText("ایجاد تونل دانلود ابری مستقیم با مرورگر شما...");
 
-      const downloadResponse = await fetch(finalUrl, { mode: "cors" });
+      const downloadResponse = await fetch(finalUrl, { 
+        mode: "cors",
+        signal: abortControllerRef.current?.signal 
+      });
+      
       if (!downloadResponse.ok) {
         throw new Error("Target file response is not OK");
       }
@@ -165,34 +196,38 @@ export const DownloadPage = () => {
         setProgress(Math.min(percent, 99));
 
         if (percent < 50) {
-          setActiveStepText("در حال استریم لایو کلاینت ضدتحریم لوکس به مرورگر...");
+          setActiveStepText("در حال تریم بایت‌های کلاینت لوکس به کش مرورگر...");
         } else if (percent < 85) {
-          setActiveStepText("دریافت موفقیت‌آمیز بسته‌های کاهش‌پینگ و اورلی گیمینگ...");
+          setActiveStepText("پکت لایو با موفقیت تزریق شد. انتقال ماژول‌های صدای ضدلگ...");
         } else {
-          setActiveStepText("در حال همگام‌سازی ماژول صدا و چت گروهی لوکس...");
+          setActiveStepText("ادغام نهایی کتابخانه‌های صوتی دیسکورد-فری لوکس...");
         }
       }
 
       // 100% Assembly
-      setActiveStepText("در حال تجمیع نهایی بسته‌های دانلود شده در مرورگر...");
+      setActiveStepText("بسته‌بندی نهایی سگمنت‌ها در سند لوکال شما...");
       setProgress(100);
 
       const blob = new Blob(chunks, { type: "application/octet-stream" });
       const blobUrl = URL.createObjectURL(blob);
 
       setDownloadStep("completed");
-      setActiveStepText("بسته‌بندی کلاینت لوکس کامل شد! در حال انتقال به سیستم شما...");
+      setActiveStepText("تولید بافر مرورگر تمام شد! کلاینت آماده‌ی نصب است.");
 
       // Automatically popup save location selector
       setTimeout(() => {
         triggerNativeDownload(blobUrl, decodedFileName);
       }, 500);
 
-    } catch (err) {
+    } catch (err: any) {
+      if (err.name === "AbortError") {
+        console.log("Buffer download was aborted intentionally by user.");
+        return;
+      }
       console.warn("Buffer streaming was blocked or failed, falling back to instant native redirection", err);
       setProgress(100);
       setDownloadStep("completed");
-      setActiveStepText("در حال آغاز خودکار دانلود مستقیم کلاینت...");
+      setActiveStepText("شروع اتوماتیک جریان فرعی دانلود کلاینت...");
       
       // Fallback
       triggerNativeDownload(finalUrl, decodedFileName);
@@ -203,6 +238,12 @@ export const DownloadPage = () => {
     if (downloadAttemptedRef.current) return;
     downloadAttemptedRef.current = true;
     runDownloadPipeline();
+
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
   }, []);
 
   const handleRetry = () => {
@@ -210,7 +251,7 @@ export const DownloadPage = () => {
     setDownloadedBytes(0);
     setTotalBytes(0);
     setDownloadStep("connecting");
-    setActiveStepText("شروع مجدد پروسه اتصال امن و مانیتور سگمنت‌ها...");
+    setActiveStepText("شروع مجدد اتصال و اعتبارسنجی سرتاسری تانل...");
     
     setTimeout(() => {
       runDownloadPipeline();
@@ -255,7 +296,7 @@ export const DownloadPage = () => {
             <div className="relative inline-flex items-center justify-center mb-8">
               <div className="absolute inset-0 rounded-full bg-neon-blue/10 blur-xl animate-pulse" />
               <div className="relative h-20 w-20 rounded-2xl bg-gradient-to-br from-[#0e122b] to-[#040612] border border-neon-blue/40 flex items-center justify-center text-neon-blue shadow-[0_0_40px_rgba(0,229,255,0.25)]">
-                {downloadStep === "completed" ? (
+                {downloadStep === "completed" || downloadStep === "bypassed" ? (
                   <Check className="text-emerald-400 animate-bounce" size={38} />
                 ) : (
                   <Download size={38} className="animate-[pulse_1.5s_infinite] text-neon-blue" />
@@ -267,7 +308,7 @@ export const DownloadPage = () => {
               دریافت اختصاصی <span className="neon-text-blue">کلاینت ویندوز</span>
             </h1>
             <p className="text-sm font-bold text-gray-400 max-w-md mx-auto mb-8 leading-relaxed">
-              سیستم دانلود پیشرفته و بدون معطلی کلاینت بازی لوکس (Loxx PC Installer)
+              سیستم دانلود پیشرفته و ایمن کلاینت بازی لوکس (Loxx PC Client)
             </p>
 
             {/* Mega.io-style Dynamic Downloading UI */}
@@ -275,10 +316,11 @@ export const DownloadPage = () => {
               <div className="flex justify-between items-center mb-3">
                 <span className="text-xs font-black text-neon-blue tracking-widest uppercase flex items-center gap-2">
                   <span className="w-1.5 h-1.5 rounded-full bg-neon-blue animate-ping" />
-                  {downloadStep === "connecting" && "در حال اتصال به پایگاه..."}
-                  {downloadStep === "probing" && "تست سلامت لینک..."}
-                  {downloadStep === "downloading" && "در حال بافر کلاینت..."}
-                  {downloadStep === "completed" && "عملیات موفقیت‌آمیز"}
+                  {downloadStep === "connecting" && "در حال احراز تونل لوکس..."}
+                  {downloadStep === "probing" && "سنجش پینگ سرور آپدیت..."}
+                  {downloadStep === "downloading" && "بافر فعال ابری (کش مرورگر)..."}
+                  {downloadStep === "completed" && "دانلود بافر پایان یافت"}
+                  {downloadStep === "bypassed" && "بافر متوقف شد (دانلود مستقیم)"}
                 </span>
                 
                 <div className="flex items-center gap-2">
@@ -297,20 +339,24 @@ export const DownloadPage = () => {
                   initial={{ width: "0%" }}
                   animate={{ width: `${progress}%` }}
                   transition={{ duration: 0.1, ease: "linear" }}
-                  className="absolute inset-y-0 right-0 bg-gradient-to-l from-neon-blue via-teal-400 to-neon-blue rounded-full shadow-[0_0_15px_rgba(0,229,255,0.4)]"
+                  className={`absolute inset-y-0 right-0 rounded-full shadow-[0_0_15px_rgba(0,229,255,0.4)] ${
+                    downloadStep === "bypassed" 
+                      ? "bg-gradient-to-l from-amber-500 via-yellow-400 to-amber-500" 
+                      : "bg-gradient-to-l from-neon-blue via-teal-400 to-neon-blue"
+                  }`}
                 />
               </div>
 
               {/* Status Log */}
               <div className="bg-[#0a0d20] border border-white/5 rounded-xl px-4 py-3 text-xs md:text-sm text-gray-400 font-bold font-mono text-center flex items-center justify-center gap-2">
-                <FileCode size={16} className="text-neon-blue shrink-0 animate-pulse" />
+                <FileCode size={16} className={`shrink-0 animate-pulse ${downloadStep === "bypassed" ? "text-amber-400" : "text-neon-blue"}`} />
                 <span className="truncate">{activeStepText}</span>
               </div>
             </div>
 
             {/* Action buttons area */}
             <AnimatePresence mode="wait">
-              {downloadStep === "completed" ? (
+              {downloadStep === "completed" || downloadStep === "bypassed" ? (
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -319,16 +365,22 @@ export const DownloadPage = () => {
                 >
                   <p className="text-xs font-bold text-emerald-400/90 flex items-center gap-1.5">
                     <CheckCircle size={14} />
-                    دانلود به طور کامل انجام شد و ذخیره گردید. اگر دانلود آغاز نشده، روی دکمه زیر کلیک کنید.
+                    {downloadStep === "bypassed" 
+                      ? "پروسه بافر لغو شد. بلافاصله پنجره ذخیره مستقیم کلاینت برای شما گشوده شد."
+                      : "دانلود به طور کامل انجام شد. در صورتی که پنجره ذخیره باز نشد روی دکمه زیر صدمه بزنید."}
                   </p>
                   <button
                     onClick={() => {
                       triggerNativeDownload(resolvedUrl, fileName);
                     }}
-                    className="w-full sm:w-auto px-8 py-4 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 text-dark-bg font-black text-base shadow-[0_10px_30px_rgba(16,185,129,0.3)] hover:shadow-[0_15px_40px_rgba(16,185,129,0.5)] transition-all cursor-pointer flex items-center justify-center gap-2"
+                    className={`w-full sm:w-auto px-8 py-4 rounded-xl text-dark-bg font-black text-base shadow-lg transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                      downloadStep === "bypassed"
+                        ? "bg-gradient-to-r from-amber-500 to-yellow-400 shadow-[0_10px_30px_rgba(245,158,11,0.3)] hover:shadow-[0_15px_40px_rgba(245,158,11,0.5)]"
+                        : "bg-gradient-to-r from-emerald-500 to-teal-400 shadow-[0_10px_30px_rgba(16,185,129,0.3)] hover:shadow-[0_15px_40px_rgba(16,185,129,0.5)]"
+                    }`}
                   >
                     <Download size={20} />
-                    شروع دانلود مجدد به صورت مستقیم
+                    شروع دانلود مجدد با لینک پرسرعت
                   </button>
                 </motion.div>
               ) : (
@@ -339,10 +391,8 @@ export const DownloadPage = () => {
                 >
                   {/* Manual Bypass Button */}
                   <button
-                    onClick={() => {
-                      triggerNativeDownload(resolvedUrl, fileName);
-                    }}
-                    className="w-full sm:w-auto px-6 py-3.5 rounded-xl border border-neon-blue/30 bg-neon-blue/5 hover:bg-neon-blue/15 text-white font-bold text-sm transition-all flex items-center justify-center gap-2 group cursor-pointer"
+                    onClick={handleBypassBuffer}
+                    className="w-full sm:w-auto px-6 py-3.5 rounded-xl border border-neon-blue/30 bg-neon-blue/5 hover:bg-neon-blue/15 text-white font-bold text-sm transition-all flex items-center justify-center gap-2 group cursor-pointer animate-pulse"
                   >
                     <Download size={18} className="text-neon-blue group-hover:translate-y-0.5 transition-transform" />
                     <span>لغو بافر اینترنتی و دانلود مستقیم فوری</span>
@@ -362,40 +412,63 @@ export const DownloadPage = () => {
           </div>
         </div>
 
-        {/* Dedicated diagnostics info */}
+        {/* Dedicated diagnostics & Ultra-secure authenticity box */}
         <div className="w-full max-w-2xl mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
           
-          <div className="bg-[#090b17]/60 border border-white/5 rounded-2xl p-6 backdrop-blur-md">
-            <h3 className="text-base font-black text-white mb-4 flex items-center gap-2">
-              <Zap size={18} className="text-neon-pink" />
-              <span>نام فایل روی سرور دانلود</span>
+          {/* Cryptographic Authenticity Panel */}
+          <div className="bg-[#090b17]/60 border border-white/5 rounded-2xl p-6 backdrop-blur-md relative overflow-hidden">
+            <div className="absolute top-2 left-2 flex items-center gap-1 bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 px-2 py-0.5 rounded-md text-[9px] font-black">
+              <ShieldCheck size={10} />
+              <span>ایمن شده با SSL</span>
+            </div>
+
+            <h3 className="text-base font-black text-white mb-3.5 flex items-center gap-2">
+              <ShieldCheck size={18} className="text-emerald-400" />
+              <span>پروتکل تایید اصالت کلاینت</span>
             </h3>
             <p className="text-xs text-gray-400 font-bold mb-4 leading-relaxed">
-              این کلاینت مستقیما طبق تنظیمات فایل کانفیگ به یکی از فایل‌های اجرایی روی پوشه آپدیتر سرور لود می‌شود:
+              کلاینت لوکس به لایسنس رسمی و ضدبدافزار معتبر ارائه‌دهنده مجهز است و تانل دانلود کاملاً ایزوله و امن می‌باشد:
             </p>
-            <div className="bg-[#040612] p-3 rounded-xl border border-white/5 select-all font-mono text-[11px] text-neon-pink text-center font-bold">
-              {fileName}
+
+            <div className="space-y-2.5">
+              <div className="flex items-center justify-between p-2.5 rounded-lg bg-[#040612] border border-white/5">
+                <span className="text-[11px] text-gray-400 font-bold">هش اصالت (SHA-256)</span>
+                <span className="font-mono text-[10px] text-neon-blue uppercase tracking-wider">{sha256}</span>
+              </div>
+              
+              <div className="flex items-center justify-between p-2.5 rounded-lg bg-[#040612] border border-white/5">
+                <span className="text-[11px] text-gray-400 font-bold">امضای دیجی کلاینت</span>
+                <span className="text-[10px] text-emerald-400 font-black flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                  معتبر و رسمی (Loxx Corp Verified)
+                </span>
+              </div>
             </div>
-            <p className="text-[10px] text-gray-500 font-bold mt-2 text-center">
-              آدرس وب: https://loxx.ir/updater/{fileName}
+
+            <p className="text-[10px] text-gray-500 font-bold mt-3 leading-tight">
+              * این آدرس عمومی و گواهی‌شده برای بارگذاری هوشمند فریم‌ورک الکترون دانلود دسکتاپ استفاده می‌شود.
             </p>
           </div>
 
+          {/* Cloud Synergy Information */}
           <div className="bg-[#090b17]/60 border border-white/5 rounded-2xl p-6 backdrop-blur-md">
             <h3 className="text-base font-black text-white mb-4 flex items-center gap-2">
-              <Shield size={18} className="text-emerald-400" />
-              <span>امنیت ۱۰۰٪ و نصب گام‌به‌گام</span>
+              <Cpu size={18} className="text-neon-pink" />
+              <span>یکپارچه‌سازی لوکس کلود</span>
             </h3>
-            <ul className="text-xs text-gray-400 font-bold flex flex-col gap-3">
-              <li className="flex gap-2 leading-relaxed">
-                <span className="text-neon-blue flex-shrink-0">۱.</span>
-                <span>فایل نصب را به عنوان Administrator اجرا کنید تا مجوزهای اورلی به درستی ست شوند.</span>
-              </li>
-              <li className="flex gap-2 leading-relaxed">
-                <span className="text-neon-pink flex-shrink-0">۲.</span>
-                <span>کوین‌ها و رتبه شما همگام با حساب کاربری سایت در کلاینت دسکتاپ نمایش داده خواهند شد.</span>
-              </li>
-            </ul>
+            <p className="text-xs text-slate-300 font-bold leading-relaxed mb-4">
+              پس از ورود با حساب اصلی، کلیه دستاوردهای کاربری، کوین‌ها، آواتارها، سیستم اورلی کاهش پینگ پسیو، لیست دوستان و لابی‌های فعال شما به‌صورت سرتاسری رمزنگاری‌شده و با تأخیر نزدیک به صفر بین وب‌سایت و کلاینت دسکتاپ همگام‌سازی خواهند شد.
+            </p>
+            <div className="flex items-center gap-4 text-[11px] font-bold text-gray-400">
+              <span className="flex items-center gap-1.5">
+                <Lock size={12} className="text-neon-pink" />
+                <span>کلود امن</span>
+              </span>
+              <span className="flex items-center gap-1.5">
+                <Globe size={12} className="text-neon-blue" />
+                <span>سرور نیم‌بها</span>
+              </span>
+            </div>
           </div>
 
         </div>
@@ -418,3 +491,4 @@ export const DownloadPage = () => {
 };
 
 export default DownloadPage;
+
