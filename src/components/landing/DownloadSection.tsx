@@ -6,7 +6,7 @@ import { GlowButton } from "../ui/GlowButton";
 
 export const DownloadSection = () => {
   const [windowsVersion, setWindowsVersion] = useState<string | null>(null);
-  const [windowsUrl, setWindowsUrl] = useState<string>("https://cdn.imgurl.ir/uploads/o691335_loxx_Setup_1.1.0.exe");
+  const [windowsUrl, setWindowsUrl] = useState<string>("https://loxx.ir/updater/loxx-Setup-1.1.0.exe");
 
   useEffect(() => {
     // Attempt to fetch latest.yml to get the exact version/url
@@ -80,8 +80,8 @@ export const DownloadSection = () => {
           addCandidate("https://loxx.ir/updater/loxx%20Setup.exe");
           addCandidate("https://loxx.ir/updater/Loxx%20Setup.exe");
 
-          // Keep the temporary stable link as the default fallback in case all probe tests fail
-          let selectedUrl = "https://cdn.imgurl.ir/uploads/o691335_loxx_Setup_1.1.0.exe";
+          // Keep the first candidate as the default fallback in case all probe tests fail
+          let selectedUrl = candidates[0] || "https://loxx.ir/updater/loxx-Setup-1.1.0.exe";
 
           // Probe candidates asynchronously to find the first 200 OK URL that is not HTML
           const probeUrls = async () => {
