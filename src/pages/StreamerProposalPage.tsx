@@ -356,26 +356,36 @@ const FloatingAudioPlayer = ({ src, streamerName, isOpened }: { src: string, str
         const audio = audioRef.current;
         if (!audio) return;
         
-        const setAudioData = () => setDuration(audio.duration);
+        const setAudioData = () => {
+            if (!isNaN(audio.duration) && audio.duration !== Infinity) {
+                setDuration(audio.duration);
+            }
+        };
         const setAudioTime = () => setCurrentTime(audio.currentTime);
         const handlePlay = () => setIsPlaying(true);
         const handlePause = () => setIsPlaying(false);
         const handleEnd = () => setIsPlaying(false);
 
-        audio.addEventListener('loadeddata', setAudioData);
+        audio.addEventListener('loadedmetadata', setAudioData);
+        audio.addEventListener('durationchange', setAudioData);
         audio.addEventListener('timeupdate', setAudioTime);
         audio.addEventListener('play', handlePlay);
         audio.addEventListener('pause', handlePause);
         audio.addEventListener('ended', handleEnd);
 
+        if (audio.readyState >= 1) {
+            setAudioData();
+        }
+
         return () => {
-            audio.removeEventListener('loadeddata', setAudioData);
+            audio.removeEventListener('loadedmetadata', setAudioData);
+            audio.removeEventListener('durationchange', setAudioData);
             audio.removeEventListener('timeupdate', setAudioTime);
             audio.removeEventListener('play', handlePlay);
             audio.removeEventListener('pause', handlePause);
             audio.removeEventListener('ended', handleEnd);
         }
-    }, []);
+    }, [isVisible]);
 
     const togglePlayPause = () => {
         if (isPlaying) {
@@ -433,20 +443,20 @@ const FloatingAudioPlayer = ({ src, streamerName, isOpened }: { src: string, str
     };
 
     return (
-        <AnimatePresence>
-            {isVisible && (
-                <motion.div 
-                    initial={{ y: 200, opacity: 0, scale: 0.9 }}
-                    animate={{ y: 0, opacity: 1, scale: 1 }}
-                    exit={{ y: 200, opacity: 0, scale: 0.9 }}
-                    transition={{ type: "spring", stiffness: 200, damping: 25 }}
-                    className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-[400px] md:bottom-8 md:right-8 md:left-auto md:translate-x-0 z-[60] pointer-events-auto"
-                >
-                    <div className="bg-[#0b0c10]/80 backdrop-blur-3xl border border-white/15 rounded-[2rem] p-5 shadow-[0_30px_60px_rgba(0,0,0,0.8),_inset_0_2px_20px_rgba(255,255,255,0.05)] overflow-hidden relative group">
-                        {/* Audio Element hidden */}
-                        <audio ref={audioRef} src={src} preload="metadata" />
-                        
-                        {/* Shimmer overlay */}
+        <>
+            {/* Audio Element hidden */}
+            <audio ref={audioRef} src={src} preload="metadata" />
+            <AnimatePresence>
+                {isVisible && (
+                    <motion.div 
+                        initial={{ y: 200, opacity: 0, scale: 0.9 }}
+                        animate={{ y: 0, opacity: 1, scale: 1 }}
+                        exit={{ y: 200, opacity: 0, scale: 0.9 }}
+                        transition={{ type: "spring", stiffness: 200, damping: 25 }}
+                        className="fixed bottom-[100px] left-1/2 -translate-x-1/2 w-[90%] max-w-[400px] lg:bottom-8 lg:right-8 lg:left-auto lg:translate-x-0 z-[60] pointer-events-auto"
+                    >
+                        <div className="bg-[#0b0c10]/80 backdrop-blur-3xl border border-white/15 rounded-[2rem] p-5 shadow-[0_30px_60px_rgba(0,0,0,0.8),_inset_0_2px_20px_rgba(255,255,255,0.05)] overflow-hidden relative group">
+                            {/* Shimmer overlay */}
                         <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/5 to-white/0 opacity-0 group-hover:opacity-100 transition-opacity duration-1000 transform -skew-x-12 translate-x-[-100%] group-hover:translate-x-[100%] pointer-events-none"></div>
 
                         {/* Glow effect based on playstate */}
@@ -549,7 +559,8 @@ const FloatingAudioPlayer = ({ src, streamerName, isOpened }: { src: string, str
                     </div>
                 </motion.div>
             )}
-        </AnimatePresence>
+            </AnimatePresence>
+        </>
     );
 }
 
