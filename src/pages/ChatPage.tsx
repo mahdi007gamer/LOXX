@@ -599,8 +599,8 @@ export const ChatPage: React.FC = () => {
   const { allGames: games, myGames } = useGames();
   const { user, isSidebarCollapsed: authIsSidebarCollapsed } = useAuth();
   const isSidebarCollapsed = authIsSidebarCollapsed;
-  const isVipOrPlus = ((user as any)?.membership === "VIP" || (user as any)?.membership === "PLUS" || (user as any)?.profile?.membershipType === "VIP" || (user as any)?.profile?.membershipType === "PLUS");
-  const isVipUser = ((user as any)?.membership === "VIP" || (user as any)?.profile?.membershipType === "VIP");
+  const isVipUser = ((user as any)?.membership === "VIP" || (user as any)?.profile?.membershipType === "VIP" || (user as any)?.role === "ADMIN");
+  const isVipOrPlus = ((user as any)?.membership === "VIP" || (user as any)?.membership === "PLUS" || (user as any)?.profile?.membershipType === "VIP" || (user as any)?.profile?.membershipType === "PLUS" || (user as any)?.role === "ADMIN");
   const { lobby } = useLobby();
   const [searchParams] = useSearchParams();
   const [activeChannelId, setActiveChannelId] = useState("general");
@@ -1452,6 +1452,14 @@ export const ChatPage: React.FC = () => {
         isElectron ? "h-[calc(100dvh-164px)] md:h-[calc(100vh-100px)]" : "h-[calc(100dvh-128px)] md:h-[calc(100vh-64px)]"
       )}
       style={{ overscrollBehavior: 'none' }} 
+      onDragEnter={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      }}
+      onDragLeave={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      }}
       onDragOver={(e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -1465,7 +1473,7 @@ export const ChatPage: React.FC = () => {
         if (activeChannelId === 'news' && (user as any)?.role === 'ADMIN') {
           handleFileUpload(file);
         } else if (file.type === "image/gif") {
-          if (((user as any)?.membership === "VIP" || (user as any)?.profile?.membershipType === "VIP")) {
+          if (isVipUser) {
             handleGifUploadAction(file);
             setShowGifPicker(false);
           } else {
@@ -1473,6 +1481,8 @@ export const ChatPage: React.FC = () => {
             setShowGifPicker(true);
             setGifTab("upload");
           }
+        } else {
+          toast.error("در گروه‌ها و چت‌های سراسری تنها آپلود فایل‌های گیف (مخصوص VIP) مجاز است.");
         }
       }}
     >

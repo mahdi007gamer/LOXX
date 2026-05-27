@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { ScreenSplash } from "./components/layout/ScreenSplash";
@@ -56,7 +56,7 @@ import { DownloadPage } from "./pages/DownloadPage";
 
 const AppContent = () => {
   const { isSidebarCollapsed } = useAuth();
-  const { overlayToastPosition, overlayToastXOffset, overlayToastYOffset, joinLobby } = useLobby();
+  const { overlayToastPosition, overlayToastXOffset, overlayToastYOffset, joinLobby, lobby } = useLobby();
   const { openProfile } = useProfilePopover();
   const navigate = useNavigate();
   const location = useLocation();
@@ -219,6 +219,21 @@ const AppContent = () => {
     return style;
   };
 
+  const lobbyUpdateRef = useRef<string | null>(null);
+  useEffect(() => {
+    lobbyUpdateRef.current = lobby?.id || null;
+  }, [lobby?.id]);
+
+  useEffect(() => {
+    const pendingLobbyId = localStorage.getItem("loxx_update_pending_rejoin_lobby");
+    if (pendingLobbyId) {
+      localStorage.removeItem("loxx_update_pending_rejoin_lobby");
+      setTimeout(() => {
+        joinLobby(pendingLobbyId);
+      }, 1500); 
+    }
+  }, [joinLobby]);
+
   const handleSplashComplete = () => {
     setShowSplash(false);
     if (typeof sessionStorage !== "undefined") {
@@ -251,14 +266,17 @@ const AppContent = () => {
                   className="absolute inset-y-0 right-0 bg-gradient-to-l from-[#00e5ff] to-[#0088ff]"
                   onAnimationComplete={() => {
                     setTimeout(() => {
+                      if (lobbyUpdateRef.current) {
+                        localStorage.setItem("loxx_update_pending_rejoin_lobby", lobbyUpdateRef.current);
+                      }
                       updateFn();
                     }, 500);
                   }}
                 />
               </div>
               <div className="flex justify-between items-center text-[10px] text-gray-500 font-bold font-mono">
-                <span>%100</span>
                 <span>%0</span>
+                <span>%100</span>
               </div>
             </div>
           ), { duration: 15000, position: 'bottom-right' });

@@ -138,7 +138,7 @@ export class UploadController {
         include: { profile: true }
       });
 
-      if (!user || user.profile?.membershipType !== "VIP") {
+      if (!user || (user.profile?.membershipType !== "VIP" && user.role !== "ADMIN")) {
         // Delete uploaded file to avoid waste
         const tempPath = path.join(process.cwd(), "uploads", req.file.filename);
         if (fs.existsSync(tempPath)) {
