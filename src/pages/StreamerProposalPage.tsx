@@ -190,73 +190,137 @@ const ProfileAnimation = ({ name }: { name: string }) => {
 
 const EnvelopeIntro = ({ onOpen, streamerName }: { onOpen: () => void, streamerName: string }) => {
     const [opening, setOpening] = useState(false);
+    const [decryptText, setDecryptText] = useState("DECRYPTING DATA...");
+    
+    useEffect(() => {
+        const interval = setInterval(() => {
+            const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%*";
+            let res = "";
+            for (let i = 0; i < 15; i++) {
+                res += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            setDecryptText(res);
+        }, 50);
+
+        const timeout = setTimeout(() => {
+            clearInterval(interval);
+            setDecryptText("ACCESS GRANTED");
+        }, 1500);
+
+        return () => {
+            clearInterval(interval);
+            clearTimeout(timeout);
+        };
+    }, []);
     
     const handleOpenClick = () => {
+        if (decryptText !== "ACCESS GRANTED") return;
         setOpening(true);
         setTimeout(() => {
             onOpen();
-        }, 800);
+        }, 1000);
     };
 
     return (
         <motion.div 
            initial={{ opacity: 1 }}
-           exit={{ opacity: 0, filter: "blur(20px)", scale: 1.1 }}
-           transition={{ duration: 0.8, ease: "easeInOut" }}
-           className="fixed inset-0 z-50 bg-[#050508] flex items-center justify-center overflow-hidden"
+           exit={{ opacity: 0, filter: "blur(40px)", scale: 1.5 }}
+           transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
+           className="fixed inset-0 z-50 bg-[#020204] flex items-center justify-center overflow-hidden"
         >
-             {/* Background Particles/Glow */}
-             <div className="absolute inset-0 z-0 pointer-events-none flex items-center justify-center">
+             {/* Dynamic Hex Background */}
+             <div className="absolute inset-0 z-0 pointer-events-none flex items-center justify-center overflow-hidden">
+                <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCI+PHBhdGggZD0iTTMwIDBMNjAgMTVWMzBMMzAgNDVMMCAzMFYxNUwzMCAwWiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMDMpIiBzdHJva2Utd2lkdGg9IjEiLz48L3N2Zz4=')] opacity-30"></div>
                 <motion.div 
-                   animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.6, 0.3] }}
-                   transition={{ duration: 4, repeat: Infinity }}
-                   className="w-[60vw] h-[60vw] md:w-[40vw] md:h-[40vw] bg-neon-blue/10 rounded-full blur-[100px]"
+                   animate={{ scale: [1, 1.5, 1], opacity: [0.2, 0.5, 0.2] }}
+                   transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+                   className="w-[80vw] h-[80vw] md:w-[60vw] md:h-[60vw] bg-neon-blue/5 rounded-full blur-[120px]"
                 />
              </div>
              
+             {/* Center Box Wrapper */}
              <motion.div 
-                initial={{ y: 0, opacity: 1, scale: 1 }}
-                animate={opening ? { y: -50, opacity: 0, scale: 1.2 } : { y: 0, opacity: 1, scale: 1 }}
-                transition={{ duration: 0.8, ease: "anticipate" }}
-                className="relative z-10 flex flex-col items-center px-4"
+                initial={{ y: 50, opacity: 0, scale: 0.9 }}
+                animate={opening ? { y: -100, opacity: 0, scale: 1.1 } : { y: 0, opacity: 1, scale: 1 }}
+                transition={{ duration: 0.8, ease: "backOut" }}
+                className="relative z-10 flex flex-col items-center px-4 w-full max-w-lg"
              >
-                 {/* The Envelope */}
+                 {/* High-Tech Container */}
                  <div 
                     onClick={!opening ? handleOpenClick : undefined}
-                    className="relative w-[320px] h-[220px] md:w-[420px] md:h-[280px] bg-gradient-to-b from-[#12141a] to-[#0a0a0f] border border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] overflow-hidden cursor-pointer group flex flex-col items-center justify-center group"
+                    className="relative w-full aspect-[4/3] bg-black/60 backdrop-blur-md border border-white/10 rounded-xl shadow-[0_30px_100px_rgba(0,0,0,0.9)] overflow-hidden cursor-pointer group flex flex-col items-center justify-center group"
                  >
-                     <div className="absolute top-0 left-0 w-full h-[5px] bg-gradient-to-r from-neon-blue via-neon-purple to-neon-pink"></div>
-                     
-                     <motion.div 
-                         animate={{ rotate: 360 }}
-                         transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-                         className="absolute -right-20 -top-20 w-40 h-40 bg-neon-blue/20 blur-[50px] rounded-full"
-                     />
-                     <motion.div 
-                         animate={{ rotate: -360 }}
-                         transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-                         className="absolute -left-20 -bottom-20 w-40 h-40 bg-neon-pink/20 blur-[50px] rounded-full"
-                     />
+                     {/* Corner acccents */}
+                     <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-neon-blue rounded-tl-xl"></div>
+                     <div className="absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 border-neon-purple rounded-tr-xl"></div>
+                     <div className="absolute bottom-0 left-0 w-8 h-8 border-b-2 border-l-2 border-neon-pink rounded-bl-xl"></div>
+                     <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-[#ffaa00] rounded-br-xl"></div>
 
-                     <div className="relative z-10 flex flex-col items-center transition-transform duration-500 group-hover:scale-105">
-                         <div className="w-14 h-14 md:w-16 md:h-16 rounded-full border border-neon-blue/40 bg-neon-blue/10 flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(0,229,255,0.3)] backdrop-blur-md">
-                             <Mail className="w-6 h-6 md:w-8 md:h-8 text-neon-blue" />
+                     {/* Scanner line */}
+                     <motion.div 
+                        animate={{ y: ['-100%', '300%'] }}
+                        transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                        className="absolute top-0 left-0 w-full h-1/3 bg-gradient-to-b from-transparent via-neon-blue/10 to-neon-blue/30 border-b border-neon-blue/50"
+                     />
+                     
+                     {/* Glowing Orbs in background */}
+                     <motion.div animate={{ rotate: 360 }} transition={{ duration: 30, repeat: Infinity, ease: "linear" }} className="absolute -right-20 -top-20 w-64 h-64 bg-neon-blue/10 blur-[60px] rounded-full pointer-events-none" />
+                     <motion.div animate={{ rotate: -360 }} transition={{ duration: 30, repeat: Infinity, ease: "linear" }} className="absolute -left-20 -bottom-20 w-64 h-64 bg-neon-pink/10 blur-[60px] rounded-full pointer-events-none" />
+
+                     {/* Main Center UI */}
+                     <div className="relative z-10 flex flex-col items-center transition-transform duration-700 w-full px-6">
+                         <div className="mb-8 relative">
+                             <div className="absolute inset-0 border-[3px] border-neon-blue rounded-full border-t-transparent animate-spin" style={{ animationDuration: '3s' }}></div>
+                             <div className="absolute inset-2 border-[2px] border-neon-purple rounded-full border-b-transparent animate-spin-reverse" style={{ animationDuration: '2s', animationDirection: 'reverse' }}></div>
+                             <div className="w-20 h-20 bg-neon-blue/10 rounded-full flex items-center justify-center backdrop-blur-md shadow-[0_0_40px_rgba(0,229,255,0.4)] m-4">
+                                <Award className="w-10 h-10 text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.8)]" />
+                             </div>
                          </div>
-                         <h2 className="text-2xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400 text-center tracking-tight">دعوت‌نامه اختصاصی</h2>
-                         <div className="mt-4 py-1.5 px-4 bg-white/5 border border-white/10 rounded-full">
-                            <span className="text-sm text-gray-300 font-bold">برای: <span className="text-white font-black ml-1">{streamerName}</span></span>
+                         
+                         <h2 className="text-3xl lg:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400 text-center tracking-tight mb-2 uppercase" dir="ltr">
+                            SECRET DOSSIER
+                         </h2>
+                         
+                         <div className="h-6 overflow-hidden mb-6">
+                            <AnimatePresence mode="popLayout">
+                                <motion.div 
+                                    key={decryptText}
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -10 }}
+                                    className={`font-mono text-sm tracking-[0.2em] font-bold ${decryptText === "ACCESS GRANTED" ? "text-green-400 drop-shadow-[0_0_8px_rgba(74,222,128,1)]" : "text-neon-pink drop-shadow-[0_0_8px_rgba(255,0,128,1)]"}`}
+                                    dir="ltr"
+                                >
+                                    {decryptText}
+                                </motion.div>
+                            </AnimatePresence>
+                         </div>
+
+                         <div className="py-2 px-6 bg-[#12141a]/80 backdrop-blur-md border border-white/10 rounded-lg flex flex-col items-center shadow-[inset_0_2px_20px_rgba(255,255,255,0.05)] w-full max-w-[280px]">
+                            <span className="text-xs text-gray-400 font-bold mb-1 tracking-widest uppercase">Target Identity</span>
+                            <span className="text-white font-black text-lg tracking-wider" dir="ltr">@{streamerName}</span>
                          </div>
                      </div>
                  </div>
                  
+                 {/* Open Button */}
                  <motion.button 
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
+                    whileHover={decryptText === "ACCESS GRANTED" ? { scale: 1.05 } : {}}
+                    whileTap={decryptText === "ACCESS GRANTED" ? { scale: 0.95 } : {}}
                     onClick={!opening ? handleOpenClick : undefined}
-                    className="mt-12 px-8 py-4 bg-white text-[#050508] rounded-full font-black text-lg shadow-[0_0_40px_rgba(255,255,255,0.3)] hover:shadow-[0_0_60px_rgba(255,255,255,0.5)] transition-shadow overflow-hidden relative group"
+                    disabled={decryptText !== "ACCESS GRANTED"}
+                    className={`mt-10 px-10 py-5 rounded-xl font-black text-lg w-full max-w-[320px] shadow-[0_0_40px_rgba(255,255,255,0.15)] transition-all overflow-hidden relative group border ${decryptText === "ACCESS GRANTED" ? "bg-white text-black border-white hover:shadow-[0_0_60px_rgba(255,255,255,0.4)] cursor-pointer" : "bg-white/5 text-gray-500 border-white/10 cursor-not-allowed"}`}
                  >
-                    <div className="absolute inset-0 bg-gradient-to-r from-neon-blue via-neon-purple to-neon-pink opacity-0 group-hover:opacity-20 transition-opacity"></div>
-                    <span className="relative z-10">باز کردن پیشنهاد استراتژیک</span>
+                    {decryptText === "ACCESS GRANTED" && (
+                       <div className="absolute inset-0 bg-[linear-gradient(90deg,transparent,rgba(255,255,255,0.5),transparent)] -translate-x-[200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
+                    )}
+                    <span className="relative z-10 flex items-center justify-center gap-2">
+                       {decryptText === "ACCESS GRANTED" ? (
+                          <><span>باز کردن قرارداد استراتژیک</span> <ArrowLeft className="w-5 h-5 ml-2" /></>
+                       ) : (
+                          "در حال پردازش..."
+                       )}
+                    </span>
                  </motion.button>
              </motion.div>
         </motion.div>
@@ -330,10 +394,10 @@ const StreamerProposalPage = () => {
           <div className="text-lg text-gray-300 font-medium leading-loose max-w-4xl space-y-6 bg-white/5 border border-white/5 p-6 rounded-3xl backdrop-blur-sm">
             <p>امیدوارم حالت عالی باشه.</p>
             <p>
-              ما در تیم <span className="text-white font-black tracking-wider">LOXX</span>، به عنوان پیشروترین پلتفرم زیرساختی و تعاملی گیمینگ ایران، در حال توسعه محیطی هوشمند و فوق‌العاده سریع هستیم تا استرس‌های فنی استریم از جمله پینگ بالا، عدم پایداری شبکه و دغدغه‌های مدیریت کامیونیتی رو به صفر برسونیم.
+              ما در تیم <span className="text-white font-black tracking-wider">LOXX</span>، فراتر از یک پلتفرم کاهش پینگ، در حال ساخت <strong>یک شبکه عظیم و قدرتمند از گیمرهای ایرانی</strong> هستیم؛ محیطی با زیرساخت عالی که کاربران می‌تونن به راحتی <strong>چت کنن، دوستای جدید پیدا کنن، تیم‌های حرفه‌ای بسازن</strong> و کامیونیتی خودشون رو گسترش بدن.
             </p>
             <p>
-              با بررسی دقیق استریم‌های حرفه‌ای تو و پتانسیل بی‌نظیر کامیونیتی بزرگت، پکیج ویژه و اختصاصی <span className="text-neon-pink font-black uppercase tracking-wide">Elite Streamer</span> رو متناسب با نیازهای تو طراحی کردیم.
+              با بررسی دقیق استریم‌های حرفه‌ای تو و پتانسیل بی‌نظیر کامیونیتی بزرگت، پکیج ویژه و اختصاصی <span className="text-neon-pink font-black uppercase tracking-wide">Elite Streamer</span> رو برای پیوستن تو به این اکوسیستم طراحی کردیم تا دغدغه‌های مدیریت لابی‌ها و پایداری شبکه‌ت رو به صفر برسونیم.
             </p>
           </div>
         </motion.section>
@@ -354,7 +418,7 @@ const StreamerProposalPage = () => {
              <div className="absolute top-0 right-0 w-[50%] h-[150%] bg-gradient-to-l from-neon-blue/5 to-transparent pointer-events-none transform rotate-12 translate-x-20 -translate-y-10"></div>
              
              <p className="text-gray-300 font-medium text-[17px] leading-loose relative z-10 mb-8">
-               یک اکوسیستم جامع و چندپلتفرمی <span className="inline-flex items-center text-neon-blue font-bold px-2 py-1 rounded bg-neon-blue/10 text-sm mx-1 border border-neon-blue/20 shadow-inner">Windows, Android, Web</span> که با بهره‌گیری از تکنولوژی پیشرفته <span className="inline-flex items-center text-neon-blue font-bold px-2 py-1 rounded bg-neon-blue/10 text-sm mx-1 border border-neon-blue/20 shadow-inner">Zero-TUN</span> و سرورهای داخلی اختصاصی، پایین‌ترین پینگ ممکن، ثبات بی‌نظیر در اتصال و بالاترین سطح امنیت را برای پلیرهای ایرانی فراهم می‌کنه. لوکس علاوه بر بهینه‌سازی شبکه، ابزارهای تعاملی کاملاً حرفه‌ای (فراتر از دیسکورد) ارائه میده.
+               یک اکوسیستم جامع و چندپلتفرمی <span className="inline-flex items-center text-neon-blue font-bold px-2 py-1 rounded bg-neon-blue/10 text-sm mx-1 border border-neon-blue/20 shadow-inner">Windows, Android, Web</span> که به عنوان <strong>پایگاه اصلی شبکه‌سازی گیمرها</strong> عمل می‌کنه. ما با بهره‌گیری از تکنولوژی اختصاصی <span className="inline-flex items-center text-neon-blue font-bold px-2 py-1 rounded bg-neon-blue/10 text-sm mx-1 border border-neon-blue/20 shadow-inner">Zero-TUN</span> علاوه بر فراهم کردن پایین‌ترین پینگ ممکن، قدرتمندترین ابزارهای تعاملی رو برای چت سراسری، یافتن هم‌بازی و مدیریت کلن‌ها در یک محیط کاملا حرفه‌ای مجهز کرده‌ایم.
              </p>
 
              {/* Feature Checklist */}
