@@ -30,6 +30,7 @@ import { PremiumPage } from "./pages/PremiumPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { FriendsPage } from "./pages/FriendsPage";
 import { InviteRedirectPage } from "./pages/InviteRedirectPage";
+import StreamerProposalPage from "./pages/StreamerProposalPage";
 import { BaleCallbackPage } from "./pages/BaleCallbackPage";
 import { GamesPage } from "./pages/GamesPage";
 import { MyGamesPage } from "./pages/MyGamesPage";
@@ -429,6 +430,8 @@ const AppContent = () => {
           <Route path="/settings/:tab" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
           <Route path="/electron-settings" element={<ProtectedRoute><ElectronSettingsPage /></ProtectedRoute>} />
           <Route path="/friends" element={<ProtectedRoute><FriendsPage /></ProtectedRoute>} />
+          <Route path="/proposal/:name" element={<StreamerProposalPage />} />
+          <Route path="/invite/Rest_in_Peace" element={<StreamerProposalPage />} />
           <Route path="/invite/:code" element={<InviteRedirectPage />} />
           <Route path="/games" element={<ProtectedRoute><GamesPage /></ProtectedRoute>} />
           <Route path="/my-games" element={<ProtectedRoute><MyGamesPage /></ProtectedRoute>} />
