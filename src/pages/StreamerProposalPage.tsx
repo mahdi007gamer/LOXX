@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { Shield, HeadphonesIcon, MessageSquare, Award, ArrowLeft, Phone, Mail, Instagram, Send, CheckCircle2, AlertCircle, User, Zap } from 'lucide-react';
+import { Shield, HeadphonesIcon, MessageSquare, Award, ArrowLeft, Phone, Mail, Instagram, Send, CheckCircle2, AlertCircle, User, Zap, Play, Pause, Volume2, VolumeX, Volume1, Forward, Rewind } from 'lucide-react';
 
 // Mini Components for Animations
 const RevenueAnimation = () => {
@@ -327,6 +327,232 @@ const EnvelopeIntro = ({ onOpen, streamerName }: { onOpen: () => void, streamerN
     )
 }
 
+const FloatingAudioPlayer = ({ src, streamerName, isOpened }: { src: string, streamerName: string, isOpened: boolean }) => {
+    const audioRef = useRef<HTMLAudioElement>(null);
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [duration, setDuration] = useState(0);
+    const [currentTime, setCurrentTime] = useState(0);
+    const [volume, setVolume] = useState(1);
+    const [isMuted, setIsMuted] = useState(false);
+    const [isVisible, setIsVisible] = useState(false);
+
+    useEffect(() => {
+        if (isOpened) {
+            const timer = setTimeout(() => {
+                setIsVisible(true);
+                // Attempt to auto play
+                if (audioRef.current) {
+                   audioRef.current.volume = volume;
+                   audioRef.current.play().catch(() => {
+                       // autoplay prevented, user needs to click play
+                   });
+                }
+            }, 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [isOpened]);
+
+    useEffect(() => {
+        const audio = audioRef.current;
+        if (!audio) return;
+        
+        const setAudioData = () => setDuration(audio.duration);
+        const setAudioTime = () => setCurrentTime(audio.currentTime);
+        const handlePlay = () => setIsPlaying(true);
+        const handlePause = () => setIsPlaying(false);
+        const handleEnd = () => setIsPlaying(false);
+
+        audio.addEventListener('loadeddata', setAudioData);
+        audio.addEventListener('timeupdate', setAudioTime);
+        audio.addEventListener('play', handlePlay);
+        audio.addEventListener('pause', handlePause);
+        audio.addEventListener('ended', handleEnd);
+
+        return () => {
+            audio.removeEventListener('loadeddata', setAudioData);
+            audio.removeEventListener('timeupdate', setAudioTime);
+            audio.removeEventListener('play', handlePlay);
+            audio.removeEventListener('pause', handlePause);
+            audio.removeEventListener('ended', handleEnd);
+        }
+    }, []);
+
+    const togglePlayPause = () => {
+        if (isPlaying) {
+            audioRef.current?.pause();
+        } else {
+            audioRef.current?.play();
+        }
+    };
+
+    const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = Number(e.target.value);
+        setVolume(value);
+        if (audioRef.current) {
+            audioRef.current.volume = value;
+            setIsMuted(value === 0);
+        }
+    };
+
+    const toggleMute = () => {
+        if (audioRef.current) {
+            audioRef.current.muted = !isMuted;
+            setIsMuted(!isMuted);
+        }
+    };
+
+    const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const time = Number(e.target.value);
+        setCurrentTime(time);
+        if (audioRef.current) {
+            audioRef.current.currentTime = time;
+        }
+    };
+
+    const skipForward = () => {
+        if (audioRef.current) {
+            audioRef.current.currentTime = Math.min(audioRef.current.currentTime + 10, duration);
+        }
+    };
+
+    const skipBackward = () => {
+        if (audioRef.current) {
+           audioRef.current.currentTime = Math.max(audioRef.current.currentTime - 10, 0);
+        }
+    };
+
+    const formatTime = (time: number) => {
+        if (time && !isNaN(time)) {
+            const minutes = Math.floor(time / 60);
+            const formatMinutes = minutes < 10 ? `0${minutes}` : `${minutes}`;
+            const seconds = Math.floor(time % 60);
+            const formatSeconds = seconds < 10 ? `0${seconds}` : `${seconds}`;
+            return `${formatMinutes}:${formatSeconds}`;
+        }
+        return '00:00';
+    };
+
+    return (
+        <AnimatePresence>
+            {isVisible && (
+                <motion.div 
+                    initial={{ y: 200, opacity: 0, scale: 0.9 }}
+                    animate={{ y: 0, opacity: 1, scale: 1 }}
+                    exit={{ y: 200, opacity: 0, scale: 0.9 }}
+                    transition={{ type: "spring", stiffness: 200, damping: 25 }}
+                    className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-[400px] md:bottom-8 md:right-8 md:left-auto md:translate-x-0 z-[60] pointer-events-auto"
+                >
+                    <div className="bg-[#0b0c10]/80 backdrop-blur-3xl border border-white/15 rounded-[2rem] p-5 shadow-[0_30px_60px_rgba(0,0,0,0.8),_inset_0_2px_20px_rgba(255,255,255,0.05)] overflow-hidden relative group">
+                        {/* Audio Element hidden */}
+                        <audio ref={audioRef} src={src} preload="metadata" />
+                        
+                        {/* Shimmer overlay */}
+                        <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/5 to-white/0 opacity-0 group-hover:opacity-100 transition-opacity duration-1000 transform -skew-x-12 translate-x-[-100%] group-hover:translate-x-[100%] pointer-events-none"></div>
+
+                        {/* Glow effect based on playstate */}
+                        <motion.div 
+                           animate={{ opacity: isPlaying ? [0.1, 0.3, 0.1] : 0, scale: isPlaying ? [1, 1.2, 1] : 1 }}
+                           transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                           className="absolute -top-10 -right-10 w-40 h-40 bg-neon-purple/40 rounded-full blur-[50px] pointer-events-none"
+                        />
+                        <motion.div 
+                           animate={{ opacity: isPlaying ? [0.05, 0.2, 0.05] : 0, scale: isPlaying ? [1, 1.3, 1] : 1 }}
+                           transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+                           className="absolute -bottom-10 -left-10 w-40 h-40 bg-neon-blue/40 rounded-full blur-[50px] pointer-events-none"
+                        />
+
+                        <div className="flex justify-between items-center mb-5 relative z-10">
+                             <div className="flex items-center gap-4">
+                                 <div className="w-12 h-12 rounded-full border border-white/20 bg-black p-[3px] shadow-[0_0_20px_rgba(0,0,0,0.5)] flex-shrink-0 relative">
+                                    {/* Spinner Border */}
+                                    <motion.div animate={{ rotate: 360 }} transition={{ duration: 5, repeat: Infinity, ease: "linear" }} className="absolute inset-0 rounded-full border-2 border-neon-blue border-r-transparent opacity-50"></motion.div>
+                                     <div className="w-full h-full bg-gradient-to-br from-gray-800 to-gray-900 rounded-full flex items-center justify-center relative overflow-hidden">
+                                        <AnimatePresence>
+                                            {isPlaying && (
+                                                <motion.div 
+                                                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                                                    className="flex gap-1 items-end h-3"
+                                                >
+                                                    <motion.div animate={{ height: ['30%', '100%', '40%'] }} transition={{ duration: 0.6, repeat: Infinity }} className="w-1 bg-neon-blue rounded-full shadow-[0_0_5px_#00e5ff]"></motion.div>
+                                                    <motion.div animate={{ height: ['60%', '20%', '80%'] }} transition={{ duration: 0.5, repeat: Infinity }} className="w-1 bg-neon-purple rounded-full shadow-[0_0_5px_#b026ff]"></motion.div>
+                                                    <motion.div animate={{ height: ['40%', '90%', '50%'] }} transition={{ duration: 0.7, repeat: Infinity }} className="w-1 bg-neon-pink rounded-full shadow-[0_0_5px_#ff0080]"></motion.div>
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
+                                        {!isPlaying && <Volume1 className="w-5 h-5 text-gray-500" />}
+                                     </div>
+                                 </div>
+                                 <div className="flex flex-col">
+                                     <span className="text-white font-black text-sm tracking-wide mb-0.5" dir="ltr">Voice Message</span>
+                                     <span className="text-neon-pink/80 text-[11px] font-bold tracking-wider" dir="ltr">FROM @{streamerName}</span>
+                                 </div>
+                             </div>
+                             
+                             {/* Volume Desktop */}
+                             <div className="hidden md:flex items-center gap-2 group/vol bg-white/5 rounded-full px-3 py-1.5 border border-white/5 hover:border-white/20 transition-all cursor-pointer" dir="ltr">
+                                 <button onClick={toggleMute} className="text-gray-400 hover:text-white transition-colors">
+                                     {isMuted || volume === 0 ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4 text-neon-blue" />}
+                                 </button>
+                                 <div className="w-0 overflow-hidden group-hover/vol:w-16 transition-all duration-300 ease-out flex items-center">
+                                     <input 
+                                         type="range" 
+                                         min={0} max={1} step={0.01} 
+                                         value={isMuted ? 0 : volume} 
+                                         onChange={handleVolumeChange}
+                                         className="w-full h-1 bg-white/20 rounded-full appearance-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-2.5 [&::-webkit-slider-thumb]:h-2.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white cursor-pointer ml-1"
+                                     />
+                                 </div>
+                             </div>
+                        </div>
+
+                        {/* Progress Bar */}
+                        <div className="flex items-center gap-3 mb-4 relative z-10" dir="ltr">
+                            <span className="text-[11px] text-gray-400 font-mono font-bold w-10 text-right tabular-nums">{formatTime(currentTime)}</span>
+                            <div className="flex-1 relative flex items-center group/slider h-5 cursor-pointer">
+                                <input 
+                                    type="range" 
+                                    min={0} 
+                                    max={duration || 100} 
+                                    value={currentTime} 
+                                    onChange={handleSeek}
+                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                />
+                                <div className="w-full h-1.5 bg-black/60 rounded-full overflow-hidden border border-white/5 group-hover/slider:h-2 transition-all">
+                                    <div 
+                                        className="h-full bg-gradient-to-r from-neon-blue via-neon-purple to-neon-pink rounded-full relative shadow-[0_0_10px_rgba(176,38,255,0.5)]"
+                                        style={{ width: `${(currentTime / (duration || 1)) * 100}%` }}
+                                    >
+                                        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-white rounded-full lg:opacity-0 group-hover/slider:opacity-100 transition-opacity"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <span className="text-[11px] text-gray-500 font-mono font-bold w-10 tabular-nums">{formatTime(duration)}</span>
+                        </div>
+
+                        {/* Controls */}
+                        <div className="flex items-center justify-center gap-8 relative z-10" dir="ltr">
+                            <button onClick={skipBackward} className="text-gray-400 hover:text-white transition-all transform hover:-translate-x-1 hover:scale-110">
+                                <Rewind className="w-6 h-6 fill-current" />
+                            </button>
+                            
+                            <button 
+                                onClick={togglePlayPause} 
+                                className="w-14 h-14 rounded-full bg-white flex items-center justify-center shadow-[0_0_20px_rgba(255,255,255,0.2)] hover:shadow-[0_0_30px_rgba(255,255,255,0.5)] transition-all hover:scale-105 active:scale-95 text-black border-[3px] border-white/20 bg-clip-padding"
+                            >
+                                {isPlaying ? <Pause className="w-6 h-6 fill-current" /> : <Play className="w-6 h-6 fill-current ml-1" />}
+                            </button>
+
+                            <button onClick={skipForward} className="text-gray-400 hover:text-white transition-all transform hover:translate-x-1 hover:scale-110">
+                                <Forward className="w-6 h-6 fill-current" />
+                            </button>
+                        </div>
+                    </div>
+                </motion.div>
+            )}
+        </AnimatePresence>
+    );
+}
+
 // Main Page
 const StreamerProposalPage = () => {
   const { name } = useParams<{ name?: string }>();
@@ -345,6 +571,8 @@ const StreamerProposalPage = () => {
            <EnvelopeIntro onOpen={() => setIsOpened(true)} streamerName={streamerName} />
         )}
       </AnimatePresence>
+
+      <FloatingAudioPlayer src="/Rest_in_Peace.mp3" streamerName={streamerName} isOpened={isOpened} />
 
       {/* Dynamic Background Effects */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
