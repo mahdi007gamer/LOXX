@@ -6,15 +6,8 @@
     <meta name="enamad" content="46418638" />
     <title>LOXX - پیشرفته‌ترین پلتفرم گیمینگ فارسی</title>
     <style>
-      body {
-        margin: 0;
-        padding: 0;
-        background-color: #040408;
-        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        overflow-x: hidden;
-      }
-      /* Preloader styling inside root when empty (before React mounts) */
-      #root:empty {
+      /* Preloader overlay styling (before React mounts) */
+      .preloader-overlay {
         background-color: #040408;
         position: fixed;
         inset: 0;
@@ -23,10 +16,14 @@
         align-items: center;
         justify-content: center;
         z-index: 99999;
+        overflow: hidden;
       }
-      #root:empty::before {
+      .preloader-overlay::before {
         content: '';
         position: absolute;
+        bottom: 50%;
+        right: 50%;
+        transform: translate(50%, 50%);
         width: 350px;
         height: 350px;
         background: radial-gradient(circle, rgba(0, 229, 255, 0.09) 0%, rgba(255, 0, 153, 0.05) 50%, transparent 100%);
@@ -110,14 +107,16 @@
   </head>
   <body>
     <div id="root">
-      <div class="preloader-container">
-        <div class="preloader-logo-wrap">
-          <div class="preloader-spinner"></div>
-          <img class="preloader-logo" src="/logo.png" alt="LOXX" />
-        </div>
-        <div>
-          <h2 class="preloader-text-primary">لوکس کلاینت</h2>
-          <p class="preloader-text-secondary">در حال آماده‌سازی و اتصال به شبکه گیمینگ لوکس...</p>
+      <div class="preloader-overlay">
+        <div class="preloader-container">
+          <div class="preloader-logo-wrap">
+            <div class="preloader-spinner"></div>
+            <img class="preloader-logo" src="/logo.png" alt="LOXX" />
+          </div>
+          <div>
+            <h2 class="preloader-text-primary">لوکس کلاینت</h2>
+            <p class="preloader-text-secondary">در حال آماده‌سازی و اتصال به شبکه گیمینگ لوکس...</p>
+          </div>
         </div>
       </div>
     </div>
