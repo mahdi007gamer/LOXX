@@ -102,7 +102,6 @@ const AppContent = () => {
   const [isMaximized, setIsMaximized] = useState(false);
   const [isDesktop, setIsDesktop] = useState(typeof window !== "undefined" ? window.innerWidth >= 768 : false);
   const [showSplash, setShowSplash] = useState(() => {
-    if (!isElectron) return false;
     if (typeof sessionStorage !== "undefined" && sessionStorage.getItem("loxx_splash_shown")) {
       return false;
     }
