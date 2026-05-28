@@ -11,7 +11,8 @@ import {
   Heart,
   Crown,
   Zap,
-  Mail
+  Mail,
+  Phone
 } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 
@@ -25,6 +26,7 @@ const menuItems = [
   { icon: Users, label: "دوستان", path: "/friends" },
   { icon: MessageSquare, label: "چت سراسری", path: "/chat" },
   { icon: Trophy, label: "رتبه‌بندی", path: "/ranking" },
+  { icon: Phone, label: "ارتباط با ما", path: "/contact" },
   { icon: Mail, label: "ایمیل سازمانی", path: "/email" },
   { icon: Crown, label: "اشتراک ویژه", path: "/premium" },
   { icon: Settings, label: "تنظیمات", path: "/settings" },

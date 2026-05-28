@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
-import { Gamepad2, User, Bell, Menu, X, LayoutDashboard, Target, Users, MessageSquare, Trophy, Settings, Shield, LogOut, Zap, Crown } from "lucide-react";
+import { Gamepad2, User, Bell, Menu, X, LayoutDashboard, Target, Users, MessageSquare, Trophy, Settings, Shield, LogOut, Zap, Crown, Phone } from "lucide-react";
 import { GlowButton } from "../ui/GlowButton";
 import { SmartImage } from "../ui/SmartImage";
 import { motion, AnimatePresence, useScroll, useMotionValueEvent } from "motion/react";
@@ -18,6 +18,7 @@ const menuItems = [
   { icon: User, label: "دوستان", path: "/friends" },
   { icon: MessageSquare, label: "چت سراسری", path: "/chat" },
   { icon: Trophy, label: "رتبه‌بندی", path: "/ranking" },
+  { icon: Phone, label: "ارتباط با ما", path: "/contact" },
   { icon: Shield, label: "اشتراک ویژه", path: "/premium" },
   { icon: Settings, label: "تنظیمات", path: "/settings" },
 ];
@@ -125,6 +126,7 @@ export const Navbar = () => {
               <NavLink to="/lobbies" className={({ isActive }) => cn("transition-all font-black text-[10px] uppercase tracking-[0.2em] italic", isActive ? "text-neon-blue drop-shadow-[0_0_8px_rgba(0,229,255,0.5)]" : "text-gray-400 hover:text-white ripple-active")}>لابی‌ها</NavLink>
               <NavLink to="/chat" className={({ isActive }) => cn("transition-all font-black text-[10px] uppercase tracking-[0.2em] italic", isActive ? "text-neon-blue drop-shadow-[0_0_8px_rgba(0,229,255,0.5)]" : "text-gray-400 hover:text-white ripple-active")}>چت سراسری</NavLink>
               <NavLink to="/games" className={({ isActive }) => cn("transition-all font-black text-[10px] uppercase tracking-[0.2em] italic", isActive ? "text-neon-blue drop-shadow-[0_0_8px_rgba(0,229,255,0.5)]" : "text-gray-400 hover:text-white ripple-active")}>بازی‌ها</NavLink>
+              <NavLink to="/contact" className={({ isActive }) => cn("transition-all font-black text-[10px] uppercase tracking-[0.2em] italic", isActive ? "text-neon-blue drop-shadow-[0_0_8px_rgba(0,229,255,0.5)]" : "text-gray-400 hover:text-white ripple-active")}>ارتباط با ما</NavLink>
               {isLanding && (
                 <button onClick={() => document.getElementById('download')?.scrollIntoView({ behavior: 'smooth' })} className="transition-all font-black text-[10px] uppercase tracking-[0.2em] italic text-gray-400 hover:text-white ripple-active">دانلود</button>
               )}

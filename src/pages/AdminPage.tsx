@@ -186,16 +186,6 @@ export const AdminPage = () => {
             </div>
             <div className="flex flex-wrap gap-4">
               <GlowButton 
-                variant="blue"
-                size="sm"
-                className="h-12 px-6 text-[10px] uppercase font-black tracking-widest italic !rounded-2xl gap-2"
-                onClick={() => {
-                  window.location.href = '/admin/enamad';
-                }}
-              >
-                <Icons.ShieldAlert size={16} /> <span>مدیریت و تاییدیه اینماد (eNamad)</span>
-              </GlowButton>
-              <GlowButton 
                 variant="purple"
                 size="sm"
                 className="h-12 px-6 text-[10px] uppercase font-black tracking-widest italic !rounded-2xl gap-2"

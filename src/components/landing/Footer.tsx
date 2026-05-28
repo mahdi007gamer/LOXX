@@ -21,8 +21,8 @@ export const Footer = () => {
               لوکس اولین و پیشرفته ترین پلتفرم فارسی گیمینگ
             </p>
             <div className="flex flex-col gap-3 pt-2">
-              <span className="text-[10px] text-gray-600 font-extrabold tracking-wider uppercase">شبکه‌های اجتماعی ما</span>
-              <div className="flex gap-3">
+              <span className="text-[10px] text-gray-600 font-extrabold tracking-wider uppercase">شبکه‌های اجتماعی و مجوزها</span>
+              <div className="flex gap-3 items-center flex-wrap">
                 <a 
                   href="https://ble.ir/loxxir" 
                   target="_blank" 
@@ -37,7 +37,23 @@ export const Footer = () => {
                   >
                     <path d="M12 2C6.48 2 2 6.48 2 12c0 1.54.36 2.98.98 4.27L1.15 21.8c-.28.82.55 1.65 1.37 1.37l5.53-1.83C9.35 21.78 10.66 22 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm1 14h-2v-2h2v2zm0-4h-2V7h2v5z"/>
                   </svg>
-                  <span className="text-xs font-black tracking-tight">کانال رسمی بله (loxxir)</span>
+                  <span className="text-xs font-black tracking-tight">کانال رسمی بله</span>
+                </a>
+
+                {/* eNamad Trust Seal */}
+                <a 
+                  referrerPolicy="origin" 
+                  target="_blank" 
+                  href="https://trustseal.enamad.ir/?id=735467&Code=c4De5lsIGSFVCL5jyQCXrTXX9hVa9lWB"
+                  className="inline-block bg-white/90 p-1.5 rounded-2xl hover:bg-white transition-all duration-300 shadow-[0_4px_12px_rgba(0,0,0,0.5)] cursor-pointer"
+                >
+                  <img 
+                    referrerPolicy="origin" 
+                    src="https://trustseal.enamad.ir/logo.aspx?id=735467&Code=c4De5lsIGSFVCL5jyQCXrTXX9hVa9lWB" 
+                    alt="نماد اعتماد الکترونیکی" 
+                    className="h-10 w-10 object-contain block"
+                    style={{ cursor: "pointer" }}
+                  />
                 </a>
               </div>
             </div>

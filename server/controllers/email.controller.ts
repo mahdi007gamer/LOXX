@@ -22,12 +22,20 @@ const ensureDefaultEmail = async () => {
       await prisma.emailMessage.createMany({
         data: [
           {
+            fromAddress: "10mahdi10mahdi10@gmail.com",
+            toAddress: defaultAddress,
+            subject: "تست دریافت ایمیل از صندوق جیمیل خارجی",
+            body: `سلام مهدی عزیز،\n\nامیدوارم حالت خوب باشه. برای دریافت ایمیل‌های واقعی که از سمت جیمیل یا یاهو به آدرس‌های دامنه loxx.ir ارسال میشن، باید حتماً تنظیمات رکورد MX دامنه رو روی سرورهای ایمیل خارجی (مثل Mailgun, SendGrid, Yandex Connect یا پنل‌های هاستینگ دیگر) ست کنی.\n\nاین پیام شبیه‌ساز به عنوان تاییدیه اتصال موقت صندوق پستی برای اکانت گوگل شما ثبت شده است.\n\nبا هماهنگی،\nمهدی`,
+            isIncoming: true,
+            isRead: false
+          },
+          {
             fromAddress: "noreply@enamad.ir",
             toAddress: defaultAddress,
             subject: "بررسی صلاحیت و تایید دامنه loxx.ir",
             body: `کاربر گرامی،\n\nدرخواست شما برای احراز هویت دامنه loxx.ir دریافت شد. لطفاً یکی از روش‌های تاییدیه را انجام دهید:\n1. قرار دادن فایل متنی با نام 46418638.txt حاوی کد تایید در ریشه دامنه\n2. قرار دادن متاتگ <meta name="enamad" content="46418638" /> در هدر صفحه اصلی\n\nپس از انجام، ربات‌های بررسی‌کننده اینماد به صورت خودکار تاییدیه شما را صادر خواهند کرد.\n\nبا احترام،\nمرکز توسعه تجارت الکترونیکی (اینماد)`,
             isIncoming: true,
-            isRead: false
+            isRead: true
           },
           {
             fromAddress: "hello@google.com",
@@ -213,6 +221,11 @@ export const receiveTestEmail = async (req: Request, res: Response) => {
     const targetAddress = toAddress || "info@loxx.ir";
 
     const testTemplates = [
+      {
+        from: "10mahdi10mahdi10@gmail.com",
+        subject: "تست ارسال از صندوق شخصی جیمیل مهدی",
+        body: "سلام ادمین گرامی لوکس،\n\nاین یک ایمیل تستی جهت راه‌اندازی شبیه‌ساز دریافت ایمیل‌های اختصاصی است.\nاز این پس تمامی ایمیل‌های ورودی دامنه به محض همگام‌سازی MX دامنه با هاست به صورت زنده در این بخش شبیه‌سازی و ذخیره خواهند شد.\n\nبا تجدید احترام"
+      },
       {
         from: "cooperation@filimo.com",
         subject: "درخواست همکاری در اسپانسری مسابقات لوکس",

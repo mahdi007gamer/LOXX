@@ -211,7 +211,7 @@ export const EmailPage = () => {
     <div className="container mx-auto px-4 py-8 animate-fade-in text-right" dir="rtl">
       
       {/* Page Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
         <div className="space-y-1">
           <h1 className="text-2xl font-black text-white flex items-center gap-3">
             <Mail className="text-neon-pink" size={28} />
@@ -256,6 +256,17 @@ export const EmailPage = () => {
           >
             <RefreshCw size={16} />
           </button>
+        </div>
+      </div>
+
+      {/* Connection Informational Alert */}
+      <div className="mb-8 rounded-2xl border border-neon-pink/10 bg-neon-pink/5 p-4 text-xs font-bold text-gray-400 leading-relaxed flex gap-3 items-start">
+        <Icons.Info size={20} className="text-neon-pink shrink-0 mt-0.5" />
+        <div className="space-y-1">
+          <p className="text-white text-sm">راهنمای اتصال MX رکورد برای دریافت مستقیم ایمیل از جیمیل و یاهو:</p>
+          <p>
+            پلتفرم با دیتابیس بومی همگام است. ایمیل‌های ارسال شده از طریق وب‌سایت یا از طریق شبیه‌سازها (پاسخ اینماد، زرین‌پال و ایمیل تست) بلادرنگ در اینجا ثبت و نمایش داده خواهند شد. جهت دریافت واقعی نامه‌ها مستقیم از سرویس‌های خارجی همچون جیمیل شخصی‌تان به صندوق‌های <code className="text-neon-pink font-mono font-black">@loxx.ir</code>، باید رکورد <code className="text-neon-pink font-mono font-black">MX</code> دامنه را از طریق پنل کلودفلر یا هاست به سرویس‌های پردازش ایمیل متصل بنشینید.
+          </p>
         </div>
       </div>
 
