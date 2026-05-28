@@ -67,7 +67,10 @@ function MessageItem({ message, onReaction, onSaveGif, onReply, activeChannelId,
   const isVIP = message.senderBadges?.includes(BadgeType.VIP);
   const isPLUS = message.senderBadges?.includes(BadgeType.PLUS);
   const isChamp = message.senderBadges?.includes(BadgeType.CHAMPION);
-  const metadata = typeof (message as any).vipMetadata === 'string' ? JSON.parse((message as any).vipMetadata) : (message as any).vipMetadata;
+  let metadata: any = null;
+  try {
+    metadata = typeof (message as any).vipMetadata === 'string' ? JSON.parse((message as any).vipMetadata) : (message as any).vipMetadata;
+  } catch(e) {}
 
   const nameColorClass = isStreamer ? "text-neon-purple drop-shadow-[0_0_8px_rgba(168,85,247,0.5)]" :
                         isVIP ? "text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.5)]" :
@@ -165,7 +168,17 @@ function MessageItem({ message, onReaction, onSaveGif, onReply, activeChannelId,
           message.self ? "flex-row" : "flex-row-reverse"
         )}>
           <span 
-              className={cn("text-[11px] font-black tracking-tight cursor-pointer hover:underline flex items-center gap-1", nameColorClass)}
+              className={cn("text-[11px] font-black tracking-tight cursor-pointer hover:underline flex items-center gap-1 transition-all", nameColorClass, (metadata?.shinyName) && "animate-pulse")}
+              style={{
+                ...(metadata && metadata.colors && (isVIP || isPLUS) ? 
+                  (metadata.colors.textGradient 
+                    ? { backgroundImage: `linear-gradient(to right, ${metadata.colors.text}, ${metadata.colors.textGradient})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }
+                    : { color: metadata.colors.text }) 
+                  : {}),
+                ...(metadata?.fontStyle === "lightning" ? { textShadow: "0 0 5px #fff, 0 0 10px #0ff", animation: "pulse 2s infinite" } : {}),
+                ...(metadata?.fontStyle === "fire" ? { textShadow: "0 -2px 4px #ff3, 0 -4px 10px #f80", animation: "pulse 1.5s infinite" } : {}),
+                ...(metadata?.fontStyle === "glitch" ? { textShadow: "1px 0 0 red, -1px 0 0 cyan", animation: "pulse 0.5s infinite" } : {}),
+              }}
               onClick={(e) => {
                 e.stopPropagation();
               openProfile({
@@ -182,6 +195,7 @@ function MessageItem({ message, onReaction, onSaveGif, onReply, activeChannelId,
               }}
             >
               {message.senderName}
+              {isStreamer && <Radio size={12} className="text-neon-purple animate-pulse" />}
             </span>
           
           <div className={cn(
@@ -289,7 +303,12 @@ function MessageItem({ message, onReaction, onSaveGif, onReply, activeChannelId,
                     : "bg-white/5 text-gray-100 border-white/10 rounded-tl-none",
                 isVIP && "border-yellow-400/40 bg-gradient-to-br from-yellow-400/[0.12] to-transparent shadow-[0_0_40px_rgba(250,204,21,0.12)]",
                 isStreamer && !isVIP && "border-neon-purple/40 bg-gradient-to-br from-neon-purple/[0.12] to-transparent shadow-[0_0_40px_rgba(168,85,247,0.12)]",
-                isPLUS && !isStreamer && !isVIP && "border-neon-blue/40 bg-gradient-to-br from-neon-blue/[0.12] to-transparent shadow-[0_0_30px_rgba(0,229,255,0.12)]"
+                isPLUS && !isStreamer && !isVIP && "border-neon-blue/40 bg-gradient-to-br from-neon-blue/[0.12] to-transparent shadow-[0_0_30px_rgba(0,229,255,0.12)]",
+                metadata?.specialFrame && metadata?.frame === "lightning" && "!border-blue-400 shadow-[0_0_20px_rgba(96,165,250,0.5)] animate-pulse",
+                metadata?.specialFrame && metadata?.frame === "fire" && "!border-orange-500 shadow-[0_0_20px_rgba(249,115,22,0.5)] animate-bounce",
+                metadata?.specialFrame && metadata?.frame === "glitch" && "!border-pink-500 shadow-[inset_0_0_10px_rgba(236,72,153,0.5),0_0_15px_rgba(236,72,153,0.8)]",
+                metadata?.specialFrame && metadata?.frame === "neon_pulse" && "!border-cyan-400 shadow-[0_0_30px_#00e5ff] animate-[pulse_1s_infinite]",
+                metadata?.specialFrame && metadata?.frame === "gold_aura" && "!border-yellow-500 shadow-[0_0_30px_rgba(234,179,8,0.7)]"
               )}
             >
                {/* VIP/PLUS Shimmer Effect */}
@@ -1798,12 +1817,12 @@ export const ChatPage: React.FC = () => {
             >
               <div className="flex justify-between items-center mb-8">
                 <div className="flex items-center gap-3">
-                  <div className="h-12 w-12 rounded-2xl bg-yellow-400/10 flex items-center justify-center text-yellow-400">
-                    <Crown size={24} />
+                  <div className={cn("h-12 w-12 rounded-2xl flex items-center justify-center", (user as any)?.role === "STREAMER" ? "bg-purple-500/10 text-purple-500" : "bg-yellow-400/10 text-yellow-400")}>
+                    {(user as any)?.role === "STREAMER" ? <Radio size={24} /> : <Crown size={24} />}
                   </div>
                   <div>
-                    <h3 className="text-xl font-black text-white italic tracking-tighter">ایجاد گروه نخبگان</h3>
-                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">VIP Group System</p>
+                    <h3 className="text-xl font-black text-white italic tracking-tighter">{(user as any)?.role === "STREAMER" ? "ایجاد گروه اختصاصی استریمرها" : "ایجاد گروه نخبگان"}</h3>
+                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">{(user as any)?.role === "STREAMER" ? "Streamer Exclusive Group" : "VIP Group System"}</p>
                   </div>
                 </div>
                 <button onClick={() => setShowVipGroupModal(false)} className="h-10 w-10 flex items-center justify-center rounded-full bg-white/5 text-gray-500 hover:text-white transition-colors">

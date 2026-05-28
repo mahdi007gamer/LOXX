@@ -388,7 +388,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
                  animate={{ opacity: [0.4, 0.9, 0.4], scale: [0.95, 1.05, 0.95] }}
                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
                  className="absolute -inset-2 rounded-[46px] blur-xl z-0 pointer-events-none"
-                 style={{ backgroundColor: metadata?.colors?.auraColor || "#eab308" }}
+                 style={{ backgroundColor: metadata?.colors?.auraColor || primaryColorHex }}
                />
              )}
              <div className={cn(

@@ -575,29 +575,56 @@ export const EliteSettingsPage = () => {
                       ))}
                     </div>
 
-                    <div className="pt-4 border-t border-white/5">
-                      <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-4 italic">فونت استایل (Font Style)</label>
-                      <div className="grid grid-cols-2 gap-3">
-                        {[
-                          { id: "none", label: "بدون افکت" },
-                          { id: "lightning", label: "برقی" },
-                          { id: "glitch", label: "گیلیچ" },
-                          { id: "fire", label: "آتیش" }
-                        ].map((style) => (
-                          <button
-                            key={style.id}
-                            onClick={() => setMetadata({ ...metadata, fontStyle: style.id as any })}
-                            className={cn(
-                              "relative h-12 rounded-xl border transition-all flex items-center justify-center group",
-                              metadata.fontStyle === style.id 
-                                ? "bg-neon-blue/10 border-neon-blue shadow-[0_0_15px_rgba(0,229,255,0.2)]" 
-                                : "bg-white/5 border-white/5 hover:border-white/10"
-                            )}
-                          >
-                             <span className={cn("text-xs font-black uppercase tracking-widest italic", metadata.fontStyle === style.id ? "text-neon-blue" : "text-gray-400")}>{style.label}</span>
-                          </button>
-                        ))}
+                    <div className="pt-4 border-t border-white/5 space-y-6">
+                      <div>
+                        <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-4 italic">فونت استایل (Font Style)</label>
+                        <div className="grid grid-cols-2 gap-3">
+                          {[
+                            { id: "none", label: "بدون افکت" },
+                            { id: "lightning", label: "برقی" },
+                            { id: "glitch", label: "گیلیچ" },
+                            { id: "fire", label: "آتیش" }
+                          ].map((style) => (
+                            <button
+                              key={style.id}
+                              onClick={() => setMetadata({ ...metadata, fontStyle: style.id as any })}
+                              className={cn(
+                                "relative h-12 rounded-xl border transition-all flex items-center justify-center group",
+                                metadata.fontStyle === style.id 
+                                  ? "bg-neon-blue/10 border-neon-blue shadow-[0_0_15px_rgba(0,229,255,0.2)]" 
+                                  : "bg-white/5 border-white/5 hover:border-white/10"
+                              )}
+                            >
+                               <span className={cn("text-xs font-black uppercase tracking-widest italic", metadata.fontStyle === style.id ? "text-neon-blue" : "text-gray-400")}>{style.label}</span>
+                            </button>
+                          ))}
+                        </div>
                       </div>
+
+                      {metadata.specialFrame && (
+                        <div>
+                          <label className="block text-[10px] font-black text-neon-blue uppercase tracking-widest mb-4 italic flex items-center gap-2">
+                             <CircleDashed size={14} /> فریم اختصاصی (Frame Type)
+                          </label>
+                          <div className="grid grid-cols-2 gap-3">
+                            {frames.map((f) => (
+                              <button
+                                key={f.id}
+                                onClick={() => setMetadata({ ...metadata, frame: f.id })}
+                                className={cn(
+                                  "relative h-12 rounded-xl border transition-all flex items-center justify-center group gap-2",
+                                  metadata.frame === f.id 
+                                    ? "bg-neon-pink/10 border-neon-pink shadow-[0_0_15px_rgba(236,72,153,0.3)]" 
+                                    : "bg-white/5 border-white/5 hover:border-white/10"
+                                )}
+                              >
+                                 <f.icon size={14} className={cn(metadata.frame === f.id ? "text-neon-pink" : "text-gray-500")} />
+                                 <span className={cn("text-xs font-black uppercase tracking-widest italic", metadata.frame === f.id ? "text-white" : "text-gray-400")}>{f.label}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </NeonCard>
               </div>
