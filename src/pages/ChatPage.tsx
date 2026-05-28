@@ -8,7 +8,7 @@ import { LobbyInviteCard } from "../components/ui/LobbyInviteCard";
 import { SmartImage } from "../components/ui/SmartImage";
 import { getAvatarFallbacks } from "../lib/avatar";
 import { getFileUrl } from "../lib/constants";
-import { Send, Hash, Users, MoreVertical, Plus, Smile, Image as ImageIcon, Reply, Heart, ChevronDown, Award, Star, Zap, Crown, Play, Check, Menu, X, MessageSquare, User, Trophy, Palette, Trash, MessageCircle, Search, UserPlus as UserPlusIcon, Settings, Flag, AlertTriangle } from "lucide-react";
+import { Send, Hash, Users, MoreVertical, Plus, Smile, Image as ImageIcon, Reply, Heart, ChevronDown, Award, Star, Zap, Crown, Play, Check, Menu, X, MessageSquare, User, Trophy, Palette, Trash, MessageCircle, Search, UserPlus as UserPlusIcon, Settings, Flag, AlertTriangle, Radio } from "lucide-react";
 import { cn } from "../lib/utils";
 import { motion, AnimatePresence } from "motion/react";
 import { useGames } from "../context/GamesContext";
@@ -33,7 +33,7 @@ interface BadgeIconProps {
 function BadgeIcon({ type }: BadgeIconProps) {
   // Legacy BadgeIcon - we prefer UserBadges component for dynamic icons from server
   switch(type) {
-    case BadgeType.STREAMER: return <div title="Streamer" className="text-neon-blue"><Zap size={12} fill="currentColor" /></div>;
+    case BadgeType.STREAMER: return <div title="Streamer" className="text-neon-purple animate-pulse"><Radio size={12} /></div>;
     case BadgeType.PRO: return <div title="Pro Player" className="text-neon-pink"><Award size={12} fill="currentColor" /></div>;
     case BadgeType.LOBBY_MASTER: return <div title="Lobby Master" className="text-yellow-500"><Star size={12} fill="currentColor" /></div>;
     case BadgeType.VIP: return <div title="VIP" className="text-yellow-500 animate-pulse"><Crown size={12} fill="currentColor" /></div>;
@@ -64,13 +64,13 @@ function MessageItem({ message, onReaction, onSaveGif, onReply, activeChannelId,
 
   // Level based colors
   const isStreamer = message.senderBadges?.includes(BadgeType.STREAMER) || (message as any).userRole === 'STREAMER' || (message as any).senderRole === 'STREAMER';
-  const isVIP = message.senderBadges?.includes(BadgeType.VIP) || isStreamer;
+  const isVIP = message.senderBadges?.includes(BadgeType.VIP);
   const isPLUS = message.senderBadges?.includes(BadgeType.PLUS);
   const isChamp = message.senderBadges?.includes(BadgeType.CHAMPION);
   const metadata = typeof (message as any).vipMetadata === 'string' ? JSON.parse((message as any).vipMetadata) : (message as any).vipMetadata;
 
-  const nameColorClass = isVIP ? "text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.5)]" :
-                        isStreamer ? "text-neon-purple drop-shadow-[0_0_8px_rgba(168,85,247,0.5)]" :
+  const nameColorClass = isStreamer ? "text-neon-purple drop-shadow-[0_0_8px_rgba(168,85,247,0.5)]" :
+                        isVIP ? "text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.5)]" :
                         isChamp ? "text-yellow-500" :
                         isPLUS ? "text-neon-blue" :
                         message.senderLevel > 40 ? "text-neon-blue shadow-[0_0_8px_rgba(0,229,255,0.3)]" : 

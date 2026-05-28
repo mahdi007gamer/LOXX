@@ -29,10 +29,11 @@ import {
   Layers,
   Settings2,
   Lock,
-  Trophy
+  Trophy,
+  Radio
 } from "lucide-react";
 import { cn } from "../lib/utils";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence, useMotionValue, useTransform } from "motion/react";
 import { useNavigate } from "react-router-dom";
 
 type FrameType = "none" | "lightning" | "glitch" | "fire" | "anime" | "neon_pulse" | "cyber" | "cosmic" | "shield" | "gold_aura" | "diamond";
@@ -72,6 +73,8 @@ interface VIPMetadata {
     textColor: string;
     effect?: string;
   };
+  floatingParticles?: boolean;
+  tiltEffect?: boolean;
 }
 
 export const EliteSettingsPage = () => {
@@ -91,6 +94,8 @@ export const EliteSettingsPage = () => {
     shinyName: false,
     specialFrame: false,
     fullGlow: false,
+    floatingParticles: false,
+    tiltEffect: false,
     frame: "none",
     frameColor: "#00e5ff",
     effectType: "none",
@@ -118,6 +123,24 @@ export const EliteSettingsPage = () => {
   const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl || "");
   const [bannerUrl, setBannerUrl] = useState(user?.bannerUrl || "");
   const [uploadingBg, setUploadingBg] = useState(false);
+
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+  const tiltX = useTransform(mouseY, [-150, 150], [10, -10]);
+  const tiltY = useTransform(mouseX, [-150, 150], [-10, 10]);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left - rect.width / 2;
+    const y = e.clientY - rect.top - rect.height / 2;
+    mouseX.set(x);
+    mouseY.set(y);
+  };
+
+  const handleMouseLeave = () => {
+    mouseX.set(0);
+    mouseY.set(0);
+  };
 
   useEffect(() => {
     const initMetadata = () => {
@@ -157,6 +180,8 @@ export const EliteSettingsPage = () => {
         shinyName: false,
         specialFrame: false,
         fullGlow: false,
+        floatingParticles: false,
+        tiltEffect: false,
         frame: "none",
         frameColor: "#00e5ff",
         effectType: "none",
@@ -362,8 +387,15 @@ export const EliteSettingsPage = () => {
     }
   };
 
-  const isVip = user?.membership === "VIP" || (user as any)?.membershipType === "VIP" || (user as any)?.role === "STREAMER";
+  const isStreamer = (user as any)?.role === "STREAMER";
+  const isVip = user?.membership === "VIP" || (user as any)?.membershipType === "VIP" || isStreamer;
 
+  const primaryVariant = isStreamer ? "purple" : "gold";
+  const primaryColorHex = isStreamer ? "#c084fc" : "#facc15";
+  const primaryText = isStreamer ? "text-neon-purple" : "text-yellow-400";
+  const primaryBg = isStreamer ? "bg-neon-purple" : "bg-yellow-400";
+  const primaryBorder = isStreamer ? "border-neon-purple" : "border-yellow-400";
+  
   if (!isVip && !loading) {
     return (
       <div className="flex min-h-[calc(100vh-64px)] items-center justify-center">
@@ -398,8 +430,8 @@ export const EliteSettingsPage = () => {
           <header className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div className="text-right">
               <div className="flex items-center gap-2 mb-2 justify-end">
-                <span className="text-[10px] font-black bg-yellow-400 text-dark-bg px-2 py-0.5 rounded uppercase tracking-widest italic">Elite Access</span>
-                <Crown size={20} className="text-yellow-400" />
+                <span className={cn("text-[10px] font-black text-dark-bg px-2 py-0.5 rounded uppercase tracking-widest italic", primaryBg)}>Elite Access</span>
+                {isStreamer ? <Radio size={20} className={primaryText} /> : <Crown size={20} className={primaryText} />}
               </div>
               <h1 className="text-4xl md:text-5xl font-black text-white italic uppercase tracking-tighter">تنظیمات نخبگان</h1>
               <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mt-1 italic">پروفایل خود را به سطح افسانه‌ای برسانید</p>
@@ -420,7 +452,7 @@ export const EliteSettingsPage = () => {
                 <ArrowRight size={16} /> بازگشت به تنظیمات
               </button>
               <GlowButton 
-                variant="gold" 
+                variant={primaryVariant as any} 
                 className="h-12 px-10 uppercase italic font-black text-xs shadow-xl shadow-yellow-500/20"
                 onClick={handleSave}
                 disabled={saving}
@@ -435,9 +467,9 @@ export const EliteSettingsPage = () => {
               {/* Media & Advanced Effects Row */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   {/* Media & Background */}
-                  <NeonCard variant="gold" className="space-y-6">
+                  <NeonCard variant={primaryVariant as any} className="space-y-6">
                     <h3 className="text-lg font-black text-white italic flex items-center gap-2 border-b border-white/5 pb-4">
-                      <ImageIcon size={20} className="text-yellow-400" />
+                      <ImageIcon size={20} className={primaryText} />
                       <span>رسانه و پس‌زمینه نخبگان</span>
                     </h3>
                     
@@ -445,11 +477,11 @@ export const EliteSettingsPage = () => {
                       <div className="flex gap-4">
                         <div className="flex-1 space-y-2">
                           <label className="text-[10px] font-black text-gray-400 uppercase italic">تصویر آواتار</label>
-                          <GlowButton variant="gold" size="sm" className="w-full h-10 text-[10px]" onClick={() => avatarInputRef.current?.click()}>تغییر آواتار</GlowButton>
+                          <GlowButton variant={primaryVariant as any} size="sm" className="w-full h-10 text-[10px]" onClick={() => avatarInputRef.current?.click()}>تغییر آواتار</GlowButton>
                         </div>
                         <div className="flex-1 space-y-2">
                           <label className="text-[10px] font-black text-gray-400 uppercase italic">بنر پروفایل</label>
-                          <GlowButton variant="gold" size="sm" className="w-full h-10 text-[10px]" onClick={() => bannerInputRef.current?.click()}>تغییر بنر</GlowButton>
+                          <GlowButton variant={primaryVariant as any} size="sm" className="w-full h-10 text-[10px]" onClick={() => bannerInputRef.current?.click()}>تغییر بنر</GlowButton>
                         </div>
                       </div>
 
@@ -458,7 +490,7 @@ export const EliteSettingsPage = () => {
                         <div className="relative group">
                           <div className={cn(
                             "h-32 w-full rounded-2xl bg-white/5 border border-white/10 overflow-hidden flex items-center justify-center transition-all",
-                            metadata.bgImage ? "border-yellow-400/30" : "hover:border-yellow-400/20"
+                            metadata.bgImage ? `${primaryBorder}/30` : `hover:${primaryBorder}/20`
                           )}>
                             {metadata.bgImage ? (
                               <img src={metadata.bgImage} alt="Background" className="w-full h-full object-cover" />
@@ -514,6 +546,8 @@ export const EliteSettingsPage = () => {
                         { id: "shinyName", label: "نام درخشان (Shiny)", icon: Sparkles, color: "text-white", desc: "افکت درخشش روی نام" },
                         { id: "specialFrame", label: "فریم متحرک", icon: Zap, color: "text-neon-blue", desc: "فریم متحرک دور کل پروفایل" },
                         { id: "fullGlow", label: "ویژگی Glow", icon: Zap, color: "text-yellow-400", desc: "هاله نورانی دور مینی پروفایل" },
+                        { id: "floatingParticles", label: "ذرات معلق", icon: Sparkles, color: "text-purple-400", desc: "ذرات نوری شناور در بک‌گراند" },
+                        { id: "tiltEffect", label: "افکت ۳-بعدی", icon: Layers, color: "text-green-400", desc: "چرخش کارت با حرکت موس" },
                       ].map(effect => (
                         <div 
                           key={effect.id} 
@@ -697,8 +731,13 @@ export const EliteSettingsPage = () => {
                          )}
                          style={{
                            ...getBackgroundStyle(),
-                           boxShadow: metadata.fullGlow ? `0 0 60px ${metadata.colors.glowColor || "#facc15"}4d` : undefined
+                           boxShadow: metadata.fullGlow ? `0 0 60px ${metadata.colors.glowColor || primaryColorHex}4d` : undefined,
+                           rotateX: metadata.tiltEffect ? tiltX : 0,
+                           rotateY: metadata.tiltEffect ? tiltY : 0,
+                           transformPerspective: metadata.tiltEffect ? 1000 : "none"
                          }}
+                         onMouseMove={metadata.tiltEffect ? handleMouseMove : undefined}
+                         onMouseLeave={metadata.tiltEffect ? handleMouseLeave : undefined}
                        >
                          {/* Background Image Layer */}
                          {metadata.bgImage && (
@@ -715,11 +754,42 @@ export const EliteSettingsPage = () => {
  
                          {/* Enhanced Readability Overlay - exactly as in Popover */}
                          <div className="absolute inset-0 z-0 bg-gradient-to-t from-[#0a0a0f] via-[#0a0a0f]/60 to-transparent" />
+
+                         {/* Floating Particles */}
+                         {metadata.floatingParticles && (
+                           <div className="absolute inset-0 pointer-events-none z-[5] overflow-hidden">
+                             {[...Array(15)].map((_, i) => (
+                               <motion.div
+                                 key={`particle-${i}`}
+                                 className="absolute w-1 h-1 rounded-full bg-white/40 blur-[1px]"
+                                 initial={{
+                                   x: Math.random() * 340,
+                                   y: Math.random() * 500,
+                                   scale: Math.random() * 1.5 + 0.5,
+                                 }}
+                                 animate={{
+                                   y: [null, -100, Math.random() * 500],
+                                   x: [null, Math.random() * 50 - 25, Math.random() * 50 - 25],
+                                   opacity: [0, 1, 0]
+                                 }}
+                                 transition={{
+                                   duration: Math.random() * 5 + 5,
+                                   repeat: Infinity,
+                                   ease: "linear",
+                                   delay: Math.random() * 3
+                                 }}
+                                 style={{
+                                   backgroundColor: metadata.colors.glowColor || primaryColorHex
+                                 }}
+                               />
+                             ))}
+                           </div>
+                         )}
  
                          {renderFrameEffect(metadata.frame)}
  
                          <div className="h-32 relative overflow-hidden z-10">
-                            {bannerUrl ? <img src={bannerUrl} alt="Banner" className="w-full h-full object-cover" /> : <div className="absolute inset-0 bg-gradient-to-br from-yellow-400/20 to-[#0a0a0f]" />}
+                            {bannerUrl ? <img src={bannerUrl} alt="Banner" className="w-full h-full object-cover" /> : <div className={cn("absolute inset-0 bg-gradient-to-br to-[#0a0a0f]", isStreamer ? "from-purple-400/20" : "from-yellow-400/20")} />}
                             <div className="absolute inset-0 bg-black/40" />
                          </div>
  
@@ -731,12 +801,14 @@ export const EliteSettingsPage = () => {
                                      animate={{ opacity: [0.4, 0.9, 0.4], scale: [0.95, 1.05, 0.95] }} 
                                      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }} 
                                      className="absolute -inset-2 rounded-[38px] blur-xl z-0 pointer-events-none"
-                                     style={{ backgroundColor: metadata.colors.auraColor || "#eab308" }}
+                                     style={{ backgroundColor: metadata.colors.auraColor || primaryColorHex }}
                                    />
                                  )}
                                  <div className={cn(
                                     "h-24 w-24 rounded-[32px] bg-[#0a0a0f] p-[2px] relative z-20",
-                                    metadata.frame === "lightning" ? "border-blue-400 shadow-[0_0_15px_blue]" : "bg-gradient-to-tr from-yellow-400 via-yellow-200 to-yellow-600"
+                                    metadata.frame === "lightning" ? "border-blue-400 shadow-[0_0_15px_blue]" : 
+                                    isStreamer ? "bg-gradient-to-tr from-purple-400 via-purple-200 to-purple-600" :
+                                    "bg-gradient-to-tr from-yellow-400 via-yellow-200 to-yellow-600"
                                  )}>
                                     <div className="h-full w-full rounded-[30px] bg-[#0d0d12] flex items-center justify-center overflow-hidden">
                                        {avatarUrl ? <SmartImage src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" /> : <User size={40} className="text-gray-700" />}
@@ -759,7 +831,7 @@ export const EliteSettingsPage = () => {
                                 </h4>
                                 <span className="text-[9px] font-black uppercase tracking-[0.2em] flex items-center gap-2 mt-1" style={{ color: metadata.colors.accent }}>
                                    <div className="h-1 w-1 rounded-full bg-current animate-ping" />
-                                   عضو ویژه لوکس (VIP)
+                                   {isStreamer ? "عضو تیم استریم" : "عضو ویژه لوکس (VIP)"}
                                 </span>
                              </div>
  

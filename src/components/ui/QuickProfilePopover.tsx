@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { GlowButton } from "./GlowButton";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence, useMotionValue, useTransform } from "motion/react";
 import { useFriends } from "../../context/FriendsContext";
 import { BadgeType, MembershipType } from "../../types";
 import { cn } from "../../lib/utils";
@@ -99,7 +99,29 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportReason, setReportReason] = useState("");
 
-  const isVIP = user.membership === MembershipType.VIP || user.membership === "VIP" || (user as any).role === "STREAMER";
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+  const tiltX = useTransform(mouseY, [-150, 150], [10, -10]);
+  const tiltY = useTransform(mouseX, [-150, 150], [-10, 10]);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left - rect.width / 2;
+    const y = e.clientY - rect.top - rect.height / 2;
+    mouseX.set(x);
+    mouseY.set(y);
+  };
+
+  const handleMouseLeave = () => {
+    mouseX.set(0);
+    mouseY.set(0);
+  };
+
+  const isStreamer = (user as any).role === "STREAMER" || user.senderBadges?.some((b: any) => b.type === "STREAMER" || b.name === "STREAMER");
+  const isRealVIP = user.membership === MembershipType.VIP || user.membership === "VIP";
+  const isVIP = isRealVIP || isStreamer; 
+
+  const primaryColorHex = isStreamer ? "#c084fc" : "#facc15";
   const isPLUS = user.membership === MembershipType.PLUS || user.membership === "PLUS";
 
   const getMetadata = (): VIPMetadata | null => {
@@ -124,6 +146,8 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
       else style.background = `conic-gradient(from ${angle}deg, ${color1}, ${color2})`;
     } else if (metadata && metadata.colors && metadata.colors.bg) {
       style.backgroundColor = metadata.colors.bg;
+    } else if (isStreamer) {
+      style.backgroundImage = "linear-gradient(to bottom right, #c084fc, #7e22ce)";
     } else if (isVIP) {
       style.backgroundImage = "linear-gradient(to bottom right, #eab308, #a16207)";
     } else if (isPLUS) {
@@ -227,7 +251,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
           <motion.div 
             animate={{ scale: [1, 1.1, 1], rotate: 360 }}
             transition={{ duration: 10, repeat: Infinity }}
-            className="absolute -inset-8 z-0 bg-[radial-gradient(circle,rgba(250,204,21,0.2)_0%,transparent_70%)] rounded-full pointer-events-none"
+            className={`absolute -inset-8 z-0 bg-[radial-gradient(circle,rgba(${isStreamer ? '168,85,247' : '250,204,21'},0.2)_0%,transparent_70%)] rounded-full pointer-events-none`}
           />
         );
       case "diamond":
@@ -249,14 +273,19 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
       exit={{ opacity: 0, scale: 0.9, y: 10 }}
       className={cn(
         "w-[380px] rounded-[48px] border overflow-hidden cursor-default rtl text-right transition-all backdrop-blur-3xl px-0 relative z-[20002]",
-        metadata?.fullGlow ? "border-yellow-400" : (isVIP ? "border-yellow-400/40 shadow-[0_40px_100px_rgba(0,0,0,1)]" : "border-white/10 shadow-[0_40px_100px_rgba(0,0,0,1)]")
+        metadata?.fullGlow ? (isStreamer ? "border-purple-400" : "border-yellow-400") : (isVIP ? (isStreamer ? "border-purple-400/40 shadow-[0_40px_100px_rgba(0,0,0,1)]" : "border-yellow-400/40 shadow-[0_40px_100px_rgba(0,0,0,1)]") : "border-white/10 shadow-[0_40px_100px_rgba(0,0,0,1)]")
       )}
       style={{ 
         ...getBackgroundStyle(), 
         borderColor: metadata?.colors?.accent ? metadata.colors.accent + "40" : (metadata?.fullGlow ? undefined : undefined),
-        boxShadow: metadata?.fullGlow ? `0 0 50px ${metadata?.colors?.glowColor || "#facc15"}66` : undefined
+        boxShadow: metadata?.fullGlow ? `0 0 50px ${metadata?.colors?.glowColor || primaryColorHex}66` : undefined,
+        rotateX: metadata?.tiltEffect ? tiltX : 0,
+        rotateY: metadata?.tiltEffect ? tiltY : 0,
+        transformPerspective: metadata?.tiltEffect ? 1000 : "none"
       }}
       onClick={(e) => e.stopPropagation()}
+      onMouseMove={metadata?.tiltEffect ? handleMouseMove : undefined}
+      onMouseLeave={metadata?.tiltEffect ? handleMouseLeave : undefined}
     >
       {/* Custom BG Image */}
       {metadata?.bgImage && (
@@ -271,13 +300,44 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
         />
       )}
 
+      {/* Floating Particles */}
+      {metadata?.floatingParticles && (
+        <div className="absolute inset-0 pointer-events-none z-[5] overflow-hidden">
+          {[...Array(15)].map((_, i) => (
+            <motion.div
+              key={`particle-${i}`}
+              className="absolute w-1 h-1 rounded-full bg-white/40 blur-[1px]"
+              initial={{
+                x: Math.random() * 380,
+                y: Math.random() * 500,
+                scale: Math.random() * 1.5 + 0.5,
+              }}
+              animate={{
+                y: [null, -100, Math.random() * 500],
+                x: [null, Math.random() * 50 - 25, Math.random() * 50 - 25],
+                opacity: [0, 1, 0]
+              }}
+              transition={{
+                duration: Math.random() * 5 + 5,
+                repeat: Infinity,
+                ease: "linear",
+                delay: Math.random() * 3
+              }}
+              style={{
+                backgroundColor: metadata?.colors?.glowColor || primaryColorHex
+              }}
+            />
+          ))}
+        </div>
+      )}
+
       {/* Effects */}
       {metadata?.frame && renderFrameEffect(metadata.frame)}
 
       {/* Dynamic Banner */}
       <div className={cn(
         "h-40 relative overflow-hidden z-10",
-        !bannerUrl && (isVIP ? "bg-gradient-to-br from-[#facc15] via-[#eab308] to-[#ca8a04]" :
+        !bannerUrl && (isStreamer ? "bg-gradient-to-br from-purple-400 via-purple-600 to-purple-900" : isVIP ? "bg-gradient-to-br from-[#facc15] via-[#eab308] to-[#ca8a04]" :
         isPLUS ? "bg-gradient-to-br from-neon-blue via-blue-600 to-indigo-800" :
         "bg-gradient-to-l from-gray-800 to-gray-900")
       )}>
@@ -334,6 +394,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
              <div className={cn(
                "h-32 w-32 rounded-[40px] bg-[#0a0a0f] p-[2px] shadow-2xl relative z-20",
                metadata?.specialFrame && metadata.frame === "lightning" ? "p-0 border-blue-400 shadow-[0_0_15px_blue]" : (
+                 isStreamer ? "p-[3px] bg-gradient-to-tr from-purple-400 via-purple-100 to-purple-600" :
                  isVIP ? "p-[3px] bg-gradient-to-tr from-yellow-400 via-yellow-100 to-yellow-600" :
                  isPLUS ? "p-[3px] bg-neon-blue" : "border border-white/10"
                )
@@ -370,7 +431,11 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
 
              <div className="absolute top-1 right-1 h-7 w-7 bg-green-500 rounded-full border-[5px] border-[#0a0a0f] z-30 shadow-lg"></div>
              
-             {isVIP && (
+             {isStreamer ? (
+               <div className="absolute -bottom-4 -left-4 h-12 w-12 rounded-full bg-purple-500 text-white border-4 border-[#0a0a0f] flex items-center justify-center shadow-2xl z-20">
+                  <Icons.Radio size={22} />
+               </div>
+             ) : isVIP && (
                <div className="absolute -bottom-4 -left-4 h-12 w-12 rounded-full bg-yellow-400 text-dark-bg border-4 border-[#0a0a0f] flex items-center justify-center shadow-2xl z-20">
                   <Crown size={22} fill="currentColor" />
                </div>
@@ -417,7 +482,12 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
               </div>
             </div>
             <div className="flex items-center gap-2 mt-1">
-               {isVIP ? (
+               {isStreamer ? (
+                 <span className="text-[11px] font-black uppercase tracking-[0.2em] flex items-center gap-2" style={{ color: metadata?.colors?.accent || "#c084fc" }}>
+                   <div className="h-1.5 w-1.5 rounded-full bg-current animate-ping" />
+                   عضو تیم استریم
+                 </span>
+               ) : isVIP ? (
                  <span className="text-[11px] font-black uppercase tracking-[0.2em] flex items-center gap-2" style={{ color: metadata?.colors?.accent || "#facc15" }}>
                    <div className="h-1.5 w-1.5 rounded-full bg-current animate-ping" />
                    عضو ویژه لوکس (VIP)
@@ -517,7 +587,8 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
                 variant={sentRequest ? "purple" : isVIP ? "purple" : "blue"} 
                 className={cn(
                   "w-full h-16 !rounded-3xl font-black text-base uppercase italic tracking-[0.2em] shadow-2xl relative overflow-hidden group",
-                  isVIP && "bg-gradient-to-r from-yellow-600 via-yellow-400 to-yellow-600 text-dark-bg border-none shadow-[0_10px_40px_rgba(250,204,21,0.3)] hover:scale-[1.02]"
+                  isVIP && "bg-gradient-to-r from-yellow-600 via-yellow-400 to-yellow-600 text-dark-bg border-none shadow-[0_10px_40px_rgba(250,204,21,0.3)] hover:scale-[1.02]",
+                  isStreamer && "bg-gradient-to-r from-purple-600 via-purple-400 to-purple-600 text-white border-none shadow-[0_10px_40px_rgba(168,85,247,0.3)] hover:scale-[1.02]"
                 )}
                 onClick={handleAddFriend}
                 disabled={sentRequest}
