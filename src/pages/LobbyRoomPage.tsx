@@ -34,7 +34,8 @@ import {
   Gavel,
   Gamepad2,
   CheckCircle2,
-  UserCheck
+  UserCheck,
+  Radio
 } from "lucide-react";
 import { GlowButton } from "../components/ui/GlowButton";
 import { useFriends } from "../context/FriendsContext";
@@ -503,11 +504,11 @@ export const LobbyRoomPage = () => {
              <div className="flex items-center gap-3 md:gap-5 text-[9px] md:text-[11px] text-gray-500 font-black uppercase tracking-widest">
                <span className="flex items-center gap-1 md:gap-1.5 font-bold"><Users size={12} className={cn("shrink-0 md:size-[14px]", isStreamerLobby ? "text-purple-400" : isVipLobby ? "text-yellow-400" : "text-neon-blue")} /> {players.filter(p => !p.id.startsWith("slot-")).length} / {lobby?.maxPlayers || 5}</span>
                {isStreamerLobby ? (
-                 <span className="flex items-center gap-1 md:gap-1.5"><Radio size={11} md:size={13} className="text-purple-400 shrink-0 animate-pulse" /> Streamer Room</span>
+                 <span className="flex items-center gap-1 md:gap-1.5"><Radio size={14} className="text-purple-400 shrink-0 w-3 h-3 md:w-3.5 md:h-3.5 animate-pulse" /> Streamer Room</span>
                ) : isVipLobby ? (
-                 <span className="flex items-center gap-1 md:gap-1.5"><Crown size={11} md:size={13} className="text-yellow-400 shrink-0" /> Elite Room</span>
+                 <span className="flex items-center gap-1 md:gap-1.5"><Crown size={14} className="text-yellow-400 shrink-0 w-3 h-3 md:w-3.5 md:h-3.5" /> Elite Room</span>
                ) : (
-                 <span className="flex items-center gap-1 md:gap-1.5"><Trophy size={11} md:size={13} className="text-neon-pink shrink-0" /> حرفه‌ای</span>
+                 <span className="flex items-center gap-1 md:gap-1.5"><Trophy size={14} className="text-neon-pink shrink-0 w-3 h-3 md:w-3.5 md:h-3.5" /> حرفه‌ای</span>
                )}
              </div>
            </div>

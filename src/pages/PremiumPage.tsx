@@ -393,7 +393,7 @@ export const PremiumPage = () => {
               </motion.div>
             ) : null}
 
-            {step === "PREVIEW" && selectedPlan && !pendingPayment ? (
+            {step === "PREVIEW" && selectedPlan ? (
               <motion.div
                 key="preview"
                 initial={{ opacity: 0, scale: 0.95 }}

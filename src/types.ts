@@ -121,6 +121,8 @@ export interface VIPMetadata {
   specialFrame: boolean;
   fullGlow: boolean;
   frame: string;
+  floatingParticles: boolean;
+  tiltEffect: boolean;
   frameColor: string;
   effectType: string;
   fontStyle?: "none" | "lightning" | "glitch" | "fire";
