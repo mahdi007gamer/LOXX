@@ -9,7 +9,8 @@ import {
   Trophy,
   Gamepad2,
   Heart,
-  Crown
+  Crown,
+  Zap
 } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 
@@ -62,6 +63,23 @@ export const Sidebar = () => {
               {!isSidebarCollapsed && <span className="font-medium whitespace-nowrap">{item.label}</span>}
             </NavLink>
           ))}
+
+          {user?.role === "STREAMER" && (
+            <NavLink
+              to="/elite-dashboard"
+              title={isSidebarCollapsed ? "داشبورد الیت" : undefined}
+              className={({ isActive }) => cn(
+                "flex items-center rounded-lg py-3 transition-all duration-300 overflow-hidden mt-4",
+                isActive 
+                  ? "bg-purple-500/10 text-purple-400 shadow-[inset_0_0_15px_rgba(168,85,247,0.2)] border-r-2 border-purple-500" 
+                  : "text-purple-400/70 hover:bg-purple-500/5 hover:text-purple-300",
+                isSidebarCollapsed ? "justify-center px-0" : "gap-3 px-4"
+              )}
+            >
+              <Zap size={20} className="shrink-0 drop-shadow-[0_0_5px_rgba(168,85,247,0.5)]" />
+              {!isSidebarCollapsed && <span className="font-bold whitespace-nowrap drop-shadow-[0_0_5px_rgba(168,85,247,0.3)]">داشبورد الیت</span>}
+            </NavLink>
+          )}
           
           {isElectron && (
             <NavLink

@@ -5,11 +5,23 @@ import { AuthenticatedRequest } from "../middleware/auth.middleware.ts";
 export class PaymentController {
   static async create(req: AuthenticatedRequest, res: Response) {
     try {
-      const { type, receiptImageUrl } = req.body;
+      const { type, receiptImageUrl, promoCode } = req.body;
       if (!type || !receiptImageUrl) throw new Error("MISSING_FIELDS");
       
-      const payment = await PaymentService.createPaymentRequest(req.user!.userId, type, receiptImageUrl);
+      const payment = await PaymentService.createPaymentRequest(req.user!.userId, type, receiptImageUrl, promoCode);
       res.status(201).json({ status: "success", data: payment });
+    } catch (error: any) {
+      res.status(400).json({ status: "error", message: error.message });
+    }
+  }
+
+  static async verifyPromo(req: AuthenticatedRequest, res: Response) {
+    try {
+      const { code } = req.body;
+      if (!code) throw new Error("MISSING_CODE");
+      
+      const promoData = await PaymentService.verifyPromoCode(code);
+      res.json({ status: "success", data: promoData });
     } catch (error: any) {
       res.status(400).json({ status: "error", message: error.message });
     }

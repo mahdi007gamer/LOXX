@@ -6,6 +6,7 @@ const router = Router();
 
 router.post("/create", authenticate, PaymentController.create);
 router.post("/cancel", authenticate, PaymentController.cancel);
+router.post("/verify-promo", authenticate, PaymentController.verifyPromo);
 router.get("/status", authenticate, PaymentController.status);
 
 // Admin routes

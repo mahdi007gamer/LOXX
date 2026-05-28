@@ -41,6 +41,7 @@ import { DesktopOverlayWidget } from "./pages/DesktopOverlayWidget";
 import { ElectronTitlebar } from "./components/layout/ElectronTitlebar";
 import { cn } from "./lib/utils";
 import NotFoundPage from "./pages/NotFoundPage";
+import { EliteDashboardPage } from "./pages/EliteDashboardPage";
 
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { Toaster, toast, ToastBar, resolveValue } from "react-hot-toast";
@@ -436,6 +437,7 @@ const AppContent = () => {
           <Route path="/games" element={<ProtectedRoute><GamesPage /></ProtectedRoute>} />
           <Route path="/my-games" element={<ProtectedRoute><MyGamesPage /></ProtectedRoute>} />
           <Route path="/settings/elite" element={<ProtectedRoute><EliteSettingsPage /></ProtectedRoute>} />
+          <Route path="/elite-dashboard" element={<ProtectedRoute><EliteDashboardPage /></ProtectedRoute>} />
           <Route path="/admin" element={<ProtectedRoute adminOnly={true}><AdminPage /></ProtectedRoute>} />
           
           <Route path="/faq" element={<FAQPage />} />

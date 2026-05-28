@@ -64,6 +64,7 @@ interface Player {
   activity: number;
   badges?: any[];
   isVerified?: boolean;
+  role?: string;
 }
 
 interface Message {
@@ -196,6 +197,7 @@ export const LobbyRoomPage = () => {
       })) || [],
       rank: "Verified Gamer",
       isHost: p.role === "HOST",
+      role: p.user?.role || p.role,
       isReady: !!p.isReady,
       hasMic: true,
       isMuted: p.userId === user?.id ? !!p.micMuted : (peerVolumes[p.userId] === 0 || !!p.micMuted),
@@ -1472,8 +1474,14 @@ const PlayerCard: React.FC<{
 
               <div className="flex items-center gap-1.5 md:gap-2 mb-0.5 md:mb-2 max-w-full">
                 <h3 className="text-xs md:text-xl font-black text-white truncate flex items-center gap-1.5">
+                  {player.role === "STREAMER" && (
+                    <CheckCircle2 size={18} className="text-white fill-purple-500 drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]" />
+                  )}
+                  {player.membership === "VIP" && player.role !== "STREAMER" && (
+                    <Crown size={16} className="text-yellow-500 fill-yellow-500 drop-shadow-[0_0_8px_rgba(250,204,21,0.8)]" />
+                  )}
                   {player.name}
-                  {player.isVerified && (
+                  {player.isVerified && player.role !== "STREAMER" && (
                     <CheckCircle2 size={14} className="text-neon-blue" fill="currentColor" />
                   )}
                 </h3>
@@ -1645,6 +1653,7 @@ const ChatPanel = ({ messages, players, inputMessage, setInputMessage, onSend, o
           const sender = players.find(p => p.id === msg.fromUserId);
           const isVIP = sender?.membership === "VIP" || msg.badges?.includes("VIP");
           const isPLUS = sender?.membership === "PLUS" || msg.badges?.includes("PLUS");
+          const isStreamer = sender?.role === "STREAMER" || msg.badges?.includes("STREAMER");
           
           return (
           <div key={`${msg.id}-${index}`} className={cn(
@@ -1679,7 +1688,8 @@ const ChatPanel = ({ messages, players, inputMessage, setInputMessage, onSend, o
                         "text-[10px] font-black uppercase tracking-widest truncate max-w-[120px] flex items-center gap-1",
                         isYou ? "text-neon-pink" : "text-neon-blue"
                       )}>
-                        {isVIP && <Crown className="w-[14px] h-[14px] shrink-0 fill-yellow-500 text-yellow-500 drop-shadow-[0_0_8px_rgba(250,204,21,0.8)]" />}
+                        {isStreamer && <CheckCircle2 className="w-[14px] h-[14px] shrink-0 fill-purple-500 text-white drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]" />}
+                        {isVIP && !isStreamer && <Crown className="w-[14px] h-[14px] shrink-0 fill-yellow-500 text-yellow-500 drop-shadow-[0_0_8px_rgba(250,204,21,0.8)]" />}
                         {msg.user}
                       </span>
                       <UserBadges badges={msg.badges || []} className={cn(isYou ? "flex-row" : "flex-row-reverse")} />
@@ -1687,18 +1697,20 @@ const ChatPanel = ({ messages, players, inputMessage, setInputMessage, onSend, o
                     <span className="text-[8px] font-bold text-gray-700 opacity-0 group-hover:opacity-100 transition-opacity">{msg.time}</span>
                   </div>
                   <div className={cn(
-                    "relative overflow-hidden border border-white/10 rounded-2xl px-4 py-2.5 text-xs text-gray-300 leading-relaxed shadow-lg",
-                    isYou ? "bg-neon-pink/5 rounded-tr-none border-neon-pink/10" : "bg-white/5 rounded-tl-none",
-                    isVIP && "border-yellow-400/40 bg-gradient-to-br from-yellow-400/[0.12] to-transparent shadow-[0_0_40px_rgba(250,204,21,0.12)]",
-                    isPLUS && "border-neon-blue/40 bg-gradient-to-br from-neon-blue/[0.12] to-transparent shadow-[0_0_30px_rgba(0,229,255,0.12)]"
+                    "relative overflow-hidden border rounded-2xl px-4 py-2.5 text-xs text-gray-300 leading-relaxed shadow-lg",
+                    isYou ? "bg-neon-pink/5 rounded-tr-none border-neon-pink/10" : "bg-white/5 rounded-tl-none border-white/10",
+                    isVIP && !isStreamer && "border-yellow-400/40 bg-gradient-to-br from-yellow-400/[0.12] to-transparent shadow-[0_0_40px_rgba(250,204,21,0.12)]",
+                    isPLUS && !isStreamer && "border-neon-blue/40 bg-gradient-to-br from-neon-blue/[0.12] to-transparent shadow-[0_0_30px_rgba(0,229,255,0.12)]",
+                    isStreamer && "border-purple-500/50 bg-gradient-to-br from-purple-500/[0.15] to-transparent shadow-[0_0_20px_rgba(168,85,247,0.3)]"
                   )}>
-                    {/* VIP/PLUS Shimmer Effect */}
-                    {(isVIP || isPLUS) && (
+                    {/* VIP/PLUS/STREAMER Shimmer Effect */}
+                    {(isVIP || isPLUS || isStreamer) && (
                       <motion.div 
                         animate={{ x: ["-100%", "200%"] }}
                         transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
                         className={cn(
                           "absolute inset-0 skew-x-12 pointer-events-none z-0 mix-blend-overlay",
+                          isStreamer ? "bg-gradient-to-r from-transparent via-purple-400/60 to-transparent" :
                           isVIP ? "bg-gradient-to-r from-transparent via-yellow-400/50 to-transparent" : "bg-gradient-to-r from-transparent via-neon-blue/40 to-transparent"
                         )}
                       />

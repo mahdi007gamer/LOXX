@@ -453,7 +453,7 @@ const FloatingAudioPlayer = ({ src, streamerName, isOpened }: { src: string, str
                         animate={{ y: 0, opacity: 1, scale: 1 }}
                         exit={{ y: 200, opacity: 0, scale: 0.9 }}
                         transition={{ type: "spring", stiffness: 200, damping: 25 }}
-                        className="fixed bottom-[100px] left-1/2 -translate-x-1/2 w-[90%] max-w-[400px] lg:bottom-8 lg:right-8 lg:left-auto lg:translate-x-0 z-[60] pointer-events-auto"
+                        className="fixed bottom-[130px] left-1/2 -translate-x-1/2 w-[90%] max-w-[400px] lg:bottom-8 lg:right-8 lg:left-auto lg:translate-x-0 z-[60] pointer-events-auto"
                     >
                         <div className="bg-[#0b0c10]/80 backdrop-blur-3xl border border-white/15 rounded-[2rem] p-5 shadow-[0_30px_60px_rgba(0,0,0,0.8),_inset_0_2px_20px_rgba(255,255,255,0.05)] overflow-hidden relative group">
                             {/* Shimmer overlay */}

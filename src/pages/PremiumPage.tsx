@@ -71,6 +71,10 @@ export const PremiumPage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
+  const [promoCode, setPromoCode] = useState("");
+  const [promoDiscount, setPromoDiscount] = useState<number>(0);
+  const [promoMessage, setPromoMessage] = useState("");
+  const [promoError, setPromoError] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -200,6 +204,30 @@ export const PremiumPage = () => {
     }
   };
 
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      if (promoCode.trim().length >= 3) {
+        try {
+          const res = await api.post("/payments/verify-promo", { code: promoCode });
+          if (res.data.status === "success") {
+            setPromoDiscount(res.data.data.discountPercent);
+            setPromoMessage(res.data.data.message);
+            setPromoError(false);
+          }
+        } catch (err: any) {
+          setPromoDiscount(0);
+          setPromoMessage("کد تخفیف نامعتبر است");
+          setPromoError(true);
+        }
+      } else {
+        setPromoDiscount(0);
+        setPromoMessage("");
+        setPromoError(false);
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [promoCode]);
+
   const handleSubmitPayment = async () => {
     if (!receiptFile || !selectedPlan) {
       toast.error("لطفاً تصویر رسید را بارگذاری کنید");
@@ -226,7 +254,8 @@ export const PremiumPage = () => {
       // 2. Create payment request with the private URL
       const response = await api.post("/payments/create", {
         type: selectedPlan,
-        receiptImageUrl: uploadRes.data.url
+        receiptImageUrl: uploadRes.data.url,
+        promoCode: promoDiscount > 0 ? promoCode : undefined
       });
 
       if (response.data.status === "success") {
@@ -474,16 +503,47 @@ export const PremiumPage = () => {
                                  {selectedPlan === "VIP" ? "LOXX ELITE (VIP)" : "LOXX PLUS"}
                               </span>
                            </div>
-                           <div className="flex justify-between items-center">
+                           <div className="flex justify-between items-center bg-white/[0.02] p-4 rounded-2xl border-2 border-dashed border-white/10 relative overflow-hidden">
+                              <span className="text-gray-500 font-black uppercase text-[10px] italic tracking-widest relative z-10">مشخصات کد تخفیف</span>
+                              <div className="flex flex-col items-end w-1/2 relative z-10">
+                                <input
+                                   type="text"
+                                   placeholder="کد تخفیف (الزاماً با حروف بزرگ)"
+                                   value={promoCode}
+                                   onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                                   className={cn(
+                                     "w-full bg-white/5 border rounded-xl px-4 py-2 text-sm text-white font-mono text-left focus:outline-none transition-colors",
+                                     promoError ? "border-red-500/50" : promoDiscount > 0 ? "border-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.3)]" : "border-white/10 focus:border-neon-blue/50"
+                                   )}
+                                   dir="ltr"
+                                />
+                                {promoMessage && (
+                                  <span className={cn("text-[9px] font-bold mt-2", promoError ? "text-red-400" : "text-purple-400 animate-pulse")}>
+                                    {promoMessage}
+                                  </span>
+                                )}
+                              </div>
+                              {promoDiscount > 0 && (
+                                <div className="absolute inset-0 bg-purple-500/10 animate-pulse-slow"></div>
+                              )}
+                           </div>
+                           
+                           <div className="flex justify-between items-center mt-4">
                               <span className="text-gray-500 font-black uppercase text-[10px] italic tracking-widest">مبلغ نهایی</span>
                               <div className="flex flex-col items-end">
                                 <span className={cn(
                                   "font-black text-2xl italic tracking-tighter",
                                   selectedPlan === "VIP" ? "text-yellow-400" : "text-neon-blue"
                                 )}>
-                                  {PLAN_DATA[selectedPlan].price} <span className="text-[10px]">تومان</span>
+                                  {promoDiscount > 0 
+                                    ? (parseInt(PLAN_DATA[selectedPlan].price.replace(/,/g, '')) * (1 - promoDiscount / 100)).toLocaleString()
+                                    : PLAN_DATA[selectedPlan].price} <span className="text-[10px]">تومان</span>
                                 </span>
-                                <span className="text-[9px] text-neon-green font-bold animate-pulse mt-1">تخفیف لایف‌تایم محاسبه شد</span>
+                                {promoDiscount > 0 ? (
+                                  <span className="text-[9px] text-purple-400 font-bold animate-pulse mt-1">تخفیف {promoDiscount}% اعمال شد</span>
+                                ) : (
+                                  <span className="text-[9px] text-gray-600 font-bold mt-1 line-through">{PLAN_DATA[selectedPlan].price}</span>
+                                )}
                               </div>
                            </div>
                            

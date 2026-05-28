@@ -33,4 +33,9 @@ router.delete("/genres/:id", adminController.deleteGenre);
 // Badges
 router.post("/badges/seed-default", BadgeController.seedDefaultBadges);
 
+// Streamers
+router.get("/streamers", adminController.getAllStreamers);
+router.post("/streamers/withdrawal/:id/approve", adminController.approveWithdrawal);
+router.post("/streamers/withdrawal/:id/reject", adminController.rejectWithdrawal);
+
 export default router;

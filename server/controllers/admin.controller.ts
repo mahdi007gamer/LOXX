@@ -481,3 +481,118 @@ export const getAdminAlerts = async (req: Request, res: Response) => {
     res.status(500).json({ status: "error", message: error.message });
   }
 };
+
+// Streamer Management
+export const getAllStreamers = async (req: Request, res: Response) => {
+  try {
+    const streamers = await prisma.user.findMany({
+      where: { role: "STREAMER" },
+      include: {
+        streamerStats: true,
+        withdrawals: { orderBy: { createdAt: 'desc' } }
+      }
+    });
+
+    const mappedStreamers = streamers.map(user => ({
+      ...user.streamerStats,
+      user: {
+        username: user.username,
+        avatar: user.avatar
+      },
+      withdrawalRequests: user.withdrawals
+    }));
+
+    res.json({ status: "success", data: mappedStreamers });
+  } catch (error: any) {
+    res.status(500).json({ status: "error", message: error.message });
+  }
+};
+
+export const approveWithdrawal = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { receiptUrl } = req.body;
+    
+    const withdrawal = await prisma.withdrawalRequest.findUnique({ where: { id }});
+    if (!withdrawal || withdrawal.status !== "PENDING") {
+      return res.status(400).json({ status: "error", message: "Invalid withdrawal request" });
+    }
+
+    await prisma.$transaction([
+      prisma.withdrawalRequest.update({
+        where: { id },
+        data: { status: "PAID", receiptUrl }
+      }),
+      prisma.streamerStats.update({
+        where: { userId: withdrawal.streamerId },
+        data: { balance: { decrement: withdrawal.amount } }
+      }),
+      // Create a notification for the streamer
+      prisma.notification.create({
+        data: {
+          userId: withdrawal.streamerId,
+          type: "SYSTEM",
+          data: JSON.stringify({
+            title: "تسویه حساب استریمر",
+            message: `درخواست تسویه ${withdrawal.amount.toLocaleString()} تومان تایید و واریز شد.`
+          })
+        }
+      })
+    ]);
+
+    const { emitNotification } = require("../utils/socket.ts");
+    emitNotification(withdrawal.streamerId, "SYSTEM", {
+      title: "تسویه حساب استریمر",
+      message: `درخواست تسویه ${withdrawal.amount.toLocaleString()} تومان تایید و واریز شد.`
+    });
+
+    res.json({ status: "success", message: "Withdrawal approved" });
+  } catch (error: any) {
+    res.status(500).json({ status: "error", message: error.message });
+  }
+};
+
+export const rejectWithdrawal = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+    
+    const withdrawal = await prisma.withdrawalRequest.findUnique({ where: { id }});
+    if (!withdrawal || withdrawal.status !== "PENDING") {
+      return res.status(400).json({ status: "error", message: "Invalid withdrawal request" });
+    }
+
+    await prisma.$transaction([
+      prisma.withdrawalRequest.update({
+        where: { id },
+        data: { status: "REJECTED" }
+      }),
+      // Refund balance? Actually no, balance is already deducted when PENDING.
+      // We must add it back since it's rejected.
+      prisma.streamerStats.update({
+        where: { userId: withdrawal.streamerId },
+        data: { balance: { increment: withdrawal.amount } }
+      }),
+      prisma.notification.create({
+        data: {
+          userId: withdrawal.streamerId,
+          type: "SYSTEM",
+          data: JSON.stringify({
+            title: "رد درخواست تسویه",
+            message: `درخواست تسویه شما رد شد. علت: ${reason || 'نامشخص'}`
+          })
+        }
+      })
+    ]);
+
+    const { emitNotification } = require("../utils/socket.ts");
+    emitNotification(withdrawal.streamerId, "SYSTEM", {
+      title: "رد درخواست تسویه",
+      message: `درخواست تسویه شما رد شد. علت: ${reason || 'نامشخص'}`
+    });
+
+    res.json({ status: "success", message: "Withdrawal rejected" });
+  } catch (error: any) {
+    res.status(500).json({ status: "error", message: error.message });
+  }
+};

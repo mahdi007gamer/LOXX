@@ -22,7 +22,7 @@ import { AuthorizedImage } from "../components/ui/AuthorizedImage";
 
 export const AdminPage = () => {
   const { isSidebarCollapsed } = useAuth();
-  const [activeTab, setActiveTab] = useState<"users" | "games" | "payments" | "paymentsHistory" | "genres" | "badges" | "reports" | "gifs">("users");
+  const [activeTab, setActiveTab] = useState<"users" | "games" | "payments" | "paymentsHistory" | "genres" | "badges" | "reports" | "gifs" | "streamers">("users");
   const [users, setUsers] = useState<any[]>([]);
   const [games, setGames] = useState<any[]>([]);
   const [payments, setPayments] = useState<any[]>([]);
@@ -31,6 +31,7 @@ export const AdminPage = () => {
   const [badges, setBadges] = useState<any[]>([]);
   const [reports, setReports] = useState<any[]>([]);
   const [gifs, setGifs] = useState<any[]>([]);
+  const [streamers, setStreamers] = useState<any[]>([]);
   
   // New Admin GIF States
   const [newGifFile, setNewGifFile] = useState<File | null>(null);
@@ -91,6 +92,9 @@ export const AdminPage = () => {
       } else if (activeTab === "gifs") {
         const res = await api.get(`/upload/gifs?q=${searchTerm}`).catch(() => ({ data: [] }));
         setGifs(res.data || []);
+      } else if (activeTab === "streamers") {
+        const res = await api.get(`/admin/streamers`).catch(() => ({ data: { data: [] } }));
+        setStreamers(res.data.data || []);
       }
     } catch (err) {
       toast.error("خطا در بارگذاری داده‌ها");
@@ -246,6 +250,15 @@ export const AdminPage = () => {
              >
                نشان‌ها
                {activeTab === "badges" && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-neon-blue shadow-[0_0_15px_#00E5FF]" />}
+             </button>
+             <button
+               onClick={() => setActiveTab("streamers")}
+               className={`pb-4 px-6 text-sm font-black uppercase tracking-widest transition-all relative ${
+                 activeTab === "streamers" ? "text-neon-purple" : "text-gray-500 hover:text-gray-300"
+               }`}
+             >
+               استریمرها
+               {activeTab === "streamers" && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-neon-purple shadow-[0_0_15px_#a855f7]" />}
              </button>
              <button
                onClick={() => setActiveTab("reports")}
@@ -1292,6 +1305,100 @@ export const AdminPage = () => {
                        </div>
                      )}
                   </div>
+                </div>
+             </div>
+          ) : activeTab === "streamers" ? (
+             <div className="space-y-6">
+                <div className="flex justify-between items-center bg-[#0a0a0f]/50 p-6 rounded-3xl border border-neon-purple/20">
+                   <div>
+                     <h2 className="text-xl font-black text-white italic tracking-tighter uppercase mb-1 flex items-center gap-2">
+                       <Shield size={20} className="text-neon-purple" />
+                       مدیریت استریمرها و برداشت‌ها
+                     </h2>
+                     <p className="text-xs text-gray-400 font-bold">نمایش استریمرها، آمار درآمد و نظارت بر درخواست‌های برداشت.</p>
+                   </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {streamers.map((s) => (
+                    <NeonCard key={s.id} variant="purple" className="p-6 bg-dark-card/50">
+                       <div className="flex items-center gap-4 mb-4">
+                         <AuthorizedImage src={s.avatar || s.user?.avatar} className="w-14 h-14 rounded-2xl object-cover" />
+                         <div>
+                            <h3 className="text-lg font-black text-white flex items-center gap-2">
+                               {s.user?.username || "---"}
+                               <span className="text-[10px] bg-purple-500/20 text-purple-400 px-2 py-0.5 rounded-full uppercase">استریمر</span>
+                            </h3>
+                            <div className="text-[10px] text-gray-500 font-mono mt-1">
+                               کد تخفیف: <span className="text-white">{s.discountCode}</span>
+                            </div>
+                         </div>
+                       </div>
+                       
+                       <div className="grid grid-cols-2 gap-4 mb-4 bg-white/5 p-4 rounded-2xl border border-white/5">
+                          <div>
+                            <p className="text-[9px] text-gray-500 uppercase tracking-widest font-black mb-1">موجودی</p>
+                            <p className="text-white font-mono">{s.balance?.toLocaleString()} <span className="text-[8px]">تومان</span></p>
+                          </div>
+                          <div>
+                            <p className="text-[9px] text-gray-500 uppercase tracking-widest font-black mb-1">کل درآمد</p>
+                            <p className="text-white font-mono">{s.totalEarned?.toLocaleString()} <span className="text-[8px]">تومان</span></p>
+                          </div>
+                          <div>
+                            <p className="text-[9px] text-gray-500 uppercase tracking-widest font-black mb-1">پورسانت ارجاع</p>
+                            <p className="text-white font-mono">{s.streamerCommissionPercent}%</p>
+                          </div>
+                          <div>
+                            <p className="text-[9px] text-gray-500 uppercase tracking-widest font-black mb-1">درخواست‌های معلق</p>
+                            <p className="text-yellow-400 font-mono font-bold">{s.withdrawalRequests?.filter((w: any) => w.status === "PENDING").length || 0}</p>
+                          </div>
+                       </div>
+                       
+                       <div className="space-y-4">
+                         {s.withdrawalRequests?.filter((w: any) => w.status === "PENDING").map((req: any) => (
+                           <div key={req.id} className="p-3 bg-yellow-400/10 border border-yellow-400/20 rounded-xl space-y-3">
+                             <div className="flex justify-between items-center text-[10px]">
+                               <span className="text-yellow-400 font-bold uppercase italic">درخواست تسویه</span>
+                               <span className="text-white font-mono">{req.amount.toLocaleString()} تومان</span>
+                             </div>
+                             
+                             <div className="text-[10px] text-gray-400 font-mono p-2 bg-black/40 rounded-lg whitespace-pre-wrap">
+                               {s.paymentInfo || 'اطلاعات بانکی ثبت نشده است'}
+                             </div>
+                             
+                             <div className="flex gap-2">
+                               <GlowButton onClick={async () => {
+                                  const receiptUrl = prompt("لینک عکس رسید واریز را وارد کنید:");
+                                  if (!receiptUrl) return;
+                                  try {
+                                    await api.post(`/admin/streamers/withdrawal/${req.id}/approve`, { receiptUrl });
+                                    toast.success("درخواست تایید و پیام ارسال شد");
+                                    fetchData();
+                                  } catch {
+                                    toast.error("خطا در تایید درخواست");
+                                  }
+                               }} size="sm" variant="blue" className="w-full text-[9px] py-2">
+                                  تایید واریز
+                               </GlowButton>
+                               <GlowButton onClick={async () => {
+                                  const reason = prompt("علت رد درخواست چیست؟");
+                                  if (!reason) return;
+                                  try {
+                                    await api.post(`/admin/streamers/withdrawal/${req.id}/reject`, { reason });
+                                    toast.success("درخواست رد شد");
+                                    fetchData();
+                                  } catch {
+                                    toast.error("خطا در رد درخواست");
+                                  }
+                               }} size="sm" className="w-full text-red-400 bg-red-400/10 border border-red-400/20 hover:bg-red-400/20 text-[9px] py-2">
+                                  رد کردن
+                               </GlowButton>
+                             </div>
+                           </div>
+                         ))}
+                       </div>
+                    </NeonCard>
+                  ))}
                 </div>
              </div>
           ) : null}
