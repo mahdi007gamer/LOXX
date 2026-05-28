@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { AuthService } from "../services/auth.service.ts";
+import { KavenegarService } from "../services/kavenegar.service.ts";
 import prisma from "../utils/prisma.ts";
 
 export class AuthController {
@@ -158,12 +159,70 @@ export class AuthController {
     }
   }
 
+  static async verifySignup(req: Request, res: Response) {
+    try {
+      const { phone, code } = req.body;
+      const { user, accessToken, refreshToken } = await AuthService.verifySignup(phone, code);
+
+      res.cookie("refresh_token", refreshToken, {
+        httpOnly: true,
+        secure: true,
+        sameSite: "none",
+        maxAge: 7 * 24 * 60 * 60 * 1000
+      });
+
+      res.json({
+        status: "success",
+        token: accessToken,
+        user
+      });
+    } catch (error: any) {
+      res.status(400).json({ status: "error", message: error.message });
+    }
+  }
+
+  static async resendSMSVerificationCode(req: Request, res: Response) {
+    try {
+      const { phone } = req.body;
+      const normalizedPhone = AuthService.normalizePhone(phone);
+      const user = await prisma.user.findFirst({
+        where: {
+          OR: [{ phone: normalizedPhone }, { phone }]
+        }
+      });
+      if (!user) throw new Error("کاربر یافت نشد");
+      if (user.isVerified) throw new Error("حساب شما قبلاً تایید شده است");
+
+      const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+      const otpExpires = new Date(Date.now() + 5 * 60 * 1000);
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { otpCode, otpExpires }
+      });
+      await KavenegarService.sendOTP(user.phone!, otpCode);
+      res.json({ status: "success", message: "کد تایید پیامکی مجدداً ارسال شد" });
+    } catch (error: any) {
+      res.status(400).json({ status: "error", message: error.message });
+    }
+  }
+
   static async sendBaleVerificationLink(req: Request, res: Response) {
     try {
+      // Deactivated Bale support, redirect to resend SMS instead
       const userId = (req as any).user?.userId;
       if (!userId) throw new Error("Unauthorized");
-      await AuthService.sendBaleVerificationLink(userId);
-      res.json({ status: "success", message: "لینک تایید ارسال شد" });
+      const user = await prisma.user.findUnique({ where: { id: userId } });
+      if (!user) throw new Error("User not found");
+      if (user.isVerified) throw new Error("حساب شما قبلاً تایید شده است");
+
+      const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+      const otpExpires = new Date(Date.now() + 5 * 60 * 1000);
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { otpCode, otpExpires }
+      });
+      await KavenegarService.sendOTP(user.phone!, otpCode);
+      res.json({ status: "success", message: "کد تایید پیامکی ارسال شد (سرویس بله غیرفعال شده است)" });
     } catch (error: any) {
       res.status(400).json({ status: "error", message: error.message });
     }

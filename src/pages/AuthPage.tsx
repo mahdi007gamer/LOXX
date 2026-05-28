@@ -3,13 +3,13 @@ import { motion, AnimatePresence } from "motion/react";
 import { NeonCard } from "../components/ui/NeonCard";
 import { Input } from "../components/ui/Input";
 import { GlowButton } from "../components/ui/GlowButton";
-import { Gamepad2, MessageCircle, Lock, User, ArrowRight, Loader2, Users, Phone, ArrowLeft, ShieldCheck, KeyRound } from "lucide-react";
+import { Gamepad2, MessageCircle, Lock, User, ArrowRight, Loader2, Users, Phone, ArrowLeft, ShieldCheck, KeyRound, Clock } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import api from "../lib/api";
 import { toast } from "react-hot-toast";
 
-type AuthStep = "AUTH" | "FORGOT_PASSWORD" | "RESET_PASSWORD" | "VERIFY_2FA" | "VERIFY_BALE";
+type AuthStep = "AUTH" | "FORGOT_PASSWORD" | "RESET_PASSWORD" | "VERIFY_2FA" | "VERIFY_SMS";
 
 export const AuthPage = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -17,6 +17,7 @@ export const AuthPage = () => {
   const [step, setStep] = useState<AuthStep>("AUTH");
   const [tempUserId, setTempUserId] = useState<string | null>(null);
   const [verificationToken, setVerificationToken] = useState<string | null>(null);
+  const [verificationCode, setVerificationCode] = useState("");
   const [statusToken, setStatusToken] = useState<string | null>(null);
   const [acceptedTerms, setAcceptedTerms] = useState(true);
   const [formData, setFormData] = useState({
@@ -30,9 +31,40 @@ export const AuthPage = () => {
     twoFactorCode: ""
   });
   const [forgotIdentifier, setForgotIdentifier] = useState("");
+  const [resendTimer, setResendTimer] = useState(120);
 
   const navigate = useNavigate();
   const { login, user } = useAuth();
+
+  React.useEffect(() => {
+    let interval: any;
+    if ((step === "VERIFY_SMS" || step === "VERIFY_2FA" || step === "RESET_PASSWORD") && resendTimer > 0) {
+      interval = setInterval(() => {
+        setResendTimer(prev => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [step, resendTimer]);
+
+  const handleResendSMS = async () => {
+    try {
+      setLoading(true);
+      if (step === "VERIFY_SMS") {
+        await api.post("/auth/resend-verification", { phone: formData.phone });
+        toast.success("کد تایید پیامکی مجدداً ارسال شد");
+      } else if (step === "VERIFY_2FA") {
+        toast.success("جهت ارسال مجدد کد امنیتی، مجدداً فرم ورود را تکمیل فرمایید");
+      } else if (step === "RESET_PASSWORD") {
+        await api.post("/auth/forgot-password", { phone: forgotIdentifier });
+        toast.success("کد بازیابی مجدداً ارسال شد");
+      }
+      setResendTimer(120);
+    } catch (err: any) {
+      toast.error(err.response?.data?.error?.message || "خطا در ارسال مجدد کد");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   React.useEffect(() => {
     if (user) {
@@ -45,27 +77,6 @@ export const AuthPage = () => {
       }
     }
   }, [user, navigate]);
-
-  React.useEffect(() => {
-    let interval: any;
-    if (step === "VERIFY_BALE" && formData.phone) {
-      interval = setInterval(async () => {
-        try {
-          const response = await api.get(`/auth/status/${formData.phone}`, {
-            params: { token: statusToken || "" }
-          });
-          if (response.data.verified) {
-            login(response.data.token, response.data.user);
-            toast.success("حساب شما با موفقیت تایید شد!");
-            navigate("/dashboard");
-          }
-        } catch (err) {
-          console.error("Polling error:", err);
-        }
-      }, 3000); // Poll every 3 seconds
-    }
-    return () => clearInterval(interval);
-  }, [step, formData.phone, statusToken, login, navigate]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -87,20 +98,18 @@ export const AuthPage = () => {
             if (response.data.status === "2fa_required") {
               setTempUserId(response.data.userId);
               setStep("VERIFY_2FA");
-              toast.success("کد تایید ارسال شد");
+              toast.success("کد تایید دو مرحله‌ای به همراه شما پیامک شد");
               return;
             }
 
             login(response.data.token, response.data.user);
             toast.success("خوش آمدید!");
           } catch (err: any) {
-             if (err.response?.data?.error?.code === "VERIFICATION_REQUIRED") {
-                const token = err.response?.data?.error?.statusToken;
-                setStatusToken(token);
-                setStep("VERIFY_BALE");
-                toast.error("حساب شما هنوز تایید نشده است.");
+             if (err.response?.data?.error?.code === "VERIFICATION_REQUIRED" || err.response?.data?.message === "VERIFICATION_REQUIRED") {
+                setStep("VERIFY_SMS");
+                toast.error("حساب شما هنوز تایید نشده است. یک کد تایید برای شماره شما پیامک شد.");
              } else {
-                toast.error("شماره همراه یا رمز عبور اشتباه است");
+                toast.error(err.response?.data?.error?.message || "شماره همراه یا رمز عبور اشتباه است");
              }
           }
         } else {
@@ -114,16 +123,20 @@ export const AuthPage = () => {
             });
             
             setVerificationToken(registerResponse.data.user.verificationToken);
-            setStatusToken(registerResponse.data.user.statusToken);
-            setStep("VERIFY_BALE");
-            toast.success("ثبت‌نام با موفقیت انجام شد.");
+            setStep("VERIFY_SMS");
+            toast.success("ثبت‌نام با موفقیت انجام شد. کد تایید پیامکی را وارد کنید.");
           } catch (err: any) {
-            toast.error(err.response?.data?.error?.message || "خطا در ثبت‌نام. لطفاً مجدداً تلاش کنید.");
+            toast.error(err.response?.data?.error?.message || err.response?.data?.message || "خطا در ثبت‌نام. لطفاً مجدداً تلاش کنید.");
           }
         }
-      } else if (step === "VERIFY_BALE") {
-        setIsLogin(true);
-        setStep("AUTH");
+      } else if (step === "VERIFY_SMS") {
+        const response = await api.post("/auth/verify-signup", {
+          phone: formData.phone,
+          code: verificationCode
+        });
+        login(response.data.token, response.data.user);
+        toast.success("ثبت نام و فعالسازی حساب کاربری موفقیت آمیز بود!");
+        navigate("/dashboard");
       } else if (step === "VERIFY_2FA") {
         const response = await api.post("/auth/verify-2fa", {
           userId: tempUserId,
@@ -190,17 +203,17 @@ export const AuthPage = () => {
                   </>
                 )}
 
-                {step === "VERIFY_BALE" && (
+                {step === "VERIFY_SMS" && (
                   <>
-                    <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter">اتصال امن بله</h2>
-                    <p className="mt-2 text-xs text-gray-500 font-bold uppercase tracking-widest">منتظر تایید شما در بازوی بله هستیم</p>
+                    <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter">تایید شماره همراه</h2>
+                    <p className="mt-2 text-xs text-gray-500 font-bold uppercase tracking-widest">لطفاً کد تایید پیامک شده را وارد کنید</p>
                   </>
                 )}
                 {step === "VERIFY_2FA" && (
                   <>
                     <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter">امنیت دو مرحله‌ای</h2>
                     <p className="mt-2 text-xs text-gray-500 font-bold uppercase tracking-widest leading-relaxed">
-                      کد تایید امنیتی به حساب بله شما ارسال شد.<br />
+                      کد تایید امنیتی به شماره همراه شما پیامک شد.<br />
                       لطفاً آن را در زیر وارد کنید.
                     </p>
                   </>
@@ -304,42 +317,52 @@ export const AuthPage = () => {
                   </>
                 )}
 
-                {step === "VERIFY_BALE" && (
-                  <div className="space-y-6 text-center">
-                    <div className="bg-white/5 border border-white/10 rounded-2xl p-6 relative overflow-hidden group">
-                       <div className="absolute inset-0 bg-gradient-to-br from-neon-blue/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                       <div className="relative z-10">
-                         <div className="flex justify-center mb-4">
-                            <div className="relative">
-                               <div className="absolute inset-0 bg-neon-blue blur-xl opacity-30 animate-pulse" />
-                               <div className="h-16 w-16 rounded-full bg-neon-blue/20 flex items-center justify-center border border-neon-blue/50">
-                                  <Loader2 size={32} className="text-neon-blue animate-spin" />
-                               </div>
-                            </div>
-                         </div>
-                         <h3 className="text-xl font-black text-white italic mb-2">منتظر تایید شماره موبایل...</h3>
-                         <p className="text-gray-300 text-sm leading-relaxed mb-6 font-bold">
-                           لطفاً روی دکمه زیر بزنید و پس از ورود به ربات، شماره موبایل خود را با استفاده از دکمه داخل ربات بله به اشتراک بگذارید.
-                         </p>
-                         
-                         <GlowButton 
-                          type="button"
-                          variant="blue"
-                          className="w-full h-14 !rounded-2xl font-black italic uppercase tracking-tighter"
-                          onClick={() => window.open(verificationToken ? `https://ble.ir/loxxbot?start=${verificationToken}` : `https://ble.ir/loxxbot`, "_blank")}
-                         >
-                           <MessageCircle size={20} className="ml-2" />
-                           ورود به ربات بله و تایید شماره
-                         </GlowButton>
+                {step === "VERIFY_SMS" && (
+                  <div className="space-y-6 text-right">
+                    <Input 
+                      label="کد تایید پیامکی (۶ رقمی)" 
+                      name="smsVerificationCode" 
+                      placeholder="123456" 
+                      dir="ltr" 
+                      className="text-center font-black tracking-[0.5em] text-lg" 
+                      value={verificationCode} 
+                      onChange={(e) => setVerificationCode(e.target.value)} 
+                      icon={<KeyRound size={18} />} 
+                      maxLength={6}
+                      required 
+                    />
+                    
+                    <div className="flex flex-col items-center justify-center p-4 bg-white/5 border border-white/10 rounded-2xl relative overflow-hidden">
+                      <div className="text-xs text-gray-400 font-bold mb-3 flex items-center gap-1.5 duration-300">
+                        <Clock size={14} className="text-neon-pink" />
+                        <span>برای ارسال مجدد کد زمان باقی‌مانده:</span>
+                        <span className="font-mono text-white text-sm tracking-tight">
+                          {Math.floor(resendTimer / 60)}:{(resendTimer % 60).toString().padStart(2, "0")}
+                        </span>
+                      </div>
+                      
+                      <button
+                        type="button"
+                        onClick={handleResendSMS}
+                        disabled={resendTimer > 0 || loading}
+                        className={`text-xs font-black uppercase tracking-wider transition-all px-4 py-2 rounded-xl border ${
+                          resendTimer > 0 
+                            ? "bg-transparent border-white/5 text-gray-600 cursor-not-allowed" 
+                            : "bg-neon-pink/10 border-neon-pink/30 text-neon-pink hover:bg-neon-pink/20 hover:scale-[1.02] active:scale-95 cursor-pointer shadow-[0_0_15px_rgba(255,0,127,0.1)]"
+                        }`}
+                      >
+                        ارسال مجدد کد پیامکی
+                      </button>
+                    </div>
 
-                         <button 
-                           type="button"
-                           onClick={() => setStep("AUTH")}
-                           className="mt-6 text-xs text-gray-500 hover:text-white transition-colors underline decoration-white/10 underline-offset-4"
-                         >
-                           لغو و بازگشت به صفحه ورود
-                         </button>
-                       </div>
+                    <div className="flex justify-center">
+                      <button 
+                        type="button"
+                        onClick={() => setStep("AUTH")}
+                        className="text-xs text-gray-500 hover:text-white transition-all hover:underline decoration-white/10 underline-offset-4 font-bold"
+                      >
+                        لغو و بازگشت به صفحه قبلی
+                      </button>
                     </div>
                   </div>
                 )}
@@ -369,7 +392,8 @@ export const AuthPage = () => {
                     >
                       {loading ? <Loader2 className="animate-spin" /> : (
                         step === "AUTH" ? (isLogin ? "ورود به سرزمین لوکس" : "ثبت‌نام در لوکس") :
-                        step === "VERIFY_BALE" ? "بازگشت به ورود" : "تایید نهایی"
+                        step === "VERIFY_SMS" ? "تایید و فعالسازی حساب" :
+                        "تایید نهایی"
                       )}
                     </GlowButton>
                     {step === "AUTH" && !isLogin && !acceptedTerms && (

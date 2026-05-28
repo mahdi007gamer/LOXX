@@ -1,6 +1,7 @@
 import { Response } from "express";
 import { UserService } from "../services/user.service.ts";
 import { BaleService } from "../services/bale.service.ts";
+import { KavenegarService } from "../services/kavenegar.service.ts";
 import { AuthenticatedRequest } from "../middleware/auth.middleware.ts";
 import prisma from "../utils/prisma.ts";
 
@@ -181,7 +182,7 @@ export class UserController {
       const userId = req.user!.userId;
       const user = await prisma.user.findUnique({ where: { id: userId } });
       if (!user) throw new Error("کاربر یافت نشد");
-      if (!user.baleId) throw new Error("ابتدا باید شماره خود را در ربات بله تایید کنید");
+      if (!user.phone) throw new Error("ابتدا باید شماره همراه خود را ثبت کنید");
 
       let code = user.twoFactorCode;
       const now = new Date();
@@ -201,9 +202,9 @@ export class UserController {
         });
       }
 
-      await BaleService.sendOTPViaBot(user.baleId, code!);
-      console.log(`[2FA ENABLE] Code for ${user.username} sent via Bale: ${code}`);
-      res.json({ status: "success", message: "کد تایید به حساب بله شما ارسال شد" });
+      await KavenegarService.sendOTP(user.phone, code!);
+      console.log(`[2FA ENABLE] Code for ${user.username} sent via SMS: ${code}`);
+      res.json({ status: "success", message: "کد تایید پیامکی ارسال شد" });
     } catch (error: any) {
       res.status(500).json({ status: "error", error: { message: error.message } });
     }

@@ -242,7 +242,7 @@ export const ProfilePage = () => {
                       </span>
                     ) : (
                       <span className="text-[10px] text-amber-500 font-bold uppercase tracking-widest flex items-center gap-1.5 whitespace-nowrap">
-                        <Shield size={12} /> منتظر تایید بله
+                        <Shield size={12} /> تایید نشده
                       </span>
                     )}
                   </div>
@@ -325,22 +325,25 @@ export const ProfilePage = () => {
                 </div>
               </NeonCard>
 
-              {!profileData?.isVerified && (
+              {!profileData?.isVerified ? (
                 <NeonCard variant="blue" className="p-8 border-neon-blue/30 bg-neon-blue/5">
                   <h3 className="flex items-center gap-3 font-black text-white italic uppercase tracking-tighter text-lg mb-4">
                     <Shield size={18} className="text-neon-blue" />
-                    <span>تایید هویت بله</span>
+                    <span>تایید هویت پیامکی</span>
                   </h3>
-                  <p className="text-xs text-gray-400 mb-6 leading-relaxed italic">
-                    حساب شما هنوز تایید نشده است. برای دسترسی کامل به امکانات و نمایش نشان تایید، اکانت خود را به بازوی بله متصل کنید.
+                  <p className="text-xs text-gray-400 mb-1 leading-relaxed italic">
+                    حساب شما هنوز به طور کامل تایید نشده است. لطفاً برای فعالسازی کامل حساب و دسترسی به مینی‌پروفایل معتبر، شماره همراه خود را تایید کنید.
                   </p>
-                  <GlowButton 
-                    variant="blue" 
-                    className="w-full h-12 !rounded-2xl font-black italic text-[10px] uppercase tracking-widest"
-                    onClick={() => window.open(`https://ble.ir/loxxbot?start=${profileData?.verificationToken || ''}`, '_blank')}
-                  >
-                    اتصال به @loxxbot
-                  </GlowButton>
+                </NeonCard>
+              ) : (
+                <NeonCard variant="blue" className="p-8 border-green-500/30 bg-green-500/5">
+                  <h3 className="flex items-center gap-3 font-black text-white italic uppercase tracking-tighter text-lg mb-4">
+                    <Shield size={18} className="text-green-400" />
+                    <span>تایید هویت پیامکی</span>
+                  </h3>
+                  <p className="text-xs text-green-400/80 mb-1 leading-relaxed italic">
+                    عالی! حساب کاربری شما با موفقیت از طریق سامانه پیامکی تایید شده و نشان طلایی تایید در مینی‌پروفایل شما فعال است.
+                  </p>
                 </NeonCard>
               )}
             </div>

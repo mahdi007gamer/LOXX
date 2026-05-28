@@ -464,7 +464,7 @@ export const SettingsPage = () => {
       setSaving(true);
       await api.post("/user/me/2fa/enable");
       setShowTwoFactorModal(true);
-      toast.success("کد تایید به حساب بله شما ارسال شد");
+      toast.success("کد تایید پیامکی به شماره همراه شما ارسال شد");
     } catch (err: any) {
       toast.error(err.response?.data?.error?.message || "خطا در برقراری ارتباط");
     } finally {
@@ -585,14 +585,14 @@ export const SettingsPage = () => {
            <div className="flex items-center justify-between mb-4">
              <div>
                <h3 className="font-black text-white italic mb-1 flex items-center gap-2">
-                 تایید دو مرحله‌ای (بله) 
+                 تایید دو مرحله‌ای (SMS) 
                  {twoFactorEnabled ? (
                    <span className="text-[10px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded uppercase not-italic">فعال</span>
                  ) : (
                    <span className="text-[10px] bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded uppercase not-italic">غیرفعال</span>
                  )}
                </h3>
-               <p className="text-[10px] text-gray-500 font-bold uppercase italic">کد تایید هنگام ورود به ایمیل شما ارسال خواهد شد</p>
+               <p className="text-[10px] text-gray-500 font-bold uppercase italic">کد تایید امنیتی هنگام ورود به شماره همراه شما پیامک خواهد شد</p>
              </div>
              {twoFactorEnabled ? (
                <GlowButton variant="purple" size="sm" className="text-[10px] font-black uppercase italic px-6 border-none bg-red-500/10 text-red-500 hover:bg-red-500/20 hover:text-red-400 shadow-none" onClick={handleDisable2FA} disabled={saving}>غیرفعال‌سازی 2FA</GlowButton>
@@ -632,8 +632,8 @@ export const SettingsPage = () => {
                    </>
                  ) : (
                    <>
-                     <h3 className="text-xl font-black text-white italic mb-2">تایید دو مرحله‌ای</h3>
-                     <p className="text-xs text-gray-500 font-bold mb-6 italic">کد تایید ارسال شده به بات بله را وارد کنید</p>
+                     <h3 className="text-xl font-black text-white italic mb-2">تایید دو مرحله‌ای پیامکی</h3>
+                     <p className="text-xs text-gray-500 font-bold mb-6 italic">کد تایید ارسال شده به شماره همراه خود را وارد کنید</p>
                      <Input 
                        label="کد تایید"
                        placeholder="مثلا 123456"

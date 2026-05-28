@@ -12,6 +12,8 @@ router.post("/forgot-password", authLimiter, AuthController.forgotPassword);
 router.post("/reset-password", AuthController.resetPassword);
 router.post("/refresh", AuthController.refresh);
 router.post("/logout", AuthController.logout);
+router.post("/verify-signup", AuthController.verifySignup);
+router.post("/resend-verification", AuthController.resendSMSVerificationCode);
 router.post("/verify-2fa", AuthController.verify2FA);
 router.post("/bale/url", AuthController.getBaleLoginUrl);
 router.post("/bale/callback", AuthController.verifyBaleCallback);

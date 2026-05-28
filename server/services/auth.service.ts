@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from "uuid";
 import prisma from "../utils/prisma.ts";
 import { RegisterDTO, LoginDTO } from "../types/auth.ts";
 import { BaleService } from "./bale.service.ts";
+import { KavenegarService } from "./kavenegar.service.ts";
 
 const JWT_SECRET = process.env.JWT_SECRET || "secret";
 const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET || "refresh_secret";
@@ -37,6 +38,10 @@ export class AuthService {
     const isAdmin = normalizedPhone === "13781378" || data.username === "admin";
     const isVip = normalizedPhone === "123" || data.username === "VIP";
     
+    // Generate signup OTP code
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpExpires = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes expiration
+
     const user = await prisma.user.create({
       data: {
         username: data.username,
@@ -45,6 +50,8 @@ export class AuthService {
         passwordHash,
         verificationToken: isAdmin ? null : verificationToken,
         isVerified: isAdmin ? true : false,
+        otpCode: isAdmin ? null : otpCode,
+        otpExpires: isAdmin ? null : otpExpires,
         role: isAdmin ? "ADMIN" : "USER",
         profile: {
           create: {
@@ -59,7 +66,10 @@ export class AuthService {
       }
     });
 
-    console.log(`[BALE] Verification link: ble.ir/loxxbot?start=${verificationToken}`);
+    console.log(`[SMS AUTH] Verification Code for ${data.username} is ${otpCode}`);
+    if (!isAdmin) {
+      await KavenegarService.sendOTP(normalizedPhone, otpCode);
+    }
     
     if (data.referralUsername) {
       const referrer = await prisma.user.findUnique({ where: { username: data.referralUsername } });
@@ -165,15 +175,22 @@ export class AuthService {
 
     if (!user) throw new Error("Invalid credentials");
 
-    // Enforce Bale verification except for pre-verified admin
-    if (!user.isVerified && user.phone !== "13781378" && user.username !== "admin") {
-      throw new Error("VERIFICATION_REQUIRED");
-    }
-
     const valid = await argon2.verify(user.passwordHash, data.password);
     if (!valid) {
       console.log(`[AUTH] Password verification failed for user: ${user.username}`);
       throw new Error("Invalid credentials");
+    }
+
+    // Enforce SMS verification except for pre-verified admin
+    if (!user.isVerified && user.phone !== "13781378" && user.username !== "admin") {
+      const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+      const otpExpires = new Date(Date.now() + 5 * 60 * 1000); // 5 mins
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { otpCode, otpExpires }
+      });
+      await KavenegarService.sendOTP(user.phone!, otpCode);
+      throw new Error("VERIFICATION_REQUIRED");
     }
 
     if (user.twoFactorEnabled) {
@@ -185,10 +202,8 @@ export class AuthService {
         data: { otpCode, otpExpires }
       });
 
-      console.log(`[BALE] 2FA Code: ${otpCode}`);
-      if (user.baleId) {
-        await BaleService.sendOTPViaBot(user.baleId, otpCode);
-      }
+      console.log(`[SMS 2FA] 2FA Code: ${otpCode}`);
+      await KavenegarService.sendOTP(user.phone!, otpCode);
       return { status: "2fa_required", userId: user.id };
     }
 
@@ -292,8 +307,14 @@ export class AuthService {
   }
 
   static async forgotPassword(phone: string) {
-    const user = await prisma.user.findUnique({
-      where: { phone }
+    const normalizedPhone = this.normalizePhone(phone);
+    const user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { phone: normalizedPhone },
+          { phone }
+        ]
+      }
     });
 
     if (!user) throw new Error("کاربری با این شماره یافت نشد");
@@ -306,11 +327,57 @@ export class AuthService {
       data: { otpCode: code, otpExpires: expires }
     });
 
-    console.log(`[BALE] Security code: ${code}`);
-    if (user.baleId) {
-      await BaleService.sendOTPViaBot(user.baleId, code);
-    }
+    console.log(`[SMS Security] Security code: ${code}`);
+    await KavenegarService.sendOTP(user.phone!, code);
     return true;
+  }
+
+  static async verifySignup(phone: string, code: string) {
+    const normalizedPhone = this.normalizePhone(phone);
+    const user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { phone: normalizedPhone },
+          { phone }
+        ]
+      },
+      include: { profile: true }
+    });
+
+    if (!user) {
+      throw new Error("کاربری با این شماره یافت نشد");
+    }
+
+    if (user.otpCode !== code || !user.otpExpires || new Date() > user.otpExpires) {
+      throw new Error("کد تایید نامعتبر یا منقضی شده است");
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id: user.id },
+      data: { isVerified: true, otpCode: null, otpExpires: null },
+      include: { profile: true }
+    });
+
+    const accessToken = this.generateAccessToken(updatedUser.id);
+    const refreshToken = this.generateRefreshToken(updatedUser.id);
+
+    return {
+      user: {
+        id: updatedUser.id,
+        username: updatedUser.username,
+        phone: updatedUser.phone,
+        role: updatedUser.role,
+        membership: updatedUser.profile?.membershipType,
+        isVerified: updatedUser.isVerified,
+        twoFactorEnabled: updatedUser.twoFactorEnabled,
+        avatarUrl: updatedUser.profile?.avatarUrl,
+        bannerUrl: updatedUser.profile?.bannerUrl,
+        displayName: updatedUser.profile?.displayName,
+        vipMetadata: updatedUser.profile?.vipMetadata ? JSON.parse(updatedUser.profile.vipMetadata) : null
+      },
+      accessToken,
+      refreshToken
+    };
   }
 
   static async resetPassword(phone: string, code: string, newPassword: string) {
