@@ -79,7 +79,7 @@ export const ProfilePage = () => {
     }
   };
 
-  const isVip = profileData?.membership === "VIP" || profileData?.membership === MembershipType.VIP;
+  const isVip = profileData?.membership === "VIP" || profileData?.membership === MembershipType.VIP || profileData?.role === "STREAMER";
   const isPlus = profileData?.membership === "PLUS" || profileData?.membership === MembershipType.PLUS;
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {

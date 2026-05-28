@@ -55,6 +55,7 @@ export function setupWebSockets(io: Server) {
     username: user.username,
     membership: user.profile?.membershipType || "NONE",
     level: user.profile?.level || 1,
+    role: user.role,
     avatar: user.profile?.avatarUrl,
     bannerUrl: user.profile?.bannerUrl,
     vipMetadata: user.profile?.vipMetadata,

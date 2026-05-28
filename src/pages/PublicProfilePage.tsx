@@ -71,7 +71,7 @@ export const PublicProfilePage = () => {
     );
   }
 
-  const isVip = profile.membership === "VIP" || profile.membership === MembershipType.VIP;
+  const isVip = profile.membership === "VIP" || profile.membership === MembershipType.VIP || profile.role === "STREAMER";
   const isPlus = profile.membership === "PLUS" || profile.membership === MembershipType.PLUS;
 
   return (

@@ -63,10 +63,10 @@ function MessageItem({ message, onReaction, onSaveGif, onReply, activeChannelId,
   const [showActions, setShowActions] = useState(false);
 
   // Level based colors
-  const isVIP = message.senderBadges?.includes(BadgeType.VIP);
+  const isStreamer = message.senderBadges?.includes(BadgeType.STREAMER) || (message as any).userRole === 'STREAMER' || (message as any).senderRole === 'STREAMER';
+  const isVIP = message.senderBadges?.includes(BadgeType.VIP) || isStreamer;
   const isPLUS = message.senderBadges?.includes(BadgeType.PLUS);
   const isChamp = message.senderBadges?.includes(BadgeType.CHAMPION);
-  const isStreamer = message.senderBadges?.includes(BadgeType.STREAMER) || (message as any).senderRole === 'STREAMER';
   const metadata = typeof (message as any).vipMetadata === 'string' ? JSON.parse((message as any).vipMetadata) : (message as any).vipMetadata;
 
   const nameColorClass = isVIP ? "text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.5)]" :
@@ -118,6 +118,7 @@ function MessageItem({ message, onReaction, onSaveGif, onReply, activeChannelId,
             senderAvatar: message.senderAvatar || message.avatarUrl,
             bannerUrl: (message as any).bannerUrl || message.avatarUrl,
             vipMetadata: (message as any).vipMetadata,
+            role: (message as any).userRole,
             senderLevel: message.senderLevel,
             senderBadges: message.senderBadges,
             id: message.senderId,
@@ -172,6 +173,7 @@ function MessageItem({ message, onReaction, onSaveGif, onReply, activeChannelId,
                 senderAvatar: message.senderAvatar,
                 bannerUrl: (message as any).bannerUrl,
                 vipMetadata: (message as any).vipMetadata,
+                role: (message as any).userRole,
                 senderLevel: message.senderLevel,
                 senderBadges: message.senderBadges,
                 id: message.senderId,
@@ -1143,6 +1145,7 @@ export const ChatPage: React.FC = () => {
        bannerUrl: isNewsChannel ? undefined : from.bannerUrl,
        vipMetadata: isNewsChannel ? undefined : from.vipMetadata,
        senderLevel: from.level || 1,
+       userRole: from.role,
        senderBadges: isNewsChannel ? [] : badges,
        text,
        image,

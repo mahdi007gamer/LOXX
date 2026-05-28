@@ -20,6 +20,7 @@ export interface QuickProfileUser {
   senderLevel: number;
   senderBadges?: any[]; // Dynamic badges
   membership?: MembershipType;
+  role?: string;
   id?: string;
   bannerUrl?: string;
   vipMetadata?: any;
@@ -64,6 +65,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
           avatarUrl: data.avatarUrl,
           bannerUrl: data.bannerUrl,
           membership: data.membership,
+          role: data.role,
           senderLevel: data.level || initialUser.senderLevel,
           stats: data.stats,
           vipMetadata: data.vipMetadata,
@@ -97,7 +99,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({ onClos
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportReason, setReportReason] = useState("");
 
-  const isVIP = user.membership === MembershipType.VIP || user.membership === "VIP";
+  const isVIP = user.membership === MembershipType.VIP || user.membership === "VIP" || (user as any).role === "STREAMER";
   const isPLUS = user.membership === MembershipType.PLUS || user.membership === "PLUS";
 
   const getMetadata = (): VIPMetadata | null => {

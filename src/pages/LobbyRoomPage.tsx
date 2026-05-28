@@ -237,7 +237,7 @@ export const LobbyRoomPage = () => {
   const isHost = lobby?.hostId === user?.id;
   
   const hostPlayer = lobby?.players?.find((p: any) => p.userId === lobby?.hostId);
-  const isVipLobby = hostPlayer?.membership === "VIP";
+  const isVipLobby = hostPlayer?.membership === "VIP" || (hostPlayer as any)?.role === "STREAMER";
   
   const isStarting = lobby?.status === "STARTING";
   const isMatchStarted = lobby?.status === "IN_PROGRESS";

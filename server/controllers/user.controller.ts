@@ -77,6 +77,7 @@ export class UserController {
           bio: user.profile?.bio,
           level: user.profile?.level,
           membership: user.profile?.membershipType,
+          role: user.role,
           avatarUrl: user.profile?.avatarUrl,
           bannerUrl: user.profile?.bannerUrl,
           stats: user.stats,

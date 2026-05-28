@@ -147,7 +147,7 @@ export const LeaderboardPage = () => {
                         <SmartImage 
                           src={podium[1].avatarUrl || podium[1].avatar || ""}
                           fallbacks={getAvatarFallbacks(podium[1].username)}
-                          isVipEnabled={podium[1].membership === MembershipType.VIP || podium[1].membership === "VIP"}
+                          isVipEnabled={podium[1].membership === MembershipType.VIP || podium[1].membership === "VIP" || (podium[1] as any).role === "STREAMER"}
                           className="w-full h-full object-cover"
                           alt={podium[1].username}
                         />
@@ -180,7 +180,7 @@ export const LeaderboardPage = () => {
                             <SmartImage 
                               src={podium[0].avatarUrl || podium[0].avatar || ""}
                               fallbacks={getAvatarFallbacks(podium[0].username)}
-                              isVipEnabled={podium[0].membership === MembershipType.VIP || podium[0].membership === "VIP"}
+                              isVipEnabled={podium[0].membership === MembershipType.VIP || podium[0].membership === "VIP" || (podium[0] as any).role === "STREAMER"}
                               className="w-full h-full object-cover"
                               alt={podium[0].username}
                             />
@@ -215,7 +215,7 @@ export const LeaderboardPage = () => {
                         <SmartImage 
                           src={podium[2].avatarUrl || podium[2].avatar || ""}
                           fallbacks={getAvatarFallbacks(podium[2].username)}
-                          isVipEnabled={podium[2].membership === MembershipType.VIP || podium[2].membership === "VIP"}
+                          isVipEnabled={podium[2].membership === MembershipType.VIP || podium[2].membership === "VIP" || (podium[2] as any).role === "STREAMER"}
                           className="w-full h-full object-cover"
                           alt={podium[2].username}
                         />
@@ -252,7 +252,7 @@ export const LeaderboardPage = () => {
                                <SmartImage 
                                  src={player.avatarUrl || player.avatar || ""}
                                  fallbacks={getAvatarFallbacks(player.username)}
-                                 isVipEnabled={player.membership === MembershipType.VIP || player.membership === "VIP"}
+                                 isVipEnabled={player.membership === MembershipType.VIP || player.membership === "VIP" || (player as any).role === "STREAMER"}
                                  className="w-full h-full object-cover"
                                  alt={player.username}
                                />
