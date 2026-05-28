@@ -2,6 +2,7 @@ import express from "express";
 import http from "http";
 import { Server } from "socket.io";
 import path from "path";
+import { execSync } from "child_process";
 import cors from "cors";
 import helmet from "helmet";
 import dotenv from "dotenv";
@@ -46,6 +47,17 @@ async function startServer() {
   const app = express();
   const server = http.createServer(app);
   const PORT = Number(process.env.PORT) || 3000;
+
+  // Programmatic DB schema sync for production/Cloud Run fallback
+  if (process.env.NODE_ENV === "production") {
+    try {
+      console.log("[DATABASE-SYNC] Ensuring database schema is synced with PostgreSQL...");
+      execSync("npx prisma db push --accept-data-loss", { stdio: "inherit" });
+      console.log("[DATABASE-SYNC] Database schema synced successfully!");
+    } catch (dbError) {
+      console.error("[DATABASE-SYNC] Schema synchronization failed:", dbError);
+    }
+  }
 
   // Socket.io initialization
   const io = new Server(server, {
