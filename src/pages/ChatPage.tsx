@@ -51,10 +51,12 @@ interface MessageItemProps {
   activeChannelId: string;
   onDelete: (msgId: string) => void;
   onReport?: (msg: ChatMessage) => void;
-  [key: string]: any; // Allow React keys
+  onPin?: () => void;
+  isGroupOwner?: boolean;
+  [key: string]: any; 
 }
 
-function MessageItem({ message, onReaction, onSaveGif, onReply, activeChannelId, onDelete, onReport }: MessageItemProps) {
+function MessageItem({ message, onReaction, onSaveGif, onReply, activeChannelId, onDelete, onReport, onPin, isGroupOwner }: MessageItemProps) {
   const { openProfile } = useProfilePopover();
   const { user } = useAuth();
   const isAdmin = (user as any)?.role === 'ADMIN';
@@ -64,9 +66,11 @@ function MessageItem({ message, onReaction, onSaveGif, onReply, activeChannelId,
   const isVIP = message.senderBadges?.includes(BadgeType.VIP);
   const isPLUS = message.senderBadges?.includes(BadgeType.PLUS);
   const isChamp = message.senderBadges?.includes(BadgeType.CHAMPION);
+  const isStreamer = message.senderBadges?.includes(BadgeType.STREAMER) || (message as any).senderRole === 'STREAMER';
   const metadata = typeof (message as any).vipMetadata === 'string' ? JSON.parse((message as any).vipMetadata) : (message as any).vipMetadata;
 
   const nameColorClass = isVIP ? "text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.5)]" :
+                        isStreamer ? "text-neon-purple drop-shadow-[0_0_8px_rgba(168,85,247,0.5)]" :
                         isChamp ? "text-yellow-500" :
                         isPLUS ? "text-neon-blue" :
                         message.senderLevel > 40 ? "text-neon-blue shadow-[0_0_8px_rgba(0,229,255,0.3)]" : 
@@ -125,7 +129,8 @@ function MessageItem({ message, onReaction, onSaveGif, onReply, activeChannelId,
           "h-9 w-9 md:h-11 md:w-11 rounded-xl flex items-center justify-center text-lg md:text-xl relative z-[10] transition-transform hover:scale-105 shadow-xl bg-cover bg-center overflow-visible",
           message.self ? "bg-neon-pink text-white" : "bg-neon-blue text-white",
           isVIP && "border-2 border-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.4)]",
-          isPLUS && "border-2 border-neon-blue shadow-[0_0_10px_rgba(0,229,255,0.3)]"
+          isStreamer && !isVIP && "border-2 border-neon-purple shadow-[0_0_15px_rgba(168,85,247,0.4)]",
+          isPLUS && !isStreamer && !isVIP && "border-2 border-neon-blue shadow-[0_0_10px_rgba(0,229,255,0.3)]"
         )}>
           <SmartImage 
             src={message.senderAvatar || message.avatarUrl || ""}
@@ -208,6 +213,11 @@ function MessageItem({ message, onReaction, onSaveGif, onReply, activeChannelId,
               <div className="absolute inset-0 bg-yellow-400/5 blur-3xl rounded-full scale-150 animate-pulse pointer-events-none" />
             )}
             
+            {/* Streamer Glow Backing */}
+            {isStreamer && !isVIP && (
+              <div className="absolute inset-0 bg-neon-purple/10 blur-3xl rounded-full scale-110 animate-pulse pointer-events-none" />
+            )}
+            
             {/* Action Buttons - Repositioned to prevent horizontal scroll */}
             <div className={cn(
               "absolute flex items-center gap-1 px-1.5 py-1 rounded-xl bg-[#0f0f15]/95 border border-white/10 shadow-2xl z-[60] backdrop-blur-2xl whitespace-nowrap transition-all duration-200 min-w-max",
@@ -231,7 +241,16 @@ function MessageItem({ message, onReaction, onSaveGif, onReply, activeChannelId,
                    <Flag size={14} />
                  </button>
               )}
-              {(isAdmin || message.self) && (
+              {onPin && (
+                 <button 
+                   className="h-6 w-6 md:h-7 md:w-7 flex items-center justify-center text-gray-400 hover:text-yellow-500 transition-colors rounded-lg hover:bg-white/5 relative z-10 shrink-0" 
+                   onClick={(e) => { e.stopPropagation(); onPin(); setShowActions(false); }}
+                   title="پین پیام"
+                 >
+                   <Star size={14} />
+                 </button>
+              )}
+              {(isAdmin || message.self || isGroupOwner) && (
                 <button 
                   className="h-6 w-6 md:h-7 md:w-7 flex items-center justify-center text-gray-400 hover:text-red-500 transition-colors rounded-lg hover:bg-white/5 relative z-10 shrink-0" 
                   onClick={(e) => { e.stopPropagation(); onDelete(message.id); setShowActions(false); }}
@@ -267,17 +286,20 @@ function MessageItem({ message, onReaction, onSaveGif, onReply, activeChannelId,
                     ? "bg-[#140e1a] text-white border-neon-pink/20 rounded-tr-none" 
                     : "bg-white/5 text-gray-100 border-white/10 rounded-tl-none",
                 isVIP && "border-yellow-400/40 bg-gradient-to-br from-yellow-400/[0.12] to-transparent shadow-[0_0_40px_rgba(250,204,21,0.12)]",
-                isPLUS && "border-neon-blue/40 bg-gradient-to-br from-neon-blue/[0.12] to-transparent shadow-[0_0_30px_rgba(0,229,255,0.12)]"
+                isStreamer && !isVIP && "border-neon-purple/40 bg-gradient-to-br from-neon-purple/[0.12] to-transparent shadow-[0_0_40px_rgba(168,85,247,0.12)]",
+                isPLUS && !isStreamer && !isVIP && "border-neon-blue/40 bg-gradient-to-br from-neon-blue/[0.12] to-transparent shadow-[0_0_30px_rgba(0,229,255,0.12)]"
               )}
             >
                {/* VIP/PLUS Shimmer Effect */}
-               {(isVIP || isPLUS) && (
+               {(isVIP || isPLUS || isStreamer) && (
                 <motion.div 
                   animate={{ x: ["-100%", "200%"] }}
                   transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
                   className={cn(
                     "absolute inset-0 skew-x-12 pointer-events-none z-0 mix-blend-overlay",
-                    isVIP ? "bg-gradient-to-r from-transparent via-yellow-400/50 to-transparent" : "bg-gradient-to-r from-transparent via-neon-blue/40 to-transparent"
+                    isVIP ? "bg-gradient-to-r from-transparent via-yellow-400/50 to-transparent" : 
+                    isStreamer ? "bg-gradient-to-r from-transparent via-neon-purple/40 to-transparent" : 
+                    "bg-gradient-to-r from-transparent via-neon-blue/40 to-transparent"
                   )}
                 />
               )}
@@ -764,7 +786,8 @@ export const ChatPage: React.FC = () => {
             icon: c.type === "PRO" ? "🏆" : "👑",
             avatarUrl: c.avatarUrl,
             ownerId: c.ownerId,
-            rawMembers: c.members
+            rawMembers: c.members,
+            metadata: c.metadata
           };
           if (c.type === "PRO") pro.push(mapped);
           else elite.push(mapped);
@@ -813,6 +836,37 @@ export const ChatPage: React.FC = () => {
       loadEliteGroups();
     } catch (err: any) {
       toast.error(err.response?.data?.error?.message || "خطا در اخراج کاربر");
+    }
+  };
+
+  const handleTimeoutEliteMember = async (targetUserId: string, durationMinutes: number) => {
+    try {
+      if (!confirm(`آیا مطمئن هستید که می‌خواهید کاربر را برای ${durationMinutes} دقیقه معلق کنید؟`)) return;
+      await api.post(`/elite/${activeChannelId}/timeout`, { targetUserId, durationMinutes });
+      toast.success(`کاربر برای ${durationMinutes} دقیقه معلق شد`);
+    } catch (err: any) {
+      toast.error(err.response?.data?.error?.message || "خطا در معلق کردن کاربر");
+    }
+  };
+
+  const handleBanEliteMember = async (targetUserId: string) => {
+    if (!confirm("آیا مطمئن هستید؟ کاربر برای همیشه از گروه بن خواهد شد")) return;
+    try {
+      await api.post(`/elite/${activeChannelId}/ban`, { targetUserId });
+      toast.success("کاربر با موفقیت از گروه بن شد");
+      loadEliteGroups();
+    } catch (err: any) {
+      toast.error(err.response?.data?.error?.message || "خطا در بن کردن کاربر");
+    }
+  };
+
+  const handlePinMessage = async (messageId: string) => {
+    try {
+       await api.post(`/elite/${activeChannelId}/pin`, { messageId });
+       toast.success("پیام با موفقیت پین شد!");
+       loadEliteGroups();
+    } catch (err: any) {
+       toast.error(err.response?.data?.error?.message || "خطا در پین کردن پیام");
     }
   };
 
@@ -1573,9 +1627,20 @@ export const ChatPage: React.FC = () => {
                            </div>
                          </div>
                          {m.userId !== user?.id ? (
-                           <button onClick={() => handleRemoveEliteMember(m.userId)} className="text-[10px] bg-red-500/10 text-red-500 hover:bg-red-500/20 px-3 py-1.5 rounded-lg border border-red-500/20 font-black uppercase tracking-widest transition-colors shrink-0">
-                             اخراج
-                           </button>
+                           <div className="flex gap-2 shrink-0">
+                               <button onClick={() => {
+                                 const mins = prompt("مدت زمان تعلیق به دقیقه (حداکثر 100)", "10");
+                                 if(mins) handleTimeoutEliteMember(m.userId, Number(mins));
+                               }} title="معلق کردن کاربر" className="text-[10px] bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20 px-2 py-1.5 rounded-lg border border-yellow-500/20 font-black uppercase tracking-widest transition-colors shrink-0">
+                                 معلق
+                               </button>
+                               <button onClick={() => handleRemoveEliteMember(m.userId)} title="اخراج کاربر" className="text-[10px] bg-red-500/10 text-red-500 hover:bg-red-500/20 px-2 py-1.5 rounded-lg border border-red-500/20 font-black uppercase tracking-widest transition-colors shrink-0">
+                                 اخراج
+                               </button>
+                               <button onClick={() => handleBanEliteMember(m.userId)} title="بن کامل و جلوگیری از ورود مجدد" className="text-[10px] bg-red-900/30 text-red-500 hover:bg-red-900/50 px-2 py-1.5 rounded-lg border border-red-900/50 font-black uppercase tracking-widest transition-colors shrink-0">
+                                 بن
+                               </button>
+                           </div>
                          ) : (
                            <span className="text-[10px] font-black uppercase tracking-widest text-[#00e5ff] bg-[#00e5ff]/10 px-3 py-1.5 rounded-lg border border-[#00e5ff]/20 shrink-0">
                              مدیر
@@ -1789,20 +1854,20 @@ export const ChatPage: React.FC = () => {
         <div className="p-6 border-b border-white/5">
           <div className="flex items-center justify-between mb-2">
             <h2 className="text-xl font-black text-white tracking-widest uppercase">کانال‌ها</h2>
-            {(user?.membership === "VIP" || user?.membership === "PLUS") && (
+            {(user?.membership === "VIP" || user?.membership === "PLUS" || (user as any)?.role === "STREAMER") && (
               <button 
                 title="ایجاد گروه حرفه‌ای"
                 onClick={() => setShowVipGroupModal(true)}
                 className={cn(
                   "group p-2 rounded-xl transition-all border relative",
-                  user?.membership === "VIP" 
+                  (user?.membership === "VIP" || (user as any)?.role === "STREAMER")
                     ? "bg-yellow-400/10 text-yellow-400 hover:bg-yellow-400 hover:text-dark-bg border-yellow-400/20 shadow-[0_0_15px_rgba(250,204,21,0.1)] hover:shadow-[0_0_20px_rgba(250,204,21,0.3)]"
                     : "bg-neon-blue/10 text-neon-blue hover:bg-neon-blue hover:text-dark-bg border-neon-blue/20 shadow-[0_0_15px_rgba(0,229,255,0.1)] hover:shadow-[0_0_20px_rgba(0,229,255,0.3)]"
                 )}
               >
                 <Plus size={18} />
                 <div className="absolute -top-1 -right-1">
-                  {user?.membership === "VIP" 
+                  {(user?.membership === "VIP" || (user as any)?.role === "STREAMER")
                     ? <Crown size={10} className="fill-yellow-400" />
                     : <Zap size={10} className="fill-neon-blue" />
                   }
@@ -2339,24 +2404,67 @@ export const ChatPage: React.FC = () => {
           style={{ overscrollBehavior: 'contain' }}
           dir="rtl"
         >
-          {/* Date Separator */}
-          <div className="flex items-center gap-4 py-4 shrink-0">
-             <div className="h-px flex-1 bg-gradient-to-l from-transparent via-white/5 to-transparent"></div>
-             <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest shrink-0">امروز</span>
-             <div className="h-px flex-1 bg-gradient-to-l from-transparent via-white/5 to-transparent"></div>
-          </div>
+          {/* Pinned Message */}
+          {(() => {
+             const activeChannelDetails = [...eliteGroups, ...proGroups].find(c => c.id === activeChannelId);
+             const metadataObj = activeChannelDetails?.metadata ? (typeof activeChannelDetails.metadata === 'string' ? JSON.parse(activeChannelDetails.metadata) : activeChannelDetails.metadata) : {};
+             const pinnedMessageId = metadataObj.pinnedMessageId;
+             if (!pinnedMessageId) return null;
+             const pinnedMessage = currentMessages.find(m => m.id === pinnedMessageId);
+             if (!pinnedMessage) return null;
+             return (
+               <div className="sticky top-0 z-10 mx-2 mb-4 bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-3 flex flex-col shadow-lg backdrop-blur-md cursor-pointer shrink-0" onClick={() => {
+                 document.getElementById(`message-${pinnedMessage.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+               }}>
+                 <div className="flex items-center gap-2 mb-1">
+                   <Star size={12} className="text-yellow-500" />
+                   <span className="text-[10px] font-black text-yellow-500 uppercase">پیام پین شده</span>
+                 </div>
+                 <p className="text-xs text-white/80 line-clamp-1">{pinnedMessage.content}</p>
+               </div>
+             )
+          })()}
 
-          {currentMessages.map((msg) => (
-            <MessageItem 
-              key={msg.id} 
-              message={msg} 
-              onReaction={handleReaction}
-              onSaveGif={handleSaveGif}
-              onReply={(m) => setReplyingTo(m)}
-              activeChannelId={activeChannelId}
-              onDelete={deleteMessage}
-              onReport={(m) => setReportingMessage(m)}
-            />
+          {/* Grouped Messages by Date */}
+          {Object.entries(
+            currentMessages.reduce((groups, msg) => {
+               const d = new Date(msg.createdAt || Date.now());
+               const today = new Date();
+               const isToday = d.toDateString() === today.toDateString();
+               const isYesterday = d.toDateString() === new Date(today.getTime() - 86400000).toDateString();
+               
+               const formatOpt: Intl.DateTimeFormatOptions = { year: 'numeric', month: '2-digit', day: '2-digit' };
+               const faDate = d.toLocaleDateString("fa-IR", formatOpt);
+
+               const label = isToday ? "امروز" : isYesterday ? `دیروز (${faDate})` : faDate;
+
+               if (!groups[label]) groups[label] = [];
+               groups[label].push(msg);
+               return groups;
+            }, {} as Record<string, typeof currentMessages>)
+          ).map(([dateLabel, msgs]) => (
+            <React.Fragment key={dateLabel}>
+               <div className="flex items-center gap-4 py-4 shrink-0">
+                  <div className="h-px flex-1 bg-gradient-to-l from-transparent via-white/5 to-transparent"></div>
+                  <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest shrink-0">{dateLabel}</span>
+                  <div className="h-px flex-1 bg-gradient-to-l from-transparent via-white/5 to-transparent"></div>
+               </div>
+               
+               {(msgs as any[]).map((msg) => (
+                 <MessageItem 
+                   key={msg.id} 
+                   message={msg} 
+                   onReaction={handleReaction} 
+                   onSaveGif={handleSaveGif} 
+                   onReply={(m) => setReplyingTo(m)} 
+                   activeChannelId={activeChannelId} 
+                   onDelete={deleteMessage} 
+                   onReport={(m) => setReportingMessage(m)} 
+                   onPin={(activeChannel.type === 'elite' && (activeChannel as any).ownerId === user?.id) ? () => handlePinMessage(msg.id) : undefined} 
+                   isGroupOwner={activeChannel.type === 'elite' && (activeChannel as any).ownerId === user?.id} 
+                 />
+               ))}
+            </React.Fragment>
           ))}
           
           {/* Typing Indicator */}

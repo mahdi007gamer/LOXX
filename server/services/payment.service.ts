@@ -116,13 +116,6 @@ export class PaymentService {
               balance: { increment: commission }
             }
           }),
-          prisma.streamerPayments.create({
-            data: {
-              streamerId: streamer.userId,
-              paymentId: payment.id,
-              commissionAmount: commission
-            }
-          }),
           prisma.notification.create({
             data: {
               userId: streamer.userId,

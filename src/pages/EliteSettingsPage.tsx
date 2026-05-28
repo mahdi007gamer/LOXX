@@ -362,7 +362,7 @@ export const EliteSettingsPage = () => {
     }
   };
 
-  const isVip = user?.membership === "VIP" || (user as any)?.membershipType === "VIP";
+  const isVip = user?.membership === "VIP" || (user as any)?.membershipType === "VIP" || (user as any)?.role === "STREAMER";
 
   if (!isVip && !loading) {
     return (

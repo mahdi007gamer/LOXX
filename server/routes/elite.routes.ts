@@ -17,5 +17,8 @@ router.delete("/members", EliteGroupController.removeMember);
 router.post("/join-link", EliteGroupController.joinViaInviteLink);
 router.post("/:groupId/regenerate-link", EliteGroupController.regenerateInviteLink);
 router.delete("/:groupId", EliteGroupController.deleteGroup);
+router.post("/:groupId/pin", EliteGroupController.pinMessage);
+router.post("/:groupId/timeout", EliteGroupController.timeoutMember);
+router.post("/:groupId/ban", EliteGroupController.banMember);
 
 export default router;

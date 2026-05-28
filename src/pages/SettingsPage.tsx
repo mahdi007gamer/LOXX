@@ -246,7 +246,7 @@ export const SettingsPage = () => {
     }
   };
 
-    const isVip = authUser?.membership === "VIP" || authUser?.membership === "PLUS";
+    const isVip = authUser?.membership === "VIP" || authUser?.membership === "PLUS" || (authUser as any)?.role === "STREAMER";
     const tabs = [
     ...(isVip ? [{ id: "elite" as const, icon: Crown, label: "تنظیمات نخبگان" }] : []),
     { id: "profile" as const, icon: User, label: "پروفایل عمومی" },

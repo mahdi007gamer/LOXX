@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { Sidebar } from "../components/layout/Sidebar";
-import { Shield, ArrowRight } from "lucide-react";
+import { Shield, ArrowRight, Save, Edit3, X } from "lucide-react";
 import { GlowButton } from "../components/ui/GlowButton";
 import { NeonCard } from "../components/ui/NeonCard";
 import { AuthorizedImage } from "../components/ui/AuthorizedImage";
@@ -10,12 +10,70 @@ import api from "../lib/api";
 import toast from "react-hot-toast";
 import { cn } from "../lib/utils";
 
+const StreamerEditForm = ({ s, onSuccess, onCancel }: { s: any, onSuccess: () => void, onCancel: () => void }) => {
+  const [discountCode, setDiscountCode] = useState(s.discountCode || "");
+  const [userDiscountPercent, setUserDiscountPercent] = useState(s.userDiscountPercent || 0);
+  const [commissionPercent, setCommissionPercent] = useState(s.streamerCommissionPercent || 0);
+  const [loading, setLoading] = useState(false);
+
+  const handleSave = async () => {
+    setLoading(true);
+    try {
+      await api.patch(`/admin/streamers/${s.id}`, {
+        discountCode,
+        userDiscountPercent: parseFloat(userDiscountPercent.toString()),
+        streamerCommissionPercent: parseFloat(commissionPercent.toString())
+      });
+      toast.success("اطلاعات استریمر با موفقیت بروزرسانی شد");
+      onSuccess();
+    } catch (e: any) {
+      toast.error(e.response?.data?.message || "خطا در بروزرسانی");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="bg-black/50 p-4 border border-neon-purple/30 rounded-2xl space-y-4">
+      <div className="flex justify-between items-center mb-2">
+         <span className="text-xs font-black text-neon-purple">ویرایش تنظیمات استریمر</span>
+         <button onClick={onCancel} className="text-gray-500 hover:text-white transition-colors">
+            <X size={16} />
+         </button>
+      </div>
+
+      <div className="space-y-3">
+        <div>
+           <label className="text-[10px] text-gray-400 mb-1 block">کد تخفیف اختصاصی</label>
+           <input type="text" value={discountCode} onChange={(e) => setDiscountCode(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-xs" dir="ltr" />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+             <label className="text-[10px] text-gray-400 mb-1 block">تخفیف کاربر (%)</label>
+             <input type="number" value={userDiscountPercent} onChange={(e) => setUserDiscountPercent(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-xs" dir="ltr" />
+          </div>
+          <div>
+             <label className="text-[10px] text-gray-400 mb-1 block">سهم استریمر (%)</label>
+             <input type="number" value={commissionPercent} onChange={(e) => setCommissionPercent(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-xs" dir="ltr" />
+          </div>
+        </div>
+      </div>
+      
+      <GlowButton variant="purple" onClick={handleSave} className="w-full text-xs py-2" disabled={loading}>
+        <Save size={14} className="mr-2" />
+        ذخیره تغییرات
+      </GlowButton>
+    </div>
+  );
+};
+
 export const AdminStreamersPage = () => {
   const { user, isSidebarCollapsed } = useAuth();
   const navigate = useNavigate();
   const [streamers, setStreamers] = useState<any[]>([]);
   const [invites, setInvites] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<"streamers" | "invites">("streamers");
+  const [editingStreamerId, setEditingStreamerId] = useState<string | null>(null);
   
   // invite form
   const [alias, setAlias] = useState("");
@@ -150,36 +208,55 @@ export const AdminStreamersPage = () => {
              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                {streamers.map((s) => (
                  <NeonCard key={s.id} variant="purple" className="p-6 bg-dark-card/50">
-                    <div className="flex items-center gap-4 mb-4">
-                      <AuthorizedImage src={s.avatar || s.user?.avatar} className="w-14 h-14 rounded-2xl object-cover" />
-                      <div>
-                         <h3 className="text-lg font-black text-white flex items-center gap-2">
-                            {s.user?.username || "---"}
-                         </h3>
-                         <div className="text-[10px] text-gray-400 font-mono mt-1 bg-white/5 px-2 py-0.5 rounded-md inline-block">
-                            کد تخفیف: <span className="text-white font-bold">{s.discountCode}</span>
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="flex items-center gap-4">
+                        <AuthorizedImage src={s.avatar || s.user?.avatar} className="w-14 h-14 rounded-2xl object-cover" />
+                        <div>
+                           <h3 className="text-lg font-black text-white flex items-center gap-2">
+                              {s.user?.username || "---"}
+                           </h3>
+                           <div className="text-[10px] text-gray-400 font-mono mt-1 bg-white/5 px-2 py-0.5 rounded-md inline-block">
+                              کد تخفیف: <span className="text-white font-bold">{s.discountCode}</span>
+                           </div>
+                        </div>
+                      </div>
+                      <button onClick={() => setEditingStreamerId(s.id)} className="p-2 bg-white/5 rounded-xl hover:bg-white/10 text-gray-400 hover:text-white transition-colors">
+                         <Edit3 size={16} />
+                      </button>
+                    </div>
+
+                    {editingStreamerId === s.id ? (
+                      <div className="mb-4">
+                        <StreamerEditForm 
+                           s={s} 
+                           onSuccess={() => { setEditingStreamerId(null); fetchStreamers(); }} 
+                           onCancel={() => setEditingStreamerId(null)} 
+                        />
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 gap-4 mb-4 bg-white/5 p-4 rounded-2xl border border-white/5">
+                         <div>
+                           <p className="text-[9px] text-gray-500 uppercase tracking-widest font-black mb-1">موجودی</p>
+                           <p className="text-white font-mono">{s.balance?.toLocaleString()} <span className="text-[8px]">تومان</span></p>
+                         </div>
+                         <div>
+                           <p className="text-[9px] text-gray-500 uppercase tracking-widest font-black mb-1">کل درآمد</p>
+                           <p className="text-white font-mono">{s.totalEarned?.toLocaleString()} <span className="text-[8px]">تومان</span></p>
+                         </div>
+                         <div>
+                           <p className="text-[9px] text-gray-500 uppercase tracking-widest font-black mb-1">تخفیف کاربر</p>
+                           <p className="text-white font-mono">{s.userDiscountPercent}%</p>
+                         </div>
+                         <div>
+                           <p className="text-[9px] text-gray-500 uppercase tracking-widest font-black mb-1">سهم استریمر</p>
+                           <p className="text-white font-mono">{s.streamerCommissionPercent}%</p>
+                         </div>
+                         <div className="col-span-2">
+                           <p className="text-[9px] text-gray-500 uppercase tracking-widest font-black mb-1">درخواست‌های معلق</p>
+                           <p className="text-yellow-400 font-mono font-bold">{s.withdrawalRequests?.filter((w: any) => w.status === "PENDING").length || 0}</p>
                          </div>
                       </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-4 mb-4 bg-white/5 p-4 rounded-2xl border border-white/5">
-                       <div>
-                         <p className="text-[9px] text-gray-500 uppercase tracking-widest font-black mb-1">موجودی</p>
-                         <p className="text-white font-mono">{s.balance?.toLocaleString()} <span className="text-[8px]">تومان</span></p>
-                       </div>
-                       <div>
-                         <p className="text-[9px] text-gray-500 uppercase tracking-widest font-black mb-1">کل درآمد</p>
-                         <p className="text-white font-mono">{s.totalEarned?.toLocaleString()} <span className="text-[8px]">تومان</span></p>
-                       </div>
-                       <div>
-                         <p className="text-[9px] text-gray-500 uppercase tracking-widest font-black mb-1">پورسانت ارجاع</p>
-                         <p className="text-white font-mono">{s.streamerCommissionPercent}%</p>
-                       </div>
-                       <div>
-                         <p className="text-[9px] text-gray-500 uppercase tracking-widest font-black mb-1">درخواست‌های معلق</p>
-                         <p className="text-yellow-400 font-mono font-bold">{s.withdrawalRequests?.filter((w: any) => w.status === "PENDING").length || 0}</p>
-                       </div>
-                    </div>
+                    )}
                     
                     <div className="space-y-4">
                       {s.withdrawalRequests?.filter((w: any) => w.status === "PENDING").map((req: any) => (

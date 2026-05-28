@@ -97,14 +97,14 @@ export const updateUserRole = async (req: Request, res: Response) => {
     const user = await prisma.user.update({
       where: { id },
       data: { role },
-      select: { id: true, role: true, streamerStats: true }
+      select: { id: true, username: true, role: true, streamerStats: true }
     });
 
     if (role === "STREAMER" && !user.streamerStats) {
       await prisma.streamerStats.create({
         data: {
           userId: id,
-          discountCode: `STREAMER_${id.substring(0, 6).toUpperCase()}`
+          discountCode: user.username.toUpperCase()
         }
       });
     }
@@ -493,6 +493,27 @@ export const getAdminAlerts = async (req: Request, res: Response) => {
 };
 
 // Streamer Management
+export const updateStreamer = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { discountCode, userDiscountPercent, streamerCommissionPercent } = req.body;
+  try {
+    const updatedStats = await prisma.streamerStats.update({
+      where: { userId: id },
+      data: {
+        discountCode,
+        userDiscountPercent,
+        streamerCommissionPercent
+      }
+    });
+    res.json({ status: "success", data: updatedStats });
+  } catch (error: any) {
+    if (error.code === 'P2002') {
+      return res.status(400).json({ status: "error", message: "این کد تخفیف قبلا استفاده شده است." });
+    }
+    res.status(500).json({ status: "error", message: error.message });
+  }
+};
+
 export const getAllStreamers = async (req: Request, res: Response) => {
   try {
     const streamers = await prisma.user.findMany({
@@ -513,7 +534,7 @@ export const getAllStreamers = async (req: Request, res: Response) => {
       paymentInfo: user.streamerStats?.paymentInfo,
       user: {
         username: user.username,
-        avatar: user.avatar
+        avatar: (user as any).profile?.avatarUrl || ""
       },
       withdrawalRequests: user.withdrawals
     }));
@@ -537,7 +558,7 @@ export const approveWithdrawal = async (req: Request, res: Response) => {
     await prisma.$transaction([
       prisma.withdrawalRequest.update({
         where: { id },
-        data: { status: "PAID", receiptUrl }
+        data: { status: "PAID", receiptImageUrl: receiptUrl }
       }),
       prisma.streamerStats.update({
         where: { userId: withdrawal.streamerId },

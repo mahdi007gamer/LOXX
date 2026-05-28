@@ -12,22 +12,17 @@ export class EliteGroupController {
       const userId = req.user!.userId;
 
       // Check if user is VIP or PLUS
-      const profile = await prisma.profile.findUnique({ where: { userId } });
-      const membership = profile?.membershipType || "STANDARD";
-      
-      if (membership !== "VIP" && membership !== "PLUS") {
-        return res.status(403).json({ status: "error", error: { message: "فقط کاربران PLUS و VIP می‌توانند گروه بسازند" } });
-      }
-
-      const groupCount = await prisma.channel.count({
-        where: { ownerId: userId, type: { in: ["ELITE", "PRO"] } }
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        include: { profile: true }
       });
-
-      if (groupCount >= 1) {
-        return res.status(400).json({ status: "error", error: { message: "شما فقط می‌توانید یک گروه بسازید" } });
+      const membership = user?.profile?.membershipType || "STANDARD";
+      
+      if (membership !== "VIP" && membership !== "PLUS" && user?.role !== "STREAMER") {
+        return res.status(403).json({ status: "error", error: { message: "فقط کاربران استریمر، PLUS و VIP می‌توانند گروه بسازند" } });
       }
 
-      const channelType = membership === "VIP" ? "ELITE" : "PRO";
+      const channelType = (membership === "VIP" || user?.role === "STREAMER") ? "ELITE" : "PRO";
 
       const channel = await prisma.channel.create({
         data: {
@@ -101,7 +96,7 @@ export class EliteGroupController {
       }
 
       const membership = channel.owner?.profile?.membershipType || "PLUS";
-      const maxMembers = (membership === "VIP" || channel.type === "ELITE") ? 50 : 5;
+      const maxMembers = (channel.owner?.role === "STREAMER") ? 5000 : (membership === "VIP" || channel.type === "ELITE") ? 5000 : 5;
 
       if (channel.members.length + (userIds?.length || 1) > maxMembers) {
         return res.status(400).json({ status: "error", error: { message: `این گروه نمی‌تواند بیش از ${maxMembers} عضو داشته باشد` } });
@@ -176,7 +171,7 @@ export class EliteGroupController {
       }
 
       const membership = channel.owner?.profile?.membershipType || "PLUS";
-      const maxMembers = (membership === "VIP" || channel.type === "ELITE") ? 50 : 5;
+      const maxMembers = (channel.owner?.role === "STREAMER") ? 5000 : (membership === "VIP" || channel.type === "ELITE") ? 5000 : 5;
 
       if (channel.members.length >= maxMembers) {
         return res.status(400).json({ status: "error", error: { message: "ظرفیت گروه پر شده است" } });
@@ -261,7 +256,7 @@ export class EliteGroupController {
       }
 
       const membership = channel.owner?.profile?.membershipType || "PLUS";
-      const maxMembers = (membership === "VIP" || channel.type === "ELITE") ? 50 : 5;
+      const maxMembers = (channel.owner?.role === "STREAMER") ? 5000 : (membership === "VIP" || channel.type === "ELITE") ? 5000 : 5;
 
       if (channel.members.length >= maxMembers) {
         return res.status(400).json({ status: "error", error: { message: `گروه نمی‌تواند بیش از ${maxMembers} عضو داشته باشد` } });
@@ -376,18 +371,26 @@ export class EliteGroupController {
 
       const channel = await prisma.channel.findUnique({
         where: { inviteCode, type: "ELITE" },
-        include: { members: true }
+        include: { members: true, owner: { include: { profile: true } } }
       });
 
       if (!channel) {
          return res.status(404).json({ status: "error", error: { message: "لینک دعوت نامعتبر است" } });
       }
 
+      const metadataObj = channel.metadata ? JSON.parse(channel.metadata) : {};
+      if (metadataObj.bans?.includes(userId)) {
+         return res.status(403).json({ status: "error", error: { message: "شما از این گروه اخراج شده‌اید و امکان بازگشت ندارید" } });
+      }
+
       if (channel.members.some(m => m.userId === userId)) {
          return res.json({ status: "success", message: "شما از قبل عضو گروه هستید", data: { groupId: channel.id } });
       }
 
-      if (channel.members.length >= 50) {
+      const membershipType = channel.owner?.profile?.membershipType || "PLUS";
+      const maxMembers = channel.owner?.role === "STREAMER" ? 5000 : (membershipType === "VIP" || channel.type === "ELITE") ? 5000 : 5;
+
+      if (channel.members.length >= maxMembers) {
          return res.status(400).json({ status: "error", error: { message: "ظرفیت گروه پر شده است" } });
       }
 
@@ -399,5 +402,95 @@ export class EliteGroupController {
     } catch(err: any) {
       res.status(500).json({ status: "error", error: { message: err.message } });
     }
+  }
+
+  static async pinMessage(req: AuthenticatedRequest, res: Response) {
+     try {
+        const { groupId } = req.params;
+        const { messageId } = req.body;
+        const userId = req.user!.userId;
+
+        const channel = await prisma.channel.findUnique({ where: { id: groupId } });
+        if (!channel || channel.ownerId !== userId) {
+            return res.status(403).json({ status: "error", error: { message: "شما دسترسی ندارید" } });
+        }
+
+        let metadataObj = channel.metadata ? JSON.parse(channel.metadata) : {};
+        metadataObj.pinnedMessageId = messageId;
+        
+        await prisma.channel.update({
+            where: { id: groupId },
+            data: { metadata: JSON.stringify(metadataObj) }
+        });
+
+        res.json({ status: "success", message: "پیام با موفقیت سنجاق شد" });
+     } catch (err: any) {
+        res.status(500).json({ status: "error", error: { message: err.message } });
+     }
+  }
+
+  static async timeoutMember(req: AuthenticatedRequest, res: Response) {
+     try {
+        const { groupId } = req.params;
+        const { targetUserId, durationMinutes } = req.body;
+        const userId = req.user!.userId;
+
+        const channel = await prisma.channel.findUnique({ where: { id: groupId } });
+        if (!channel || channel.ownerId !== userId) {
+            return res.status(403).json({ status: "error", error: { message: "شما دسترسی ندارید" } });
+        }
+
+        let metadataObj = channel.metadata ? JSON.parse(channel.metadata) : {};
+        if (!metadataObj.timeouts) metadataObj.timeouts = {};
+        
+        // maximum 100 minutes
+        const minutes = Math.min(Number(durationMinutes) || 10, 100);
+        const expireAt = Date.now() + (minutes * 60 * 1000);
+        
+        metadataObj.timeouts[targetUserId] = expireAt;
+
+        await prisma.channel.update({
+            where: { id: groupId },
+            data: { metadata: JSON.stringify(metadataObj) }
+        });
+
+        res.json({ status: "success", message: `کاربر برای ${minutes} دقیقه معلق شد` });
+     } catch (err: any) {
+        res.status(500).json({ status: "error", error: { message: err.message } });
+     }
+  }
+
+  static async banMember(req: AuthenticatedRequest, res: Response) {
+     try {
+        const { groupId } = req.params;
+        const { targetUserId } = req.body;
+        const userId = req.user!.userId;
+
+        const channel = await prisma.channel.findUnique({ where: { id: groupId } });
+        if (!channel || channel.ownerId !== userId) {
+            return res.status(403).json({ status: "error", error: { message: "شما دسترسی ندارید" } });
+        }
+
+        let metadataObj = channel.metadata ? JSON.parse(channel.metadata) : {};
+        if (!metadataObj.bans) metadataObj.bans = [];
+        
+        if (!metadataObj.bans.includes(targetUserId)) {
+            metadataObj.bans.push(targetUserId);
+        }
+
+        // Kick them from the channel too
+        await prisma.channelMember.deleteMany({
+            where: { channelId: groupId, userId: targetUserId }
+        });
+
+        await prisma.channel.update({
+            where: { id: groupId },
+            data: { metadata: JSON.stringify(metadataObj) }
+        });
+
+        res.json({ status: "success", message: "کاربر از گروه بن شد" });
+     } catch (err: any) {
+        res.status(500).json({ status: "error", error: { message: err.message } });
+     }
   }
 }

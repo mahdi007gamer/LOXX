@@ -35,6 +35,7 @@ router.post("/badges/seed-default", BadgeController.seedDefaultBadges);
 
 // Streamers
 router.get("/streamers", adminController.getAllStreamers);
+router.patch("/streamers/:id", adminController.updateStreamer);
 router.post("/streamers/withdrawal/:id/approve", adminController.approveWithdrawal);
 router.post("/streamers/withdrawal/:id/reject", adminController.rejectWithdrawal);
 

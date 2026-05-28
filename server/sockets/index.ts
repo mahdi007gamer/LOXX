@@ -1280,7 +1280,7 @@ export function setupWebSockets(io: Server) {
         const room = `channel:${target.id}`;
 
         // Ensure Channel exists
-        await prisma.channel.upsert({
+        const channelObj = await prisma.channel.upsert({
            where: { id: target.id },
            update: {},
            create: {
@@ -1288,6 +1288,18 @@ export function setupWebSockets(io: Server) {
              title: target.id 
            }
         });
+
+        // Timeout check for Elite groups
+        if (channelObj && channelObj.type === "ELITE") {
+           const metadata = channelObj.metadata ? JSON.parse(channelObj.metadata) : {};
+           if (metadata.timeouts && metadata.timeouts[userId]) {
+              if (Date.now() < metadata.timeouts[userId]) {
+                 const remaining = Math.ceil((metadata.timeouts[userId] - Date.now()) / 60000);
+                 if (ack) ack({ status: "error", error: { message: `شما به مدت ${remaining} دقیقه در گروه معلق هستید` }});
+                 return;
+              }
+           }
+        }
 
         const msg = await prisma.message.create({
           data: {
