@@ -49,6 +49,7 @@ import { Toaster, toast, ToastBar, resolveValue } from "react-hot-toast";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AdminPage } from "./pages/AdminPage";
 import { AdminStreamersPage } from "./pages/AdminStreamersPage";
+import { AdminEnamadPage } from "./pages/AdminEnamadPage";
 import { FAQPage } from "./pages/FAQPage";
 import { TermsPage } from "./pages/TermsPage";
 import { PrivacyPage } from "./pages/PrivacyPage";
@@ -443,6 +444,7 @@ const AppContent = () => {
           <Route path="/elite-dashboard" element={<ProtectedRoute><EliteDashboardPage /></ProtectedRoute>} />
           <Route path="/admin" element={<ProtectedRoute adminOnly={true}><AdminPage /></ProtectedRoute>} />
           <Route path="/admin/streamers" element={<ProtectedRoute adminOnly={true}><AdminStreamersPage /></ProtectedRoute>} />
+          <Route path="/admin/enamad" element={<ProtectedRoute adminOnly={true}><AdminEnamadPage /></ProtectedRoute>} />
           
           <Route path="/faq" element={<FAQPage />} />
           <Route path="/terms" element={<TermsPage />} />

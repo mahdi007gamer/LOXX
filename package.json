@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "tsx scripts/dev.ts",
     "build": "tsx scripts/restore-postgres.ts && vite build && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
-    "start": "npx prisma db push --accept-data-loss && cross-env NODE_ENV=production node dist/server.cjs",
+    "start": "tsx scripts/restore-postgres.ts && npx prisma db push --accept-data-loss && cross-env NODE_ENV=production node dist/server.cjs",
     "preview": "vite preview",
     "clean": "rm -rf dist",
     "lint": "tsx scripts/restore-postgres.ts && tsc --noEmit"
