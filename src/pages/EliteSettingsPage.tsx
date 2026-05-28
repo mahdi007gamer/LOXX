@@ -30,7 +30,8 @@ import {
   Settings2,
   Lock,
   Trophy,
-  Radio
+  Radio,
+  Copy
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { motion, AnimatePresence, useMotionValue, useTransform } from "motion/react";
@@ -72,6 +73,13 @@ interface VIPMetadata {
     bubbleColor: string;
     textColor: string;
     effect?: string;
+  };
+  streamerLinks?: {
+    aparat?: string;
+    twitch?: string;
+    kick?: string;
+    youtube?: string;
+    donate?: string;
   };
   floatingParticles?: boolean;
   tiltEffect?: boolean;
@@ -117,6 +125,13 @@ export const EliteSettingsPage = () => {
         type: "linear",
         angle: 45
       }
+    },
+    streamerLinks: {
+      aparat: "",
+      twitch: "",
+      kick: "",
+      youtube: "",
+      donate: ""
     }
   });
 
@@ -628,6 +643,86 @@ export const EliteSettingsPage = () => {
                     </div>
                   </NeonCard>
               </div>
+
+               {/* Streamer Links & Promo */}
+               {isStreamer && (
+                 <NeonCard variant="purple" className="space-y-6">
+                    <h3 className="text-lg font-black text-white italic flex items-center gap-2 border-b border-white/5 pb-4">
+                      <Radio size={20} className="text-neon-purple" />
+                      <span>لینک‌های شبکه اجتماعی استریمر</span>
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                       <div className="space-y-2">
+                         <label className="text-[10px] font-black text-gray-400 uppercase italic">استریم آپارات</label>
+                         <Input 
+                           value={metadata.streamerLinks?.aparat || ""} 
+                           placeholder="https://aparat.com/username"
+                           onChange={(e) => setMetadata(m => ({ ...m, streamerLinks: { ...m.streamerLinks, aparat: e.target.value } }))} 
+                         />
+                       </div>
+                       <div className="space-y-2">
+                         <label className="text-[10px] font-black text-gray-400 uppercase italic">استریم توییچ</label>
+                         <Input 
+                           value={metadata.streamerLinks?.twitch || ""} 
+                           placeholder="https://twitch.tv/username"
+                           onChange={(e) => setMetadata(m => ({ ...m, streamerLinks: { ...m.streamerLinks, twitch: e.target.value } }))} 
+                         />
+                       </div>
+                       <div className="space-y-2">
+                         <label className="text-[10px] font-black text-gray-400 uppercase italic">یوتیوب</label>
+                         <Input 
+                           value={metadata.streamerLinks?.youtube || ""} 
+                           placeholder="https://youtube.com/@username"
+                           onChange={(e) => setMetadata(m => ({ ...m, streamerLinks: { ...m.streamerLinks, youtube: e.target.value } }))} 
+                         />
+                       </div>
+                       <div className="space-y-2">
+                         <label className="text-[10px] font-black text-gray-400 uppercase italic">Kick</label>
+                         <Input 
+                           value={metadata.streamerLinks?.kick || ""} 
+                           placeholder="https://kick.com/username"
+                           onChange={(e) => setMetadata(m => ({ ...m, streamerLinks: { ...m.streamerLinks, kick: e.target.value } }))} 
+                         />
+                       </div>
+                       <div className="space-y-2 lg:col-span-2">
+                         <label className="text-[10px] font-black text-gray-400 uppercase italic">لینک دونیت (حمایت مالی)</label>
+                         <Input 
+                           value={metadata.streamerLinks?.donate || ""} 
+                           placeholder="https://zarinp.al/username"
+                           onChange={(e) => setMetadata(m => ({ ...m, streamerLinks: { ...m.streamerLinks, donate: e.target.value } }))} 
+                         />
+                       </div>
+                    </div>
+
+                    <div className="mt-8 pt-6 border-t border-white/5">
+                      <div className="relative overflow-hidden rounded-[32px] bg-[#0d0d12] border border-neon-purple/30 p-8 shadow-[0_0_50px_rgba(168,85,247,0.15)] group">
+                        <div className="absolute inset-0 bg-gradient-to-br from-neon-purple/10 via-transparent to-neon-purple/5 opacity-50 transition-opacity group-hover:opacity-100" />
+                        <div className="relative z-10 flex flex-col md:flex-row items-center gap-8 justify-between">
+                           <div>
+                             <p className="text-[11px] text-gray-400 font-bold uppercase tracking-widest italic mb-2">کد تخفیف اختصاصی شما</p>
+                             <div className="flex items-center gap-4">
+                                <span className="text-3xl font-black text-white tracking-widest bg-white/5 px-6 py-2 rounded-2xl border border-white/10 uppercase font-mono">{((user as any)?.streamerStats?.discountCode) || (user?.username || "STREAMER").toUpperCase()}</span>
+                                <button className="p-3 bg-neon-purple/10 text-neon-purple rounded-xl hover:bg-neon-purple/20 transition-all border border-neon-purple/20" title="کپی کردن">
+                                  <Copy size={20} />
+                                </button>
+                             </div>
+                           </div>
+                           <div className="flex gap-8 items-center text-center">
+                              <div>
+                                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest italic mb-1">تخفیف کاربر</p>
+                                <p className="text-2xl font-black text-neon-purple italic">{((user as any)?.streamerStats?.userDiscountPercent) || 10}٪</p>
+                              </div>
+                              <div className="w-px h-12 bg-white/10" />
+                              <div>
+                                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest italic mb-1">درآمد فعلی شما</p>
+                                <p className="text-2xl font-black text-green-400 italic">{((user as any)?.streamerStats?.streamerCommissionPercent) || 10}٪ پورسانت</p>
+                              </div>
+                           </div>
+                        </div>
+                      </div>
+                    </div>
+                 </NeonCard>
+               )}
 
                {/* Colors & Preview */}
                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">

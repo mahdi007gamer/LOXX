@@ -33,6 +33,7 @@ import {
   Copy,
   Share2,
   Gift,
+  Radio,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
@@ -205,6 +206,8 @@ export const DashboardPage = () => {
 
   const isElectron = typeof window !== "undefined" && !!(window as any).electronAPI;
 
+  const isStreamer = (user as any)?.role === "STREAMER" || Boolean(user?.profile?.badges?.some(b => b.name === "Streamer" || b.name === "استریمر"));
+
   if (loading) {
     return (
       <div className={cn("flex", isElectron ? "min-h-[calc(100vh-100px)]" : "min-h-[calc(100vh-64px)]")}>
@@ -221,48 +224,97 @@ export const DashboardPage = () => {
       <Sidebar />
       <main className={cn("flex-1 px-4 py-8 lg:px-8 pb-24 md:pb-8 transition-all duration-300 min-w-0 w-full", !isSidebarCollapsed ? "md:mr-64" : "md:mr-20")}>
         <div className="container mx-auto max-w-6xl">
-          {/* VIP/PROMO BANNER - HIDDEN FOR MEMBERS */}
-          {(currentMembership === "NONE" || currentMembership === "FREE") && (
+          {/* STREAMER BANNER */}
+          {isStreamer ? (
             <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="mb-10 cursor-pointer group relative"
-              onClick={() => navigate("/premium")}
+              initial={{ opacity: 0, scale: 0.95, y: -10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              className="mb-10 group relative"
             >
-              <div className="relative min-h-[160px] md:h-40 w-full rounded-[48px] overflow-hidden bg-[#0d0d12] border border-white/10 group-hover:border-neon-purple/50 transition-all duration-700 shadow-[0_40px_100px_-20px_rgba(168,85,247,0.2)]">
-                 <div className="absolute inset-0 bg-white/5 opacity-10 pattern-dots" />
+              <div className="relative min-h-[160px] md:h-44 w-full rounded-[48px] overflow-hidden bg-[#0d0d12] border border-neon-purple/30 transition-all duration-700 shadow-[0_42px_120px_-20px_rgba(168,85,247,0.35)]">
+                 <div className="absolute inset-0 bg-gradient-to-r from-neon-purple/15 via-[#0d0d12] to-neon-purple/5 opacity-80" />
+                 <div className="absolute top-0 right-1/4 w-[350px] h-[350px] bg-purple-600/10 rounded-full blur-[100px] pointer-events-none -z-10" />
                  
-                 <div className="absolute inset-0 flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x md:divide-x-reverse divide-white/5 rtl:divide-x-reverse">
-                    {/* PLUS PROMO */}
-                    <div className="flex-1 p-6 md:p-8 flex items-center gap-6 group/plus bg-gradient-to-br from-neon-blue/5 to-transparent hover:from-neon-blue/10 transition-all duration-500">
-                       <div className="h-16 w-16 rounded-[24px] bg-neon-blue/10 flex items-center justify-center text-neon-blue border border-neon-blue/20 group-hover/plus:scale-110 group-hover/plus:rotate-6 transition-all duration-500">
-                          <Zap size={32} />
-                       </div>
-                       <div className="text-right">
-                          <h3 className="text-lg md:text-xl font-black text-white italic uppercase tracking-tighter mb-1">LOXX PLUS</h3>
-                          <p className="text-[10px] text-gray-400 font-bold italic uppercase tracking-widest">نشان اختصاصی و استیکرهای متحرک</p>
-                          <div className="mt-2 text-[8px] text-neon-blue font-black uppercase tracking-[0.2em] animate-pulse">کلیک کنید و ارتقا دهید</div>
-                       </div>
-                    </div>
-                    {/* VIP PROMO */}
-                    <div className="flex-1 p-6 md:p-8 flex items-center gap-6 group/vip bg-gradient-to-bl from-yellow-400/5 to-transparent hover:from-yellow-400/10 transition-all duration-500">
-                       <div className="h-16 w-16 rounded-[24px] bg-yellow-400/10 flex items-center justify-center text-yellow-400 border border-yellow-400/20 group-hover/vip:scale-110 group-hover/vip:-rotate-6 transition-all duration-500">
-                          <Crown size={32} />
-                       </div>
-                       <div className="text-right">
-                          <h3 className="text-lg md:text-xl font-black text-white italic uppercase tracking-tighter mb-1">LOXX VIP</h3>
-                          <p className="text-[10px] text-gray-400 font-bold italic uppercase tracking-widest">پروفایل و بنر متحرک GIF + تم طلایی</p>
-                          <div className="mt-2 text-[8px] text-yellow-400 font-black uppercase tracking-[0.2em] animate-pulse">تجربه نخبگان گیمینگ</div>
-                       </div>
-                    </div>
+                 {/* Floating spark particles decoration */}
+                 <div className="absolute inset-0 opacity-40 pointer-events-none">
+                   {[1, 2, 3, 4].map(idx => (
+                     <div 
+                       key={idx} 
+                       className="absolute h-1.5 w-1.5 rounded-full bg-neon-purple animate-pulse" 
+                       style={{ 
+                         top: `${15 + idx * 20}%`, 
+                         left: `${10 + idx * 18}%`,
+                         animationDelay: `${idx * 0.4}s` 
+                       }} 
+                     />
+                   ))}
                  </div>
 
-                 {/* Center Badge */}
-                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 hidden md:flex h-12 w-12 rounded-full bg-[#0d0d12] border border-white/20 items-center justify-center text-white z-20 shadow-2xl">
-                    <Star size={20} className="text-neon-purple animate-spin-slow" />
+                 <div className="absolute inset-0 flex flex-col md:flex-row p-6 md:p-8 items-center gap-6 md:gap-10">
+                    <div className="h-20 w-20 rounded-[28px] bg-gradient-to-tr from-neon-purple/20 to-[#a855f7]/10 flex items-center justify-center text-neon-purple border border-neon-purple/30 shadow-[0_0_35px_rgba(168,85,247,0.35)]">
+                       <Radio size={44} className="animate-pulse" />
+                    </div>
+                    <div className="text-center md:text-right flex-1">
+                       <h3 className="text-xl md:text-2xl font-black text-white italic tracking-tight mb-2 flex items-center gap-2 justify-center md:justify-start">
+                         <span>به دنیای نخبگان و سفیران رسانه‌ای لوکس خوش آمدید</span>
+                         <span className="hidden md:inline-block px-2.5 py-0.5 rounded-md bg-neon-purple/10 text-[9px] font-bold text-neon-purple border border-neon-purple/20 uppercase">Streamer Pro</span>
+                       </h3>
+                       <p className="text-xs md:text-sm text-gray-300 font-bold leading-relaxed max-w-2xl">
+                         هنر و انرژی شما در استریم، قلب تپنده کامیونیتی بزرگ ماست. با مدیریت لینک‌ها، کدهای مشارکت مالی و ابزارهای اختصاصی، تجربه ارتباطی بی‌نظیری برای مخاطبان خود خلق کنید.
+                       </p>
+                    </div>
+                    <div className="shrink-0 flex gap-4">
+                       <GlowButton variant="purple" onClick={() => navigate("/elite-dashboard")} className="py-3.5 px-8 text-[11px] font-black italic tracking-widest min-w-[180px] shadow-lg shadow-purple-500/20">
+                         پنل و ابزارهای استریمر
+                       </GlowButton>
+                    </div>
                  </div>
               </div>
             </motion.div>
+          ) : (
+            /* VIP/PROMO BANNER - HIDDEN FOR MEMBERS */
+            (currentMembership === "NONE" || currentMembership === "FREE") && (
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="mb-10 cursor-pointer group relative"
+                onClick={() => navigate("/premium")}
+              >
+                <div className="relative min-h-[160px] md:h-40 w-full rounded-[48px] overflow-hidden bg-[#0d0d12] border border-white/10 group-hover:border-neon-purple/50 transition-all duration-700 shadow-[0_40px_100px_-20px_rgba(168,85,247,0.2)]">
+                   <div className="absolute inset-0 bg-white/5 opacity-10 pattern-dots" />
+                   
+                   <div className="absolute inset-0 flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x md:divide-x-reverse divide-white/5 rtl:divide-x-reverse">
+                      {/* PLUS PROMO */}
+                      <div className="flex-1 p-6 md:p-8 flex items-center gap-6 group/plus bg-gradient-to-br from-neon-blue/5 to-transparent hover:from-neon-blue/10 transition-all duration-500">
+                         <div className="h-16 w-16 rounded-[24px] bg-neon-blue/10 flex items-center justify-center text-neon-blue border border-neon-blue/20 group-hover/plus:scale-110 group-hover/plus:rotate-6 transition-all duration-500">
+                            <Zap size={32} />
+                         </div>
+                         <div className="text-right">
+                            <h3 className="text-lg md:text-xl font-black text-white italic uppercase tracking-tighter mb-1">LOXX PLUS</h3>
+                            <p className="text-[10px] text-gray-400 font-bold italic uppercase tracking-widest">نشان اختصاصی و استیکرهای متحرک</p>
+                            <div className="mt-2 text-[8px] text-neon-blue font-black uppercase tracking-[0.2em] animate-pulse">کلیک کنید و ارتقا دهید</div>
+                         </div>
+                      </div>
+                      {/* VIP PROMO */}
+                      <div className="flex-1 p-6 md:p-8 flex items-center gap-6 group/vip bg-gradient-to-bl from-yellow-400/5 to-transparent hover:from-yellow-400/10 transition-all duration-500">
+                         <div className="h-16 w-16 rounded-[24px] bg-yellow-400/10 flex items-center justify-center text-yellow-400 border border-yellow-400/20 group-hover/vip:scale-110 group-hover/vip:-rotate-6 transition-all duration-500">
+                            <Crown size={32} />
+                         </div>
+                         <div className="text-right">
+                            <h3 className="text-lg md:text-xl font-black text-white italic uppercase tracking-tighter mb-1">LOXX VIP</h3>
+                            <p className="text-[10px] text-gray-400 font-bold italic uppercase tracking-widest">پروفایل و بنر متحرک GIF + تم طلایی</p>
+                            <div className="mt-2 text-[8px] text-yellow-400 font-black uppercase tracking-[0.2em] animate-pulse">تجربه نخبگان گیمینگ</div>
+                         </div>
+                      </div>
+                   </div>
+
+                   {/* Center Badge */}
+                   <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 hidden md:flex h-12 w-12 rounded-full bg-[#0d0d12] border border-white/20 items-center justify-center text-white z-20 shadow-2xl">
+                      <Star size={20} className="text-neon-purple animate-spin-slow" />
+                   </div>
+                </div>
+              </motion.div>
+            )
           )}
 
           <header className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-center md:mb-10">
@@ -326,51 +378,77 @@ export const DashboardPage = () => {
               >
                 <div className={cn(
                   "p-8 rounded-[48px] border transition-all duration-700 relative overflow-hidden group",
-                  currentMembership === "VIP" 
+                  isStreamer
+                    ? "bg-[#0d0d12]/90 border-neon-purple/40 shadow-[0_40px_100px_-20px_rgba(168,85,247,0.3)]"
+                    : currentMembership === "VIP" 
                     ? "bg-[#0d0d12] border-yellow-400/20 shadow-[0_40px_100px_-20px_rgba(250,204,21,0.15)]" 
                     : currentMembership === "PLUS"
                     ? "bg-[#0d0d12] border-neon-blue/20 shadow-[0_40px_100px_-20px_rgba(0,229,255,0.15)]"
                     : "bg-[#0d0d12] border-white/5"
                 )}>
                    {/* Background Effects */}
-                   {currentMembership === "VIP" && (
+                   {isStreamer ? (
+                     <div className="absolute inset-0 bg-gradient-to-br from-neon-purple/5 via-transparent to-transparent opacity-80" />
+                   ) : currentMembership === "VIP" ? (
                      <div className="absolute inset-0 bg-gradient-to-br from-yellow-400/5 via-transparent to-transparent opacity-50" />
-                   )}
-                   {currentMembership === "PLUS" && (
+                   ) : currentMembership === "PLUS" ? (
                      <div className="absolute inset-0 bg-gradient-to-br from-neon-blue/5 via-transparent to-transparent opacity-50" />
-                   )}
+                   ) : null}
                    
                    <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
                       <div className="flex items-center gap-6 text-center md:text-right">
                          <div className={cn(
                            "h-24 w-24 rounded-[32px] flex items-center justify-center border-2 transition-all duration-700 group-hover:scale-110 group-hover:rotate-6",
+                           isStreamer ? "bg-neon-purple/10 border-neon-purple/40 text-neon-purple shadow-[0_0_30px_rgba(168,85,247,0.3)]" :
                            currentMembership === "VIP" ? "bg-yellow-400/10 border-yellow-400/40 text-yellow-400 shadow-[0_0_30px_rgba(250,204,21,0.3)]" :
                            currentMembership === "PLUS" ? "bg-neon-blue/10 border-neon-blue/40 text-neon-blue shadow-[0_0_30px_rgba(0,229,255,0.3)]" :
                            "bg-white/5 border-white/10 text-gray-700"
                          )}>
-                            {currentMembership === "VIP" ? <Crown size={54} /> : currentMembership === "PLUS" ? <Zap size={54} /> : <User size={54} />}
+                            {isStreamer ? <Radio size={54} className="animate-pulse" /> : currentMembership === "VIP" ? <Crown size={54} /> : currentMembership === "PLUS" ? <Zap size={54} /> : <User size={54} />}
                          </div>
                          <div>
                             <p className="text-[10px] text-gray-500 font-black uppercase tracking-[0.2em] mb-1 italic">
-                              {currentMembership !== "NONE" && currentMembership !== "FREE" ? "وضعیت اشتراک فعال" : "اطلاعات سطح کاربری"}
+                               {isStreamer ? "سطح احراز هویت همکاران" : (currentMembership !== "NONE" && currentMembership !== "FREE" ? "وضعیت اشتراک فعال" : "اطلاعات سطح کاربری")}
                             </p>
                             <h2 className={cn(
                               "text-3xl md:text-4xl font-black italic tracking-tighter uppercase leading-none",
+                              isStreamer ? "text-neon-purple text-shadow-glow" :
                               currentMembership === "VIP" ? "text-yellow-400 text-shadow-glow" :
                               currentMembership === "PLUS" ? "text-neon-blue text-shadow-glow" :
                               "text-white"
                             )}>
-                               {currentMembership === "VIP" ? "عضو ویژه لوکس" : currentMembership === "PLUS" ? "عضویت طلایی پلاس" : "عضو عادی لوکس"}
+                               {isStreamer ? "استریمر رسمی لوکس" : currentMembership === "VIP" ? "عضو ویژه لوکس" : currentMembership === "PLUS" ? "عضویت طلایی پلاس" : "عضو عادی لوکس"}
                             </h2>
                             <p className="text-[11px] text-gray-400 font-bold italic mt-2">
-                               {currentMembership === "VIP" ? `باقیمانده اشتراک الیت: ${daysLeft} روز (تا ${expiryDate ? new Date(expiryDate).toLocaleDateString('fa-IR') : "نامعلوم"})` : 
+                               {isStreamer ? "شما به عنوان یکی از ستون‌های کامیونیتی لوکس، مستقیماً با سیستم کارمزد و حمایت مالی تایید شده‌اید." : currentMembership === "VIP" ? `باقیمانده اشتراک الیت: ${daysLeft} روز (تا ${expiryDate ? new Date(expiryDate).toLocaleDateString('fa-IR') : "نامعلوم"})` : 
                                 currentMembership === "PLUS" ? `باقیمانده اشتراک پلاس: ${daysLeft} روز (تا ${expiryDate ? new Date(expiryDate).toLocaleDateString('fa-IR') : "نامعلوم"})` :
                                 "شما در حال حاضر از طرح رایگان استفاده می‌کنید. برای دسترسی به امکانات ویژه ارتقا دهید."}
                             </p>
                          </div>
                       </div>
 
-                      {currentMembership !== "NONE" && currentMembership !== "FREE" ? (
+                      {isStreamer ? (
+                         <div className="flex items-center gap-6 bg-white/[0.02] backdrop-blur-md p-6 rounded-[32px] border border-white/5 min-w-[320px]">
+                             <div className="flex-1 space-y-2">
+                                <GlowButton 
+                                  variant="purple" 
+                                  size="sm" 
+                                  className="h-11 w-full text-[10px] font-black uppercase italic !rounded-xl"
+                                  onClick={() => navigate("/elite-dashboard")}
+                                >
+                                   مدیریت امور مالی
+                                </GlowButton>
+                                <GlowButton 
+                                  variant="purple" 
+                                  size="sm" 
+                                  className="h-11 w-full text-[10px] font-black uppercase italic !rounded-xl bg-white/5 border-white/10 text-white hover:bg-white/10"
+                                  onClick={() => navigate("/settings/elite")}
+                                >
+                                   تنظیمات رسانه‌ای
+                                </GlowButton>
+                             </div>
+                         </div>
+                      ) : (currentMembership !== "NONE" && currentMembership !== "FREE" ? (
                          <div className="flex items-center gap-10 bg-white/[0.02] backdrop-blur-md p-8 rounded-[40px] border border-white/5 min-w-[280px]">
                             <div className="text-center">
                                <p className="text-[10px] text-gray-500 font-black uppercase tracking-[0.2em] mb-2 italic">باقیمانده اشتراک</p>
@@ -402,7 +480,7 @@ export const DashboardPage = () => {
                          >
                             ارتقای حساب کاربری
                          </GlowButton>
-                      )}
+                      ))}
                    </div>
                    
                    {/* Decorative corner light */}

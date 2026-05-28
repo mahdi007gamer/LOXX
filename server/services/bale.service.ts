@@ -71,13 +71,24 @@ export class BaleService {
   }
 
   static async setWebhook(url: string) {
+    if (!BALE_TOKEN) {
+      console.log("Bale Webhook configuration skipped: BALE_BOT_TOKEN is not configured.");
+      return;
+    }
     try {
       await baleApi.post("/setWebhook", {
           url: `${url}/api/v1/webhooks/bale`
+      }, {
+        timeout: 5000
       });
-      console.log(`Bale Webhook set to ${url}/api/v1/webhooks/bale`);
-    } catch (error) {
-      console.error("Failed to set Bale webhook:", error);
+      console.log(`Bale Webhook successfully set to ${url}/api/v1/webhooks/bale`);
+    } catch (error: any) {
+      const isDnsError = error.code === 'EAI_AGAIN' || error.code === 'ENOTFOUND' || error.message?.includes('EAI_AGAIN') || error.message?.includes('getaddrinfo');
+      if (isDnsError) {
+        console.warn("Bale Webhook warning: Host tapi.bale.ai is not reachable (network/DNS or offline mode). Webhook was not registered.");
+      } else {
+        console.warn("Failed to set Bale webhook:", error.message || error);
+      }
     }
   }
 }

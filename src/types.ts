@@ -151,6 +151,13 @@ export interface VIPMetadata {
     textColor: string;
     effect?: string;
   };
+  streamerLinks?: {
+    aparat?: string;
+    twitch?: string;
+    kick?: string;
+    youtube?: string;
+    donate?: string;
+  };
 }
 
 export interface Reaction {
