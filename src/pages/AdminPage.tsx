@@ -196,7 +196,20 @@ export const AdminPage = () => {
               </div>
               <p className="text-gray-400 font-bold uppercase text-[10px] tracking-widest italic opacity-60">Advanced Authority Controls</p>
             </div>
-            <div className="flex gap-4">
+            <div className="flex flex-wrap gap-4">
+              <GlowButton 
+                variant="blue"
+                size="sm"
+                className={cn(
+                  "h-12 px-6 text-[10px] uppercase font-black tracking-widest italic !rounded-2xl gap-2",
+                  activeTab === "enamad" ? "border-2 border-neon-blue bg-neon-blue/20" : ""
+                )}
+                onClick={() => {
+                  setActiveTab("enamad");
+                }}
+              >
+                <Icons.ShieldAlert size={16} /> <span>مدیریت و تاییدیه اینماد (eNamad)</span>
+              </GlowButton>
               <GlowButton 
                 variant="purple"
                 size="sm"
