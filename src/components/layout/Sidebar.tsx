@@ -10,7 +10,8 @@ import {
   Gamepad2,
   Heart,
   Crown,
-  Zap
+  Zap,
+  Mail
 } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 
@@ -24,6 +25,7 @@ const menuItems = [
   { icon: Users, label: "دوستان", path: "/friends" },
   { icon: MessageSquare, label: "چت سراسری", path: "/chat" },
   { icon: Trophy, label: "رتبه‌بندی", path: "/ranking" },
+  { icon: Mail, label: "ایمیل سازمانی", path: "/email" },
   { icon: Crown, label: "اشتراک ویژه", path: "/premium" },
   { icon: Settings, label: "تنظیمات", path: "/settings" },
 ];

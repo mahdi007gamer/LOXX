@@ -23,6 +23,7 @@ import chatRoutes from "./server/routes/chat.routes.ts";
 import reportRoutes from "./server/routes/report.routes.ts";
 import webhookRoutes from "./server/routes/webhook.routes.ts";
 import streamerRoutes from "./server/routes/streamer.routes.ts";
+import emailRoutes from "./server/routes/email.routes.ts";
 import { BaleService } from "./server/services/bale.service.ts";
 import { setupWebSockets } from "./server/sockets/index.ts";
 import { setIO } from "./server/utils/socket.ts";
@@ -112,6 +113,7 @@ async function startServer() {
   app.use("/api/v1/reports", reportRoutes);
   app.use("/api/v1/webhooks", webhookRoutes);
   app.use("/api/v1/streamers", streamerRoutes);
+  app.use("/api/v1/email", emailRoutes);
   
   app.get("/api/health", (req, res) => {
     res.json({ status: "ok", message: "LOXX Backend is running in Persian mode (UTF-8)" });
@@ -147,6 +149,72 @@ async function startServer() {
       console.error("[CRON] Weekly rewards job error:", err);
     }
   }, 60 * 60 * 1000);
+
+  // Support Enamad dynamic root verification files (.txt)
+  app.get("/:filename.txt", async (req, res, next) => {
+    const { filename } = req.params;
+    const fullName = `${filename}.txt`;
+    try {
+      const file = await prisma.verificationFile.findUnique({
+        where: { filename: fullName }
+      });
+      if (file) {
+        res.setHeader("Content-Type", "text/plain; charset=utf-8");
+        return res.send(file.content);
+      }
+    } catch (err) {
+      console.error("Error serving verification file:", err);
+    }
+    next();
+  });
+
+  // Intercept the root path to dynamically inject Enamad Meta tag and page Title from DB
+  app.get("/", async (req, res, next) => {
+    try {
+      const fs = await import("fs");
+      const isProd = process.env.NODE_ENV === "production";
+      const filePath = isProd 
+        ? path.join(process.cwd(), "dist", "index.html")
+        : path.join(process.cwd(), "index.html");
+        
+      if (fs.existsSync(filePath)) {
+        let html = fs.readFileSync(filePath, "utf8");
+        
+        // Fetch dynamic settings
+        let config = await prisma.enamadConfig.findUnique({
+          where: { id: "default" }
+        });
+        
+        if (!config) {
+          config = await prisma.enamadConfig.create({
+            data: {
+              id: "default",
+              siteTitle: "لوکس | پلتفرم بازی های آنلاین",
+              enamadMetaCode: "46418638"
+            }
+          });
+        }
+        
+        const title = config.siteTitle || "LOXX - پیشرفته‌ترین پلتفرم گیمینگ فارسی";
+        const metaCode = config.enamadMetaCode || "46418638";
+        
+        // Replace Title element
+        html = html.replace(/<title>.*?<\/title>/, `<title>${title}</title>`);
+        
+        // Inject Enamad meta tag
+        const metaTag = `<meta name="enamad" content="${metaCode}" />`;
+        if (html.includes("</head>")) {
+          html = html.replace("</head>", `  ${metaTag}\n  </head>`);
+        }
+        
+        res.setHeader("Content-Type", "text/html; charset=utf-8");
+        return res.send(html);
+      }
+    } catch (err) {
+      console.error("Error rendering dynamically injected index.html:", err);
+    }
+    next();
+  });
 
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {

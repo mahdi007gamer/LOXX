@@ -44,4 +44,11 @@ router.get("/streamer-invites", adminController.getStreamerInvites);
 router.post("/streamer-invites", adminController.createStreamerInvite);
 router.delete("/streamer-invites/:id", adminController.deleteStreamerInvite);
 
+// Enamad (اینماد) Support
+import * as enamadController from "../controllers/enamad.controller.ts";
+router.get("/enamad", enamadController.getEnamadData);
+router.post("/enamad/config", enamadController.updateEnamadConfig);
+router.post("/enamad/files", enamadController.createVerificationFile);
+router.delete("/enamad/files/:id", enamadController.deleteVerificationFile);
+
 export default router;

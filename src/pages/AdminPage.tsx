@@ -22,7 +22,7 @@ import { AuthorizedImage } from "../components/ui/AuthorizedImage";
 
 export const AdminPage = () => {
   const { isSidebarCollapsed } = useAuth();
-  const [activeTab, setActiveTab] = useState<"users" | "games" | "payments" | "paymentsHistory" | "genres" | "badges" | "reports" | "gifs" | "streamers">("users");
+  const [activeTab, setActiveTab] = useState<"users" | "games" | "payments" | "paymentsHistory" | "genres" | "badges" | "reports" | "gifs" | "streamers" | "enamad">("users");
   const [users, setUsers] = useState<any[]>([]);
   const [games, setGames] = useState<any[]>([]);
   const [payments, setPayments] = useState<any[]>([]);
@@ -32,6 +32,14 @@ export const AdminPage = () => {
   const [reports, setReports] = useState<any[]>([]);
   const [gifs, setGifs] = useState<any[]>([]);
   const [streamers, setStreamers] = useState<any[]>([]);
+  
+  // Enamad Settings States
+  const [enamadConfig, setEnamadConfig] = useState<any>({ siteTitle: "لوکس | پلتفرم بازی های آنلاین", enamadMetaCode: "46418638" });
+  const [enamadFiles, setEnamadFiles] = useState<any[]>([]);
+  const [newFileName, setNewFileName] = useState("");
+  const [newFileContent, setNewFileContent] = useState("");
+  const [isSavingConfig, setIsSavingConfig] = useState(false);
+  const [isCreatingFile, setIsCreatingFile] = useState(false);
   
   // New Admin GIF States
   const [newGifFile, setNewGifFile] = useState<File | null>(null);
@@ -95,6 +103,10 @@ export const AdminPage = () => {
       } else if (activeTab === "streamers") {
         const res = await api.get(`/admin/streamers`).catch(() => ({ data: { data: [] } }));
         setStreamers(res.data.data || []);
+      } else if (activeTab === "enamad") {
+        const res = await api.get("/admin/enamad");
+        setEnamadConfig(res.data.data.config || { siteTitle: "", enamadMetaCode: "" });
+        setEnamadFiles(res.data.data.files || []);
       }
     } catch (err) {
       toast.error("خطا در بارگذاری داده‌ها");
@@ -1310,6 +1322,210 @@ export const AdminPage = () => {
                   </div>
                 </div>
              </div>
+          ) : activeTab === "enamad" ? (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fade-in">
+                
+                {/* Right/Main panel - Config & Status */}
+                <div className="lg:col-span-2 space-y-6 animate-fade-in">
+                  
+                  {/* Site Metadata Modifier */}
+                  <NeonCard variant="blue" className="p-6 border-neon-blue/30 bg-neon-blue/5">
+                    <h3 className="flex items-center gap-2 text-md font-black text-white italic mb-2">
+                      <Icons.Globe className="text-neon-blue" size={18} />
+                      تنظیمات متادیتا و عنوان اصلی سایت loxx.ir
+                    </h3>
+                    <p className="text-xs text-gray-400 mb-6 leading-relaxed">
+                      در این بخش می‌توانید عنوان موقت صحفه نمایش داده شده به مرورگر یا خزنده‌ها و کد تاییدیه اینماد را جهت بررسی تزریق کنید. متاتگ به طور اتوماتیک به هدر کدهای سمت سرور تزریق خواهد شد.
+                    </p>
+
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-xs text-gray-400 font-bold mb-2">عنوان جدید صفحه اصلی (تاثیر مستقیم روی سئو و خزنده)</label>
+                        <input 
+                          type="text"
+                          value={enamadConfig.siteTitle || ""}
+                          onChange={(e) => setEnamadConfig({ ...enamadConfig, siteTitle: e.target.value })}
+                          placeholder="مثلا: لوکس | پلتفرم بازی های آنلاین لایو"
+                          className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-neon-blue/40 font-bold"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs text-gray-400 font-bold mb-2">کد تزریقی متاتگ اینماد (enamad content code)</label>
+                        <div className="space-y-2">
+                          <input 
+                            type="text"
+                            value={enamadConfig.enamadMetaCode || ""}
+                            onChange={(e) => setEnamadConfig({ ...enamadConfig, enamadMetaCode: e.target.value })}
+                            placeholder="مثلا: 46418638"
+                            className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-neon-blue/40 font-mono font-bold"
+                          />
+                          <p className="text-[10px] text-gray-500 font-mono">
+                            تگ تزریقی نهایی: &lt;meta name="enamad" content="{enamadConfig.enamadMetaCode || '46418638'}" /&gt;
+                          </p>
+                        </div>
+                      </div>
+
+                      <GlowButton 
+                        variant="blue"
+                        className="h-11 font-black px-8 mt-2 text-xs"
+                        disabled={isSavingConfig}
+                        onClick={async () => {
+                          setIsSavingConfig(true);
+                          try {
+                            const res = await api.post("/admin/enamad/config", {
+                              siteTitle: enamadConfig.siteTitle,
+                              enamadMetaCode: enamadConfig.enamadMetaCode
+                            });
+                            toast.success(res.data.message || "تغییرات با موفقیت ذخیره شد");
+                            fetchData();
+                          } catch (err: any) {
+                            toast.error(err.response?.data?.message || "خطا در برقراری ارتباط");
+                          } finally {
+                            setIsSavingConfig(false);
+                          }
+                        }}
+                      >
+                        {isSavingConfig ? "در حال ذخیره‌سازی..." : "بروزرسانی متادیتا و عنوان"}
+                      </GlowButton>
+                    </div>
+                  </NeonCard>
+
+                  {/* Verification File Host List */}
+                  <NeonCard variant="purple" className="p-6 border-neon-purple/20 bg-neon-purple/5">
+                    <h3 className="flex items-center gap-2 text-md font-black text-white italic mb-4">
+                      <Icons.FileText className="text-neon-purple" size={18} />
+                      فایل‌های تایید هویت روت دامنه (Hosted Plaintext Files)
+                    </h3>
+
+                    {enamadFiles.length === 0 ? (
+                      <div className="py-8 text-center text-xs text-gray-500 font-bold bg-[#0d0d12]/40 rounded-xl border border-white/5">
+                        هیچ فایل متنی فعالی روی روت دامنه تعریف نشده است.
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {enamadFiles.map((f: any) => (
+                          <div 
+                            key={f.id}
+                            className="flex items-center justify-between p-4 bg-[#0d0d12]/60 hover:bg-[#0d0d12]/90 border border-white/10 rounded-xl transition-all"
+                          >
+                            <div className="space-y-1 text-right">
+                              <span className="text-xs font-black text-white font-mono flex items-center gap-2 justify-end">
+                                <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
+                                {f.filename}
+                              </span>
+                              <p className="text-[10px] text-gray-500 font-bold max-w-sm truncate">
+                                محتویات: <span className="text-gray-400 font-mono">{f.content}</span>
+                              </p>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              <a 
+                                href={`/${f.filename}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="h-8 px-3 rounded-lg bg-white/5 border border-white/5 hover:bg-neutral-800 transition-all font-bold text-[10px] text-gray-300 flex items-center gap-1"
+                              >
+                                نمایش و دانلود مستقیم
+                                <Icons.ExternalLink size={10} />
+                              </a>
+                              <button
+                                onClick={async () => {
+                                  if (!confirm(`آیا از حذف فایل تاییدیه loxx.ir/${f.filename} اطمینان دارید؟`)) return;
+                                  try {
+                                    await api.delete(`/admin/enamad/files/${f.id}`);
+                                    toast.success("فایل با موفقیت حذف گردید");
+                                    fetchData();
+                                  } catch (err: any) {
+                                    toast.error(err.response?.data?.message || "ناموفق");
+                                  }
+                                }}
+                                className="h-8 w-8 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 flex items-center justify-center border border-red-500/20 transition-all"
+                                title="حذف دائمی فایل از روت"
+                              >
+                                <Icons.Trash2 size={12} />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </NeonCard>
+                </div>
+
+                {/* Left/Sidebar-like Panel - File Creator */}
+                <div className="space-y-6">
+                  <NeonCard variant="pink" className="p-6 border-neon-pink/20 bg-neon-pink/5">
+                    <h3 className="flex items-center gap-2 text-md font-black text-white italic mb-4">
+                      <Icons.FilePlus2 className="text-neon-pink" size={18} />
+                      ایجاد فایل متنی جدید روی ریشه دامنه (مثلا جهت اینماد)
+                    </h3>
+
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-xs text-gray-400 font-bold mb-2">نام فایل با پسوند (مثلا 46418638.txt)</label>
+                        <input 
+                          type="text"
+                          value={newFileName}
+                          onChange={(e) => setNewFileName(e.target.value)}
+                          placeholder="مثلا: 46418638.txt"
+                          className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-neon-pink/40 font-mono font-bold"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs text-gray-400 font-bold mb-2">محتوای متنی داخل فایل (کد احراز هویت)</label>
+                        <textarea 
+                          rows={4}
+                          value={newFileContent}
+                          onChange={(e) => setNewFileContent(e.target.value)}
+                          placeholder="مثلا: 46418638"
+                          className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-neon-pink/40 font-mono font-bold resize-none"
+                        />
+                      </div>
+
+                      <GlowButton 
+                        variant="pink"
+                        className="w-full h-11 text-xs font-black"
+                        disabled={isCreatingFile || !newFileName || !newFileContent}
+                        onClick={async () => {
+                          setIsCreatingFile(true);
+                          try {
+                            const res = await api.post("/admin/enamad/files", {
+                              filename: newFileName,
+                              content: newFileContent
+                            });
+                            toast.success(res.data.message || "فایل با موفقیت در ریشه دامنه مستقر شد");
+                            setNewFileName("");
+                            setNewFileContent("");
+                            fetchData();
+                          } catch (err: any) {
+                            toast.error(err.response?.data?.message || "خطا در استقرار فایل");
+                          } finally {
+                            setIsCreatingFile(false);
+                          }
+                        }}
+                      >
+                        {isCreatingFile ? "در حال ایجاد فایل..." : "ذخیره و انتشار فوری فایل تایید"}
+                      </GlowButton>
+                    </div>
+                  </NeonCard>
+
+                  <NeonCard variant="blue" className="p-6 border-blue-500/10 bg-blue-500/5">
+                    <h4 className="flex items-center gap-2 text-xs font-black text-white mb-2">
+                      <Icons.ShieldCheck className="text-blue-400" size={14} />
+                      راهنمای بررسی ای‌نماد
+                    </h4>
+                    <ul className="text-[10px] text-gray-400 space-y-2 leading-relaxed font-semibold">
+                      <li>• کارشناسان مرکز مالکیت دیجیتال اینماد برای اطمینان از دسترسی شما به دامنه ریشه loxx.ir، یکی از سه روش آپلود فایل، تغییر عنوان موقت یا تگ تزریقی را پیشنهاد می‌کنند.</li>
+                      <li>• با این پنل قدرتمند، بدون ایجاد تغییر در کدهای اصلی یا آپلود فیزیکی فایل‌ها، بلافاصله از پایگاه داده به صورت داینامیک تمام موارد را مدیریت و تایید کنید.</li>
+                    </ul>
+                  </NeonCard>
+                </div>
+
+              </div>
+            </div>
           ) : null}
         </div>
       </div>

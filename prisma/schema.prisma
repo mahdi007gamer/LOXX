@@ -453,3 +453,35 @@ model StreamerInvite {
   voiceUrl        String?
   createdAt       DateTime @default(now())
 }
+
+model EnamadConfig {
+  id             String   @id @default("default")
+  siteTitle      String?  @default("لوکس | پلتفرم بازی های آنلاین")
+  enamadMetaCode String?  @default("46418638")
+  updatedAt      DateTime @updatedAt @default(now())
+}
+
+model VerificationFile {
+  id        String   @id @default(uuid())
+  filename  String   @unique
+  content   String
+  createdAt DateTime @default(now())
+}
+
+model DomainEmail {
+  id        String   @id @default(uuid())
+  address   String   @unique
+  label     String
+  createdAt DateTime @default(now())
+}
+
+model EmailMessage {
+  id         String   @id @default(uuid())
+  fromAddress String
+  toAddress   String
+  subject    String
+  body       String
+  isIncoming Boolean  @default(true)
+  isRead     Boolean  @default(false)
+  createdAt  DateTime @default(now())
+}
