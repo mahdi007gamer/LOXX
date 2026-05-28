@@ -70,9 +70,10 @@ export class BadgeService {
   }
 
   static async removeBadge(userId: string, badgeId: string) {
-    return await prisma.userBadge.delete({
+    return await prisma.userBadge.deleteMany({
       where: {
-        userId_badgeId: { userId, badgeId }
+        userId,
+        badgeId
       }
     });
   }

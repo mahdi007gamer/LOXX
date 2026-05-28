@@ -97,8 +97,18 @@ export const updateUserRole = async (req: Request, res: Response) => {
     const user = await prisma.user.update({
       where: { id },
       data: { role },
-      select: { id: true, role: true }
+      select: { id: true, role: true, streamerStats: true }
     });
+
+    if (role === "STREAMER" && !user.streamerStats) {
+      await prisma.streamerStats.create({
+        data: {
+          userId: id,
+          discountCode: `STREAMER_${id.substring(0, 6).toUpperCase()}`
+        }
+      });
+    }
+
     res.json({ status: "success", data: user });
   } catch (error: any) {
     res.status(500).json({ status: "error", message: error.message });
@@ -494,7 +504,13 @@ export const getAllStreamers = async (req: Request, res: Response) => {
     });
 
     const mappedStreamers = streamers.map(user => ({
-      ...user.streamerStats,
+      id: user.streamerStats?.userId || user.id,
+      discountCode: user.streamerStats?.discountCode || "---",
+      userDiscountPercent: user.streamerStats?.userDiscountPercent || 0,
+      streamerCommissionPercent: user.streamerStats?.streamerCommissionPercent || 0,
+      totalEarned: user.streamerStats?.totalEarned || 0,
+      balance: user.streamerStats?.balance || 0,
+      paymentInfo: user.streamerStats?.paymentInfo,
       user: {
         username: user.username,
         avatar: user.avatar
