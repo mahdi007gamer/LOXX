@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { Shield, HeadphonesIcon, MessageSquare, Award, ArrowLeft, Phone, Mail, Instagram, Send, CheckCircle2, AlertCircle, User, Zap, Play, Pause, Volume2, VolumeX, Volume1, Forward, Rewind } from 'lucide-react';
+import api from '../lib/api';
 
 // Mini Components for Animations
 const RevenueAnimation = () => {
@@ -568,10 +569,42 @@ const FloatingAudioPlayer = ({ src, streamerName, isOpened }: { src: string, str
 const StreamerProposalPage = () => {
   const { name } = useParams<{ name?: string }>();
   
-  const streamerId = name || 'Rest_in_Peace';
-  const streamerName = streamerId === 'Rest_in_Peace' ? 'امیر' : streamerId;
-
+  const [inviteData, setInviteData] = useState<any>(null);
   const [isOpened, setIsOpened] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    const fetchInvite = async () => {
+      try {
+        const alias = name || 'Rest_in_Peace';
+        const res = await api.get(`/streamers/invite/${alias}`);
+        const result = res.data;
+        
+        if (result.status === "success" && result.data) {
+           setInviteData(result.data);
+        } else {
+           // Fallback to static for backwards compatibility
+           setInviteData({
+             alias: alias,
+             streamerName: alias === 'Rest_in_Peace' ? 'امیر' : alias,
+             voiceUrl: alias === 'Rest_in_Peace' ? '/Rest_in_Peace.mp3' : ''
+           });
+        }
+      } catch (e) {
+         setInviteData({
+           alias: name || 'Rest_in_Peace',
+           streamerName: name === 'Rest_in_Peace' ? 'امیر' : (name || 'کاربر'),
+           voiceUrl: name === 'Rest_in_Peace' ? '/Rest_in_Peace.mp3' : ''
+         });
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchInvite();
+  }, [name]);
+
+  if (loading) return <div className="min-h-screen bg-[#050508] flex items-center justify-center"><div className="w-8 h-8 rounded-full border-b-2 border-neon-blue animate-spin" /></div>;
 
   return (
     <div className="min-h-screen bg-[#050508] text-white font-sans selection:bg-neon-pink/30 relative overflow-x-hidden flex flex-col" dir="rtl">
@@ -579,11 +612,11 @@ const StreamerProposalPage = () => {
       {/* Envelope Overlay */}
       <AnimatePresence>
         {!isOpened && (
-           <EnvelopeIntro onOpen={() => setIsOpened(true)} streamerName={streamerName} />
+           <EnvelopeIntro onOpen={() => setIsOpened(true)} streamerName={inviteData.streamerName} />
         )}
       </AnimatePresence>
 
-      <FloatingAudioPlayer src="/Rest_in_Peace.mp3" streamerName={streamerName} isOpened={isOpened} />
+      <FloatingAudioPlayer src={inviteData.voiceUrl || "/Rest_in_Peace.mp3"} streamerName={inviteData.streamerName} isOpened={isOpened} />
 
       {/* Dynamic Background Effects */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
@@ -628,7 +661,7 @@ const StreamerProposalPage = () => {
           className="mb-16"
         >
           <h2 className="text-2xl md:text-3xl font-black text-white mb-6">
-            سلام {streamerName} عزیز <span className="opacity-50 text-xl font-mono mx-1">({streamerId})</span>،
+            سلام {inviteData.streamerName} عزیز <span className="opacity-50 text-xl font-mono mx-1">({inviteData.alias})</span>،
           </h2>
           <div className="text-lg text-gray-300 font-medium leading-loose max-w-4xl space-y-6 bg-white/5 border border-white/5 p-6 rounded-3xl backdrop-blur-sm">
             <p>امیدوارم حالت عالی باشه.</p>
@@ -754,7 +787,7 @@ const StreamerProposalPage = () => {
                <p className="text-gray-400 font-medium leading-relaxed text-[14px] relative z-10">
                  پروفایل کاملاً شخصی‌سازی شده با بالاترین سطح، نشان (Badge) منحصربه‌فرد بر روی پلتفرم و دسترسی به سیستم اطلاع‌رسانی پیشرفته برای هدایت کامیونیتی.
                </p>
-               <ProfileAnimation name={streamerName} />
+               <ProfileAnimation name={inviteData.streamerName} />
             </div>
 
           </div>

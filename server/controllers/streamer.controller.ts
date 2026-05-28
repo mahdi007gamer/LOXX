@@ -3,6 +3,18 @@ import prisma from "../utils/prisma.ts";
 import { AuthenticatedRequest } from "../middleware/auth.middleware.ts";
 
 export class StreamerController {
+  static async getInviteByAlias(req: Request, res: Response) {
+    try {
+      const invite = await prisma.streamerInvite.findUnique({
+        where: { alias: req.params.alias }
+      });
+      if (!invite) return res.status(404).json({ status: "error", message: "Invite not found" });
+      res.json({ status: "success", data: invite });
+    } catch (error: any) {
+      res.status(500).json({ status: "error", message: error.message });
+    }
+  }
+
   static async getStats(req: AuthenticatedRequest, res: Response) {
     try {
       let user = await prisma.user.findUnique({

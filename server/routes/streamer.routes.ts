@@ -4,6 +4,8 @@ import { StreamerController } from "../controllers/streamer.controller.ts";
 
 const router = Router();
 
+router.get("/invite/:alias", StreamerController.getInviteByAlias);
+
 router.use(authenticate);
 
 router.get("/stats", StreamerController.getStats);

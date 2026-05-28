@@ -596,3 +596,41 @@ export const rejectWithdrawal = async (req: Request, res: Response) => {
     res.status(500).json({ status: "error", message: error.message });
   }
 };
+
+export const getStreamerInvites = async (req: Request, res: Response) => {
+  try {
+    const invites = await prisma.streamerInvite.findMany({
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json({ status: "success", data: invites });
+  } catch (error: any) {
+    res.status(500).json({ status: "error", message: error.message });
+  }
+};
+
+export const createStreamerInvite = async (req: Request, res: Response) => {
+  try {
+    const { alias, streamerName, voiceUrl } = req.body;
+    if (!alias || !streamerName) return res.status(400).json({ status: "error", message: "Missing fields" });
+
+    const existing = await prisma.streamerInvite.findUnique({ where: { alias } });
+    if (existing) return res.status(400).json({ status: "error", message: "Alias already exists" });
+
+    const invite = await prisma.streamerInvite.create({
+      data: { alias, streamerName, voiceUrl }
+    });
+    res.json({ status: "success", data: invite });
+  } catch (error: any) {
+    res.status(500).json({ status: "error", message: error.message });
+  }
+};
+
+export const deleteStreamerInvite = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    await prisma.streamerInvite.delete({ where: { id } });
+    res.json({ status: "success", message: "Invite deleted" });
+  } catch (error: any) {
+    res.status(500).json({ status: "error", message: error.message });
+  }
+};

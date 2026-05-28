@@ -91,9 +91,27 @@ const bannerUpload = multer({
   }
 });
 
+const audioUpload = multer({
+  storage,
+  limits: {
+    fileSize: 50 * 1024 * 1024 // 50MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /mp3|wav|ogg|m4a/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype) || file.mimetype.startsWith('audio/');
+
+    if (extname && mimetype) {
+      return cb(null, true);
+    }
+    cb(new Error("فقط فایل‌های صوتی مجاز هستند (mp3, wav, ogg, m4a)"));
+  }
+});
+
 const router = Router();
 
 router.post("/", authenticate, upload.single("file"), UploadController.uploadFile);
+router.post("/audio", authenticate, audioUpload.single("file"), UploadController.uploadFile);
 router.post("/gif", authenticate, upload.single("file"), UploadController.uploadGif);
 router.post("/banner", authenticate, bannerUpload.single("file"), UploadController.uploadFile);
 router.post("/receipt", authenticate, receiptUpload.single("file"), UploadController.uploadReceipt);

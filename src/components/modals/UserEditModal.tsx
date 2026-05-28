@@ -216,23 +216,25 @@ export const UserEditModal = ({ isOpen, onClose, user, onSuccess }: UserEditModa
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-4">
                   <label className="text-[10px] font-black text-gray-600 uppercase tracking-[0.2em] italic pr-2">نقش سیستمی کاربر</label>
-                  <div className="grid grid-cols-2 gap-3">
-                    {["USER", "ADMIN"].map(r => (
+                  <div className="grid grid-cols-3 gap-3">
+                    {["USER", "STREAMER", "ADMIN"].map(r => (
                       <button
                         key={r}
                         onClick={() => setRole(r)}
                         className={cn(
                           "h-14 rounded-2xl border transition-all duration-300 text-[11px] font-black uppercase italic relative overflow-hidden group",
                           role === r 
-                            ? "bg-neon-blue/10 border-neon-blue text-white shadow-[0_0_20px_rgba(0,229,255,0.15)]" 
+                            ? (r === "ADMIN" ? "bg-red-500/10 border-red-500 text-red-500 shadow-[0_0_20px_rgba(239,68,68,0.15)]" 
+                             : r === "STREAMER" ? "bg-purple-500/10 border-purple-500 text-purple-400 shadow-[0_0_20px_rgba(168,85,247,0.15)]"
+                             : "bg-neon-blue/10 border-neon-blue text-white shadow-[0_0_20px_rgba(0,229,255,0.15)]")
                             : "bg-white/[0.03] border-white/5 text-gray-500 hover:border-white/10"
                         )}
                       >
-                        <div className="flex items-center justify-center gap-2 relative z-10">
-                           {r === "ADMIN" ? <Shield size={14} /> : <User size={14} />}
-                           <span>{r === "ADMIN" ? "مدیر کل" : "کاربر عادی"}</span>
+                        <div className="flex items-center justify-center gap-1.5 relative z-10">
+                           {r === "ADMIN" ? <Shield size={14} /> : r === "STREAMER" ? <Zap size={14} /> : <User size={14} />}
+                           <span>{r === "ADMIN" ? "مدیر کل" : r === "STREAMER" ? "استریمر" : "کاربر عادی"}</span>
                         </div>
-                        {role === r && <div className="absolute inset-0 bg-gradient-to-tr from-neon-blue/5 to-transparent" />}
+                        {role === r && <div className="absolute inset-0 bg-gradient-to-tr from-current/5 to-transparent" />}
                       </button>
                     ))}
                   </div>

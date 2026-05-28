@@ -38,4 +38,9 @@ router.get("/streamers", adminController.getAllStreamers);
 router.post("/streamers/withdrawal/:id/approve", adminController.approveWithdrawal);
 router.post("/streamers/withdrawal/:id/reject", adminController.rejectWithdrawal);
 
+// Streamer Invites
+router.get("/streamer-invites", adminController.getStreamerInvites);
+router.post("/streamer-invites", adminController.createStreamerInvite);
+router.delete("/streamer-invites/:id", adminController.deleteStreamerInvite);
+
 export default router;
