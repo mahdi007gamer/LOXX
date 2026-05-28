@@ -286,7 +286,7 @@ export const PremiumPage = () => {
       <main className={cn("flex-1 px-4 py-8 lg:px-8 pb-32 md:pb-8 transition-all duration-300", !isSidebarCollapsed ? "md:mr-64" : "md:mr-20")}>
         <div className="container mx-auto max-w-6xl">
           <AnimatePresence mode="wait">
-            {step === "SELECT" && (
+            {step === "SELECT" ? (
               <motion.div
                 key="select"
                 initial={{ opacity: 0, y: 20 }}
@@ -391,9 +391,9 @@ export const PremiumPage = () => {
                   </NeonCard>
                 </div>
               </motion.div>
-            )}
+            ) : null}
 
-            {step === "PREVIEW" && selectedPlan && !pendingPayment && (
+            {step === "PREVIEW" && selectedPlan && !pendingPayment ? (
               <motion.div
                 key="preview"
                 initial={{ opacity: 0, scale: 0.95 }}
@@ -464,9 +464,9 @@ export const PremiumPage = () => {
                   </GlowButton>
                 </NeonCard>
               </motion.div>
-            )}
+            ) : null}
 
-            {step === "PAYMENT" && selectedPlan && (
+            {step === "PAYMENT" && selectedPlan ? (
               <motion.div
                 key="payment"
                 initial={{ opacity: 0, x: 50 }}
@@ -618,9 +618,9 @@ export const PremiumPage = () => {
                    </div>
                 </div>
               </motion.div>
-            )}
+            ) : null}
 
-            {step === "STATUS" && pendingPayment && (
+            {step === "STATUS" && pendingPayment ? (
               <motion.div
                 key="status"
                 initial={{ opacity: 0, scale: 0.9 }}
@@ -716,7 +716,7 @@ export const PremiumPage = () => {
                   </div>
                 </NeonCard>
               </motion.div>
-            )}
+            ) : null}
           </AnimatePresence>
 
           <div className="mt-20 grid grid-cols-1 md:grid-cols-3 gap-6">
