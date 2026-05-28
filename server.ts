@@ -54,8 +54,29 @@ async function startServer() {
       console.log("[DATABASE-SYNC] Ensuring database schema is synced with PostgreSQL...");
       execSync("npx prisma db push --accept-data-loss", { stdio: "inherit" });
       console.log("[DATABASE-SYNC] Database schema synced successfully!");
+      
+      // Ensure eNamad default records exist in DB
+      console.log("[DATABASE-SYNC] Ensuring eNamad defaults exist...");
+      await prisma.enamadConfig.upsert({
+        where: { id: "default" },
+        update: {},
+        create: {
+          id: "default",
+          siteTitle: "لوکس | پلتفرم بازی های آنلاین",
+          enamadMetaCode: "46418638"
+        }
+      });
+      await prisma.verificationFile.upsert({
+        where: { filename: "46418638.txt" },
+        update: { content: "46418638" },
+        create: {
+          filename: "46418638.txt",
+          content: "46418638"
+        }
+      });
+      console.log("[DATABASE-SYNC] eNamad defaults ensured successfully.");
     } catch (dbError) {
-      console.error("[DATABASE-SYNC] Schema synchronization failed:", dbError);
+      console.error("[DATABASE-SYNC] Schema synchronization/seeding failed:", dbError);
     }
   }
 
