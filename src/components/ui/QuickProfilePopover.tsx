@@ -117,6 +117,11 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({
   };
 
   const handleMessage = () => {
+    if (isAdminUnified) {
+      onClose();
+      window.location.href = "https://loxx.ir/settings";
+      return;
+    }
     if (user.id) {
       openChat(user.id, user.senderName, user.senderAvatar || user.avatarUrl);
       onClose();
@@ -143,6 +148,12 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({
     mouseX.set(0);
     mouseY.set(0);
   };
+
+  const isAdminUnified =
+    user.role === "ADMIN" ||
+    user.senderName?.toLowerCase() === "admin" ||
+    user.senderName?.toLowerCase()?.includes("admin") ||
+    initialUser.role === "ADMIN";
 
   const isStreamer =
     (user as any).role === "STREAMER" ||
@@ -174,6 +185,12 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({
 
   const getBackgroundStyle = () => {
     let style: any = {};
+    if (isAdminUnified) {
+      style.background = "linear-gradient(to bottom, #110303, #1c0808, #0a0a0f)";
+      style.border = "1px solid rgba(239, 68, 68, 0.45)";
+      style.boxShadow = "0 30px 100px rgba(239, 68, 68, 0.2)";
+      return style;
+    }
     if (metadata && metadata.colors && metadata.colors.gradient?.enabled) {
       const { color1, color2, type, angle } = metadata.colors.gradient;
       if (type === "linear")
@@ -419,14 +436,16 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({
         <div
           className={cn(
             "h-40 relative overflow-hidden z-10",
-            !bannerUrl &&
-              (isStreamer
-                ? "bg-gradient-to-br from-purple-400 via-purple-600 to-purple-900"
-                : isVIP
-                  ? "bg-gradient-to-br from-[#facc15] via-[#eab308] to-[#ca8a04]"
-                  : isPLUS
-                    ? "bg-gradient-to-br from-neon-blue via-blue-600 to-indigo-800"
-                    : "bg-gradient-to-l from-gray-800 to-gray-900"),
+            isAdminUnified
+              ? "bg-gradient-to-br from-red-950 via-red-800 to-[#120303]"
+              : (!bannerUrl &&
+                  (isStreamer
+                    ? "bg-gradient-to-br from-purple-400 via-purple-600 to-purple-900"
+                    : isVIP
+                      ? "bg-gradient-to-br from-[#facc15] via-[#eab308] to-[#ca8a04]"
+                      : isPLUS
+                        ? "bg-gradient-to-br from-neon-blue via-blue-600 to-indigo-800"
+                        : "bg-gradient-to-l from-gray-800 to-gray-900")),
           )}
         >
           {bannerUrl && (
@@ -438,16 +457,16 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({
             />
           )}
           <div className="absolute inset-0 bg-black/40"></div>
-          {isVIP && (
+          {(isVIP || isAdminUnified) && (
             <motion.div
               animate={{ opacity: [0.1, 0.4, 0.1], x: [-20, 20, -20] }}
               transition={{ duration: 7, repeat: Infinity }}
-              className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(255,255,255,0.2),transparent_50%)]"
+              className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(239,68,68,0.2),transparent_50%)]"
             />
           )}
 
           <div className="absolute top-6 left-6 flex items-center gap-2 z-20">
-            {!isSelf && (
+            {!isSelf && !isAdminUnified && (
               <button
                 onClick={() => setShowReportModal(true)}
                 className="h-10 w-10 rounded-full bg-black/60 text-gray-300 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all backdrop-blur-xl border border-white/10 shadow-lg"
@@ -474,7 +493,21 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({
 
           <div className="flex items-start justify-between">
             <div className="relative -mt-20 mb-6 inline-block">
-              {(isVIP || isPLUS) && metadata?.auraEffect && (
+              {isAdminUnified && (
+                <motion.div
+                  animate={{
+                    opacity: [0.5, 0.9, 0.5],
+                    scale: [0.98, 1.05, 0.98],
+                  }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }}
+                  className="absolute -inset-2 rounded-[46px] blur-xl bg-red-600/50 z-0 pointer-events-none"
+                />
+              )}
+              {!isAdminUnified && (isVIP || isPLUS) && metadata?.auraEffect && (
                 <motion.div
                   animate={{
                     opacity: [0.4, 0.9, 0.4],
@@ -495,15 +528,17 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({
               <div
                 className={cn(
                   "h-32 w-32 rounded-[40px] bg-[#0a0a0f] p-[2px] shadow-2xl relative z-20",
-                  metadata?.specialFrame && metadata.frame === "lightning"
-                    ? "p-0 border-blue-400 shadow-[0_0_15px_blue]"
-                    : isStreamer
-                      ? "p-[3px] bg-gradient-to-tr from-purple-400 via-purple-100 to-purple-600"
-                      : isVIP
-                        ? "p-[3px] bg-gradient-to-tr from-yellow-400 via-yellow-100 to-yellow-600"
-                        : isPLUS
-                          ? "p-[3px] bg-neon-blue"
-                          : "border border-white/10",
+                  isAdminUnified
+                    ? "p-[3px] bg-gradient-to-tr from-red-600 via-red-300 to-red-800 shadow-[0_0_20px_rgba(239,68,68,0.5)]"
+                    : (metadata?.specialFrame && metadata.frame === "lightning"
+                        ? "p-0 border-blue-400 shadow-[0_0_15px_blue]"
+                        : isStreamer
+                          ? "p-[3px] bg-gradient-to-tr from-purple-400 via-purple-100 to-purple-600"
+                          : isVIP
+                            ? "p-[3px] bg-gradient-to-tr from-yellow-400 via-yellow-100 to-yellow-600"
+                            : isPLUS
+                              ? "p-[3px] bg-neon-blue"
+                              : "border border-white/10"),
                 )}
               >
                 <div className="h-full w-full rounded-[34px] bg-[#0d0d12] flex items-center justify-center text-6xl overflow-hidden relative">
@@ -521,7 +556,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({
                   )}
 
                   {/* VIP Animated Aura around Avatar */}
-                  {(isVIP || isPLUS) && metadata?.auraEffect && (
+                  {!isAdminUnified && (isVIP || isPLUS) && metadata?.auraEffect && (
                     <motion.div
                       animate={{ rotate: 360 }}
                       transition={{
@@ -535,14 +570,18 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({
                 </div>
 
                 {/* Optional Avatar Frame Pulse */}
-                {metadata?.specialFrame && metadata.frame === "lightning" && (
+                {!isAdminUnified && metadata?.specialFrame && metadata.frame === "lightning" && (
                   <div className="absolute inset-0 border-2 border-blue-400 animate-pulse rounded-[40px] shadow-[0_0_15px_rgba(96,165,250,0.8)]" />
                 )}
               </div>
 
               <div className="absolute top-1 right-1 h-7 w-7 bg-green-500 rounded-full border-[5px] border-[#0a0a0f] z-30 shadow-lg"></div>
 
-              {isStreamer ? (
+              {isAdminUnified ? (
+                <div className="absolute -bottom-4 -left-4 h-12 w-12 rounded-full bg-red-600 text-white border-4 border-[#0a0a0f] flex items-center justify-center shadow-2xl z-20">
+                  <Shield size={22} fill="currentColor" />
+                </div>
+              ) : isStreamer ? (
                 <div className="absolute -bottom-4 -left-4 h-12 w-12 rounded-full bg-purple-500 text-white border-4 border-[#0a0a0f] flex items-center justify-center shadow-2xl z-20">
                   <Icons.Radio size={22} />
                 </div>
@@ -553,7 +592,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({
                   </div>
                 )
               )}
-              {isPLUS && (
+              {!isAdminUnified && isPLUS && (
                 <div className="absolute -bottom-4 -left-4 h-12 w-12 rounded-full bg-neon-blue text-dark-bg border-4 border-[#0a0a0f] flex items-center justify-center shadow-2xl z-20">
                   <Zap size={22} fill="currentColor" />
                 </div>
@@ -563,7 +602,10 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({
             {!isSelf && (
               <button
                 onClick={handleMessage}
-                className="mt-6 h-14 w-14 rounded-3xl bg-white/10 text-white flex items-center justify-center hover:bg-neon-blue hover:text-dark-bg transition-all border border-white/10 group active:scale-95 shadow-xl backdrop-blur-xl"
+                className={cn(
+                  "mt-6 h-14 w-14 rounded-3xl bg-white/10 text-white flex items-center justify-center transition-all border border-white/10 group active:scale-95 shadow-xl backdrop-blur-xl",
+                  isAdminUnified ? "hover:bg-red-500 hover:text-white" : "hover:bg-neon-blue hover:text-dark-bg"
+                )}
                 title="ارسال پیام"
               >
                 <MessageCircle
@@ -580,26 +622,28 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({
                 <h4
                   className={cn(
                     "text-3xl font-black italic tracking-tighter uppercase",
-                    isVIP ? "text-[#0a0a0f]" : "text-white",
+                    isAdminUnified ? "text-red-500" : (isVIP ? "text-[#0a0a0f]" : "text-white"),
                     metadata?.shinyName && "animate-pulse",
                   )}
                   style={{
-                    ...(metadata && metadata.colors && (isVIP || isPLUS)
-                      ? metadata.colors.textGradient
-                        ? {
-                            backgroundImage: `linear-gradient(to right, ${metadata.colors.text}, ${metadata.colors.textGradient})`,
-                            WebkitBackgroundClip: "text",
-                            WebkitTextFillColor: "transparent",
-                          }
-                        : { color: metadata.colors.text }
-                      : {}),
+                    ...(isAdminUnified
+                      ? { textShadow: "0 0 10px rgba(239, 68, 68, 0.6)" }
+                      : (metadata && metadata.colors && (isVIP || isPLUS)
+                        ? metadata.colors.textGradient
+                          ? {
+                              backgroundImage: `linear-gradient(to right, ${metadata.colors.text}, ${metadata.colors.textGradient})`,
+                              WebkitBackgroundClip: "text",
+                              WebkitTextFillColor: "transparent",
+                            }
+                          : { color: metadata.colors.text }
+                        : {})),
                     ...getFontStyle(),
                   }}
                 >
                   {user.displayName || user.senderName}
                 </h4>
                 <div className="flex items-center gap-0.5">
-                  {user.senderBadges
+                  {!isAdminUnified && user.senderBadges
                     ?.filter((b) => b?.isSpecial)
                     .map((badge) => (
                       <img
@@ -613,7 +657,14 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({
                 </div>
               </div>
               <div className="flex items-center gap-2 mt-1">
-                {isStreamer ? (
+                {isAdminUnified ? (
+                  <span
+                    className="text-xs font-black uppercase tracking-[0.1em] flex items-center gap-2 text-red-500 bg-red-500/10 px-3 py-1 rounded-full border border-red-500/20 shadow-[0_0_15px_rgba(239,68,68,0.1)]"
+                  >
+                    <div className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
+                    مدیریت رسمی پلتفرم لوکس
+                  </span>
+                ) : isStreamer ? (
                   <span
                     className="text-[11px] font-black uppercase tracking-[0.2em] flex items-center gap-2"
                     style={{ color: metadata?.colors?.accent || "#c084fc" }}
@@ -646,229 +697,259 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({
             </div>
 
             {/* Accurate Statistics Grid */}
-            <div className="grid grid-cols-4 gap-4 py-6 border-y border-white/5">
-              <div className="text-center group">
-                <p
-                  className="text-[9px] font-black uppercase mb-1.5 group-hover:text-neon-blue transition-colors italic"
-                  style={{
-                    color:
-                      metadata?.colors?.statsLabel ||
-                      (isVIP ? "#451a03" : "#4b5563"),
-                  }}
-                >
-                  عضویت
-                </p>
-                <div className="flex flex-col items-center">
-                  {loading ? (
-                    <div className="h-4 w-8 bg-white/5 animate-pulse rounded" />
-                  ) : (
-                    <p
-                      className="text-sm font-black italic"
-                      style={{
-                        color:
-                          isVIP && !metadata?.colors?.text
-                            ? "#0a0a0f"
-                            : metadata?.colors?.statsText ||
-                              metadata?.colors?.text ||
-                              "white",
-                        textShadow: isVIP
-                          ? "none"
-                          : "0 2px 4px rgba(0,0,0,0.5)",
-                      }}
-                    >
-                      {user.stats?.daysSinceJoin || 0} روز
+            {isAdminUnified ? (
+              <div className="py-6 border-y border-white/5 space-y-4 text-right">
+                <div className="flex items-start gap-4 bg-red-950/20 border border-red-500/15 p-4 rounded-2xl relative overflow-hidden">
+                  <div className="absolute right-0 top-0 h-16 w-16 bg-red-500/5 rounded-full blur-xl pointer-events-none" />
+                  <div className="h-10 w-10 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 flex items-center justify-center shrink-0">
+                    <Shield size={20} />
+                  </div>
+                  <div>
+                    <p className="text-xs font-black text-red-400">حساب رسمی مدیریت لوکس</p>
+                    <p className="text-[11px] text-gray-400 mt-1.5 leading-relaxed">
+                      این اکانت به عنوان مدیریت ارشد پلتفرم لوکس فعالیت می‌کند. جهت طرح هرگونه سوال، پیشنهاد، همکاری یا پشتیبانی اختصاصی، دکمه زیر را بفشارید.
                     </p>
-                  )}
+                  </div>
                 </div>
-              </div>
-              <div className="text-center group">
-                <p
-                  className="text-[9px] font-black uppercase mb-1.5 group-hover:text-neon-pink transition-colors italic"
-                  style={{
-                    color:
-                      metadata?.colors?.statsLabel ||
-                      (isVIP ? "#451a03" : "#4b5563"),
-                  }}
-                >
-                  دوستان
-                </p>
-                <div className="flex flex-col items-center">
-                  {loading ? (
-                    <div className="h-4 w-8 bg-white/5 animate-pulse rounded" />
-                  ) : (
-                    <p
-                      className="text-sm font-black italic"
-                      style={{
-                        color:
-                          isVIP && !metadata?.colors?.text
-                            ? "#0a0a0f"
-                            : metadata?.colors?.statsText ||
-                              metadata?.colors?.text ||
-                              "white",
-                        textShadow: isVIP
-                          ? "none"
-                          : "0 2px 4px rgba(0,0,0,0.5)",
-                      }}
-                    >
-                      {user.stats?.friendsCount || 0}
-                    </p>
-                  )}
-                </div>
-              </div>
-              <div className="text-center group">
-                <p
-                  className="text-[9px] font-black uppercase mb-1.5 group-hover:text-neon-purple transition-colors italic"
-                  style={{
-                    color:
-                      metadata?.colors?.statsLabel ||
-                      (isVIP ? "#451a03" : "#4b5563"),
-                  }}
-                >
-                  لابی‌ها
-                </p>
-                <div className="flex flex-col items-center">
-                  {loading ? (
-                    <div className="h-4 w-8 bg-white/5 animate-pulse rounded" />
-                  ) : (
-                    <p
-                      className="text-sm font-black italic"
-                      style={{
-                        color:
-                          isVIP && !metadata?.colors?.text
-                            ? "#0a0a0f"
-                            : metadata?.colors?.statsText ||
-                              metadata?.colors?.text ||
-                              "white",
-                        textShadow: isVIP
-                          ? "none"
-                          : "0 2px 4px rgba(0,0,0,0.5)",
-                      }}
-                    >
-                      {user.stats?.lobbiesJoined || 0}
-                    </p>
-                  )}
-                </div>
-              </div>
-              <div className="text-center group">
-                <p
-                  className="text-[9px] font-black uppercase mb-1.5 group-hover:text-yellow-500 transition-colors italic"
-                  style={{
-                    color:
-                      metadata?.colors?.statsLabel ||
-                      (isVIP ? "#451a03" : "#4b5563"),
-                  }}
-                >
-                  میزبانی
-                </p>
-                <div className="flex flex-col items-center">
-                  {loading ? (
-                    <div className="h-4 w-8 bg-white/5 animate-pulse rounded" />
-                  ) : (
-                    <p
-                      className="text-sm font-black italic"
-                      style={{
-                        color:
-                          isVIP && !metadata?.colors?.text
-                            ? "#0a0a0f"
-                            : metadata?.colors?.statsText ||
-                              metadata?.colors?.text ||
-                              "white",
-                        textShadow: isVIP
-                          ? "none"
-                          : "0 2px 4px rgba(0,0,0,0.5)",
-                      }}
-                    >
-                      {user.stats?.lobbiesCreated || 0}
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
 
-            {/* Badges Section */}
-            <div className="space-y-4">
-              <h5
-                className="text-[10px] font-black uppercase tracking-widest italic"
-                style={{
-                  color:
-                    metadata?.colors?.statsLabel ||
-                    (isVIP ? "#451a03" : "#4b5563"),
-                }}
-              >
-                نشان‌های انتخابی و دستاوردها
-              </h5>
-              <div className="flex flex-wrap gap-2.5 max-h-[120px] overflow-y-auto no-scrollbar">
-                {user.senderBadges
-                  ?.filter((b) => b.isPinned)
-                  .map((ub, i) => (
-                    <div
-                      key={ub.id || i}
-                      title={ub.name}
-                      className={cn(
-                        "flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all border",
-                        "bg-neon-blue/10 border-neon-blue shadow-[0_0_10px_rgba(0,229,255,0.2)]",
-                      )}
-                    >
-                      <img
-                        src={ub.iconUrl}
-                        alt={ub.name}
-                        className="h-4 w-4 object-contain"
-                      />
-                      <span
-                        className="text-[10px] font-black uppercase italic"
-                        style={{
-                          color:
-                            isVIP && !metadata?.colors?.badgeText
-                              ? "#0a0a0f"
-                              : metadata?.colors?.badgeText || "white",
-                          textShadow: isVIP
-                            ? "none"
-                            : "0 1px 2px rgba(0,0,0,0.5)",
-                        }}
-                      >
-                        {ub.name}
-                      </span>
-                    </div>
-                  ))}
-                {user.senderBadges
-                  ?.filter((b) => !b.isPinned)
-                  .slice(0, 5)
-                  .map((ub, i) => (
-                    <div
-                      key={ub.id || i}
-                      title={ub.name}
-                      className={cn(
-                        "flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all border",
-                        isVIP
-                          ? "bg-black/10 border-black/10"
-                          : "bg-white/5 border-white/10 opacity-70 hover:opacity-100",
-                      )}
-                    >
-                      <img
-                        src={ub.iconUrl}
-                        alt={ub.name}
-                        className="h-4 w-4 object-contain"
-                      />
-                      <span
-                        className="text-[10px] font-black uppercase italic"
-                        style={{
-                          color:
-                            isVIP && !metadata?.colors?.badgeText
-                              ? "#0a0a0f"
-                              : metadata?.colors?.badgeText || "#6b7280",
-                        }}
-                      >
-                        {ub.name}
-                      </span>
-                    </div>
-                  ))}
-                {!user.senderBadges?.length && !loading && (
-                  <p className="text-[10px] text-gray-500 italic">
-                    بدون نشان‌های کسب شده
-                  </p>
-                )}
+                <div className="grid grid-cols-2 gap-3 pt-1">
+                  <div className="bg-white/5 border border-white/10 rounded-2xl p-3 text-center">
+                    <p className="text-[9px] text-gray-500 font-extrabold uppercase tracking-wider mb-1">حمایت فنی و نظارت</p>
+                    <p className="text-xs font-black text-emerald-400">تمام وقت متصل</p>
+                  </div>
+                  <div className="bg-white/5 border border-white/10 rounded-2xl p-3 text-center">
+                    <p className="text-[9px] text-gray-500 font-extrabold uppercase tracking-wider mb-1">سمت کاربری</p>
+                    <p className="text-xs font-black text-red-500">مدیر کل کلان سیستم</p>
+                  </div>
+                </div>
               </div>
-            </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-4 gap-4 py-6 border-y border-white/5">
+                  <div className="text-center group">
+                    <p
+                      className="text-[9px] font-black uppercase mb-1.5 group-hover:text-neon-blue transition-colors italic"
+                      style={{
+                        color:
+                          metadata?.colors?.statsLabel ||
+                          (isVIP ? "#451a03" : "#4b5563"),
+                      }}
+                    >
+                      عضویت
+                    </p>
+                    <div className="flex flex-col items-center">
+                      {loading ? (
+                        <div className="h-4 w-8 bg-white/5 animate-pulse rounded" />
+                      ) : (
+                        <p
+                          className="text-sm font-black italic"
+                          style={{
+                            color:
+                              isVIP && !metadata?.colors?.text
+                                ? "#0a0a0f"
+                                : metadata?.colors?.statsText ||
+                                  metadata?.colors?.text ||
+                                  "white",
+                            textShadow: isVIP
+                              ? "none"
+                              : "0 2px 4px rgba(0,0,0,0.5)",
+                          }}
+                        >
+                          {user.stats?.daysSinceJoin || 0} روز
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="text-center group">
+                    <p
+                      className="text-[9px] font-black uppercase mb-1.5 group-hover:text-neon-pink transition-colors italic"
+                      style={{
+                        color:
+                          metadata?.colors?.statsLabel ||
+                          (isVIP ? "#451a03" : "#4b5563"),
+                      }}
+                    >
+                      دوستان
+                    </p>
+                    <div className="flex flex-col items-center">
+                      {loading ? (
+                        <div className="h-4 w-8 bg-white/5 animate-pulse rounded" />
+                      ) : (
+                        <p
+                          className="text-sm font-black italic"
+                          style={{
+                            color:
+                              isVIP && !metadata?.colors?.text
+                                ? "#0a0a0f"
+                                : metadata?.colors?.statsText ||
+                                  metadata?.colors?.text ||
+                                  "white",
+                            textShadow: isVIP
+                              ? "none"
+                              : "0 2px 4px rgba(0,0,0,0.5)",
+                          }}
+                        >
+                          {user.stats?.friendsCount || 0}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="text-center group">
+                    <p
+                      className="text-[9px] font-black uppercase mb-1.5 group-hover:text-neon-purple transition-colors italic"
+                      style={{
+                        color:
+                          metadata?.colors?.statsLabel ||
+                          (isVIP ? "#451a03" : "#4b5563"),
+                      }}
+                    >
+                      لابی‌ها
+                    </p>
+                    <div className="flex flex-col items-center">
+                      {loading ? (
+                        <div className="h-4 w-8 bg-white/5 animate-pulse rounded" />
+                      ) : (
+                        <p
+                          className="text-sm font-black italic"
+                          style={{
+                            color:
+                              isVIP && !metadata?.colors?.text
+                                ? "#0a0a0f"
+                                : metadata?.colors?.statsText ||
+                                  metadata?.colors?.text ||
+                                  "white",
+                            textShadow: isVIP
+                              ? "none"
+                              : "0 2px 4px rgba(0,0,0,0.5)",
+                          }}
+                        >
+                          {user.stats?.lobbiesJoined || 0}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="text-center group">
+                    <p
+                      className="text-[9px] font-black uppercase mb-1.5 group-hover:text-yellow-500 transition-colors italic"
+                      style={{
+                        color:
+                          metadata?.colors?.statsLabel ||
+                          (isVIP ? "#451a03" : "#4b5563"),
+                      }}
+                    >
+                      میزبانی
+                    </p>
+                    <div className="flex flex-col items-center">
+                      {loading ? (
+                        <div className="h-4 w-8 bg-white/5 animate-pulse rounded" />
+                      ) : (
+                        <p
+                          className="text-sm font-black italic"
+                          style={{
+                            color:
+                              isVIP && !metadata?.colors?.text
+                                ? "#0a0a0f"
+                                : metadata?.colors?.statsText ||
+                                  metadata?.colors?.text ||
+                                  "white",
+                            textShadow: isVIP
+                              ? "none"
+                              : "0 2px 4px rgba(0,0,0,0.5)",
+                          }}
+                        >
+                          {user.stats?.lobbiesCreated || 0}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Badges Section */}
+                <div className="space-y-4">
+                  <h5
+                    className="text-[10px] font-black uppercase tracking-widest italic"
+                    style={{
+                      color:
+                        metadata?.colors?.statsLabel ||
+                        (isVIP ? "#451a03" : "#4b5563"),
+                    }}
+                  >
+                    نشان‌های انتخابی و دستاوردها
+                  </h5>
+                  <div className="flex flex-wrap gap-2.5 max-h-[120px] overflow-y-auto no-scrollbar">
+                    {user.senderBadges
+                      ?.filter((b) => b.isPinned)
+                      .map((ub, i) => (
+                        <div
+                          key={ub.id || i}
+                          title={ub.name}
+                          className={cn(
+                            "flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all border",
+                            "bg-neon-blue/10 border-neon-blue shadow-[0_0_10px_rgba(0,229,255,0.2)]",
+                          )}
+                        >
+                          <img
+                            src={ub.iconUrl}
+                            alt={ub.name}
+                            className="h-4 w-4 object-contain"
+                          />
+                          <span
+                            className="text-[10px] font-black uppercase italic"
+                            style={{
+                              color:
+                                isVIP && !metadata?.colors?.badgeText
+                                  ? "#0a0a0f"
+                                  : metadata?.colors?.badgeText || "white",
+                              textShadow: isVIP
+                                ? "none"
+                                : "0 1px 2px rgba(0,0,0,0.5)",
+                            }}
+                          >
+                            {ub.name}
+                          </span>
+                        </div>
+                      ))}
+                    {user.senderBadges
+                      ?.filter((b) => !b.isPinned)
+                      .slice(0, 5)
+                      .map((ub, i) => (
+                        <div
+                          key={ub.id || i}
+                          title={ub.name}
+                          className={cn(
+                            "flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all border",
+                            isVIP
+                              ? "bg-black/10 border-black/10"
+                              : "bg-white/5 border-white/10 opacity-70 hover:opacity-100",
+                          )}
+                        >
+                          <img
+                            src={ub.iconUrl}
+                            alt={ub.name}
+                            className="h-4 w-4 object-contain"
+                          />
+                          <span
+                            className="text-[10px] font-black uppercase italic"
+                            style={{
+                              color:
+                                isVIP && !metadata?.colors?.badgeText
+                                  ? "#0a0a0f"
+                                  : metadata?.colors?.badgeText || "#6b7280",
+                            }}
+                          >
+                            {ub.name}
+                          </span>
+                        </div>
+                      ))}
+                    {!user.senderBadges?.length && !loading && (
+                      <p className="text-[10px] text-gray-500 italic">
+                        بدون نشان‌های کسب شده
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
 
             {/* Streamer Links UI */}
             {isStreamer &&
@@ -1047,28 +1128,40 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({
             {/* Actions */}
             <div className="pt-4">
               {!isSelf ? (
-                <GlowButton
-                  variant={sentRequest ? "purple" : isVIP ? "purple" : "blue"}
-                  className={cn(
-                    "w-full h-16 !rounded-3xl font-black text-base uppercase italic tracking-[0.2em] shadow-2xl relative overflow-hidden group",
-                    isVIP &&
-                      "bg-gradient-to-r from-yellow-600 via-yellow-400 to-yellow-600 text-dark-bg border-none shadow-[0_10px_40px_rgba(250,204,21,0.3)] hover:scale-[1.02]",
-                    isStreamer &&
-                      "bg-gradient-to-r from-purple-600 via-purple-400 to-purple-600 text-white border-none shadow-[0_10px_40px_rgba(168,85,247,0.3)] hover:scale-[1.02]",
-                  )}
-                  onClick={handleAddFriend}
-                  disabled={sentRequest}
-                >
-                  {sentRequest ? (
-                    <span className="flex items-center gap-2">
-                      <CheckCircle2 size={20} /> درخواست ارسال شد
+                isAdminUnified ? (
+                  <GlowButton
+                    variant="purple"
+                    className="w-full h-16 !rounded-3xl font-black text-base uppercase italic tracking-wide shadow-2xl relative overflow-hidden group bg-gradient-to-r from-red-700 via-red-500 to-red-700 text-white border-none shadow-[0_10px_40px_rgba(239,68,68,0.3)] hover:scale-[1.02] transition-transform"
+                    onClick={handleMessage}
+                  >
+                    <span className="flex items-center gap-2 justify-center font-black tracking-wide">
+                      <MessageCircle size={20} /> ارتباط با مدیریت
                     </span>
-                  ) : (
-                    <span className="flex items-center gap-2 group-hover:scale-110 transition-transform tracking-widest italic font-black uppercase">
-                      افزودن به لیست دوستان
-                    </span>
-                  )}
-                </GlowButton>
+                  </GlowButton>
+                ) : (
+                  <GlowButton
+                    variant={sentRequest ? "purple" : isVIP ? "purple" : "blue"}
+                    className={cn(
+                      "w-full h-16 !rounded-3xl font-black text-base uppercase italic tracking-[0.2em] shadow-2xl relative overflow-hidden group",
+                      isVIP &&
+                        "bg-gradient-to-r from-yellow-600 via-yellow-400 to-yellow-600 text-dark-bg border-none shadow-[0_10px_40px_rgba(250,204,21,0.3)] hover:scale-[1.02]",
+                      isStreamer &&
+                        "bg-gradient-to-r from-purple-600 via-purple-400 to-purple-600 text-white border-none shadow-[0_10px_40px_rgba(168,85,247,0.3)] hover:scale-[1.02]",
+                    )}
+                    onClick={handleAddFriend}
+                    disabled={sentRequest}
+                  >
+                    {sentRequest ? (
+                      <span className="flex items-center gap-2">
+                        <CheckCircle2 size={20} /> درخواست ارسال شد
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-2 group-hover:scale-110 transition-transform tracking-widest italic font-black uppercase">
+                        افزودن به لیست دوستان
+                      </span>
+                    )}
+                  </GlowButton>
+                )
               ) : (
                 <GlowButton
                   variant={isVIP ? "gold" : "blue"}
