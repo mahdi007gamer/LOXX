@@ -6,7 +6,13 @@ const schemaPath = path.resolve('prisma/schema.prisma');
 
 function getOriginalSchema() {
   if (!existsSync(schemaPath)) return '';
-  return readFileSync(schemaPath, 'utf-8');
+  let content = readFileSync(schemaPath, 'utf-8');
+  if (content.includes('provider = "sqlite"')) {
+    console.log('[Dev] Startup check: Restoring schema provider to "postgresql"...');
+    content = content.replace('provider = "sqlite"', 'provider = "postgresql"');
+    writeFileSync(schemaPath, content);
+  }
+  return content;
 }
 
 const originalSchema = getOriginalSchema();
@@ -58,6 +64,10 @@ async function main() {
         console.error('[Dev] Initial prisma db push failed. Retrying generate...', err);
         execSync('npx prisma generate', { stdio: 'inherit' });
       }
+      
+      // Restore schema immediately after generating Prisma Client/DB push
+      // so that it never sits as "sqlite" on disk while dev server runs.
+      restoreSchema();
     }
   } else {
     console.log('[Dev] Using non-SQLite database connection. Schema untouched.');
