@@ -108,9 +108,9 @@ export const AdminStreamersPage = () => {
   
   const uploadVoice = async (file: File) => {
     // Client-side guard for large audio files to prevent 413 Payload Too Large
-    const maxSizeBytes = 4 * 1024 * 1024; // 4MB
+    const maxSizeBytes = 10 * 1024 * 1024; // 10MB
     if (file.size > maxSizeBytes) {
-      toast.error(`حجم فایل بسیار زیاد است (${(file.size / (1024 * 1024)).toFixed(1)}MB). به دلیل محدودیت حجم آپلود، لطفا فایلی با حجم کمتر از ۴ مگابایت (ترجیحا فرمت فشرده MP3) انتخاب نمایید.`);
+      toast.error(`حجم فایل بسیار زیاد است (${(file.size / (1024 * 1024)).toFixed(1)}MB). به عنوان مدیر پلتفرم، حداکثر حجم مجاز آپلود برای فایل‌های صوتی ۱۰ مگابایت است. لطفاً فایل فشرده‌تری انتخاب نمایید.`);
       return;
     }
 
@@ -126,7 +126,7 @@ export const AdminStreamersPage = () => {
     } catch (e: any) {
         console.error("Audio upload error:", e);
         if (e.response?.status === 413) {
-            toast.error("خطای بارگذاری: حجم فایل صوتی انتخابی بیش از حد مجاز شبکه سرور است. لطفا فایل فشرده‌تر با حجم کمتر از ۴ مگابایت آپلود کنید.");
+            toast.error("خطای بارگذاری: حجم فایل صوتی انتخابی بیش از حد مجاز شبکه سرور است (بیشتر از ۱۰ مگابایت).");
         } else {
             toast.error(e.response?.data?.message || "خطا در آپلود وویس. لطفا فرمت یا حجم فایل را بررسی کنید.");
         }

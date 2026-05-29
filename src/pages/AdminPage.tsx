@@ -1092,6 +1092,10 @@ export const AdminPage = () => {
                               toast.error("فقط فایل‌های گیف مجاز هستند.");
                               return;
                             }
+                            if (file.size > 10 * 1024 * 1024) {
+                              toast.error("حجم فایل گیف انتخابی بیش از حد مجاز (ﺣداکثر ۱۰ مگابایت) است.");
+                              return;
+                            }
                             setNewGifFile(file);
                             if (!newGifTitle) {
                               setNewGifTitle(file.name.replace(/\\.gif$/i, ''));
@@ -1103,7 +1107,7 @@ export const AdminPage = () => {
                         <div className="text-center space-y-2">
                           <Icons.FileCheck className="text-neon-blue mx-auto" size={36} />
                           <p className="text-xs text-white font-bold w-48 truncate">{newGifFile.name}</p>
-                          <p className="text-[10px] text-gray-500 font-mono">{(newGifFile.size / (1024 * 1024)).toFixed(2)} MB</p>
+                          <p className="text-[10px] text-gray-500 font-mono">حجم اصلی: {(newGifFile.size / (1024 * 1024)).toFixed(2)} MB (فشرده‌سازی در مرحله بعد)</p>
                         </div>
                       ) : (
                         <div className="text-center space-y-1">
@@ -1189,7 +1193,7 @@ export const AdminPage = () => {
                         }
                       }}
                     >
-                      {isUploadingGif ? "در حال آپلود و بهینه‌سازی..." : "آپلود و ذخیره در گالری"}
+                      {isUploadingGif ? "در حال فشرده‌سازی و آپلود لایو..." : "آپلود و بهینه‌سازی گیف در گالری"}
                     </GlowButton>
                   </div>
 
@@ -1266,7 +1270,7 @@ export const AdminPage = () => {
                                       <h4 className="text-xs font-black text-white truncate w-full" title={gif.title}>
                                         {gif.title || "بدون عنوان"}
                                       </h4>
-                                      <p className="text-[9px] text-gray-500 truncate font-mono mt-0.5">{gif.originalName}</p>
+                                      <p className="text-[9px] text-gray-500 truncate font-mono mt-0.5">{gif.originalName} ({gif.size ? (gif.size / (1024 * 1024)).toFixed(2) + " MB" : ""})</p>
                                    </div>
                                    
                                    <div className="flex flex-wrap gap-1 mt-1.5 h-6 overflow-hidden">
