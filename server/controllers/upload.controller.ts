@@ -433,4 +433,111 @@ export class UploadController {
       return res.status(500).json({ error: error.message || "خطا در آپلود گیف گالری" });
     }
   }
+
+  static async uploadChunk(req: any, res: Response) {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "No chunk file received" });
+      }
+
+      const { fileId, chunkIndex, totalChunks, filename, target, title, tags } = req.body;
+      if (!fileId || chunkIndex === undefined || !totalChunks || !filename) {
+        if (req.file.path && fs.existsSync(req.file.path)) {
+          fs.unlinkSync(req.file.path);
+        }
+        return res.status(400).json({ error: "Missing chunk metadata" });
+      }
+
+      const idx = parseInt(chunkIndex);
+      const total = parseInt(totalChunks);
+
+      const chunksDir = path.join(process.cwd(), "uploads", "chunks", fileId);
+      if (!fs.existsSync(chunksDir)) {
+        fs.mkdirSync(chunksDir, { recursive: true });
+      }
+
+      // Move chunk to its temp path
+      const chunkPath = path.join(chunksDir, `${idx}`);
+      fs.renameSync(req.file.path, chunkPath);
+
+      // Check if all chunks are uploaded
+      const files = fs.readdirSync(chunksDir);
+      if (files.length === total) {
+        const ext = path.extname(filename);
+        const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+        const assembledFilename = `assembled-${uniqueSuffix}${ext}`;
+        
+        let targetDir = path.join(process.cwd(), "uploads");
+        if (target === "gif") {
+          targetDir = path.join(process.cwd(), "uploads", "gifs");
+        }
+        if (!fs.existsSync(targetDir)) {
+          fs.mkdirSync(targetDir, { recursive: true });
+        }
+
+        const finalPath = path.join(targetDir, assembledFilename);
+        const writeStream = fs.createWriteStream(finalPath);
+
+        // Assemble chunks in order
+        for (let i = 0; i < total; i++) {
+          const currentChunkPath = path.join(chunksDir, `${i}`);
+          if (!fs.existsSync(currentChunkPath)) {
+            writeStream.end();
+            return res.status(400).json({ error: `Missing chunk index ${i}` });
+          }
+          const buffer = fs.readFileSync(currentChunkPath);
+          writeStream.write(buffer);
+        }
+        writeStream.end();
+
+        // Wait for streaming to finish
+        await new Promise<void>((resolve) => writeStream.on("finish", () => resolve()));
+
+        // Clean up chunk folder
+        fs.rmSync(chunksDir, { recursive: true, force: true });
+
+        // Perform target logic or compression
+        if (target === "audio") {
+          const url = `/api/v1/upload/file/${assembledFilename}`;
+          return res.status(200).json({
+            url,
+            filename: assembledFilename,
+            size: fs.statSync(finalPath).size,
+            mimetype: "audio/mp3",
+            status: "complete"
+          });
+        } else if (target === "gif") {
+          await UploadController.compressImage(finalPath, "chat");
+          const finalSize = fs.statSync(finalPath).size;
+          const url = `/api/v1/upload/file/gifs/${assembledFilename}`;
+          
+          const dbGif = await prisma.uploadedGif.create({
+            data: {
+              originalName: filename,
+              title: title || "",
+              tags: tags || "",
+              size: finalSize,
+              url
+            }
+          });
+          return res.status(200).json(dbGif);
+        } else {
+          await UploadController.compressImage(finalPath, target || "default");
+          const finalSize = fs.statSync(finalPath).size;
+          const url = `/api/v1/upload/file/${assembledFilename}`;
+          return res.status(200).json({
+            url,
+            filename: assembledFilename,
+            size: finalSize,
+            status: "complete"
+          });
+        }
+      }
+
+      return res.status(200).json({ status: "chunk_received", chunkIndex: idx });
+    } catch (error: any) {
+      console.error("Chunk upload error:", error);
+      return res.status(500).json({ error: error.message || "Failed to process chunk" });
+    }
+  }
 }

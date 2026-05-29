@@ -80,6 +80,7 @@ export const AdminStreamersPage = () => {
   const [streamerName, setStreamerName] = useState("");
   const [voiceUrl, setVoiceUrl] = useState("");
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   useEffect(() => {
     if (user && user.role === "ADMIN") {
@@ -107,31 +108,62 @@ export const AdminStreamersPage = () => {
   };
   
   const uploadVoice = async (file: File) => {
-    // Client-side guard for large audio files to prevent 413 Payload Too Large
-    const maxSizeBytes = 10 * 1024 * 1024; // 10MB
+    // Client-side guard for extremely huge files (> 30MB)
+    const maxSizeBytes = 30 * 1024 * 1024; // 30MB
     if (file.size > maxSizeBytes) {
-      toast.error(`حجم فایل بسیار زیاد است (${(file.size / (1024 * 1024)).toFixed(1)}MB). به عنوان مدیر پلتفرم، حداکثر حجم مجاز آپلود برای فایل‌های صوتی ۱۰ مگابایت است. لطفاً فایل فشرده‌تری انتخاب نمایید.`);
+      toast.error(`حجم فایل بسیار زیاد است (${(file.size / (1024 * 1024)).toFixed(1)}MB). حداکثر حجم مجاز ۳۰ مگابایت است.`);
       return;
     }
 
     setIsUploading(true);
-    const formData = new FormData();
-    formData.append("file", file);
+    setUploadProgress(0);
+
     try {
-        const res = await api.post("/upload/audio", formData, {
-            headers: { "Content-Type": "multipart/form-data" }
+      // Chunk configuration
+      const fileId = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+      const chunkSize = 512 * 1024; // 512KB chunks for maximum reliability
+      const totalChunks = Math.ceil(file.size / chunkSize);
+
+      let assembledUrl = "";
+
+      for (let index = 0; index < totalChunks; index++) {
+        const start = index * chunkSize;
+        const end = Math.min(start + chunkSize, file.size);
+        const chunk = file.slice(start, end);
+
+        const formData = new FormData();
+        formData.append("file", chunk, file.name);
+        formData.append("fileId", fileId);
+        formData.append("chunkIndex", index.toString());
+        formData.append("totalChunks", totalChunks.toString());
+        formData.append("filename", file.name);
+        formData.append("target", "audio");
+
+        const res = await api.post("/upload/chunk", formData, {
+          headers: { "Content-Type": "multipart/form-data" }
         });
-        setVoiceUrl(res.data.url);
-        toast.success("وویس با موفقیت آپلود شد");
+
+        // Set progress
+        const percent = Math.floor(((index + 1) / totalChunks) * 100);
+        setUploadProgress(percent);
+
+        if (res.data && res.data.url) {
+          assembledUrl = res.data.url;
+        }
+      }
+
+      if (assembledUrl) {
+        setVoiceUrl(assembledUrl);
+        toast.success("وویس با موفقیت به صورت بخش‌های بهینه آپلود و مستقر شد!");
+      } else {
+        throw new Error("خطا در دریافت پاسخ نهایی از سرور.");
+      }
     } catch (e: any) {
         console.error("Audio upload error:", e);
-        if (e.response?.status === 413) {
-            toast.error("خطای بارگذاری: حجم فایل صوتی انتخابی بیش از حد مجاز شبکه سرور است (بیشتر از ۱۰ مگابایت).");
-        } else {
-            toast.error(e.response?.data?.message || "خطا در آپلود وویس. لطفا فرمت یا حجم فایل را بررسی کنید.");
-        }
+        toast.error(e.response?.data?.message || "خطا در آپلود وویس به صورت تکه‌ای. لطفا فرمت فایل را بررسی کنید.");
     } finally {
         setIsUploading(false);
+        setUploadProgress(0);
     }
   };
 
@@ -332,7 +364,12 @@ export const AdminStreamersPage = () => {
                        <input type="text" placeholder="URL وویس پیام استریمر" className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-neon-blue outline-none" value={voiceUrl} onChange={e => setVoiceUrl(e.target.value)} dir="ltr" />
                        <input type="file" id="audio-upload" accept="audio/*" className="hidden" onChange={e => { if(e.target.files?.[0]) uploadVoice(e.target.files[0]) }} />
                        <label htmlFor="audio-upload" className={`flex items-center justify-center bg-white/10 border border-white/20 rounded-xl px-4 cursor-pointer hover:bg-white/20 transition-all ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}>
-                          {isUploading ? <div className="w-5 h-5 border-2 border-white/50 border-t-white rounded-full animate-spin" /> : 'آپلود'}
+                          {isUploading ? (
+                            <div className="flex items-center gap-1">
+                              <div className="w-3.5 h-3.5 border-2 border-white/50 border-t-white rounded-full animate-spin" />
+                              <span className="text-[10px] font-mono text-neon-blue font-bold">{uploadProgress}%</span>
+                            </div>
+                          ) : 'آپلود'}
                        </label>
                     </div>
                   </div>

@@ -39,6 +39,7 @@ export const AdminPage = () => {
   const [newGifTags, setNewGifTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
   const [isUploadingGif, setIsUploadingGif] = useState(false);
+  const [gifUploadProgress, setGifUploadProgress] = useState(0);
   
   // Editing states
   const [editingGifId, setEditingGifId] = useState<string | null>(null);
@@ -1172,28 +1173,61 @@ export const AdminPage = () => {
                       onClick={async () => {
                         if (!newGifFile) return;
                         setIsUploadingGif(true);
-                        const formData = new FormData();
-                        formData.append("file", newGifFile);
-                        formData.append("title", newGifTitle);
-                        formData.append("tags", newGifTags.join(","));
+                        setGifUploadProgress(0);
 
                         try {
-                          await api.post("/upload/gifs/store", formData, {
-                            headers: { "Content-Type": "multipart/form-data" }
-                          });
-                          toast.success("گیف گالری با موفقیت ثبت شد.");
-                          setNewGifFile(null);
-                          setNewGifTitle("");
-                          setNewGifTags([]);
-                          fetchData();
+                          const fileId = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+                          const chunkSize = 512 * 1024; // 512KB chunks for high network reliability
+                          const totalChunks = Math.ceil(newGifFile.size / chunkSize);
+
+                          let uploadedSuccessfully = false;
+
+                          for (let index = 0; index < totalChunks; index++) {
+                            const start = index * chunkSize;
+                            const end = Math.min(start + chunkSize, newGifFile.size);
+                            const chunk = newGifFile.slice(start, end);
+
+                            const formData = new FormData();
+                            formData.append("file", chunk, newGifFile.name);
+                            formData.append("fileId", fileId);
+                            formData.append("chunkIndex", index.toString());
+                            formData.append("totalChunks", totalChunks.toString());
+                            formData.append("filename", newGifFile.name);
+                            formData.append("target", "gif");
+                            formData.append("title", newGifTitle);
+                            formData.append("tags", newGifTags.join(","));
+
+                            const res = await api.post("/upload/chunk", formData, {
+                              headers: { "Content-Type": "multipart/form-data" }
+                            });
+
+                            const percent = Math.floor(((index + 1) / totalChunks) * 100);
+                            setGifUploadProgress(percent);
+
+                            if (res.data && (res.data.id || res.data.url)) {
+                              uploadedSuccessfully = true;
+                            }
+                          }
+
+                          if (uploadedSuccessfully) {
+                            toast.success("گیف گالری با موفقیت ثبت، بهینه‌سازی و ذخیره شد.");
+                            setNewGifFile(null);
+                            setNewGifTitle("");
+                            setNewGifTags([]);
+                            fetchData();
+                          } else {
+                            throw new Error("خطا در یکپارچه‌سازی و بهینه‌سازی نهایی گیف.");
+                          }
                         } catch (err: any) {
-                          toast.error(err.response?.data?.error || "خطا در آپلود گیف");
+                          console.error("GIF upload error:", err);
+                          toast.error(err.response?.data?.error || err.message || "خطا در آپلود گیف");
                         } finally {
                           setIsUploadingGif(false);
+                          setGifUploadProgress(0);
                         }
                       }}
                     >
-                      {isUploadingGif ? "در حال فشرده‌سازی و آپلود لایو..." : "آپلود و بهینه‌سازی گیف در گالری"}
+                      {isUploadingGif ? `در حال فشرده‌سازی و آپلود لایو... (${gifUploadProgress}%)` : "آپلود و بهینه‌سازی گیف در گالری"}
                     </GlowButton>
                   </div>
 

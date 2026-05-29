@@ -108,10 +108,18 @@ const audioUpload = multer({
   }
 });
 
+const chunkUpload = multer({
+  storage,
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10MB chunk limit
+  }
+});
+
 const router = Router();
 
 router.post("/", authenticate, upload.single("file"), UploadController.uploadFile);
 router.post("/audio", authenticate, audioUpload.single("file"), UploadController.uploadFile);
+router.post("/chunk", authenticate, chunkUpload.single("file"), UploadController.uploadChunk);
 router.post("/gif", authenticate, upload.single("file"), UploadController.uploadGif);
 router.post("/banner", authenticate, bannerUpload.single("file"), UploadController.uploadFile);
 router.post("/receipt", authenticate, receiptUpload.single("file"), UploadController.uploadReceipt);
