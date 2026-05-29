@@ -431,7 +431,7 @@ const AppContent = () => {
           <Route path="/premium" element={<ProtectedRoute><PremiumPage /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
           <Route path="/settings/:tab" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
-          <Route path="/email" element={<ProtectedRoute><EmailPage /></ProtectedRoute>} />
+          <Route path="/email" element={<ProtectedRoute adminOnly={true}><EmailPage /></ProtectedRoute>} />
           <Route path="/electron-settings" element={<ProtectedRoute><ElectronSettingsPage /></ProtectedRoute>} />
           <Route path="/friends" element={<ProtectedRoute><FriendsPage /></ProtectedRoute>} />
           <Route path="/proposal/:name" element={<StreamerProposalPage />} />

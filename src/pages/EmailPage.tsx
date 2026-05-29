@@ -260,13 +260,23 @@ export const EmailPage = () => {
       </div>
 
       {/* Connection Informational Alert */}
-      <div className="mb-8 rounded-2xl border border-neon-pink/10 bg-neon-pink/5 p-4 text-xs font-bold text-gray-400 leading-relaxed flex gap-3 items-start">
-        <Icons.Info size={20} className="text-neon-pink shrink-0 mt-0.5" />
-        <div className="space-y-1">
-          <p className="text-white text-sm">راهنمای اتصال MX رکورد برای دریافت مستقیم ایمیل از جیمیل و یاهو:</p>
-          <p>
-            پلتفرم با دیتابیس بومی همگام است. ایمیل‌های ارسال شده از طریق وب‌سایت یا از طریق شبیه‌سازها (پاسخ اینماد، زرین‌پال و ایمیل تست) بلادرنگ در اینجا ثبت و نمایش داده خواهند شد. جهت دریافت واقعی نامه‌ها مستقیم از سرویس‌های خارجی همچون جیمیل شخصی‌تان به صندوق‌های <code className="text-neon-pink font-mono font-black">@loxx.ir</code>، باید رکورد <code className="text-neon-pink font-mono font-black">MX</code> دامنه را از طریق پنل کلودفلر یا هاست به سرویس‌های پردازش ایمیل متصل بنشینید.
+      <div className="mb-8 rounded-2xl border border-neon-pink/10 bg-[#0d0d12]/60 p-5 text-xs font-bold text-gray-400 leading-relaxed flex flex-col md:flex-row gap-4 items-start">
+        <Icons.Info size={24} className="text-neon-pink shrink-0 mt-0.5" />
+        <div className="space-y-2 flex-1">
+          <p className="text-white text-base font-black flex items-center gap-2">
+            راهنمای اتصال نهایی و لایو سیستم ایمیل رسمی لوکس (loxx.ir):
           </p>
+          <p className="text-gray-300 pointer-events-none">
+            شما با موفقیت رکوردهای DNS دامین را به IP سرور متصل کرده‌اید! بخش ایمیل‌های ورودی و خروجی ما مجهز به دو ویژگی کاملاً واقعی است:
+          </p>
+          <ul className="list-disc pr-5 space-y-1.5 text-gray-400">
+            <li>
+              <strong className="text-white">ارسال لایو به خارج (خروجی):</strong> در صورتی که متغیرهای <code className="text-neon-pink font-mono">SMTP_HOST</code>، <code className="text-neon-pink font-mono">SMTP_USER</code> و <code className="text-neon-pink font-mono">SMTP_PASS</code> را در محیط سرور خود تعریف کنید، نامه‌های ارسالی پنل به صورت کاملاً واقعی با پروتکل SMTP به جیمیل یا یاهوی مقصد ارسال خواهند شد.
+            </li>
+            <li>
+              <strong className="text-white font-black">دریافت لایو از خارج (ورودی):</strong> با توجه به اینکه پورت ۲۵ (SMTP) ورودی در سرورهای ابری استاندارد مسدود است، برای دریافت ایمیل‌های واقعی مستقیم از جیمیل به این پرتال تحت MX رکورد، آدرس <strong className="text-neon-blue">وب‌هوک امن با ساختار JSON</strong> با مسیر <code className="text-neon-blue font-mono select-all font-black">https://loxx.ir/api/email/incoming</code> آماده شده است. کافیست در پنل ابری دامنه همچون Cloudflare (بخش Free Email Routing ➜ Workers) یا Mailgun/SendGrid تنظیم کنید تا هر زمان ایمیلی به آدرس‌های دامنه <code className="text-neon-pink font-mono font-black">@loxx.ir</code> آمد، مستقیماً به این وب‌هوک POST شود تا فوراً در این صندوق ظاهر شود!
+            </li>
+          </ul>
         </div>
       </div>
 

@@ -196,6 +196,16 @@ export const AdminPage = () => {
                 <Icons.Zap size={16} /> <span>مدیریت ویژه استریمرها</span>
               </GlowButton>
               <GlowButton 
+                variant="pink"
+                size="sm"
+                className="h-12 px-6 text-[10px] uppercase font-black tracking-widest italic !rounded-2xl gap-2 shadow-[0_0_15px_rgba(255,0,153,0.3)] border border-neon-pink/30 hover:shadow-[0_0_25px_rgba(255,0,153,0.5)]"
+                onClick={() => {
+                  window.location.href = '/email';
+                }}
+              >
+                <Icons.Mail size={16} /> <span>ایمیل‌های سازمانی</span>
+              </GlowButton>
+              <GlowButton 
                 variant="secondary"
                 size="sm"
                 className="h-12 px-6 text-[10px] uppercase font-black tracking-widest italic !rounded-2xl gap-2"

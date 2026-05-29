@@ -1,5 +1,38 @@
 import { Request, Response } from "express";
 import prisma from "../utils/prisma.ts";
+import nodemailer from "nodemailer";
+
+let transporter: any = null;
+
+const getTransporter = () => {
+  if (transporter !== null) return transporter;
+
+  const host = process.env.SMTP_HOST;
+  const port = process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : 587;
+  const secure = process.env.SMTP_SECURE === "true"; // true for port 465, false for 587/25
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+
+  if (host && user && pass) {
+    transporter = nodemailer.createTransport({
+      host,
+      port,
+      secure,
+      auth: {
+        user,
+        pass
+      },
+      tls: {
+        rejectUnauthorized: false
+      }
+    });
+    console.log(`[SMTP] Real Mail Transporter configured on ${host}:${port}`);
+  } else {
+    console.log(`[SMTP] SMTP host credentials are not defined yet. Outbound mail delivery is simulated.`);
+  }
+
+  return transporter;
+};
 
 // Helper to seed default email and messages if empty
 const ensureDefaultEmail = async () => {
@@ -173,6 +206,23 @@ export const sendEmailMessage = async (req: Request, res: Response) => {
       }
     });
 
+    // Handle real Outbound SMTP sending if configured
+    const smtp = getTransporter();
+    if (smtp) {
+      try {
+        await smtp.sendMail({
+          from: `"${fromAddress.split("@")[0]}" <${fromAddress}>`,
+          to: toAddress,
+          subject: subject,
+          text: body,
+          html: body.replace(/\n/g, "<br/>")
+        });
+        console.log(`[SMTP] Real outgoing email delivered to ${toAddress}`);
+      } catch (smtpErr: any) {
+        console.error(`[SMTP-ERROR] Outbound delivery failed:`, smtpErr.message);
+      }
+    }
+
     // Simulated Auto-Reply Engine to make it super interactive
     let replyFrom = "";
     let replySubject = "";
@@ -294,6 +344,45 @@ export const deleteEmailMessage = async (req: Request, res: Response) => {
     await prisma.emailMessage.delete({ where: { id } });
     res.json({ status: "success", message: "ایمیل با موفقیت حذف شد" });
   } catch (error: any) {
+    res.status(500).json({ status: "error", message: error.message });
+  }
+};
+
+export const handleIncomingWebhook = async (req: Request, res: Response) => {
+  try {
+    const fromAddress = req.body.from || req.body.sender || req.body.fromAddress;
+    const toAddress = req.body.to || req.body.recipient || req.body.toAddress;
+    const subject = req.body.subject || "No Subject";
+    const body = req.body.text || req.body.body || req.body.html || "Empty Message";
+
+    if (!fromAddress || !toAddress) {
+      return res.status(400).json({ status: "error", message: "Missing fromAddress or toAddress data in payload" });
+    }
+
+    // Clean names / formats (e.g., stripping brackets if present: "User <user@gmail.com>" to "user@gmail.com")
+    const cleanEmail = (raw: string) => {
+      const match = raw.match(/<([^>]+)>/);
+      return match ? match[1].trim().toLowerCase() : raw.trim().toLowerCase();
+    };
+
+    const parsedFrom = cleanEmail(String(fromAddress));
+    const parsedTo = cleanEmail(String(toAddress));
+
+    const savedMessage = await prisma.emailMessage.create({
+      data: {
+        fromAddress: parsedFrom,
+        toAddress: parsedTo,
+        subject: String(subject),
+        body: String(body),
+        isIncoming: true,
+        isRead: false
+      }
+    });
+
+    console.log(`[EMAIL-WEBHOOK] Webhook successfully registered incoming mail from ${parsedFrom} to ${parsedTo}`);
+    res.json({ status: "success", data: savedMessage, message: "Email recorded successfully" });
+  } catch (error: any) {
+    console.error(`[EMAIL-WEBHOOK-ERROR] Webhook ingestion failed:`, error.message);
     res.status(500).json({ status: "error", message: error.message });
   }
 };

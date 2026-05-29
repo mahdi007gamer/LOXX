@@ -27,7 +27,6 @@ const menuItems = [
   { icon: MessageSquare, label: "چت سراسری", path: "/chat" },
   { icon: Trophy, label: "رتبه‌بندی", path: "/ranking" },
   { icon: Phone, label: "ارتباط با ما", path: "/contact" },
-  { icon: Mail, label: "ایمیل سازمانی", path: "/email" },
   { icon: Crown, label: "اشتراک ویژه", path: "/premium" },
   { icon: Settings, label: "تنظیمات", path: "/settings" },
 ];
@@ -103,20 +102,37 @@ export const Sidebar = () => {
           )}
           
           {(user?.role === "ADMIN" || user?.email === "admin@loxx.ir" || user?.email === "admin@test.com") && (
-            <NavLink
-              to="/admin"
-              title={isSidebarCollapsed ? "پنل مدیریت" : undefined}
-              className={({ isActive }) => cn(
-                "flex items-center rounded-lg py-3 transition-all duration-300 overflow-hidden",
-                isActive 
-                  ? "bg-neon-blue/10 text-neon-blue shadow-[inset_0_0_10px_rgba(0,229,255,0.1)] border-r-2 border-neon-blue" 
-                  : "text-amber-400/80 hover:bg-white/5 hover:text-amber-400",
-                isSidebarCollapsed ? "justify-center px-0" : "gap-3 px-4"
-              )}
-            >
-              <Shield size={20} className="shrink-0" />
-              {!isSidebarCollapsed && <span className="font-medium whitespace-nowrap">پنل مدیریت</span>}
-            </NavLink>
+            <>
+              <NavLink
+                to="/admin"
+                title={isSidebarCollapsed ? "پنل مدیریت" : undefined}
+                className={({ isActive }) => cn(
+                  "flex items-center rounded-lg py-3 transition-all duration-300 overflow-hidden",
+                  isActive 
+                    ? "bg-neon-blue/10 text-neon-blue shadow-[inset_0_0_10px_rgba(0,229,255,0.1)] border-r-2 border-neon-blue" 
+                    : "text-amber-400/80 hover:bg-white/5 hover:text-amber-400",
+                  isSidebarCollapsed ? "justify-center px-0" : "gap-3 px-4"
+                )}
+              >
+                <Shield size={20} className="shrink-0" />
+                {!isSidebarCollapsed && <span className="font-medium whitespace-nowrap">پنل مدیریت</span>}
+              </NavLink>
+
+              <NavLink
+                to="/email"
+                title={isSidebarCollapsed ? "ایمیل سازمانی" : undefined}
+                className={({ isActive }) => cn(
+                  "flex items-center rounded-lg py-3 transition-all duration-300 overflow-hidden",
+                  isActive 
+                    ? "bg-neon-pink/10 text-neon-pink shadow-[inset_0_0_10px_rgba(255,0,153,0.1)] border-r-2 border-neon-pink" 
+                    : "text-indigo-400/80 hover:bg-white/5 hover:text-indigo-300",
+                  isSidebarCollapsed ? "justify-center px-0" : "gap-3 px-4"
+                )}
+              >
+                <Mail size={20} className="shrink-0" />
+                {!isSidebarCollapsed && <span className="font-medium whitespace-nowrap">ایمیل سازمانی</span>}
+              </NavLink>
+            </>
           )}
         </div>
 
