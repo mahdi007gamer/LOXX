@@ -41,7 +41,7 @@ export const FriendChatOverlay = () => {
     window.location.pathname === '/overlay' || 
     window.location.pathname === '/lobby/overlay-widget' ||
     window.location.hash.includes('/overlay')
-  );
+  ) && new URLSearchParams(window.location.search).get("is_overlay_window") === "true";
 
   const [testingCompatibility, setTestingCompatibility] = useState(false);
   const [testResult, setTestResult] = useState<null | 'ok' | 'fail'>(null);
@@ -201,7 +201,7 @@ export const FriendChatOverlay = () => {
               <div className="h-2 w-2 rounded-full bg-neon-pink animate-ping"></div>
               <p className="text-white text-sm font-bold flex items-center gap-2">
                 حالت تعاملی لوکس فعال است. برای خروج از این حالت دکمه
-                <kbd className="bg-white/10 border border-white/20 rounded px-2 text-neon-blue font-mono text-xs mx-1 leading-none shadow-inner h-6 flex items-center justify-center">Alt+F2</kbd> 
+                <kbd className="bg-white/10 border border-white/20 rounded px-2 text-neon-blue font-mono text-xs mx-1 leading-none shadow-inner h-6 flex items-center justify-center">Alt+F1</kbd> 
                 را بفشارید.
               </p>
             </div>
@@ -226,7 +226,7 @@ export const FriendChatOverlay = () => {
               <MessageSquare size={16} className="text-neon-pink animate-bounce" />
               <p className="text-white text-xs font-bold flex items-center gap-2">
                 پیام جدید؛ برای گفتگو دکمه
-                <kbd className="bg-white/10 border border-white/20 rounded px-2 text-neon-pink font-mono text-xs mx-1 leading-none shadow-inner h-6 flex items-center justify-center">Alt+F2</kbd> 
+                <kbd className="bg-white/10 border border-white/20 rounded px-2 text-neon-pink font-mono text-xs mx-1 leading-none shadow-inner h-6 flex items-center justify-center">Alt+F1</kbd> 
                 را فشار دهید.
               </p>
             </div>
@@ -858,7 +858,7 @@ export const FriendChatOverlay = () => {
                   animate={{ opacity: 1, y: 0 }}
                   className="absolute -top-12 left-1/2 -translate-x-1/2 whitespace-nowrap bg-yellow-500 text-black text-[10px] font-black px-3 py-1.5 rounded-lg shadow-[0_0_15px_rgba(234,179,8,0.5)] pointer-events-none before:content-[''] before:absolute before:-bottom-1.5 before:left-1/2 before:-translate-x-1/2 before:border-4 before:border-transparent before:border-t-yellow-500"
                 >
-                  برای باز کردن گفتگو دکمه Alt+F2 را بزنید
+                  برای باز کردن گفتگو دکمه Alt+F1 را بزنید
                 </motion.div>
               )}
               <button 

@@ -388,7 +388,7 @@ export const ElectronSettingsPage = () => {
 
                   <div className="text-xs text-gray-500 bg-[#00e5ff]/10 border border-[#00e5ff]/20 p-3 rounded-xl mt-4">
                      <p>سیستم اورلی هم‌اکنون به صورت تمام صفحه روی مانیتور اصلی رندر می‌شود. (تزریق مستقیم DirectX/Vulkan برای بازی‌های Fullscreen فعال است)</p>
-                     <p className="mt-2 text-[#00e5ff] font-bold">» برای فعال‌سازی حالت چت، کلید میانبر Alt+F2 را بفشارید.</p>
+                     <p className="mt-2 text-[#00e5ff] font-bold">» برای فعال‌سازی حالت چت، کلید میانبر Alt+F1 را بفشارید.</p>
                   </div>
                </div>
             </div>

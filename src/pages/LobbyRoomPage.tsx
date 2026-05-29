@@ -35,7 +35,8 @@ import {
   Gamepad2,
   CheckCircle2,
   UserCheck,
-  Radio
+  Radio,
+  LayoutTemplate
 } from "lucide-react";
 import { GlowButton } from "../components/ui/GlowButton";
 import { useFriends } from "../context/FriendsContext";
@@ -161,6 +162,15 @@ export const LobbyRoomPage = () => {
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [activeProfileUserId, setActiveProfileUserId] = useState<string | null>(null);
+  const [layoutMode, setLayoutMode] = useState<'default' | 'compact' | 'discord'>(() => (localStorage.getItem('loxx-lobby-layout') as any) || 'default');
+
+  const toggleLayout = () => {
+    const modes: ('default' | 'compact' | 'discord')[] = ['default', 'compact', 'discord'];
+    const nextMode = modes[(modes.indexOf(layoutMode) + 1) % modes.length];
+    setLayoutMode(nextMode);
+    localStorage.setItem('loxx-lobby-layout', nextMode);
+    toast(`حالت نمایش: ${nextMode === 'default' ? 'استاندارد' : nextMode === 'compact' ? 'فشرده و ساده' : 'مدل دیسکورد'}`, { icon: "🎨" });
+  };
 
   const [wasInLobby, setWasInLobby] = useState(false);
 
@@ -515,6 +525,16 @@ export const LobbyRoomPage = () => {
         </div>
 
         <div className="flex items-center gap-2 md:gap-4 shrink-0">
+          {isElectron && (
+            <button 
+              onClick={toggleLayout}
+              className="p-2 md:p-3 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors h-10 md:h-14 flex items-center justify-center border border-white/10"
+              title="تغییر چینش لابی"
+            >
+              <LayoutTemplate size={20} />
+            </button>
+          )}
+
           {!isAudioContextResumed && (
             <button 
               onClick={resumeAudio}
@@ -570,7 +590,12 @@ export const LobbyRoomPage = () => {
           />
 
           {/* Players Flex - Drastically improved for responsiveness & wrapping */}
-          <div className="flex flex-wrap gap-3 md:gap-6 px-1 w-full justify-start items-stretch">
+          <div className={cn(
+            "w-full justify-start items-stretch px-1",
+            layoutMode === 'discord' ? "grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-4" : 
+            layoutMode === 'compact' ? "flex flex-wrap gap-2 md:gap-3" 
+            : "flex flex-wrap gap-3 md:gap-6"
+          )}>
             <AnimatePresence mode="popLayout">
               {players.map((player) => (
                 <PlayerCard 
@@ -579,6 +604,7 @@ export const LobbyRoomPage = () => {
                   volume={player.volume}
                   isVipLobby={isVipLobby}
                   isStreamerLobby={isStreamerLobby}
+                  layoutMode={layoutMode}
                   isSelected={selectedPlayer === player.id}
                   onSelect={() => setSelectedPlayer(selectedPlayer === player.id ? null : player.id)}
                   onVolumeChange={(val) => handlePlayerVolume(player.id, val)}
@@ -1338,6 +1364,131 @@ const MatchInfoPanel = ({ isStarting, isMatchStarted, countdown, players, lobby,
   );
 };
 
+const DiscordLayoutPlayerCard: React.FC<any> = ({ 
+  player, volume, isSelected, onSelect, onVolumeChange, onMute, onInvite, onProfile, onDirectMessage, onAddFriend, onKick, onBan, isHostView, isVipLobby, isStreamerLobby
+}) => {
+  const isSlot = player.name === "Empty Slot";
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.9 }}
+      onClick={!isSlot ? onSelect : () => onInvite()}
+      className={cn(
+        "relative rounded-[16px] border transition-all duration-300 cursor-pointer overflow-hidden group flex flex-col justify-end p-2 md:p-3 items-center text-center aspect-square md:aspect-auto md:h-[180px] w-full",
+        isSlot ? "border-dashed border-white/10 bg-transparent opacity-40 hover:opacity-100 items-center justify-center" : "bg-[#0a0a0f] border-white/10 shadow-lg",
+        player.isReady && !isSlot ? "ring-1 ring-neon-blue/40 border-neon-blue/30 shadow-[0_10px_20px_-5px_rgba(0,229,255,0.15)]" : "",
+        player.isSpeaking && "ring-2 ring-green-500/50"
+      )}
+    >
+      {!isSlot ? (
+        <>
+           {/* Avatar Area */}
+           <div className="absolute inset-0 z-0">
+             <SmartImage src={player.avatarUrl || player.avatar} className="w-full h-full object-cover opacity-30 group-hover:opacity-40 transition-opacity blur-sm scale-110" />
+           </div>
+           
+           <div className="relative z-10 w-12 h-12 md:w-16 md:h-16 rounded-full overflow-hidden mb-2 border-2 border-white/10">
+              <SmartImage src={player.avatarUrl || player.avatar} className="w-full h-full object-cover" />
+           </div>
+
+           <div className="relative z-10 w-full bg-black/60 backdrop-blur-md rounded-xl p-1.5 md:p-2 border border-white/10 flex flex-col items-center">
+              <span className="text-[10px] md:text-xs font-bold text-white truncate max-w-full">{player.name}</span>
+              <div className="flex items-center gap-1 mt-0.5">
+                {player.isMuted ? <MicOff size={10} className="text-red-400" /> : <Mic size={10} className="text-gray-400" />}
+                <span className="text-[8px] font-mono text-gray-500">{player.ping}ms</span>
+              </div>
+           </div>
+
+           {isSelected && (
+              <div className="absolute inset-0 bg-black/80 backdrop-blur-md z-20 flex flex-col p-2 border border-neon-blue/50 rounded-[16px] justify-center items-center shadow-2xl" onClick={e => e.stopPropagation()}>
+                <input 
+                  type="range" min="0" max="200" value={player.volume} 
+                  onChange={(e) => onVolumeChange(parseInt(e.target.value))}
+                  className="w-full h-1 bg-white/10 rounded-lg appearance-none accent-neon-blue mb-4"
+                />
+                <div className="flex flex-wrap items-center justify-center gap-1 mt-auto">
+                   <QuickAction icon={<Users size={12} />} tooltip="پروفایل" onClick={() => onProfile(player.id)} />
+                   <QuickAction icon={<MessageSquare size={12} />} tooltip="پیام" onClick={() => onDirectMessage(player.id)} />
+                   <QuickAction icon={player.isMuted ? <Mic size={12} /> : <MicOff size={12} />} tooltip="صدا" onClick={() => onMute(player.id)} />
+                </div>
+              </div>
+           )}
+        </>
+      ) : (
+        <div className="flex flex-col items-center justify-center h-full text-white/20">
+          <UserPlus size={24} className="mb-2" />
+        </div>
+      )}
+    </motion.div>
+  )
+}
+
+const CompactLayoutPlayerCard: React.FC<any> = ({ 
+  player, volume, isSelected, onSelect, onVolumeChange, onMute, onInvite, onProfile, onDirectMessage, onAddFriend, onKick, onBan, isHostView, isVipLobby, isStreamerLobby
+}) => {
+  const isSlot = player.name === "Empty Slot";
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.9 }}
+      onClick={!isSlot ? onSelect : () => onInvite()}
+      className={cn(
+        "relative rounded-[16px] border transition-all duration-300 cursor-pointer overflow-hidden group flex w-full sm:w-[calc(50%-6px)] lg:w-[calc(33.333%-10px)] h-[60px] md:h-[72px] items-center p-2 md:p-3 shrink-0",
+        isSlot ? "border-dashed border-white/10 bg-transparent opacity-40 hover:opacity-100" : "bg-[#0a0a0f] border-white/10 hover:bg-[#12121a]",
+        player.isReady && !isSlot ? "border-neon-blue/30 shadow-[0_0_15px_rgba(0,229,255,0.1)]" : "",
+        player.isSpeaking && "ring-1 ring-green-500/50"
+      )}
+    >
+      {!isSlot ? (
+        <>
+          <div className="relative w-10 h-10 md:w-12 md:h-12 rounded-xl overflow-hidden shrink-0 border border-white/10 mr-3">
+             <SmartImage src={player.avatarUrl || player.avatar} className="w-full h-full object-cover" />
+          </div>
+          <div className="flex-1 min-w-0 pr-2">
+             <div className="flex items-center justify-between">
+                <span className="text-xs md:text-sm font-bold text-white truncate">{player.name}</span>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {player.isMuted ? <MicOff size={12} className="text-red-400" /> : <Mic size={12} className="text-green-400" />}
+                  <span className="text-[9px] font-mono text-gray-500">{player.ping}ms</span>
+                </div>
+             </div>
+             <div className="text-[10px] text-gray-500 truncate mt-0.5">{player.rank}</div>
+          </div>
+
+          {isSelected && (
+             <div className="absolute inset-0 bg-black/90 backdrop-blur-md z-20 flex items-center px-4 border border-neon-blue/40 rounded-[16px] justify-between shadow-2xl" onClick={e => e.stopPropagation()}>
+                <div className="flex items-center gap-2 mr-2 max-w-[80px] w-full">
+                  <span className="text-[8px] text-white/50">VOL</span>
+                  <input 
+                    type="range" min="0" max="200" value={player.volume} 
+                    onChange={(e) => onVolumeChange(parseInt(e.target.value))}
+                    className="w-full h-1 bg-white/10 rounded-lg appearance-none accent-neon-blue"
+                  />
+                </div>
+                <div className="flex items-center gap-1 shrink-0">
+                   <QuickAction icon={<Users size={14} />} tooltip="پروفایل" onClick={() => onProfile(player.id)} />
+                   <QuickAction icon={<MessageSquare size={14} />} tooltip="پیام" onClick={() => onDirectMessage(player.id)} />
+                   <QuickAction icon={player.isMuted ? <Mic size={14} /> : <MicOff size={14} />} tooltip="صدا" onClick={() => onMute(player.id)} />
+                </div>
+             </div>
+          )}
+        </>
+      ) : (
+        <div className="flex items-center gap-3 w-full text-white/20">
+           <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl border border-dashed border-white/20 flex items-center justify-center">
+             <UserPlus size={16} />
+           </div>
+           <span className="text-xs lowercase tracking-widest font-mono">empty_slot</span>
+        </div>
+      )}
+    </motion.div>
+  )
+}
+
 const PlayerCard: React.FC<{ 
   player: Player;
   volume?: number;
@@ -1355,6 +1506,7 @@ const PlayerCard: React.FC<{
   disabled?: boolean;
   isVipLobby?: boolean;
   isStreamerLobby?: boolean;
+  layoutMode?: 'default' | 'compact' | 'discord';
 }> = ({ 
   player, 
   volume,
@@ -1371,11 +1523,20 @@ const PlayerCard: React.FC<{
   isHostView,
   disabled,
   isVipLobby,
-  isStreamerLobby
+  isStreamerLobby,
+  layoutMode = 'default'
 }) => {
   const isSlot = player.name === "Empty Slot";
   const { user } = useAuth();
   const isMe = user?.id === player.id;
+
+  if (layoutMode === 'discord') {
+    return <DiscordLayoutPlayerCard player={player} isSelected={isSelected} onSelect={onSelect} onInvite={onInvite} isVipLobby={isVipLobby} isStreamerLobby={isStreamerLobby} volume={volume} onVolumeChange={onVolumeChange} onMute={onMute} onProfile={onProfile} onDirectMessage={onDirectMessage} onAddFriend={onAddFriend} onKick={onKick} onBan={onBan} isHostView={isHostView} />
+  }
+
+  if (layoutMode === 'compact') {
+    return <CompactLayoutPlayerCard player={player} isSelected={isSelected} onSelect={onSelect} onInvite={onInvite} isVipLobby={isVipLobby} isStreamerLobby={isStreamerLobby} volume={volume} onVolumeChange={onVolumeChange} onMute={onMute} onProfile={onProfile} onDirectMessage={onDirectMessage} onAddFriend={onAddFriend} onKick={onKick} onBan={onBan} isHostView={isHostView} />
+  }
 
   return (
       <motion.div

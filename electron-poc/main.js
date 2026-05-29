@@ -591,14 +591,14 @@ function registerGlobalShortcuts() {
 
   // 3. Overlay Interaction Toggle
   try {
-    globalShortcut.register('Alt+F2', () => {
+    globalShortcut.register('Alt+F1', () => {
       // Must be defined somewhere accessible, will fix toggle function ref
       if (typeof global.toggleOverlayInteraction === 'function') {
         global.toggleOverlayInteraction();
       }
     });
   } catch (e) {
-    console.warn('Error registering Alt+F2 shortcut:', e);
+    console.warn('Error registering Alt+F1 shortcut:', e);
   }
 }
 
@@ -830,7 +830,7 @@ updateCheckTimeout = setTimeout(() => {
             baseURL = currentURL.split('/').slice(0, 3).join('/');
           }
         }
-        overlayWindow.loadURL(`${baseURL}/#/overlay`);
+        overlayWindow.loadURL(`${baseURL}/#/overlay?is_overlay_window=true`);
         
         overlayWindow.on('closed', () => {
           overlayWindow = null;

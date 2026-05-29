@@ -19,6 +19,7 @@ import { BadgeType, ChatMessage, Channel, MembershipType, FriendStatus } from ".
 import { useProfilePopover } from "../context/ProfilePopoverContext";
 import { useAuth } from "../context/AuthContext";
 import { UserBadges } from "../components/ui/UserBadges";
+import { MessageContextMenu, ContextMenuAction } from "../components/ui/MessageContextMenu";
 import { chatSocket } from "../lib/socket";
 import { toast } from "react-hot-toast";
 import api from "../lib/api";
@@ -69,6 +70,29 @@ function MessageItem({ message, onReaction, onSaveGif, onReply, activeChannelId,
   const isAdmin = (user as any)?.role === 'ADMIN';
   const isHelper = (user as any)?.role === 'HELPER';
   const [showActions, setShowActions] = useState(false);
+  const [contextMenu, setContextMenu] = useState<{ x: number, y: number } | null>(null);
+
+  const getContextMenuActions = (): ContextMenuAction[] => {
+    const actions: ContextMenuAction[] = [
+      { id: 'reply', label: 'پاسخ دادن', icon: <Reply size={14} />, onClick: () => onReply(message) },
+    ];
+    if (message.text) {
+      actions.push({ id: 'copy', label: 'کپی متن', icon: <Copy size={14} />, onClick: () => navigator.clipboard.writeText(message.text) });
+    }
+    if (message.image) {
+      actions.push({ id: 'save-img', label: 'ذخیره تصویر', icon: <Save size={14} />, onClick: () => window.open(getFileUrl(message.image!), '_blank') });
+    }
+    if (message.gif) {
+      actions.push({ id: 'save-gif', label: 'ذخیره گیف', icon: <Save size={14} />, onClick: () => onSaveGif(message.gif!) });
+    }
+    if (message.video) {
+        actions.push({ id: 'save-vid', label: 'ذخیره ویدیو', icon: <Save size={14} />, onClick: () => window.open(getFileUrl(message.video!), '_blank') });
+    }
+    if (message.self || isAdmin || isGroupOwner) {
+      actions.push({ id: 'delete', label: 'حذف پیام', icon: <Trash2 size={14} />, destructive: true, onClick: () => onDelete(message.id) });
+    }
+    return actions;
+  };
 
   const isMsgSenderAdmin = 
     (message as any).userRole === 'ADMIN' || 
@@ -108,11 +132,23 @@ function MessageItem({ message, onReaction, onSaveGif, onReply, activeChannelId,
   return (
     <div 
       id={`msg-${message.id}`}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        setContextMenu({ x: e.clientX, y: e.clientY });
+      }}
       className={cn(
         "flex gap-2 md:gap-3 transition-all duration-300 mb-6 px-1 md:px-0 relative w-full",
         message.self ? "flex-row justify-start" : "flex-row-reverse justify-start"
       )}
     >
+      {contextMenu && (
+        <MessageContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          actions={getContextMenuActions()}
+          onClose={() => setContextMenu(null)}
+        />
+      )}
       {/* Interaction Menu Popover Overlay - Globally available */}
       <AnimatePresence>
         {showActions && (

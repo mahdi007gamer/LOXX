@@ -95,7 +95,7 @@ export const DesktopOverlayWidget = () => {
     }
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.altKey && e.key === "F2") {
+      if (e.altKey && e.key === "F1") {
         e.preventDefault();
         // If running in Electron, the globalShortcut handles it.
         // We only toggle locally when running in a standard web browser.

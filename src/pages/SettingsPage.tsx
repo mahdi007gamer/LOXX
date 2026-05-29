@@ -613,7 +613,9 @@ export const SettingsPage = () => {
                />
                <motion.div 
                  initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
-                 className="relative w-full max-w-sm rounded-[24px] bg-[#0a0a0f] border border-white/10 p-8 shadow-2xl"
+                 className="relative w-full max-w-sm rounded-[24px] bg-[#0a0a0f] border border-white/10 p-8 shadow-2xl overflow-hidden"
+                 style={{ transformOrigin: "center center" }}
+                 onMouseMove={(e) => e.stopPropagation()}
                >
                  {showVerificationModal ? (
                    <>
