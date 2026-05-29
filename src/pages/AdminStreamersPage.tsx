@@ -107,6 +107,13 @@ export const AdminStreamersPage = () => {
   };
   
   const uploadVoice = async (file: File) => {
+    // Client-side guard for large audio files to prevent 413 Payload Too Large
+    const maxSizeBytes = 4 * 1024 * 1024; // 4MB
+    if (file.size > maxSizeBytes) {
+      toast.error(`حجم فایل بسیار زیاد است (${(file.size / (1024 * 1024)).toFixed(1)}MB). به دلیل محدودیت حجم آپلود، لطفا فایلی با حجم کمتر از ۴ مگابایت (ترجیحا فرمت فشرده MP3) انتخاب نمایید.`);
+      return;
+    }
+
     setIsUploading(true);
     const formData = new FormData();
     formData.append("file", file);
@@ -116,8 +123,13 @@ export const AdminStreamersPage = () => {
         });
         setVoiceUrl(res.data.url);
         toast.success("وویس با موفقیت آپلود شد");
-    } catch (e) {
-        toast.error("خطا در آپلود وویس");
+    } catch (e: any) {
+        console.error("Audio upload error:", e);
+        if (e.response?.status === 413) {
+            toast.error("خطای بارگذاری: حجم فایل صوتی انتخابی بیش از حد مجاز شبکه سرور است. لطفا فایل فشرده‌تر با حجم کمتر از ۴ مگابایت آپلود کنید.");
+        } else {
+            toast.error(e.response?.data?.message || "خطا در آپلود وویس. لطفا فرمت یا حجم فایل را بررسی کنید.");
+        }
     } finally {
         setIsUploading(false);
     }
