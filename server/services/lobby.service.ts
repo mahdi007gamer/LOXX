@@ -4,6 +4,29 @@ export class LobbyService {
   static async createLobby(userId: string, data: any) {
     const id = "LX" + Math.random().toString(36).substring(2, 8).toUpperCase();
     
+    // Validate maxPlayers by user membership level
+    const userWithProfile = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { profile: true }
+    });
+    const membershipType = userWithProfile?.profile?.membershipType || "NONE";
+    const role = userWithProfile?.role || "USER";
+
+    const isVIP = membershipType === "VIP" || role === "ADMIN";
+    const isPlus = membershipType === "PLUS";
+    const maxAllowed = isVIP ? 30 : (isPlus ? 15 : 10);
+    const requestedMax = data.maxPlayers || data.max_players || 5;
+
+    if (requestedMax > maxAllowed) {
+      if (isPlus) {
+        throw new Error("ظرفیت لابی شما حداکثر ۱۵ نفر است. برای افزایش ظرفیت تا ۳۰ نفر باید اشتراک VIP تهیه کنید.");
+      } else if (!isVIP) {
+        throw new Error("اگه ظرفیت بیشتر بخواید باید اشتراک Plus یا VIP تهییه کنید");
+      } else {
+        throw new Error("ظرفیت لابی شما حداکثر ۳۰ نفر است.");
+      }
+    }
+
     const lobby = await prisma.lobby.create({
       data: {
         id,

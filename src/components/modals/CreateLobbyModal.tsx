@@ -73,6 +73,23 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!formData.gameId) return;
+
+    // Validate maxPlayers by user membership level
+    const isVIP = user?.membership === "VIP" || (user as any)?.profile?.membershipType === "VIP" || user?.role === "ADMIN";
+    const isPlus = user?.membership === "PLUS" || (user as any)?.profile?.membershipType === "PLUS";
+    const maxAllowedPlayers = isVIP ? 30 : (isPlus ? 15 : 10);
+
+    if (formData.maxPlayers > maxAllowedPlayers) {
+      if (isPlus) {
+        toast.error("ظرفیت لابی شما حداکثر ۱۵ نفر است. برای افزایش ظرفیت تا ۳۰ نفر باید اشتراک VIP تهیه کنید.");
+      } else if (!isVIP) {
+        toast.error("اگه ظرفیت بیشتر بخواید باید اشتراک Plus یا VIP تهییه کنید");
+      } else {
+        toast.error("ظرفیت لابی شما حداکثر ۳۰ نفر است.");
+      }
+      return;
+    }
+
     setLoading(true);
     try {
       // Find mode and maps in metadata to populate top-level fields for the database
@@ -104,8 +121,9 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
         onClose();
         navigate(`/lobby/${response.data.data.id}`);
       }
-    } catch (error) {
-      toast.error("خطا در ساخت لابی");
+    } catch (error: any) {
+      const serverErrMsg = error.response?.data?.error?.message;
+      toast.error(serverErrMsg || "خطا در ساخت لابی");
     } finally {
       setLoading(false);
     }
@@ -332,9 +350,31 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
                     <div>
                       <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2 text-right">ظرفیت کل لابی</label>
                       <div className="flex items-center gap-2 bg-[#16181c] border border-white/5 rounded-xl px-2 py-1.5 h-[50px]">
-                        <button type="button" onClick={() => setFormData(p => ({...p, maxPlayers: Math.max(2, p.maxPlayers - 1)}))} className="h-full px-4 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-white"> - </button>
+                        <button type="button" onClick={() => setFormData(p => ({...p, maxPlayers: Math.max(2, p.maxPlayers - 1)}))} className="h-full px-4 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-white text-lg font-black"> - </button>
                         <span className="flex-1 text-center text-white font-black text-lg">{formData.maxPlayers}</span>
-                        <button type="button" onClick={() => setFormData(p => ({...p, maxPlayers: Math.min(20, p.maxPlayers + 1)}))} className="h-full px-4 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-white"> + </button>
+                        <button 
+                          type="button" 
+                          onClick={() => {
+                            const isVIP = user?.membership === "VIP" || (user as any)?.profile?.membershipType === "VIP" || user?.role === "ADMIN";
+                            const isPlus = user?.membership === "PLUS" || (user as any)?.profile?.membershipType === "PLUS";
+                            const limit = isVIP ? 30 : (isPlus ? 15 : 10);
+                            
+                            if (formData.maxPlayers >= limit) {
+                              if (isPlus) {
+                                toast.error("ظرفیت لابی شما حداکثر ۱۵ نفر است. برای افزایش ظرفیت تا ۳۰ نفر باید اشتراک VIP تهیه کنید.");
+                              } else if (!isVIP) {
+                                toast.error("اگه ظرفیت بیشتر بخواید باید اشتراک Plus یا VIP تهییه کنید");
+                              } else {
+                                toast.error("ظرفیت لابی شما حداکثر ۳۰ نفر است.");
+                              }
+                              return;
+                            }
+                            setFormData(p => ({...p, maxPlayers: p.maxPlayers + 1}));
+                          }} 
+                          className="h-full px-4 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-white text-lg font-black"
+                        >
+                          +
+                        </button>
                       </div>
                     </div>
                     <div>

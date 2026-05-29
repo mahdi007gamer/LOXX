@@ -8,7 +8,7 @@ import { LobbyInviteCard } from "../components/ui/LobbyInviteCard";
 import { SmartImage } from "../components/ui/SmartImage";
 import { getAvatarFallbacks } from "../lib/avatar";
 import { getFileUrl } from "../lib/constants";
-import { Send, Hash, Users, MoreVertical, Plus, Smile, Image as ImageIcon, Reply, Heart, ChevronDown, Award, Star, Zap, Crown, Play, Check, Menu, X, MessageSquare, User, Trophy, Palette, Trash, MessageCircle, Search, UserPlus as UserPlusIcon, Settings, Flag, AlertTriangle, Radio, VolumeX } from "lucide-react";
+import { Send, Hash, Users, MoreVertical, Plus, Smile, Image as ImageIcon, Reply, Heart, ChevronDown, Award, Star, Zap, Crown, Play, Check, Menu, X, MessageSquare, User, Trophy, Palette, Trash, MessageCircle, Search, UserPlus as UserPlusIcon, Settings, Flag, AlertTriangle, Radio, VolumeX, Shield } from "lucide-react";
 import { cn } from "../lib/utils";
 import { motion, AnimatePresence } from "motion/react";
 import { useGames } from "../context/GamesContext";
@@ -28,15 +28,20 @@ import api from "../lib/api";
 interface BadgeIconProps {
   type: BadgeType | any;
   key?: any;
+  isAdmin?: boolean;
 }
 
-function BadgeIcon({ type }: BadgeIconProps) {
+function BadgeIcon({ type, isAdmin }: BadgeIconProps) {
   // Legacy BadgeIcon - we prefer UserBadges component for dynamic icons from server
   switch(type) {
     case BadgeType.STREAMER: return <div title="Streamer" className="text-neon-purple animate-pulse"><Radio size={12} /></div>;
     case BadgeType.PRO: return <div title="Pro Player" className="text-neon-pink"><Award size={12} fill="currentColor" /></div>;
     case BadgeType.LOBBY_MASTER: return <div title="Lobby Master" className="text-yellow-500"><Star size={12} fill="currentColor" /></div>;
-    case BadgeType.VIP: return <div title="VIP" className="text-yellow-500 animate-pulse"><Crown size={12} fill="currentColor" /></div>;
+    case BadgeType.VIP: 
+      if (isAdmin) {
+        return <div title="مدیریت لوکس" className="text-red-500 animate-pulse"><Shield size={12} fill="currentColor" /></div>;
+      }
+      return <div title="VIP" className="text-yellow-500 animate-pulse"><Crown size={12} fill="currentColor" /></div>;
     case BadgeType.CHAMPION: return <div title="Champion" className="text-yellow-400"><Trophy size={12} fill="currentColor" /></div>;
     case BadgeType.PLUS: return <div title="Plus" className="text-neon-blue"><Zap size={12} fill="currentColor" /></div>;
     default: return null;
@@ -65,6 +70,13 @@ function MessageItem({ message, onReaction, onSaveGif, onReply, activeChannelId,
   const isHelper = (user as any)?.role === 'HELPER';
   const [showActions, setShowActions] = useState(false);
 
+  const isMsgSenderAdmin = 
+    (message as any).userRole === 'ADMIN' || 
+    (message as any).senderRole === 'ADMIN' || 
+    message.senderName?.toLowerCase() === 'admin' || 
+    message.senderName?.toLowerCase()?.includes('admin') ||
+    (message as any).role === 'ADMIN';
+
   // Level based colors
   const isStreamer = message.senderBadges?.includes(BadgeType.STREAMER) || (message as any).userRole === 'STREAMER' || (message as any).senderRole === 'STREAMER';
   const isVIP = message.senderBadges?.includes(BadgeType.VIP);
@@ -75,7 +87,8 @@ function MessageItem({ message, onReaction, onSaveGif, onReply, activeChannelId,
     metadata = typeof (message as any).vipMetadata === 'string' ? JSON.parse((message as any).vipMetadata) : (message as any).vipMetadata;
   } catch(e) {}
 
-  const nameColorClass = isStreamer ? "text-neon-purple drop-shadow-[0_0_8px_rgba(168,85,247,0.5)]" :
+  const nameColorClass = isMsgSenderAdmin ? "text-red-500 font-extrabold drop-shadow-[0_0_8px_rgba(239,68,68,0.7)]" :
+                        isStreamer ? "text-neon-purple drop-shadow-[0_0_8px_rgba(168,85,247,0.5)]" :
                         isVIP ? "text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.5)]" :
                         isChamp ? "text-yellow-500" :
                         isPLUS ? "text-neon-blue" :
@@ -83,6 +96,7 @@ function MessageItem({ message, onReaction, onSaveGif, onReply, activeChannelId,
                         message.senderLevel > 20 ? "text-neon-pink" : "text-white/80";
 
   const getBubbleStyle = () => {
+    if (isMsgSenderAdmin) return {};
     if (!metadata || !metadata.chatStyle) return {};
     return {
       backgroundColor: metadata.chatStyle.bubbleColor || undefined,
@@ -124,25 +138,27 @@ function MessageItem({ message, onReaction, onSaveGif, onReply, activeChannelId,
             senderAvatar: message.senderAvatar || message.avatarUrl,
             bannerUrl: (message as any).bannerUrl || message.avatarUrl,
             vipMetadata: (message as any).vipMetadata,
-            role: (message as any).userRole,
+            role: (message as any).userRole || (isMsgSenderAdmin ? 'ADMIN' : undefined),
             senderLevel: message.senderLevel,
             senderBadges: message.senderBadges,
             id: message.senderId,
-            membership: (message as any).membership ? (message as any).membership : isVIP ? MembershipType.VIP : isPLUS ? MembershipType.PLUS : MembershipType.NONE
+            membership: isMsgSenderAdmin ? MembershipType.VIP : ((message as any).membership ? (message as any).membership : isVIP ? MembershipType.VIP : isPLUS ? MembershipType.PLUS : MembershipType.NONE)
           }, message.self);
         }}
       >
         <div className={cn(
           "h-9 w-9 md:h-11 md:w-11 rounded-xl flex items-center justify-center text-lg md:text-xl relative z-[10] transition-transform hover:scale-105 shadow-xl bg-cover bg-center overflow-visible",
           message.self ? "bg-neon-pink text-white" : "bg-neon-blue text-white",
-          isVIP && "border-2 border-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.4)]",
-          isStreamer && !isVIP && "border-2 border-neon-purple shadow-[0_0_15px_rgba(168,85,247,0.4)]",
-          isPLUS && !isStreamer && !isVIP && "border-2 border-neon-blue shadow-[0_0_10px_rgba(0,229,255,0.3)]"
+          isMsgSenderAdmin ? "border-2 border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.75)] bg-gradient-to-tr from-red-600 via-red-300 to-red-800" : (
+            isVIP ? "border-2 border-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.4)]" :
+            isStreamer && "border-2 border-neon-purple shadow-[0_0_15px_rgba(168,85,247,0.4)]"
+          ),
+          isPLUS && !isStreamer && !isVIP && !isMsgSenderAdmin && "border-2 border-neon-blue shadow-[0_0_10px_rgba(0,229,255,0.3)]"
         )}>
           <SmartImage 
             src={message.senderAvatar || message.avatarUrl || ""}
             fallbacks={getAvatarFallbacks(message.senderName)}
-            isVipEnabled={isVIP}
+            isVipEnabled={isVIP || isMsgSenderAdmin}
             className="w-full h-full object-cover rounded-xl"
             alt={message.senderName}
           />
@@ -173,11 +189,12 @@ function MessageItem({ message, onReaction, onSaveGif, onReply, activeChannelId,
           <span 
               className={cn("text-[11px] font-black tracking-tight cursor-pointer hover:underline flex items-center gap-1 transition-all", nameColorClass, (metadata?.shinyName) && "animate-pulse")}
               style={{
-                ...(metadata && metadata.colors && (isVIP || isPLUS) ? 
+                ...(metadata && metadata.colors && (isVIP || isPLUS) && !isMsgSenderAdmin ? 
                   (metadata.colors.textGradient 
                     ? { backgroundImage: `linear-gradient(to right, ${metadata.colors.text}, ${metadata.colors.textGradient})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }
                     : { color: metadata.colors.text }) 
                   : {}),
+                ...(isMsgSenderAdmin ? { color: "#ef4444", textShadow: "0 0 10px rgba(239, 68, 68, 0.6)" } : {}),
                 ...(metadata?.fontStyle === "lightning" ? { textShadow: "0 0 5px #fff, 0 0 10px #0ff", animation: "pulse 2s infinite" } : {}),
                 ...(metadata?.fontStyle === "fire" ? { textShadow: "0 -2px 4px #ff3, 0 -4px 10px #f80", animation: "pulse 1.5s infinite" } : {}),
                 ...(metadata?.fontStyle === "glitch" ? { textShadow: "1px 0 0 red, -1px 0 0 cyan", animation: "pulse 0.5s infinite" } : {}),
@@ -189,16 +206,17 @@ function MessageItem({ message, onReaction, onSaveGif, onReply, activeChannelId,
                 senderAvatar: message.senderAvatar,
                 bannerUrl: (message as any).bannerUrl,
                 vipMetadata: (message as any).vipMetadata,
-                role: (message as any).userRole,
+                role: (message as any).userRole || (isMsgSenderAdmin ? 'ADMIN' : undefined),
                 senderLevel: message.senderLevel,
                 senderBadges: message.senderBadges,
                 id: message.senderId,
-                membership: isVIP ? MembershipType.VIP : isPLUS ? MembershipType.PLUS : MembershipType.NONE
+                membership: isMsgSenderAdmin ? MembershipType.VIP : (isVIP ? MembershipType.VIP : isPLUS ? MembershipType.PLUS : MembershipType.NONE)
               }, message.self);
               }}
             >
               {message.senderName}
-              {isStreamer && <Radio size={12} className="text-neon-purple animate-pulse" />}
+              {isMsgSenderAdmin && <Shield size={11} className="text-red-500 fill-current animate-pulse shrink-0" />}
+              {isStreamer && !isMsgSenderAdmin && <Radio size={12} className="text-neon-purple animate-pulse" />}
             </span>
           
           <div className={cn(
@@ -207,15 +225,15 @@ function MessageItem({ message, onReaction, onSaveGif, onReply, activeChannelId,
           )}>
              {/* Dynamic Badges from Server */}
              {(message as any).badges && (
-               <UserBadges 
-                 badges={(message as any).badges} 
-                 className={cn(message.self ? "flex-row" : "flex-row-reverse")}
-               />
+                <UserBadges 
+                  badges={(message as any).badges} 
+                  className={cn(message.self ? "flex-row" : "flex-row-reverse")}
+                />
              )}
              {/* Legacy Badge Types */}
              {message.senderBadges
                 ?.filter(b => !((message as any).badges?.length > 0 && b === BadgeType.VIP))
-                .map((b, i) => <BadgeIcon key={i} type={b as any} />)}
+                .map((b, i) => <BadgeIcon key={i} type={b as any} isAdmin={isMsgSenderAdmin} />)}
           </div>
 
           <span className={cn(
@@ -227,13 +245,18 @@ function MessageItem({ message, onReaction, onSaveGif, onReply, activeChannelId,
         {/* Message Container Area */}
         <div className="flex flex-col w-full">
           <div className={cn("relative group/bubble-container flex items-center w-fit", message.self ? "ml-auto" : "mr-auto")}>
+            {/* Admin Glow Backing */}
+            {isMsgSenderAdmin && (
+              <div className="absolute inset-0 bg-red-500/10 blur-3xl rounded-full scale-150 animate-pulse pointer-events-none hidden md:block" />
+            )}
+            
             {/* VIP Glow Backing */}
-            {isVIP && (
+            {!isMsgSenderAdmin && isVIP && (
               <div className="absolute inset-0 bg-yellow-400/5 blur-3xl rounded-full scale-150 animate-pulse pointer-events-none hidden md:block" />
             )}
             
             {/* Streamer Glow Backing */}
-            {isStreamer && !isVIP && (
+            {!isMsgSenderAdmin && isStreamer && !isVIP && (
               <div className="absolute inset-0 bg-neon-purple/10 blur-3xl rounded-full scale-110 animate-pulse pointer-events-none hidden md:block" />
             )}
             
@@ -319,12 +342,14 @@ function MessageItem({ message, onReaction, onSaveGif, onReply, activeChannelId,
                 "rtl text-right break-words",
                 activeChannelId === 'news'
                   ? "bg-[#0b0c14] text-white border-white/5 shadow-none rounded-xl px-0"
-                  : message.self 
-                    ? "bg-[#140e1a] text-white border-neon-pink/20 rounded-tr-none" 
-                    : "bg-white/5 text-gray-100 border-white/10 rounded-tl-none",
-                isVIP && "border-yellow-400/40 bg-gradient-to-br from-yellow-400/[0.12] to-transparent shadow-[0_0_40px_rgba(250,204,21,0.12)]",
-                isStreamer && !isVIP && "border-neon-purple/40 bg-gradient-to-br from-neon-purple/[0.12] to-transparent shadow-[0_0_40px_rgba(168,85,247,0.12)]",
-                isPLUS && !isStreamer && !isVIP && "border-neon-blue/40 bg-gradient-to-br from-neon-blue/[0.12] to-transparent shadow-[0_0_30px_rgba(0,229,255,0.12)]",
+                  : isMsgSenderAdmin
+                    ? cn("bg-gradient-to-br from-[#260505] via-[#470a0a] to-[#210404] border-red-500/50 shadow-[0_0_30px_rgba(239,68,68,0.4)] text-white hover:border-red-400/75 transition-all duration-300", message.self ? "rounded-tr-none" : "rounded-tl-none")
+                    : message.self 
+                      ? "bg-[#140e1a] text-white border-neon-pink/20 rounded-tr-none" 
+                      : "bg-white/5 text-gray-100 border-white/10 rounded-tl-none",
+                !isMsgSenderAdmin && isVIP && "border-yellow-400/40 bg-gradient-to-br from-yellow-400/[0.12] to-transparent shadow-[0_0_40px_rgba(250,204,21,0.12)]",
+                !isMsgSenderAdmin && isStreamer && !isVIP && "border-neon-purple/40 bg-gradient-to-br from-neon-purple/[0.12] to-transparent shadow-[0_0_40px_rgba(168,85,247,0.12)]",
+                !isMsgSenderAdmin && isPLUS && !isStreamer && !isVIP && "border-neon-blue/40 bg-gradient-to-br from-neon-blue/[0.12] to-transparent shadow-[0_0_30px_rgba(0,229,255,0.12)]",
                 metadata?.specialFrame && metadata?.frame === "lightning" && "!border-blue-400 shadow-[0_0_20px_rgba(96,165,250,0.5)] animate-pulse",
                 metadata?.specialFrame && metadata?.frame === "fire" && "!border-orange-500 shadow-[0_0_20px_rgba(249,115,22,0.5)] animate-bounce",
                 metadata?.specialFrame && metadata?.frame === "glitch" && "!border-pink-500 shadow-[inset_0_0_10px_rgba(236,72,153,0.5),0_0_15px_rgba(236,72,153,0.8)]",
@@ -333,18 +358,19 @@ function MessageItem({ message, onReaction, onSaveGif, onReply, activeChannelId,
               )}
             >
                {/* VIP/PLUS Shimmer Effect */}
-               {(isVIP || isPLUS || isStreamer) && (
-                <motion.div 
-                  animate={{ x: ["-100%", "200%"] }}
-                  transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-                  className={cn(
-                    "absolute inset-0 skew-x-12 pointer-events-none z-0 mix-blend-overlay",
-                    isVIP ? "bg-gradient-to-r from-transparent via-yellow-400/50 to-transparent" : 
-                    isStreamer ? "bg-gradient-to-r from-transparent via-neon-purple/40 to-transparent" : 
-                    "bg-gradient-to-r from-transparent via-neon-blue/40 to-transparent"
-                  )}
-                />
-              )}
+               {(isVIP || isPLUS || isStreamer || isMsgSenderAdmin) && (
+                 <motion.div 
+                   animate={{ x: ["-100%", "200%"] }}
+                   transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                   className={cn(
+                     "absolute inset-0 skew-x-12 pointer-events-none z-0 mix-blend-overlay",
+                     isMsgSenderAdmin ? "bg-gradient-to-r from-transparent via-red-500/60 to-transparent" :
+                     isVIP ? "bg-gradient-to-r from-transparent via-yellow-400/50 to-transparent" : 
+                     isStreamer ? "bg-gradient-to-r from-transparent via-neon-purple/40 to-transparent" : 
+                     "bg-gradient-to-r from-transparent via-neon-blue/40 to-transparent"
+                   )}
+                 />
+               )}
               {/* Reply Preview - Embedded inside bubble area */}
               {message.replyTo && (
                  <div 
