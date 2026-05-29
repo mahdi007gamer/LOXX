@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { Sidebar } from "../components/layout/Sidebar";
-import { Shield, ArrowRight, Save, Edit3, X } from "lucide-react";
+import { Shield, ArrowRight, Save, Edit3, X, CheckCircle2, HeartHandshake, Phone, MessageSquare } from "lucide-react";
 import { GlowButton } from "../components/ui/GlowButton";
 import { NeonCard } from "../components/ui/NeonCard";
 import { AuthorizedImage } from "../components/ui/AuthorizedImage";
@@ -72,7 +72,8 @@ export const AdminStreamersPage = () => {
   const navigate = useNavigate();
   const [streamers, setStreamers] = useState<any[]>([]);
   const [invites, setInvites] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState<"streamers" | "invites">("streamers");
+  const [cooperationProposals, setCooperationProposals] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState<"streamers" | "invites" | "cooperation">("streamers");
   const [editingStreamerId, setEditingStreamerId] = useState<string | null>(null);
   
   // invite form
@@ -86,6 +87,7 @@ export const AdminStreamersPage = () => {
     if (user && user.role === "ADMIN") {
       fetchStreamers();
       fetchInvites();
+      fetchCooperationProposals();
     }
   }, [user]);
 
@@ -104,6 +106,37 @@ export const AdminStreamersPage = () => {
       setInvites(res.data.data || []);
     } catch {
       toast.error("خطا در دریافت صفحات دعوت");
+    }
+  };
+
+  const fetchCooperationProposals = async () => {
+    try {
+      const res = await api.get(`/admin/cooperation-proposals`);
+      setCooperationProposals(res.data.data || []);
+    } catch {
+      toast.error("خطا در دریافت درخواست‌های همکاری");
+    }
+  };
+
+  const handleUpdateCooperationStatus = async (id: string, currentStatus: string) => {
+    const nextStatus = currentStatus === "PENDING" ? "READ" : "PENDING";
+    try {
+      await api.put(`/admin/cooperation-proposals/${id}`, { status: nextStatus });
+      toast.success("وضعیت درخواست همگام‌سازی شد.");
+      fetchCooperationProposals();
+    } catch {
+      toast.error("خطا در به روز رسانی وضعیت درخواست");
+    }
+  };
+
+  const handleDeleteCooperation = async (id: string) => {
+    if (!window.confirm("آیا از حذف این درخواست همکاری استریمر اطمینان کامل دارید؟ این مورد از صفحه پروپوزال او برداشته خواهد شد و وی می‌تواند مجدداً ثبت‌نام کند.")) return;
+    try {
+      await api.delete(`/admin/cooperation-proposals/${id}`);
+      toast.success("درخواست همکاری با موفقیت حذف شد.");
+      fetchCooperationProposals();
+    } catch {
+      toast.error("خطا در حذف درخواست همکاری");
     }
   };
   
@@ -238,12 +271,21 @@ export const AdminStreamersPage = () => {
              </button>
              <button
                onClick={() => setActiveTab("invites")}
-               className={`pb-4 px-6 text-sm font-black uppercase tracking-widest transition-all relative ${
+               className={`pb-4 px-3 md:px-6 text-xs md:text-sm font-black uppercase tracking-widest transition-all relative ${
                  activeTab === "invites" ? "text-neon-blue" : "text-gray-500 hover:text-gray-300"
                }`}
              >
                صفحات دعوت (پروپوزال)
                {activeTab === "invites" && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-neon-blue shadow-[0_0_15px_#00E5FF]" />}
+             </button>
+             <button
+               onClick={() => setActiveTab("cooperation")}
+               className={`pb-4 px-3 md:px-6 text-xs md:text-sm font-black uppercase tracking-widest transition-all relative ${
+                 activeTab === "cooperation" ? "text-neon-pink" : "text-gray-500 hover:text-gray-300"
+               }`}
+             >
+               درخواست‌های همکاری
+               {activeTab === "cooperation" && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-neon-pink shadow-[0_0_15px_#FF0080]" />}
              </button>
           </div>
 
@@ -395,6 +437,103 @@ export const AdminStreamersPage = () => {
                     <div className="col-span-full py-10 text-center text-gray-500">صفحه دعوتی موجود نیست</div>
                   )}
                 </div>
+             </div>
+             ) : activeTab === "cooperation" ? (
+             <div className="space-y-6">
+                <NeonCard variant="pink" className="p-6 bg-[#090b11]/90 backdrop-blur-md">
+                   <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+                     <div>
+                       <h3 className="text-xl font-black text-white">لیست درخواست‌های همکاری استریمرها</h3>
+                       <p className="text-xs text-gray-400 mt-1 font-bold">نمایش موارد ثبت شده توسط استریمرها همراه با اطلاعات تماس و پیشنهادات</p>
+                     </div>
+                     <span className="bg-neon-pink/10 border border-neon-pink/20 text-neon-pink text-[11px] font-black uppercase px-4 py-1.5 rounded-full shadow-[0_0_15px_rgba(255,0,128,0.1)]">
+                        {cooperationProposals.length} درخواست ثبت‌شده
+                     </span>
+                   </div>
+
+                    <div className="overflow-x-auto rounded-2xl border border-white/5 bg-black/40">
+                       <table className="w-full text-right border-collapse text-xs">
+                          <thead>
+                             <tr className="bg-white/5 border-b border-white/10 text-gray-400 font-bold">
+                                <th className="p-4">نام ارسالی</th>
+                                <th className="p-4">صفحه مبدا استریمر</th>
+                                <th className="p-4">شماره تماس</th>
+                                <th className="p-4">علاقه‌مندی به همکاری ویژه</th>
+                                <th className="p-4">پیشنهاد / انتقاد استریمر</th>
+                                <th className="p-4">تاریخ ثبت</th>
+                                <th className="p-4 text-center">وضعیت</th>
+                                <th className="p-4 text-center">عملیات</th>
+                             </tr>
+                          </thead>
+                          <tbody className="divide-y divide-white/5">
+                             {cooperationProposals.map((prop) => (
+                                <tr key={prop.id} className="hover:bg-white/5 transition-colors">
+                                   <td className="p-4 font-black text-white">{prop.fullName}</td>
+                                   <td className="p-4 font-mono font-bold text-neon-blue">
+                                      <a href={`/invite/${prop.alias}`} target="_blank" rel="noreferrer" className="hover:underline">
+                                         /invite/{prop.alias}
+                                      </a>
+                                   </td>
+                                   <td className="p-4 font-mono font-bold text-gray-300" dir="ltr">{prop.phone}</td>
+                                   <td className="p-4">
+                                      {prop.wantsCooperate ? (
+                                         <span className="text-green-400 font-black flex items-center gap-1.5 shadow-[0_0_10px_rgba(34,197,94,0.1)] py-1 px-2 bg-green-500/5 border border-green-500/20 rounded-md w-fit">
+                                            <CheckCircle2 size={13} /> بله، علاقه‌مند
+                                         </span>
+                                      ) : (
+                                         <span className="text-red-400 font-bold flex items-center gap-1.5 py-1 px-2 bg-red-500/5 border border-red-500/20 rounded-md w-fit">
+                                            <X size={13} /> خیر
+                                         </span>
+                                      )}
+                                   </td>
+                                   <td className="p-4 max-w-sm font-semibold text-gray-200">
+                                      {prop.feedback ? (
+                                         <div className="bg-black/20 p-2.5 rounded-lg border border-white/5 whitespace-pre-wrap leading-relaxed">
+                                            {prop.feedback}
+                                         </div>
+                                      ) : (
+                                         <span className="text-gray-600 italic">بدون پیشنهاد یا پیام خاص</span>
+                                      )}
+                                   </td>
+                                   <td className="p-4 font-mono text-gray-400">
+                                      {new Date(prop.createdAt).toLocaleDateString("fa-IR")}
+                                   </td>
+                                   <td className="p-4 text-center">
+                                      {prop.status === "PENDING" ? (
+                                         <span className="bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 px-3 py-1 rounded-full text-[10px] font-black animate-pulse">در انتظار بررسی</span>
+                                      ) : (
+                                         <span className="bg-green-500/10 border border-green-500/30 text-green-400 px-3 py-1 rounded-full text-[10px] font-black">بررسی شده</span>
+                                      )}
+                                   </td>
+                                   <td className="p-4 text-center">
+                                      <div className="flex gap-2 justify-center">
+                                         <button 
+                                            onClick={() => handleUpdateCooperationStatus(prop.id, prop.status)}
+                                            className="px-3 py-1.5 bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 text-white rounded-lg transition-all text-[10px] font-bold"
+                                            title="تغییر وضعیت"
+                                         >
+                                            {prop.status === "PENDING" ? "اتمام بررسی" : "بازگشت به بررسی"}
+                                         </button>
+                                         <button 
+                                            onClick={() => handleDeleteCooperation(prop.id)}
+                                            className="px-3 py-1.5 bg-red-400/10 border border-red-400/20 hover:bg-red-400/20 text-red-400 rounded-lg transition-all text-[10px] font-bold"
+                                            title="حذف"
+                                         >
+                                            حذف
+                                         </button>
+                                      </div>
+                                   </td>
+                                </tr>
+                             ))}
+                             {cooperationProposals.length === 0 && (
+                                <tr>
+                                   <td colSpan={8} className="p-12 text-center text-gray-500 font-bold">تاکنون درخواستی ارسال نشده است.</td>
+                                </tr>
+                             )}
+                          </tbody>
+                       </table>
+                    </div>
+                </NeonCard>
              </div>
             ) : null}
           </div>

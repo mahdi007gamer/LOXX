@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { Shield, HeadphonesIcon, MessageSquare, Award, ArrowLeft, Phone, Mail, Instagram, Send, CheckCircle2, AlertCircle, User, Zap, Play, Pause, Volume2, VolumeX, Volume1, Forward, Rewind } from 'lucide-react';
+import { Shield, HeadphonesIcon, MessageSquare, Award, ArrowLeft, Phone, Mail, Instagram, Send, CheckCircle2, AlertCircle, User, Zap, Play, Pause, Volume2, VolumeX, Volume1, Forward, Rewind, HeartHandshake, Sparkles, Check, HelpCircle } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 import api from '../lib/api';
 
 // Mini Components for Animations
@@ -579,6 +580,38 @@ const StreamerProposalPage = ({ overrideName }: StreamerProposalPageProps = {}) 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
+  // Cooperation proposals states
+  const [proposalStatus, setProposalStatus] = useState<any>(null);
+  const [checkingProposal, setCheckingProposal] = useState(true);
+
+  const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [wantsCooperate, setWantsCooperate] = useState(true);
+  const [feedback, setFeedback] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const fetchProposal = async () => {
+    try {
+      setCheckingProposal(true);
+      const res = await api.get(`/streamers/invite/${alias}/proposals`);
+      if (res.data && res.data.data) {
+        setProposalStatus(res.data.data);
+      } else {
+        setProposalStatus(null);
+      }
+    } catch (e) {
+      console.error("Error checking active proposal:", e);
+    } finally {
+      setCheckingProposal(false);
+    }
+  };
+
+  useEffect(() => {
+    if (inviteData) {
+      setFullName(inviteData.streamerName || "");
+    }
+  }, [inviteData]);
+
   useEffect(() => {
     const fetchInvite = async () => {
       try {
@@ -606,7 +639,46 @@ const StreamerProposalPage = ({ overrideName }: StreamerProposalPageProps = {}) 
       }
     };
     fetchInvite();
+    fetchProposal();
   }, [alias]);
+
+  const handleCooperationSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!fullName.trim()) {
+      toast.error("لطفاً نام خود را وارد کنید.");
+      return;
+    }
+    if (!phone.trim()) {
+      toast.error("لطفاً شماره تماس را وارد کنید.");
+      return;
+    }
+    if (phone.length < 10) {
+      toast.error("شماره تماس نامعتبر است.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const res = await api.post(`/streamers/invite/${alias}/cooperate`, {
+        fullName,
+        phone,
+        wantsCooperate,
+        feedback
+      });
+
+      if (res.data && res.data.status === "success") {
+        toast.success("درخواست همکاری شما با موفقیت ثبت شد!");
+        setProposalStatus(res.data.data);
+      } else {
+        toast.error(res.data.message || "خطا در ثبت درخواست");
+      }
+    } catch (err: any) {
+      console.error("Cooperation submit error:", err);
+      toast.error(err.response?.data?.message || "خطا در برقراری ارتباط با سرور");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   if (loading) return <div className="min-h-screen bg-[#050508] flex items-center justify-center"><div className="w-8 h-8 rounded-full border-b-2 border-neon-blue animate-spin" /></div>;
 
@@ -794,6 +866,199 @@ const StreamerProposalPage = ({ overrideName }: StreamerProposalPageProps = {}) 
                <ProfileAnimation name={inviteData.streamerName} />
             </div>
 
+          </div>
+        </motion.section>
+
+        {/* Streamer Cooperation Proposal Section */}
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={isOpened ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+          transition={{ duration: 0.6, delay: 0.9 }}
+          className="mb-16"
+        >
+          <div className="flex items-center gap-4 mb-8">
+            <div className="w-1.5 h-8 bg-neon-blue rounded-full shadow-[0_0_10px_rgba(0,195,255,0.5)]"></div>
+            <h3 className="text-2xl font-black text-white">درخواست تسریع و ثبت پلن همکاری</h3>
+          </div>
+
+          <div className="bg-gradient-to-br from-[#0c0d12]/90 to-[#121420]/90 border border-white/10 rounded-3xl p-6 md:p-10 relative overflow-hidden shadow-2xl backdrop-blur-xl">
+            <div className="absolute top-0 left-0 w-32 h-32 bg-neon-blue/5 rounded-full blur-[60px]" />
+            <div className="absolute bottom-0 right-0 w-48 h-48 bg-neon-pink/5 rounded-full blur-[80px]" />
+
+            {checkingProposal ? (
+              <div className="flex flex-col items-center justify-center py-12">
+                <div className="w-8 h-8 rounded-full border-b-2 border-neon-blue animate-spin mb-4" />
+                <p className="text-gray-400 font-bold text-sm">در حال بررسی وضعیت درخواست شما...</p>
+              </div>
+            ) : proposalStatus ? (
+              // Active Proposal is found
+              <div className="relative z-10 text-right">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-6 border-b border-white/5 pb-8 mb-8">
+                  <div className="flex items-center gap-4 w-full md:w-auto">
+                    <div className="w-14 h-14 rounded-2xl bg-neon-blue/10 border border-neon-blue/20 flex items-center justify-center text-neon-blue flex-shrink-0">
+                      <HeartHandshake className="w-8 h-8" />
+                    </div>
+                    <div>
+                      <h4 className="text-xl font-bold text-white">درخواست همکاری شما فعال است</h4>
+                      <p className="text-xs text-gray-400 mt-1 font-medium">سند ثبت شده با کد رهگیری اختصاصی</p>
+                    </div>
+                  </div>
+                  
+                  {proposalStatus.status === "PENDING" ? (
+                    <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-yellow-500/30 bg-yellow-500/10 text-yellow-400 font-black text-xs shadow-[0_0_15px_rgba(234,179,8,0.15)] animate-pulse">
+                      <Sparkles className="w-3.5 h-3.5" />
+                      در انتظار بررسی و تماس مدیریت
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-green-500/30 bg-green-500/10 text-green-400 font-black text-xs shadow-[0_0_15px_rgba(34,197,94,0.15)]">
+                      <Check className="w-3.5 h-3.5" />
+                      تایید اولیه شده، به زودی با شما تماس می‌گیریم
+                    </span>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 bg-white/5 p-6 rounded-2xl border border-white/5">
+                  <div>
+                    <span className="text-[11px] text-gray-500 font-bold uppercase tracking-wider block mb-1">نام و نشان استریمر</span>
+                    <span className="text-sm font-bold text-gray-200">{proposalStatus.fullName}</span>
+                  </div>
+                  <div>
+                    <span className="text-[11px] text-gray-400 font-bold uppercase tracking-wider block mb-1">شماره تماس جهت هماهنگی</span>
+                    <span dir="ltr" className="text-sm font-bold text-gray-200 block text-right">{proposalStatus.phone}</span>
+                  </div>
+                  <div>
+                    <span className="text-[11px] text-gray-400 font-bold uppercase tracking-wider block mb-1">تمایل به اسپانسرشیپ رسمی</span>
+                    <span className="text-sm font-bold text-green-400 flex items-center gap-1.5 mt-0.5">
+                      <CheckCircle2 className="w-4 h-4" />
+                      بله، کاملاً آماده شروع کار
+                    </span>
+                  </div>
+                </div>
+
+                {proposalStatus.feedback && (
+                  <div className="bg-black/40 border border-white/5 p-4 rounded-xl mb-6">
+                    <span className="text-[11px] text-gray-500 font-bold uppercase block mb-1">جزییات و پیشنهادات شما:</span>
+                    <p className="text-sm text-gray-300 leading-relaxed font-semibold">{proposalStatus.feedback}</p>
+                  </div>
+                )}
+
+                <p className="text-xs text-gray-500 font-bold text-center leading-relaxed">
+                  نکته امنیتی لایسنس: در صورت نیاز به به‌روزرسانی اطلاعات یا انصراف موقت، پس از بررسی یا حذف این پلن توسط ادمین محترم، امکان ثبت مجدد در همین صفحه بلافاصله فراهم خواهد شد.
+                </p>
+              </div>
+            ) : (
+              // No Active Proposal: render the interactive FORM
+              <form onSubmit={handleCooperationSubmit} className="relative z-10 space-y-6 text-right">
+                <div className="mb-6">
+                  <h4 className="text-lg font-black text-white flex items-center gap-2 mb-2">
+                    <Sparkles className="w-5 h-5 text-neon-blue" />
+                    شخصی‌سازی و ارسال پلن بیزینسی لوکس
+                  </h4>
+                  <p className="text-sm text-gray-400 font-bold leading-relaxed">
+                    با تکمیل فرم کوتاه زیر، تیم پشتیبانی بیزینس لوکس پنل اختصاصی شما (Revenue Share) را ظرف چند ساعت پیکربندی کرده و با شما جهت عقد قرارداد دیجیتال تماس می‌گیرد.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Name field */}
+                  <div className="relative">
+                    <label className="text-[12px] font-bold text-gray-400 block mb-2 mr-1">نام یا مستعار استریمر</label>
+                    <div className="relative">
+                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500">
+                        <User className="w-4 h-4" />
+                      </span>
+                      <input 
+                        type="text" 
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        className="w-full bg-black/40 border border-white/10 hover:border-white/20 focus:border-neon-blue focus:outline-none focus:ring-1 focus:ring-neon-blue rounded-xl py-3 pr-11 pl-4 text-sm text-white font-bold transition-all text-right"
+                        placeholder="نام شما"
+                      />
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[9px] font-black uppercase text-neon-blue/60 bg-neon-blue/10 px-2 py-0.5 rounded border border-neon-blue/20">
+                        تکمیل خودکار
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Phone field */}
+                  <div>
+                    <label className="text-[12px] font-bold text-gray-400 block mb-2 mr-1">شماره تماس (ترجیحاً دارای تلگرام/واتساپ)</label>
+                    <div className="relative">
+                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500">
+                        <Phone className="w-4 h-4" />
+                      </span>
+                      <input 
+                        type="tel" 
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        required
+                        dir="ltr"
+                        className="w-full bg-black/40 border border-white/10 hover:border-white/20 focus:border-neon-blue focus:outline-none focus:ring-1 focus:ring-neon-blue rounded-xl py-3 pr-11 pl-4 text-sm text-white font-bold transition-all text-left"
+                        placeholder="0912XXXXXXX"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Cooperation Checkbox Toggle */}
+                <div className="p-4 bg-white/5 rounded-2xl border border-white/5 hover:border-white/10 transition-all">
+                  <label className="flex items-start md:items-center gap-4 cursor-pointer relative">
+                    <input 
+                      type="checkbox" 
+                      checked={wantsCooperate}
+                      onChange={(e) => setWantsCooperate(e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-neon-blue peer-checked:to-neon-purple relative flex-shrink-0" />
+                    <div>
+                      <span className="text-sm font-bold text-gray-200 block">آمادگی ۱۰۰٪ جهت پیوستن به لِول Elite و دریافت سهم ۵۰ درصدی تراکنش‌ها</span>
+                      <span className="text-xs text-neon-blue font-bold mt-1 block">با فعال‌سازی این مورد، موافقت خود را با مانیتورینگ اولیه کانال استریم اعلام می‌کنید.</span>
+                    </div>
+                  </label>
+                </div>
+
+                {/* Textarea suggestion */}
+                <div>
+                  <div className="flex justify-between items-center mb-2 mr-1">
+                    <label className="text-[12px] font-bold text-gray-400 block">انتقاد، پیشنهاد یا توضیحات تکمیلی (اختیاری)</label>
+                    <span className="text-[10px] text-gray-500 font-mono font-bold">{feedback.length} / 300</span>
+                  </div>
+                  <div className="relative">
+                    <span className="absolute right-4 top-4 text-gray-500">
+                      <MessageSquare className="w-4 h-4" />
+                    </span>
+                    <textarea 
+                      value={feedback}
+                      onChange={(e) => setFeedback(e.target.value.slice(0, 300))}
+                      rows={3}
+                      className="w-full bg-black/40 border border-white/10 hover:border-white/20 focus:border-neon-blue focus:outline-none focus:ring-1 focus:ring-neon-blue rounded-xl py-3 pr-11 pl-4 text-sm text-white font-semibold transition-all resize-none text-right"
+                      placeholder="اگر پیشنهاد خاصی دارید یا مایلید قابلیت خاصی برای لابی‌های شما توسعه داده شود، اینجا بنویسید..."
+                    />
+                  </div>
+                </div>
+
+                {/* Submit button inside a glowing container */}
+                <div className="flex justify-end pt-2">
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="relative group overflow-hidden px-8 py-4 rounded-xl font-bold text-white text-sm tracking-wide bg-gradient-to-r from-neon-blue via-neon-purple to-neon-pink hover:opacity-90 disabled:opacity-50 transition-all duration-300 shadow-[0_0_20px_rgba(0,195,255,0.2)] hover:shadow-[0_0_30px_rgba(0,195,255,0.4)] cursor-pointer"
+                  >
+                    {isSubmitting ? (
+                      <span className="flex items-center gap-2">
+                        <span className="w-4 h-4 border-2 border-white/30 border-b-white rounded-full animate-spin" />
+                        در حال مکاتبه با لوکس‌سرور...
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-2">
+                        <HeartHandshake className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                        ارسال درخواست و استارت همکاری هوشمند
+                      </span>
+                    )}
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </motion.section>
 

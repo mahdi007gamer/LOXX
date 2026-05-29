@@ -454,6 +454,18 @@ model StreamerInvite {
   createdAt       DateTime @default(now())
 }
 
+model StreamerCooperationProposal {
+  id              String   @id @default(uuid())
+  alias           String
+  fullName        String
+  phone           String
+  wantsCooperate  Boolean  @default(true)
+  feedback        String?
+  status          String   @default("PENDING") // PENDING, READ, Archived
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
 model EnamadConfig {
   id             String   @id @default("default")
   siteTitle      String?  @default("لوکس | پلتفرم بازی های آنلاین")
