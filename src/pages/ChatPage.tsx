@@ -1960,26 +1960,28 @@ export const ChatPage: React.FC = () => {
         <div className="p-6 border-b border-white/5">
           <div className="flex items-center justify-between mb-2">
             <h2 className="text-xl font-black text-white tracking-widest uppercase">کانال‌ها</h2>
-            {(user?.membership === "VIP" || user?.membership === "PLUS" || (user as any)?.role === "STREAMER") && (
-              <button 
-                title="ایجاد گروه حرفه‌ای"
-                onClick={() => setShowVipGroupModal(true)}
-                className={cn(
-                  "group p-2 rounded-xl transition-all border relative",
-                  (user?.membership === "VIP" || (user as any)?.role === "STREAMER")
-                    ? "bg-yellow-400/10 text-yellow-400 hover:bg-yellow-400 hover:text-dark-bg border-yellow-400/20 shadow-[0_0_15px_rgba(250,204,21,0.1)] hover:shadow-[0_0_20px_rgba(250,204,21,0.3)]"
-                    : "bg-neon-blue/10 text-neon-blue hover:bg-neon-blue hover:text-dark-bg border-neon-blue/20 shadow-[0_0_15px_rgba(0,229,255,0.1)] hover:shadow-[0_0_20px_rgba(0,229,255,0.3)]"
-                )}
-              >
-                <Plus size={18} />
-                <div className="absolute -top-1 -right-1">
-                  {(user?.membership === "VIP" || (user as any)?.role === "STREAMER")
-                    ? <Crown size={10} className="fill-yellow-400" />
-                    : <Zap size={10} className="fill-neon-blue" />
-                  }
-                </div>
-              </button>
-            )}
+            <button 
+              title="ایجاد گروه"
+              onClick={() => setShowVipGroupModal(true)}
+              className={cn(
+                "group p-2 rounded-xl transition-all border relative",
+                (user?.membership === "VIP" || (user as any)?.role === "STREAMER")
+                  ? "bg-yellow-400/10 text-yellow-400 hover:bg-yellow-400 hover:text-dark-bg border-yellow-400/20 shadow-[0_0_15px_rgba(250,204,21,0.1)] hover:shadow-[0_0_20px_rgba(250,204,21,0.3)]"
+                  : (user?.membership === "PLUS")
+                    ? "bg-neon-blue/10 text-neon-blue hover:bg-neon-blue hover:text-dark-bg border-neon-blue/20 shadow-[0_0_15px_rgba(0,229,255,0.1)] hover:shadow-[0_0_20px_rgba(0,229,255,0.3)]"
+                    : "bg-white/5 text-gray-300 hover:bg-white/10 hover:text-white border-white/10"
+              )}
+            >
+              <Plus size={18} />
+              <div className="absolute -top-1 -right-1">
+                {(user?.membership === "VIP" || (user as any)?.role === "STREAMER")
+                  ? <Crown size={10} className="fill-yellow-400 text-yellow-400" />
+                  : (user?.membership === "PLUS")
+                    ? <Zap size={10} className="fill-neon-blue text-neon-blue" />
+                    : null
+                }
+              </div>
+            </button>
           </div>
           <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Global Comms Network</p>
         </div>
@@ -2408,7 +2410,34 @@ export const ChatPage: React.FC = () => {
                 className="fixed left-0 top-0 bottom-0 z-[101] w-72 bg-dark-bg/95 border-r border-white/10 p-6 backdrop-blur-xl md:hidden"
               >
                 <div className="flex items-center justify-between mb-8">
-                  <h2 className="text-xl font-black text-white tracking-widest uppercase text-right">کانال‌ها</h2>
+                  <div className="flex items-center gap-3">
+                    <h2 className="text-xl font-black text-white tracking-widest uppercase text-right">کانال‌ها</h2>
+                    <button 
+                      title="ایجاد گروه"
+                      onClick={() => {
+                        setShowVipGroupModal(true);
+                        setShowChannelMenu(false);
+                      }}
+                      className={cn(
+                        "group p-1.5 rounded-lg transition-all border relative",
+                        (user?.membership === "VIP" || (user as any)?.role === "STREAMER")
+                          ? "bg-yellow-400/10 text-yellow-400 hover:bg-yellow-400 hover:text-dark-bg border-yellow-400/20 shadow-[0_0_10px_rgba(250,204,21,0.1)] hover:shadow-[0_0_15px_rgba(250,204,21,0.3)]"
+                          : (user?.membership === "PLUS")
+                            ? "bg-neon-blue/10 text-neon-blue hover:bg-neon-blue hover:text-dark-bg border-neon-blue/20 shadow-[0_0_10px_rgba(0,229,255,0.1)] hover:shadow-[0_0_15px_rgba(0,229,255,0.3)]"
+                            : "bg-white/5 text-gray-300 hover:bg-white/10 hover:text-white border-white/10"
+                      )}
+                    >
+                      <Plus size={14} />
+                      <div className="absolute -top-1 -right-1">
+                        {(user?.membership === "VIP" || (user as any)?.role === "STREAMER")
+                          ? <Crown size={6} className="fill-yellow-400 text-yellow-400" />
+                          : (user?.membership === "PLUS")
+                            ? <Zap size={6} className="fill-neon-blue text-neon-blue" />
+                            : null
+                        }
+                      </div>
+                    </button>
+                  </div>
                   <button onClick={() => setShowChannelMenu(false)} className="text-gray-500 hover:text-white">
                     <X size={24} />
                   </button>

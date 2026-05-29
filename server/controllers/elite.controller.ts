@@ -16,13 +16,43 @@ export class EliteGroupController {
         where: { id: userId },
         include: { profile: true }
       });
-      const membership = user?.profile?.membershipType || "STANDARD";
-      
-      if (membership !== "VIP" && membership !== "PLUS" && user?.role !== "STREAMER") {
-        return res.status(403).json({ status: "error", error: { message: "فقط کاربران استریمر، PLUS و VIP می‌توانند گروه بسازند" } });
+      const membership = user?.profile?.membershipType || "NONE";
+      const role = user?.role || "USER";
+
+      const isVIP = membership === "VIP" || role === "ADMIN" || role === "STREAMER";
+      const isPlus = membership === "PLUS";
+
+      // Max groups allowed to create
+      const maxGroupsAllowed = isVIP ? 2 : 1;
+
+      // Count current owned groups (ELITE & PRO both are groups)
+      const ownedCount = await prisma.channel.count({
+        where: {
+          ownerId: userId,
+          type: { in: ["ELITE", "PRO"] }
+        }
+      });
+
+      if (ownedCount >= maxGroupsAllowed) {
+        if (isPlus) {
+          return res.status(403).json({ 
+            status: "error", 
+            error: { message: "کاربران PLUS حداکثر می‌توانند ۱ گروه بسازند" } 
+          });
+        } else if (isVIP) {
+          return res.status(403).json({ 
+            status: "error", 
+            error: { message: "کاربران VIP حداکثر می‌توانند ۲ گروه بسازند" } 
+          });
+        } else {
+          return res.status(403).json({ 
+            status: "error", 
+            error: { message: "کاربران معمولی حداکثر می‌توانند ۱ گروه بسازند. برای ایجاد گروه‌های بیشتر، اشتراک تهیه کنید." } 
+          });
+        }
       }
 
-      const channelType = (membership === "VIP" || user?.role === "STREAMER") ? "ELITE" : "PRO";
+      const channelType = isVIP ? "ELITE" : "PRO";
 
       const channel = await prisma.channel.create({
         data: {
@@ -52,7 +82,7 @@ export class EliteGroupController {
       const userId = req.user!.userId;
 
       const channel = await prisma.channel.findUnique({ where: { id: groupId } });
-      if (!channel || channel.type !== "ELITE") {
+      if (!channel || (channel.type !== "ELITE" && channel.type !== "PRO")) {
         return res.status(404).json({ status: "error", error: { message: "گروه یافت نشد" } });
       }
 
@@ -87,7 +117,7 @@ export class EliteGroupController {
         }
       });
 
-      if (!channel || channel.type !== "ELITE") {
+      if (!channel || (channel.type !== "ELITE" && channel.type !== "PRO")) {
         return res.status(404).json({ status: "error", error: { message: "گروه یافت نشد" } });
       }
 
@@ -95,8 +125,13 @@ export class EliteGroupController {
         return res.status(403).json({ status: "error", error: { message: "شما مدیر این گروه نیستید" } });
       }
 
-      const membership = channel.owner?.profile?.membershipType || "PLUS";
-      const maxMembers = (channel.owner?.role === "STREAMER") ? 5000 : (membership === "VIP" || channel.type === "ELITE") ? 5000 : 5;
+      const membership = channel.owner?.profile?.membershipType || "NONE";
+      const ownerRole = channel.owner?.role || "USER";
+
+      const isVIP = membership === "VIP" || ownerRole === "ADMIN" || ownerRole === "STREAMER";
+      const isPlus = membership === "PLUS";
+
+      const maxMembers = isVIP ? 100 : (isPlus ? 50 : 10);
 
       if (channel.members.length + (userIds?.length || 1) > maxMembers) {
         return res.status(400).json({ status: "error", error: { message: `این گروه نمی‌تواند بیش از ${maxMembers} عضو داشته باشد` } });
@@ -170,8 +205,13 @@ export class EliteGroupController {
         return res.status(404).json({ status: "error", error: { message: "گروه تخریب شده است" } });
       }
 
-      const membership = channel.owner?.profile?.membershipType || "PLUS";
-      const maxMembers = (channel.owner?.role === "STREAMER") ? 5000 : (membership === "VIP" || channel.type === "ELITE") ? 5000 : 5;
+      const membership = channel.owner?.profile?.membershipType || "NONE";
+      const ownerRole = channel.owner?.role || "USER";
+
+      const isVIP = membership === "VIP" || ownerRole === "ADMIN" || ownerRole === "STREAMER";
+      const isPlus = membership === "PLUS";
+
+      const maxMembers = isVIP ? 100 : (isPlus ? 50 : 10);
 
       if (channel.members.length >= maxMembers) {
         return res.status(400).json({ status: "error", error: { message: "ظرفیت گروه پر شده است" } });
@@ -198,7 +238,7 @@ export class EliteGroupController {
       const userId = req.user!.userId;
 
       const channel = await prisma.channel.findUnique({ where: { id: groupId } });
-      if (!channel || channel.type !== "ELITE") {
+      if (!channel || (channel.type !== "ELITE" && channel.type !== "PRO")) {
          return res.status(404).json({ status: "error", error: { message: "گروه یافت نشد" } });
       }
 
@@ -247,7 +287,7 @@ export class EliteGroupController {
         }
       });
 
-      if (!channel || channel.type !== "ELITE") {
+      if (!channel || (channel.type !== "ELITE" && channel.type !== "PRO")) {
         return res.status(404).json({ status: "error", error: { message: "گروه یافت نشد" } });
       }
 
@@ -255,8 +295,13 @@ export class EliteGroupController {
         return res.status(403).json({ status: "error", error: { message: "شما مدیر این گروه نیستید" } });
       }
 
-      const membership = channel.owner?.profile?.membershipType || "PLUS";
-      const maxMembers = (channel.owner?.role === "STREAMER") ? 5000 : (membership === "VIP" || channel.type === "ELITE") ? 5000 : 5;
+      const membership = channel.owner?.profile?.membershipType || "NONE";
+      const ownerRole = channel.owner?.role || "USER";
+
+      const isVIP = membership === "VIP" || ownerRole === "ADMIN" || ownerRole === "STREAMER";
+      const isPlus = membership === "PLUS";
+
+      const maxMembers = isVIP ? 100 : (isPlus ? 50 : 10);
 
       if (channel.members.length >= maxMembers) {
         return res.status(400).json({ status: "error", error: { message: `گروه نمی‌تواند بیش از ${maxMembers} عضو داشته باشد` } });
@@ -291,7 +336,7 @@ export class EliteGroupController {
         include: { members: true }
       });
 
-      if (!channel || channel.type !== "ELITE") {
+      if (!channel || (channel.type !== "ELITE" && channel.type !== "PRO")) {
          return res.status(404).json({ status: "error", error: { message: "گروه یافت نشد" } });
       }
 
@@ -319,7 +364,7 @@ export class EliteGroupController {
        const userId = req.user!.userId;
 
        const channel = await prisma.channel.findUnique({ where: { id: groupId } });
-       if (!channel || channel.type !== "ELITE") return res.status(404).json({ status: "error", error: { message: "گروه یافت نشد" } });
+       if (!channel || (channel.type !== "ELITE" && channel.type !== "PRO")) return res.status(404).json({ status: "error", error: { message: "گروه یافت نشد" } });
        
        if (channel.ownerId !== userId) return res.status(403).json({ status: "error", error: { message: "شما مدیر این گروه نیستید" } });
 
@@ -340,16 +385,12 @@ export class EliteGroupController {
         include: { owner: { include: { profile: true } } }
       });
 
-      if (!channel || channel.type !== "ELITE") {
+      if (!channel || (channel.type !== "ELITE" && channel.type !== "PRO")) {
         return res.status(404).json({ status: "error", error: { message: "گروه یافت نشد" } });
       }
 
       if (channel.ownerId !== userId) {
         return res.status(403).json({ status: "error", error: { message: "شما مدیر این گروه نیستید" } });
-      }
-
-      if (channel.owner?.profile?.membershipType !== "VIP") {
-        return res.status(403).json({ status: "error", error: { message: "فقط کاربران VIP می‌توانند لینک دعوت بسازند" } });
       }
 
       const newInviteCode = Math.random().toString(36).substring(2, 10);
@@ -369,8 +410,8 @@ export class EliteGroupController {
       const { inviteCode } = req.body;
       const userId = req.user!.userId;
 
-      const channel = await prisma.channel.findUnique({
-        where: { inviteCode, type: "ELITE" },
+      const channel = await prisma.channel.findFirst({
+        where: { inviteCode, type: { in: ["ELITE", "PRO"] } },
         include: { members: true, owner: { include: { profile: true } } }
       });
 
@@ -387,8 +428,13 @@ export class EliteGroupController {
          return res.json({ status: "success", message: "شما از قبل عضو گروه هستید", data: { groupId: channel.id } });
       }
 
-      const membershipType = channel.owner?.profile?.membershipType || "PLUS";
-      const maxMembers = channel.owner?.role === "STREAMER" ? 5000 : (membershipType === "VIP" || channel.type === "ELITE") ? 5000 : 5;
+      const membershipType = channel.owner?.profile?.membershipType || "NONE";
+      const ownerRole = channel.owner?.role || "USER";
+
+      const isOwnerVIP = membershipType === "VIP" || ownerRole === "ADMIN" || ownerRole === "STREAMER";
+      const isOwnerPlus = membershipType === "PLUS";
+
+      const maxMembers = isOwnerVIP ? 100 : (isOwnerPlus ? 50 : 10);
 
       if (channel.members.length >= maxMembers) {
          return res.status(400).json({ status: "error", error: { message: "ظرفیت گروه پر شده است" } });

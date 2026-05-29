@@ -2,10 +2,6 @@ import axios from "axios";
 import https from "https";
 import http from "http";
 
-const KAVENEGAR_API_KEY = process.env.KAVENEGAR_API_KEY || "6A42677659444F74536B77467678745132456C4F364D494A43617572757639424775454243317A313974453D";
-const KAVENEGAR_SENDER = process.env.KAVENEGAR_SENDER || "2000660110";
-const KAVENEGAR_TEMPLATE = process.env.KAVENEGAR_TEMPLATE || "template";
-
 export class KavenegarService {
   /**
    * Sends an OTP (verification code) via Kavenegar.
@@ -15,6 +11,10 @@ export class KavenegarService {
    * @param token OTP verification code
    */
   static async sendOTP(phone: string, token: string): Promise<boolean> {
+    const KAVENEGAR_API_KEY = process.env.KAVENEGAR_API_KEY || "6A42677659444F74536B77467678745132456C4F364D494A43617572757639424775454243317A313974453D";
+    const KAVENEGAR_SENDER = process.env.KAVENEGAR_SENDER || "2000660110";
+    const KAVENEGAR_TEMPLATE = process.env.KAVENEGAR_TEMPLATE || "template";
+
     const formattedPhone = this.formatPhone(phone);
     console.log(`[KavenegarService] Attempting to send OTP Code ${token} to ${formattedPhone}`);
 
@@ -31,7 +31,7 @@ export class KavenegarService {
     // Try Lookup API (Pattern/Template) first as it delivers instantly and handles AD-blocks
     try {
       const lookupUrl = `https://api.kavenegar.com/v1/${KAVENEGAR_API_KEY}/verify/lookup.json`;
-      console.log(`[KavenegarService] Calling Lookup API for pattern template: "${KAVENEGAR_TEMPLATE}"`);
+      console.log(`[KavenegarService] Calling Lookup API for pattern template: "${KAVENEGAR_TEMPLATE}" to ${formattedPhone}`);
       
       const response = await axios.get(lookupUrl, {
         params: {
@@ -39,41 +39,48 @@ export class KavenegarService {
           token: token,
           template: KAVENEGAR_TEMPLATE
         },
-        timeout: 8000
+        timeout: 10000
       });
 
       if (response.data && response.data.return && response.data.return.status === 200) {
-        console.log(`[KavenegarService] Lookup SMS sent successfully via template:`, response.data.entries);
+        console.log(`[KavenegarService] Lookup SMS queued successfully by Kavenegar:`, response.data.entries);
         return true;
       } else {
         throw new Error(response.data?.return?.message || "Invalid status code from Kavenegar");
       }
     } catch (lookupError: any) {
-      console.warn(`[KavenegarService] Lookup template failed, falling back to standard send API. Error:`, lookupError.message);
+      console.error(`[KavenegarService] Lookup template failed. Message: ${lookupError.message}`);
+      if (lookupError.response && lookupError.response.data) {
+         console.error(`[KavenegarService] Kavenegar error details:`, lookupError.response.data);
+      }
       
       // Fallback: Send standard SMS via the purchased sender number "10009000400099"
       try {
         const sendUrl = `https://api.kavenegar.com/v1/${KAVENEGAR_API_KEY}/sms/send.json`;
-        const messageText = `کد شما در پلتفرم لوکس ${token}`;
+        const messageText = `کد شما در پلتفرم لوکس: ${token}`;
         
+        console.log(`[KavenegarService] Falling back to standard send API with sender: "${KAVENEGAR_SENDER}"`);
         const response = await axios.get(sendUrl, {
           params: {
             sender: KAVENEGAR_SENDER,
             receptor: formattedPhone,
             message: messageText
           },
-          timeout: 8000
+          timeout: 10000
         });
 
         if (response.data && response.data.return && response.data.return.status === 200) {
-          console.log(`[KavenegarService] Standard fallback SMS sent successfully with sender: ${KAVENEGAR_SENDER}`);
+          console.log(`[KavenegarService] Standard fallback SMS queued successfully.`);
           return true;
         } else {
-          console.error(`[KavenegarService] All SMS delivery methods failed.`, response.data);
+          console.error(`[KavenegarService] Standard fallback SMS failed.`, response.data);
           return false;
         }
       } catch (sendError: any) {
         console.error(`[KavenegarService] Kavenegar standard API connection error:`, sendError.message);
+        if (sendError.response && sendError.response.data) {
+           console.error(`[KavenegarService] Standard API error details:`, sendError.response.data);
+        }
         return false;
       }
     }
