@@ -2,9 +2,9 @@ import axios from "axios";
 import https from "https";
 import http from "http";
 
-const KAVENEGAR_API_KEY = process.env.KAVENEGAR_API_KEY;
-const KAVENEGAR_SENDER = process.env.KAVENEGAR_SENDER || "10009000400099";
-const KAVENEGAR_TEMPLATE = process.env.KAVENEGAR_TEMPLATE || "loxx";
+const KAVENEGAR_API_KEY = process.env.KAVENEGAR_API_KEY || "6A42677659444F74536B77467678745132456C4F364D494A43617572757639424775454243317A313974453D";
+const KAVENEGAR_SENDER = process.env.KAVENEGAR_SENDER || "2000660110";
+const KAVENEGAR_TEMPLATE = process.env.KAVENEGAR_TEMPLATE || "template";
 
 export class KavenegarService {
   /**
