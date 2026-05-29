@@ -2,6 +2,7 @@ import { Router } from "express";
 import { authenticate, authorizeAdmin } from "../middleware/auth.middleware.ts";
 import * as adminController from "../controllers/admin.controller.ts";
 import { BadgeController } from "../controllers/badge.controller.ts";
+import { StreamerController } from "../controllers/streamer.controller.ts";
 
 const router = Router();
 
@@ -40,6 +41,11 @@ router.patch("/streamers/:id", adminController.updateStreamer);
 router.post("/streamers/withdrawal/:id/approve", adminController.approveWithdrawal);
 router.post("/streamers/withdrawal/:id/reject", adminController.rejectWithdrawal);
 
+// Streamer cooperation proposals
+router.get("/cooperation-proposals", StreamerController.getCooperationProposals);
+router.put("/cooperation-proposals/:id", StreamerController.updateCooperationStatus);
+router.delete("/cooperation-proposals/:id", StreamerController.deleteCooperationProposal);
+
 // Streamer Invites
 router.get("/streamer-invites", adminController.getStreamerInvites);
 router.post("/streamer-invites", adminController.createStreamerInvite);
@@ -51,5 +57,8 @@ router.get("/enamad", enamadController.getEnamadData);
 router.post("/enamad/config", enamadController.updateEnamadConfig);
 router.post("/enamad/files", enamadController.createVerificationFile);
 router.delete("/enamad/files/:id", enamadController.deleteVerificationFile);
+
+// Clear general chat route
+router.delete("/chat/clear-general", adminController.clearGeneralChat);
 
 export default router;

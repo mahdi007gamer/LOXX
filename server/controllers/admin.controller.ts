@@ -726,3 +726,27 @@ export const getDashboardStats = async (req: Request, res: Response) => {
     res.status(500).json({ status: "error", message: error.message });
   }
 };
+
+export const clearGeneralChat = async (req: Request, res: Response) => {
+  try {
+    // 1. Disassociate self-relation thread indices in general to avoid foreign key violations
+    await prisma.message.updateMany({
+      where: { channelId: "general" },
+      data: { replyToId: null }
+    });
+
+    // 2. Terminate all entries associated with the general channel
+    const deletedCountObj = await prisma.message.deleteMany({
+      where: { channelId: "general" }
+    });
+
+    res.json({
+      status: "success",
+      message: "تمامی پیام‌های چت عمومی با موفقیت حذف شدند.",
+      deletedCount: deletedCountObj.count
+    });
+  } catch (error: any) {
+    res.status(500).json({ status: "error", message: error.message });
+  }
+};
+

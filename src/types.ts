@@ -195,6 +195,7 @@ export interface ChatMessage {
   bannerUrl?: string;
   vipMetadata?: any;
   userRole?: string;
+  createdAt?: string;
   lobbyInvite?: {
     lobbyId: string;
     gameTitle: string;

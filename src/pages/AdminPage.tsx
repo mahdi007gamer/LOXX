@@ -48,6 +48,8 @@ export const AdminPage = () => {
   const [editTags, setEditTags] = useState("");
 
   const [loading, setLoading] = useState(true);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [isClearingChat, setIsClearingChat] = useState(false);
   const [isGameModalOpen, setIsGameModalOpen] = useState(false);
   const [isGenreModalOpen, setIsGenreModalOpen] = useState(false);
   const [isBadgeModalOpen, setIsBadgeModalOpen] = useState(false);
@@ -105,6 +107,24 @@ export const AdminPage = () => {
       toast.error("خطا در بارگذاری داده‌ها");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleClearGeneralChat = async () => {
+    try {
+      setIsClearingChat(true);
+      const res = await api.delete("/admin/chat/clear-general");
+      if (res.data.status === "success") {
+        toast.success(res.data.message || "پیام‌های چت عمومی با موفقیت پاک شدند.");
+        setShowClearConfirm(false);
+      } else {
+        toast.error("خطایی در پاکسازی چت رخ داد.");
+      }
+    } catch (e: any) {
+      console.error(e);
+      toast.error(e.response?.data?.message || "خطا در اتصال به سرور.");
+    } finally {
+      setIsClearingChat(false);
     }
   };
 
@@ -515,6 +535,62 @@ export const AdminPage = () => {
                       <p className="text-xs text-gray-400">ارسال ایمیل‌های مکاتباتی، اطلاعیه سیستم و هماهنگی رسمی لابی‌ها</p>
                     </div>
                   </button>
+                </div>
+              </div>
+
+              {/* System Maintenance & Database Optimization */}
+              <div className="border border-red-500/10 rounded-3xl bg-gradient-to-br from-[#0c0d12]/95 to-red-950/10 p-8 shadow-xl relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-red-500/5 rounded-full blur-[80px]" />
+                <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                  <div>
+                    <div className="flex items-center gap-3 mb-3">
+                      <Icons.AlertTriangle className="text-red-500 w-5 h-5 animate-pulse" />
+                      <h4 className="text-lg font-black text-white">بهینه‌سازی دیتابیس و مدیریت سیستم</h4>
+                    </div>
+                    <p className="text-sm text-gray-400 font-semibold leading-relaxed max-w-3xl font-sans text-right">
+                      جهت سبک‌سازی، کاهش حجم پایگاه داده و از بین بردن پیام‌های چت عمومی، مدیران سیستم می‌توانند تمامی پیام‌های تبادلی در چت عمومی (سراسری) را به صورت کامل و یکباره حذف کنند.
+                    </p>
+                    <p className="text-xs text-red-500 font-black mt-2 text-right">
+                      ⚠️ هشدار: این اقدام غیرقابل بازگشت بوده و پیام‌ها از جداول بازیابی نخواهند شد.
+                    </p>
+                  </div>
+                  
+                  <div className="shrink-0 w-full md:w-auto">
+                    {!showClearConfirm ? (
+                      <button
+                        onClick={() => setShowClearConfirm(true)}
+                        className="w-full md:w-auto bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 px-6 py-4 rounded-2xl text-xs font-black uppercase tracking-widest italic transition-all duration-300 flex items-center justify-center gap-2 group hover:shadow-[0_0_15px_rgba(239,68,68,0.2)]"
+                      >
+                        <Icons.Trash2 className="w-4 h-4 group-hover:scale-110 transition-all" />
+                        <span>پاکسازی چت سراسری</span>
+                      </button>
+                    ) : (
+                      <div className="flex flex-col gap-2">
+                        <span className="text-[10px] text-red-400 font-black text-center animate-pulse">آیا از حذف تمامی پیام‌ها مطمئن هستید؟</span>
+                        <div className="flex gap-2 justify-center">
+                          <button
+                            onClick={handleClearGeneralChat}
+                            disabled={isClearingChat}
+                            className="bg-red-600 hover:bg-red-700 text-white px-5 py-3 rounded-xl text-xs font-black transition-all flex items-center gap-2 disabled:opacity-50"
+                          >
+                            {isClearingChat ? (
+                              <div className="w-3.5 h-3.5 rounded-full border border-t-transparent animate-spin" />
+                            ) : (
+                              <Icons.Check className="w-3.5 h-3.5" />
+                            )}
+                            <span>بله، کاملا پاک شود</span>
+                          </button>
+                          <button
+                            onClick={() => setShowClearConfirm(false)}
+                            disabled={isClearingChat}
+                            className="bg-white/5 hover:bg-white/10 text-gray-400 px-5 py-3 rounded-xl text-xs font-black border border-white/5 transition-all"
+                          >
+                            <span>خیر، لغو اقدام</span>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

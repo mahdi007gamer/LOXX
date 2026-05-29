@@ -1198,6 +1198,7 @@ export const ChatPage: React.FC = () => {
        timestamp: new Date(msg.createdAt || Date.now()).toLocaleTimeString("fa-IR", { hour: "2-digit", minute: "2-digit" }),
        isRead: true,
        self: from.userId === currentUserId,
+        createdAt: msg.createdAt,
        reactions: msg.reactions || [],
        replyTo: msg.replyTo ? { 
            id: msg.replyTo.id, 
@@ -1262,6 +1263,7 @@ export const ChatPage: React.FC = () => {
        vipMetadata: user?.vipMetadata,
        senderLevel: 1,
        text: messageText,
+       createdAt: new Date().toISOString(),
        timestamp: new Date().toLocaleTimeString("fa-IR", { hour: "2-digit", minute: "2-digit" }),
        isRead: true,
        self: true,
@@ -1385,6 +1387,7 @@ export const ChatPage: React.FC = () => {
        senderLevel: 1,
        text: "",
        gif: gifUrl,
+       createdAt: new Date().toISOString(),
        timestamp: new Date().toLocaleTimeString("fa-IR", { hour: "2-digit", minute: "2-digit" }),
        isRead: true,
        self: true,
