@@ -32,6 +32,7 @@ export const Navbar = () => {
   const location = useLocation();
   const isLanding = location.pathname === "/";
   const isElectron = typeof window !== "undefined" && !!(window as any).electronAPI;
+  const isInvitePage = location.pathname.startsWith("/invite/") || location.pathname.startsWith("/proposal/");
 
   useMotionValueEvent(scrollY, "change", (latest) => {
     setIsScrolled(latest > 50);
@@ -81,19 +82,23 @@ export const Navbar = () => {
         >
           {/* Left: Logo & Mobile Toggle */}
           <div className="flex items-center gap-4 flex-shrink-0">
-            <button 
-              className="p-2 text-gray-400 hover:text-white md:hidden animate-fade-in"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-            >
-              {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
-            </button>
-            <button 
-              className="p-2 text-gray-400 hover:text-white hidden md:block cursor-pointer transition-colors hover:bg-white/5 rounded-lg"
-              onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-              title={isSidebarCollapsed ? "نمایش منوی اصلی" : "پنهان کردن منوی اصلی"}
-            >
-              <Menu size={21} className={cn("transition-transform duration-300", isSidebarCollapsed && "rotate-180")} />
-            </button>
+            {!isInvitePage && (
+              <>
+                <button 
+                  className="p-2 text-gray-400 hover:text-white md:hidden animate-fade-in"
+                  onClick={() => setIsMenuOpen(!isMenuOpen)}
+                >
+                  {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+                </button>
+                <button 
+                  className="p-2 text-gray-400 hover:text-white hidden md:block cursor-pointer transition-colors hover:bg-white/5 rounded-lg"
+                  onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+                  title={isSidebarCollapsed ? "نمایش منوی اصلی" : "پنهان کردن منوی اصلی"}
+                >
+                  <Menu size={21} className={cn("transition-transform duration-300", isSidebarCollapsed && "rotate-180")} />
+                </button>
+              </>
+            )}
             <Link to="/" className="flex items-center gap-4 group">
               <img 
                 src="/logo.png" 
@@ -122,7 +127,20 @@ export const Navbar = () => {
 
           {/* Middle: Centered Navigation (OMITTED entirely on Desktop Client as requested) */}
           {!isElectron && (
-            <div className="hidden md:flex items-center gap-8 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+            <div className="hidden md:flex items-center gap-6 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+              {user && (
+                <NavLink 
+                  to="/dashboard" 
+                  className={({ isActive }) => 
+                    cn(
+                      "transition-all font-black text-[11px] uppercase tracking-[0.12em] italic px-3 py-1 border border-neon-blue/30 bg-neon-blue/5 text-neon-blue shadow-[0_0_12px_rgba(0,229,255,0.1)] hover:bg-neon-blue/20 hover:border-neon-blue/60 hover:text-white ripple-active transition-all duration-300 rounded-lg",
+                      isActive && "border-neon-blue/80 bg-neon-blue/15 text-white shadow-[0_0_18px_rgba(0,229,255,0.3)]"
+                    )
+                  }
+                >
+                  داشبورد
+                </NavLink>
+              )}
               <NavLink to="/lobbies" className={({ isActive }) => cn("transition-all font-black text-[10px] uppercase tracking-[0.2em] italic", isActive ? "text-neon-blue drop-shadow-[0_0_8px_rgba(0,229,255,0.5)]" : "text-gray-400 hover:text-white ripple-active")}>لابی‌ها</NavLink>
               <NavLink to="/chat" className={({ isActive }) => cn("transition-all font-black text-[10px] uppercase tracking-[0.2em] italic", isActive ? "text-neon-blue drop-shadow-[0_0_8px_rgba(0,229,255,0.5)]" : "text-gray-400 hover:text-white ripple-active")}>چت سراسری</NavLink>
               <NavLink to="/games" className={({ isActive }) => cn("transition-all font-black text-[10px] uppercase tracking-[0.2em] italic", isActive ? "text-neon-blue drop-shadow-[0_0_8px_rgba(0,229,255,0.5)]" : "text-gray-400 hover:text-white ripple-active")}>بازی‌ها</NavLink>
