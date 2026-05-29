@@ -8,7 +8,7 @@ import { LobbyInviteCard } from "../components/ui/LobbyInviteCard";
 import { SmartImage } from "../components/ui/SmartImage";
 import { getAvatarFallbacks } from "../lib/avatar";
 import { getFileUrl } from "../lib/constants";
-import { Send, Hash, Users, MoreVertical, Plus, Smile, Image as ImageIcon, Reply, Heart, ChevronDown, Award, Star, Zap, Crown, Play, Check, Menu, X, MessageSquare, User, Trophy, Palette, Trash, MessageCircle, Search, UserPlus as UserPlusIcon, Settings, Flag, AlertTriangle, Radio } from "lucide-react";
+import { Send, Hash, Users, MoreVertical, Plus, Smile, Image as ImageIcon, Reply, Heart, ChevronDown, Award, Star, Zap, Crown, Play, Check, Menu, X, MessageSquare, User, Trophy, Palette, Trash, MessageCircle, Search, UserPlus as UserPlusIcon, Settings, Flag, AlertTriangle, Radio, VolumeX } from "lucide-react";
 import { cn } from "../lib/utils";
 import { motion, AnimatePresence } from "motion/react";
 import { useGames } from "../context/GamesContext";
@@ -53,13 +53,16 @@ interface MessageItemProps {
   onReport?: (msg: ChatMessage) => void;
   onPin?: () => void;
   isGroupOwner?: boolean;
+  onWarnUser?: (targetUserId: string, senderName: string) => void;
+  onMuteUser?: (targetUserId: string, senderName: string) => void;
   [key: string]: any; 
 }
 
-function MessageItem({ message, onReaction, onSaveGif, onReply, activeChannelId, onDelete, onReport, onPin, isGroupOwner }: MessageItemProps) {
+function MessageItem({ message, onReaction, onSaveGif, onReply, activeChannelId, onDelete, onReport, onPin, isGroupOwner, onWarnUser, onMuteUser }: MessageItemProps) {
   const { openProfile } = useProfilePopover();
   const { user } = useAuth();
   const isAdmin = (user as any)?.role === 'ADMIN';
+  const isHelper = (user as any)?.role === 'HELPER';
   const [showActions, setShowActions] = useState(false);
 
   // Level based colors
@@ -226,12 +229,12 @@ function MessageItem({ message, onReaction, onSaveGif, onReply, activeChannelId,
           <div className={cn("relative group/bubble-container flex items-center w-fit", message.self ? "ml-auto" : "mr-auto")}>
             {/* VIP Glow Backing */}
             {isVIP && (
-              <div className="absolute inset-0 bg-yellow-400/5 blur-3xl rounded-full scale-150 animate-pulse pointer-events-none" />
+              <div className="absolute inset-0 bg-yellow-400/5 blur-3xl rounded-full scale-150 animate-pulse pointer-events-none hidden md:block" />
             )}
             
             {/* Streamer Glow Backing */}
             {isStreamer && !isVIP && (
-              <div className="absolute inset-0 bg-neon-purple/10 blur-3xl rounded-full scale-110 animate-pulse pointer-events-none" />
+              <div className="absolute inset-0 bg-neon-purple/10 blur-3xl rounded-full scale-110 animate-pulse pointer-events-none hidden md:block" />
             )}
             
             {/* Action Buttons - Repositioned to prevent horizontal scroll */}
@@ -266,7 +269,7 @@ function MessageItem({ message, onReaction, onSaveGif, onReply, activeChannelId,
                    <Star size={14} />
                  </button>
               )}
-              {(isAdmin || message.self || isGroupOwner) && (
+              {(isAdmin || isHelper || message.self || isGroupOwner) && (
                 <button 
                   className="h-6 w-6 md:h-7 md:w-7 flex items-center justify-center text-gray-400 hover:text-red-500 transition-colors rounded-lg hover:bg-white/5 relative z-10 shrink-0" 
                   onClick={(e) => { e.stopPropagation(); onDelete(message.id); setShowActions(false); }}
@@ -274,6 +277,24 @@ function MessageItem({ message, onReaction, onSaveGif, onReply, activeChannelId,
                 >
                   <Trash size={14} />
                 </button>
+              )}
+              {(isAdmin || isHelper) && !message.self && (
+                <>
+                  <button 
+                    className="h-6 w-6 md:h-7 md:w-7 flex items-center justify-center text-gray-400 hover:text-yellow-500 transition-colors rounded-lg hover:bg-white/5 relative z-10 shrink-0" 
+                    onClick={(e) => { e.stopPropagation(); onWarnUser?.(message.senderId, message.senderName); setShowActions(false); }}
+                    title="ثبت اخطار برای کاربر"
+                  >
+                    <AlertTriangle size={14} className="text-yellow-500" />
+                  </button>
+                  <button 
+                    className="h-6 w-6 md:h-7 md:w-7 flex items-center justify-center text-gray-400 hover:text-red-500 transition-colors rounded-lg hover:bg-white/5 relative z-10 shrink-0" 
+                    onClick={(e) => { e.stopPropagation(); onMuteUser?.(message.senderId, message.senderName); setShowActions(false); }}
+                    title="ساکت کردن (Mute)"
+                  >
+                    <VolumeX size={14} className="text-red-500" />
+                  </button>
+                </>
               )}
               <div className="flex items-center gap-0.5 md:gap-1.5 border-r border-white/5 pr-1 md:pr-2 relative z-10 shrink-0">
                   {["🔥", "🎯", "👑", "❤️"].map(emoji => (
@@ -1521,6 +1542,37 @@ export const ChatPage: React.FC = () => {
     }
   };
 
+  const handleWarnUser = (targetUserId: string, senderName: string) => {
+    if (confirm(`آیا مطمئن هستید که می‌خواهید به کاربر "${senderName}" اخطار بدهید؟`)) {
+      chatSocket.emit("chat.warn_user", { targetUserId }, (res: any) => {
+        if (res.status === "ok") {
+          toast.success(`اخطار با موفقیت به کاربر ${senderName} اعطا شد. تعداد اخطارهای امروز: ${res.data.warningsToday}`);
+        } else {
+          toast.error(res.error?.message || "خطا در ثبت اخطار");
+        }
+      });
+    }
+  };
+
+  const handleMuteUser = (targetUserId: string, senderName: string) => {
+    const minStr = prompt("مدت زمان سکوت (Mute) را بین ۲ تا ۱۰ دقیقه وارد کنید:");
+    if (minStr === null) return; // user cancelled
+
+    const duration = parseInt(minStr);
+    if (isNaN(duration) || duration < 2 || duration > 10) {
+      toast.error("مدت زمان باید یک عدد بین ۲ تا ۱۰ دقیقه باشد.");
+      return;
+    }
+
+    chatSocket.emit("chat.mute_user", { targetUserId, durationMinutes: duration }, (res: any) => {
+      if (res.status === "ok") {
+        toast.success(`کاربر ${senderName} به مدت ${duration} دقیقه با موفقیت ساکت (Mute) شد.`);
+      } else {
+        toast.error(res.error?.message || "خطا در اعمال سکوت");
+      }
+    });
+  };
+
   return (
     <div 
       className={cn(
@@ -2482,6 +2534,8 @@ export const ChatPage: React.FC = () => {
                    activeChannelId={activeChannelId} 
                    onDelete={deleteMessage} 
                    onReport={(m) => setReportingMessage(m)} 
+                   onWarnUser={handleWarnUser}
+                   onMuteUser={handleMuteUser} 
                    onPin={(activeChannel.type === 'elite' && (activeChannel as any).ownerId === user?.id) ? () => handlePinMessage(msg.id) : undefined} 
                    isGroupOwner={activeChannel.type === 'elite' && (activeChannel as any).ownerId === user?.id} 
                  />

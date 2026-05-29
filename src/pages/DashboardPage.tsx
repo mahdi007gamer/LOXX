@@ -233,7 +233,7 @@ export const DashboardPage = () => {
             >
               <div className="relative min-h-[160px] md:h-44 w-full rounded-[48px] overflow-hidden bg-[#0d0d12] border border-neon-purple/30 transition-all duration-700 shadow-[0_42px_120px_-20px_rgba(168,85,247,0.35)]">
                  <div className="absolute inset-0 bg-gradient-to-r from-neon-purple/15 via-[#0d0d12] to-neon-purple/5 opacity-80" />
-                 <div className="absolute top-0 right-1/4 w-[350px] h-[350px] bg-purple-600/10 rounded-full blur-[100px] pointer-events-none -z-10" />
+                 <div className="absolute top-0 right-1/4 w-[350px] h-[350px] bg-purple-600/10 rounded-full blur-[100px] pointer-events-none -z-10 hidden md:block" />
                  
                  {/* Floating spark particles decoration */}
                  <div className="absolute inset-0 opacity-40 pointer-events-none">
@@ -485,7 +485,7 @@ export const DashboardPage = () => {
                    
                    {/* Decorative corner light */}
                    <div className={cn(
-                     "absolute -bottom-20 -right-20 h-40 w-40 rounded-full blur-[80px] opacity-30",
+                     "absolute -bottom-20 -right-20 h-40 w-40 rounded-full blur-[80px] opacity-30 hidden md:block",
                      currentMembership === "VIP" ? "bg-yellow-400" : (currentMembership === "PLUS" || currentMembership === "PLATINUM") ? "bg-neon-blue" : "bg-neon-purple"
                    )} />
                 </div>
@@ -507,7 +507,7 @@ export const DashboardPage = () => {
               )}>
                  {/* Background Accent */}
                  <div className={cn(
-                    "absolute -top-10 -right-10 h-40 w-40 rounded-full blur-[60px] opacity-40 group-hover:opacity-60 transition-all duration-700",
+                    "absolute -top-10 -right-10 h-40 w-40 rounded-full blur-[60px] opacity-40 group-hover:opacity-60 transition-all duration-700 hidden md:block",
                     isTop10 ? "bg-yellow-400" : "bg-neon-purple"
                  )} />
                  

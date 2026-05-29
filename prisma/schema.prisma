@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -60,6 +60,8 @@ model User {
   streamerStats   StreamerStats?
   withdrawals     WithdrawalRequest[]
   referredPayments PaymentRequest[] @relation("StreamerPayments")
+  chatWarningsReceived ChatWarning[] @relation("UserWarnings")
+  chatWarningsGiven   ChatWarning[] @relation("WarnedBy")
 }
 
 model LoginToken {
@@ -496,4 +498,13 @@ model EmailMessage {
   isIncoming Boolean  @default(true)
   isRead     Boolean  @default(false)
   createdAt  DateTime @default(now())
+}
+
+model ChatWarning {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation("UserWarnings", fields: [userId], references: [id], onDelete: Cascade)
+  warnedById  String
+  warnedBy    User     @relation("WarnedBy", fields: [warnedById], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
 }

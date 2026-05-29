@@ -402,9 +402,9 @@ const AppContent = () => {
       {/* Abstract background effects */}
       {!isOverlayWidget && (
         <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10">
-          <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-neon-blue/5 rounded-full blur-[120px]" />
-          <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-neon-pink/5 rounded-full blur-[120px]" />
-          <div className="absolute top-[30%] left-[20%] w-[30%] h-[30%] bg-neon-purple/5 rounded-full blur-[120px]" />
+          <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-neon-blue/5 rounded-full blur-[120px] hidden md:block" />
+          <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-neon-pink/5 rounded-full blur-[120px] hidden md:block" />
+          <div className="absolute top-[30%] left-[20%] w-[30%] h-[30%] bg-[#a855f7]/0.03 rounded-full blur-[80px] md:blur-[120px] md:bg-neon-purple/5" />
           
           {/* Subtle Grid */}
           <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_at_center,black,transparent_80%)]" />

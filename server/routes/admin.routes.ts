@@ -8,6 +8,7 @@ const router = Router();
 router.use(authenticate, authorizeAdmin);
 
 router.get("/alerts", adminController.getAdminAlerts);
+router.get("/dashboard-stats", adminController.getDashboardStats);
 
 router.get("/users", adminController.getAllUsers);
 router.patch("/users/:id", adminController.updateUserDetails);

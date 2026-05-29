@@ -894,7 +894,7 @@ export function setupWebSockets(io: Server) {
         if (!message) return;
 
         const user = await prisma.user.findUnique({ where: { id: userId } });
-        const canDelete = message.senderId === userId || user?.role === "ADMIN";
+        const canDelete = message.senderId === userId || user?.role === "ADMIN" || user?.role === "HELPER";
 
         if (!canDelete) return;
 
@@ -904,15 +904,120 @@ export function setupWebSockets(io: Server) {
           return;
         }
 
+        const isUserHelperOrAdmin = user?.role === "ADMIN" || user?.role === "HELPER";
+        const content = (isUserHelperOrAdmin && message.senderId !== userId)
+          ? "این پیام توسط Helper پاک شد"
+          : "این پیام حذف شده است.";
+
         await prisma.message.update({
           where: { id: messageId },
-          data: { isDeleted: true, content: "این پیام حذف شده است." }
+          data: { isDeleted: true, content }
         });
 
         const room = message.channelId ? `channel:${message.channelId}` : message.lobbyId ? `lobby:${message.lobbyId}` : `user:${message.receiverId || message.senderId}`;
-        chatNs.to(room).emit("chat.delete", { messageId: data.messageId });
+        chatNs.to(room).emit("chat.delete", { messageId: data.messageId, content });
       } catch (err) {
         console.error("Delete error:", err);
+      }
+    });
+
+    socket.on("chat.warn_user", async (data: { targetUserId: string }, ack) => {
+      try {
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+        const isHelperOrAdmin = user?.role === "ADMIN" || user?.role === "HELPER";
+        if (!isHelperOrAdmin) {
+          return ack?.({ status: "error", error: { message: "شما دسترسی به این بخش را ندارید." } });
+        }
+
+        const targetUser = await prisma.user.findUnique({ where: { id: data.targetUserId } });
+        if (!targetUser) {
+          return ack?.({ status: "error", error: { message: "کاربر مورد نظر یافت نشد." } });
+        }
+
+        const startOfToday = new Date();
+        startOfToday.setHours(0, 0, 0, 0);
+
+        // Record warning
+        await prisma.chatWarning.create({
+          data: {
+            userId: data.targetUserId,
+            warnedById: userId
+          }
+        });
+
+        const warningsToday = await prisma.chatWarning.count({
+          where: {
+            userId: data.targetUserId,
+            createdAt: { gte: startOfToday }
+          }
+        });
+
+        // Notify client in real-time
+        chatNs.to(`user:${data.targetUserId}`).emit("chat.warning_received", {
+          warningsToday,
+          message: `شما یک اخطار چت دریافت کردید! تعداد اخطارهای امروز شما: ${warningsToday} از ۲.`
+        });
+
+        if (ack) {
+          ack({ status: "ok", data: { warningsToday } });
+        }
+      } catch (err: any) {
+        console.error("Warn error:", err);
+        if (ack) ack({ status: "error", error: { message: err.message } });
+      }
+    });
+
+    socket.on("chat.mute_user", async (data: { targetUserId: string, durationMinutes: number }, ack) => {
+      try {
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+        const isHelperOrAdmin = user?.role === "ADMIN" || user?.role === "HELPER";
+        if (!isHelperOrAdmin) {
+          return ack?.({ status: "error", error: { message: "شما دسترسی به این بخش را ندارید." } });
+        }
+
+        const targetUser = await prisma.user.findUnique({ where: { id: data.targetUserId } });
+        if (!targetUser) {
+          return ack?.({ status: "error", error: { message: "کاربر مورد نظر یافت نشد." } });
+        }
+
+        const startOfToday = new Date();
+        startOfToday.setHours(0, 0, 0, 0);
+
+        const warningsCount = await prisma.chatWarning.count({
+          where: {
+            userId: data.targetUserId,
+            createdAt: { gte: startOfToday }
+          }
+        });
+
+        if (warningsCount < 2) {
+          return ack?.({ status: "error", error: { message: `کاربر باید حداقل ۲ اخطار امروز داشته باشد تابتوانید او را ساکت (Mute) کنید. (اخطارهای امروز: ${warningsCount})` } });
+        }
+
+        const duration = Math.min(10, Math.max(2, data.durationMinutes || 2));
+        const expiresAt = new Date();
+        expiresAt.setMinutes(expiresAt.getMinutes() + duration);
+
+        await prisma.penalty.create({
+          data: {
+            userId: data.targetUserId,
+            type: "CHAT_BAN",
+            reason: `سکوت توسط مدیر به دلیل دریافت اخطارهای متعدد`,
+            expiresAt
+          }
+        });
+
+        chatNs.to(`user:${data.targetUserId}`).emit("chat.muted", {
+          until: expiresAt.getTime(),
+          message: `شما ساکت (Mute) شدید و تا ${duration} دقیقه آینده نمی‌توانید در چت‌ها پیام ارسال کنید.`
+        });
+
+        if (ack) {
+          ack({ status: "ok", data: { duration, until: expiresAt.getTime() } });
+        }
+      } catch (err: any) {
+        console.error("Mute error:", err);
+        if (ack) ack({ status: "error", error: { message: err.message } });
       }
     });
 

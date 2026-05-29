@@ -671,3 +671,58 @@ export const deleteStreamerInvite = async (req: Request, res: Response) => {
     res.status(500).json({ status: "error", message: error.message });
   }
 };
+
+export const getDashboardStats = async (req: Request, res: Response) => {
+  try {
+    const totalUsers = await prisma.user.count();
+    
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const usersToday = await prisma.user.count({
+      where: {
+        createdAt: {
+          gte: startOfToday
+        }
+      }
+    });
+
+    const vipUsers = await prisma.profile.count({
+      where: {
+        membershipType: "VIP"
+      }
+    });
+
+    const activeLobbies = await prisma.lobby.count();
+    const pendingPayments = await prisma.paymentRequest.count({
+      where: { status: "PENDING" }
+    });
+    const pendingReports = await prisma.report.count({
+      where: { status: "PENDING" }
+    });
+    const totalGames = await prisma.game.count();
+    const totalStreamers = await prisma.user.count({
+      where: { role: "STREAMER" }
+    });
+    const totalCooperationProposals = await prisma.streamerCooperationProposal.count({
+      where: { status: "PENDING" }
+    });
+
+    res.json({
+      status: "success",
+      data: {
+        totalUsers,
+        usersToday,
+        vipUsers,
+        activeLobbies,
+        pendingPayments,
+        pendingReports,
+        totalGames,
+        totalStreamers,
+        totalCooperationProposals
+      }
+    });
+  } catch (error: any) {
+    res.status(500).json({ status: "error", message: error.message });
+  }
+};

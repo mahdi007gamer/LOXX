@@ -93,8 +93,8 @@ export const LandingPage = () => {
 
       {/* Global Background Glows */}
       <div className="fixed inset-0 pointer-events-none -z-20 overflow-hidden">
-        <div className="absolute top-[20%] left-[-10%] w-[60%] h-[60%] bg-neon-blue/5 rounded-full blur-[150px]" />
-        <div className="absolute bottom-[20%] right-[-10%] w-[60%] h-[60%] bg-neon-pink/5 rounded-full blur-[150px]" />
+        <div className="absolute top-[20%] left-[-10%] w-[60%] h-[60%] bg-neon-blue/5 rounded-full blur-[150px] hidden md:block" />
+        <div className="absolute bottom-[20%] right-[-10%] w-[60%] h-[60%] bg-neon-pink/5 rounded-full blur-[150px] hidden md:block" />
       </div>
     </div>
   );

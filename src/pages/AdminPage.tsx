@@ -22,7 +22,7 @@ import { AuthorizedImage } from "../components/ui/AuthorizedImage";
 
 export const AdminPage = () => {
   const { isSidebarCollapsed } = useAuth();
-  const [activeTab, setActiveTab] = useState<"users" | "games" | "payments" | "paymentsHistory" | "genres" | "badges" | "reports" | "gifs" | "streamers">("users");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "users" | "games" | "payments" | "paymentsHistory" | "genres" | "badges" | "reports" | "gifs" | "streamers">("dashboard");
   const [users, setUsers] = useState<any[]>([]);
   const [games, setGames] = useState<any[]>([]);
   const [payments, setPayments] = useState<any[]>([]);
@@ -32,6 +32,7 @@ export const AdminPage = () => {
   const [reports, setReports] = useState<any[]>([]);
   const [gifs, setGifs] = useState<any[]>([]);
   const [streamers, setStreamers] = useState<any[]>([]);
+  const [dashboardStats, setDashboardStats] = useState<any>(null);
   
   // New Admin GIF States
   const [newGifFile, setNewGifFile] = useState<File | null>(null);
@@ -69,7 +70,10 @@ export const AdminPage = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      if (activeTab === "users") {
+      if (activeTab === "dashboard") {
+        const res = await api.get("/admin/dashboard-stats");
+        setDashboardStats(res.data.data);
+      } else if (activeTab === "users") {
         const res = await api.get(`/admin/users?search=${searchTerm}`).catch(() => ({ data: { data: [] } }));
         setUsers(res.data.data || []);
       } else if (activeTab === "games") {
@@ -221,6 +225,15 @@ export const AdminPage = () => {
 
           <div className="flex gap-4 border-b border-white/5 pb-px overflow-x-auto">
             <button
+              onClick={() => setActiveTab("dashboard")}
+              className={`pb-4 px-6 text-sm font-black uppercase tracking-widest transition-all relative ${
+                activeTab === "dashboard" ? "text-neon-pink" : "text-gray-500 hover:text-gray-300"
+              }`}
+            >
+              داشبورد مدیریت
+              {activeTab === "dashboard" && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-neon-pink shadow-[0_0_15px_#FF0080]" />}
+            </button>
+            <button
               onClick={() => setActiveTab("users")}
               className={`pb-4 px-6 text-sm font-black uppercase tracking-widest transition-all relative ${
                 activeTab === "users" ? "text-neon-blue" : "text-gray-500 hover:text-gray-300"
@@ -294,7 +307,218 @@ export const AdminPage = () => {
               </button>
           </div>
 
-          {activeTab === "users" ? (
+          {activeTab === "dashboard" ? (
+            <div className="space-y-8 animate-fade-in" id="dashboard-tab-content">
+              {/* Top Banner */}
+              <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-neon-blue/10 via-neon-purple/5 to-transparent border border-white/5 p-8">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-neon-blue/10 rounded-full blur-[80px]" />
+                <div className="relative z-10">
+                  <h2 className="text-2xl font-black text-white mb-2">سلام، ادمین عزیز! 👋</h2>
+                  <p className="text-sm text-gray-400 leading-relaxed font-semibold">
+                    به بخش پیشخوان مدیریت خوش آمدید. در اینجا کنترل‌های جامع پلتفرم، آمار رشد و وضعیت تراکنش‌ها و لابی‌های پلتفرم در زمان پاسخ‌دهی زنده را مشاهده می‌کنید.
+                  </p>
+                </div>
+              </div>
+
+              {/* Stats Grid */}
+              {loading && !dashboardStats ? (
+                <div className="flex flex-col items-center justify-center py-16">
+                  <div className="w-10 h-10 rounded-full border-2 border-t-neon-blue border-r-transparent border-b-transparent border-l-transparent animate-spin mb-4" />
+                  <p className="text-gray-400 font-bold text-sm">در حال بارگذاری اطلاعات زنده داشبورد...</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {/* Total Users */}
+                  <div className="relative group overflow-hidden bg-gradient-to-br from-[#0c0d12]/90 to-[#121420]/90 border border-white/5 rounded-2xl p-6 shadow-xl transition-all hover:border-neon-blue/30 hover:shadow-[0_0_20px_rgba(0,195,255,0.1)]">
+                    <div className="absolute top-0 left-0 w-16 h-16 bg-neon-blue/5 rounded-full blur-[20px]" />
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <span className="text-[11px] text-gray-500 font-black uppercase tracking-wider block mb-1">تعداد کل کاربران</span>
+                        <span className="text-3xl font-black text-white">{dashboardStats?.totalUsers ?? 0}</span>
+                      </div>
+                      <div className="w-12 h-12 rounded-xl bg-neon-blue/10 border border-neon-blue/20 flex items-center justify-center text-neon-blue">
+                        <Icons.Users className="w-6 h-6" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Registered Today */}
+                  <div className="relative group overflow-hidden bg-gradient-to-br from-[#0c0d12]/90 to-[#121420]/90 border border-white/5 rounded-2xl p-6 shadow-xl transition-all hover:border-green-400/30 hover:shadow-[0_0_20px_rgba(74,222,128,0.1)]">
+                    <div className="absolute top-0 left-0 w-16 h-16 bg-green-400/5 rounded-full blur-[20px]" />
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <span className="text-[11px] text-gray-500 font-black uppercase tracking-wider block mb-1">ثبت‌نامی‌های امروز</span>
+                        <span className="text-3xl font-black text-green-400">{dashboardStats?.usersToday ?? 0}</span>
+                      </div>
+                      <div className="w-12 h-12 rounded-xl bg-green-400/10 border border-green-400/20 flex items-center justify-center text-green-400">
+                        <Icons.UserPlus className="w-6 h-6" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Pending Payments */}
+                  <div className="relative group overflow-hidden bg-gradient-to-br from-[#0c0d12]/90 to-[#121420]/90 border border-white/5 rounded-2xl p-6 shadow-xl transition-all hover:border-yellow-400/30 hover:shadow-[0_0_20px_rgba(250,204,21,0.1)] cursor-pointer" onClick={() => setActiveTab("payments")}>
+                    <div className="absolute top-0 left-0 w-16 h-16 bg-yellow-400/5 rounded-full blur-[20px]" />
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <span className="text-[11px] text-gray-500 font-black uppercase tracking-wider block mb-1">تراکنش‌های معلق</span>
+                        <span className="text-3xl font-black text-yellow-400">{dashboardStats?.pendingPayments ?? 0}</span>
+                      </div>
+                      <div className="w-12 h-12 rounded-xl bg-yellow-400/10 border border-yellow-400/20 flex items-center justify-center text-yellow-400">
+                        <Icons.CreditCard className="w-6 h-6" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Abuse Reports */}
+                  <div className="relative group overflow-hidden bg-gradient-to-br from-[#0c0d12]/90 to-[#121420]/90 border border-white/5 rounded-2xl p-6 shadow-xl transition-all hover:border-red-400/30 hover:shadow-[0_0_20px_rgba(248,113,113,0.1)] cursor-pointer" onClick={() => setActiveTab("reports")}>
+                    <div className="absolute top-0 left-0 w-16 h-16 bg-red-400/5 rounded-full blur-[20px]" />
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <span className="text-[11px] text-gray-500 font-black uppercase tracking-wider block mb-1">گزارش‌های تخلف معلق</span>
+                        <span className="text-3xl font-black text-red-500">{dashboardStats?.pendingReports ?? 0}</span>
+                      </div>
+                      <div className="w-12 h-12 rounded-xl bg-red-400/10 border border-red-400/20 flex items-center justify-center text-red-500">
+                        <Icons.AlertTriangle className="w-6 h-6" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Active Lobbies */}
+                  <div className="relative group overflow-hidden bg-gradient-to-br from-[#0c0d12]/90 to-[#121420]/90 border border-white/5 rounded-2xl p-6 shadow-xl transition-all hover:border-pink-500/30 hover:shadow-[0_0_20px_rgba(219,39,119,0.1)]">
+                    <div className="absolute top-0 left-0 w-16 h-16 bg-pink-500/5 rounded-full blur-[20px]" />
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <span className="text-[11px] text-gray-500 font-black uppercase tracking-wider block mb-1">لابی‌های فعال سیستم</span>
+                        <span className="text-3xl font-black text-pink-500">{dashboardStats?.activeLobbies ?? 0}</span>
+                      </div>
+                      <div className="w-12 h-12 rounded-xl bg-pink-500/10 border border-pink-500/20 flex items-center justify-center text-pink-500">
+                        <Icons.Tv className="w-6 h-6" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Platform Games */}
+                  <div className="relative group overflow-hidden bg-gradient-to-br from-[#0c0d12]/90 to-[#121420]/90 border border-white/5 rounded-2xl p-6 shadow-xl transition-all hover:border-purple-500/30 hover:shadow-[0_0_20px_rgba(168,85,247,0.1)] cursor-pointer" onClick={() => setActiveTab("games")}>
+                    <div className="absolute top-0 left-0 w-16 h-16 bg-purple-500/5 rounded-full blur-[20px]" />
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <span className="text-[11px] text-gray-500 font-black uppercase tracking-wider block mb-1">کتابخانه بازی‌ها</span>
+                        <span className="text-3xl font-black text-purple-400">{dashboardStats?.totalGames ?? 0}</span>
+                      </div>
+                      <div className="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
+                        <Icons.Gamepad className="w-6 h-6" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Streamers */}
+                  <div className="relative group overflow-hidden bg-gradient-to-br from-[#0c0d12]/90 to-[#121420]/90 border border-white/5 rounded-2xl p-6 shadow-xl transition-all hover:border-cyan-500/30 hover:shadow-[0_0_20px_rgba(6,182,212,0.1)] cursor-pointer" onClick={() => window.location.href = '/admin/streamers'}>
+                    <div className="absolute top-0 left-0 w-16 h-16 bg-cyan-500/5 rounded-full blur-[20px]" />
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <span className="text-[11px] text-gray-500 font-black uppercase tracking-wider block mb-1">استریمرهای رسمی</span>
+                        <span className="text-3xl font-black text-cyan-400">{dashboardStats?.totalStreamers ?? 0}</span>
+                      </div>
+                      <div className="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400">
+                        <Icons.Sparkles className="w-6 h-6" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Cooperation requests */}
+                  <div className="relative group overflow-hidden bg-gradient-to-br from-[#0c0d12]/90 to-[#121420]/90 border border-white/5 rounded-2xl p-6 shadow-xl transition-all hover:border-orange-500/30 hover:shadow-[0_0_20px_rgba(249,115,22,0.1)] cursor-pointer" onClick={() => { window.location.href = '/admin/streamers' }}>
+                    <div className="absolute top-0 left-0 w-16 h-16 bg-orange-500/5 rounded-full blur-[20px]" />
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <span className="text-[11px] text-gray-500 font-black uppercase tracking-wider block mb-1">درخواست همکاری جدید</span>
+                        <span className="text-3xl font-black text-orange-400">{dashboardStats?.totalCooperationProposals ?? 0}</span>
+                      </div>
+                      <div className="w-12 h-12 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-400">
+                        <Icons.HeartHandshake className="w-6 h-6" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Quick Actions / Shortcuts Panel */}
+              <div>
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-1.5 h-6 bg-neon-pink rounded-full shadow-[0_0_10px_#FF0080]" />
+                  <h3 className="text-lg font-black text-white">دسترسی سریع به بخش‌های اصلی پیشخوان</h3>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {/* Action 1 */}
+                  <button onClick={() => setActiveTab("users")} className="flex items-center gap-4 p-5 rounded-2xl border border-white/5 bg-[#0a0c14]/60 hover:bg-[#121523]/70 hover:border-neon-blue/40 transition-all text-right w-full group">
+                    <div className="w-12 h-12 rounded-xl bg-neon-blue/10 flex items-center justify-center text-neon-blue group-hover:scale-110 transition-all">
+                      <Icons.Users className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-black text-white mb-0.5">مدیریت کاربران سیستم</h4>
+                      <p className="text-xs text-gray-400">ویرایش نقش، مسدودسازی، تاییدیه هویت و ارتقای پلن عضویت</p>
+                    </div>
+                  </button>
+
+                  {/* Action 2 */}
+                  <button onClick={() => setActiveTab("games")} className="flex items-center gap-4 p-5 rounded-2xl border border-white/5 bg-[#0a0c14]/60 hover:bg-[#121523]/70 hover:border-neon-blue/40 transition-all text-right w-full group">
+                    <div className="w-12 h-12 rounded-xl bg-neon-blue/10 flex items-center justify-center text-neon-blue group-hover:scale-110 transition-all">
+                      <Icons.Gamepad className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-black text-white mb-0.5">کتابخانه بازی‌ها</h4>
+                      <p className="text-xs text-gray-400">افزودن بازی جدید، ژانربندی، لینک کردن مدال‌ها و نشان‌ها</p>
+                    </div>
+                  </button>
+
+                  {/* Action 3 */}
+                  <button onClick={() => setActiveTab("payments")} className="flex items-center gap-4 p-5 rounded-2xl border border-white/5 bg-[#0a0c14]/60 hover:bg-[#121523]/70 hover:border-yellow-400/40 transition-all text-right w-full group">
+                    <div className="w-12 h-12 rounded-xl bg-yellow-400/10 flex items-center justify-center text-yellow-400 group-hover:scale-110 transition-all">
+                      <Icons.CreditCard className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-black text-white mb-0.5">رسیدهای پرداختی کاربران</h4>
+                      <p className="text-xs text-gray-400">تایید یا رد تراکنش‌های ارتقای عضویت Plus و VIP کاربران</p>
+                    </div>
+                  </button>
+
+                  {/* Action 4 */}
+                  <button onClick={() => setActiveTab("reports")} className="flex items-center gap-4 p-5 rounded-2xl border border-white/5 bg-[#0a0c14]/60 hover:bg-[#121523]/70 hover:border-red-400/40 transition-all text-right w-full group">
+                    <div className="w-12 h-12 rounded-xl bg-red-400/10 flex items-center justify-center text-red-500 group-hover:scale-110 transition-all">
+                      <Icons.ShieldAlert className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-black text-white mb-0.5">گزارش‌های تخلف و چت</h4>
+                      <p className="text-xs text-gray-400">بررسی تخلفات چت عمومی، لابی‌ها و عکس‌های نمایه نامناسب</p>
+                    </div>
+                  </button>
+
+                  {/* Action 5 */}
+                  <button onClick={() => { window.location.href = '/admin/streamers' }} className="flex items-center gap-4 p-5 rounded-2xl border border-white/5 bg-[#0a0c14]/60 hover:bg-[#121523]/70 hover:border-cyan-400/40 transition-all text-right w-full group">
+                    <div className="w-12 h-12 rounded-xl bg-cyan-400/10 flex items-center justify-center text-cyan-400 group-hover:scale-110 transition-all">
+                      <Icons.Zap className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-black text-white mb-0.5">پنل اختصاصی استریمرها</h4>
+                      <p className="text-xs text-gray-400">بررسی تسویه‌حساب‌ها، ثبت صفحات استخدام و ساخت مینی‌سایت دعوت شخصی</p>
+                    </div>
+                  </button>
+
+                  {/* Action 6 */}
+                  <button onClick={() => { window.location.href = '/email' }} className="flex items-center gap-4 p-5 rounded-2xl border border-white/5 bg-[#0a0c14]/60 hover:bg-[#121523]/70 hover:border-neon-pink/40 transition-all text-right w-full group">
+                    <div className="w-12 h-12 rounded-xl bg-neon-pink/10 flex items-center justify-center text-neon-pink group-hover:scale-110 transition-all">
+                      <Icons.Mail className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-black text-white mb-0.5">ایمیل سازمانی لوکس</h4>
+                      <p className="text-xs text-gray-400">ارسال ایمیل‌های مکاتباتی، اطلاعیه سیستم و هماهنگی رسمی لابی‌ها</p>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : activeTab === "users" ? (
             <div className="space-y-6">
               <div className="flex flex-col md:flex-row gap-4 items-center">
                 <div className="relative flex-1">

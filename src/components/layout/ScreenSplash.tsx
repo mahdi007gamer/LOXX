@@ -5,6 +5,7 @@ export const ScreenSplash = ({ onComplete }: { onComplete: () => void }) => {
   const [progress, setProgress] = useState(0);
   const [isUpdating, setIsUpdating] = useState(false);
   const [appVersion, setAppVersion] = useState("1.0.6");
+  const isElectron = typeof window !== "undefined" && !!(window as any).electronAPI;
 
   useEffect(() => {
     // Determine live launcher version dynamically in desktop mode
@@ -104,7 +105,7 @@ export const ScreenSplash = ({ onComplete }: { onComplete: () => void }) => {
           className="space-y-2 mb-10"
         >
           <h1 className="text-3xl font-black italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-white via-gray-100 to-gray-300 uppercase leading-none font-sans">
-            LOXX CLIENT
+            {isElectron ? "LOXX CLIENT" : "LOXX"}
           </h1>
           <p className="text-sm font-black text-neon-blue tracking-wider uppercase font-sans">
             لوکس | اولین پلتفرم پیشرفته گیمینگ فارسی
