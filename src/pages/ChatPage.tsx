@@ -1050,37 +1050,40 @@ export const ChatPage: React.FC = () => {
 
     const handleReactionUpdate = (data: { messageId: string, reactions: any[] }) => {
       setMessages(prev => {
-        const newMessages = { ...prev };
-        Object.keys(newMessages).forEach(channelId => {
-          newMessages[channelId] = newMessages[channelId].map(m => 
+        const targetChannelId = Object.keys(prev).find(chId => prev[chId]?.some(m => m.id === data.messageId));
+        if (!targetChannelId) return prev;
+        return {
+          ...prev,
+          [targetChannelId]: prev[targetChannelId].map(m => 
             m.id === data.messageId ? { ...m, reactions: data.reactions } : m
-          );
-        });
-        return newMessages;
+          )
+        };
       });
     };
     chatSocket.on("chat.reaction", handleReactionUpdate);
 
     const handleDelete = (data: { messageId: string }) => {
       setMessages(prev => {
-        const newMessages = { ...prev };
-        Object.keys(newMessages).forEach(channelId => {
-          newMessages[channelId] = newMessages[channelId].map(m => 
+        const targetChannelId = Object.keys(prev).find(chId => prev[chId]?.some(m => m.id === data.messageId));
+        if (!targetChannelId) return prev;
+        return {
+          ...prev,
+          [targetChannelId]: prev[targetChannelId].map(m => 
             m.id === data.messageId ? { ...m, isDeleted: true, text: "این پیام حذف شده است." } : m
-          );
-        });
-        return newMessages;
+          )
+        };
       });
     };
     chatSocket.on("chat.delete", handleDelete);
 
     const handleRemove = (data: { messageId: string }) => {
       setMessages(prev => {
-        const newMessages = { ...prev };
-        Object.keys(newMessages).forEach(channelId => {
-          newMessages[channelId] = newMessages[channelId].filter(m => m.id !== data.messageId);
-        });
-        return newMessages;
+        const targetChannelId = Object.keys(prev).find(chId => prev[chId]?.some(m => m.id === data.messageId));
+        if (!targetChannelId) return prev;
+        return {
+          ...prev,
+          [targetChannelId]: prev[targetChannelId].filter(m => m.id !== data.messageId)
+        };
       });
     };
     chatSocket.on("chat.message_removed", handleRemove);

@@ -114,8 +114,17 @@
             <img class="preloader-logo" src="/logo.png" alt="LOXX" />
           </div>
           <div>
-            <h2 class="preloader-text-primary">لوکس کلاینت</h2>
+            <h2 class="preloader-text-primary" id="preloader-title">لوکس</h2>
             <p class="preloader-text-secondary">در حال آماده‌سازی و اتصال به شبکه گیمینگ لوکس...</p>
+            <script>
+              (function() {
+                const isElectron = !!(window.electronAPI || (navigator.userAgent && navigator.userAgent.indexOf('Electron') > -1));
+                const titleEl = document.getElementById('preloader-title');
+                if (titleEl) {
+                  titleEl.textContent = isElectron ? 'لوکس کلاینت' : 'لوکس';
+                }
+              })();
+            </script>
           </div>
         </div>
       </div>
