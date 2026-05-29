@@ -565,9 +565,14 @@ const FloatingAudioPlayer = ({ src, streamerName, isOpened }: { src: string, str
     );
 }
 
+interface StreamerProposalPageProps {
+  overrideName?: string;
+}
+
 // Main Page
-const StreamerProposalPage = () => {
+const StreamerProposalPage = ({ overrideName }: StreamerProposalPageProps = {}) => {
   const { name } = useParams<{ name?: string }>();
+  const alias = overrideName || name || 'Rest_in_Peace';
   
   const [inviteData, setInviteData] = useState<any>(null);
   const [isOpened, setIsOpened] = useState(false);
@@ -577,7 +582,6 @@ const StreamerProposalPage = () => {
   useEffect(() => {
     const fetchInvite = async () => {
       try {
-        const alias = name || 'Rest_in_Peace';
         const res = await api.get(`/streamers/invite/${alias}`);
         const result = res.data;
         
@@ -593,16 +597,16 @@ const StreamerProposalPage = () => {
         }
       } catch (e) {
          setInviteData({
-           alias: name || 'Rest_in_Peace',
-           streamerName: name === 'Rest_in_Peace' ? 'امیر' : (name || 'کاربر'),
-           voiceUrl: name === 'Rest_in_Peace' ? '/Rest_in_Peace.mp3' : ''
+           alias: alias,
+           streamerName: alias === 'Rest_in_Peace' ? 'امیر' : (alias || 'کاربر'),
+           voiceUrl: alias === 'Rest_in_Peace' ? '/Rest_in_Peace.mp3' : ''
          });
       } finally {
         setLoading(false);
       }
     };
     fetchInvite();
-  }, [name]);
+  }, [alias]);
 
   if (loading) return <div className="min-h-screen bg-[#050508] flex items-center justify-center"><div className="w-8 h-8 rounded-full border-b-2 border-neon-blue animate-spin" /></div>;
 

@@ -5,22 +5,44 @@ import api from "../lib/api";
 import { motion } from "motion/react";
 import { Users, AlertTriangle } from "lucide-react";
 import { GlowButton } from "../components/ui/GlowButton";
+import StreamerProposalPage from "./StreamerProposalPage";
 
 export const InviteRedirectPage = () => {
   const { code } = useParams<{ code: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
+  const [isStreamerInvite, setIsStreamerInvite] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const handleJoin = async () => {
+      if (!code) {
+        setError("لینک دعوت نامعتبر است");
+        setLoading(false);
+        return;
+      }
+
+      // 1. Try to check if it's a streamer proposal page (publicly accessible)
+      try {
+        const streamerRes = await api.get(`/streamers/invite/${code}`);
+        if (streamerRes.data && streamerRes.data.status === "success" && streamerRes.data.data) {
+          setIsStreamerInvite(true);
+          setLoading(false);
+          return;
+        }
+      } catch (e) {
+        // Not a streamer invite, proceed to standard elite group invitation handling
+      }
+
+      // 2. Elite group invite requires authentication
       if (!user) {
         // save the code to localStorage so we can join after login
         localStorage.setItem("pending_invite_code", code || "");
         navigate("/auth");
         return;
       }
+
       try {
         const res = await api.post("/elite/join-link", { inviteCode: code });
         navigate("/chat?channel=" + res.data.data.groupId);
@@ -39,6 +61,11 @@ export const InviteRedirectPage = () => {
          <div className="h-10 w-10 border-4 border-t-neon-blue border-white/10 rounded-full animate-spin"></div>
       </div>
     );
+  }
+
+  // Render the streamer proposal page dynamically if verified
+  if (isStreamerInvite && code) {
+    return <StreamerProposalPage overrideName={code} />;
   }
 
   if (error) {
