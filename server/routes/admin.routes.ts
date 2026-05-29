@@ -60,5 +60,6 @@ router.delete("/enamad/files/:id", enamadController.deleteVerificationFile);
 
 // Clear general chat route
 router.delete("/chat/clear-general", adminController.clearGeneralChat);
+router.post("/chat/generate-tts", adminController.generateTTSGreeting);
 
 export default router;

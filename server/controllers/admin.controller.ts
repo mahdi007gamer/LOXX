@@ -1,6 +1,9 @@
 import { Request, Response } from "express";
 import prisma from "../utils/prisma.ts";
 import argon2 from "argon2";
+import fs from "fs";
+import path from "path";
+import { GoogleGenAI } from "@google/genai";
 
 export const getAllUsers = async (req: Request, res: Response) => {
   try {
@@ -647,14 +650,14 @@ export const getStreamerInvites = async (req: Request, res: Response) => {
 
 export const createStreamerInvite = async (req: Request, res: Response) => {
   try {
-    const { alias, streamerName, voiceUrl } = req.body;
+    const { alias, streamerName, voiceUrl, ttsUrl } = req.body;
     if (!alias || !streamerName) return res.status(400).json({ status: "error", message: "Missing fields" });
 
     const existing = await prisma.streamerInvite.findUnique({ where: { alias } });
     if (existing) return res.status(400).json({ status: "error", message: "Alias already exists" });
 
     const invite = await prisma.streamerInvite.create({
-      data: { alias, streamerName, voiceUrl }
+      data: { alias, streamerName, voiceUrl, ttsUrl }
     });
     res.json({ status: "success", data: invite });
   } catch (error: any) {
@@ -746,6 +749,98 @@ export const clearGeneralChat = async (req: Request, res: Response) => {
       deletedCount: deletedCountObj.count
     });
   } catch (error: any) {
+    res.status(500).json({ status: "error", message: error.message });
+  }
+};
+
+function addWavHeader(pcmBuffer: Buffer, sampleRate: number = 24000, numChannels: number = 1, bitsPerSample: number = 16): Buffer {
+  const header = Buffer.alloc(44);
+  const blockAlign = numChannels * (bitsPerSample / 8);
+  const byteRate = sampleRate * blockAlign;
+  const dataSize = pcmBuffer.length;
+  const chunkSize = 36 + dataSize;
+
+  // RIFF identifier
+  header.write("RIFF", 0);
+  header.writeUInt32LE(chunkSize, 4);
+  // WAVE identifier
+  header.write("WAVE", 8);
+  // Fmt subchunk identifier
+  header.write("fmt ", 12);
+  header.writeUInt32LE(16, 16); // Subchunk1Size
+  header.writeUInt16LE(1, 20); // AudioFormat (1 = PCM)
+  header.writeUInt16LE(numChannels, 22);
+  header.writeUInt32LE(sampleRate, 24);
+  header.writeUInt32LE(byteRate, 28);
+  header.writeUInt16LE(blockAlign, 32);
+  header.writeUInt16LE(bitsPerSample, 34);
+  // Data subchunk identifier
+  header.write("data", 36);
+  header.writeUInt32LE(dataSize, 40);
+
+  return Buffer.concat([header, pcmBuffer]);
+}
+
+export const generateTTSGreeting = async (req: Request, res: Response) => {
+  try {
+    const { streamerName } = req.body;
+    if (!streamerName) {
+      return res.status(400).json({ status: "error", message: "نام نمایشی استریمر الزامی است." });
+    }
+
+    if (!process.env.GEMINI_API_KEY) {
+      return res.status(500).json({ status: "error", message: "کلید API معتبر یافت نشد." });
+    }
+
+    const ai = new GoogleGenAI({
+      apiKey: process.env.GEMINI_API_KEY,
+      httpOptions: {
+        headers: {
+          'User-Agent': 'aistudio-build',
+        }
+      }
+    });
+
+    const response = await ai.models.generateContent({
+      model: "gemini-3.1-flash-tts-preview",
+      contents: [{ parts: [{ text: `سلام ${streamerName} عزیز` }] }],
+      config: {
+        systemInstruction: "تو یک گوینده صبور، شمرده، پرانرژی و بسیار صمیمی و محترم هستی که جمله ورودی را با تلفظ دقیق فارسی و تن صدای بالا و شاداب روایت می‌کنی.",
+        responseModalities: ["AUDIO"],
+        speechConfig: {
+          voiceConfig: {
+            prebuiltVoiceConfig: { voiceName: "Achird" },
+          },
+        },
+      },
+    });
+
+    const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+    if (!base64Audio) {
+      return res.status(500).json({ status: "error", message: "خطا در تولید فایل صوتی از طریق هوش مصنوعی." });
+    }
+
+    const pcmBuffer = Buffer.from(base64Audio, "base64");
+    // Gemini TTS runs with 24000Hz sample rate
+    const wavBuffer = addWavHeader(pcmBuffer, 24000, 1, 16);
+
+    const uploadsDir = path.join(process.cwd(), "uploads");
+    if (!fs.existsSync(uploadsDir)) {
+      fs.mkdirSync(uploadsDir, { recursive: true });
+    }
+
+    const filename = `tts-${Date.now()}-${Math.random().toString(36).substring(7)}.wav`;
+    const filepath = path.join(uploadsDir, filename);
+
+    await fs.promises.writeFile(filepath, wavBuffer);
+
+    res.json({
+      status: "success",
+      message: "فایل صوتی خوش‌آمدگویی با موفقیت تولید شد.",
+      ttsUrl: `/uploads/${filename}`
+    });
+  } catch (error: any) {
+    console.error("TTS generation error:", error);
     res.status(500).json({ status: "error", message: error.message });
   }
 };

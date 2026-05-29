@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -453,6 +453,7 @@ model StreamerInvite {
   alias           String   @unique
   streamerName    String
   voiceUrl        String?
+  ttsUrl          String?
   createdAt       DateTime @default(now())
 }
 

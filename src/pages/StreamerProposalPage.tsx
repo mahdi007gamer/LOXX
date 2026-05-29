@@ -329,7 +329,7 @@ const EnvelopeIntro = ({ onOpen, streamerName }: { onOpen: () => void, streamerN
     )
 }
 
-const FloatingAudioPlayer = ({ src, streamerName, isOpened }: { src: string, streamerName: string, isOpened: boolean }) => {
+const FloatingAudioPlayer = ({ src, ttsUrl, streamerName, isOpened }: { src: string, ttsUrl?: string, streamerName: string, isOpened: boolean }) => {
     const audioRef = useRef<HTMLAudioElement>(null);
     const [isPlaying, setIsPlaying] = useState(false);
     const [duration, setDuration] = useState(0);
@@ -337,6 +337,24 @@ const FloatingAudioPlayer = ({ src, streamerName, isOpened }: { src: string, str
     const [volume, setVolume] = useState(1);
     const [isMuted, setIsMuted] = useState(false);
     const [isVisible, setIsVisible] = useState(false);
+    const [currentTrack, setCurrentTrack] = useState<"tts" | "main">(ttsUrl ? "tts" : "main");
+
+    const trackSrc = currentTrack === "tts" && ttsUrl ? ttsUrl : src;
+
+    useEffect(() => {
+        if (ttsUrl) {
+            setCurrentTrack("tts");
+        } else {
+            setCurrentTrack("main");
+        }
+    }, [ttsUrl, src]);
+
+    useEffect(() => {
+        if (isPlaying && audioRef.current) {
+            audioRef.current.load();
+            audioRef.current.play().catch(() => {});
+        }
+    }, [trackSrc]);
 
     useEffect(() => {
         if (isOpened) {
@@ -366,7 +384,14 @@ const FloatingAudioPlayer = ({ src, streamerName, isOpened }: { src: string, str
         const setAudioTime = () => setCurrentTime(audio.currentTime);
         const handlePlay = () => setIsPlaying(true);
         const handlePause = () => setIsPlaying(false);
-        const handleEnd = () => setIsPlaying(false);
+        const handleEnd = () => {
+            if (currentTrack === "tts" && src) {
+                setCurrentTrack("main");
+                setIsPlaying(true);
+            } else {
+                setIsPlaying(false);
+            }
+        };
 
         audio.addEventListener('loadedmetadata', setAudioData);
         audio.addEventListener('durationchange', setAudioData);
@@ -387,7 +412,7 @@ const FloatingAudioPlayer = ({ src, streamerName, isOpened }: { src: string, str
             audio.removeEventListener('pause', handlePause);
             audio.removeEventListener('ended', handleEnd);
         }
-    }, [isVisible]);
+    }, [isVisible, currentTrack, src]);
 
     const togglePlayPause = () => {
         if (isPlaying) {
@@ -429,7 +454,7 @@ const FloatingAudioPlayer = ({ src, streamerName, isOpened }: { src: string, str
 
     const skipBackward = () => {
         if (audioRef.current) {
-           audioRef.current.currentTime = Math.max(audioRef.current.currentTime - 10, 0);
+            audioRef.current.currentTime = Math.max(audioRef.current.currentTime - 10, 0);
         }
     };
 
@@ -447,7 +472,7 @@ const FloatingAudioPlayer = ({ src, streamerName, isOpened }: { src: string, str
     return (
         <>
             {/* Audio Element hidden */}
-            <audio ref={audioRef} src={src} preload="metadata" />
+            <audio ref={audioRef} src={trackSrc} preload="metadata" />
             <AnimatePresence>
                 {isVisible && (
                     <motion.div 
@@ -495,8 +520,12 @@ const FloatingAudioPlayer = ({ src, streamerName, isOpened }: { src: string, str
                                      </div>
                                  </div>
                                  <div className="flex flex-col">
-                                     <span className="text-white font-black text-sm tracking-wide mb-0.5" dir="ltr">Voice Message</span>
-                                     <span className="text-neon-pink/80 text-[11px] font-bold tracking-wider" dir="ltr">FROM @{streamerName}</span>
+                                     <span className="text-white font-black text-sm tracking-wide mb-0.5" dir="ltr">
+                                         {currentTrack === "tts" ? "خوش‌آمدگویی هوش مصنوعی" : "پیام صوتی دعوت"}
+                                     </span>
+                                     <span className="text-neon-pink/80 text-[11px] font-bold tracking-wider uppercase" dir="ltr">
+                                         {currentTrack === "tts" ? "Achird AI Voice" : `FROM @${streamerName}`}
+                                     </span>
                                  </div>
                              </div>
                              
@@ -692,7 +721,7 @@ const StreamerProposalPage = ({ overrideName }: StreamerProposalPageProps = {}) 
         )}
       </AnimatePresence>
 
-      <FloatingAudioPlayer src={inviteData.voiceUrl || "/Rest_in_Peace.mp3"} streamerName={inviteData.streamerName} isOpened={isOpened} />
+      <FloatingAudioPlayer src={inviteData.voiceUrl || "/Rest_in_Peace.mp3"} ttsUrl={inviteData.ttsUrl} streamerName={inviteData.streamerName} isOpened={isOpened} />
 
       {/* Dynamic Background Effects */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">

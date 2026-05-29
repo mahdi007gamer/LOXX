@@ -80,6 +80,8 @@ export const AdminStreamersPage = () => {
   const [alias, setAlias] = useState("");
   const [streamerName, setStreamerName] = useState("");
   const [voiceUrl, setVoiceUrl] = useState("");
+  const [ttsUrl, setTtsUrl] = useState("");
+  const [isGeneratingTts, setIsGeneratingTts] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
 
@@ -200,12 +202,32 @@ export const AdminStreamersPage = () => {
     }
   };
 
+  const handleGenerateTts = async () => {
+    if (!streamerName.trim()) {
+      return toast.error("لطفاً ابتدا نام نمایشی استریمر را وارد کنید");
+    }
+    setIsGeneratingTts(true);
+    try {
+      const res = await api.post("/admin/chat/generate-tts", { streamerName });
+      if (res.data && res.data.ttsUrl) {
+        setTtsUrl(res.data.ttsUrl);
+        toast.success("وویس خوش‌آمدگویی هوش مصنوعی با موفقیت تولید شد!");
+      } else {
+        toast.error("خطا در تولید وویس هوش مصنوعی");
+      }
+    } catch (e: any) {
+      toast.error(e.response?.data?.message || "خطا در برقراری ارتباط با سرویس هوش مصنوعی");
+    } finally {
+      setIsGeneratingTts(false);
+    }
+  };
+
   const handleCreateInvite = async () => {
     if(!alias || !streamerName) return toast.error("تکمیل فیلدها الزامی است");
     try {
-      await api.post(`/admin/streamer-invites`, { alias, streamerName, voiceUrl });
+      await api.post(`/admin/streamer-invites`, { alias, streamerName, voiceUrl, ttsUrl });
       toast.success("صفحه دعوت با موفقیت ساخته شد");
-      setAlias(""); setStreamerName(""); setVoiceUrl("");
+      setAlias(""); setStreamerName(""); setVoiceUrl(""); setTtsUrl("");
       fetchInvites();
     } catch(e: any) {
       toast.error(e.response?.data?.message || "خطا در ساخت صفحه دعوت");
@@ -415,6 +437,41 @@ export const AdminStreamersPage = () => {
                        </label>
                     </div>
                   </div>
+
+                  {/* AI TTS Segment */}
+                  <div className="bg-white/5 border border-white/5 rounded-2xl p-4 mb-6 flex flex-col md:flex-row items-center justify-between gap-4">
+                    <div className="flex flex-col gap-1 w-full md:w-auto">
+                      <span className="text-sm font-black text-white">وویس پیش‌فرض خوش‌آمدگویی (پخش خودکار قبل از پیام بالا)</span>
+                      <p className="text-xs text-gray-400">پیام صوتی تولید شده توسط هوش مصنوعی با صدای گوینده صمیمی، شمرده و پر انرژی Achird: «سلام {streamerName || "[نام استریمر]"} عزیز»</p>
+                      {ttsUrl && (
+                        <div className="mt-2 flex items-center gap-2 text-neon-pink font-mono text-xs max-w-md overflow-hidden truncate bg-[#0c1020]/50 p-2 rounded-lg border border-neon-pink/20" dir="ltr">
+                          <span className="text-gray-400">TTS Audio: </span>
+                          <span className="underline select-all text-neon-pink">{ttsUrl}</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-3 w-full md:w-auto justify-end">
+                      {ttsUrl && (
+                        <div className="flex items-center bg-black/40 border border-white/10 rounded-xl px-4 py-1.5" dir="ltr">
+                          <audio src={ttsUrl} controls className="h-8 max-w-[200px] outline-none" />
+                        </div>
+                      )}
+                      <GlowButton 
+                        type="button"
+                        onClick={(e) => { e.preventDefault(); handleGenerateTts(); }} 
+                        disabled={isGeneratingTts}
+                        className="px-5 py-2 text-xs"
+                      >
+                        {isGeneratingTts ? (
+                          <div className="flex items-center gap-2">
+                            <div className="w-3.5 h-3.5 border-2 border-white/50 border-t-white rounded-full animate-spin" />
+                            <span>در حال ساخت وویس...</span>
+                          </div>
+                        ) : ttsUrl ? "تولید مجدد پیام صوتی سلام" : "تولید وویس سلام (Achird)"}
+                      </GlowButton>
+                    </div>
+                  </div>
+
                   <GlowButton variant="blue" className="w-full md:w-auto" onClick={handleCreateInvite}>
                     ایجاد صفحه پروپوزال
                   </GlowButton>
