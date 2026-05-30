@@ -628,11 +628,17 @@ app.whenReady().then(() => {
           const found = sources.find(s => s.id === selectedDesktopSourceId);
           if (found) {
             chosenSource = found;
+          } else {
+             console.log('Source not found in getSources:', selectedDesktopSourceId);
           }
-          selectedDesktopSourceId = null; // reset
+          // NEVER reset selectedDesktopSourceId here, as Chromium may call this multiple times per getDisplayMedia request
         }
         
-        let audioOption = request.audioRequested ? 'loopback' : undefined;
+        // Only allow loopback audio for screens, not windows, to prevent crashes
+        let audioOption = undefined;
+        if (request.audioRequested && chosenSource && chosenSource.id.startsWith('screen')) {
+           audioOption = 'loopback';
+        }
         callback({ video: chosenSource, audio: audioOption });
       }).catch((e) => {
         console.error('Failed to get sources for native display media request', e);
