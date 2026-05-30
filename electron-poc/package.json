@@ -1,6 +1,6 @@
 {
   "name": "loxx",
-  "version": "1.2.5",
+  "version": "1.2.6",
   "description": "Electron POC for Loxx",
   "author": "Loxx",
   "homepage": "https://loxx.ir",
@@ -54,7 +54,6 @@
       "uninstallerIcon": "build/icon.ico",
       "uninstallDisplayName": "Loxx",
       "unicode": true,
-      "solid": false,
       "differentialPackage": true,
       "include": "installer.nsh"
     },
