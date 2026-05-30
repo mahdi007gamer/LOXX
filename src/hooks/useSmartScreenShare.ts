@@ -134,17 +134,31 @@ export const useSmartScreenShare = (
           // via getDisplayMedia natively in some cases, but we will rely solely on the main process 
           // intercept handling via setDisplayMediaRequestHandler to simplify the pipeline.
           try {
-            stream = await navigator.mediaDevices.getDisplayMedia({
-              video: true,
-              audio: false
+            console.log("Using getUserMedia fallback for window:", sourceId);
+            stream = await navigator.mediaDevices.getUserMedia({
+              audio: false,
+              video: {
+                mandatory: {
+                  chromeMediaSource: 'desktop',
+                  chromeMediaSourceId: sourceId
+                }
+              } as any
             });
           } catch(e) {
-            console.error("Window capture via getDisplayMedia failed, clearing source ID and throwing:", e);
-            const api = (window as any).electronAPI;
-            if (api && api.setDesktopSourceId) {
-              await api.setDesktopSourceId(null);
+            console.error("Window capture via getUserMedia failed, retrying getDisplayMedia:", e);
+            try {
+              stream = await navigator.mediaDevices.getDisplayMedia({
+                video: true,
+                audio: false
+              });
+            } catch (err) {
+              console.error("Window capture via getDisplayMedia failed, clearing source ID and throwing:", err);
+              const api = (window as any).electronAPI;
+              if (api && api.setDesktopSourceId) {
+                await api.setDesktopSourceId(null);
+              }
+              throw new Error('سیستم عامل نتوانست این پنجره را کپچر کند (احتمالاً به دلیل مینی‌مایز بودن یا محافظت سخت‌افزاری پنجره). لطفاً کل صفحه (Screen) را به اشتراک بگذارید.');
             }
-            throw new Error('سیستم عامل نتوانست این پنجره را کپچر کند (احتمالاً به دلیل مینی‌مایز بودن یا محافظت سخت‌افزاری پنجره). لطفاً کل صفحه (Screen) را به اشتراک بگذارید.');
           }
         } else {
           // Screen sources are fully supported natively via getDisplayMedia
