@@ -143,17 +143,27 @@ export const useSmartScreenShare = (
       } else {
         // Standard Web API or native Electron interceptor
         stream = await navigator.mediaDevices.getDisplayMedia({
-          video: {
-            width: quality.resolution === "1080p" ? 1920 : quality.resolution === "720p" ? 1280 : 854,
-            height: quality.resolution === "1080p" ? 1080 : quality.resolution === "720p" ? 720 : 480,
-            frameRate: quality.framerate
-          },
+          video: true,
           audio: true 
         });
       }
 
+      // Apply quality constraints if possible
+      const videoTrack = stream.getVideoTracks()[0];
+      if (videoTrack) {
+        try {
+          await videoTrack.applyConstraints({
+            width: { ideal: quality.resolution === "1080p" ? 1920 : quality.resolution === "720p" ? 1280 : 854 },
+            height: { ideal: quality.resolution === "1080p" ? 1080 : quality.resolution === "720p" ? 720 : 480 },
+            frameRate: { ideal: quality.framerate, max: quality.framerate }
+          });
+        } catch (e) {
+          console.warn("Could not apply resolution constraints to screen share", e);
+        }
+      }
+
       // Listen for system stop
-      stream.getVideoTracks()[0].onended = () => {
+      videoTrack.onended = () => {
         stopShare();
       };
 
