@@ -84,6 +84,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   
   // Dynamic version query
   getAppVersion: () => ipcRenderer.invoke('get-app-version'),
+  isAdmin: () => ipcRenderer.invoke('is-admin'),
 
   downloadMedia: (url, fileName) => ipcRenderer.send('download-media', { url, fileName }),
 

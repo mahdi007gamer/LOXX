@@ -31,7 +31,7 @@
     ],
     "win": {
       "icon": "build/icon.ico",
-      "requestedExecutionLevel": "requireAdministrator",
+      "requestedExecutionLevel": "asInvoker",
       "artifactName": "loxx-Setup-${version}.${ext}",
       "target": [
         {

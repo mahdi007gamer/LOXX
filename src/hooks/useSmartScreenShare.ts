@@ -157,7 +157,19 @@ export const useSmartScreenShare = (
               if (api && api.setDesktopSourceId) {
                 await api.setDesktopSourceId(null);
               }
-              throw new Error('سیستم عامل نتوانست این پنجره را کپچر کند (احتمالاً به دلیل مینی‌مایز بودن یا محافظت سخت‌افزاری پنجره). لطفاً کل صفحه (Screen) را به اشتراک بگذارید.');
+              
+              let customErrorMessage = 'سیستم‌عامل نتوانست این پنجره را کپچر کند (احتمالاً به دلیل مینی‌مایز بودن یا محافظت سخت‌افزاری پنجره). لطفاً کل صفحه (Screen) را به اشتراک بگذارید.';
+              if (api && api.isAdmin) {
+                try {
+                  const isElevated = await api.isAdmin();
+                  if (isElevated) {
+                    customErrorMessage = 'به دلیل اجرای این برنامه با دسترسی Administrator، سیستم‌عامل اجازه اشتراک‌گذاری پنجره‌های عادی را نمی‌دهد. لطفاً برنامه را ببندید و در حالت عادی (بدون Run as admin) اجرا کنید یا از گزینه اشتراک‌گذاری کل صفحه (Screen) استفاده فرمایید.';
+                  }
+                } catch (adminError) {
+                  console.warn("Failed to check admin status", adminError);
+                }
+              }
+              throw new Error(customErrorMessage);
             }
           }
         } else {

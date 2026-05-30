@@ -683,6 +683,22 @@ app.whenReady().then(() => {
     return app.getVersion();
   });
 
+  // Handle checking if app is running with elevated privileges (Run as Administrator)
+  let isRunningAsAdmin = false;
+  if (process.platform === 'win32') {
+    try {
+      const { execSync } = require('child_process');
+      execSync('net session', { stdio: 'ignore' });
+      isRunningAsAdmin = true;
+    } catch (e) {
+      isRunningAsAdmin = false;
+    }
+  }
+
+  ipcMain.handle('is-admin', () => {
+    return isRunningAsAdmin;
+  });
+
 let isUpdateDownloading = false;
 let updateCheckTimeout;
 
