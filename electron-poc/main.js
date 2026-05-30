@@ -640,7 +640,7 @@ app.whenReady().then(() => {
       sendLog('setDisplayMediaRequestHandler triggered! request audioRequested:', request.audioRequested);
       sendLog('Current selectedDesktopSourceId:', selectedDesktopSourceId);
 
-      desktopCapturer.getSources({ types: ['screen', 'window'], fetchWindowIcons: false, thumbnailSize: { width: 0, height: 0 } }).then((sources) => {
+      desktopCapturer.getSources({ types: ['screen', 'window'] }).then((sources) => {
         sendLog('Available sources count:', sources.length);
         sendLog('Sources IDs:', sources.map(s => s.id));
         

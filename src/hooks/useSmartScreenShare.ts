@@ -128,18 +128,47 @@ export const useSmartScreenShare = (
         if (!navigator.mediaDevices.getDisplayMedia) {
           throw new Error("مرورگر شما از getDisplayMedia پشتیبانی نمی‌کند.");
         }
-        // Electron specific desktop stream with sourceId via interceptor
-        try {
-          stream = await navigator.mediaDevices.getDisplayMedia({
-            video: true,
-            audio: sourceId.startsWith('screen')
-          });
-        } catch (desktopError) {
-          console.warn("Retrying without audio due to error:", desktopError);
-          stream = await navigator.mediaDevices.getDisplayMedia({
-            video: true,
-            audio: false
-          });
+        
+        if (sourceId.startsWith('window')) {
+          // Electron window sources notoriously throw DOMException Could not start video source 
+          // via getDisplayMedia + setDisplayMediaRequestHandler natively in Electron 28-30.
+          // Using getUserMedia intercept bypasses the handler & supports explicit size constraints.
+          try {
+            console.log("Using getUserMedia fallback for window:", sourceId);
+            stream = await navigator.mediaDevices.getUserMedia({
+              audio: false,
+              video: {
+                mandatory: {
+                  chromeMediaSource: 'desktop',
+                  chromeMediaSourceId: sourceId,
+                  minWidth: 0,
+                  maxWidth: 4096,
+                  minHeight: 0,
+                  maxHeight: 4096
+                }
+              } as any
+            });
+          } catch(e) {
+            console.error("Window capture via getUserMedia failed, retrying getDisplayMedia", e);
+            stream = await navigator.mediaDevices.getDisplayMedia({
+              video: true,
+              audio: false
+            });
+          }
+        } else {
+          // Screen sources are fully supported natively via getDisplayMedia
+          try {
+            stream = await navigator.mediaDevices.getDisplayMedia({
+              video: true,
+              audio: true
+            });
+          } catch (desktopError) {
+            console.warn("Retrying screen share without audio due to error:", desktopError);
+            stream = await navigator.mediaDevices.getDisplayMedia({
+              video: true,
+              audio: false
+            });
+          }
         }
       } else {
         if (!navigator.mediaDevices.getDisplayMedia) {
