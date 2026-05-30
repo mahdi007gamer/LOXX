@@ -616,6 +616,9 @@ app.whenReady().then(() => {
   session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
     callback(true); // Allow all standard media permissions for POC
   });
+  session.defaultSession.setPermissionCheckHandler((webContents, permission, requestingOrigin, details) => {
+    return true; 
+  });
 
   let selectedDesktopSourceId = null;
   ipcMain.handle('set-desktop-source-id', (event, sourceId) => {
@@ -637,7 +640,7 @@ app.whenReady().then(() => {
       sendLog('setDisplayMediaRequestHandler triggered! request audioRequested:', request.audioRequested);
       sendLog('Current selectedDesktopSourceId:', selectedDesktopSourceId);
 
-      desktopCapturer.getSources({ types: ['screen', 'window'] }).then((sources) => {
+      desktopCapturer.getSources({ types: ['screen', 'window'], fetchWindowIcons: false, thumbnailSize: { width: 0, height: 0 } }).then((sources) => {
         sendLog('Available sources count:', sources.length);
         sendLog('Sources IDs:', sources.map(s => s.id));
         

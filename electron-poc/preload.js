@@ -1,36 +1,5 @@
 const { contextBridge, ipcRenderer, webFrame } = require('electron');
 
-// Intercept getDisplayMedia in the main world to fix window sharing with audio
-try {
-  webFrame.executeJavaScript(`
-    window._selectedSourceIdForIntercept = null;
-    const originalGetDisplayMedia = navigator.mediaDevices.getDisplayMedia;
-    navigator.mediaDevices.getDisplayMedia = async function(constraints) {
-      if (window._selectedSourceIdForIntercept && window._selectedSourceIdForIntercept.startsWith('window')) {
-        console.log("Using getUserMedia intercept for window source:", window._selectedSourceIdForIntercept);
-        return navigator.mediaDevices.getUserMedia({
-          audio: false,
-          video: {
-            mandatory: {
-              chromeMediaSource: 'desktop',
-              chromeMediaSourceId: window._selectedSourceIdForIntercept
-            }
-          }
-        });
-      }
-      
-      // For screens, use the standard getDisplayMedia (but strip audio if not a screen, just in case)
-      if (window._selectedSourceIdForIntercept && !window._selectedSourceIdForIntercept.startsWith('screen')) {
-         if (constraints) constraints.audio = false;
-      }
-      
-      return originalGetDisplayMedia.call(this, constraints);
-    };
-  `);
-} catch (e) {
-  console.error("Error setting up getDisplayMedia interceptor", e);
-}
-
 contextBridge.exposeInMainWorld('electronAPI', {
   isElectron: true,
   
@@ -72,11 +41,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   closeWindow: () => ipcRenderer.send('window-close'),
   getDesktopSources: (options) => ipcRenderer.invoke('get-desktop-sources', options),
   setDesktopSourceId: (sourceId) => {
-    try {
-      webFrame.executeJavaScript(`window._selectedSourceIdForIntercept = "${sourceId || ''}";`);
-    } catch (e) {
-      console.error(e);
-    }
     return ipcRenderer.invoke('set-desktop-source-id', sourceId);
   },
   onMaximizeStatusChange: (callback) => {
