@@ -1164,14 +1164,16 @@ export const LobbyRoomPage = () => {
   );
 };
 
-const StatCard = ({ label, value }: { label: string, value: string }) => (
+function StatCard({ label, value }: { label: string, value: string }) {
+  return (
   <div className="bg-white/5 border border-white/10 rounded-2xl p-3 text-center">
     <p className="text-[8px] font-black text-gray-500 uppercase mb-1">{label}</p>
     <p className="text-sm font-black text-white">{value}</p>
   </div>
-);
+  );
+}
 
-const RemoteAudioPlayer = ({ stream, onVolumeChange, volumeLevel }: { stream: MediaStream, onVolumeChange: (vol: number) => void, volumeLevel: number, key?: any }) => {
+function RemoteAudioPlayer({ stream, onVolumeChange, volumeLevel }: { stream: MediaStream, onVolumeChange: (vol: number) => void, volumeLevel: number, key?: any }) {
   const audioRef = useRef<HTMLAudioElement>(null);
 
   useEffect(() => {
@@ -1247,10 +1249,13 @@ const RemoteAudioPlayer = ({ stream, onVolumeChange, volumeLevel }: { stream: Me
     };
   }, [stream, onVolumeChange]);
 
-  return <audio ref={audioRef} autoPlay playsInline className="hidden" />;
-};
+  return (
+    <audio ref={audioRef} autoPlay playsInline className="hidden" />
+  );
+}
 
-const Modal = ({ title, children, onClose }: { title: string, children: React.ReactNode, onClose: () => void }) => (
+function Modal({ title, children, onClose }: { title: string, children: React.ReactNode, onClose: () => void }) {
+  return (
   <motion.div 
     initial={{ opacity: 0 }}
     animate={{ opacity: 1 }}
@@ -1279,9 +1284,11 @@ const Modal = ({ title, children, onClose }: { title: string, children: React.Re
         </div>
      </motion.div>
   </motion.div>
-);
+  );
+}
 
-const ControlButton = ({ icon, active = false, onClick, className }: { icon: React.ReactNode, active?: boolean, onClick?: () => void, className?: string }) => (
+function ControlButton({ icon, active = false, onClick, className, tooltip }: { icon: React.ReactNode, active?: boolean, onClick?: () => void, className?: string, tooltip?: string }) {
+  return (
   <button 
     onClick={onClick}
     className={cn(
@@ -1292,9 +1299,10 @@ const ControlButton = ({ icon, active = false, onClick, className }: { icon: Rea
   >
     <div className="group-hover:scale-110 transition-transform">{icon}</div>
   </button>
-);
+  );
+}
 
-const MatchInfoPanel = ({ isStarting, isMatchStarted, countdown, players, lobby, onCancel, onReopen, isVipLobby, isStreamerLobby }: { 
+function MatchInfoPanel({ isStarting, isMatchStarted, countdown, players, lobby, onCancel, onReopen, isVipLobby, isStreamerLobby }: { 
   isStarting: boolean, 
   isMatchStarted: boolean,
   countdown: number, 
@@ -1304,7 +1312,7 @@ const MatchInfoPanel = ({ isStarting, isMatchStarted, countdown, players, lobby,
   onReopen: () => void,
   isVipLobby?: boolean,
   isStreamerLobby?: boolean
-}) => {
+}) {
   const activePlayers = players.filter(p => !p.id.startsWith("slot-"));
   const readyCount = activePlayers.filter(p => p.isReady).length;
 
@@ -1423,9 +1431,9 @@ const MatchInfoPanel = ({ isStarting, isMatchStarted, countdown, players, lobby,
   );
 };
 
-const DiscordLayoutPlayerCard: React.FC<any> = ({ 
+function DiscordLayoutPlayerCard({ 
   player, volume, isSelected, onSelect, onVolumeChange, onMute, onInvite, onProfile, onDirectMessage, onAddFriend, onKick, onBan, isHostView, isVipLobby, isStreamerLobby
-}) => {
+}) {
   const isSlot = player.name === "Empty Slot";
   return (
     <motion.div
@@ -1490,9 +1498,9 @@ const DiscordLayoutPlayerCard: React.FC<any> = ({
   )
 }
 
-const CompactLayoutPlayerCard: React.FC<any> = ({ 
+function CompactLayoutPlayerCard({ 
   player, volume, isSelected, onSelect, onVolumeChange, onMute, onInvite, onProfile, onDirectMessage, onAddFriend, onKick, onBan, isHostView, isVipLobby, isStreamerLobby
-}) => {
+}) {
   const isSlot = player.name === "Empty Slot";
   return (
     <motion.div
@@ -1560,25 +1568,7 @@ const CompactLayoutPlayerCard: React.FC<any> = ({
   )
 }
 
-const PlayerCard: React.FC<{ 
-  player: Player;
-  volume?: number;
-  isSelected: boolean;
-  onSelect: () => void;
-  onVolumeChange: (val: number) => void;
-  onMute: (id: string) => void;
-  onInvite: () => void;
-  onProfile: (id: string) => void;
-  onDirectMessage: (id: string) => void;
-  onAddFriend: (id: string) => void;
-  onKick?: (id: string) => void;
-  onBan?: (id: string) => void;
-  isHostView?: boolean;
-  disabled?: boolean;
-  isVipLobby?: boolean;
-  isStreamerLobby?: boolean;
-  layoutMode?: 'default' | 'compact' | 'discord';
-}> = ({ 
+function PlayerCard({ 
   player, 
   volume,
   isSelected, 
@@ -1596,7 +1586,25 @@ const PlayerCard: React.FC<{
   isVipLobby,
   isStreamerLobby,
   layoutMode = 'default'
-}) => {
+}: {
+  player: Player;
+  volume?: number;
+  isSelected: boolean;
+  onSelect: () => void;
+  onVolumeChange: (val: number) => void;
+  onMute: (id: string) => void;
+  onInvite: () => void;
+  onProfile: (id: string) => void;
+  onDirectMessage: (id: string) => void;
+  onAddFriend: (id: string) => void;
+  onKick?: (id: string) => void;
+  onBan?: (id: string) => void;
+  isHostView?: boolean;
+  disabled?: boolean;
+  isVipLobby?: boolean;
+  isStreamerLobby?: boolean;
+  layoutMode?: 'default' | 'compact' | 'discord';
+}) {
   const isSlot = player.name === "Empty Slot";
   const { user } = useAuth();
   const isMe = user?.id === player.id;
@@ -1834,7 +1842,8 @@ const PlayerCard: React.FC<{
   );
 };
 
-const QuickAction = ({ icon, tooltip, color = "blue", onClick }: { icon: React.ReactNode, tooltip: string, color?: "blue" | "pink", onClick?: () => void }) => (
+function QuickAction({ icon, tooltip, color = "blue", onClick }: { icon: React.ReactNode, tooltip: string, color?: "blue" | "pink", onClick?: () => void }) {
+  return (
   <div className="relative group/btn cursor-pointer" onClick={onClick}>
     <div className={cn(
       "h-8 w-8 rounded-lg flex items-center justify-center transition-all",
@@ -1846,9 +1855,10 @@ const QuickAction = ({ icon, tooltip, color = "blue", onClick }: { icon: React.R
       {tooltip}
     </div>
   </div>
-);
+  );
+}
 
-const PingChart = ({ ping }: { ping: number }) => {
+function PingChart({ ping }: { ping: number }) {
   const bars = [1, 2, 3];
   const color = ping < 30 ? "bg-green-500" : ping < 60 ? "bg-yellow-500" : "bg-red-500";
   const activeCount = ping < 30 ? 3 : ping < 60 ? 2 : 1;
@@ -1869,7 +1879,7 @@ const PingChart = ({ ping }: { ping: number }) => {
   );
 };
 
-const ChatPanel = ({ messages, players, inputMessage, setInputMessage, onSend, onClose, currentUserId, isVipLobby, isStreamerLobby }: { 
+function ChatPanel({ messages, players, inputMessage, setInputMessage, onSend, onClose, currentUserId, isVipLobby, isStreamerLobby }: { 
   messages: Message[], 
   players: Player[],
   inputMessage: string, 
@@ -1879,7 +1889,7 @@ const ChatPanel = ({ messages, players, inputMessage, setInputMessage, onSend, o
   currentUserId?: string,
   isVipLobby?: boolean,
   isStreamerLobby?: boolean
-}) => {
+}) {
   const filteredMessages = messages.filter(msg => !msg.toUserId || msg.isSystem);
   const scrollRef = useRef<HTMLDivElement>(null);
   
