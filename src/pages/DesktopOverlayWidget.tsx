@@ -150,7 +150,7 @@ export const DesktopOverlayWidget = () => {
           </div>
         )}
 
-        <div className="flex flex-row flex-wrap gap-3 items-center">
+        <div className="flex flex-col gap-3 items-start">
           <AnimatePresence>
             {players?.map((player) => {
               const isMe = player.userId === currentUserId;

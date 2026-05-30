@@ -114,25 +114,44 @@ export const useSmartScreenShare = (
 
       if (sourceId) {
         // Electron specific desktop stream with sourceId
-        stream = await navigator.mediaDevices.getUserMedia({
-          audio: {
-            mandatory: {
-              chromeMediaSource: 'desktop'
-            }
-          } as any,
-          video: {
-            mandatory: {
-              chromeMediaSource: 'desktop',
-              chromeMediaSourceId: sourceId,
-              minWidth: quality.resolution === "1080p" ? 1920 : quality.resolution === "720p" ? 1280 : 854,
-              minHeight: quality.resolution === "1080p" ? 1080 : quality.resolution === "720p" ? 720 : 480,
-              maxWidth: quality.resolution === "1080p" ? 1920 : quality.resolution === "720p" ? 1280 : 854,
-              maxHeight: quality.resolution === "1080p" ? 1080 : quality.resolution === "720p" ? 720 : 480,
-              minFrameRate: quality.framerate,
-              maxFrameRate: quality.framerate
-            }
-          } as any
-        });
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            audio: {
+              mandatory: {
+                chromeMediaSource: 'desktop'
+              }
+            } as any,
+            video: {
+              mandatory: {
+                chromeMediaSource: 'desktop',
+                chromeMediaSourceId: sourceId,
+                minWidth: quality.resolution === "1080p" ? 1920 : quality.resolution === "720p" ? 1280 : 854,
+                minHeight: quality.resolution === "1080p" ? 1080 : quality.resolution === "720p" ? 720 : 480,
+                maxWidth: quality.resolution === "1080p" ? 1920 : quality.resolution === "720p" ? 1280 : 854,
+                maxHeight: quality.resolution === "1080p" ? 1080 : quality.resolution === "720p" ? 720 : 480,
+                minFrameRate: quality.framerate,
+                maxFrameRate: quality.framerate
+              }
+            } as any
+          });
+        } catch (desktopError) {
+          console.warn("Retrying without audio due to error:", desktopError);
+          stream = await navigator.mediaDevices.getUserMedia({
+            audio: false,
+            video: {
+              mandatory: {
+                chromeMediaSource: 'desktop',
+                chromeMediaSourceId: sourceId,
+                minWidth: quality.resolution === "1080p" ? 1920 : quality.resolution === "720p" ? 1280 : 854,
+                minHeight: quality.resolution === "1080p" ? 1080 : quality.resolution === "720p" ? 720 : 480,
+                maxWidth: quality.resolution === "1080p" ? 1920 : quality.resolution === "720p" ? 1280 : 854,
+                maxHeight: quality.resolution === "1080p" ? 1080 : quality.resolution === "720p" ? 720 : 480,
+                minFrameRate: quality.framerate,
+                maxFrameRate: quality.framerate
+              }
+            } as any
+          });
+        }
       } else {
         // Standard Web API or native Electron interceptor
         stream = await navigator.mediaDevices.getDisplayMedia({

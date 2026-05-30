@@ -78,16 +78,43 @@ export const useWebRTC = (roomId: string | null, localStream: MediaStream | null
         }
       };
 
-      pc.ontrack = ({ streams: [stream] }) => {
-        if (!stream) return;
+      pc.ontrack = (event) => {
         setRemoteStreams((prev) => {
-          const map = new Map(prev);
+          const map = new Map<string, MediaStream>(prev);
           const existing = map.get(targetUserId) as MediaStream | undefined;
-          if (!existing || existing.id !== stream.id) {
-            map.set(targetUserId, stream);
+          const incomingStream = event.streams[0] as MediaStream | undefined;
+          
+          if (!existing) {
+            const newStream = incomingStream || new MediaStream([event.track]);
+            
+            // Listen for future track removals on this stream to force re-render
+            newStream.onremovetrack = () => {
+              setRemoteStreams(current => new Map(current));
+            };
+            newStream.onaddtrack = () => {
+              setRemoteStreams(current => new Map(current));
+            };
+            
+            map.set(targetUserId, newStream);
             return map;
+          } else {
+            // If it's a completely new stream object ID, replace it
+            if (incomingStream && existing.id !== incomingStream.id) {
+               incomingStream.onremovetrack = () => {
+                 setRemoteStreams(current => new Map(current));
+               };
+               incomingStream.onaddtrack = () => {
+                 setRemoteStreams(current => new Map(current));
+               };
+               map.set(targetUserId, incomingStream);
+            } else {
+               // Track added to existing stream
+               if (!existing.getTracks().find(t => t.id === event.track.id)) {
+                 existing.addTrack(event.track);
+               }
+            }
+            return new Map(map); // trigger re-render
           }
-          return prev;
         });
       };
 

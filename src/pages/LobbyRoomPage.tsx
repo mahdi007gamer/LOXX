@@ -231,24 +231,27 @@ export const LobbyRoomPage = () => {
   
   const [isScreenShareModalOpen, setIsScreenShareModalOpen] = useState(false);
   const [isSourcePickerOpen, setIsSourcePickerOpen] = useState(false);
-  const [pendingQuality, setPendingQuality] = useState<ShareQuality | null>(null);
+  const [pendingSourceId, setPendingSourceId] = useState<string | null>(null);
 
-  const handleQualitySelected = (quality: ShareQuality) => {
-    setIsScreenShareModalOpen(false);
+  const initiateScreenShareFlow = () => {
     const api = (window as any).electronAPI;
     if (api && api.getDesktopSources) {
-      setPendingQuality(quality);
       setIsSourcePickerOpen(true);
     } else {
-      startShare(quality);
+      setIsScreenShareModalOpen(true);
     }
   };
 
   const handleSourceSelected = (sourceId: string) => {
-    if (pendingQuality) {
-      startShare(pendingQuality, sourceId);
-    }
-    setPendingQuality(null);
+    setPendingSourceId(sourceId);
+    setIsSourcePickerOpen(false);
+    setIsScreenShareModalOpen(true);
+  };
+
+  const handleQualitySelected = (quality: ShareQuality) => {
+    setIsScreenShareModalOpen(false);
+    startShare(quality, pendingSourceId || undefined);
+    setPendingSourceId(null);
   };
 
 
@@ -821,7 +824,7 @@ export const LobbyRoomPage = () => {
              <button 
                onClick={() => {
                  if (screenStream) { stopShare(); }
-                 else if (isBaseRequirementMet) { setIsScreenShareModalOpen(true); }
+                 else if (isBaseRequirementMet) { initiateScreenShareFlow(); }
                }}
                className={cn(
                  "h-12 w-12 rounded-[14px] flex items-center justify-center transition-all group shrink-0 relative",
@@ -917,7 +920,7 @@ export const LobbyRoomPage = () => {
                 <button 
                   onClick={() => {
                     if (screenStream) { stopShare(); }
-                    else if (isBaseRequirementMet) { setIsScreenShareModalOpen(true); }
+                    else if (isBaseRequirementMet) { initiateScreenShareFlow(); }
                   }}
                   className={cn(
                     "h-12 w-12 rounded-2xl flex items-center justify-center transition-all group relative shrink-0",
@@ -988,7 +991,7 @@ export const LobbyRoomPage = () => {
 
         <ScreenShareModal
           isOpen={isScreenShareModalOpen}
-          onClose={() => setIsScreenShareModalOpen(false)}
+          onClose={() => { setIsScreenShareModalOpen(false); setPendingSourceId(null); }}
           userPlan={((user as any)?.profile?.membershipType as any) || "NORMAL"}
           onStartShare={handleQualitySelected}
           estimatedUploadMbps={estimatedUploadMbps}
@@ -997,7 +1000,7 @@ export const LobbyRoomPage = () => {
 
         <DesktopSourcePickerModal
           isOpen={isSourcePickerOpen}
-          onClose={() => { setIsSourcePickerOpen(false); setPendingQuality(null); }}
+          onClose={() => { setIsSourcePickerOpen(false); setPendingSourceId(null); }}
           onSelect={handleSourceSelected}
         />
 
