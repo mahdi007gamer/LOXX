@@ -61,7 +61,8 @@ export const DesktopSourcePickerModal = ({
   const handleSelect = () => {
     if (selectedSourceId) {
       onSelect(selectedSourceId);
-      onClose();
+      // Do not call onClose() here, as LobbyRoomPage's handleSourceSelected already closes the modal. 
+      // Calling onClose() was triggering setPendingSourceId(null) unexpectedly.
     }
   };
 
