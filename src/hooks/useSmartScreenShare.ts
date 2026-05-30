@@ -131,13 +131,17 @@ export const useSmartScreenShare = (
         // Electron specific desktop stream with sourceId via interceptor
         try {
           stream = await navigator.mediaDevices.getDisplayMedia({
-            video: true,
+            video: {
+              displaySurface: sourceId.startsWith('screen') ? 'monitor' : 'window'
+            },
             audio: sourceId.startsWith('screen')
           });
         } catch (desktopError) {
           console.warn("Retrying without audio due to error:", desktopError);
           stream = await navigator.mediaDevices.getDisplayMedia({
-            video: true,
+            video: {
+              displaySurface: sourceId.startsWith('screen') ? 'monitor' : 'window'
+            },
             audio: false
           });
         }
