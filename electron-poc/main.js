@@ -651,7 +651,7 @@ app.whenReady().then(() => {
         }
 
         let audioOption = undefined;
-        if (request.audioRequested) {
+        if (request.audioRequested && chosenSource && chosenSource.id.startsWith('screen')) {
            audioOption = 'loopback';
         }
         

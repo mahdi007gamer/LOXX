@@ -132,7 +132,7 @@ export const useSmartScreenShare = (
         try {
           stream = await navigator.mediaDevices.getDisplayMedia({
             video: true,
-            audio: true
+            audio: sourceId.startsWith('screen')
           });
         } catch (desktopError) {
           console.warn("Retrying without audio due to error:", desktopError);
