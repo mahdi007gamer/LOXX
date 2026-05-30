@@ -631,7 +631,9 @@ app.whenReady().then(() => {
           }
           selectedDesktopSourceId = null; // reset
         }
-        callback({ video: chosenSource, audio: 'loopback' });
+        
+        let audioOption = request.audioRequested ? 'loopback' : undefined;
+        callback({ video: chosenSource, audio: audioOption });
       }).catch((e) => {
         console.error('Failed to get sources for native display media request', e);
       });
