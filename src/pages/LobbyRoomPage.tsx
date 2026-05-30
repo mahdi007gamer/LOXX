@@ -48,6 +48,7 @@ import { GlowButton } from "../components/ui/GlowButton";
 import { useFriends } from "../context/FriendsContext";
 import { ShareQuality, SHARE_QUALITIES, useSmartScreenShare } from "../hooks/useSmartScreenShare";
 import { ScreenShareModal } from "../components/ScreenShareModal";
+import { DesktopSourcePickerModal } from "../components/DesktopSourcePickerModal";
 import { ScreenSharePresenter } from "../components/ScreenSharePresenter";
 import { UserBadges } from "../components/ui/UserBadges";
 import { useProfilePopover } from "../context/ProfilePopoverContext";
@@ -229,6 +230,27 @@ export const LobbyRoomPage = () => {
   );
   
   const [isScreenShareModalOpen, setIsScreenShareModalOpen] = useState(false);
+  const [isSourcePickerOpen, setIsSourcePickerOpen] = useState(false);
+  const [pendingQuality, setPendingQuality] = useState<ShareQuality | null>(null);
+
+  const handleQualitySelected = (quality: ShareQuality) => {
+    setIsScreenShareModalOpen(false);
+    const api = (window as any).electronAPI;
+    if (api && api.getDesktopSources) {
+      setPendingQuality(quality);
+      setIsSourcePickerOpen(true);
+    } else {
+      startShare(quality);
+    }
+  };
+
+  const handleSourceSelected = (sourceId: string) => {
+    if (pendingQuality) {
+      startShare(pendingQuality, sourceId);
+    }
+    setPendingQuality(null);
+  };
+
 
   // Compute active remote screen share (if any user in the lobby is sharing video tracks)
   const activeRemoteShare = useMemo(() => {
@@ -968,9 +990,15 @@ export const LobbyRoomPage = () => {
           isOpen={isScreenShareModalOpen}
           onClose={() => setIsScreenShareModalOpen(false)}
           userPlan={((user as any)?.profile?.membershipType as any) || "NORMAL"}
-          onStartShare={startShare}
+          onStartShare={handleQualitySelected}
           estimatedUploadMbps={estimatedUploadMbps}
           numViewers={players.length || 1}
+        />
+
+        <DesktopSourcePickerModal
+          isOpen={isSourcePickerOpen}
+          onClose={() => { setIsSourcePickerOpen(false); setPendingQuality(null); }}
+          onSelect={handleSourceSelected}
         />
 
         {activeProfileUserId && (

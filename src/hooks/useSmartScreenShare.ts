@@ -108,17 +108,42 @@ export const useSmartScreenShare = (
     return () => clearInterval(interval);
   }, [screenStream, currentQuality, numViewers, checkBandwidth, isElectron, isWarningActive, stopShare]);
 
-  const startShare = async (quality: ShareQuality) => {
+  const startShare = async (quality: ShareQuality, sourceId?: string) => {
     try {
-      // Prompt user to select screen
-      const stream = await navigator.mediaDevices.getDisplayMedia({
-        video: {
-          width: quality.resolution === "1080p" ? 1920 : quality.resolution === "720p" ? 1280 : 854,
-          height: quality.resolution === "1080p" ? 1080 : quality.resolution === "720p" ? 720 : 480,
-          frameRate: quality.framerate
-        },
-        audio: true 
-      });
+      let stream: MediaStream;
+
+      if (sourceId) {
+        // Electron specific desktop stream with sourceId
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            mandatory: {
+              chromeMediaSource: 'desktop'
+            }
+          } as any,
+          video: {
+            mandatory: {
+              chromeMediaSource: 'desktop',
+              chromeMediaSourceId: sourceId,
+              minWidth: quality.resolution === "1080p" ? 1920 : quality.resolution === "720p" ? 1280 : 854,
+              minHeight: quality.resolution === "1080p" ? 1080 : quality.resolution === "720p" ? 720 : 480,
+              maxWidth: quality.resolution === "1080p" ? 1920 : quality.resolution === "720p" ? 1280 : 854,
+              maxHeight: quality.resolution === "1080p" ? 1080 : quality.resolution === "720p" ? 720 : 480,
+              minFrameRate: quality.framerate,
+              maxFrameRate: quality.framerate
+            }
+          } as any
+        });
+      } else {
+        // Standard Web API or native Electron interceptor
+        stream = await navigator.mediaDevices.getDisplayMedia({
+          video: {
+            width: quality.resolution === "1080p" ? 1920 : quality.resolution === "720p" ? 1280 : 854,
+            height: quality.resolution === "1080p" ? 1080 : quality.resolution === "720p" ? 720 : 480,
+            frameRate: quality.framerate
+          },
+          audio: true 
+        });
+      }
 
       // Listen for system stop
       stream.getVideoTracks()[0].onended = () => {

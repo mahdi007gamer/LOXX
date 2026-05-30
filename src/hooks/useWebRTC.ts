@@ -17,11 +17,19 @@ export const useWebRTC = (roomId: string | null, localStream: MediaStream | null
 
       peersRef.current.forEach((pc) => {
         const senders = pc.getSenders();
-        localStream.getTracks().forEach((track) => {
-          const sender = senders.find((s) => s.track?.kind === track.kind);
-          if (sender) {
-            sender.replaceTrack(track);
-          } else {
+        const currentTracks = localStream.getTracks();
+
+        // 1. Remove tracks that are no longer in the new stream
+        senders.forEach((sender) => {
+          if (sender.track && !currentTracks.some(t => t.id === sender.track!.id)) {
+            pc.removeTrack(sender);
+          }
+        });
+
+        // 2. Add new tracks that aren't currently being sent (by matching ID)
+        currentTracks.forEach((track) => {
+          const sender = senders.find(s => s.track?.id === track.id);
+          if (!sender) {
             pc.addTrack(track, localStream);
           }
         });
