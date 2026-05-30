@@ -110,9 +110,16 @@ export const useSmartScreenShare = (
 
   const startShare = async (quality: ShareQuality, sourceId?: string) => {
     try {
+      if (!navigator.mediaDevices) {
+        throw new Error("مرورگر شما از قابلیت اشتراک‌گذاری صفحه پشتیبانی نمی‌کند یا دسترسی به آن محدود شده است.");
+      }
+
       let stream: MediaStream;
 
       if (sourceId) {
+        if (!navigator.mediaDevices.getUserMedia) {
+          throw new Error("مرورگر شما از getUserMedia پشتیبانی نمی‌کند.");
+        }
         // Electron specific desktop stream with sourceId
         try {
           stream = await navigator.mediaDevices.getUserMedia({
@@ -141,6 +148,9 @@ export const useSmartScreenShare = (
           });
         }
       } else {
+        if (!navigator.mediaDevices.getDisplayMedia) {
+          throw new Error("مرورگر شما از getDisplayMedia پشتیبانی نمی‌کند یا دسترسی به آن در محیط فعلی مسدود است.");
+        }
         // Standard Web API or native Electron interceptor
         stream = await navigator.mediaDevices.getDisplayMedia({
           video: true,
@@ -173,7 +183,11 @@ export const useSmartScreenShare = (
       setIsWarningActive(false);
     } catch (err) {
       console.error("Error sharing screen:", err);
-      toast.error("خطا در اشتراک‌گذاری صفحه نمایش");
+      let errorMsg = err instanceof Error ? err.message : String(err);
+      if (errorMsg.includes("Permission denied") || errorMsg.includes("NotAllowedError")) {
+        errorMsg = "دسترسی اشتراک‌گذاری صفحه داده نشد یا لغو شد.";
+      }
+      toast.error(`خطا در اشتراک‌گذاری: ${errorMsg}`, { duration: 6000 });
     }
   };
 
