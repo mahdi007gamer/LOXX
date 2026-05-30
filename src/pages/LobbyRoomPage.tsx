@@ -163,6 +163,21 @@ export const LobbyRoomPage = () => {
   
   const [copied, setCopied] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false); // Mobile chat
+  const messages = useMemo(() => {
+    return [
+      { id: "system-1", user: "LOXX BOT", text: "لابی ساخته شد. منتظر همرزمان هستیم...", time: "System", isSystem: true, fromUserId: "system" },
+      ...(lobby?.messages?.map(m => ({
+        id: m.id,
+        fromUserId: m.from?.userId || m.senderId,
+        user: m.from?.username || m.sender?.username || "بازیکن",
+        avatarUrl: (m.from as any)?.avatarUrl || m.sender?.profile?.avatarUrl,
+        badges: (m.from as any)?.badges?.map((ub: any) => ub.badge) || m.sender?.badges?.map((ub: any) => ub.badge) || [],
+        text: m.content,
+        time: m.createdAt ? new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "Recently"
+      })) || [])
+    ];
+  }, [lobby?.messages]);
+
   const [isDesktopChatOpen, setIsDesktopChatOpen] = useState(false); // Desktop chat
   const [unreadDesktopChat, setUnreadDesktopChat] = useState(0);
 
@@ -303,21 +318,6 @@ export const LobbyRoomPage = () => {
       setLobbyMuted(!isMicMuted);
     }
   };
-
-  const messages = useMemo(() => {
-    return [
-      { id: "system-1", user: "LOXX BOT", text: "لابی ساخته شد. منتظر همرزمان هستیم...", time: "System", isSystem: true, fromUserId: "system" },
-      ...(lobby?.messages?.map(m => ({
-        id: m.id,
-        fromUserId: m.from?.userId || m.senderId,
-        user: m.from?.username || m.sender?.username || "بازیکن",
-        avatarUrl: (m.from as any)?.avatarUrl || m.sender?.profile?.avatarUrl,
-        badges: (m.from as any)?.badges?.map((ub: any) => ub.badge) || m.sender?.badges?.map((ub: any) => ub.badge) || [],
-        text: m.content,
-        time: m.createdAt ? new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "Recently"
-      })) || [])
-    ];
-  }, [lobby?.messages]);
 
   const [inputMessage, setInputMessage] = useState("");
 
@@ -1568,25 +1568,7 @@ function CompactLayoutPlayerCard({
   )
 }
 
-function PlayerCard({ 
-  player, 
-  volume,
-  isSelected, 
-  onSelect, 
-  onVolumeChange, 
-  onMute, 
-  onInvite, 
-  onProfile, 
-  onDirectMessage, 
-  onAddFriend, 
-  onKick,
-  onBan,
-  isHostView,
-  disabled,
-  isVipLobby,
-  isStreamerLobby,
-  layoutMode = 'default'
-}: {
+const PlayerCard: React.FC<{
   player: Player;
   volume?: number;
   isSelected: boolean;
@@ -1604,7 +1586,25 @@ function PlayerCard({
   isVipLobby?: boolean;
   isStreamerLobby?: boolean;
   layoutMode?: 'default' | 'compact' | 'discord';
-}) {
+}> = ({
+  player, 
+  volume,
+  isSelected, 
+  onSelect, 
+  onVolumeChange, 
+  onMute, 
+  onInvite, 
+  onProfile, 
+  onDirectMessage, 
+  onAddFriend, 
+  onKick,
+  onBan,
+  isHostView,
+  disabled,
+  isVipLobby,
+  isStreamerLobby,
+  layoutMode = 'default'
+}) => {
   const isSlot = player.name === "Empty Slot";
   const { user } = useAuth();
   const isMe = user?.id === player.id;
@@ -1883,7 +1883,7 @@ function ChatPanel({ messages, players, inputMessage, setInputMessage, onSend, o
   messages: Message[], 
   players: Player[],
   inputMessage: string, 
-  setInputMessage: (v: string) => void,
+  setInputMessage: React.Dispatch<React.SetStateAction<string>>,
   onSend: (e: React.FormEvent) => void,
   onClose?: () => void,
   currentUserId?: string,
