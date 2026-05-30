@@ -615,12 +615,23 @@ app.whenReady().then(() => {
     callback(true); // Allow all standard media permissions for POC
   });
 
+  let selectedDesktopSourceId = null;
+  ipcMain.handle('set-desktop-source-id', (event, sourceId) => {
+    selectedDesktopSourceId = sourceId;
+  });
+
   if (session.defaultSession.setDisplayMediaRequestHandler) {
     session.defaultSession.setDisplayMediaRequestHandler((request, callback) => {
-      desktopCapturer.getSources({ types: ['screen'] }).then((sources) => {
-        // Automatically give it the primary screen to prevent hanging if native UI isn't configured
-        // In reality, this gets bypassed because we use our Custom React Picker mostly
-        callback({ video: sources[0], audio: 'loopback' });
+      desktopCapturer.getSources({ types: ['screen', 'window'] }).then((sources) => {
+        let chosenSource = sources[0];
+        if (selectedDesktopSourceId) {
+          const found = sources.find(s => s.id === selectedDesktopSourceId);
+          if (found) {
+            chosenSource = found;
+          }
+          selectedDesktopSourceId = null; // reset
+        }
+        callback({ video: chosenSource, audio: 'loopback' });
       }).catch((e) => {
         console.error('Failed to get sources for native display media request', e);
       });

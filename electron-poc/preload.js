@@ -40,6 +40,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   maximizeWindow: () => ipcRenderer.send('window-maximize'),
   closeWindow: () => ipcRenderer.send('window-close'),
   getDesktopSources: (options) => ipcRenderer.invoke('get-desktop-sources', options),
+  setDesktopSourceId: (sourceId) => ipcRenderer.invoke('set-desktop-source-id', sourceId),
   onMaximizeStatusChange: (callback) => {
     const subscription = (event, isMaximized) => callback(isMaximized);
     ipcRenderer.on('window-maximize-status', subscription);
