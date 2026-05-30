@@ -26,7 +26,7 @@ const InviteToast = ({ t, inviteData, navigate }: { t: any, inviteData: any, nav
       window.location.pathname === '/overlay' || 
       window.location.pathname === '/lobby/overlay-widget' ||
       window.location.hash.includes('/overlay')
-    ) && new URLSearchParams(window.location.search).get("is_overlay_window") === "true";
+    ) && (new URLSearchParams(window.location.search).get("is_overlay_window") === "true" || window.location.hash.includes("is_overlay_window=true"));
 
     if (isOverlayWidget && (window as any).electronAPI?.sendOverlayAction) {
       toast.dismiss(t.id);

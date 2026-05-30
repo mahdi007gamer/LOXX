@@ -8,7 +8,7 @@ import { LobbyInviteCard } from "../components/ui/LobbyInviteCard";
 import { SmartImage } from "../components/ui/SmartImage";
 import { getAvatarFallbacks } from "../lib/avatar";
 import { getFileUrl } from "../lib/constants";
-import { Send, Hash, Users, MoreVertical, Plus, Smile, Image as ImageIcon, Reply, Heart, ChevronDown, Award, Star, Zap, Crown, Play, Check, Menu, X, MessageSquare, User, Trophy, Palette, Trash, MessageCircle, Search, UserPlus as UserPlusIcon, Settings, Flag, AlertTriangle, Radio, VolumeX, Shield } from "lucide-react";
+import { Send, Hash, Users, MoreVertical, Plus, Smile, Image as ImageIcon, Reply, Heart, ChevronDown, Award, Star, Zap, Crown, Play, Check, Menu, X, MessageSquare, User, Trophy, Palette, Trash, Trash2, MessageCircle, Search, UserPlus as UserPlusIcon, Settings, Flag, AlertTriangle, Radio, VolumeX, Shield, Copy, Save } from "lucide-react";
 import { cn } from "../lib/utils";
 import { motion, AnimatePresence } from "motion/react";
 import { useGames } from "../context/GamesContext";
@@ -84,9 +84,6 @@ function MessageItem({ message, onReaction, onSaveGif, onReply, activeChannelId,
     }
     if (message.gif) {
       actions.push({ id: 'save-gif', label: 'ذخیره گیف', icon: <Save size={14} />, onClick: () => onSaveGif(message.gif!) });
-    }
-    if (message.video) {
-        actions.push({ id: 'save-vid', label: 'ذخیره ویدیو', icon: <Save size={14} />, onClick: () => window.open(getFileUrl(message.video!), '_blank') });
     }
     if (message.self || isAdmin || isGroupOwner) {
       actions.push({ id: 'delete', label: 'حذف پیام', icon: <Trash2 size={14} />, destructive: true, onClick: () => onDelete(message.id) });

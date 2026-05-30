@@ -95,7 +95,7 @@ const AppContent = () => {
     }
   }, [currentHash, location.pathname, navigate]);
 
-  const isOverlayWidget = (location.pathname === "/overlay" || currentHash.includes("/overlay")) && new URLSearchParams(window.location.search).get("is_overlay_window") === "true";
+  const isOverlayWidget = (location.pathname === "/overlay" || currentHash.includes("/overlay")) && (new URLSearchParams(window.location.search).get("is_overlay_window") === "true" || currentHash.includes("is_overlay_window=true"));
   const isLanding = (location.pathname === "/" || location.pathname === "/download") && !currentHash.startsWith("#/");
   const hideSidebar = isLanding || location.pathname === "/auth" || isOverlayWidget;
   const isElectron = typeof window !== "undefined" && !!(window as any).electronAPI;
@@ -533,7 +533,7 @@ const AppContent = () => {
 
 function App() {
   const isOverlayWidget = typeof window !== 'undefined' && 
-    (window.location.pathname === '/overlay' || window.location.hash.includes('/overlay'));
+    (window.location.pathname === '/overlay' || window.location.hash.includes('/overlay')) && (new URLSearchParams(window.location.search).get("is_overlay_window") === "true" || window.location.hash.includes("is_overlay_window=true"));
   
   return (
     <Router>

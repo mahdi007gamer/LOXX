@@ -53,7 +53,7 @@ export const LobbyInviteCard: React.FC<LobbyInviteCardProps> = ({ initialData })
         window.location.pathname === '/overlay' || 
         window.location.pathname === '/lobby/overlay-widget' ||
         window.location.hash.includes('/overlay')
-      ) && new URLSearchParams(window.location.search).get("is_overlay_window") === "true";
+      ) && (new URLSearchParams(window.location.search).get("is_overlay_window") === "true" || window.location.hash.includes("is_overlay_window=true"));
       
       if (isOverlayWidget && (window as any).electronAPI?.sendOverlayAction) {
         (window as any).electronAPI.sendOverlayAction({ type: 'join-lobby', lobbyId: initialData.lobbyId });
