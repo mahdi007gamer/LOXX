@@ -117,26 +117,34 @@ export const useSmartScreenShare = (
       let stream: MediaStream;
 
       if (sourceId) {
-        const api = (window as any).electronAPI;
-        if (api && api.setDesktopSourceId) {
-          // Tell main process which source to pick
-          await api.setDesktopSourceId(sourceId);
+        if (!navigator.mediaDevices.getUserMedia) {
+          throw new Error("مرورگر شما از getUserMedia پشتیبانی نمی‌کند.");
         }
-        
-        if (!navigator.mediaDevices.getDisplayMedia) {
-          throw new Error("مرورگر شما از getDisplayMedia پشتیبانی نمی‌کند.");
-        }
-        
+        // Electron specific desktop stream with sourceId
         try {
-          stream = await navigator.mediaDevices.getDisplayMedia({
-            video: true,
-            audio: true
+          stream = await navigator.mediaDevices.getUserMedia({
+            audio: {
+              mandatory: {
+                chromeMediaSource: 'desktop'
+              }
+            } as any,
+            video: {
+              mandatory: {
+                chromeMediaSource: 'desktop',
+                chromeMediaSourceId: sourceId
+              }
+            } as any
           });
         } catch (desktopError) {
           console.warn("Retrying without audio due to error:", desktopError);
-          stream = await navigator.mediaDevices.getDisplayMedia({
-            video: true,
-            audio: false
+          stream = await navigator.mediaDevices.getUserMedia({
+            audio: false,
+            video: {
+              mandatory: {
+                chromeMediaSource: 'desktop',
+                chromeMediaSourceId: sourceId
+              }
+            } as any
           });
         }
       } else {
