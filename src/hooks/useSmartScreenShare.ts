@@ -125,48 +125,21 @@ export const useSmartScreenShare = (
       }
 
       if (sourceId) {
-        if (api && api.setDesktopSourceId) {
-          // In Electron, use getUserMedia with chromeMediaSourceId for robust window/screen capture
-          const constraints: any = {
-            audio: false,
-            video: {
-              mandatory: {
-                chromeMediaSource: 'desktop',
-                chromeMediaSourceId: sourceId
-              }
-            }
-          };
-          if (sourceId.startsWith('screen')) {
-            constraints.audio = {
-              mandatory: {
-                chromeMediaSource: 'desktop'
-              }
-            };
-          }
-          
-          try {
-            stream = await navigator.mediaDevices.getUserMedia(constraints);
-          } catch (desktopError) {
-             console.warn("Retrying without audio due to error:", desktopError);
-             constraints.audio = false;
-             stream = await navigator.mediaDevices.getUserMedia(constraints);
-          }
-        } else {
-          if (!navigator.mediaDevices.getDisplayMedia) {
-            throw new Error("مرورگر شما از getDisplayMedia پشتیبانی نمی‌کند.");
-          }
-          try {
-            stream = await navigator.mediaDevices.getDisplayMedia({
-              video: true,
-              audio: true
-            });
-          } catch (desktopError) {
-            console.warn("Retrying without audio due to error:", desktopError);
-            stream = await navigator.mediaDevices.getDisplayMedia({
-              video: true,
-              audio: false
-            });
-          }
+        if (!navigator.mediaDevices.getDisplayMedia) {
+          throw new Error("مرورگر شما از getDisplayMedia پشتیبانی نمی‌کند.");
+        }
+        // Electron specific desktop stream with sourceId via interceptor
+        try {
+          stream = await navigator.mediaDevices.getDisplayMedia({
+            video: true,
+            audio: true
+          });
+        } catch (desktopError) {
+          console.warn("Retrying without audio due to error:", desktopError);
+          stream = await navigator.mediaDevices.getDisplayMedia({
+            video: true,
+            audio: false
+          });
         }
       } else {
         if (!navigator.mediaDevices.getDisplayMedia) {
