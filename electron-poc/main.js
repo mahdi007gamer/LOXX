@@ -1007,19 +1007,130 @@ updateCheckTimeout = setTimeout(() => {
           let processes = JSON.parse(stdout);
           if (!Array.isArray(processes)) processes = [processes];
           
-          let detectedGame = null;
-          // Filter common windows and generic titles to find the "Game"
-          const ignoreTitles = ["Settings", "Microsoft Text Input Application", "Program Manager"];
+          const GAMES_LIST = [
+            { key: "Counter-Strike 2", patterns: ["cs2", "counter-strike", "counter strike"] },
+            { key: "Valorant", patterns: ["valorant", "riotclient"] },
+            { key: "Fortnite", patterns: ["fortnite"] },
+            { key: "Call of Duty: Warzone", patterns: ["cod", "warzone", "modern warfare"] },
+            { key: "Apex Legends", patterns: ["r5apex", "apex legends", "apex_legends"] },
+            { key: "PUBG: Battlegrounds", patterns: ["tslgame", "pubg", "battlegrounds"] },
+            { key: "League of Legends", patterns: ["leagueoflegends", "league of legends", "riot client"] },
+            { key: "Dota 2", patterns: ["dota2", "dota 2"] },
+            { key: "Overwatch 2", patterns: ["overwatch"] },
+            { key: "Rainbow Six Siege", patterns: ["rainbowsix", "rainbow six", "r6s", "siege"] },
+            { key: "Tom Clancy’s The Division 2", patterns: ["thedivision2", "division 2", "division2"] },
+            { key: "Destiny 2", patterns: ["destiny2", "destiny 2"] },
+            { key: "Rocket League", patterns: ["rocketleague", "rocket league"] },
+            { key: "Grand Theft Auto Online", patterns: ["gta5", "grand theft auto v", "gta online", "gtaonline", "sc_gta5"] },
+            { key: "EA Sports FC 24", patterns: ["fc24", "fifa24", "fifa 24"] },
+            { key: "EA Sports FC 25", patterns: ["fc25", "fifa25", "fifa 25"] },
+            { key: "Minecraft", patterns: ["minecraft", "javaw"] },
+            { key: "Roblox", patterns: ["roblox", "robloxebeta"] },
+            { key: "Teamfight Tactics", patterns: ["league of legends", "teamfight tactics", "tft"] },
+            { key: "World of Warcraft", patterns: ["wow", "world of warcraft"] },
+            { key: "Final Fantasy XIV Online", patterns: ["ffxiv", "ffxiv_dx11", "final fantasy xiv"] },
+            { key: "The Elder Scrolls Online", patterns: ["eso64", "elder scrolls online"] },
+            { key: "Warframe", patterns: ["warframe"] },
+            { key: "Path of Exile", patterns: ["pathofexile", "path of exile", "poe"] },
+            { key: "Diablo IV", patterns: ["diablo iv", "diablo4", "diablo_iv"] },
+            { key: "Helldivers 2", patterns: ["helldivers2", "helldivers 2"] },
+            { key: "Sea of Thieves", patterns: ["sotgame", "sea of thieves"] },
+            { key: "Dead by Daylight", patterns: ["deadbydaylight", "dead by daylight", "dbd"] },
+            { key: "Rust", patterns: ["rustclient", "rust"] },
+            { key: "Ark: Survival Ascended", patterns: ["arkascended", "survival ascended"] },
+            { key: "DayZ", patterns: ["dayz"] },
+            { key: "Escape from Tarkov", patterns: ["escapefromtarkov", "escape from tarkov", "eft"] },
+            { key: "Hunt: Showdown", patterns: ["huntshowdown", "hunt: showdown"] },
+            { key: "Palworld", patterns: ["palworld", "pal"] },
+            { key: "Among Us", patterns: ["among us", "amongus"] },
+            { key: "Fall Guys", patterns: ["fallguys", "fall guys"] },
+            { key: "The Finals", patterns: ["discovery", "the finals", "thefinals"] },
+            { key: "Brawlhalla", patterns: ["brawlhalla"] },
+            { key: "Genshin Impact", patterns: ["genshinimpact", "genshin impact"] },
+            { key: "Honkai: Star Rail", patterns: ["starrail", "honkai: star rail", "honkai star rail"] },
+            { key: "Monster Hunter: World", patterns: ["monsterhunterworld", "monster hunter: world", "monster hunter world"] },
+            { key: "Monster Hunter Rise", patterns: ["monsterhunterrise", "monster hunter rise"] },
+            { key: "Phasmophobia", patterns: ["phasmophobia"] },
+            { key: "Lethal Company", patterns: ["lethal company", "lethalcompany"] },
+            { key: "Party Animals", patterns: ["partyanimals", "party animals"] },
+            { key: "Payday 3", patterns: ["payday3", "payday 3"] },
+            { key: "War Thunder", patterns: ["aces", "warthunder", "war thunder"] },
+            { key: "World of Tanks", patterns: ["worldoftanks", "world of tanks"] },
+            { key: "Naraka: Bladepoint", patterns: ["narakabladepoint", "naraka: bladepoint"] },
+            { key: "Black Desert Online", patterns: ["blackdesert", "black desert"] },
+            { key: "Guild Wars 2", patterns: ["gw2", "guild wars 2"] },
+            { key: "Grand Theft Auto V", patterns: ["gta5", "grand theft auto v"] },
+            { key: "Red Dead Redemption 2", patterns: ["rdr2", "red dead redemption 2"] },
+            { key: "Cyberpunk 2077", patterns: ["cyberpunk2077", "cyberpunk 2077"] },
+            { key: "The Witcher 3: Wild Hunt", patterns: ["witcher3", "the witcher 3", "witcher 3"] },
+            { key: "Elden Ring", patterns: ["eldenring", "elden ring"] },
+            { key: "Sekiro: Shadows Die Twice", patterns: ["sekiro", "sekiro: shadows die twice"] },
+            { key: "Dark Souls III", patterns: ["darksouls3", "dark souls iii", "dark souls 3"] },
+            { key: "Baldur’s Gate 3", patterns: ["bg3", "baldurs gate 3", "baldur's gate 3"] },
+            { key: "Starfield", patterns: ["starfield"] },
+            { key: "Hogwarts Legacy", patterns: ["hogwartslegacy", "hogwarts legacy"] },
+            { key: "God of War", patterns: ["gow", "god of war"] },
+            { key: "God of War Ragnarök", patterns: ["godofwarragnarok", "god of war ragnarök", "god of war ragnarok"] },
+            { key: "Marvel’s Spider-Man Remastered", patterns: ["spider-man", "spiderman remastered"] },
+            { key: "Marvel’s Spider-Man 2", patterns: ["spiderman2", "spider-man 2"] },
+            { key: "The Last of Us Part I", patterns: ["tlou", "the last of us"] },
+            { key: "The Last of Us Part II", patterns: ["tlou2", "the last of us part ii"] },
+            { key: "Ghost of Tsushima", patterns: ["ghost of tsushima", "ghostoftsushima"] },
+            { key: "Horizon Zero Dawn", patterns: ["horizon zero dawn", "horizonzerodawn"] },
+            { key: "Horizon Forbidden West", patterns: ["horizon forbidden west", "horizonforbiddenwest"] },
+            { key: "Assassin’s Creed Valhalla", patterns: ["acvalhalla", "assassin's creed valhalla"] },
+            { key: "Assassin’s Creed Mirage", patterns: ["acmirage", "assassin's creed mirage"] },
+            { key: "Far Cry 5", patterns: ["farcry5", "far cry 5"] },
+            { key: "Far Cry 6", patterns: ["farcry6", "far cry 6"] },
+            { key: "Resident Evil 4 Remake", patterns: ["re4", "resident evil 4"] },
+            { key: "Resident Evil Village", patterns: ["re8", "resident evil village"] },
+            { key: "Resident Evil 2 Remake", patterns: ["re2", "resident evil 2"] },
+            { key: "Alan Wake 2", patterns: ["alanwake2", "alan wake 2"] },
+            { key: "Control", patterns: ["control"] },
+            { key: "Death Stranding", patterns: ["deathstranding", "death stranding"] },
+            { key: "Days Gone", patterns: ["daysgone", "days gone"] },
+            { key: "Dying Light 2 Stay Human", patterns: ["dyinglight2", "dying light 2"] },
+            { key: "Metro Exodus", patterns: ["metroexodus", "metro exodus"] },
+            { key: "DOOM Eternal", patterns: ["doometernal", "doom eternal"] },
+            { key: "Star Wars Jedi: Fallen Order", patterns: ["starwarsjedifallenorder", "fallen order"] },
+            { key: "Star Wars Jedi: Survivor", patterns: ["jedisurvivor", "jedi survivor"] },
+            { key: "Black Myth: Wukong", patterns: ["b1", "black myth wukong", "blackmythwukong"] },
+            { key: "Dragon’s Dogma 2", patterns: ["dragonsdogma2", "dragon's dogma 2"] },
+            { key: "Persona 5 Royal", patterns: ["p5r", "persona 5 royal"] },
+            { key: "Like a Dragon: Infinite Wealth", patterns: ["infinitewealth", "infinite wealth"] },
+            { key: "Yakuza: Like a Dragon", patterns: ["yakuza", "like a dragon"] },
+            { key: "Hades", patterns: ["hades"] },
+            { key: "Hades II", patterns: ["hades2", "hades ii"] },
+            { key: "Hollow Knight", patterns: ["hollow knight", "hollow_knight", "hollowknight"] },
+            { key: "Ori and the Will of the Wisps", patterns: ["oriwotw", "will of the wisps"] },
+            { key: "Cuphead", patterns: ["cuphead"] },
+            { key: "Lies of P", patterns: ["liesofp", "lies of p"] },
+            { key: "Armored Core VI: Fires of Rubicon", patterns: ["armoredcore6", "fires of rubicon"] },
+            { key: "Sifu", patterns: ["sifu"] },
+            { key: "Subnautica", patterns: ["subnautica"] },
+            { key: "Terraria", patterns: ["terraria"] }
+          ];
           
+          let detectedGame = null;
           let detectedGameProcess = null;
-
+          
+          const ignoreTitles = ["Settings", "Microsoft Text Input Application", "Program Manager", "Task Manager"];
+          
           for (const proc of processes) {
-             if (proc.MainWindowTitle && proc.MainWindowTitle.trim() !== "" && !ignoreTitles.includes(proc.MainWindowTitle)) {
-                 // Assume the most prominent heavy localized fullscreen app as the game
-                 detectedGame = proc.MainWindowTitle.trim();
-                 detectedGameProcess = proc.ProcessName;
-                 break;
-             }
+            if (proc.MainWindowTitle && proc.MainWindowTitle.trim() !== "" && !ignoreTitles.includes(proc.MainWindowTitle)) {
+              const procNameLower = (proc.ProcessName || "").toLowerCase();
+              const wTitleLower = (proc.MainWindowTitle || "").toLowerCase();
+              
+              for (const game of GAMES_LIST) {
+                const matches = game.patterns.some(p => procNameLower.includes(p) || wTitleLower.includes(p));
+                if (matches) {
+                  detectedGame = game.key;
+                  detectedGameProcess = proc.ProcessName;
+                  break;
+                }
+              }
+            }
+            if (detectedGame) break;
           }
           
           if (detectedGame && detectedGame !== richPresenceGame) {
@@ -1027,7 +1138,7 @@ updateCheckTimeout = setTimeout(() => {
           } else if (!detectedGame && richPresenceGame) {
              NativeGraphicInjector.detach();
           }
-
+          
           mainWindow.webContents.send('native-game-detected', detectedGame);
         } catch (parseErr) {
           // ignore parse err

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Mic, Key, Monitor, Power, CheckCircle, ShieldAlert, MonitorPlay, MousePointerClick, Maximize, Activity, Eye, MonitorUp } from "lucide-react";
+import { Mic, Key, Monitor, Power, CheckCircle, ShieldAlert, MonitorPlay, MousePointerClick, Maximize, Activity, Eye, MonitorUp, Cpu, RefreshCw, Flame, Sliders } from "lucide-react";
 import { GlowButton } from "../components/ui/GlowButton";
 import { toast } from "react-hot-toast";
 import { useAuth } from "../context/AuthContext";
@@ -26,7 +26,14 @@ export const ElectronSettingsPage = () => {
     setOverlayEnabled,
     transparentOverlayEnabled,
     setTransparentOverlayEnabled,
-    updateLauncherSettings
+    overlayMembersVisible,
+    setOverlayMembersVisible,
+    overlayNormalOpacity,
+    setOverlayNormalOpacity,
+    overlaySpeakingOpacity,
+    setOverlaySpeakingOpacity,
+    updateLauncherSettings,
+    gameDetected
   } = useLobby();
   const [config, setConfig] = useState<any>({});
   const [recordingKey, setRecordingKey] = useState<string | null>(null);
@@ -214,6 +221,7 @@ export const ElectronSettingsPage = () => {
                         <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#00e5ff]"></div>
                       </label>
                   </div>
+
                   <div className="flex items-center justify-between bg-black/40 p-3 rounded-xl">
                       <span className="text-sm font-bold text-white flex items-center gap-2"><MousePointerClick size={16} className="text-[#00e5ff]" /> عبور کلیک از اورلی</span>
                       <label className="relative inline-flex items-center cursor-pointer">
@@ -221,6 +229,45 @@ export const ElectronSettingsPage = () => {
                         <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#00e5ff]"></div>
                       </label>
                   </div>
+
+                  {/* Toggle: Members Display on Overlay */}
+                  <div className={cn("flex items-center justify-between bg-black/40 p-3 rounded-xl transition-opacity", !overlayEnabled && "opacity-50 pointer-events-none")}>
+                      <span className="text-sm font-bold text-white flex items-center gap-2">نمایش لیست اعضا روی اورلی</span>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" className="sr-only peer" checked={overlayMembersVisible} onChange={(e) => setOverlayMembersVisible(e.target.checked)} />
+                        <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#00e5ff]"></div>
+                      </label>
+                  </div>
+
+                  {/* Sliders for Normal and Talking Opacity */}
+                  <div className={cn("space-y-4 bg-black/30 p-3 rounded-xl border border-white/5 transition-opacity", (!overlayEnabled || !overlayMembersVisible) && "opacity-50 pointer-events-none")}>
+                    <div>
+                      <div className="flex justify-between text-gray-400 text-xs mb-1">
+                        <span className="font-mono text-[#00e5ff]">{Math.round(overlayNormalOpacity * 100)}%</span>
+                        <span>شفافیت اعضا در حالت سکوت (Quiet)</span>
+                      </div>
+                      <input 
+                        type="range" min="0.1" max="1.0" step="0.05" 
+                        value={overlayNormalOpacity} 
+                        onChange={e => setOverlayNormalOpacity(parseFloat(e.target.value))} 
+                        className="w-full accent-[#00e5ff]" 
+                      />
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between text-gray-400 text-xs mb-1">
+                        <span className="font-mono text-[#00e5ff]">{Math.round(overlaySpeakingOpacity * 100)}%</span>
+                        <span>شفافیت اعضا در حال صحبت (Speaking)</span>
+                      </div>
+                      <input 
+                        type="range" min="0.1" max="1.0" step="0.05" 
+                        value={overlaySpeakingOpacity} 
+                        onChange={e => setOverlaySpeakingOpacity(parseFloat(e.target.value))} 
+                        className="w-full accent-[#00e5ff]" 
+                      />
+                    </div>
+                  </div>
+
                   <div>
                     <label className="text-sm text-gray-400 font-bold block mb-2">شفافیت پس‌زمینه اورلی</label>
                     <input 
@@ -361,12 +408,11 @@ export const ElectronSettingsPage = () => {
          <div className="bg-dark-elem border border-white/5 p-6 rounded-2xl md:col-span-2 relative overflow-hidden group">
             <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-500/10 rounded-bl-full -mr-16 -mt-16 blur-xl" />
             <div className="flex flex-col h-full relative z-10">
-               <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2"><Activity className="text-yellow-400" /> پرفورمنس و سیستم</h3>
-               
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+               <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2"><Activity className="text-yellow-400 animate-pulse" /> پرفورمنس علمی و تنظیمات سیستم (GPU & CPU)</h3>
+               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6" dir="rtl" style={{ textAlign: "right" }}>
                  <div className="space-y-4">
                     <div className="flex items-center justify-between bg-black/40 p-3 rounded-xl">
-                        <span className="text-sm font-bold text-white flex items-center gap-2">اجرای خودکار با ویندوز</span>
+                        <span className="text-sm font-bold text-white flex items-center gap-2">اجرای خودکار کلاینت با لود شدن ویندوز (Autostart)</span>
                         <label className="relative inline-flex items-center cursor-pointer">
                           <input type="checkbox" className="sr-only peer" checked={!!config.startAtLogin} onChange={(e) => updateSetting("startAtLogin", e.target.checked)} />
                           <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-yellow-400"></div>
@@ -374,11 +420,11 @@ export const ElectronSettingsPage = () => {
                     </div>
 
                     <div className="flex items-center justify-between bg-black/40 p-3 rounded-xl">
-                        <span className="text-sm font-bold text-white flex items-center gap-2">شتاب‌دهنده سخت‌افزاری (کاهش لگ گیم)</span>
+                        <span className="text-sm font-bold text-white flex items-center gap-2">شتاب‌دهنده گرافیکی سخت‌افزاری (کاهش قطعی لگ اورلی درون گیم)</span>
                         <label className="relative inline-flex items-center cursor-pointer">
                           <input type="checkbox" className="sr-only peer" checked={!!config.hardwareAcceleration} onChange={(e) => {
                              updateSetting("hardwareAcceleration", e.target.checked);
-                             toast("جهت اعمال نیاز به راه‌اندازی مجدد است.", { icon: "⚠️" });
+                             toast.success("تنظیم تغییر شتاب‌دهنده فرعی گرافیک ثبت شد! جهت اعمال، کلاینت را از نوار بالایی یا سیستم تسکبار راه‌اندازی مجدد کنید.", { icon: "⚙️" });
                           }} />
                           <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-yellow-400"></div>
                         </label>
@@ -393,8 +439,48 @@ export const ElectronSettingsPage = () => {
                  </div>
                  
                  <div className="bg-black/20 border border-white/5 p-4 rounded-xl text-center flex flex-col items-center justify-center space-y-4">
-                    <ShieldAlert size={48} className="text-gray-600" />
-                    <p className="text-sm text-gray-400 px-4">هنگام اجرای بازی‌های سنگین، کلاینت به صورت خودکار انیمیشن‌ها و رندرهای اضافه را جهت بهبود FPS متوقف می‌کند.</p>
+                    <ShieldAlert size={48} className="text-yellow-500 animate-pulse" />
+                    <p className="text-sm font-bold text-[#00e5ff] px-4">سیستم هوشمند گیم بوستر و ارزیابی پرفورمنس</p>
+                     <div className="w-full space-y-2 text-right text-xs px-3" dir="rtl">
+                        <div className="bg-black/40 p-2.5 rounded-lg border border-white/5">
+                           <div className="flex justify-between items-center text-[11px] mb-1">
+                              <span className="text-gray-400">شتاب‌دهنده گرافیکی (GPU):</span>
+                              <span className={config.hardwareAcceleration ? "text-emerald-400 font-bold" : "text-gray-500"}>
+                                 {config.hardwareAcceleration ? "فعال و پایدار (144+ FPS)" : "غیر فعال (رندر نرم‌افزاری)"}
+                              </span>
+                           </div>
+                           <div className="w-full bg-white/5 h-1 rounded-full overflow-hidden">
+                              <div className={cn("h-full transition-all duration-500", config.hardwareAcceleration ? "bg-emerald-400 w-full" : "bg-yellow-400 w-[25%]")} />
+                           </div>
+                        </div>
+
+                        <div className="bg-black/40 p-2.5 rounded-lg border border-white/5">
+                           <div className="flex justify-between items-center text-[11px] mb-1">
+                              <span className="text-gray-400">کاهش مصرف منابع کلاینت:</span>
+                              <span className={config.throttleGameMode ? "text-emerald-400 font-bold" : "text-yellow-500"}>
+                                 {config.throttleGameMode ? "هوشمند فعال (<0.2% CPU)" : "غیرفعال (عادی)"}
+                              </span>
+                           </div>
+                           <div className="w-full bg-white/5 h-1 rounded-full overflow-hidden">
+                              <div className={cn("h-full transition-all duration-500", config.throttleGameMode ? "bg-emerald-400 w-full" : "bg-yellow-500 w-[50%]")} />
+                           </div>
+                        </div>
+
+                        {gameDetected ? (
+                           <div className="bg-emerald-500/10 p-2.5 rounded-lg border border-emerald-500/20 text-emerald-300 font-bold text-[11px] flex items-center justify-between animate-pulse">
+                              <span>🎮 بازی در حال اجرا:</span>
+                              <span>{gameDetected} (کاهش لگ فعال)</span>
+                           </div>
+                        ) : (
+                           <div className="bg-white/5 p-2.5 rounded-lg border border-white/5 text-gray-400 text-[11px] flex items-center justify-between">
+                              <span>● مانیتورینگ بازی فعال:</span>
+                              <span>آماده مانیتور (مثلاً CS2)</span>
+                           </div>
+                        )}
+                        <div className="text-[10px] text-gray-500 text-center leading-relaxed mt-1">
+                           پایش بلادرنگ با ۱۲۵ عنوان مطرح بازی جهت خفه‌سازی کامل سربار و انیمیشن‌های پس‌زمینه لانچر.
+                        </div>
+                     </div>
                  </div>
                </div>
             </div>

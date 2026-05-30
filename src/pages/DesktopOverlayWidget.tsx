@@ -24,7 +24,10 @@ export const DesktopOverlayWidget = () => {
   const { 
     overlayPosition, 
     overlaySize, 
-    overlayOnlyTalking
+    overlayOnlyTalking,
+    overlayMembersVisible,
+    overlayNormalOpacity,
+    overlaySpeakingOpacity
   } = useLobby();
   const { user } = useAuth();
   
@@ -33,9 +36,19 @@ export const DesktopOverlayWidget = () => {
   // We read the local storage directly if the context initially misses it since it's a separate window
   const storedPos = localStorage.getItem("loxx_overlay_position") || "top-left";
   const storedSize = localStorage.getItem("loxx_overlay_size") || "medium";
+  const storedMembersVisible = localStorage.getItem("loxx_overlay_members_visible") !== "false";
+  const storedNormalOpacity = localStorage.getItem("loxx_overlay_normal_opacity") !== null 
+    ? parseFloat(localStorage.getItem("loxx_overlay_normal_opacity")!) 
+    : 0.75;
+  const storedSpeakingOpacity = localStorage.getItem("loxx_overlay_speaking_opacity") !== null 
+    ? parseFloat(localStorage.getItem("loxx_overlay_speaking_opacity")!) 
+    : 1.0;
 
   const posStr = overlayPosition || storedPos;
   const sizeStr = overlaySize || storedSize;
+  const membersVisibleVal = overlayMembersVisible !== undefined ? overlayMembersVisible : storedMembersVisible;
+  const normalOpacityVal = overlayNormalOpacity !== undefined ? overlayNormalOpacity : storedNormalOpacity;
+  const speakingOpacityVal = overlaySpeakingOpacity !== undefined ? overlaySpeakingOpacity : storedSpeakingOpacity;
   
   const positionClasses = {
     "top-left": "top-6 left-6 items-start text-left",
@@ -142,7 +155,7 @@ export const DesktopOverlayWidget = () => {
 
       <div className={cn("fixed z-[9999] flex flex-col pointer-events-none select-none", positionClasses)}>
         {/* Title tag - minimal, matches Discord Overlay appearance */}
-        {players && players.length > 0 && (
+        {membersVisibleVal && players && players.length > 0 && (
           <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/75 border border-white/5 backdrop-blur-md mb-2 shadow-lg shadow-black/30 w-fit">
             <span className="h-2 w-2 rounded-full bg-[#22c55e] animate-ping" />
             <span className="text-[10px] font-black tracking-wider text-white uppercase font-sans">LOXX LOBBY</span>
@@ -152,7 +165,7 @@ export const DesktopOverlayWidget = () => {
 
         <div className="flex flex-col gap-3 items-start">
           <AnimatePresence>
-            {players?.map((player) => {
+            {membersVisibleVal && players?.map((player) => {
               const isMe = player.userId === currentUserId;
               
               // Speech detection comes strictly from IPC now, avoiding context reliance
@@ -169,7 +182,7 @@ export const DesktopOverlayWidget = () => {
                 <motion.div
                   key={player.userId}
                   initial={{ opacity: 0, x: posStr.includes("left") ? -30 : 30, scale: 0.9 }}
-                  animate={{ opacity: isTalking ? 1 : 0.75, x: 0, scale: 1 }}
+                  animate={{ opacity: isTalking ? speakingOpacityVal : normalOpacityVal, x: 0, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.9 }}
                   transition={{ type: "spring", damping: 20, stiffness: 200 }}
                   className="flex items-center gap-2.5 flex-row"

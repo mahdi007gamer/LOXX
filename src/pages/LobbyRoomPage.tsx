@@ -131,6 +131,12 @@ export const LobbyRoomPage = () => {
     setOverlaySize,
     overlayOnlyTalking,
     setOverlayOnlyTalking,
+    overlayMembersVisible,
+    setOverlayMembersVisible,
+    overlayNormalOpacity,
+    setOverlayNormalOpacity,
+    overlaySpeakingOpacity,
+    setOverlaySpeakingOpacity,
 
     // Electron bindings
     isElectron,
@@ -1223,6 +1229,55 @@ export const LobbyRoomPage = () => {
                             "absolute top-1 h-4 w-4 rounded-full transition-all",
                             overlayOnlyTalking ? "right-1 bg-neon-blue shadow-[0_0_10px_rgba(0,229,255,1)]" : "right-7 bg-gray-500"
                           )} />
+                        </div>
+                      </div>
+
+                      {/* Display members list display toggle */}
+                      <div className={cn("flex items-center justify-between p-3 rounded-2xl bg-white/5 transition-opacity", !overlayEnabled && "opacity-50 pointer-events-none")}>
+                        <div>
+                          <p className="text-xs font-black text-white">نمایش لیست اعضا روی اورلی</p>
+                          <p className="text-[9px] text-gray-400 font-bold font-sans">نمایش یا پنهان‌سازی اسامی و آواتار اعضا در لابی روی تصویر</p>
+                        </div>
+                        <div 
+                          onClick={() => setOverlayMembersVisible(!overlayMembersVisible)}
+                          className={cn(
+                            "w-12 h-6 rounded-full relative cursor-pointer border transition-colors",
+                             overlayMembersVisible ? "bg-neon-blue/20 border-neon-blue/30" : "bg-white/5 border-white/10"
+                          )}
+                        >
+                          <div className={cn(
+                            "absolute top-1 h-4 w-4 rounded-full transition-all",
+                            overlayMembersVisible ? "right-1 bg-neon-blue shadow-[0_0_10px_rgba(0,229,255,1)]" : "right-7 bg-gray-500"
+                          )} />
+                        </div>
+                      </div>
+
+                      {/* Speaking & Quiet Opacities sliders */}
+                      <div className={cn("space-y-3 p-3 rounded-2xl bg-white/5 transition-opacity", (!overlayEnabled || !overlayMembersVisible) && "opacity-50 pointer-events-none")}>
+                        <div className="space-y-1">
+                          <div className="flex justify-between text-gray-400 text-[10px] font-bold">
+                            <span className="font-mono text-neon-blue">{Math.round(overlayNormalOpacity * 100)}%</span>
+                            <span>شفافیت عضو در حالت سکوت (Quiet)</span>
+                          </div>
+                          <input 
+                            type="range" min="0.1" max="1.0" step="0.05"
+                            value={overlayNormalOpacity} 
+                            onChange={e => setOverlayNormalOpacity(parseFloat(e.target.value))} 
+                            className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-neon-blue" 
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <div className="flex justify-between text-gray-400 text-[10px] font-bold">
+                            <span className="font-mono text-neon-blue">{Math.round(overlaySpeakingOpacity * 100)}%</span>
+                            <span>شفافیت عضو در حال صحبت (Speaking)</span>
+                          </div>
+                          <input 
+                            type="range" min="0.1" max="1.0" step="0.05"
+                            value={overlaySpeakingOpacity} 
+                            onChange={e => setOverlaySpeakingOpacity(parseFloat(e.target.value))} 
+                            className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-neon-blue" 
+                          />
                         </div>
                       </div>
 

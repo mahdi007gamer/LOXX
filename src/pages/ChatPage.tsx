@@ -753,7 +753,29 @@ export const ChatPage: React.FC = () => {
   const { lobby } = useLobby();
   const [searchParams] = useSearchParams();
   const [activeChannelId, setActiveChannelId] = useState("general");
-  const [messages, setMessages] = useState<Record<string, ChatMessage[]>>({});
+  const [messages, setMessages] = useState<Record<string, ChatMessage[]>>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const cached = localStorage.getItem("loxx_cached_chat_messages");
+        if (cached) {
+          return JSON.parse(cached);
+        }
+      } catch (e) {
+        console.error("[CHAT] Failed to parse cached messages", e);
+      }
+    }
+    return {};
+  });
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && Object.keys(messages).length > 0) {
+      try {
+        localStorage.setItem("loxx_cached_chat_messages", JSON.stringify(messages));
+      } catch (e) {
+        console.error("[CHAT] Failed to cache messages", e);
+      }
+    }
+  }, [messages]);
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
   const [channelUsers, setChannelUsers] = useState<Record<string, number>>({});
   const [memberCount, setMemberCount] = useState(0);
@@ -893,11 +915,14 @@ export const ChatPage: React.FC = () => {
     window.dispatchEvent(new Event("loxx-chat-unread-update"));
   }, [unreadCounts, user?.id]);
 
+  const activeChannelMsgs = messages[activeChannelId] || [];
+  const activeChannelMsgsLength = activeChannelMsgs.length;
+  const latestMessageId = activeChannelMsgsLength > 0 ? activeChannelMsgs[activeChannelMsgsLength - 1]?.id : null;
+
   useEffect(() => {
     if (!user?.id || !activeChannelId) return;
-    const channelMsgs = messages[activeChannelId] || [];
-    if (channelMsgs.length > 0) {
-      const latestMsg = channelMsgs[channelMsgs.length - 1];
+    if (activeChannelMsgs.length > 0) {
+      const latestMsg = activeChannelMsgs[activeChannelMsgs.length - 1];
       if (latestMsg && latestMsg.id) {
         const lastReadIds = JSON.parse(localStorage.getItem(`loxx_chat_last_read_ids_${user.id}`) || "{}");
         lastReadIds[activeChannelId] = parseInt(latestMsg.id);
@@ -909,7 +934,7 @@ export const ChatPage: React.FC = () => {
         });
       }
     }
-  }, [messages, activeChannelId, user?.id]);
+  }, [latestMessageId, activeChannelId, user?.id]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -1336,7 +1361,9 @@ export const ChatPage: React.FC = () => {
      };
   };
 
-  const currentMessages = messages[activeChannelId] || [];
+  const currentMessages = (messages[activeChannelId] || []).filter(
+    m => !m.isDeleted && m.text !== "این پیام حذف شده است."
+  );
 
   // Update member count based on active channel
   useEffect(() => {
@@ -1368,7 +1395,7 @@ export const ChatPage: React.FC = () => {
     if (scrollRef.current && !showNewMessageButton) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages, activeChannelId, showNewMessageButton]);
+  }, [activeChannelMsgsLength, activeChannelId, showNewMessageButton]);
 
   const handleScroll = () => {
     if (!scrollRef.current) return;

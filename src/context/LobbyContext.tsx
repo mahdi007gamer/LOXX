@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { lobbySocket, chatSocket, voiceSocket, getSharedAudioContext, resumeSharedAudioContext } from "../lib/socket";
+import { lobbySocket, chatSocket, voiceSocket, presenceSocket, getSharedAudioContext, resumeSharedAudioContext } from "../lib/socket";
 import { toast } from "react-hot-toast";
 import { useAuth } from "./AuthContext";
 import { useWebRTC } from "../hooks/useWebRTC";
@@ -104,6 +104,12 @@ interface LobbyContextType {
   setOverlayToastXOffset: (val: number) => void;
   overlayToastYOffset: number;
   setOverlayToastYOffset: (val: number) => void;
+  overlayMembersVisible: boolean;
+  setOverlayMembersVisible: (val: boolean) => void;
+  overlayNormalOpacity: number;
+  setOverlayNormalOpacity: (val: number) => void;
+  overlaySpeakingOpacity: number;
+  setOverlaySpeakingOpacity: (val: number) => void;
 
   // Electron Launcher Specific Settings
   isElectron: boolean;
@@ -218,6 +224,42 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
     return 40;
   });
+
+  const [overlayMembersVisible, setOverlayMembersVisible] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      const val = localStorage.getItem("loxx_overlay_members_visible");
+      return val !== null ? val === "true" : true;
+    }
+    return true;
+  });
+
+  const [overlayNormalOpacity, setOverlayNormalOpacity] = useState<number>(() => {
+    if (typeof window !== "undefined") {
+      const val = localStorage.getItem("loxx_overlay_normal_opacity");
+      return val !== null ? parseFloat(val) : 0.75;
+    }
+    return 0.75;
+  });
+
+  const [overlaySpeakingOpacity, setOverlaySpeakingOpacity] = useState<number>(() => {
+    if (typeof window !== "undefined") {
+      const val = localStorage.getItem("loxx_overlay_speaking_opacity");
+      return val !== null ? parseFloat(val) : 1.0;
+    }
+    return 1.0;
+  });
+
+  useEffect(() => {
+    localStorage.setItem("loxx_overlay_members_visible", String(overlayMembersVisible));
+  }, [overlayMembersVisible]);
+
+  useEffect(() => {
+    localStorage.setItem("loxx_overlay_normal_opacity", String(overlayNormalOpacity));
+  }, [overlayNormalOpacity]);
+
+  useEffect(() => {
+    localStorage.setItem("loxx_overlay_speaking_opacity", String(overlaySpeakingOpacity));
+  }, [overlaySpeakingOpacity]);
 
   // Sync state changes to localStorage
   useEffect(() => {
@@ -355,6 +397,14 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }
     }
   }, [launcherRichPresenceEnabled, gameDetected, isElectron]);
+
+  useEffect(() => {
+    if (gameDetected) {
+      presenceSocket.emit("presence.update", { status: "in_game", activity: gameDetected });
+    } else {
+      presenceSocket.emit("presence.update", { status: "online" });
+    }
+  }, [gameDetected]);
 
   useEffect(() => {
     const checkElectron = typeof window !== "undefined" && !!(window as any).electronAPI;
@@ -1284,6 +1334,12 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setOverlayToastXOffset,
       overlayToastYOffset,
       setOverlayToastYOffset,
+      overlayMembersVisible,
+      setOverlayMembersVisible,
+      overlayNormalOpacity,
+      setOverlayNormalOpacity,
+      overlaySpeakingOpacity,
+      setOverlaySpeakingOpacity,
 
       // Electron bindings
       isElectron,
