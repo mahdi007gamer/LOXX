@@ -656,7 +656,12 @@ app.whenReady().then(() => {
         }
         
         sendLog('Calling callback with video:', {id: chosenSource.id, audio: audioOption});
-        callback({ video: chosenSource, audio: audioOption });
+        
+        if (audioOption) {
+          callback({ video: chosenSource, audio: audioOption });
+        } else {
+          callback({ video: chosenSource });
+        }
       }).catch((e) => {
         sendLog('Failed to get sources for native display media request', e.toString());
       });
