@@ -81,6 +81,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Dynamic version query
   getAppVersion: () => ipcRenderer.invoke('get-app-version'),
 
+  downloadMedia: (url, fileName) => ipcRenderer.send('download-media', { url, fileName }),
+
   // Listen for launcher update events inside splash
   onUpdateStatus: (callback) => {
     const subscription = (event, status, percent) => callback(status, percent);

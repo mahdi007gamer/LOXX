@@ -76,14 +76,32 @@ function MessageItem({ message, onReaction, onSaveGif, onReply, activeChannelId,
     const actions: ContextMenuAction[] = [
       { id: 'reply', label: 'پاسخ دادن', icon: <Reply size={14} />, onClick: () => onReply(message) },
     ];
+    const handleSaveMedia = (url: string, prefix: string) => {
+      const ext = url.split('.').pop()?.split('?')[0] || 'png';
+      const fileName = `${prefix}_${Date.now()}.${ext}`;
+      const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
+      if (isElectron && (window as any).electronAPI.downloadMedia) {
+        (window as any).electronAPI.downloadMedia(url, fileName);
+      } else {
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = fileName;
+        a.rel = "noopener noreferrer";
+        a.target = "_blank";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }
+    };
+
     if (message.text) {
       actions.push({ id: 'copy', label: 'کپی متن', icon: <Copy size={14} />, onClick: () => navigator.clipboard.writeText(message.text) });
     }
     if (message.image) {
-      actions.push({ id: 'save-img', label: 'ذخیره تصویر', icon: <Save size={14} />, onClick: () => window.open(getFileUrl(message.image!), '_blank') });
+      actions.push({ id: 'save-img', label: 'ذخیره تصویر', icon: <Save size={14} />, onClick: () => handleSaveMedia(getFileUrl(message.image!), 'image') });
     }
     if (message.gif) {
-      actions.push({ id: 'save-gif', label: 'ذخیره گیف', icon: <Save size={14} />, onClick: () => onSaveGif(message.gif!) });
+      actions.push({ id: 'save-gif', label: 'ذخیره گیف', icon: <Save size={14} />, onClick: () => handleSaveMedia(message.gif!, 'gif') });
     }
     if (message.self || isAdmin || isGroupOwner) {
       actions.push({ id: 'delete', label: 'حذف پیام', icon: <Trash2 size={14} />, destructive: true, onClick: () => onDelete(message.id) });

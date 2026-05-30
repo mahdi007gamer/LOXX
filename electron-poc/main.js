@@ -855,6 +855,22 @@ updateCheckTimeout = setTimeout(() => {
     }
   });
 
+  ipcMain.on('download-media', async (event, { url, fileName }) => {
+    try {
+      const { filePath } = await dialog.showSaveDialog(BrowserWindow.fromWebContents(event.sender), {
+        defaultPath: fileName
+      });
+      if (filePath) {
+        event.sender.session.once('will-download', (e, item) => {
+          item.setSavePath(filePath);
+        });
+        event.sender.downloadURL(url);
+      }
+    } catch(e) {
+      console.error("Download failed:", e);
+    }
+  });
+
   ipcMain.handle('get-overlay-players', () => {
     return lastOverlayPlayers;
   });

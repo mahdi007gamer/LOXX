@@ -86,6 +86,8 @@ interface LobbyContextType {
   peerActivity: Record<string, number>;
   setPeerVolume: (userId: string, volume: number) => void;
   localVolume: number;
+  isDeafened: boolean;
+  setIsDeafened: (val: boolean) => void;
 
   // Overlay Settings
   overlayEnabled: boolean;
@@ -246,6 +248,8 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // Use refs to track latest state for socket listeners
   const lobbyRef = useRef<LobbyState | null>(null);
   const userRef = useRef<any>(null);
+
+  const [isDeafened, setIsDeafened] = useState(false);
 
   useEffect(() => {
     lobbyRef.current = lobby;
@@ -1223,6 +1227,8 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       peerActivity,
       setPeerVolume,
       localVolume,
+      isDeafened,
+      setIsDeafened,
 
       // Overlay bindings
       overlayEnabled,
@@ -1274,7 +1280,7 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         <RemoteAudioPlayer 
           key={peerUserId}
           stream={stream}
-          volumeLevel={peerVolumes[peerUserId] !== undefined ? peerVolumes[peerUserId] : 100}
+          volumeLevel={isDeafened ? 0 : (peerVolumes[peerUserId] !== undefined ? peerVolumes[peerUserId] : 100)}
           onVolumeChange={(vol) => handlePeerVolumeChange(peerUserId, vol)}
           outputDeviceId={selectedAudioOutput}
         />

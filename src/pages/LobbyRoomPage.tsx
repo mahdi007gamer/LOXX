@@ -36,7 +36,10 @@ import {
   CheckCircle2,
   UserCheck,
   Radio,
-  LayoutTemplate
+  LayoutTemplate,
+  VolumeX,
+  Volume2,
+  Reply
 } from "lucide-react";
 import { GlowButton } from "../components/ui/GlowButton";
 import { useFriends } from "../context/FriendsContext";
@@ -149,15 +152,37 @@ export const LobbyRoomPage = () => {
     overlayClickThrough,
     gameDetected,
     launcherRichPresenceEnabled,
-    setLauncherRichPresenceEnabled
+    setLauncherRichPresenceEnabled,
+    isDeafened,
+    setIsDeafened
   } = useLobby();
 
-  const { user, isSidebarCollapsed } = useAuth();
+  const { user, isSidebarCollapsed, setIsSidebarCollapsed } = useAuth();
   const { openChat, addFriend } = useFriends();
   const { openProfile } = useProfilePopover();
   
   const [copied, setCopied] = useState(false);
-  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false); // Mobile chat
+  const [isDesktopChatOpen, setIsDesktopChatOpen] = useState(false); // Desktop chat
+  const [unreadDesktopChat, setUnreadDesktopChat] = useState(0);
+
+  const prevLastMessage = useRef<string | null>(null);
+  useEffect(() => {
+    if (messages.length > 0) {
+      const last = messages[messages.length - 1];
+      if (last.id !== prevLastMessage.current) {
+        prevLastMessage.current = last.id;
+        if (!isDesktopChatOpen && last.fromUserId !== user?.id && !last.isSystem) {
+          setUnreadDesktopChat(p => p + 1);
+        }
+      }
+    }
+  }, [messages, isDesktopChatOpen, user?.id]);
+
+  useEffect(() => {
+    if (isDesktopChatOpen) setUnreadDesktopChat(0);
+  }, [isDesktopChatOpen]);
+
   const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
@@ -179,7 +204,11 @@ export const LobbyRoomPage = () => {
     if (id) {
        joinLobby(id);
     }
-  }, [id]);
+    const isElectron = typeof window !== "undefined" && !!(window as any).electronAPI;
+    if (isElectron) {
+      setIsSidebarCollapsed(true);
+    }
+  }, [id, setIsSidebarCollapsed]);
 
   // Redirect if lobby becomes null (e.g., closed by host) or if joining fails
   const [countdown, setCountdown] = useState(5);
@@ -302,6 +331,12 @@ export const LobbyRoomPage = () => {
     e.preventDefault();
     if (!inputMessage.trim() || !id) return;
     
+    const words = inputMessage.split(/\s+/);
+    if (words.some(word => word.length > 15)) {
+      toast.error("یک کلمه نمیتواند بیشتر از 15 کاراکتر باشد (اسپم)");
+      return;
+    }
+
     sendMessage(inputMessage);
     setInputMessage("");
   };
@@ -652,17 +687,40 @@ export const LobbyRoomPage = () => {
         </div>
 
         {/* Desktop Chat Sidebar (Right) */}
-        <div className="hidden lg:flex w-full lg:w-[280px] xl:w-[320px] flex-col h-full overflow-hidden order-first">
-           <ChatPanel 
-             messages={messages} 
-             players={players}
-             inputMessage={inputMessage} 
-             setInputMessage={setInputMessage} 
-             onSend={handleSendMessage}
-             currentUserId={user?.id}
-             isVipLobby={isVipLobby}
-           />
-        </div>
+        {!isElectron || isDesktopChatOpen ? (
+          <div className={cn("hidden lg:flex flex-col overflow-hidden shadow-2xl", isElectron ? "absolute bottom-6 right-6 z-40 bg-black/80 backdrop-blur-3xl w-[340px] h-[450px] rounded-[24px] border border-white/10" : "w-full lg:w-[280px] xl:w-[320px] h-full order-first")}>
+             <ChatPanel 
+               messages={messages} 
+               players={players}
+               inputMessage={inputMessage} 
+               setInputMessage={setInputMessage} 
+               onSend={handleSendMessage}
+               currentUserId={user?.id}
+               isVipLobby={isVipLobby}
+               onClose={isElectron ? () => setIsDesktopChatOpen(false) : undefined}
+             />
+          </div>
+        ) : (
+          isElectron && (
+            <motion.div 
+              initial={{ y: 50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              className="hidden lg:flex absolute bottom-6 right-6 z-40 flex-col border border-white/10 bg-black/60 backdrop-blur-lg rounded-[24px] overflow-hidden shadow-2xl cursor-pointer hover:bg-black/80 w-[300px] hover:border-neon-blue/30 transition-colors duration-300"
+              onClick={() => setIsDesktopChatOpen(true)}
+            >
+              <div className="flex items-center justify-between p-4">
+                 <div className="flex flex-col">
+                   <div className="flex items-center gap-2">
+                     <div className="h-2 w-2 rounded-full bg-neon-blue animate-pulse" />
+                     <h2 className="text-xs font-black uppercase tracking-widest text-white">Lobby Comms</h2>
+                   </div>
+                   {unreadDesktopChat > 0 && <span className="text-[10px] text-neon-blue mt-1 font-bold">{unreadDesktopChat} پیام جدید</span>}
+                 </div>
+                 <MessageSquare size={18} className="text-gray-400" />
+              </div>
+            </motion.div>
+          )
+        )}
       </div>
 
       {/* Mobile Chat Trigger & Bottom Actions - Fixed and Styled */}
@@ -766,9 +824,10 @@ export const LobbyRoomPage = () => {
            </div>
            
            <div className="flex items-center gap-4">
-              <ControlButton icon={isMicMuted ? <MicOff size={20} /> : <Mic size={20} />} active={!isMicMuted} onClick={toggleMic} />
-              <ControlButton icon={<UserPlus size={20} />} onClick={() => setIsInviteModalOpen(true)} />
-              <ControlButton icon={<Settings size={20} />} onClick={() => setIsSettingsModalOpen(true)} />
+              <ControlButton icon={isMicMuted ? <MicOff size={20} /> : <Mic size={20} />} active={!isMicMuted} onClick={toggleMic} tooltip="میکروفون" />
+              <ControlButton icon={isDeafened ? <VolumeX size={20} /> : <Volume2 size={20} />} active={!isDeafened} onClick={() => setIsDeafened(!isDeafened)} tooltip="قطع صدای اسپیکر" />
+              <ControlButton icon={<UserPlus size={20} />} onClick={() => setIsInviteModalOpen(true)} tooltip="دعوت" />
+              <ControlButton icon={<Settings size={20} />} onClick={() => setIsSettingsModalOpen(true)} tooltip="تنظیمات" />
            </div>
         </div>
 
@@ -1374,7 +1433,13 @@ const DiscordLayoutPlayerCard: React.FC<any> = ({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.9 }}
-      onClick={!isSlot ? onSelect : () => onInvite()}
+      onClick={!isSlot ? () => onProfile(player.id) : () => onInvite()}
+      onContextMenu={(e) => {
+        if (!isSlot) {
+          e.preventDefault();
+          onSelect();
+        }
+      }}
       className={cn(
         "relative rounded-[16px] border transition-all duration-300 cursor-pointer overflow-hidden group flex flex-col justify-end p-2 md:p-3 items-center text-center aspect-square md:aspect-auto md:h-[180px] w-full",
         isSlot ? "border-dashed border-white/10 bg-transparent opacity-40 hover:opacity-100 items-center justify-center" : "bg-[#0a0a0f] border-white/10 shadow-lg",
@@ -1435,7 +1500,13 @@ const CompactLayoutPlayerCard: React.FC<any> = ({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.9 }}
-      onClick={!isSlot ? onSelect : () => onInvite()}
+      onClick={!isSlot ? () => onProfile(player.id) : () => onInvite()}
+      onContextMenu={(e) => {
+        if (!isSlot) {
+          e.preventDefault();
+          onSelect();
+        }
+      }}
       className={cn(
         "relative rounded-[16px] border transition-all duration-300 cursor-pointer overflow-hidden group flex w-full sm:w-[calc(50%-6px)] lg:w-[calc(33.333%-10px)] h-[60px] md:h-[72px] items-center p-2 md:p-3 shrink-0",
         isSlot ? "border-dashed border-white/10 bg-transparent opacity-40 hover:opacity-100" : "bg-[#0a0a0f] border-white/10 hover:bg-[#12121a]",
@@ -1545,7 +1616,13 @@ const PlayerCard: React.FC<{
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.9 }}
       whileHover={!isSlot ? { y: -8, transition: { duration: 0.2 } } : {}}
-      onClick={!isSlot ? onSelect : () => onInvite()}
+      onClick={!isSlot ? () => onProfile(player.id) : () => onInvite()}
+      onContextMenu={(e) => {
+        if (!isSlot) {
+          e.preventDefault();
+          onSelect();
+        }
+      }}
       className={cn(
         "relative p-3 md:p-6 rounded-[24px] md:rounded-[32px] border transition-all duration-300 backdrop-blur-md cursor-pointer group flex flex-col justify-between min-h-[220px] md:min-h-[360px] w-full sm:w-[calc(50%-6px)] md:w-[calc(50%-12px)] lg:w-[calc(33.333%-10px)] xl:w-[calc(25%-18px)] shrink-0 grow min-w-[140px] sm:min-w-[220px] md:min-w-[245px]",
         isSlot ? "border-dashed border-white/10 bg-transparent opacity-40 hover:opacity-100" : "bg-[#0a0a0f] border-white/10 shadow-2xl overflow-hidden",
@@ -1805,12 +1882,25 @@ const ChatPanel = ({ messages, players, inputMessage, setInputMessage, onSend, o
 }) => {
   const filteredMessages = messages.filter(msg => !msg.toUserId || msg.isSystem);
   const scrollRef = useRef<HTMLDivElement>(null);
+  
+  const [contextMenu, setContextMenu] = useState<{ id: string, x: number, y: number } | null>(null);
 
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
     }
   }, [filteredMessages.length]);
+  
+  useEffect(() => {
+    const handleGlobalClick = () => setContextMenu(null);
+    window.addEventListener('click', handleGlobalClick);
+    return () => window.removeEventListener('click', handleGlobalClick);
+  }, []);
+
+  const handleContextMenu = (e: React.MouseEvent, msgId: string) => {
+    e.preventDefault();
+    setContextMenu({ id: msgId, x: e.clientX, y: e.clientY });
+  };
 
   return (
     <div className="flex-1 flex flex-col h-full bg-[#0d0d14]/40 backdrop-blur-xl border-l md:border-r border-white/5">
@@ -1852,10 +1942,13 @@ const ChatPanel = ({ messages, players, inputMessage, setInputMessage, onSend, o
                  </span>
               </div>
             ) : (
-              <div className={cn(
-                "flex items-start gap-3 max-w-[95%] sm:max-w-[85%]",
-                isYou ? "flex-row" : "flex-row-reverse"
-              )}>
+              <div 
+                className={cn(
+                  "flex items-start gap-3 max-w-[95%] sm:max-w-[85%]",
+                  isYou ? "flex-row" : "flex-row-reverse"
+                )}
+                onContextMenu={(e) => handleContextMenu(e, msg.id || `${index}`)}
+              >
                 <div className="h-8 w-8 rounded-xl bg-white/5 border border-white/10 flex-shrink-0 flex items-center justify-center text-lg mt-1 font-black uppercase overflow-hidden">
                    <SmartImage 
                      src={msg.avatarUrl || ""}
@@ -1905,6 +1998,48 @@ const ChatPanel = ({ messages, players, inputMessage, setInputMessage, onSend, o
           </div>
         )})}
       </div>
+
+      <AnimatePresence>
+        {contextMenu && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.1 }}
+            className="fixed z-[9999] w-48 bg-[#0a0a0f] border border-white/10 rounded-xl shadow-2xl py-1 overflow-hidden"
+            style={{ 
+              top: contextMenu.y, 
+              left: contextMenu.x,
+            }}
+          >
+            <button
+              onClick={() => {
+                const message = messages.find(m => (m.id || m.id) === contextMenu.id);
+                if (message?.text) {
+                  navigator.clipboard.writeText(message.text);
+                  toast.success("متن پیام کپی شد!");
+                }
+              }}
+              className="w-full text-left px-4 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white flex items-center justify-end gap-3 transition-colors group"
+            >
+              کپی متن
+              <Copy size={14} className="text-gray-500 group-hover:text-white transition-colors" />
+            </button>
+            <button
+              onClick={() => {
+                const message = messages.find(m => (m.id || m.id) === contextMenu.id);
+                if (message) {
+                  setInputMessage((prev: string) => `در پاسخ به ${message.user}:\n${prev}`);
+                }
+              }}
+              className="w-full text-left px-4 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white flex items-center justify-end gap-3 transition-colors group"
+            >
+              پاسخ دادن
+              <Reply size={14} className="text-gray-500 group-hover:text-white transition-colors" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <form onSubmit={onSend} className="p-4 md:p-6 pb-6 bg-black/20 border-t border-white/5">
         <div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-2xl p-1 pr-4 focus-within:border-neon-blue/50 transition-all relative">
