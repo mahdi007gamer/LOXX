@@ -622,19 +622,18 @@ app.whenReady().then(() => {
 
   if (session.defaultSession.setDisplayMediaRequestHandler) {
     session.defaultSession.setDisplayMediaRequestHandler((request, callback) => {
+      if (selectedDesktopSourceId) {
+        let audioOption = undefined;
+        if (request.audioRequested && selectedDesktopSourceId.startsWith('screen')) {
+           audioOption = 'loopback';
+        }
+        // Native Electron allows passing an object with id and name
+        callback({ video: { id: selectedDesktopSourceId, name: 'ShareSource' }, audio: audioOption });
+        return;
+      }
+
       desktopCapturer.getSources({ types: ['screen', 'window'] }).then((sources) => {
         let chosenSource = sources[0];
-        if (selectedDesktopSourceId) {
-          const found = sources.find(s => s.id === selectedDesktopSourceId);
-          if (found) {
-            chosenSource = found;
-          } else {
-             console.log('Source not found in getSources:', selectedDesktopSourceId);
-          }
-          // NEVER reset selectedDesktopSourceId here, as Chromium may call this multiple times per getDisplayMedia request
-        }
-        
-        // Only allow loopback audio for screens, not windows, to prevent crashes
         let audioOption = undefined;
         if (request.audioRequested && chosenSource && chosenSource.id.startsWith('screen')) {
            audioOption = 'loopback';
