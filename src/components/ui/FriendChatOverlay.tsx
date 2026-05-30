@@ -41,7 +41,7 @@ export const FriendChatOverlay = () => {
     window.location.pathname === '/overlay' || 
     window.location.pathname === '/lobby/overlay-widget' ||
     window.location.hash.includes('/overlay')
-  ) && (new URLSearchParams(window.location.search).get("is_overlay_window") === "true" || window.location.hash.includes("is_overlay_window=true"));
+  );
 
   const [testingCompatibility, setTestingCompatibility] = useState(false);
   const [testResult, setTestResult] = useState<null | 'ok' | 'fail'>(null);
