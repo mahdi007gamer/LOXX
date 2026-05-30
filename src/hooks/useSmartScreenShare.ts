@@ -124,13 +124,7 @@ export const useSmartScreenShare = (
             video: {
               mandatory: {
                 chromeMediaSource: 'desktop',
-                chromeMediaSourceId: sourceId,
-                minWidth: quality.resolution === "1080p" ? 1920 : quality.resolution === "720p" ? 1280 : 854,
-                minHeight: quality.resolution === "1080p" ? 1080 : quality.resolution === "720p" ? 720 : 480,
-                maxWidth: quality.resolution === "1080p" ? 1920 : quality.resolution === "720p" ? 1280 : 854,
-                maxHeight: quality.resolution === "1080p" ? 1080 : quality.resolution === "720p" ? 720 : 480,
-                minFrameRate: quality.framerate,
-                maxFrameRate: quality.framerate
+                chromeMediaSourceId: sourceId
               }
             } as any
           });
@@ -141,13 +135,7 @@ export const useSmartScreenShare = (
             video: {
               mandatory: {
                 chromeMediaSource: 'desktop',
-                chromeMediaSourceId: sourceId,
-                minWidth: quality.resolution === "1080p" ? 1920 : quality.resolution === "720p" ? 1280 : 854,
-                minHeight: quality.resolution === "1080p" ? 1080 : quality.resolution === "720p" ? 720 : 480,
-                maxWidth: quality.resolution === "1080p" ? 1920 : quality.resolution === "720p" ? 1280 : 854,
-                maxHeight: quality.resolution === "1080p" ? 1080 : quality.resolution === "720p" ? 720 : 480,
-                minFrameRate: quality.framerate,
-                maxFrameRate: quality.framerate
+                chromeMediaSourceId: sourceId
               }
             } as any
           });

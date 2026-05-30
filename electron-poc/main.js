@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, Tray, globalShortcut, ipcMain, nativeImage, screen, dialog } = require('electron');
+const { app, BrowserWindow, Menu, Tray, globalShortcut, ipcMain, nativeImage, screen, dialog, desktopCapturer } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { autoUpdater } = require('electron-updater');
@@ -873,6 +873,18 @@ updateCheckTimeout = setTimeout(() => {
 
   ipcMain.handle('get-overlay-players', () => {
     return lastOverlayPlayers;
+  });
+
+  ipcMain.handle('get-desktop-sources', async (event, args) => {
+    const types = (args && args.types) || ['window', 'screen'];
+    const sources = await desktopCapturer.getSources({ types });
+    return sources.map(source => ({
+      id: source.id,
+      name: source.name,
+      thumbnail: source.thumbnail.toDataURL(),
+      display_id: source.display_id,
+      appIcon: source.appIcon ? source.appIcon.toDataURL() : null
+    }));
   });
 
   // Native Rich Presence State
