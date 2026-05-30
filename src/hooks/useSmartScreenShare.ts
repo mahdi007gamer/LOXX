@@ -131,29 +131,20 @@ export const useSmartScreenShare = (
         
         if (sourceId.startsWith('window')) {
           // Electron window sources notoriously throw DOMException Could not start video source 
-          // via getDisplayMedia + setDisplayMediaRequestHandler natively in Electron 28-30.
-          // Using getUserMedia intercept bypasses the handler & supports explicit size constraints.
+          // via getDisplayMedia natively in some cases, but we will rely solely on the main process 
+          // intercept handling via setDisplayMediaRequestHandler to simplify the pipeline.
           try {
-            console.log("Using getUserMedia fallback for window:", sourceId);
-            stream = await navigator.mediaDevices.getUserMedia({
-              audio: false,
-              video: {
-                mandatory: {
-                  chromeMediaSource: 'desktop',
-                  chromeMediaSourceId: sourceId,
-                  minWidth: 0,
-                  maxWidth: 4096,
-                  minHeight: 0,
-                  maxHeight: 4096
-                }
-              } as any
-            });
-          } catch(e) {
-            console.error("Window capture via getUserMedia failed, retrying getDisplayMedia", e);
             stream = await navigator.mediaDevices.getDisplayMedia({
               video: true,
               audio: false
             });
+          } catch(e) {
+            console.error("Window capture via getDisplayMedia failed, clearing source ID and throwing:", e);
+            const api = (window as any).electronAPI;
+            if (api && api.setDesktopSourceId) {
+              await api.setDesktopSourceId(null);
+            }
+            throw new Error('سیستم عامل نتوانست این پنجره را کپچر کند (احتمالاً به دلیل مینی‌مایز بودن یا محافظت سخت‌افزاری پنجره). لطفاً کل صفحه (Screen) را به اشتراک بگذارید.');
           }
         } else {
           // Screen sources are fully supported natively via getDisplayMedia
