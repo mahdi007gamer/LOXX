@@ -373,6 +373,8 @@ function createMainWindow() {
 
   // Handle redundant graceful fallback shows
   mainWindow.once('ready-to-show', () => {
+    // Open DevTools automatically for debugging
+    mainWindow.webContents.openDevTools({ mode: 'detach' });
     if (!splashWindow) {
       mainWindow.show();
     }
@@ -618,29 +620,45 @@ app.whenReady().then(() => {
   let selectedDesktopSourceId = null;
   ipcMain.handle('set-desktop-source-id', (event, sourceId) => {
     selectedDesktopSourceId = sourceId;
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.executeJavaScript(`console.log("MAIN PROCESS (electron): ipcMain received sourceId: ${sourceId}")`).catch(()=>{});
+    }
   });
 
   if (session.defaultSession.setDisplayMediaRequestHandler) {
     session.defaultSession.setDisplayMediaRequestHandler((request, callback) => {
-      if (selectedDesktopSourceId) {
-        let audioOption = undefined;
-        if (request.audioRequested && selectedDesktopSourceId.startsWith('screen')) {
-           audioOption = 'loopback';
-        }
-        // Native Electron allows passing an object with id and name
-        callback({ video: { id: selectedDesktopSourceId, name: 'ShareSource' }, audio: audioOption });
-        return;
-      }
+      const sendLog = (msg, obj) => {
+          console.log(msg, obj);
+          if (mainWindow && !mainWindow.isDestroyed()) {
+              mainWindow.webContents.executeJavaScript(`console.log("MAIN PROCESS (electron): ${msg}", ${JSON.stringify(obj || '')})`).catch(()=>{});
+          }
+      };
 
-      desktopCapturer.getSources({ types: ['screen', 'window'] }).then((sources) => {
-        let chosenSource = sources[0];
+      sendLog('setDisplayMediaRequestHandler triggered! request audioRequested:', request.audioRequested);
+      sendLog('Current selectedDesktopSourceId:', selectedDesktopSourceId);
+
+      desktopCapturer.getSources({ types: ['screen', 'window'], fetchWindowIcons: false }).then((sources) => {
+        sendLog('Available sources count:', sources.length);
+        sendLog('Sources IDs:', sources.map(s => s.id));
+        
+        let chosenSource = sources.find(s => s.id === selectedDesktopSourceId);
+        
+        if (chosenSource) {
+          sendLog('Found chosen source:', {id: chosenSource.id, name: chosenSource.name});
+        } else {
+          chosenSource = sources[0]; // fallback
+          sendLog('Failed to find specific source or none selected, falling back to:', {id: chosenSource.id, name: chosenSource.name});
+        }
+
         let audioOption = undefined;
         if (request.audioRequested && chosenSource && chosenSource.id.startsWith('screen')) {
            audioOption = 'loopback';
         }
+        
+        sendLog('Calling callback with video:', {id: chosenSource.id, audio: audioOption});
         callback({ video: chosenSource, audio: audioOption });
       }).catch((e) => {
-        console.error('Failed to get sources for native display media request', e);
+        sendLog('Failed to get sources for native display media request', e.toString());
       });
     });
   }
