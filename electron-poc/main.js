@@ -637,7 +637,7 @@ app.whenReady().then(() => {
       sendLog('setDisplayMediaRequestHandler triggered! request audioRequested:', request.audioRequested);
       sendLog('Current selectedDesktopSourceId:', selectedDesktopSourceId);
 
-      desktopCapturer.getSources({ types: ['screen', 'window'], fetchWindowIcons: false }).then((sources) => {
+      desktopCapturer.getSources({ types: ['screen', 'window'] }).then((sources) => {
         sendLog('Available sources count:', sources.length);
         sendLog('Sources IDs:', sources.map(s => s.id));
         
@@ -651,7 +651,7 @@ app.whenReady().then(() => {
         }
 
         let audioOption = undefined;
-        if (request.audioRequested && chosenSource && chosenSource.id.startsWith('screen')) {
+        if (request.audioRequested) {
            audioOption = 'loopback';
         }
         

@@ -180,6 +180,8 @@ export const useSmartScreenShare = (
       let errorMsg = err instanceof Error ? err.message : String(err);
       if (errorMsg.includes("Permission denied") || errorMsg.includes("NotAllowedError")) {
         errorMsg = "دسترسی اشتراک‌گذاری صفحه داده نشد یا لغو شد.";
+      } else if (errorMsg.includes("Could not start video source")) {
+        errorMsg = "نمی‌توان این پنجره را به اشتراک گذاشت. ممکن است پنجره کوچک (Minimize) شده باشد یا در پس‌زمینه مسدود باشد. لطفاً پنجره را باز کنید و دوباره تلاش کنید.";
       }
       toast.error(`خطا در اشتراک‌گذاری: ${errorMsg}`, { duration: 6000 });
     }
