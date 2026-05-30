@@ -51,6 +51,7 @@ function BadgeIcon({ type, isAdmin }: BadgeIconProps) {
 
 interface MessageItemProps {
   message: ChatMessage;
+  isConsecutive?: boolean;
   onReaction: (msgId: string, emoji: string) => void;
   onSaveGif: (url: string) => void;
   onReply: (message: ChatMessage) => void;
@@ -64,7 +65,7 @@ interface MessageItemProps {
   [key: string]: any; 
 }
 
-function MessageItem({ message, onReaction, onSaveGif, onReply, activeChannelId, onDelete, onReport, onPin, isGroupOwner, onWarnUser, onMuteUser }: MessageItemProps) {
+function MessageItem({ message, isConsecutive = false, onReaction, onSaveGif, onReply, activeChannelId, onDelete, onReport, onPin, isGroupOwner, onWarnUser, onMuteUser }: MessageItemProps) {
   const { openProfile } = useProfilePopover();
   const { user } = useAuth();
   const isAdmin = (user as any)?.role === 'ADMIN';
@@ -152,7 +153,8 @@ function MessageItem({ message, onReaction, onSaveGif, onReply, activeChannelId,
         setContextMenu({ x: e.clientX, y: e.clientY });
       }}
       className={cn(
-        "flex gap-2 md:gap-3 transition-all duration-300 mb-6 px-1 md:px-0 relative w-full",
+        "flex gap-2 md:gap-3 transition-all duration-300 px-1 md:px-0 relative w-full",
+        isConsecutive ? "mb-1.5" : "mb-5",
         message.self ? "flex-row justify-start" : "flex-row-reverse justify-start"
       )}
     >
@@ -180,48 +182,52 @@ function MessageItem({ message, onReaction, onSaveGif, onReply, activeChannelId,
         )}
       </AnimatePresence>
 
-      <div 
-        className="shrink-0 cursor-pointer relative mt-1"
-        onClick={(e) => {
-          e.stopPropagation();
-          openProfile({
-            senderName: message.senderName,
-            senderAvatar: message.senderAvatar || message.avatarUrl,
-            bannerUrl: (message as any).bannerUrl || message.avatarUrl,
-            vipMetadata: (message as any).vipMetadata,
-            role: (message as any).userRole || (isMsgSenderAdmin ? 'ADMIN' : undefined),
-            senderLevel: message.senderLevel,
-            senderBadges: message.senderBadges,
-            id: message.senderId,
-            membership: isMsgSenderAdmin ? MembershipType.VIP : ((message as any).membership ? (message as any).membership : isVIP ? MembershipType.VIP : isPLUS ? MembershipType.PLUS : MembershipType.NONE)
-          }, message.self);
-        }}
-      >
-        <div className={cn(
-          "h-9 w-9 md:h-11 md:w-11 rounded-xl flex items-center justify-center text-lg md:text-xl relative z-[10] transition-transform hover:scale-105 shadow-xl bg-cover bg-center overflow-visible",
-          message.self ? "bg-neon-pink text-white" : "bg-neon-blue text-white",
-          isMsgSenderAdmin ? "border-2 border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.75)] bg-gradient-to-tr from-red-600 via-red-300 to-red-800" : (
-            isVIP ? "border-2 border-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.4)]" :
-            isStreamer && "border-2 border-neon-purple shadow-[0_0_15px_rgba(168,85,247,0.4)]"
-          ),
-          isPLUS && !isStreamer && !isVIP && !isMsgSenderAdmin && "border-2 border-neon-blue shadow-[0_0_10px_rgba(0,229,255,0.3)]"
-        )}>
-          <SmartImage 
-            src={message.senderAvatar || message.avatarUrl || ""}
-            fallbacks={getAvatarFallbacks(message.senderName)}
-            isVipEnabled={isVIP || isMsgSenderAdmin}
-            className="w-full h-full object-cover rounded-xl"
-            alt={message.senderName}
-          />
-          
-          <div 
-            className={cn(
-              "absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-[#050507] z-[31] shadow-lg transition-colors duration-500", 
-            )} 
-            style={{ backgroundColor: (activeChannelId === 'news' || message.isOnline !== false) ? "#22c55e" : "#9ca3af" }} 
-          />
+      {isConsecutive ? (
+         <div className="shrink-0 w-9 md:w-11" />
+      ) : (
+        <div 
+          className="shrink-0 cursor-pointer relative mt-1"
+          onClick={(e) => {
+            e.stopPropagation();
+            openProfile({
+              senderName: message.senderName,
+              senderAvatar: message.senderAvatar || message.avatarUrl,
+              bannerUrl: (message as any).bannerUrl || message.avatarUrl,
+              vipMetadata: (message as any).vipMetadata,
+              role: (message as any).userRole || (isMsgSenderAdmin ? 'ADMIN' : undefined),
+              senderLevel: message.senderLevel,
+              senderBadges: message.senderBadges,
+              id: message.senderId,
+              membership: isMsgSenderAdmin ? MembershipType.VIP : ((message as any).membership ? (message as any).membership : isVIP ? MembershipType.VIP : isPLUS ? MembershipType.PLUS : MembershipType.NONE)
+            }, message.self);
+          }}
+        >
+          <div className={cn(
+            "h-9 w-9 md:h-11 md:w-11 rounded-xl flex items-center justify-center text-lg md:text-xl relative z-[10] transition-transform hover:scale-105 shadow-xl bg-cover bg-center overflow-visible",
+            message.self ? "bg-neon-pink text-white" : "bg-neon-blue text-white",
+            isMsgSenderAdmin ? "border-2 border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.75)] bg-gradient-to-tr from-red-600 via-red-300 to-red-800" : (
+              isVIP ? "border-2 border-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.4)]" :
+              isStreamer && "border-2 border-neon-purple shadow-[0_0_15px_rgba(168,85,247,0.4)]"
+            ),
+            isPLUS && !isStreamer && !isVIP && !isMsgSenderAdmin && "border-2 border-neon-blue shadow-[0_0_10px_rgba(0,229,255,0.3)]"
+          )}>
+            <SmartImage 
+              src={message.senderAvatar || message.avatarUrl || ""}
+              fallbacks={getAvatarFallbacks(message.senderName)}
+              isVipEnabled={isVIP || isMsgSenderAdmin}
+              className="w-full h-full object-cover rounded-xl"
+              alt={message.senderName}
+            />
+            
+            <div 
+              className={cn(
+                "absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-[#050507] z-[31] shadow-lg transition-colors duration-500", 
+              )} 
+              style={{ backgroundColor: (activeChannelId === 'news' || message.isOnline !== false) ? "#22c55e" : "#9ca3af" }} 
+            />
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Message Content Area */}
       <div 
@@ -233,65 +239,67 @@ function MessageItem({ message, onReaction, onSaveGif, onReply, activeChannelId,
         onClick={() => setShowActions(!showActions)}
       >
         {/* Header - Name -> Badge -> Time (Order follows container flow) */}
-        <div className={cn(
-          "flex items-center gap-1.5 mb-1 px-0.5",
-          message.self ? "flex-row" : "flex-row-reverse"
-        )}>
-          <span 
-              className={cn("text-[11px] font-black tracking-tight cursor-pointer hover:underline flex items-center gap-1 transition-all", nameColorClass, (metadata?.shinyName) && "animate-pulse")}
-              style={{
-                ...(metadata && metadata.colors && (isVIP || isPLUS) && !isMsgSenderAdmin ? 
-                  (metadata.colors.textGradient 
-                    ? { backgroundImage: `linear-gradient(to right, ${metadata.colors.text}, ${metadata.colors.textGradient})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }
-                    : { color: metadata.colors.text }) 
-                  : {}),
-                ...(isMsgSenderAdmin ? { color: "#ef4444", textShadow: "0 0 10px rgba(239, 68, 68, 0.6)" } : {}),
-                ...(metadata?.fontStyle === "lightning" ? { textShadow: "0 0 5px #fff, 0 0 10px #0ff", animation: "pulse 2s infinite" } : {}),
-                ...(metadata?.fontStyle === "fire" ? { textShadow: "0 -2px 4px #ff3, 0 -4px 10px #f80", animation: "pulse 1.5s infinite" } : {}),
-                ...(metadata?.fontStyle === "glitch" ? { textShadow: "1px 0 0 red, -1px 0 0 cyan", animation: "pulse 0.5s infinite" } : {}),
-              }}
-              onClick={(e) => {
-                e.stopPropagation();
-              openProfile({
-                senderName: message.senderName,
-                senderAvatar: message.senderAvatar,
-                bannerUrl: (message as any).bannerUrl,
-                vipMetadata: (message as any).vipMetadata,
-                role: (message as any).userRole || (isMsgSenderAdmin ? 'ADMIN' : undefined),
-                senderLevel: message.senderLevel,
-                senderBadges: message.senderBadges,
-                id: message.senderId,
-                membership: isMsgSenderAdmin ? MembershipType.VIP : (isVIP ? MembershipType.VIP : isPLUS ? MembershipType.PLUS : MembershipType.NONE)
-              }, message.self);
-              }}
-            >
-              {message.senderName}
-              {isMsgSenderAdmin && <Shield size={11} className="text-red-500 fill-current animate-pulse shrink-0" />}
-              {isStreamer && !isMsgSenderAdmin && <Radio size={12} className="text-neon-purple animate-pulse" />}
-            </span>
-          
+        {!isConsecutive && (
           <div className={cn(
-            "flex gap-1 items-center",
+            "flex items-center gap-1.5 mb-1 px-0.5",
             message.self ? "flex-row" : "flex-row-reverse"
           )}>
-             {/* Dynamic Badges from Server */}
-             {(message as any).badges && (
-                <UserBadges 
-                  badges={(message as any).badges} 
-                  className={cn(message.self ? "flex-row" : "flex-row-reverse")}
-                />
-             )}
-             {/* Legacy Badge Types */}
-             {message.senderBadges
-                ?.filter(b => !((message as any).badges?.length > 0 && b === BadgeType.VIP))
-                .map((b, i) => <BadgeIcon key={i} type={b as any} isAdmin={isMsgSenderAdmin} />)}
-          </div>
+            <span 
+                className={cn("text-[11px] font-black tracking-tight cursor-pointer hover:underline flex items-center gap-1 transition-all", nameColorClass, (metadata?.shinyName) && "animate-pulse")}
+                style={{
+                  ...(metadata && metadata.colors && (isVIP || isPLUS) && !isMsgSenderAdmin ? 
+                    (metadata.colors.textGradient 
+                      ? { backgroundImage: `linear-gradient(to right, ${metadata.colors.text}, ${metadata.colors.textGradient})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }
+                      : { color: metadata.colors.text }) 
+                    : {}),
+                  ...(isMsgSenderAdmin ? { color: "#ef4444", textShadow: "0 0 10px rgba(239, 68, 68, 0.6)" } : {}),
+                  ...(metadata?.fontStyle === "lightning" ? { textShadow: "0 0 5px #fff, 0 0 10px #0ff", animation: "pulse 2s infinite" } : {}),
+                  ...(metadata?.fontStyle === "fire" ? { textShadow: "0 -2px 4px #ff3, 0 -4px 10px #f80", animation: "pulse 1.5s infinite" } : {}),
+                  ...(metadata?.fontStyle === "glitch" ? { textShadow: "1px 0 0 red, -1px 0 0 cyan", animation: "pulse 0.5s infinite" } : {}),
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                openProfile({
+                  senderName: message.senderName,
+                  senderAvatar: message.senderAvatar,
+                  bannerUrl: (message as any).bannerUrl,
+                  vipMetadata: (message as any).vipMetadata,
+                  role: (message as any).userRole || (isMsgSenderAdmin ? 'ADMIN' : undefined),
+                  senderLevel: message.senderLevel,
+                  senderBadges: message.senderBadges,
+                  id: message.senderId,
+                  membership: isMsgSenderAdmin ? MembershipType.VIP : (isVIP ? MembershipType.VIP : isPLUS ? MembershipType.PLUS : MembershipType.NONE)
+                }, message.self);
+                }}
+              >
+                {message.senderName}
+                {isMsgSenderAdmin && <Shield size={11} className="text-red-500 fill-current animate-pulse shrink-0" />}
+                {isStreamer && !isMsgSenderAdmin && <Radio size={12} className="text-neon-purple animate-pulse" />}
+              </span>
+            
+            <div className={cn(
+              "flex gap-1 items-center",
+              message.self ? "flex-row" : "flex-row-reverse"
+            )}>
+               {/* Dynamic Badges from Server */}
+               {(message as any).badges && (
+                  <UserBadges 
+                    badges={(message as any).badges} 
+                    className={cn(message.self ? "flex-row" : "flex-row-reverse")}
+                  />
+               )}
+               {/* Legacy Badge Types */}
+               {message.senderBadges
+                  ?.filter(b => !((message as any).badges?.length > 0 && b === BadgeType.VIP))
+                  .map((b, i) => <BadgeIcon key={i} type={b as any} isAdmin={isMsgSenderAdmin} />)}
+            </div>
 
-          <span className={cn(
-            "text-[9px] text-gray-500 font-bold opacity-60",
-            message.self ? "mr-1" : "ml-1"
-          )}>{message.timestamp}</span>
-        </div>
+            <span className={cn(
+              "text-[9px] text-gray-500 font-bold opacity-60",
+              message.self ? "mr-1" : "ml-1"
+            )}>{message.timestamp}</span>
+          </div>
+        )}
 
         {/* Message Container Area */}
         <div className="flex flex-col w-full">
@@ -2636,22 +2644,30 @@ export const ChatPage: React.FC = () => {
                   <div className="h-px flex-1 bg-gradient-to-l from-transparent via-white/5 to-transparent"></div>
                </div>
                
-               {(msgs as any[]).map((msg) => (
-                 <MessageItem 
-                   key={msg.id} 
-                   message={msg} 
-                   onReaction={handleReaction} 
-                   onSaveGif={handleSaveGif} 
-                   onReply={(m) => setReplyingTo(m)} 
-                   activeChannelId={activeChannelId} 
-                   onDelete={deleteMessage} 
-                   onReport={(m) => setReportingMessage(m)} 
-                   onWarnUser={handleWarnUser}
-                   onMuteUser={handleMuteUser} 
-                   onPin={(activeChannel.type === 'elite' && (activeChannel as any).ownerId === user?.id) ? () => handlePinMessage(msg.id) : undefined} 
-                   isGroupOwner={activeChannel.type === 'elite' && (activeChannel as any).ownerId === user?.id} 
-                 />
-               ))}
+               {(msgs as any[]).map((msg, index, arr) => {
+                 const prevMsg = index > 0 ? arr[index - 1] : null;
+                 const isConsecutive = prevMsg && 
+                   prevMsg.senderId === msg.senderId && 
+                   (new Date(msg.createdAt || msg.timestamp).getTime() - new Date(prevMsg.createdAt || prevMsg.timestamp).getTime() < 180000);
+
+                 return (
+                   <MessageItem 
+                     key={msg.id} 
+                     message={msg} 
+                     isConsecutive={!!isConsecutive}
+                     onReaction={handleReaction} 
+                     onSaveGif={handleSaveGif} 
+                     onReply={(m) => setReplyingTo(m)} 
+                     activeChannelId={activeChannelId} 
+                     onDelete={deleteMessage} 
+                     onReport={(m) => setReportingMessage(m)} 
+                     onWarnUser={handleWarnUser}
+                     onMuteUser={handleMuteUser} 
+                     onPin={(activeChannel.type === 'elite' && (activeChannel as any).ownerId === user?.id) ? () => handlePinMessage(msg.id) : undefined} 
+                     isGroupOwner={activeChannel.type === 'elite' && (activeChannel as any).ownerId === user?.id} 
+                   />
+                 );
+               })}
             </React.Fragment>
           ))}
           

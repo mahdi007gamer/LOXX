@@ -111,7 +111,7 @@ const InviteToast = ({ t, inviteData, navigate }: { t: any, inviteData: any, nav
 
 export const NotificationHandler = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const checkedAdminAlerts = useRef<string | null>(null);
 
   const isAdmin = !!(user && (user.role === "ADMIN" || user.email === "admin@loxx.ir" || user.email === "admin@test.com"));
@@ -191,7 +191,13 @@ export const NotificationHandler = () => {
 
   useEffect(() => {
     const playNotifySFX = () => {
-      // Disabled mixkit sound
+      try {
+        const audio = new Audio('/notifsound.mp3');
+        audio.volume = 0.4;
+        audio.play().catch(e => console.log("Notification audio playback requires prior user interaction: ", e));
+      } catch (err) {
+        console.error("Audio playback error:", err);
+      }
     };
 
     const handleLobbyInvite = (inviteData: any) => {
@@ -210,6 +216,7 @@ export const NotificationHandler = () => {
     };
 
     const handleWarning = (data: any) => {
+      playNotifySFX();
       toast.error(data.message, { 
         duration: 10000, 
         icon: '⚠️',
@@ -224,8 +231,51 @@ export const NotificationHandler = () => {
       });
     };
 
+    const handleMembershipUpdated = (data: any) => {
+      if (typeof refreshUser === "function") {
+        refreshUser();
+      }
+      playNotifySFX();
+
+      toast.custom((t) => (
+        <div 
+          className="p-6 bg-[#0c0c12]/95 border border-yellow-500/40 rounded-[24px] flex flex-col gap-4 text-white hover:border-yellow-500/80 transition-all duration-300 w-[360px] md:w-[380px] shadow-[0_20px_50px_rgba(0,0,0,0.9)] relative overflow-hidden text-right"
+          dir="rtl"
+        >
+          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-yellow-400 to-transparent animate-pulse" />
+          <div className="absolute -top-12 -right-12 w-32 h-32 bg-yellow-500/5 rounded-full blur-[40px] pointer-events-none" />
+          
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-yellow-400/10 flex items-center justify-center border border-yellow-400/30 text-yellow-300 shrink-0 text-2xl">
+              👑
+            </div>
+            <div>
+              <h4 className="font-extrabold text-sm text-yellow-400">تبریک ارتقای اشتراک! 🎉</h4>
+              <p className="text-[10px] text-gray-400 mt-0.5">یک حساب کاربری لوکس جدید!</p>
+            </div>
+          </div>
+          <div className="text-sm font-bold text-gray-200 mt-1 leading-relaxed">
+            {data.message || "حساب شما ارتقا یافت!"}
+          </div>
+          <p className="text-xs text-yellow-400 font-bold bg-yellow-400/5 p-3 rounded-xl border border-yellow-400/10 italic text-center">
+            {data.membershipType === "VIP" 
+              ? "🌟 به جمع نخبگان لوکس خوش آمدید! امکانات ویژه و بخش Elite هم‌اکنون برای شما فعال است."
+              : "⚡ به جمع مشترکین ویژه (Plus) لوکس خوش آمدید! اسکرین شیر ۷۲۰پی، قفل کانال‌ها، و آیکون‌های ویژه آماده استفاده هستند."
+            }
+          </p>
+          <button 
+            onClick={() => toast.dismiss(t.id)}
+            className="w-full py-2.5 rounded-xl bg-gradient-to-l from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600 font-black text-white text-xs transition-all cursor-pointer text-center"
+          >
+            بسیار عالی! ❤️
+          </button>
+        </div>
+      ), { duration: 15000, position: "top-center", id: `membership-upgrade-congrats` });
+    };
+
     notifySocket.on("lobby.invite", handleLobbyInvite);
     notifySocket.on("moderation.warning", handleWarning);
+    notifySocket.on("membership.updated", handleMembershipUpdated);
     notifySocket.on("notification", (data: any) => {
       if (data.type === "LOBBY_INVITE") {
         handleLobbyInvite(data);
@@ -241,9 +291,10 @@ export const NotificationHandler = () => {
     return () => {
       notifySocket.off("lobby.invite");
       notifySocket.off("moderation.warning");
+      notifySocket.off("membership.updated");
       notifySocket.off("notification");
     };
-  }, [navigate]);
+  }, [navigate, refreshUser]);
 
   return null;
 };

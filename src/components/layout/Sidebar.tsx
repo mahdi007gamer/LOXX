@@ -17,6 +17,7 @@ import {
 import { cn } from "@/src/lib/utils";
 
 import { useAuth } from "../../context/AuthContext";
+import { useFriends } from "../../context/FriendsContext";
 import { Shield } from "lucide-react";
 
 const menuItems = [
@@ -33,6 +34,7 @@ const menuItems = [
 
 export const Sidebar = () => {
   const { user, logout, isSidebarCollapsed } = useAuth();
+  const { requests } = useFriends();
   const isElectron = typeof window !== "undefined" && !!(window as any).electronAPI;
   
   // if (isSidebarCollapsed) return null; // Removed so it can render as tiny
@@ -49,23 +51,42 @@ export const Sidebar = () => {
     >
       <div className="flex h-full flex-col justify-between py-6">
         <div className="space-y-1 px-4">
-          {menuItems.map((item) => (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              title={isSidebarCollapsed ? item.label : undefined}
-              className={({ isActive }) => cn(
-                "flex items-center rounded-lg py-3 transition-all duration-300 overflow-hidden",
-                isActive 
-                  ? "bg-neon-blue/10 text-neon-blue shadow-[inset_0_0_10px_rgba(0,229,255,0.1)] border-r-2 border-neon-blue" 
-                  : "text-gray-400 hover:bg-white/5 hover:text-gray-100",
-                isSidebarCollapsed ? "justify-center px-0" : "gap-3 px-4"
-              )}
-            >
-              <item.icon size={20} className="shrink-0" />
-              {!isSidebarCollapsed && <span className="font-medium whitespace-nowrap">{item.label}</span>}
-            </NavLink>
-          ))}
+          {menuItems.map((item) => {
+            const hasRequests = item.path === "/friends" && requests && requests.length > 0;
+            return (
+              <NavLink
+                key={item.path}
+                to={item.path}
+                title={isSidebarCollapsed ? item.label : undefined}
+                className={({ isActive }) => cn(
+                  "flex items-center rounded-lg py-3 transition-all duration-300 overflow-hidden",
+                  isActive 
+                    ? "bg-neon-blue/10 text-neon-blue shadow-[inset_0_0_10px_rgba(0,229,255,0.1)] border-r-2 border-neon-blue" 
+                    : "text-gray-400 hover:bg-white/5 hover:text-gray-100",
+                  isSidebarCollapsed ? "justify-center px-0" : "gap-3 px-4 shadow-sm"
+                )}
+              >
+                <div className="relative shrink-0">
+                  <item.icon size={20} />
+                  {hasRequests && isSidebarCollapsed && (
+                    <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white font-extrabold text-[8px] h-4 min-w-4 px-1 flex items-center justify-center rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)]">
+                      {requests.length}
+                    </span>
+                  )}
+                </div>
+                {!isSidebarCollapsed && (
+                  <div className="flex items-center justify-between w-full min-w-0">
+                    <span className="font-medium whitespace-nowrap truncate">{item.label}</span>
+                    {hasRequests && (
+                      <span className="bg-red-500 text-white font-black text-[10px] px-1.5 py-0.5 rounded-full animate-bounce shadow-[0_0_10px_rgba(239,68,68,0.5)] leading-none select-none">
+                        +{requests.length}
+                      </span>
+                    )}
+                  </div>
+                )}
+              </NavLink>
+            );
+          })}
 
           {user?.role === "STREAMER" && (
             <NavLink

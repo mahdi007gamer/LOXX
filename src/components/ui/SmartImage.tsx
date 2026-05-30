@@ -3,6 +3,10 @@ import { cn } from "../../lib/utils";
 import api from "../../lib/api";
 import { getFileUrl } from "../../lib/constants";
 
+// Global memory cache for fetched blobs to prevent duplicate HTTP requests and lag
+const blobCache: Record<string, string> = {};
+const activeFetches: Record<string, Promise<string>> = {};
+
 interface SmartImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   src: string;
   fallbacks?: string[];
@@ -69,19 +73,52 @@ export const SmartImage: React.FC<SmartImageProps> = ({
 
       // If it's an API route or an internal path that might need auth headers
       if (fullUrl.includes("/api/v1/upload/")) {
+        const urlPath = fullUrl.substring(fullUrl.indexOf("/api/v1") + 7);
+        
+        // 1. Check if we already have it in cache
+        if (blobCache[urlPath]) {
+          setDisplaySrc(blobCache[urlPath]);
+          setLoading(false);
+          return;
+        }
+
+        // 2. Check if there is already an active fetch for this path
+        if (activeFetches[urlPath]) {
+          setLoading(true);
+          activeFetches[urlPath].then((cachedUrl) => {
+            if (isMounted) {
+              setDisplaySrc(cachedUrl);
+              setLoading(false);
+            }
+          }).catch(() => {
+            if (isMounted) {
+              setDisplaySrc(fullUrl);
+              setLoading(false);
+            }
+          });
+          return;
+        }
+
+        // 3. Start a new fetch and register it globally
         try {
           setLoading(true);
-          // Extract the part after /api/v1 for the axios baseURL
-          const urlPath = fullUrl.substring(fullUrl.indexOf("/api/v1") + 7);
-          const response = await api.get(urlPath, { responseType: "blob" });
-          
+          const fetchPromise = (async () => {
+            const response = await api.get(urlPath, { responseType: "blob" });
+            const objUrl = URL.createObjectURL(response.data);
+            blobCache[urlPath] = objUrl;
+            return objUrl;
+          })();
+
+          activeFetches[urlPath] = fetchPromise;
+
+          const objUrl = await fetchPromise;
           if (isMounted) {
-            objectUrl = URL.createObjectURL(response.data);
-            setDisplaySrc(objectUrl);
+            setDisplaySrc(objUrl);
             setLoading(false);
           }
         } catch (err) {
           console.error("SmartImage fetch error:", err);
+          delete activeFetches[urlPath];
           if (isMounted) {
             // As a last resort, try direct URL without auth headers
             setDisplaySrc(fullUrl);
@@ -99,9 +136,7 @@ export const SmartImage: React.FC<SmartImageProps> = ({
 
     return () => {
       isMounted = false;
-      if (objectUrl) {
-        URL.revokeObjectURL(objectUrl);
-      }
+      // We do not revoke cached object URLs here as they are recycled across all components in the session.
     };
   }, [src, fallbackIndex, memoizedFallbacks]);
 

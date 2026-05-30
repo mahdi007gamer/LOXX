@@ -375,8 +375,6 @@ function createMainWindow() {
 
   // Handle redundant graceful fallback shows
   mainWindow.once('ready-to-show', () => {
-    // Open DevTools automatically for debugging
-    mainWindow.webContents.openDevTools({ mode: 'detach' });
     if (!splashWindow) {
       mainWindow.show();
     }
@@ -384,7 +382,7 @@ function createMainWindow() {
 
   // Provide custom User-Agent to easily identify Launcher on the server
   const defaultUA = mainWindow.webContents.getUserAgent();
-  mainWindow.webContents.setUserAgent(`${defaultUA} LoxxLauncher/1.0.0`);
+  mainWindow.webContents.setUserAgent(`${defaultUA} LoxxLauncher/1.2.21`);
 
   // Listen for maximize / restore updates
   mainWindow.on('maximize', () => {

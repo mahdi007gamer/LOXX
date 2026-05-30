@@ -213,6 +213,10 @@ export const LobbyRoomPage = () => {
   const [activeProfileUserId, setActiveProfileUserId] = useState<string | null>(null);
   const [layoutMode, setLayoutMode] = useState<'default' | 'compact' | 'discord'>(() => (localStorage.getItem('loxx-lobby-layout') as any) || 'default');
 
+  const userPlanResolved = ((user as any)?.role === "ADMIN" || (user as any)?.membership === "VIP" || (user as any)?.profile?.membershipType === "VIP") 
+    ? "VIP" 
+    : (((user as any)?.membership === "PLUS" || (user as any)?.profile?.membershipType === "PLUS") ? "PLUS" : "NORMAL");
+
   const {
     estimatedUploadMbps,
     isTestingBandwidth,
@@ -223,7 +227,7 @@ export const LobbyRoomPage = () => {
     isBaseRequirementMet,
     isWarningActive
   } = useSmartScreenShare(
-    ((user as any)?.profile?.membershipType as any) || "NORMAL",
+    userPlanResolved,
     lobby?.players?.length || 1,
     typeof window !== "undefined" && !!(window as any).electronAPI,
     setScreenStreamForWebRTC
@@ -992,7 +996,7 @@ export const LobbyRoomPage = () => {
         <ScreenShareModal
           isOpen={isScreenShareModalOpen}
           onClose={() => { setIsScreenShareModalOpen(false); setPendingSourceId(null); }}
-          userPlan={((user as any)?.profile?.membershipType as any) || "NORMAL"}
+          userPlan={userPlanResolved}
           onStartShare={handleQualitySelected}
           estimatedUploadMbps={estimatedUploadMbps}
           numViewers={players.length || 1}
