@@ -398,7 +398,7 @@ export const FriendChatOverlay = () => {
 
               <div className="border-t border-white/5 my-2"></div>
 
-              {/* Action Buttons: Preview & Compatibility */}
+              {/* Action Buttons: Preview */}
               <div className="space-y-3 pt-1">
                 <button
                   onClick={triggerPreviewToast}
@@ -407,43 +407,6 @@ export const FriendChatOverlay = () => {
                   <Eye size={13} className="text-neon-pink" />
                   <span>پیش‌نمایش اعلان نمونه (کلیک)</span>
                 </button>
-
-                <div className="bg-white/5 border border-white/5 rounded-xl p-3 space-y-2">
-                  <div className="flex items-center gap-1.5 text-white font-bold">
-                    <MonitorUp size={13} className="text-neon-blue" />
-                    <span>تست عیب‌یابی و سازگاری اورلی</span>
-                  </div>
-                  <p className="text-[10px] text-gray-500 leading-relaxed text-right">
-                    اگر به هر دلیلی در بازی‌هایی مانند CS2، Dota2 یا Valorant اورلی ظاهر نمی‌شود، این ماژول سازگاری را بررسی می‌کند.
-                  </p>
-                  
-                  {testingCompatibility ? (
-                    <div className="space-y-1.5 py-1 text-right">
-                      <div className="flex items-center gap-2 justify-end">
-                        <span className="text-[10px] text-neon-blue animate-pulse font-bold">در حال پردازش تداخل‌ها...</span>
-                        <div className="h-2 w-2 rounded-full bg-neon-blue animate-ping" />
-                      </div>
-                      <div className="text-[9px] text-gray-400 max-h-[80px] overflow-y-auto font-mono bg-black/45 p-1.5 rounded space-y-0.5 custom-scrollbar">
-                        {testSteps.map((step, idx) => (
-                          <div key={idx} className="truncate">↳ {step}</div>
-                        ))}
-                      </div>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={runCompatibilityTest}
-                      className="w-full py-1.5 px-3 rounded-lg bg-neon-blue/20 border border-neon-blue/30 text-white text-[10px] font-bold hover:bg-neon-blue/30 transition-all text-center"
-                    >
-                      شروع تست هماهنگی اورلی
-                    </button>
-                  )}
-
-                  {testResult === 'ok' && (
-                    <div className="p-2 rounded-lg bg-green-500/10 border border-green-500/20 text-green-400 text-[10px] text-right font-medium leading-relaxed">
-                      هیچ تداخلی با آنتی‌ویروس یا درایور گرافیک یافت نشد. وضعیت رندر: <span className="font-bold underline text-white font-mono">OK</span>. اورلی آماده فعالیت است.
-                    </div>
-                  )}
-                </div>
               </div>
 
             </div>

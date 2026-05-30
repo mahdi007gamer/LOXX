@@ -338,7 +338,7 @@ export const ElectronSettingsPage = () => {
                     />
                   </div>
                   
-                  {/* Action row: Preview Toast & Compatibility Check */}
+                  {/* Action row: Preview Toast */}
                   <div className="space-y-3 pt-3 border-t border-white/5">
                     <button
                       onClick={triggerPreviewToast}
@@ -347,43 +347,6 @@ export const ElectronSettingsPage = () => {
                       <Eye size={13} className="text-[#00e5ff]" />
                       <span>پیش‌نمایش اعلان موقعیت‌یابی (تستی)</span>
                     </button>
-
-                    <div className="bg-white/5 border border-white/10 rounded-xl p-3 space-y-2">
-                      <div className="flex items-center gap-1.5 text-white font-bold text-xs">
-                        <MonitorUp size={13} className="text-[#00e5ff]" />
-                        <span>تست تطبیق پذیری و عیب‌یابی اورلی ویندوز</span>
-                      </div>
-                      <p className="text-[10px] text-gray-500 leading-relaxed text-right">
-                        اگر تداخل آنتی‌ویروس یا مشکلات امضای درایور گرافیک دارید، این ابزار عیب‌یابی و پورتینگ را اجرا کنید.
-                      </p>
-                      
-                      {testingCompatibility ? (
-                        <div className="space-y-1.5 py-1 text-right">
-                          <div className="flex items-center gap-1.5 justify-end">
-                            <span className="text-[10px] text-[#00e5ff] animate-pulse font-bold">در حال پردازش گام‌ها...</span>
-                            <div className="h-1.5 w-1.5 rounded-full bg-[#00e5ff] animate-ping" />
-                          </div>
-                          <div className="text-[9px] text-gray-400 max-h-[80px] overflow-y-auto font-mono bg-black/45 p-1.5 rounded space-y-0.5 custom-scrollbar">
-                            {testSteps.map((step, idx) => (
-                              <div key={idx} className="truncate">↳ {step}</div>
-                            ))}
-                          </div>
-                        </div>
-                      ) : (
-                        <button
-                          onClick={runCompatibilityTest}
-                          className="w-full py-1.5 px-3 rounded-lg bg-white/5 border border-white/10 text-gray-300 text-[10px] font-bold hover:bg-white/10 transition-all text-center"
-                        >
-                          شروع فرآیند عیب‌یابی اورلی
-                        </button>
-                      )}
-
-                      {testResult === 'ok' && (
-                        <div className="p-2 rounded-lg bg-green-500/10 border border-green-500/20 text-green-400 text-[10px] text-right font-medium leading-relaxed animate-enter">
-                          سیستم با موفقیت بررسی شد. تمام سرویس‌های رندر <span className="font-bold underline text-white font-mono">DirectX</span> و <span className="font-bold underline text-white font-mono">Vulkan</span> آماده‌اند.
-                        </div>
-                      )}
-                    </div>
                   </div>
 
                   <div className="text-xs text-gray-500 bg-[#00e5ff]/10 border border-[#00e5ff]/20 p-3 rounded-xl mt-4">

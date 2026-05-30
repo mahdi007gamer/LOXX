@@ -2,6 +2,29 @@ import { Response } from "express";
 import { AuthenticatedRequest } from "../middleware/auth.middleware.ts";
 import prisma from "../utils/prisma.ts";
 
+function isMessageMediaIncomplete(content: string | null | undefined): boolean {
+  if (!content) return false;
+  const trimmed = content.trim();
+  if (trimmed === "") return true;
+
+  if (trimmed.includes("[IMAGE]:")) {
+    const parts = trimmed.split("[IMAGE]:");
+    const mediaUrl = parts[parts.length - 1]?.trim();
+    if (!mediaUrl || mediaUrl.length < 5) {
+      return true;
+    }
+  }
+
+  if (trimmed.includes("[GIF]:")) {
+    const parts = trimmed.split("[GIF]:");
+    const mediaUrl = parts[parts.length - 1]?.trim();
+    if (!mediaUrl || mediaUrl.length < 5) {
+      return true;
+    }
+  }
+  return false;
+}
+
 export class ChatController {
   static async getMessages(req: AuthenticatedRequest, res: Response) {
     try {
@@ -54,8 +77,24 @@ export class ChatController {
         }
       });
 
+      // Filter and delete corrupt messages
+      const corruptIds: number[] = [];
+      const validMessages = messages.filter(m => {
+        if (isMessageMediaIncomplete(m.content)) {
+          corruptIds.push(m.id);
+          return false;
+        }
+        return true;
+      });
+
+      if (corruptIds.length > 0) {
+        prisma.message.deleteMany({
+          where: { id: { in: corruptIds } }
+        }).catch(err => console.error("Failed to delete corrupt database messages:", err));
+      }
+
       // Format for frontend
-      const formatted = messages.map(m => ({
+      const formatted = validMessages.map(m => ({
         id: m.id.toString(),
         from: {
           userId: m.sender.id,
@@ -130,6 +169,43 @@ export class ChatController {
 
       res.json({ status: "success", data: Array.from(dialogues.values()) });
     } catch (error: any) {
+      res.status(500).json({ status: "error", error: { message: error.message } });
+    }
+  }
+
+  static async getUnreadCounts(req: AuthenticatedRequest, res: Response) {
+    try {
+      const userId = req.user!.userId;
+      const { readStates = {} } = req.body;
+
+      const userGames = await prisma.userGame.findMany({
+        where: { userId }
+      });
+      const gameChannelIds = userGames.map(ug => ug.gameId);
+      const channelIds = ["general", "news", ...gameChannelIds];
+
+      const counts: Record<string, number> = {};
+
+      await Promise.all(channelIds.map(async (cid) => {
+        const lastReadId = readStates[cid] ? parseInt(String(readStates[cid])) : 0;
+        
+        if (lastReadId === 0) {
+          counts[cid] = 0;
+          return;
+        }
+
+        const count = await prisma.message.count({
+          where: { 
+            channelId: cid,
+            id: { gt: lastReadId }
+          }
+        });
+        counts[cid] = count;
+      }));
+
+      res.json({ status: "success", data: counts });
+    } catch (error: any) {
+      console.error("Failed to get unread counts:", error);
       res.status(500).json({ status: "error", error: { message: error.message } });
     }
   }

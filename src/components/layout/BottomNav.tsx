@@ -2,8 +2,41 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { LayoutDashboard, Users, MessageSquare, Gamepad2, Trophy } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { useAuth } from '../../context/AuthContext';
+import { useGames } from '../../context/GamesContext';
 
 export const BottomNav = () => {
+  const { user } = useAuth();
+  const { myGames } = useGames();
+  const [channelsUnread, setChannelsUnread] = React.useState(0);
+
+  React.useEffect(() => {
+    if (!user?.id) return;
+    const calcUnreads = () => {
+      try {
+        const stored = JSON.parse(localStorage.getItem(`loxx_chat_unreads_${user.id}`) || "{}");
+        let sum = (stored["general"] || 0) + (stored["news"] || 0);
+        if (myGames && myGames.length > 0) {
+          myGames.forEach((g: any) => {
+            sum += (stored[g.id] || 0);
+          });
+        }
+        setChannelsUnread(sum);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    calcUnreads();
+    
+    // Custom trigger hook
+    window.addEventListener("storage", calcUnreads);
+    window.addEventListener("loxx-chat-unread-update", calcUnreads);
+    return () => {
+      window.removeEventListener("storage", calcUnreads);
+      window.removeEventListener("loxx-chat-unread-update", calcUnreads);
+    };
+  }, [user?.id, myGames]);
+
   const menuItems = [
     { icon: LayoutDashboard, label: "داشبورد", path: "/dashboard" },
     { icon: Gamepad2, label: "بازی‌ها", path: "/games" },
@@ -37,10 +70,15 @@ export const BottomNav = () => {
             {({ isActive }) => (
               <>
                 <div className={cn(
-                  "flex flex-col items-center justify-center gap-0.5",
+                  "flex flex-col items-center justify-center gap-0.5 relative",
                   item.isSpecial && (isActive ? "translate-y-[-1px]" : "translate-y-[1px]")
                 )}>
                   <item.icon size={item.isSpecial ? (isActive ? 22 : 18) : 18} />
+                  {item.path === "/chat" && channelsUnread > 0 && (
+                    <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white font-extrabold text-[8px] h-4 min-w-4 px-1 flex items-center justify-center rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)]">
+                      {channelsUnread}
+                    </span>
+                  )}
                   <span className={cn(
                     "text-[8px] font-black tracking-tight whitespace-nowrap",
                     item.isSpecial && "mt-[-2px]"

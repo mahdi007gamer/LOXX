@@ -21,6 +21,29 @@ export function sendRealtimeWarning(userId: string, message: string) {
   }
 }
 
+function isMessageMediaIncomplete(content: string | null | undefined): boolean {
+  if (!content) return false;
+  const trimmed = content.trim();
+  if (trimmed === "") return true;
+
+  if (trimmed.includes("[IMAGE]:")) {
+    const parts = trimmed.split("[IMAGE]:");
+    const mediaUrl = parts[parts.length - 1]?.trim();
+    if (!mediaUrl || mediaUrl.length < 5) {
+      return true;
+    }
+  }
+
+  if (trimmed.includes("[GIF]:")) {
+    const parts = trimmed.split("[GIF]:");
+    const mediaUrl = parts[parts.length - 1]?.trim();
+    if (!mediaUrl || mediaUrl.length < 5) {
+      return true;
+    }
+  }
+  return false;
+}
+
 export function setupWebSockets(io: Server) {
   globalIo = io;
   
@@ -703,6 +726,12 @@ export function setupWebSockets(io: Server) {
           }
         }
 
+        // Media Integrity Check
+        if (isMessageMediaIncomplete(content)) {
+          if (ack) ack({ status: "error", error: { code: "INCOMPLETE_MEDIA", message: "رسانه به طور کامل لود نشده یا آدرس آن نامعتبر است." } });
+          return;
+        }
+
         const safeContent = sanitizeMessage(filterProfanity(content));
 
         const msg = await prisma.message.create({
@@ -1054,7 +1083,23 @@ export function setupWebSockets(io: Server) {
              }
            });
 
-           const formatted = messages.map(msg => ({
+           // Filter and delete corrupt messages
+           const corruptIds: number[] = [];
+           const validMessages = messages.filter(msg => {
+             if (isMessageMediaIncomplete(msg.content)) {
+               corruptIds.push(msg.id);
+               return false;
+             }
+             return true;
+           });
+
+           if (corruptIds.length > 0) {
+             prisma.message.deleteMany({
+               where: { id: { in: corruptIds } }
+             }).catch(err => console.error("Failed to delete corrupt channel messages:", err));
+           }
+
+           const formatted = validMessages.map(msg => ({
               id: msg.id.toString(),
               from: formatUserForSocket(msg.sender),
               targetType: "channel",
@@ -1095,7 +1140,23 @@ export function setupWebSockets(io: Server) {
              }
            });
 
-           const formatted = messages.map(msg => ({
+           // Filter and delete corrupt messages
+           const corruptIds: number[] = [];
+           const validMessages = messages.filter(msg => {
+             if (isMessageMediaIncomplete(msg.content)) {
+               corruptIds.push(msg.id);
+               return false;
+             }
+             return true;
+           });
+
+           if (corruptIds.length > 0) {
+             prisma.message.deleteMany({
+               where: { id: { in: corruptIds } }
+             }).catch(err => console.error("Failed to delete corrupt user messages:", err));
+           }
+
+           const formatted = validMessages.map(msg => ({
               id: msg.id.toString(),
               from: formatUserForSocket(msg.sender),
               targetType: "user",
@@ -1131,7 +1192,23 @@ export function setupWebSockets(io: Server) {
              }
            });
 
-           const formatted = messages.map(msg => ({
+           // Filter and delete corrupt messages
+           const corruptIds: number[] = [];
+           const validMessages = messages.filter(msg => {
+             if (isMessageMediaIncomplete(msg.content)) {
+               corruptIds.push(msg.id);
+               return false;
+             }
+             return true;
+           });
+
+           if (corruptIds.length > 0) {
+             prisma.message.deleteMany({
+               where: { id: { in: corruptIds } }
+             }).catch(err => console.error("Failed to delete corrupt lobby messages:", err));
+           }
+
+           const formatted = validMessages.map(msg => ({
               id: msg.id.toString(),
               from: formatUserForSocket(msg.sender),
               targetType: "lobby",
@@ -1234,6 +1311,12 @@ export function setupWebSockets(io: Server) {
            if (ack) ack({ status: "error", error: { code: "SPAM", message: "پیام شما به عنوان اسپم شناسایی شد (استفاده از کلمات طولانی یا تکراری بیش از ۱۵ حرف)." } });
            return;
         }
+      }
+
+      // Media Integrity Check
+      if (isMessageMediaIncomplete(content)) {
+        if (ack) ack({ status: "error", error: { code: "INCOMPLETE_MEDIA", message: "رسانه به طور کامل لود نشده یا آدرس آن نامعتبر است." } });
+        return;
       }
 
       // Profanity & Link Filter

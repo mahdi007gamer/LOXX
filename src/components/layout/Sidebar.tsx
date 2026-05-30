@@ -18,6 +18,7 @@ import { cn } from "@/src/lib/utils";
 
 import { useAuth } from "../../context/AuthContext";
 import { useFriends } from "../../context/FriendsContext";
+import { useGames } from "../../context/GamesContext";
 import { Shield } from "lucide-react";
 
 const menuItems = [
@@ -35,9 +36,39 @@ const menuItems = [
 export const Sidebar = () => {
   const { user, logout, isSidebarCollapsed } = useAuth();
   const { requests } = useFriends();
+  const { myGames } = useGames();
+  const [channelsUnread, setChannelsUnread] = React.useState(0);
   const isElectron = typeof window !== "undefined" && !!(window as any).electronAPI;
   
-  // if (isSidebarCollapsed) return null; // Removed so it can render as tiny
+  React.useEffect(() => {
+    if (!user?.id) return;
+
+    const calcUnreads = () => {
+      try {
+        const stored = JSON.parse(localStorage.getItem(`loxx_chat_unreads_${user.id}`) || "{}");
+        let sum = (stored["general"] || 0) + (stored["news"] || 0);
+
+        if (myGames && myGames.length > 0) {
+          myGames.forEach((g: any) => {
+            sum += (stored[g.id] || 0);
+          });
+        }
+        setChannelsUnread(sum);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    calcUnreads();
+
+    window.addEventListener("storage", calcUnreads);
+    window.addEventListener("loxx-chat-unread-update", calcUnreads);
+
+    return () => {
+      window.removeEventListener("storage", calcUnreads);
+      window.removeEventListener("loxx-chat-unread-update", calcUnreads);
+    };
+  }, [user?.id, myGames]);
   
   return (
     <aside 
@@ -52,7 +83,14 @@ export const Sidebar = () => {
       <div className="flex h-full flex-col justify-between py-6">
         <div className="space-y-1 px-4">
           {menuItems.map((item) => {
-            const hasRequests = item.path === "/friends" && requests && requests.length > 0;
+            const incomingRequestsCount = item.path === "/friends" && requests 
+              ? requests.filter(r => r.type === "incoming").length 
+              : 0;
+            const unreadCount = item.path === "/chat" ? channelsUnread : 0;
+            const hasRequests = incomingRequestsCount > 0;
+            const hasBadge = item.path === "/friends" ? hasRequests : (item.path === "/chat" ? unreadCount > 0 : false);
+            const badgeValue = item.path === "/friends" ? incomingRequestsCount : unreadCount;
+
             return (
               <NavLink
                 key={item.path}
@@ -68,18 +106,18 @@ export const Sidebar = () => {
               >
                 <div className="relative shrink-0">
                   <item.icon size={20} />
-                  {hasRequests && isSidebarCollapsed && (
+                  {hasBadge && isSidebarCollapsed && (
                     <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white font-extrabold text-[8px] h-4 min-w-4 px-1 flex items-center justify-center rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)]">
-                      {requests.length}
+                      {badgeValue}
                     </span>
                   )}
                 </div>
                 {!isSidebarCollapsed && (
                   <div className="flex items-center justify-between w-full min-w-0">
                     <span className="font-medium whitespace-nowrap truncate">{item.label}</span>
-                    {hasRequests && (
+                    {hasBadge && (
                       <span className="bg-red-500 text-white font-black text-[10px] px-1.5 py-0.5 rounded-full animate-bounce shadow-[0_0_10px_rgba(239,68,68,0.5)] leading-none select-none">
-                        +{requests.length}
+                        +{badgeValue}
                       </span>
                     )}
                   </div>

@@ -550,7 +550,7 @@ export const FriendsPage = () => {
                <div className="space-y-4">
                   <h3 className="text-lg font-bold text-white flex items-center gap-2">
                     درخواست‌ها
-                    {requests.length > 0 && <span className="bg-neon-pink text-white text-[10px] px-1.5 rounded-full">{requests.length}</span>}
+                    {requests.filter(r => r.type === 'incoming').length > 0 && <span className="bg-neon-pink text-white text-[10px] px-1.5 rounded-full">{requests.filter(r => r.type === 'incoming').length}</span>}
                   </h3>
                   
                   {requests.map(req => (

@@ -382,7 +382,7 @@ function createMainWindow() {
 
   // Provide custom User-Agent to easily identify Launcher on the server
   const defaultUA = mainWindow.webContents.getUserAgent();
-  mainWindow.webContents.setUserAgent(`${defaultUA} LoxxLauncher/1.2.21`);
+  mainWindow.webContents.setUserAgent(`${defaultUA} LoxxLauncher/1.2.22`);
 
   // Listen for maximize / restore updates
   mainWindow.on('maximize', () => {

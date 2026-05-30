@@ -867,6 +867,49 @@ export const ChatPage: React.FC = () => {
   useEffect(() => {
     localStorage.setItem("loxx-chat-theme", chatTheme);
   }, [chatTheme]);
+
+  // Read and maintain precise unread counts for channels
+  useEffect(() => {
+    if (!user?.id) return;
+    const fetchUnreadCounts = async () => {
+      try {
+        const readStates = JSON.parse(localStorage.getItem(`loxx_chat_last_read_ids_${user.id}`) || "{}");
+        const res = await api.post("/chat/unread-states", { readStates });
+        if (res.data.status === "success" && res.data.data) {
+          setUnreadCounts(res.data.data);
+          localStorage.setItem(`loxx_chat_unreads_${user.id}`, JSON.stringify(res.data.data));
+          window.dispatchEvent(new Event("loxx-chat-unread-update"));
+        }
+      } catch (err) {
+        console.error("Failed to fetch unread states:", err);
+      }
+    };
+    fetchUnreadCounts();
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    localStorage.setItem(`loxx_chat_unreads_${user.id}`, JSON.stringify(unreadCounts));
+    window.dispatchEvent(new Event("loxx-chat-unread-update"));
+  }, [unreadCounts, user?.id]);
+
+  useEffect(() => {
+    if (!user?.id || !activeChannelId) return;
+    const channelMsgs = messages[activeChannelId] || [];
+    if (channelMsgs.length > 0) {
+      const latestMsg = channelMsgs[channelMsgs.length - 1];
+      if (latestMsg && latestMsg.id) {
+        const lastReadIds = JSON.parse(localStorage.getItem(`loxx_chat_last_read_ids_${user.id}`) || "{}");
+        lastReadIds[activeChannelId] = parseInt(latestMsg.id);
+        localStorage.setItem(`loxx_chat_last_read_ids_${user.id}`, JSON.stringify(lastReadIds));
+        
+        setUnreadCounts(prev => {
+          if (prev[activeChannelId] === 0) return prev;
+          return { ...prev, [activeChannelId]: 0 };
+        });
+      }
+    }
+  }, [messages, activeChannelId, user?.id]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
