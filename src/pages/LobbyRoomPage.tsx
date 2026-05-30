@@ -39,10 +39,16 @@ import {
   LayoutTemplate,
   VolumeX,
   Volume2,
-  Reply
+  Reply,
+  MonitorUp,
+  Monitor,
+  AlertTriangle
 } from "lucide-react";
 import { GlowButton } from "../components/ui/GlowButton";
 import { useFriends } from "../context/FriendsContext";
+import { ShareQuality, SHARE_QUALITIES, useSmartScreenShare } from "../hooks/useSmartScreenShare";
+import { ScreenShareModal } from "../components/ScreenShareModal";
+import { ScreenSharePresenter } from "../components/ScreenSharePresenter";
 import { UserBadges } from "../components/ui/UserBadges";
 import { useProfilePopover } from "../context/ProfilePopoverContext";
 import { MembershipType } from "../types";
@@ -154,7 +160,9 @@ export const LobbyRoomPage = () => {
     launcherRichPresenceEnabled,
     setLauncherRichPresenceEnabled,
     isDeafened,
-    setIsDeafened
+    setIsDeafened,
+    remoteStreams,
+    setScreenStreamForWebRTC
   } = useLobby();
 
   const { user, isSidebarCollapsed, setIsSidebarCollapsed } = useAuth();
@@ -203,6 +211,36 @@ export const LobbyRoomPage = () => {
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [activeProfileUserId, setActiveProfileUserId] = useState<string | null>(null);
   const [layoutMode, setLayoutMode] = useState<'default' | 'compact' | 'discord'>(() => (localStorage.getItem('loxx-lobby-layout') as any) || 'default');
+
+  const {
+    estimatedUploadMbps,
+    isTestingBandwidth,
+    screenStream,
+    currentQuality,
+    startShare,
+    stopShare,
+    isBaseRequirementMet,
+    isWarningActive
+  } = useSmartScreenShare(
+    ((user as any)?.profile?.membershipType as any) || "NORMAL",
+    lobby?.players?.length || 1,
+    typeof window !== "undefined" && !!(window as any).electronAPI,
+    setScreenStreamForWebRTC
+  );
+  
+  const [isScreenShareModalOpen, setIsScreenShareModalOpen] = useState(false);
+
+  // Compute active remote screen share (if any user in the lobby is sharing video tracks)
+  const activeRemoteShare = useMemo(() => {
+    if (!remoteStreams) return null;
+    for (const [peerId, stream] of remoteStreams.entries()) {
+      if (stream.getVideoTracks().length > 0) {
+        const presenter = lobby?.players?.find(p => p.userId === peerId);
+        return { peerId, stream, presenterName: presenter?.username || "Guest Player" };
+      }
+    }
+    return null;
+  }, [remoteStreams, lobby?.players]);
 
   const toggleLayout = () => {
     const modes: ('default' | 'compact' | 'discord')[] = ['default', 'compact', 'discord'];
@@ -624,6 +662,16 @@ export const LobbyRoomPage = () => {
             isStreamerLobby={isStreamerLobby}
           />
 
+          {/* Screen Share View (Local or Remote) */}
+          {(screenStream || activeRemoteShare) && (
+            <ScreenSharePresenter 
+              stream={screenStream || activeRemoteShare!.stream}
+              presenterName={screenStream ? "شما" : activeRemoteShare!.presenterName}
+              isLocal={!!screenStream}
+              isWarningActive={screenStream ? isWarningActive : false}
+            />
+          )}
+
           {/* Players Flex - Drastically improved for responsiveness & wrapping */}
           <div className={cn(
             "w-full justify-start items-stretch px-1",
@@ -747,6 +795,23 @@ export const LobbyRoomPage = () => {
 
         <div className="flex items-center gap-2 overflow-x-auto scrollbar-none px-1 py-1">
            <ControlButton icon={isMicMuted ? <MicOff size={20} /> : <Mic size={20} />} active={!isMicMuted} onClick={toggleMic} className="h-12 w-12 rounded-[14px] shrink-0" />
+           {typeof window !== "undefined" && !!(window as any).electronAPI && (
+             <button 
+               onClick={() => {
+                 if (screenStream) { stopShare(); }
+                 else if (isBaseRequirementMet) { setIsScreenShareModalOpen(true); }
+               }}
+               className={cn(
+                 "h-12 w-12 rounded-[14px] flex items-center justify-center transition-all group shrink-0 relative",
+                 screenStream ? "bg-neon-blue/20 text-neon-blue border-neon-blue shadow-[0_0_15px_rgba(0,240,255,0.4)] border shadow-inner" :
+                 (isBaseRequirementMet ? "bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white" : "bg-white/5 text-gray-700 opacity-50 cursor-not-allowed")
+               )}
+               title={!isBaseRequirementMet ? "سرعت اینترنت شما برای این کار کافی نیست" : screenStream ? "پایان شیر اسکرین" : "اشتراک صفحه نمایش"}
+             >
+               {screenStream ? <MonitorUp size={20} /> : <Monitor size={20} />}
+               {!isBaseRequirementMet && <AlertTriangle size={10} className="absolute top-2 right-2 text-yellow-500" />}
+             </button>
+           )}
            <ControlButton icon={<UserPlus size={20} />} onClick={() => setIsInviteModalOpen(true)} className="h-12 w-12 rounded-[14px] shrink-0" />
            <ControlButton icon={<Settings size={20} />} onClick={() => setIsSettingsModalOpen(true)} className="h-12 w-12 rounded-[14px] shrink-0" />
         </div>
@@ -826,6 +891,23 @@ export const LobbyRoomPage = () => {
            <div className="flex items-center gap-4">
               <ControlButton icon={isMicMuted ? <MicOff size={20} /> : <Mic size={20} />} active={!isMicMuted} onClick={toggleMic} tooltip="میکروفون" />
               <ControlButton icon={isDeafened ? <VolumeX size={20} /> : <Volume2 size={20} />} active={!isDeafened} onClick={() => setIsDeafened(!isDeafened)} tooltip="قطع صدای اسپیکر" />
+              {typeof window !== "undefined" && !!(window as any).electronAPI && (
+                <button 
+                  onClick={() => {
+                    if (screenStream) { stopShare(); }
+                    else if (isBaseRequirementMet) { setIsScreenShareModalOpen(true); }
+                  }}
+                  className={cn(
+                    "h-12 w-12 rounded-2xl flex items-center justify-center transition-all group relative shrink-0",
+                    screenStream ? "bg-neon-blue/20 text-neon-blue border-neon-blue shadow-[0_0_15px_rgba(0,240,255,0.4)] border shadow-inner" :
+                    (isBaseRequirementMet ? "bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white" : "bg-white/5 text-gray-700 opacity-50 cursor-not-allowed")
+                  )}
+                  title={!isBaseRequirementMet ? "سرعت اینترنت شما برای اشتراک گذاری با این تعداد بیننده کافی نیست" : screenStream ? "پایان شیر اسکرین" : "اشتراک صفحه نمایش"}
+                >
+                  {screenStream ? <MonitorUp size={20} /> : <Monitor size={20} />}
+                  {!isBaseRequirementMet && <AlertTriangle size={10} className="absolute top-2 right-2 text-yellow-500" />}
+                </button>
+              )}
               <ControlButton icon={<UserPlus size={20} />} onClick={() => setIsInviteModalOpen(true)} tooltip="دعوت" />
               <ControlButton icon={<Settings size={20} />} onClick={() => setIsSettingsModalOpen(true)} tooltip="تنظیمات" />
            </div>
@@ -881,6 +963,15 @@ export const LobbyRoomPage = () => {
             </div>
           </Modal>
         )}
+
+        <ScreenShareModal
+          isOpen={isScreenShareModalOpen}
+          onClose={() => setIsScreenShareModalOpen(false)}
+          userPlan={((user as any)?.profile?.membershipType as any) || "NORMAL"}
+          onStartShare={startShare}
+          estimatedUploadMbps={estimatedUploadMbps}
+          numViewers={players.length || 1}
+        />
 
         {activeProfileUserId && (
           <Modal title="پروفایل بازیکن" onClose={() => setActiveProfileUserId(null)}>
@@ -1467,7 +1558,9 @@ function DiscordLayoutPlayerCard({
            </div>
 
            <div className="relative z-10 w-full bg-black/60 backdrop-blur-md rounded-xl p-1.5 md:p-2 border border-white/10 flex flex-col items-center">
-              <span className="text-[10px] md:text-xs font-bold text-white truncate max-w-full">{player.name}</span>
+              <span className="text-[10px] md:text-xs font-bold text-white truncate max-w-full">
+                {player.name ? (player.name.length > 10 ? player.name.substring(0, 10) + "..." : player.name) : ""}
+              </span>
               <div className="flex items-center gap-1 mt-0.5">
                 {player.isMuted ? <MicOff size={10} className="text-red-400" /> : <Mic size={10} className="text-gray-400" />}
                 <span className="text-[8px] font-mono text-gray-500">{player.ping}ms</span>
@@ -1475,16 +1568,26 @@ function DiscordLayoutPlayerCard({
            </div>
 
            {isSelected && (
-              <div className="absolute inset-0 bg-black/80 backdrop-blur-md z-20 flex flex-col p-2 border border-neon-blue/50 rounded-[16px] justify-center items-center shadow-2xl" onClick={e => e.stopPropagation()}>
-                <input 
-                  type="range" min="0" max="200" value={player.volume} 
-                  onChange={(e) => onVolumeChange(parseInt(e.target.value))}
-                  className="w-full h-1 bg-white/10 rounded-lg appearance-none accent-neon-blue mb-4"
-                />
-                <div className="flex flex-wrap items-center justify-center gap-1 mt-auto">
-                   <QuickAction icon={<Users size={12} />} tooltip="پروفایل" onClick={() => onProfile(player.id)} />
-                   <QuickAction icon={<MessageSquare size={12} />} tooltip="پیام" onClick={() => onDirectMessage(player.id)} />
-                   <QuickAction icon={player.isMuted ? <Mic size={12} /> : <MicOff size={12} />} tooltip="صدا" onClick={() => onMute(player.id)} />
+              <div className="absolute inset-0 bg-[#0a0a0f]/95 backdrop-blur-md z-20 flex flex-col p-4 border border-neon-blue/50 rounded-[16px] justify-center items-center shadow-2xl" onClick={e => e.stopPropagation()}>
+                
+                <div className="w-full flex-1 flex flex-col justify-center gap-6">
+                  <div className="w-full px-2 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold text-gray-400">VOLUME</span>
+                      <span className="text-[10px] font-bold text-white">{player.volume}%</span>
+                    </div>
+                    <input 
+                      type="range" min="0" max="200" value={player.volume} 
+                      onChange={(e) => onVolumeChange(parseInt(e.target.value))}
+                      className="w-full h-1.5 bg-white/10 rounded-lg appearance-none accent-neon-blue"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-center gap-2">
+                     <QuickAction icon={<Users size={14} />} tooltip="پروفایل" onClick={() => onProfile(player.id)} />
+                     <QuickAction icon={<MessageSquare size={14} />} tooltip="پیام" onClick={() => onDirectMessage(player.id)} />
+                     <QuickAction icon={player.isMuted ? <Mic size={14} /> : <MicOff size={14} />} tooltip="صدا" onClick={() => onMute(player.id)} />
+                  </div>
                 </div>
               </div>
            )}
@@ -1529,7 +1632,9 @@ function CompactLayoutPlayerCard({
           </div>
           <div className="flex-1 min-w-0 pr-2">
              <div className="flex items-center justify-between">
-                <span className="text-xs md:text-sm font-bold text-white truncate">{player.name}</span>
+                <span className="text-xs md:text-sm font-bold text-white truncate">
+                  {player.name ? (player.name.length > 10 ? player.name.substring(0, 10) + "..." : player.name) : ""}
+                </span>
                 <div className="flex items-center gap-1.5 shrink-0">
                   {player.isMuted ? <MicOff size={12} className="text-red-400" /> : <Mic size={12} className="text-green-400" />}
                   <span className="text-[9px] font-mono text-gray-500">{player.ping}ms</span>
@@ -1539,16 +1644,16 @@ function CompactLayoutPlayerCard({
           </div>
 
           {isSelected && (
-             <div className="absolute inset-0 bg-black/90 backdrop-blur-md z-20 flex items-center px-4 border border-neon-blue/40 rounded-[16px] justify-between shadow-2xl" onClick={e => e.stopPropagation()}>
-                <div className="flex items-center gap-2 mr-2 max-w-[80px] w-full">
-                  <span className="text-[8px] text-white/50">VOL</span>
+             <div className="absolute inset-0 bg-[#0a0a0f]/95 backdrop-blur-md z-20 flex items-center px-4 border border-neon-blue/40 rounded-[16px] justify-between shadow-2xl" onClick={e => e.stopPropagation()}>
+                <div className="flex items-center gap-3 w-[100px]">
+                  <span className="text-[10px] font-bold text-gray-400">VOL</span>
                   <input 
                     type="range" min="0" max="200" value={player.volume} 
                     onChange={(e) => onVolumeChange(parseInt(e.target.value))}
-                    className="w-full h-1 bg-white/10 rounded-lg appearance-none accent-neon-blue"
+                    className="w-full h-1.5 bg-white/10 rounded-lg appearance-none accent-neon-blue"
                   />
                 </div>
-                <div className="flex items-center gap-1 shrink-0">
+                <div className="flex items-center gap-2 shrink-0">
                    <QuickAction icon={<Users size={14} />} tooltip="پروفایل" onClick={() => onProfile(player.id)} />
                    <QuickAction icon={<MessageSquare size={14} />} tooltip="پیام" onClick={() => onDirectMessage(player.id)} />
                    <QuickAction icon={player.isMuted ? <Mic size={14} /> : <MicOff size={14} />} tooltip="صدا" onClick={() => onMute(player.id)} />
@@ -1745,7 +1850,7 @@ const PlayerCard: React.FC<{
                   {player.membership === "VIP" && player.role !== "STREAMER" && (
                     <Crown size={16} className="text-yellow-500 fill-yellow-500 drop-shadow-[0_0_8px_rgba(250,204,21,0.8)]" />
                   )}
-                  {player.name}
+                  {player.name ? (player.name.length > 10 ? player.name.substring(0, 10) + "..." : player.name) : ""}
                   {player.isVerified && player.role !== "STREAMER" && (
                     <CheckCircle2 size={14} className="text-neon-blue" fill="currentColor" />
                   )}

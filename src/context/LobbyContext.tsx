@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from "react";
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { lobbySocket, chatSocket, voiceSocket, getSharedAudioContext, resumeSharedAudioContext } from "../lib/socket";
 import { toast } from "react-hot-toast";
 import { useAuth } from "./AuthContext";
@@ -146,6 +146,8 @@ interface LobbyContextType {
   gameDetected: string | null;
   launcherRichPresenceEnabled: boolean;
   setLauncherRichPresenceEnabled: (val: boolean) => void;
+  remoteStreams: Map<string, MediaStream>;
+  setScreenStreamForWebRTC: (stream: MediaStream | null) => void;
 }
 
 const LobbyContext = createContext<LobbyContextType | undefined>(undefined);
@@ -156,6 +158,7 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   
   // Voice integration states
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
+  const [screenStream, setScreenStreamForWebRTCState] = useState<MediaStream | null>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
   const [voiceMode, setVoiceMode] = useState<"activation" | "ptt">("activation");
   const [pttKey, setPttKey] = useState<string>("v");
@@ -668,8 +671,20 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
   }, [lobby?.id, user?.id, localStream, isAudioContextResumed]);
 
+  const combinedStreamMemo = useMemo(() => {
+    if (!localStream && !screenStream) return null;
+    const stream = new MediaStream();
+    if (localStream) {
+      localStream.getTracks().forEach(t => stream.addTrack(t));
+    }
+    if (screenStream) {
+      screenStream.getTracks().forEach(t => stream.addTrack(t));
+    }
+    return stream;
+  }, [localStream, screenStream]);
+
   // Connect globally using our WebRTC signaling hook
-  const { remoteStreams } = useWebRTC(lobby?.id || null, localStream, user?.id);
+  const { remoteStreams } = useWebRTC(lobby?.id || null, combinedStreamMemo, user?.id);
 
   // Monitor speaking volumes for glowing effects
   const handlePeerVolumeChange = useCallback((peerUserId: string, vol: number) => {
@@ -737,7 +752,31 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       
       if (data.user.id !== userRef.current?.id) {
         playSFX('join');
-        toast(`${data.user.username} وارد لابی شد`, { icon: '👋', id: `join-${data.user.id}` });
+        
+        if (data.user.role === 'ADMIN') {
+          toast.custom((t) => (
+            <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-sm w-full bg-[#1a0505] shadow-2xl rounded-2xl pointer-events-auto flex items-center ring-1 ring-red-500/50 p-4 border-s-4 border-s-red-500`}>
+              <div className="flex-1 w-0">
+                <div className="flex items-start">
+                  <div className="flex-shrink-0 pt-0.5 relative">
+                    <div className="absolute -inset-1 bg-red-500 blur-sm rounded-full opacity-50 animate-pulse"></div>
+                    <img className="h-10 w-10 rounded-full border border-red-500 relative z-10 bg-black" src={data.user.avatarUrl || "https://api.dicebear.com/7.x/notionists/svg"} alt="" />
+                  </div>
+                  <div className="ms-3 flex-1">
+                    <p className="text-sm font-black text-red-500 uppercase tracking-widest drop-shadow-[0_0_8px_rgba(239,68,68,0.3)]" style={{ direction: 'ltr', textAlign: 'left' }}>
+                      LOXX ADMIN JOINED
+                    </p>
+                    <p className="mt-1 text-sm text-gray-300 font-bold" style={{ direction: 'rtl', textAlign: 'right' }}>
+                      مدیر کل <span className="text-white">{data.user.username}</span> وارد لابی شد
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ), { duration: 5000, id: `admin-join-${data.user.id}` });
+        } else {
+          toast(`${data.user.username} وارد لابی شد`, { icon: '👋', id: `join-${data.user.id}` });
+        }
       }
     });
 
@@ -1273,7 +1312,9 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       overlayClickThrough,
       gameDetected,
       launcherRichPresenceEnabled,
-      setLauncherRichPresenceEnabled
+      setLauncherRichPresenceEnabled,
+      remoteStreams,
+      setScreenStreamForWebRTC: setScreenStreamForWebRTCState
     }}>
       {children}
       {lobby?.id && Array.from(remoteStreams.entries()).map(([peerUserId, stream]) => (
