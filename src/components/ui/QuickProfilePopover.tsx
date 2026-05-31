@@ -7,6 +7,7 @@ import {
   useTransform,
 } from "motion/react";
 import { useFriends } from "../../context/FriendsContext";
+import { useLanguage } from "../../context/LanguageContext";
 import { BadgeType, MembershipType } from "../../types";
 import { cn } from "../../lib/utils";
 import {
@@ -63,6 +64,8 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({
   user: initialUser,
   isSelf,
 }) => {
+  const { direction } = useLanguage();
+  const isRtl = direction === "rtl";
   const navigate = useNavigate();
   const { addFriend, openChat } = useFriends();
   const [sentRequest, setSentRequest] = useState(false);
@@ -355,7 +358,8 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.9, y: 10 }}
         className={cn(
-          "w-[380px] rounded-[48px] border overflow-hidden cursor-default rtl text-right transition-all backdrop-blur-3xl px-0 relative z-[20002]",
+          "w-[380px] rounded-[48px] border overflow-hidden cursor-default transition-all backdrop-blur-3xl px-0 relative z-[20002]",
+          isRtl ? "rtl text-right" : "ltr text-left",
           metadata?.fullGlow
             ? isStreamer
               ? "border-purple-400"
@@ -470,7 +474,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({
               <button
                 onClick={() => setShowReportModal(true)}
                 className="h-10 w-10 rounded-full bg-black/60 text-gray-300 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all backdrop-blur-xl border border-white/10 shadow-lg"
-                title="گزارش پروفایل"
+                title={isRtl ? "گزارش پروفایل" : "Report Profile"}
               >
                 <Icons.Flag size={16} />
               </button>
@@ -606,7 +610,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({
                   "mt-6 h-14 w-14 rounded-3xl bg-white/10 text-white flex items-center justify-center transition-all border border-white/10 group active:scale-95 shadow-xl backdrop-blur-xl",
                   isAdminUnified ? "hover:bg-red-500 hover:text-white" : "hover:bg-neon-blue hover:text-dark-bg"
                 )}
-                title="ارسال پیام"
+                title={isRtl ? "ارسال پیام" : "Send Message"}
               >
                 <MessageCircle
                   size={28}
@@ -662,7 +666,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({
                     className="text-xs font-black uppercase tracking-[0.1em] flex items-center gap-2 text-red-500 bg-red-500/10 px-3 py-1 rounded-full border border-red-500/20 shadow-[0_0_15px_rgba(239,68,68,0.1)]"
                   >
                     <div className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
-                    مدیریت رسمی پلتفرم لوکس
+                    {isRtl ? "مدیریت رسمی پلتفرم لوکس" : "LOXX Platform Official Administration"}
                   </span>
                 ) : isStreamer ? (
                   <span
@@ -670,7 +674,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({
                     style={{ color: metadata?.colors?.accent || "#c084fc" }}
                   >
                     <div className="h-1.5 w-1.5 rounded-full bg-current animate-ping" />
-                    عضو تیم استریم
+                    {isRtl ? "عضو تیم استریم" : "Streamer Team Member"}
                   </span>
                 ) : isVIP ? (
                   <span
@@ -678,7 +682,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({
                     style={{ color: metadata?.colors?.accent || "#facc15" }}
                   >
                     <div className="h-1.5 w-1.5 rounded-full bg-current animate-ping" />
-                    عضو ویژه لوکس (VIP)
+                    {isRtl ? "عضو ویژه لوکس (VIP)" : "VIP Elite Member"}
                   </span>
                 ) : isPLUS ? (
                   <span
@@ -686,11 +690,11 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({
                     style={{ color: metadata?.colors?.accent || "#00e5ff" }}
                   >
                     <div className="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />
-                    عضو طلایی پلاس (PLUS)
+                    {isRtl ? "عضو طلایی پلاس (PLUS)" : "PLUS Gold Member"}
                   </span>
                 ) : (
                   <p className="text-[11px] text-gray-500 font-black uppercase tracking-[0.2em]">
-                    گیمر تایید شده لول {user.senderLevel}
+                    {isRtl ? `گیمر تایید شده لول ${user.senderLevel}` : `Verified Gamer Level ${user.senderLevel}`}
                   </p>
                 )}
               </div>
@@ -698,28 +702,40 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({
 
             {/* Accurate Statistics Grid */}
             {isAdminUnified ? (
-              <div className="py-6 border-y border-white/5 space-y-4 text-right">
+              <div className={cn("py-6 border-y border-white/5 space-y-4", isRtl ? "text-right" : "text-left")}>
                 <div className="flex items-start gap-4 bg-red-950/20 border border-red-500/15 p-4 rounded-2xl relative overflow-hidden">
                   <div className="absolute right-0 top-0 h-16 w-16 bg-red-500/5 rounded-full blur-xl pointer-events-none" />
                   <div className="h-10 w-10 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 flex items-center justify-center shrink-0">
                     <Shield size={20} />
                   </div>
                   <div>
-                    <p className="text-xs font-black text-red-400">حساب رسمی مدیریت لوکس</p>
+                    <p className="text-xs font-black text-red-400">
+                      {isRtl ? "حساب رسمی مدیریت لوکس" : "Official LOXX Management Account"}
+                    </p>
                     <p className="text-[11px] text-gray-400 mt-1.5 leading-relaxed">
-                      این اکانت به عنوان مدیریت ارشد پلتفرم لوکس فعالیت می‌کند. جهت طرح هرگونه سوال، پیشنهاد، همکاری یا پشتیبانی اختصاصی، دکمه زیر را بفشارید.
+                      {isRtl 
+                        ? "این اکانت به عنوان مدیریت ارشد پلتفرم لوکس فعالیت می‌کند. جهت طرح هرگونه سوال، پیشنهاد، همکاری یا پشتیبانی اختصاصی، دکمه زیر را بفشارید." 
+                        : "This account represents LOXX Lead Administration. For official inquiries, partnerships, or support, feel free to drop a message."}
                     </p>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 pt-1">
                   <div className="bg-white/5 border border-white/10 rounded-2xl p-3 text-center">
-                    <p className="text-[9px] text-gray-500 font-extrabold uppercase tracking-wider mb-1">حمایت فنی و نظارت</p>
-                    <p className="text-xs font-black text-emerald-400">تمام وقت متصل</p>
+                    <p className="text-[9px] text-gray-500 font-extrabold uppercase tracking-wider mb-1">
+                      {isRtl ? "حمایت فنی و نظارت" : "TECHNICAL OPERATIONS"}
+                    </p>
+                    <p className="text-xs font-black text-emerald-400">
+                      {isRtl ? "تمام وقت متصل" : "Online 24/7"}
+                    </p>
                   </div>
                   <div className="bg-white/5 border border-white/10 rounded-2xl p-3 text-center">
-                    <p className="text-[9px] text-gray-500 font-extrabold uppercase tracking-wider mb-1">سمت کاربری</p>
-                    <p className="text-xs font-black text-red-500">مدیر کل کلان سیستم</p>
+                    <p className="text-[9px] text-gray-500 font-extrabold uppercase tracking-wider mb-1">
+                      {isRtl ? "سمت کاربری" : "ROLE"}
+                    </p>
+                    <p className="text-xs font-black text-red-500">
+                      {isRtl ? "مدیر کل کلان سیستم" : "SysOps Chief Executive"}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -735,7 +751,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({
                           (isVIP ? "#451a03" : "#4b5563"),
                       }}
                     >
-                      عضویت
+                      {isRtl ? "عضویت" : "JOINED"}
                     </p>
                     <div className="flex flex-col items-center">
                       {loading ? (
@@ -755,7 +771,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({
                               : "0 2px 4px rgba(0,0,0,0.5)",
                           }}
                         >
-                          {user.stats?.daysSinceJoin || 0} روز
+                          {isRtl ? `${user.stats?.daysSinceJoin || 0} روز` : `${user.stats?.daysSinceJoin || 0}d ago`}
                         </p>
                       )}
                     </div>
@@ -769,7 +785,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({
                           (isVIP ? "#451a03" : "#4b5563"),
                       }}
                     >
-                      دوستان
+                      {isRtl ? "دوستان" : "FRIENDS"}
                     </p>
                     <div className="flex flex-col items-center">
                       {loading ? (
@@ -803,7 +819,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({
                           (isVIP ? "#451a03" : "#4b5563"),
                       }}
                     >
-                      لابی‌ها
+                      {isRtl ? "لابی‌ها" : "LOBBIES"}
                     </p>
                     <div className="flex flex-col items-center">
                       {loading ? (
@@ -837,7 +853,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({
                           (isVIP ? "#451a03" : "#4b5563"),
                       }}
                     >
-                      میزبانی
+                      {isRtl ? "میزبانی" : "HOSTED"}
                     </p>
                     <div className="flex flex-col items-center">
                       {loading ? (
@@ -874,7 +890,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({
                         (isVIP ? "#451a03" : "#4b5563"),
                     }}
                   >
-                    نشان‌های انتخابی و دستاوردها
+                    {isRtl ? "نشان‌های انتخابی و دستاوردها" : "PINNED BADGES & MERITS"}
                   </h5>
                   <div className="flex flex-wrap gap-2.5 max-h-[120px] overflow-y-auto no-scrollbar">
                     {user.senderBadges
@@ -943,7 +959,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({
                       ))}
                     {!user.senderBadges?.length && !loading && (
                       <p className="text-[10px] text-gray-500 italic">
-                        بدون نشان‌های کسب شده
+                        {isRtl ? "بدون نشان‌های کسب شده" : "No unlocked badges found"}
                       </p>
                     )}
                   </div>
@@ -960,7 +976,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({
                 metadata?.streamerLinks?.donate) && (
                 <div className="space-y-4 pt-5 mt-4 border-t border-white/5">
                   <h5 className="text-[11px] font-extrabold uppercase tracking-widest italic text-neon-purple flex gap-2 items-center justify-center">
-                    <Icons.Radio size={14} className="animate-pulse" /> کانال‌های پخش زنده استریمر
+                    <Icons.Radio size={14} className="animate-pulse" /> {isRtl ? "کانال‌های پخش زنده استریمر" : "STREAMER'S LIVE CHANNELS"}
                   </h5>
                   <div className="grid grid-cols-1 gap-3">
                     {metadata.streamerLinks.twitch && (
@@ -976,7 +992,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({
                             className="group-hover:scale-110 group-hover:rotate-6 transition-transform"
                           />
                         </div>
-                        <div className="flex-1 text-right">
+                        <div className={cn("flex-1", isRtl ? "text-right" : "text-left")}>
                           <span
                             className="text-[10px] text-purple-300 font-bold block mb-0.5"
                             dir="ltr"
@@ -984,7 +1000,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({
                             TWITCH.TV
                           </span>
                           <h4 className="text-sm font-black text-white italic">
-                            پخش زنده در توییچ
+                            {isRtl ? "پخش زنده در توییچ" : "Live stream on Twitch"}
                           </h4>
                         </div>
                         <div className="flex items-center gap-1.5 bg-[#9146FF]/20 px-2.5 py-1 rounded-full">
@@ -1009,7 +1025,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({
                             className="group-hover:scale-110 group-hover:-rotate-6 transition-transform"
                           />
                         </div>
-                        <div className="flex-1 text-right">
+                        <div className={cn("flex-1", isRtl ? "text-right" : "text-left")}>
                           <span
                             className="text-[10px] text-pink-300 font-bold block mb-0.5"
                             dir="ltr"
@@ -1017,7 +1033,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({
                             APARAT.COM
                           </span>
                           <h4 className="text-sm font-black text-white italic">
-                            پخش زنده در آپارات
+                            {isRtl ? "پخش زنده در آپارات" : "Live stream on Aparat"}
                           </h4>
                         </div>
                         <div className="flex items-center gap-1.5 bg-[#ED1C24]/20 px-2.5 py-1 rounded-full">
@@ -1042,7 +1058,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({
                             className="group-hover:scale-110 transition-transform text-[#53FC18]"
                           />
                         </div>
-                        <div className="flex-1 text-right">
+                        <div className={cn("flex-1", isRtl ? "text-right" : "text-left")}>
                           <span
                             className="text-[10px] text-green-300 font-bold block mb-0.5"
                             dir="ltr"
@@ -1050,7 +1066,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({
                             KICK.COM
                           </span>
                           <h4 className="text-sm font-black text-white italic">
-                            پخش زنده در کیک
+                            {isRtl ? "پخش زنده در کیک" : "Live stream on Kick"}
                           </h4>
                         </div>
                         <div className="flex items-center gap-1.5 bg-[#53FC18]/20 px-2.5 py-1 rounded-full">
@@ -1075,7 +1091,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({
                             className="group-hover:scale-110 transition-transform"
                           />
                         </div>
-                        <div className="flex-1 text-right">
+                        <div className={cn("flex-1", isRtl ? "text-right" : "text-left")}>
                           <span
                             className="text-[10px] text-red-300 font-bold block mb-0.5"
                             dir="ltr"
@@ -1083,7 +1099,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({
                             YOUTUBE.COM
                           </span>
                           <h4 className="text-sm font-black text-white italic">
-                            کانال رسمی یوتیوب
+                            {isRtl ? "کانال رسمی یوتیوب" : "Official YouTube Channel"}
                           </h4>
                         </div>
                         <Icons.ChevronLeft
@@ -1107,12 +1123,12 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({
                             fill="currentColor"
                           />
                         </div>
-                        <div className="flex-1 text-right">
+                        <div className={cn("flex-1", isRtl ? "text-right" : "text-left")}>
                           <span className="text-[10px] text-yellow-500 font-bold block mb-0.5">
                             SUPPORT STREAMER
                           </span>
                           <h4 className="text-sm font-black text-white italic">
-                            درگاه حمایت مالی (Donate)
+                            {isRtl ? "درگاه حمایت مالی (Donate)" : "Financial Support (Donate)"}
                           </h4>
                         </div>
                         <Icons.ChevronLeft

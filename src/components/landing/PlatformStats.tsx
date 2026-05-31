@@ -1,12 +1,6 @@
 import React from "react";
 import { motion, useInView } from "motion/react";
-
-const stats = [
-  { label: "گیمر فعال", value: 2400, suffix: "+" },
-  { label: "لابی زنده", value: 300, suffix: "+" },
-  { label: "پیام در روز", value: 12000, suffix: "" },
-  { label: "مسابقات ماهانه", value: 45, suffix: "" },
-];
+import { useLanguage } from "../../context/LanguageContext";
 
 const StatItem = ({ label, value, suffix, delay }: any) => {
   const ref = React.useRef(null);
@@ -54,6 +48,16 @@ const StatItem = ({ label, value, suffix, delay }: any) => {
 };
 
 export const PlatformStats = () => {
+  const { direction } = useLanguage();
+  const isRtl = direction === "rtl";
+
+  const stats = [
+    { label: isRtl ? "گیمر فعال" : "Active Gamers", value: 2400, suffix: "+" },
+    { label: isRtl ? "لابی زنده" : "Live Lobbies", value: 300, suffix: "+" },
+    { label: isRtl ? "پیام در روز" : "Daily Messages", value: 12000, suffix: "" },
+    { label: isRtl ? "مسابقات ماهانه" : "Monthly Tournaments", value: 45, suffix: "" },
+  ];
+
   return (
     <section className="py-20 border-y border-white/5 bg-white/[0.02]">
       <div className="container mx-auto px-4 max-w-6xl">

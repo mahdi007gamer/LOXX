@@ -3,41 +3,53 @@ import { motion } from "motion/react";
 import { NeonCard } from "../ui/NeonCard";
 import { MessageSquare, Users, Target, Zap } from "lucide-react";
 import { cn } from "@/src/lib/utils";
-
-const features = [
-  {
-    title: "چت سراسری بلادرنگ",
-    desc: "با تمام گیمرهای ایران به صورت لحظه‌ای تبادل نظر کنید. محیطی امن و کاملاً فارسی.",
-    icon: MessageSquare,
-    color: "blue" as const,
-    glow: "bg-neon-blue",
-  },
-  {
-    title: "مدیریت لابی حرفه‌ای",
-    desc: "برای بازی‌های محبوب خود لابی بسازید یا به لابی دیگران بپیوندید. هماهنگی تیم در سریع‌ترین زمان.",
-    icon: Target,
-    color: "pink" as const,
-    glow: "bg-neon-pink",
-  },
-  {
-    title: "جامعه گیمرهای فعال",
-    desc: "دوستان جدید پیدا کنید، تیم تشکیل دهید و در رقابت‌های هفتگی شرکت کنید.",
-    icon: Users,
-    color: "purple" as const,
-    glow: "bg-neon-purple",
-  },
-  {
-    title: "سرعت و پایداری بالا",
-    desc: "زیرساخت قدرتمند با کمترین تاخیر ممکن برای تجربه‌ای روان در بازی‌ها.",
-    icon: Zap,
-    color: "blue" as const,
-    glow: "bg-neon-blue",
-  },
-];
+import { useLanguage } from "../../context/LanguageContext";
 
 export const FeatureSection = () => {
+  const { direction } = useLanguage();
+  const isRtl = direction === "rtl";
+
+  const features = [
+    {
+      title: isRtl ? "چت سراسری بلادرنگ" : "Real-time Global Chat",
+      desc: isRtl 
+        ? "با تمام گیمرهای ایران به صورت لحظه‌ای تبادل نظر کنید. محیطی امن و کاملاً فارسی."
+        : "Trade tactics and banter with players nationwide in real-time. Secure and moderated.",
+      icon: MessageSquare,
+      color: "blue" as const,
+      glow: "bg-neon-blue",
+    },
+    {
+      title: isRtl ? "مدیریت لابی حرفه‌ای" : "High-tier Lobby Hubs",
+      desc: isRtl 
+        ? "برای بازی‌های محبوب خود لابی بسازید یا به لابی دیگران بپیوندید. هماهنگی تیم در سریع‌ترین زمان."
+        : "Instantly create or join active game rooms for your favorites. Fast-track your squad coordination.",
+      icon: Target,
+      color: "pink" as const,
+      glow: "bg-neon-pink",
+    },
+    {
+      title: isRtl ? "جامعه گیمرهای فعال" : "Vibrant Gamer Society",
+      desc: isRtl 
+        ? "دوستان جدید پیدا کنید، تیم تشکیل دهید و در رقابت‌های هفتگی شرکت کنید."
+        : "Team up with like-minded players, expand your friends list, and field contenders to weekly matches.",
+      icon: Users,
+      color: "purple" as const,
+      glow: "bg-neon-purple",
+    },
+    {
+      title: isRtl ? "سرعت و پایداری بالا" : "Supercharged Performance",
+      desc: isRtl 
+        ? "زیرساخت قدرتمند با کمترین تاخیر ممکن برای تجربه‌ای روان در بازی‌ها."
+        : "Squeeze the frame rates with optimized low-ping servers tailored for seamless gaming.",
+      icon: Zap,
+      color: "blue" as const,
+      glow: "bg-neon-blue",
+    },
+  ];
+
   return (
-    <section className="relative py-32 overflow-hidden">
+    <section className="relative py-32 overflow-hidden" dir={isRtl ? "rtl" : "ltr"}>
       <div className="container mx-auto max-w-6xl px-4">
         <div className="mb-20 text-center">
           <motion.h2 
@@ -46,7 +58,11 @@ export const FeatureSection = () => {
             viewport={{ once: true }}
             className="text-4xl font-black text-white sm:text-5xl"
           >
-            قابلیت‌های منحصر به فرد <span className="neon-text-blue">لوکس</span>
+            {isRtl ? (
+              <>قابلیت‌های منحصر به فرد <span className="neon-text-blue">لوکس</span></>
+            ) : (
+              <>State-of-the-Art <span className="neon-text-blue">LOXX</span> Features</>
+            )}
           </motion.h2>
           <motion.div 
              initial={{ width: 0 }}
@@ -82,7 +98,7 @@ export const FeatureSection = () => {
                   )} />
                 </div>
                 
-                <div>
+                <div className={cn("flex-1 min-w-0", isRtl ? "text-right" : "text-left")}>
                   <h3 className="mb-3 text-2xl font-bold text-white transition-colors group-hover:text-white">
                     {feature.title}
                   </h3>

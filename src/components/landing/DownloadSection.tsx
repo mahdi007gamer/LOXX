@@ -3,8 +3,11 @@ import { Link } from "react-router-dom";
 import { motion } from "motion/react";
 import { Monitor, Apple, Smartphone, Download } from "lucide-react";
 import { GlowButton } from "../ui/GlowButton";
+import { useLanguage } from "../../context/LanguageContext";
 
 export const DownloadSection = () => {
+  const { direction } = useLanguage();
+  const isRtl = direction === "rtl";
   const [windowsVersion, setWindowsVersion] = useState<string | null>(null);
   const [windowsUrl, setWindowsUrl] = useState<string>("https://loxx.ir/updater/loxx-Setup-1.1.0.exe");
 
@@ -124,7 +127,7 @@ export const DownloadSection = () => {
   }, []);
 
   return (
-    <section className="py-24 relative overflow-hidden" id="download">
+    <section className="py-24 relative overflow-hidden" id="download" dir={isRtl ? "rtl" : "ltr"}>
       <div className="absolute inset-0 bg-neon-blue/5 skew-y-3 transform -z-10" />
       
       <div className="container mx-auto px-4 max-w-5xl relative z-10 text-center">
@@ -134,9 +137,17 @@ export const DownloadSection = () => {
           viewport={{ once: true }}
           transition={{ duration: 0.8 }}
         >
-          <h2 className="text-4xl md:text-5xl font-black text-white mb-6">دریافت <span className="neon-text-blue">کلاینت‌های</span> لوکس</h2>
-          <p className="text-gray-400 mb-16 max-w-2xl mx-auto text-lg">
-            برای تجربه بدون لگ همراه با تماس صوتی یکپارچه داخل بازی و اورلی ویندوز، کلاینت اختصاصی لوکس را دریافت کنید.
+          <h2 className="text-4xl md:text-5xl font-black text-white mb-6">
+            {isRtl ? (
+              <>دریافت <span className="neon-text-blue">کلاینت‌های</span> لوکس</>
+            ) : (
+              <>Download <span className="neon-text-blue">LOXX</span> Desktop Client</>
+            )}
+          </h2>
+          <p className="text-gray-400 mb-16 max-w-2xl mx-auto text-lg leading-relaxed">
+            {isRtl 
+              ? "برای تجربه بدون لگ همراه با تماس صوتی یکپارچه داخل بازی و اورلی ویندوز، کلاینت اختصاصی لوکس را دریافت کنید."
+              : "For a lag-free experience with integrated in-game real-time voice chat and custom Windows HUD overlays, download the dedicated LOXX client."}
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -149,9 +160,9 @@ export const DownloadSection = () => {
               <div className="absolute -inset-[10px] bg-gradient-to-r from-neon-blue/10 via-neon-pink/10 to-neon-purple/10 opacity-30 blur-xl group-hover:opacity-60 transition-opacity duration-700 pointer-events-none" />
               
               {/* Special Badge */}
-              <div className="absolute top-3 right-3 bg-gradient-to-r from-neon-pink to-neon-purple text-dark-bg text-[10px] font-black px-3 py-1 rounded-full flex items-center gap-1.5 shadow-[0_0_15px_rgba(255,0,153,0.5)] z-20 animate-bounce">
+              <div className={`absolute top-3 ${isRtl ? "left-3" : "right-3"} bg-gradient-to-r from-neon-pink to-neon-purple text-dark-bg text-[10px] font-black px-3 py-1 rounded-full flex items-center gap-1.5 shadow-[0_0_15px_rgba(255,0,153,0.5)] z-20 animate-bounce`}>
                 <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
-                <span>نسخه پیشنهادی و رسمی</span>
+                <span>{isRtl ? "نسخه پیشنهادی و رسمی" : "Recommended Official"}</span>
               </div>
 
               {/* Icon Container with glowing ring & audio wave effect */}
@@ -166,14 +177,16 @@ export const DownloadSection = () => {
               </div>
               
               <h3 className="text-2xl font-black text-white mb-2 z-10 tracking-tight flex items-center gap-2">
-                کلاینت ویندوز Loxx
+                {isRtl ? "کلاینت ویندوز Loxx" : "LOXX Windows Client"}
               </h3>
               
               <p className="text-gray-300 text-xs mb-6 h-12 z-10 font-bold max-w-xs leading-relaxed text-center px-2">
-                روان‌ترین تجربه تماس صوتی ریل‌تایم درون بازی + سیستم هوشمند ضد لگ و پینگ کم
+                {isRtl 
+                  ? "روان‌ترین تجربه تماس صوتی ریل‌تایم درون بازی + سیستم هوشمند ضد لگ و پینگ کم"
+                  : "Smooth real-time voice chat + ultra low ping proxy integration."}
               </p>
               
-              <Link to="/download" className="w-full z-10">
+              <a href={windowsUrl} target="_blank" rel="noopener noreferrer" className="w-full z-10">
                 <motion.div
                   whileHover={{ scale: 1.04 }}
                   whileTap={{ scale: 0.98 }}
@@ -196,15 +209,17 @@ export const DownloadSection = () => {
                     
                     <Download size={20} className="animate-bounce shrink-0" />
                     <span className="font-extrabold text-base">
-                      دریافت نسخه ویندوز {windowsVersion ? `(v${windowsVersion})` : 'مستقیم'}
+                      {isRtl 
+                        ? `دریافت نسخه ویندوز ${windowsVersion ? `(v${windowsVersion})` : 'مستقیم'}`
+                        : `Download Windows Client ${windowsVersion ? `(v${windowsVersion})` : 'Direct'}`}
                     </span>
                   </button>
                 </motion.div>
-              </Link>
+              </a>
               
               {/* Extra micro labels underneath button */}
               <span className="mt-3 text-[10px] text-neon-blue font-black tracking-widest uppercase z-10 group-hover:text-neon-pink transition-colors">
-                حجم فایل کمتر از ۱۰۰ مگابایت
+                {isRtl ? "حجم فایل کمتر از ۱۰۰ مگابایت" : "File size under 100 MB"}
               </span>
 
             </div>
@@ -214,11 +229,13 @@ export const DownloadSection = () => {
               <div className="mb-6 h-20 w-20 rounded-2xl bg-white/5 flex items-center justify-center text-gray-400 group-hover:text-green-400 transition-colors">
                 <Smartphone size={36} />
               </div>
-              <h3 className="text-xl font-bold text-white mb-2">اندروید</h3>
-              <p className="text-gray-500 text-sm mb-6 h-10 group-hover:text-gray-400 transition-colors">دانلود مستقیم و گوگل‌پلی</p>
+              <h3 className="text-xl font-bold text-white mb-2">{isRtl ? "اندروید" : "Android"}</h3>
+              <p className="text-gray-500 text-sm mb-6 h-10 group-hover:text-gray-400 transition-colors">
+                {isRtl ? "دانلود مستقیم و گوگل‌پلی" : "Direct Download & Google Play"}
+              </p>
               
               <button disabled className="w-full py-3 rounded-xl bg-black/50 border border-white/5 text-gray-500 font-bold text-sm cursor-not-allowed">
-                در حال توسعه...
+                {isRtl ? "در حال توسعه..." : "In Development..."}
               </button>
             </div>
 
@@ -227,11 +244,13 @@ export const DownloadSection = () => {
               <div className="mb-6 h-20 w-20 rounded-2xl bg-white/5 flex items-center justify-center text-gray-400 group-hover:text-white transition-colors">
                 <Apple size={36} />
               </div>
-              <h3 className="text-xl font-bold text-white mb-2">iOS</h3>
-              <p className="text-gray-500 text-sm mb-6 h-10 group-hover:text-gray-400 transition-colors">اپ استور و نصب مستقیم</p>
+              <h3 className="text-xl font-bold text-white mb-2">{isRtl ? "iOS" : "Apple iOS"}</h3>
+              <p className="text-gray-500 text-sm mb-6 h-10 group-hover:text-gray-400 transition-colors">
+                {isRtl ? "اپ استور و نصب مستقیم" : "App Store & Direct IPA"}
+              </p>
               
               <button disabled className="w-full py-3 rounded-xl bg-black/50 border border-white/5 text-gray-500 font-bold text-sm cursor-not-allowed">
-                در حال توسعه...
+                {isRtl ? "در حال توسعه..." : "In Development..."}
               </button>
             </div>
 
@@ -240,11 +259,13 @@ export const DownloadSection = () => {
               <div className="mb-6 h-20 w-20 rounded-2xl bg-white/5 flex items-center justify-center text-gray-400 group-hover:text-gray-200 transition-colors">
                 <Monitor size={36} />
               </div>
-              <h3 className="text-xl font-bold text-white mb-2">مک OS</h3>
-              <p className="text-gray-500 text-sm mb-6 h-10 group-hover:text-gray-400 transition-colors">پشتیبانی از پردازنده‌های M1 و M2</p>
+              <h3 className="text-xl font-bold text-white mb-2">{isRtl ? "مک OS" : "macOS"}</h3>
+              <p className="text-gray-500 text-sm mb-6 h-10 group-hover:text-gray-400 transition-colors">
+                {isRtl ? "پشتیبانی از پردازنده‌های M1 و M2" : "Designed for Apple M1, M2 & M3"}
+              </p>
               
               <button disabled className="w-full py-3 rounded-xl bg-black/50 border border-white/5 text-gray-500 font-bold text-sm cursor-not-allowed">
-                به زودی
+                {isRtl ? "به زودی" : "Coming Soon"}
               </button>
             </div>
           </div>

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { MessageSquare, UserPlus, Sword, Zap, Gamepad2 } from "lucide-react";
 import { publicSocket } from "../../lib/socket";
+import { useLanguage } from "../../context/LanguageContext";
 
 type ActivityAction = 'LOBBY_CREATE' | 'LOBBY_JOIN' | 'CHAT_MESSAGE' | 'LEVEL_UP';
 
@@ -24,6 +25,8 @@ const mockNames = ["علیرضا", "Phantom", "سارا", "DarkKnight", "Nima", 
 const mockGames = ["CS2", "Dota 2", "Valorant", "Rainbow Six"];
 
 export const LiveActivity = () => {
+  const { direction } = useLanguage();
+  const isRtl = direction === "rtl";
   const [activities, setActivities] = useState<ActivityItem[]>(initialActivities);
 
   useEffect(() => {
@@ -74,10 +77,53 @@ export const LiveActivity = () => {
     }
   };
 
+  const formatAction = (item: ActivityItem) => {
+    if (isRtl) return item.action;
+    
+    // Dynamic translations for English
+    switch (item.type) {
+      case 'LOBBY_JOIN': {
+        const match = item.action.match(/لابی\s+(.+?)\s+ملحق/) || item.action.match(/لابی\s+(.+)/) || item.action.match(/به لابی\s+(.+?)\s+ملحق/);
+        const game = match ? match[1].trim() : "CS2";
+        return `joined ${game} lobby`;
+      }
+      case 'CHAT_MESSAGE':
+        return "sent a message in global chat";
+      case 'LOBBY_CREATE': {
+        const match = item.action.match(/برای\s+(.+?)\s+ساخت/) || item.action.match(/در\s+(.+?)\s+شروع/);
+        const game = match ? match[1].trim() : "Dota 2";
+        return `created lobby for ${game}`;
+      }
+      case 'LEVEL_UP': {
+        const match = item.action.match(/سطح\s+(\d+)/);
+        const lvl = match ? match[1] : "10";
+        return `leveled up to Level ${lvl}`;
+      }
+      default:
+        return "is active";
+    }
+  };
+
+  const formatUser = (user: string) => {
+    if (isRtl) return user;
+    // Map standard Persian names to English for better localization flow
+    const nameMap: { [key: string]: string } = {
+      "محسن": "Mohsen",
+      "امیرحسین": "Amir",
+      "مریم": "Maryam",
+      "علیرضا": "Alireza",
+      "سارا": "Sara",
+      "زهرا": "Zahra",
+    };
+    return nameMap[user] || user;
+  };
+
   return (
-    <div className="rounded-2xl border border-white/5 bg-white/2 p-6 backdrop-blur-md overflow-hidden relative">
+    <div className="rounded-2xl border border-white/5 bg-white/2 p-6 backdrop-blur-md overflow-hidden relative" dir={isRtl ? "rtl" : "ltr"}>
       <div className="mb-6 flex items-center justify-between relative z-10">
-        <h4 className="font-bold text-white">فعالیت‌های زنده پلتفرم</h4>
+        <h4 className="font-bold text-white">
+          {isRtl ? "فعالیت‌های زنده پلتفرم" : "Live Platform Feed"}
+        </h4>
         <div className="flex h-2 w-2 rounded-full bg-red-500 animate-ping shadow-[0_0_10px_red]" />
       </div>
       
@@ -94,12 +140,14 @@ export const LiveActivity = () => {
                 transition={{ type: "spring", stiffness: 300, damping: 25 }}
                 className="flex items-center gap-4 rounded-xl border border-white/5 bg-white/5 p-3 text-sm hover:bg-white/10 transition-colors"
               >
-                <div className={`p-2 rounded-lg bg-white/5 ${color}`}>
-                   <Icon size={16} />
+                <div className="p-2 rounded-lg bg-white/5 shrink-0">
+                   <Icon size={16} className={color} />
                 </div>
-                <div className="text-right flex-1 truncate">
-                   <span className="font-bold text-white ml-2">{item.user}</span>
-                   <span className="text-gray-400">{item.action}</span>
+                <div className={`flex-1 min-w-0 truncate ${isRtl ? "text-right" : "text-left"}`}>
+                   <span className={isRtl ? "font-bold text-white ml-2" : "font-bold text-white mr-2"}>
+                     {formatUser(item.user)}
+                   </span>
+                   <span className="text-gray-400">{formatAction(item)}</span>
                 </div>
               </motion.div>
             );

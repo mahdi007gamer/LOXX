@@ -2,14 +2,17 @@ import React from "react";
 import { motion, useScroll, useTransform } from "motion/react";
 import { NeonCard } from "../ui/NeonCard";
 import { User, Trophy, ShieldCheck, Zap } from "lucide-react";
+import { useLanguage } from "../../context/LanguageContext";
 
 export const GamerShowcase = () => {
+  const { direction } = useLanguage();
+  const isRtl = direction === "rtl";
   const { scrollYProgress } = useScroll();
   const x = useTransform(scrollYProgress, [0.3, 0.6], [100, 0]);
   const rotate = useTransform(scrollYProgress, [0.3, 0.6], [5, 0]);
 
   return (
-    <section className="relative py-24 overflow-hidden">
+    <section className="relative py-24 overflow-hidden" dir={isRtl ? "rtl" : "ltr"}>
       <div className="container mx-auto max-w-6xl px-4">
         <div className="flex flex-col items-center gap-16 lg:flex-row">
           {/* Character Illustration Area */}
@@ -51,29 +54,45 @@ export const GamerShowcase = () => {
             <div className="absolute -bottom-6 -left-6 z-10 rounded-2xl border border-neon-pink/50 bg-dark-bg/80 p-6 backdrop-blur-xl shadow-2xl">
                <div className="flex items-center gap-3">
                   <div className="h-4 w-4 animate-pulse rounded-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.8)]" />
-                  <span className="text-lg font-bold text-white">۱۲,۴۸۰ گیمر آنلاین</span>
+                  <span className="text-lg font-bold text-white">
+                    {isRtl ? "۱۲,۴۸۰ گیمر آنلاین" : "12,480 Gamers Online"}
+                  </span>
                </div>
             </div>
           </motion.div>
 
-          <div className="flex-1 space-y-8 text-right lg:text-right">
+          <div className={`flex-1 space-y-8 ${isRtl ? "text-right" : "text-left"}`}>
              <motion.div
-               initial={{ opacity: 0, x: -50 }}
-               whileInView={{ opacity: 1, x: 0 }}
-               viewport={{ once: true }}
+                initial={{ opacity: 0, x: -50 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
              >
-                <h2 className="text-4xl font-black text-white sm:text-5xl lg:text-6xl">
-                  به دنیای <span className="neon-text-pink">نامحدود</span> لوکس ملحق شوید
+                <h2 className="text-4xl font-black text-white sm:text-5xl lg:text-6xl leading-[1.25]">
+                  {isRtl ? (
+                    <>به دنیای <span className="neon-text-pink">نامحدود</span> لوکس ملحق شوید</>
+                  ) : (
+                    <>Join the <span className="neon-text-pink">Limitless</span> World of LOXX</>
+                  )}
                 </h2>
                 <p className="mt-8 text-xl leading-relaxed text-gray-400">
-                  لوکس فقط یک پلتفرم نیست؛ یک اکوسیستم کامل برای گیمرهایی است که به دنبال پیشرفت، رقابت و برقراری ارتباط با دیگران هستند.
+                  {isRtl 
+                    ? "لوکس فقط یک پلتفرم نیست؛ یک اکوسیستم کامل برای گیمرهایی است که به دنبال پیشرفت، رقابت و برقراری ارتباط با دیگران هستند." 
+                    : "LOXX is not just a gaming channel; it's a complete ecosystem built for players looking to level up, rival standard matchmaking, and connect."}
                 </p>
              </motion.div>
 
              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                 {[
-                  { icon: ShieldCheck, label: "امنیت حرفه‌ای", val: "تایید هویت دو مرحله‌ای" },
-                  { icon: Zap, label: "سرعت خیره‌کننده", val: "سرورهای ایران با کمترین پینگ" }
+                  { 
+                    icon: ShieldCheck, 
+                    label: isRtl ? "امنیت حرفه‌ای" : "Pro Security", 
+                    val: isRtl ? "تایید هویت دو مرحله‌ای" : "Two-factor Authentication (2FA)" 
+                  },
+                  { 
+                    icon: Zap, 
+                    label: isRtl ? "سرعت خیره‌کننده" : "Blazing Performance", 
+                    val: isRtl ? "سرورهای ایران با کمترین پینگ" : "High bandwidth networks, lowest ping routes" 
+                  }
                 ].map((item, i) => (
                   <div key={i} className="flex flex-col items-start gap-3 rounded-2xl border border-white/5 bg-white/5 p-6 hover:bg-white/10 transition-colors">
                      <div className="h-10 w-10 flex items-center justify-center rounded-lg bg-neon-blue/10 text-neon-blue">

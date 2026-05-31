@@ -48,7 +48,8 @@ export const SettingsPage = () => {
   const { tab } = useParams();
   const { user: authUser, refreshUser, isSidebarCollapsed } = useAuth();
   const { language, setLanguage } = useLanguage();
-  const [activeTab, setActiveTab] = useState<SettingsTab>((tab as SettingsTab) || "profile");
+  const isRtl = language === "fa";
+  const [activeTab, setActiveTab ] = useState<SettingsTab>((tab as SettingsTab) || "profile");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -249,7 +250,7 @@ export const SettingsPage = () => {
   };
 
     const isVip = authUser?.membership === "VIP" || authUser?.membership === "PLUS" || (authUser as any)?.role === "STREAMER";
-    const isRtlStyle = language === "fa";
+    const isRtlStyle = isRtl;
     const tabs = [
     ...(isVip ? [{ id: "elite" as const, icon: Crown, label: isRtlStyle ? "تنظیمات نخبگان" : "Elite Settings" }] : []),
     { id: "profile" as const, icon: User, label: isRtlStyle ? "پروفایل عمومی" : "Public Profile" },
@@ -282,12 +283,16 @@ export const SettingsPage = () => {
                   <Crown size={32} />
                 </div>
                 <div>
-                  <h3 className="text-xl font-black text-white italic uppercase tracking-tight">تنظیمات نخبگان (Elite Settings)</h3>
-                  <p className="text-[10px] text-yellow-400/70 font-bold uppercase tracking-[0.2em] mt-1">شخصی‌سازی پیشرفته مینی‌پروفایل، فریم‌ها و افکت‌های VIP</p>
+                  <h3 className="text-xl font-black text-white italic uppercase tracking-tight">
+                    {isRtl ? "تنظیمات نخبگان (Elite Settings)" : "Elite Settings (VIP & Streamer)"}
+                  </h3>
+                  <p className="text-[10px] text-yellow-400/70 font-bold uppercase tracking-[0.2em] mt-1">
+                    {isRtl ? "شخصی‌سازی پیشرفته مینی‌پروفایل، فریم‌ها و افکت‌های VIP" : "Advanced customization of mini-profile, frames, and VIP aura effects"}
+                  </p>
                 </div>
               </div>
               <div className="h-12 w-12 rounded-full border border-yellow-400/30 flex items-center justify-center group-hover:bg-yellow-400/10 transition-all">
-                <ArrowRight className="text-yellow-400 -rotate-45 group-hover:rotate-0 transition-transform" />
+                <ArrowRight className={cn("text-yellow-400 transition-transform", isRtl ? "-rotate-45 group-hover:rotate-0" : "rotate-135 group-hover:rotate-180")} />
               </div>
             </div>
           </NeonCard>
@@ -312,8 +317,10 @@ export const SettingsPage = () => {
             </div>
           </div>
           <div className="flex-1">
-            <h3 className="font-black text-white italic">تصویر پروفایل</h3>
-            <p className="text-[10px] text-gray-500 font-bold uppercase mt-1 mb-3">تصویر خود را آپلود کنید (فقط فرمت‌های PNG و JPG).</p>
+            <h3 className="font-black text-white italic">{isRtl ? "تصویر پروفایل" : "Profile Picture"}</h3>
+            <p className="text-[10px] text-gray-500 font-bold uppercase mt-1 mb-3">
+              {isRtl ? "تصویر خود را آپلود کنید (فقط فرمت‌های PNG و JPG)." : "Upload your profile icon (PNG, JPG and WEBP formats supported)."}
+            </p>
             <div className="flex flex-col sm:flex-row gap-4 items-end">
               <div className="flex-none">
                 <input 
@@ -326,11 +333,11 @@ export const SettingsPage = () => {
                       const file = e.target.files[0];
                       const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
                       if (!allowedTypes.includes(file.type)) {
-                        toast.error("فقط فایل‌های JPG، PNG، GIF و WEBP مجاز هستند");
+                        toast.error(isRtl ? "فقط فایل‌های JPG، PNG، GIF و WEBP مجاز هستند" : "Only JPG, PNG, GIF, and WEBP formats are allowed");
                         return;
                       }
                       if (file.size > 5 * 1024 * 1024) {
-                        toast.error("حجم فایل نباید بیشتر از ۵ مگابایت باشد");
+                        toast.error(isRtl ? "حجم فایل نباید بیشتر از ۵ مگابایت باشد" : "File size cannot exceed 5MB");
                         return;
                       }
                       const data = new FormData();
@@ -341,24 +348,24 @@ export const SettingsPage = () => {
                         });
                         if (res.data.url) {
                           setFormData(p => ({ ...p, avatarUrl: res.data.url }));
-                          toast.success("تصویر با موفقیت آپلود شد");
-                        } else {
-                          toast.error("خطا در دریافت تصویر آپلود شده");
+                          toast.success(isRtl ? "تصویر با موفقیت آپلود شد" : "Avatar uploaded successfully");
                         }
-                      } catch (err: any) {
-                        toast.error(err.response?.data?.error?.message || "خطا در آپلود تصویر");
+                      } catch {
+                        toast.error(isRtl ? "خطا در آپلود تصویر" : "Error uploading avatar image");
                       }
                     }
                   }}
                 />
                 <label htmlFor="avatar-upload" className="h-[46px] px-6 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-xs font-black italic cursor-pointer hover:bg-white/10 hover:border-neon-blue/30 transition-all text-white shrink-0">
-                  <Camera size={16} className="ml-2" />
-                  آپلود تصویر
+                  <Camera size={16} className={cn(isRtl ? "ml-2" : "mr-2")} />
+                  {isRtl ? "آپلود تصویر" : "Upload Avatar"}
                 </label>
               </div>
             </div>
-            <div className="mt-2 text-right">
-              <button onClick={() => setFormData(p => ({ ...p, avatarUrl: "" }))} className="text-[10px] text-gray-600 font-black uppercase italic hover:text-neon-pink transition-colors">حذف تصویر</button>
+            <div className={cn("mt-2", isRtl ? "text-right" : "text-left")}>
+              <button onClick={() => setFormData(p => ({ ...p, avatarUrl: "" }))} className="text-[10px] text-gray-600 font-black uppercase italic hover:text-neon-pink transition-colors">
+                {isRtl ? "حذف تصویر" : "Remove Avatar"}
+              </button>
             </div>
           </div>
         </div>
@@ -367,8 +374,10 @@ export const SettingsPage = () => {
 
         <div className="flex items-center gap-6">
           <div className="flex-1">
-            <h3 className="font-black text-white italic">تصویر کاور (بنر)</h3>
-            <p className="text-[10px] text-gray-500 font-bold uppercase mt-1 mb-3">تصویر بنر پروفایل خود را آپلود کنید (حداکثر ۵ مگابایت، JPG، PNG، GIF و WEBP).</p>
+            <h3 className="font-black text-white italic">{isRtl ? "تصویر کاور (بنر)" : "Profile Cover (Banner)"}</h3>
+            <p className="text-[10px] text-gray-500 font-bold uppercase mt-1 mb-3">
+              {isRtl ? "تصویر بنر پروفایل خود را آپلود کنید (حداکثر ۵ مگابایت، JPG، PNG، GIF و WEBP)." : "Upload profile banner image (Max 5MB, JPG, PNG, GIF, WEBP)."}
+            </p>
             <div className="flex flex-col sm:flex-row gap-4 items-end">
               <div className="flex-none">
                 <input 
@@ -406,8 +415,8 @@ export const SettingsPage = () => {
                   }}
                 />
                 <label htmlFor="banner-upload" className="h-[46px] px-6 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-xs font-black italic cursor-pointer hover:bg-white/10 hover:border-neon-blue/30 transition-all text-white shrink-0">
-                  <Camera size={16} className="ml-2" />
-                  آپلود بنر
+                  <Camera size={16} className={cn(isRtl ? "ml-2" : "mr-2")} />
+                  {isRtl ? "آپلود بنر" : "Upload Banner"}
                 </label>
               </div>
             </div>
@@ -416,8 +425,10 @@ export const SettingsPage = () => {
                  <SmartImage src={formData.bannerUrl} alt="Banner Preview" className="w-full h-full object-cover" />
               </div>
             )}
-            <div className="mt-2 text-right">
-              <button onClick={() => setFormData(p => ({ ...p, bannerUrl: "" }))} className="text-[10px] text-gray-600 font-black uppercase italic hover:text-neon-pink transition-colors">حذف بنر</button>
+            <div className={cn("mt-2", isRtl ? "text-right" : "text-left")}>
+              <button onClick={() => setFormData(p => ({ ...p, bannerUrl: "" }))} className="text-[10px] text-gray-600 font-black uppercase italic hover:text-neon-pink transition-colors">
+                {isRtl ? "حذف بنر" : "Remove Cover"}
+              </button>
             </div>
           </div>
         </div>
@@ -426,36 +437,38 @@ export const SettingsPage = () => {
 
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
           <Input 
-             label="نام نمایشی" 
-             placeholder="Ali_Gamer_98" 
+             label={isRtl ? "نام نمایشی" : "Display Name"} 
+             placeholder={isRtl ? "Ali_Gamer_98" : "e.g. Maverick_98"} 
              value={formData.displayName}
              onChange={(e) => setFormData(p => ({ ...p, displayName: e.target.value }))}
           />
           <Input 
-             label="آیدی یکتا (Handle)" 
+             label={isRtl ? "آیدی یکتا (Handle)" : "Unique Handle (Username)"} 
              placeholder="aligamer" 
              value={formData.username}
              disabled
           />
           <div className="sm:col-span-2">
-            <label className="block px-1 text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2 italic">درباره شما (Bio)</label>
+            <label className="block px-1 text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2 italic">
+              {isRtl ? "درباره شما (Bio)" : "About You (Bio)"}
+            </label>
             <textarea 
               className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-gray-700 transition-all focus:border-neon-blue/50 focus:outline-none h-32 resize-none"
-              placeholder="کمی در مورد خودتان، بازی‌هایی که دوست دارید و ... بنویسید"
+              placeholder={isRtl ? "کمی در مورد خودتان، بازی‌هایی که دوست دارید و ... بنویسید" : "Tell us a bit about yourself, games you play..."}
               value={formData.bio}
               onChange={(e) => setFormData(p => ({ ...p, bio: e.target.value }))}
             />
           </div>
         </div>
 
-        <div className="flex justify-end pt-4 border-t border-white/5">
+        <div className={cn("flex pt-4 border-t border-white/5", isRtl ? "justify-end" : "justify-start")}>
           <GlowButton 
              variant="blue" 
              className="px-10 h-10 text-[11px] font-black uppercase italic"
              onClick={handleSaveProfile}
              disabled={saving}
           >
-            {saving ? "در حال ذخیره..." : "ذخیره تغییرات پروفایل"}
+            {saving ? (isRtl ? "در حال ذخیره..." : "Saving...") : (isRtl ? "ذخیره تغییرات پروفایل" : "Save Profile Changes")}
           </GlowButton>
         </div>
       </NeonCard>
@@ -567,17 +580,17 @@ export const SettingsPage = () => {
            <div className="flex items-center justify-between mb-4">
              <div>
                <h3 className="font-black text-white italic mb-1 flex items-center gap-2">
-                 وضعیت تایید حساب
+                 {isRtl ? "وضعیت تایید حساب" : "Account Verification Status"}
                  {authUser?.isVerified ? (
-                   <span className="text-[10px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded uppercase not-italic">حساب تایید شده</span>
+                   <span className="text-[10px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded uppercase not-italic">{isRtl ? "حساب تایید شده" : "Verified Account"}</span>
                  ) : (
-                   <span className="text-[10px] bg-red-500/20 text-red-400 px-2 py-0.5 rounded uppercase not-italic">حساب تایید نشده</span>
+                   <span className="text-[10px] bg-red-500/20 text-red-400 px-2 py-0.5 rounded uppercase not-italic">{isRtl ? "حساب تایید نشده" : "Unverified Account"}</span>
                  )}
                </h3>
-               <p className="text-[10px] text-gray-500 font-bold uppercase italic">{authUser?.isVerified ? "هویت شما با موفقیت تایید شده است." : "برای دسترسی به تمامی امکانات، حساب خود را تایید کنید"}</p>
+               <p className="text-[10px] text-gray-500 font-bold uppercase italic">{isRtl ? (authUser?.isVerified ? "هویت شما با موفقیت تایید شده است." : "برای دسترسی به تمامی امکانات، حساب خود را تایید کنید") : (authUser?.isVerified ? "Your identity is verified and in good standing." : "Verify your account email to access all platform features.")}</p>
              </div>
              {!authUser?.isVerified && (
-               <GlowButton variant="blue" size="sm" className="text-[10px] font-black uppercase italic px-6 border-none" onClick={handleSendVerificationEmail}>تایید پروفایل</GlowButton>
+               <GlowButton variant="blue" size="sm" className="text-[10px] font-black uppercase italic px-6 border-none" onClick={handleSendVerificationEmail}>{isRtl ? "تایید پروفایل" : "Verify Profile"}</GlowButton>
              )}
            </div>
         </div>
@@ -588,19 +601,19 @@ export const SettingsPage = () => {
            <div className="flex items-center justify-between mb-4">
              <div>
                <h3 className="font-black text-white italic mb-1 flex items-center gap-2">
-                 تایید دو مرحله‌ای (SMS) 
+                 {isRtl ? "تایید دو مرحله‌ای (SMS)" : "Two-Factor Auth (SMS)"} 
                  {twoFactorEnabled ? (
-                   <span className="text-[10px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded uppercase not-italic">فعال</span>
+                   <span className="text-[10px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded uppercase not-italic">{isRtl ? "فعال" : "Enabled"}</span>
                  ) : (
-                   <span className="text-[10px] bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded uppercase not-italic">غیرفعال</span>
+                   <span className="text-[10px] bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded uppercase not-italic">{isRtl ? "غیرفعال" : "Disabled"}</span>
                  )}
                </h3>
-               <p className="text-[10px] text-gray-500 font-bold uppercase italic">کد تایید امنیتی هنگام ورود به شماره همراه شما پیامک خواهد شد</p>
+               <p className="text-[10px] text-gray-500 font-bold uppercase italic">{isRtl ? "کد تایید امنیتی هنگام ورود به شماره همراه شما پیامک خواهد شد" : "Security codes will be messaged to your phone when you log in."}</p>
              </div>
              {twoFactorEnabled ? (
-               <GlowButton variant="purple" size="sm" className="text-[10px] font-black uppercase italic px-6 border-none bg-red-500/10 text-red-500 hover:bg-red-500/20 hover:text-red-400 shadow-none" onClick={handleDisable2FA} disabled={saving}>غیرفعال‌سازی 2FA</GlowButton>
+               <GlowButton variant="purple" size="sm" className="text-[10px] font-black uppercase italic px-6 border-none bg-red-500/10 text-red-500 hover:bg-red-500/20 hover:text-red-400 shadow-none" onClick={handleDisable2FA} disabled={saving}>{isRtl ? "غیرفعال‌سازی 2FA" : "Disable 2FA"}</GlowButton>
              ) : (
-               <GlowButton variant="blue" size="sm" className="text-[10px] font-black uppercase italic px-6 border-none" onClick={handleEnable2FA} disabled={saving}>فعال‌سازی 2FA</GlowButton>
+               <GlowButton variant="blue" size="sm" className="text-[10px] font-black uppercase italic px-6 border-none" onClick={handleEnable2FA} disabled={saving}>{isRtl ? "فعال‌سازی 2FA" : "Enable 2FA"}</GlowButton>
              )}
            </div>
         </div>
@@ -659,23 +672,23 @@ export const SettingsPage = () => {
         <hr className="border-white/5" />
 
         <div>
-          <h3 className="font-black text-white italic mb-1">تغییر رمز عبور</h3>
-          <p className="text-[10px] text-gray-500 font-bold uppercase mb-6 italic">برای امنیت بیشتر از رمزهای طولانی استفاده کنید</p>
+          <h3 className="font-black text-white italic mb-1">{isRtl ? "تغییر رمز عبور" : "Change Password"}</h3>
+          <p className="text-[10px] text-gray-500 font-bold uppercase mb-6 italic">{isRtl ? "برای امنیت بیشتر از رمزهای طولانی استفاده کنید" : "Use custom long passwords for maximum security."}</p>
           <div className="space-y-6 max-w-md">
             <Input 
-               label="رمز عبور فعلی" 
+               label={isRtl ? "رمز عبور فعلی" : "Current Password"} 
                type="password" 
                value={formData.currentPassword}
                onChange={(e) => setFormData(p => ({ ...p, currentPassword: e.target.value }))}
             />
             <Input 
-               label="رمز عبور جدید" 
+               label={isRtl ? "رمز عبور جدید" : "New Password"} 
                type="password" 
                value={formData.newPassword}
                onChange={(e) => setFormData(p => ({ ...p, newPassword: e.target.value }))}
             />
             <Input 
-               label="تکرار رمز عبور جدید" 
+               label={isRtl ? "تکرار رمز عبور جدید" : "Confirm New Password"} 
                type="password" 
                value={formData.confirmPassword}
                onChange={(e) => setFormData(p => ({ ...p, confirmPassword: e.target.value }))}
@@ -688,7 +701,7 @@ export const SettingsPage = () => {
                onClick={handlePasswordChange}
                disabled={saving}
             >
-              {saving ? "در حال تغییر..." : "به‌روزرسانی رمز عبور"}
+              {saving ? (isRtl ? "در حال تغییر..." : "Updating...") : (isRtl ? "به‌روزرسانی رمز عبور" : "Update Password")}
             </GlowButton>
           </div>
         </div>
@@ -696,7 +709,7 @@ export const SettingsPage = () => {
         <hr className="border-white/5" />
 
         <div>
-          <h3 className="font-black text-white italic mb-4">دستگاه‌های متصل</h3>
+          <h3 className="font-black text-white italic mb-4">{isRtl ? "دستگاه‌های متصل" : "Connected Devices"}</h3>
           <div className="space-y-3">
              {(devices || []).map((session, i) => (
                <div key={i} className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/5 group hover:border-white/10 transition-all">
@@ -707,39 +720,39 @@ export const SettingsPage = () => {
                     <div>
                       <h4 className="text-xs font-black text-white italic flex items-center gap-2">
                         {session.deviceName}
-                        {i === 0 && <span className="text-[8px] text-neon-blue uppercase">اخیر</span>}
+                        {i === 0 && <span className="text-[8px] text-neon-blue uppercase">{isRtl ? "اخیر" : "Recent"}</span>}
                       </h4>
                       <p className="text-[10px] text-gray-500 font-bold">{session.ipAddress}</p>
                     </div>
                   </div>
-                  <button onClick={() => handleRevokeDevice(session.id)} className="text-[10px] font-black text-neon-pink uppercase italic opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">خروج</button>
+                  <button onClick={() => handleRevokeDevice(session.id)} className="text-[10px] font-black text-neon-pink uppercase italic opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">{isRtl ? "خروج" : "Logout"}</button>
                </div>
              ))}
              {(!devices || devices.length === 0) && (
-               <p className="text-[10px] text-gray-500 font-bold uppercase">در حال بارگذاری...</p>
+               <p className="text-[10px] text-gray-500 font-bold uppercase">{isRtl ? "در حال بارگذاری..." : "Loading..."}</p>
              )}
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
            <SecurityStatusCard 
-             title="وضعیت تایید حساب" 
-             status={authUser?.isVerified ? "تایید شده" : "در انتظار تایید"}
-             desc={authUser?.isVerified ? "حساب شما کاملاً تایید شده و به تمامی امکانات دسترسی دارید." : "تایید ایمیل برای دسترسی به تمامی امکانات لابی و فروشگاه الزامی است."}
+             title={isRtl ? "وضعیت تایید حساب" : "Account Verification"} 
+             status={authUser?.isVerified ? (isRtl ? "تایید شده" : "Verified") : (isRtl ? "در انتظار تایید" : "Pending")}
+             desc={authUser?.isVerified ? (isRtl ? "حساب شما کاملاً تایید شده و به تمامی امکانات دسترسی دارید." : "Your account is high standing and fully verified.") : (isRtl ? "تایید ایمیل برای دسترسی به تمامی امکانات لابی و فروشگاه الزامی است." : "Please verify your email to unlock all lobbies, chat and store privileges.")}
              icon={<Mail size={20} className="text-neon-blue" />}
              color={authUser?.isVerified ? "green" : "red"}
            />
            <SecurityStatusCard 
-             title="تایید دو مرحله‌ای" 
-             status={twoFactorEnabled ? "فعال" : "غیرفعال"}
-             desc={twoFactorEnabled ? "تایید دو مرحله‌ای فعال است و امنیت حساب شما را تضمین می‌کند." : "برای جلوگیری از دسترسی غیرمجاز، تایید دو مرحله‌ای را فعال کنید."}
+             title={isRtl ? "تایید دو مرحله‌ای" : "2FA Protection"} 
+             status={twoFactorEnabled ? (isRtl ? "فعال" : "Enabled") : (isRtl ? "غیرفعال" : "Disabled")}
+             desc={twoFactorEnabled ? (isRtl ? "تایید دو مرحله‌ای فعال است و امنیت حساب شما را تضمین می‌کند." : "2FA protection is armed and securing your sessions.") : (isRtl ? "برای جلوگیری از دسترسی غیرمجاز، تایید دو مرحله‌ای را فعال کنید." : "Secure your account from remote brute force attacks by enabling 2FA SMS.")}
              icon={<Lock size={20} className="text-neon-purple" />}
              color={twoFactorEnabled ? "green" : "blue"}
            />
            <SecurityStatusCard 
-             title="محافظت از اکانت" 
-             status="تحت نظارت"
-             desc="سیستم ضد تقلب و محافظت از اکانت لoxx به صورت ۲۴ ساعته فعال است."
+             title={isRtl ? "محافظت از اکانت" : "Account Protection"} 
+             status={isRtl ? "تحت نظارت" : "Monitored"}
+             desc={isRtl ? "سیستم ضد تقلب و محافظت از اکانت لoxx به صورت ۲۴ ساعته فعال است." : "The LOXX anti-cheat and token guard system is active 24/7."}
              icon={<SecurityAlert size={20} className="text-neon-pink" />}
              color="green"
            />
@@ -930,14 +943,14 @@ export const SettingsPage = () => {
     <div className="space-y-4">
       <NeonCard variant="blue" className="p-0 overflow-hidden">
         <div className="p-6 border-b border-white/5">
-          <h3 className="font-black text-white italic">مدیریت اعلان‌ها</h3>
-          <p className="text-[10px] text-gray-500 font-bold uppercase italic">نحوه اطلاع از رویدادهای Loxx را انتخاب کنید</p>
+          <h3 className="font-black text-white italic">{isRtl ? "مدیریت اعلان‌ها" : "Manage Notifications"}</h3>
+          <p className="text-[10px] text-gray-500 font-bold uppercase italic">{isRtl ? "نحوه اطلاع از رویدادهای Loxx را انتخاب کنید" : "Configure how you receive platform updates and alerts"}</p>
         </div>
         <div className="divide-y divide-white/5">
           {[
-            { key: "receiveFriendRequests", label: "درخواست‌های دوستی", desc: "وقتی کسی برای شما درخواست دوستی می‌فرستد", icon: User },
-            { key: "receiveLobbyInvites", label: "دعوت به لابی", desc: "وقتی دوستانتان شما را به بازی دعوت می‌کنند", icon: User },
-            { key: "showMentionAlerts", label: "اعلان‌های منشن", desc: "وقتی کسی شما را در چت منشن می‌کند", icon: Bell },
+            { key: "receiveFriendRequests", label: isRtl ? "درخواست‌های دوستی" : "Friend Requests", desc: isRtl ? "وقتی کسی برای شما درخواست دوستی می‌فرستد" : "When someone sends you a friend invite", icon: User },
+            { key: "receiveLobbyInvites", label: isRtl ? "دعوت به لابی" : "Lobby Invitations", desc: isRtl ? "وقتی دوستانتان شما را به بازی دعوت می‌کنند" : "When playing buddies invite you to a lobby", icon: User },
+            { key: "showMentionAlerts", label: isRtl ? "اعلان‌های منشن" : "Mention Alerts", desc: isRtl ? "وقتی کسی شما را در چت منشن می‌کند" : "When someone @mentions you in any channel", icon: Bell },
           ].map((item, i) => (
             <label key={i} className="flex items-center justify-between p-6 hover:bg-white/5 transition-colors group cursor-pointer border-b border-white/5 last:border-b-0">
                <div className="flex gap-4">
@@ -969,13 +982,13 @@ export const SettingsPage = () => {
     <div className="space-y-6">
       <NeonCard variant="blue" className="space-y-8">
         <div>
-          <h3 className="font-black text-white italic mb-1">وضعیت و تم</h3>
-          <p className="text-[10px] text-gray-500 font-bold uppercase mb-6 italic">ظاهر برنامه خود را شخصی‌سازی کنید</p>
+          <h3 className="font-black text-white italic mb-1">{isRtl ? "وضعیت و تم" : "Status & Theme"}</h3>
+          <p className="text-[10px] text-gray-500 font-bold uppercase mb-6 italic">{isRtl ? "ظاهر برنامه خود را شخصی‌سازی کنید" : "Personalize your visual appearance"}</p>
           <div className="space-y-4">
             <label className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/5 cursor-pointer hover:border-white/10">
                <div className="flex items-center gap-3">
                  <Eye size={16} className="text-gray-500" />
-                 <span className="text-xs font-black text-white italic">نمایش وضعیت آنلاین</span>
+                 <span className="text-xs font-black text-white italic">{isRtl ? "نمایش وضعیت آنلاین" : "Show Online Status"}</span>
                </div>
                <input 
                  type="checkbox" 
@@ -987,7 +1000,7 @@ export const SettingsPage = () => {
             <div className="p-4 rounded-xl bg-white/5 border border-white/10">
                 <div className="flex items-center gap-3 mb-4">
                    <Monitor size={16} className="text-gray-500" />
-                   <span className="text-xs font-black text-white italic uppercase">تم برنامه</span>
+                   <span className="text-xs font-black text-white italic uppercase">{isRtl ? "تم برنامه" : "App Theme"}</span>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                     {['dark', 'high-contrast'].map((t) => (
@@ -999,7 +1012,7 @@ export const SettingsPage = () => {
                           settings.theme === t ? "bg-neon-blue/10 border-neon-blue text-neon-blue" : "bg-white/5 border-white/5 text-gray-500 hover:border-white/20"
                         )}
                       >
-                        {t === 'dark' ? 'حالت تاریک' : 'کنتراست بالا'}
+                        {t === 'dark' ? (isRtl ? 'حالت تاریک' : 'Dark Mode') : (isRtl ? 'کنتراست بالا' : 'High Contrast')}
                       </button>
                     ))}
                 </div>
@@ -1010,13 +1023,13 @@ export const SettingsPage = () => {
         <hr className="border-white/5" />
 
         <div>
-          <h3 className="font-black text-white italic mb-1">عملکرد</h3>
-          <p className="text-[10px] text-gray-500 font-bold uppercase mb-6 italic">بهینه‌سازی برای دستگاه‌های مختلف</p>
+          <h3 className="font-black text-white italic mb-1">{isRtl ? "عملکرد" : "Performance"}</h3>
+          <p className="text-[10px] text-gray-500 font-bold uppercase mb-6 italic">{isRtl ? "بهینه‌سازی برای دستگاه‌های مختلف" : "Optimize rendering for your devices"}</p>
           <div className="space-y-4">
             <label className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/5 cursor-pointer hover:border-white/10">
                <div className="flex items-center gap-3">
                  <Zap size={16} className="text-gray-500" />
-                 <span className="text-xs font-black text-white italic">کاهش انیمیشن‌ها</span>
+                 <span className="text-xs font-black text-white italic">{isRtl ? "کاهش انیمیشن‌ها" : "Reduce Animations"}</span>
                </div>
                <input 
                  type="checkbox" 
@@ -1093,51 +1106,51 @@ export const SettingsPage = () => {
   const [supportMessage, setSupportMessage] = useState("");
 
   const handleSendSupport = async () => {
-    if (!supportMessage.trim()) { toast.error("متن پیام خالی است"); return; }
+    if (!supportMessage.trim()) { toast.error(isRtl ? "متن پیام خالی است" : "Message text cannot be empty"); return; }
     setSaving(true);
     try {
       await api.post("/reports", {
         targetType: "TICKET",
         reason: supportMessage
       });
-      toast.success("پیام شما با موفقیت ارسال شد");
+      toast.success(isRtl ? "پیام شما با موفقیت ارسال شد" : "Your message has been successfully sent");
       setSupportMessage("");
-    } catch { toast.error("خطا در ارسال پیام"); }
+    } catch { toast.error(isRtl ? "خطا در ارسال پیام" : "Error sending message"); }
     finally { setSaving(false); }
   };
 
   const faqItems = [
     {
-      q: "۱. پلتفرم لوکس دقیقاً چیست و چه تفاوتی با نمونه‌های مشابه دارد؟",
-      a: "لوکس (LOXX) یک پلتفرم کامل و همه جانبه فارسی است که بستر فوق‌العاده‌ای را برای ارتباط گرفتن، رفیق پیدا کردن و برقراری ارتباط موثر متنی و صوتی با بالاترین کیفیت ممکن فراهم کرده است. ما با رفع محدودیت‌های موجود برای کاربران ایرانی، فضایی دوستانه و تعاملی ایجاد کرده‌ایم تا بتوانید به راحتی با دوستان جدید آشنا شوید و با آن‌ها گفتگو کنید."
+      q: isRtl ? "۱. پلتفرم لوکس دقیقاً چیست و چه تفاوتی با نمونه‌های مشابه دارد؟" : "1. What is the LOXX platform and how is it different?",
+      a: isRtl ? "لوکس (LOXX) یک پلتفرم کامل و همه جانبه فارسی است که بستر فوق‌العاده‌ای را برای ارتباط گرفتن، رفیق پیدا کردن و برقراری ارتباط موثر متنی و صوتی با بالاترین کیفیت ممکن فراهم کرده است. ما با رفع محدودیت‌های موجود برای کاربران ایرانی، فضایی دوستانه و تعاملی ایجاد کرده‌ایم تا بتوانید به راحتی با دوستان جدید آشنا شوید و با آن‌ها گفتگو کنید." : "LOXX is an all-in-one gaming community platform that provides chat, lobbies, and premium voice comms. We've removed limitations for Iranian gamers, creating a highly interactive space to meet new partners and sync up."
     },
     {
-      q: "۲. سیستم تونلینگ LAN در کلاینت ویندوز چگونه کار می‌کند؟",
-      a: "ما یک معماری انحصاری TCP/UDP Relay پیاده‌سازی کرده‌ایم. کلاینت لوکس به صورت خودکار پورت‌های استاندارد بازی‌ها (مثل Minecraft، Warcraft III، CS و…) را رصد کرده و بسته‌های دیسکاوری را مستقیماً در شبکه محلی شما تزریق می‌کند. این یعنی به محض ورود به یک لابی در لوکس، بازی شما در لیست LAN ویندوز ظاهر می‌شود؛ بدون هاماچی، بدون درایور مجازی و بدون دردسر."
+      q: isRtl ? "۲. سیستم تونلینگ LAN در کلاینت ویندوز چگونه کار می‌کند؟" : "2. How does LAN tunneling work in the Windows Client?",
+      a: isRtl ? "ما یک معماری انحصاری TCP/UDP Relay پیاده‌سازی کرده‌ایم. کلاینت لوکس به صورت خودکار پورت‌های استاندارد بازی‌ها (مثل Minecraft، Warcraft III، CS و…) را رصد کرده و بسته‌های دیسکاوری را مستقیماً در شبکه محلی شما تزریق می‌کند. این یعنی به محض ورود به یک لابی در لوکس، بازی شما در لیست LAN ویندوز ظاهر می‌شود؛ بدون هاماچی، بدون درایور مجازی و بدون دردسر." : "We have implemented a custom TCP/UDP Relay architecture. The LOXX desktop client listens to standard game discovery ports (e.g., Minecraft, Warcraft III, Counter-Strike) and relays discovery broadcasts directly. Games appear in Windows LAN lists instantly without virtual NICs or Hamachi."
     },
     {
-      q: "۳. چرا بخش لابی‌های آفلاین (LAN) در نسخه وب نمایش داده نمی‌شود؟",
-      a: "به دلیل محدودیت‌های امنیتی مرورگرها در دسترسی به لایه‌های زیرین شبکه، سیستم پیشرفته Tunneling فقط در نسخه کلاینت ویندوز فعال است. کلاینت لوکس با تشخیص پلتفرم، تمامی امکانات لازم برای اتصال مستقیم را در اختیار شما قرار می‌دهد، در حالی که نسخه وب برای مدیریت حساب و چت سراسری بهینه شده است."
+      q: isRtl ? "۳. چرا بخش لابی‌های آفلاین (LAN) در نسخه وب نمایش داده نمی‌شود؟" : "3. Why does the LAN Lobby section not show up on the Web version?",
+      a: isRtl ? "به دلیل محدودیت‌های امنیتی مرورگرها در دسترسی به لایه‌های زیرین شبکه، سیستم پیشرفته Tunneling فقط در نسخه کلاینت ویندوز فعال است. کلاینت لوکس با تشخیص پلتفرم، تمامی امکانات لازم برای اتصال مستقیم را در اختیار شما قرار می‌دهد، در حالی که نسخه وب برای مدیریت حساب و چت سراسری بهینه شده است." : "Browser sandboxing prevents raw socket bindings required for packet level routing. Desktop clients natively resolve these configurations, whereas the web is tailored for global chats and user profile configurations."
     },
     {
-      q: "۴. تفاوت اشتراک‌های VIP و +LOXX در چیست؟",
-      a: "همانطور که در بخش «ارتقای سطح کاربری» مشاهده می‌کنید:\n\nLOXX PLUS: مخصوص کاربرانی است که به دنبال شخصی‌سازی پروفایل (آواتار متحرک، استیکرهای اختصاصی، نشان مخصوص) و اولویت در لیست لابی‌ها هستند.\nLOXX VIP: سطح نخبگان لوکس است که علاوه بر تمام قابلیت‌های پلاس، به تنظیمات پیشرفته Elite، ظرفیت XP دوبرابر، گروه‌های چت VIP و تم‌های طلایی اختصاصی دسترسی دارند."
+      q: isRtl ? "۴. تفاوت اشتراک‌های VIP و +LOXX در چیست؟" : "4. What is the difference between LOXX VIP and LOXX PLUS status?",
+      a: isRtl ? "همانطور که در بخش «ارتقای سطح کاربری» مشاهده می‌کنید:\n\nLOXX PLUS: مخصوص کاربرانی است که به دنبال شخصی‌سازی پروفایل (آواتار متحرک، استیکرهای اختصاصی، نشان مخصوص) و اولویت در لیست لابی‌ها هستند.\nLOXX VIP: سطح نخبگان لوکس است که علاوه بر تمام قابلیت‌های پلاس، به تنظیمات پیشرفته Elite، ظرفیت XP دوبرابر، گروه‌های چت VIP و تم‌های طلایی اختصاصی دسترسی دارند." : "LOXX PLUS grants custom profile perks (animated avatars, custom themes). LOXX VIP is the ultimate tier, featuring everything in PLUS, twice the XP multiplier, VIP-exclusive lobby invites, and golden theme accents."
     },
     {
-      q: "۵. چطور می‌توانم در لیست «قهرمانان هفته» قرار بگیرم؟",
-      a: "سیستم رتبه‌بندی لوکس بر اساس فعالیت‌های شما (ایجاد لابی، تکمیل بازی‌ها و تعامل در پلتفرم) امتیاز XP محاسبه می‌کند. ۳ نفر برتر لیست رتبه‌بندی در پایان هر هفته، جوایز ویژه و اشتراک‌های رایگان دریافت می‌کنند. زمان باقیمانده تا ریست امتیازات را می‌توانید در صفحه «رتبه‌بندی» مشاهده کنید."
+      q: isRtl ? "۵. چطور می‌توانم در لیست «قهرمانان هفته» قرار بگیرم؟" : "5. How do I make it to the 'Heroes of the Week' ranking?",
+      a: isRtl ? "سیستم رتبه‌بندی لوکس بر اساس فعالیت‌های شما (ایجاد لابی، تکمیل بازی‌ها و تعامل در پلتفرم) امتیاز XP محاسبه می‌کند. ۳ نفر برتر لیست رتبه‌بندی در پایان هر هفته، جوایز ویژه و اشتراک‌های رایگان دریافت می‌کنند. زمان باقیمانده تا ریست امتیازات را می‌توانید در صفحه «رتبه‌بندی» مشاهده کنید." : "The LOXX rating engine calculates XP based on lobby hosting, chat engagements, and activity metrics. The top 3 users on the weekly leaderboard receive complimentary shop bonuses and free upgrades."
     },
     {
-      q: "۶. امنیت مکالمات صوتی (Voice Chat) چگونه تضمین می‌شود؟",
-      a: "سیستم گفتگوی صوتی (ویس چت) لوکس بر اساس مدرن‌ترین و پیشرفته‌ترین متدهای ارتباطی امن پیاده‌سازی شده است. در این ساختار هوشمند، ارتباط صوتی شما با نهایت سرعت مایکروثانیه منتقل شده و هیچ‌گونه ضبط یا ذخیره‌سازی روی سرورهای ما انجام نمی‌شود تا بتوانید با خیالی کاملاً آسوده و امنیت کامل گفتگو کنید."
+      q: isRtl ? "۶. امنیت مکالمات صوتی (Voice Chat) چگونه تضمین می‌شود؟" : "6. How is secure and confidential voice chat guaranteed?",
+      a: isRtl ? "سیستم گفتگوی صوتی (ویس چت) لوکس بر اساس مدرن‌ترین و پیشرفته‌ترین متدهای ارتباطی امن پیاده‌سازی شده است. در این ساختار هوشمند، ارتباط صوتی شما با نهایت سرعت مایکروثانیه منتقل شده و هیچ‌گونه ضبط یا ذخیره‌سازی روی سرورهای ما انجام نشده است تا بتوانید با خیالی کاملاً آسوده و امنیت کامل گفتگو کنید." : "Our low-latency WebRTC channels are encrypted and route directly to relay edge nodes. Voice packets are forwarded instantly in microseconds without server caching or voice logging."
     },
     {
-      q: "۷. چرا باید اشتراک تهیه کنیم؟",
-      a: "پلتفرم لوکس یک پروژه کاملاً مستقل است که با هزینه‌های شخصی سنگین جهت خرید سرورهای باکیفیت و توسعه فنی لانچ شده است. تهیه اشتراک VIP توسط شما، تنها منبع درآمدی ما برای سرپا نگه داشتن سرورها، رفع باگ‌ها و افزودن قابلیت‌های جدید (مانند نسخه موبایل) است. شما با این کار، مستقیم از رشد جامعه گیمینگ فارسی حمایت می‌کنید."
+      q: isRtl ? "۷. چرا باید اشتراک تهیه کنیم؟" : "7. Why should we purchase a platform subscription?",
+      a: isRtl ? "پلتفرم لوکس یک پروژه کاملاً مستقل است که با هزینه‌های شخصی سنگین جهت خرید سرورهای باکیفیت و توسعه فنی لانچ شده است. تهیه اشتراک VIP توسط شما، تنها منبع درآمدی ما برای سرپا نگه داشتن سرورها، رفع باگ‌ها و افزودن قابلیت‌های جدید (مانند نسخه موبایل) است. شما با این کار، مستقیم از رشد جامعه گیمینگ فارسی حمایت می‌کنید." : "LOXX is an independent passion project funded personally. Premium subscriptions help cover bandwidth, cloud orchestration fees, and new tools like the upcoming mobile version. Your purchase supports independent gaming spaces."
     },
     {
-      q: "۸. در صورت تداخل پورت یا خطا در اتصال چه کار کنم؟",
-      a: "کلاینت هوشمند لوکس در صورت مسدود بودن پورت‌های بازی توسط آنتی‌ویروس یا برنامه‌های دیگر، بلافاصله از طریق اعلان‌های فارسی به شما هشدار داده و راهنمای رفع مشکل را نمایش می‌دهد. همچنین تیم پشتیبانی در چت سراسری همیشه آماده راهنمایی شماست."
+      q: isRtl ? "۸. در صورت تداخل پورت یا خطا در اتصال چه کار کنم؟" : "8. What should I do if I get a port binding error?",
+      a: isRtl ? "کلاینت هوشمند لوکس در صورت مسدود بودن پورت‌های بازی توسط آنتی‌ویروس یا برنامه‌های دیگر، بلافاصله از طریق اعلان‌های فارسی به شما هشدار داده و راهنمای رفع مشکل را نمایش می‌دهد. همچنین تیم پشتیبانی در چت سراسری همیشه آماده راهنمایی شماست." : "The LOXX smart client alerts you if ports are blocked by third-party anti-viruses or system firewalls. Our live chat moderators are also around the clock to assist you."
     }
   ];
 
@@ -1150,12 +1163,12 @@ export const SettingsPage = () => {
              <HelpCircle size={24} />
           </div>
           <div>
-            <h3 className="text-xl font-black italic uppercase tracking-tighter">سوالات متداول (FAQ) - پلتفرم لوکس</h3>
-            <p className="text-[10px] uppercase font-bold tracking-widest text-gray-500">پاسخ به سوالات و مشکلات متداول کاربران</p>
+            <h3 className="text-xl font-black italic uppercase tracking-tighter">{isRtl ? "سوالات متداول (FAQ) - پلتفرم لوکس" : "Frequently Asked Questions (FAQ)"}</h3>
+            <p className="text-[10px] uppercase font-bold tracking-widest text-gray-500">{isRtl ? "پاسخ به سوالات و مشکلات متداول کاربران" : "Answers to common platform questions and troubleshooting"}</p>
           </div>
         </div>
 
-        <div className="space-y-3" dir="rtl">
+        <div className="space-y-3" dir={isRtl ? "rtl" : "ltr"}>
           {faqItems.map((item, idx) => {
             const isExpanded = expandedFaq === idx;
             return (
@@ -1165,9 +1178,9 @@ export const SettingsPage = () => {
               >
                 <button
                   onClick={() => setExpandedFaq(isExpanded ? null : idx)}
-                  className="w-full text-right px-5 py-4 flex items-center justify-between gap-4 text-white font-bold text-sm md:text-base hover:bg-white/[0.02] transition-colors"
+                  className={cn("w-full px-5 py-4 flex items-center justify-between gap-4 text-white font-bold text-sm md:text-base hover:bg-white/[0.02] transition-colors", isRtl ? "text-right" : "text-left")}
                 >
-                  <span className="text-right leading-relaxed font-black">{item.q}</span>
+                  <span className={cn("leading-relaxed font-black", isRtl ? "text-right" : "text-left")}>{item.q}</span>
                   <ChevronDown 
                     size={18} 
                     className={cn(
@@ -1204,37 +1217,119 @@ export const SettingsPage = () => {
              <MessageSquare size={24} />
           </div>
           <div>
-            <h3 className="text-xl font-black italic uppercase tracking-tighter">ارسال تیکت / گزارش</h3>
-            <p className="text-[10px] uppercase font-bold tracking-widest text-gray-500">ارتباط مستقیم با مدیریت</p>
+            <h3 className="text-xl font-black italic uppercase tracking-tighter">{isRtl ? "ارسال تیکت / گزارش" : "Submit Ticket / Report"}</h3>
+            <p className="text-[10px] uppercase font-bold tracking-widest text-gray-500">{isRtl ? "ارتباط مستقیم با مدیریت" : "Contact the administration directly"}</p>
           </div>
         </div>
 
         <div className="space-y-4">
-          <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest italic">شرح پیام</label>
+          <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest italic">{isRtl ? "شرح پیام" : "Message Description"}</label>
           <textarea
             value={supportMessage}
             onChange={(e) => setSupportMessage(e.target.value)}
+            dir={isRtl ? "rtl" : "ltr"}
             className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-gray-700 transition-all focus:border-neon-blue/50 focus:outline-none h-40 resize-none"
-            placeholder="گزارش مشکل، باگ، یا پیشنهاد خود را اینجا بنویسید..."
+            placeholder={isRtl ? "گزارش مشکل، باگ، یا پیشنهاد خود را اینجا بنویسید..." : "Describe bugs, issues, or specify your suggestions here..."}
           />
         </div>
 
-        <div className="flex justify-end pt-4 border-t border-white/5">
+        <div className={cn("flex pt-4 border-t border-white/5", isRtl ? "justify-end" : "justify-start")}>
           <GlowButton 
             variant="blue" 
             className="px-10 h-10 text-[11px] font-black uppercase italic"
             onClick={handleSendSupport}
             disabled={saving}
           >
-            {saving ? "در حال ارسال..." : "ارسال پیام"}
+            {saving ? (isRtl ? "در حال ارسال..." : "Sending...") : (isRtl ? "ارسال پیام" : "Send Message")}
           </GlowButton>
         </div>
       </NeonCard>
     </div>
   );
 
-  const renderRules = () => (
-    <div className="space-y-8 animate-fade-in" dir="rtl">
+  const renderRules = () => {
+    if (!isRtl) {
+      return (
+        <div className="space-y-8 animate-fade-in" dir="ltr">
+          <NeonCard className="relative overflow-hidden border-none bg-black/40 backdrop-blur-2xl">
+            {/* Glow decoration */}
+            <div className="absolute top-0 left-0 w-80 h-80 bg-neon-blue/5 rounded-full blur-[100px] pointer-events-none" />
+            
+            <header className="border-b border-white/5 pb-6 mb-8 text-left relative z-10">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="h-12 w-12 rounded-xl bg-neon-blue/10 flex items-center justify-center text-neon-blue">
+                  <BookOpen size={24} />
+                </div>
+                <div>
+                  <h1 className="text-2xl md:text-3xl font-black text-white italic tracking-tight font-sans">Terms of Service & Rules</h1>
+                  <p className="text-xs text-gray-400 mt-1 font-sans">Last updated: May 15, 2026</p>
+                </div>
+              </div>
+              <p className="text-sm text-gray-300 leading-relaxed font-sans">
+                Welcome to LOXX. Please read these Terms of Service carefully before using our platform. By registering or using our gaming tunnel / voice server / match lobbies, you acknowledge you have read, understood, and agreed to adhere to these rules.
+              </p>
+            </header>
+
+            <main className="space-y-8 relative z-10 font-sans text-left">
+              <section className="space-y-3">
+                <h3 className="text-lg font-black text-neon-blue border-l-4 border-neon-blue pl-3 mb-2 flex items-center gap-2">
+                  <span>Article 1: Definitions & Platforms</span>
+                </h3>
+                <p className="text-sm text-gray-300 leading-relaxed pl-2">
+                  The LOXX platform includes our web console, desktop tunneling client, match lobbies, secure P2P voice rooms, and any future mobile applications launched to coordinate matchmaking and local-area gaming networks.
+                </p>
+              </section>
+
+              <section className="space-y-3">
+                <h3 className="text-lg font-black text-neon-blue border-l-4 border-neon-blue pl-3 mb-2">
+                  Article 2: User Account Integrity
+                </h3>
+                <p className="text-sm text-gray-300 leading-relaxed pl-2">
+                  Users must register with verified email addresses and maintain accurate profile data. Each player is restricted to one primary account. Sharing or trading accounts to bypass matchmaking ratings or bans is strictly prohibited.
+                </p>
+              </section>
+
+              <section className="space-y-3">
+                <h3 className="text-lg font-black text-neon-blue border-l-4 border-neon-blue pl-3 mb-2">
+                  Article 3: Zero-TUN & Desktop Client Safety
+                </h3>
+                <p className="text-sm text-gray-300 leading-relaxed pl-2">
+                  Our Zero-TUN tunneling client relays TCP/UDP game broadcast discovery frames natively on port 3000 proxies. Reverse-engineering code injection, memory patching, and anti-cheat tampering will cause automated permanent device level HWID bans.
+                </p>
+              </section>
+
+              <section className="space-y-3">
+                <h3 className="text-lg font-black text-neon-blue border-l-4 border-neon-blue pl-3 mb-2">
+                  Article 4: Subscriptions, VIP & Refund Clauses
+                </h3>
+                <p className="text-sm text-gray-300 leading-relaxed pl-2">
+                  LOXX VIP and LOXX PLUS memberships are immediately activated upon gateway billing confirmation. Subscriptions are strictly non-refundable and digital content purchases are final, unless there are systemic host side failures preventing platform launch.
+                </p>
+              </section>
+
+              <section className="space-y-3">
+                <h3 className="text-lg font-black text-neon-blue border-l-4 border-neon-blue pl-3 mb-2">
+                  Article 5: Communication Integrity & Safety
+                </h3>
+                <p className="text-sm text-gray-300 leading-relaxed pl-2">
+                  LOXX enforces zero-tolerance against hate speech, systematic harassment, and coordinate tracking of user data. Peer-to-peer real-time voice packets are fully encrypted and transmitted directly without server logging or inspection.
+                </p>
+              </section>
+            </main>
+
+            <footer className="mt-8 text-center text-gray-400 font-sans border-t border-white/5 pt-6 flex flex-col items-center justify-center gap-2">
+              <p className="text-sm font-bold">Thank you for being part of the LOXX community.</p>
+              <div className="px-6 py-2 rounded-2xl bg-neon-blue/5 border border-neon-blue/20 text-xs font-black text-neon-blue tracking-widest uppercase">
+                LOXX Engineering Team
+              </div>
+            </footer>
+          </NeonCard>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-8 animate-fade-in" dir="rtl">
       <NeonCard className="relative overflow-hidden border-none bg-black/40 backdrop-blur-2xl">
         {/* Glow decoration */}
         <div className="absolute top-0 right-0 w-80 h-80 bg-neon-blue/5 rounded-full blur-[100px] pointer-events-none" />
@@ -1504,8 +1599,7 @@ export const SettingsPage = () => {
       </NeonCard>
     </div>
   );
-
-  const isRtl = language === "fa";
+};
 
   return (
     <div className="flex min-h-[calc(100vh-64px)] pb-20 md:pb-0" dir={isRtl ? "rtl" : "ltr"}>

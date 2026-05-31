@@ -65,6 +65,7 @@ export const Navbar = () => {
   return (
     <>
       <nav 
+        dir={isRtl ? "rtl" : "ltr"}
         className={cn(
           "fixed left-0 right-0 z-[10000] w-full transition-all duration-500 Richie-nav pointer-events-none",
           isElectron 
@@ -96,7 +97,7 @@ export const Navbar = () => {
                 <button 
                   className="p-2 text-gray-400 hover:text-white hidden md:block cursor-pointer transition-colors hover:bg-white/5 rounded-lg"
                   onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-                  title={isSidebarCollapsed ? "نمایش منوی اصلی" : "پنهان کردن منوی اصلی"}
+                  title={isRtl ? (isSidebarCollapsed ? "نمایش منوی اصلی" : "پنهان کردن منوی اصلی") : (isSidebarCollapsed ? "Show main menu" : "Hide main menu")}
                 >
                   <Menu size={21} className={cn("transition-transform duration-300", isSidebarCollapsed && "rotate-180")} />
                 </button>
@@ -149,7 +150,9 @@ export const Navbar = () => {
               <NavLink to="/games" className={({ isActive }) => cn("transition-all font-black text-[10px] uppercase tracking-[0.2em] italic", isActive ? "text-neon-blue drop-shadow-[0_0_8px_rgba(0,229,255,0.5)]" : "text-gray-400 hover:text-white ripple-active")}>{t("games")}</NavLink>
               <NavLink to="/contact" className={({ isActive }) => cn("transition-all font-black text-[10px] uppercase tracking-[0.2em] italic", isActive ? "text-neon-blue drop-shadow-[0_0_8px_rgba(0,229,255,0.5)]" : "text-gray-400 hover:text-white ripple-active")}>{t("contactUs")}</NavLink>
               {isLanding && (
-                <button onClick={() => document.getElementById('download')?.scrollIntoView({ behavior: 'smooth' })} className="transition-all font-black text-[10px] uppercase tracking-[0.2em] italic text-gray-400 hover:text-white ripple-active">دانلود</button>
+                <button onClick={() => document.getElementById('download')?.scrollIntoView({ behavior: 'smooth' })} className="transition-all font-black text-[10px] uppercase tracking-[0.2em] italic text-gray-400 hover:text-white ripple-active">
+                  {isRtl ? "دانلود" : "DOWNLOAD"}
+                </button>
               )}
             </div>
           )}
