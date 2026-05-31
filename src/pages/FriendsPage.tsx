@@ -35,6 +35,7 @@ import { cn } from "../lib/utils";
 
 import { useProfilePopover } from "../context/ProfilePopoverContext";
 import { MembershipType } from "../types";
+import { useLanguage } from "../context/LanguageContext";
 
 const StatusBadge = ({ status }: { status: FriendStatus }) => {
   const colors = {
@@ -287,6 +288,8 @@ export const FriendsPage = () => {
   } = useFriends();
   const { user, isSidebarCollapsed } = useAuth();
   const { openProfile } = useProfilePopover();
+  const { language, t } = useLanguage();
+  const isRtl = language === "fa";
 
   const [searchTerm, setSearchTerm] = useState("");
   const [userSearchTerm, setUserSearchTerm] = useState("");
@@ -364,11 +367,15 @@ export const FriendsPage = () => {
   return (
     <div className="flex min-h-[calc(100vh-64px)] overflow-x-hidden">
       <Sidebar />
-      <main className={cn("flex-1 px-4 py-8 lg:px-8 pb-24 md:pb-8 w-full transition-all duration-300", !isSidebarCollapsed ? "md:mr-64" : "md:mr-20")} dir="rtl">
+      <main className={cn("flex-1 px-4 py-8 lg:px-8 pb-24 md:pb-8 w-full transition-all duration-300", isRtl ? (!isSidebarCollapsed ? "md:mr-64" : "md:mr-20") : (!isSidebarCollapsed ? "md:ml-64" : "md:ml-20"))} dir={isRtl ? "rtl" : "ltr"}>
         <div className="container mx-auto max-w-6xl">
-          <header className="mb-8 md:mb-10 text-center md:text-right">
-            <h1 className="text-2xl md:text-3xl font-black text-white">دوستان و اجتماعی</h1>
-            <p className="mt-1 text-xs md:text-base text-gray-400">مدیریت دوستان، جستجوی بازیکنان و درخواست‌ها</p>
+          <header className={cn("mb-8 md:mb-10 text-center", isRtl ? "md:text-right" : "md:text-left")}>
+            <h1 className="text-2xl md:text-3xl font-black text-white">
+              {isRtl ? "دوستان و اجتماعی" : "Friends & Social"}
+            </h1>
+            <p className="mt-1 text-xs md:text-base text-gray-400">
+              {isRtl ? "مدیریت دوستان، جستجوی بازیکنان و درخواست‌ها" : "Manage friends, search players, and handle incoming requests"}
+            </p>
           </header>
 
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">

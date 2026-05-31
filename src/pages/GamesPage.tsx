@@ -19,6 +19,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useLanguage } from "../context/LanguageContext";
 
 const GameCardSkeleton = () => (
   <div className="rounded-3xl bg-white/5 border border-white/10 overflow-hidden animate-pulse">
@@ -137,6 +138,8 @@ const GameCard: React.FC<{ game: Game; index: number }> = ({ game, index }) => {
 export const GamesPage = () => {
   const { allGames, loading } = useGames();
   const { isSidebarCollapsed } = useAuth();
+  const { language, t } = useLanguage();
+  const isRtl = language === "fa";
   const [searchTerm, setSearchTerm] = useState("");
 
   const filteredGames = useMemo(() => {
@@ -151,45 +154,48 @@ export const GamesPage = () => {
   return (
     <div className={cn("flex overflow-x-hidden", isElectron ? "min-h-[calc(100vh-100px)]" : "min-h-[calc(100vh-64px)]")}>
       <Sidebar />
-      <main className={cn("flex-1 px-4 py-8 lg:px-8 pb-32 md:pb-8 min-w-0 transition-all duration-300", !isSidebarCollapsed ? "md:mr-64" : "md:mr-20")} dir="rtl">
+      <main className={cn("flex-1 px-4 py-8 lg:px-8 pb-32 md:pb-8 min-w-0 transition-all duration-300", isRtl ? (!isSidebarCollapsed ? "md:mr-64" : "md:mr-20") : (!isSidebarCollapsed ? "md:ml-64" : "md:ml-20"))} dir={isRtl ? "rtl" : "ltr"}>
         <div className="container mx-auto max-w-7xl">
           <header className="mb-8 md:mb-12">
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-              <div className="text-center md:text-right">
+            <div className={cn("flex flex-col md:flex-row md:items-end justify-between gap-6", isRtl ? "" : "md:flex-row-reverse")}>
+              <div className={cn("text-center", isRtl ? "md:text-right" : "md:text-left")}>
                 <motion.h1 
-                  initial={{ opacity: 0, x: 20 }}
+                  initial={{ opacity: 0, x: isRtl ? 20 : -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   className="text-3xl md:text-4xl font-black text-white"
                 >
-                  همه بازی‌ها
+                  {t("allGamesTitle")}
                 </motion.h1>
-                <p className="text-gray-400 mt-2 text-xs md:text-sm">بازی مورد علاقه خود را انتخاب کنید و وارد لابی شوید</p>
+                <p className="text-gray-400 mt-2 text-xs md:text-sm">{t("gamesSubtitle")}</p>
               </div>
               
               <Link to="/my-games" className="w-full md:w-auto">
                 <GlowButton variant="purple" className="flex items-center justify-center gap-2 px-6 w-full md:w-auto">
                   <Heart size={18} />
-                  بازی‌های من
+                  {t("myGamesList")}
                 </GlowButton>
               </Link>
             </div>
             
             {/* Search Bar */}
             <div className="mt-8 md:mt-10 relative">
-              <Search className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+              <Search className={cn("absolute top-1/2 -translate-y-1/2 text-gray-400", isRtl ? "right-5" : "left-5")} size={20} />
               <input 
                 type="text" 
-                placeholder="جستجوی بازی بر اساس نام یا سبک..."
-                className="w-full rounded-2xl border border-white/10 bg-white/5 py-4 md:py-5 pr-14 pl-6 text-sm text-white focus:border-neon-blue/50 focus:outline-none transition-all placeholder:text-gray-600 shadow-xl"
+                placeholder={t("searchGames")}
+                className={cn(
+                  "w-full rounded-2xl border border-white/10 bg-white/5 py-4 md:py-5 text-sm text-white focus:border-neon-blue/50 focus:outline-none transition-all placeholder:text-gray-600 shadow-xl",
+                  isRtl ? "pr-14 pl-6 text-right" : "pl-14 pr-6 text-left"
+                )}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
               {searchTerm && (
                 <button 
                   onClick={() => setSearchTerm("")}
-                  className="absolute left-5 top-1/2 -translate-y-1/2 p-2 rounded-full hover:bg-white/10 text-gray-400"
+                  className={cn("absolute top-1/2 -translate-y-1/2 p-2 rounded-full hover:bg-white/10 text-gray-400", isRtl ? "left-5" : "right-5")}
                 >
-                  حذف
+                  {isRtl ? "حذف" : "Clear"}
                 </button>
               )}
             </div>

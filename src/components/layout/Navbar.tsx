@@ -13,15 +13,15 @@ import { BadgeType, MembershipType } from "../../types";
 import { getAvatarFallbacks } from "../../lib/avatar";
 
 const menuItems = [
-  { icon: LayoutDashboard, label: "داشبورد", path: "/dashboard" },
-  { icon: Gamepad2, label: "بازی‌ها", path: "/games" },
-  { icon: Users, label: "لابی‌ها", path: "/lobbies" },
-  { icon: User, label: "دوستان", path: "/friends" },
-  { icon: MessageSquare, label: "چت سراسری", path: "/chat" },
-  { icon: Trophy, label: "رتبه‌بندی", path: "/ranking" },
-  { icon: Phone, label: "ارتباط با ما", path: "/contact" },
-  { icon: Shield, label: "اشتراک ویژه", path: "/premium" },
-  { icon: Settings, label: "تنظیمات", path: "/settings" },
+  { icon: LayoutDashboard, label: "داشبورد", translationKey: "dashboard", path: "/dashboard" },
+  { icon: Gamepad2, label: "بازی‌ها", translationKey: "games", path: "/games" },
+  { icon: Users, label: "لابی‌ها", translationKey: "lobbies", path: "/lobbies" },
+  { icon: User, label: "دوستان", translationKey: "friends", path: "/friends" },
+  { icon: MessageSquare, label: "چت سراسری", translationKey: "globalChat", path: "/chat" },
+  { icon: Trophy, label: "رتبه‌بندی", translationKey: "rankings", path: "/ranking" },
+  { icon: Phone, label: "ارتباط با ما", translationKey: "contactUs", path: "/contact" },
+  { icon: Shield, label: "اشتراک ویژه", translationKey: "premiumClub", path: "/premium" },
+  { icon: Settings, label: "تنظیمات", translationKey: "settings", path: "/settings" },
 ];
 
 export const Navbar = () => {
@@ -35,6 +35,7 @@ export const Navbar = () => {
   const isLanding = location.pathname === "/";
   const isElectron = typeof window !== "undefined" && !!(window as any).electronAPI;
   const isInvitePage = location.pathname.startsWith("/invite/") || location.pathname.startsWith("/proposal/");
+  const isRtl = language === "fa";
 
   useMotionValueEvent(scrollY, "change", (latest) => {
     setIsScrolled(latest > 50);
@@ -116,10 +117,10 @@ export const Navbar = () => {
                     className="flex flex-col -space-y-1"
                   >
                     <span className="text-xl md:text-3xl font-black italic tracking-tighter text-white group-hover:text-neon-blue transition-colors uppercase">
-                      لوکس
+                      {language === "fa" ? "لوکس" : "LOXX"}
                     </span>
                     <span className="text-[8px] md:text-[10px] text-gray-400 font-bold tracking-widest hidden sm:block">
-                      پیشرفته‌ترین پلتفرم گیمینگ فارسی
+                      {language === "fa" ? "پیشرفته‌ترین پلتفرم گیمینگ فارسی" : "ADVANCED GAMING PLATFORM"}
                     </span>
                   </motion.div>
                 )}
@@ -213,15 +214,18 @@ export const Navbar = () => {
               className="fixed inset-0 z-[10000] bg-black/60 backdrop-blur-sm md:hidden"
             />
             <motion.div
-              initial={{ x: "100%" }}
+              initial={{ x: isRtl ? "100%" : "-100%" }}
               animate={{ x: 0 }}
-              exit={{ x: "100%" }}
+              exit={{ x: isRtl ? "100%" : "-100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="fixed right-0 top-0 z-[10001] h-full w-72 bg-[#050507] border-l border-white/10 flex flex-col md:hidden shadow-2xl"
+              className={cn(
+                "fixed top-0 z-[10001] h-full w-72 bg-[#050507] flex flex-col md:hidden shadow-2xl transition-all duration-300",
+                isRtl ? "right-0 border-l border-white/10" : "left-0 border-r border-white/10"
+              )}
             >
               {/* Menu Header */}
               <div className="flex items-center justify-between p-6 border-b border-white/5 pt-10">
-                <span className="text-xl font-black italic text-white uppercase tracking-tighter">منو دسترسی</span>
+                <span className="text-xl font-black italic text-white uppercase tracking-tighter">{t("menuPlaceholder")}</span>
                 <button onClick={() => setIsMenuOpen(false)} className="text-gray-500 hover:text-white">
                   <X size={24} />
                 </button>
@@ -244,7 +248,7 @@ export const Navbar = () => {
                       )}
                     >
                       <item.icon size={20} className={cn(isActive && "drop-shadow-[0_0_8px_rgba(0,229,255,0.5)]")} />
-                      <span className="text-sm font-black italic uppercase tracking-tight">{item.label}</span>
+                      <span className="text-sm font-black italic uppercase tracking-tight">{t(item.translationKey)}</span>
                     </NavLink>
                   );
                 })}
@@ -276,11 +280,11 @@ export const Navbar = () => {
                           />
                         </div>
                       </div>
-                      <div className="flex-1 min-w-0 text-right">
+                      <div className={cn("flex-1 min-w-0", isRtl ? "text-right" : "text-left")}>
                         <p className="font-black text-white uppercase text-xs truncate italic tracking-tighter mb-0.5">
                           {user.displayName || user.username}
                         </p>
-                        <div className="flex items-center justify-end gap-1.5 opacity-80">
+                        <div className={cn("flex items-center gap-1.5 opacity-80", isRtl ? "justify-end" : "justify-start")}>
                            {isVIP ? (
                              <span className="text-[9px] text-yellow-400 font-black tracking-widest uppercase flex items-center gap-1">
                                <Crown size={10} /> VIP ELITE
@@ -291,7 +295,7 @@ export const Navbar = () => {
                              </span>
                            ) : (
                              <span className="text-[9px] text-gray-500 font-black tracking-widest uppercase">
-                               Regular Player
+                               {t("regularPlayer")}
                              </span>
                            )}
                         </div>
@@ -305,13 +309,13 @@ export const Navbar = () => {
                       className="flex items-center justify-center gap-2.5 rounded-2xl bg-red-500/10 hover:bg-red-500/20 text-red-500 py-4 border border-red-500/10 hover:border-red-500/30 transition-all w-full font-black text-[10px] uppercase italic tracking-widest"
                     >
                       <LogOut size={16} />
-                      خروج از حساب کاربری
+                      {t("logoutBtn")}
                     </button>
                   </div>
                 ) : (
                   <Link to="/auth" onClick={() => setIsMenuOpen(false)}>
                     <GlowButton variant="blue" className="w-full text-[10px] font-black uppercase italic h-14 !rounded-2xl shadow-none">
-                      ورود / ثبت‌نام در سامانه
+                      {t("loginOrRegister")}
                     </GlowButton>
                   </Link>
                 )}

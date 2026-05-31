@@ -29,9 +29,12 @@ import { cn } from "../lib/utils";
 import { QuickProfilePopover } from "../components/ui/QuickProfilePopover";
 import { BadgeType, MembershipType } from "../types";
 import { SmartImage } from "../components/ui/SmartImage";
+import { useLanguage } from "../context/LanguageContext";
 
 export const ProfilePage = () => {
   const { user, setUser, isSidebarCollapsed } = useAuth();
+  const { language, t } = useLanguage();
+  const isRtl = language === "fa";
   const [profileData, setProfileData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -143,7 +146,7 @@ export const ProfilePage = () => {
   return (
     <div className="flex min-h-[calc(100vh-64px)]">
       <Sidebar />
-      <main className={cn("flex-1 px-4 py-8 lg:px-8 transition-all duration-300", !isSidebarCollapsed ? "md:mr-64" : "md:mr-20")}>
+      <main className={cn("flex-1 px-4 py-8 lg:px-8 transition-all duration-300", isRtl ? (!isSidebarCollapsed ? "md:mr-64" : "md:mr-20") : (!isSidebarCollapsed ? "md:ml-64" : "md:ml-20"))} dir={isRtl ? "rtl" : "ltr"}>
         <div className="container mx-auto max-w-5xl">
           {/* Enhanced Profile Header */}
           <div className={cn(

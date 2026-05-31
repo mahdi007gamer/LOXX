@@ -32,11 +32,14 @@ import { CreateLobbyModal } from "../components/modals/CreateLobbyModal";
 import { useGames } from "../context/GamesContext";
 import { useAuth } from "../context/AuthContext";
 import { SmartImage } from "../components/ui/SmartImage";
+import { useLanguage } from "../context/LanguageContext";
 
 export const LobbiesPage = () => {
   const navigate = useNavigate();
   const { allGames: games } = useGames();
   const { isSidebarCollapsed } = useAuth();
+  const { language, t } = useLanguage();
+  const isRtl = language === "fa";
   const isElectron = typeof window !== "undefined" && !!(window as any).electronAPI;
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -98,16 +101,20 @@ export const LobbiesPage = () => {
   return (
     <div className={cn("flex min-h-screen bg-[#0a0a0f] overflow-x-hidden", isElectron ? "min-h-[calc(100vh-100px)]" : "min-h-[calc(100vh-64px)]")}>
       <Sidebar />
-      <main className={cn("flex-1 min-w-0 relative pb-24 md:pb-8 transition-all duration-300", !isSidebarCollapsed ? "md:mr-64" : "md:mr-20")}>
+      <main className={cn("flex-1 min-w-0 relative pb-24 md:pb-8 transition-all duration-300", isRtl ? (!isSidebarCollapsed ? "md:mr-64" : "md:mr-20") : (!isSidebarCollapsed ? "md:ml-64" : "md:ml-20"))} dir={isRtl ? "rtl" : "ltr"}>
         <div className="px-4 py-8 md:px-8 lg:px-10 max-w-7xl mx-auto w-full">
           {/* Mobile Header: Beautifully aligned and spaced */}
           <header className="mb-6 md:mb-12 space-y-6 md:space-y-8 w-full max-w-full">
-            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 w-full">
-              <div className="text-right sm:text-right w-full sm:w-auto">
+            <div className={cn("flex flex-col sm:flex-row sm:items-end justify-between gap-4 w-full", isRtl ? "" : "sm:flex-row-reverse")}>
+              <div className={cn("w-full sm:w-auto", isRtl ? "text-right sm:text-right" : "text-left sm:text-left")}>
                 <h1 className="text-2xl md:text-3xl lg:text-4xl font-black text-white italic tracking-tighter uppercase leading-tight">
-                  لابی‌های <span className="text-neon-blue">فعال</span>
+                  {isRtl ? (
+                    <>لابی‌های <span className="text-neon-blue">فعال</span></>
+                  ) : (
+                    <><span className="text-neon-blue">Active</span> Lobbies</>
+                  )}
                 </h1>
-                <p className="text-gray-400 mt-2 text-[10px] md:text-sm">لابی مورد علاقه خود را انتخاب کنید یا خودتان بسازید</p>
+                <p className="text-gray-400 mt-2 text-[10px] md:text-sm">{t("lobbiesSubtitle")}</p>
               </div>
               
               <div className="w-full sm:w-auto shrink-0 flex">
@@ -117,27 +124,30 @@ export const LobbiesPage = () => {
                   onClick={() => setIsModalOpen(true)}
                 >
                   <Plus size={18} className="group-hover:rotate-90 transition-transform shrink-0" />
-                  ساخت لابی جدید
+                  {t("createLobby")}
                 </GlowButton>
               </div>
             </div>
             
             {/* Search Bar */}
             <div className="relative w-full max-w-full">
-              <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 shrink-0" size={18} />
+              <Search className={cn("absolute top-1/2 -translate-y-1/2 text-gray-400 shrink-0", isRtl ? "right-4" : "left-4")} size={18} />
               <input 
                 type="text" 
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="جستجوی لابی..."
-                className="w-full rounded-xl md:rounded-2xl border border-white/10 bg-white/5 py-3 md:py-4 pr-12 pl-16 text-xs md:text-sm text-white focus:border-neon-blue/50 focus:outline-none transition-all placeholder:text-gray-600 shadow-xl"
+                placeholder={t("searchLobby")}
+                className={cn(
+                  "w-full rounded-xl md:rounded-2xl border border-white/10 bg-white/5 py-3 md:py-4 text-xs md:text-sm text-white focus:border-neon-blue/50 focus:outline-none transition-all placeholder:text-gray-600 shadow-xl",
+                  isRtl ? "pr-12 pl-16 text-right" : "pl-12 pr-16 text-left"
+                )}
               />
               {searchTerm && (
                 <button 
                   onClick={() => setSearchTerm("")}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 p-1.5 md:p-2 rounded-lg bg-white/5 hover:bg-white/10 text-[10px] md:text-xs font-bold text-gray-400 cursor-pointer transition-colors"
+                  className={cn("absolute top-1/2 -translate-y-1/2 p-1.5 md:p-2 rounded-lg bg-white/5 hover:bg-white/10 text-[10px] md:text-xs font-bold text-gray-400 cursor-pointer transition-colors", isRtl ? "left-3" : "right-3")}
                 >
-                  حذف
+                  {isRtl ? "حذف" : "Clear"}
                 </button>
               )}
             </div>
@@ -145,13 +155,13 @@ export const LobbiesPage = () => {
 
           {/* Game Filters - Better padding and mask for mobile */}
           <div className="mb-6 md:mb-8 relative w-full overflow-hidden">
-            <div className="flex items-center justify-between mb-3 px-1">
+            <div className={cn("flex items-center justify-between mb-3 px-1", isRtl ? "" : "flex-row-reverse")}>
                <div className="flex items-center gap-1.5 md:gap-2">
                  <Filter size={12} className="text-neon-blue shrink-0" />
-                 <span className="text-[9px] font-black text-white/30 uppercase tracking-[0.2em] truncate">فیلتر بازی</span>
+                 <span className="text-[9px] font-black text-white/30 uppercase tracking-[0.2em] truncate">{t("gameFilter")}</span>
                </div>
                {activeFilter !== 'all' && (
-                 <button onClick={() => setActiveFilter('all')} className="text-[9px] font-bold text-neon-blue hover:text-white transition-colors uppercase tracking-widest shrink-0">پاک کردن</button>
+                 <button onClick={() => setActiveFilter('all')} className="text-[9px] font-bold text-neon-blue hover:text-white transition-colors uppercase tracking-widest shrink-0">{isRtl ? "پاک کردن" : "Clear"}</button>
                )}
             </div>
             <div className="flex items-center gap-2 overflow-x-auto pb-4 scrollbar-none snap-x snap-mandatory mask-fade-edges w-full">
@@ -160,12 +170,12 @@ export const LobbiesPage = () => {
                   className={cn(
                     "shrink-0 whitespace-nowrap rounded-lg px-5 py-2.5 text-[9px] md:text-[11px] font-black uppercase transition-all snap-start border flex items-center justify-center gap-2",
                     activeFilter === "all" 
-                      ? "bg-neon-blue border-neon-blue text-dark-bg shadow-[0_0_15px_rgba(0,229,255,0.3)]" 
-                      : "bg-white/5 text-gray-500 border-white/5 hover:border-white/10 hover:text-white"
+                       ? "bg-neon-blue border-neon-blue text-dark-bg shadow-[0_0_15px_rgba(0,229,255,0.3)]" 
+                       : "bg-white/5 text-gray-500 border-white/5 hover:border-white/10 hover:text-white"
                   )}
                >
                  <Globe size={12} />
-                 همه لابی‌ها
+                 {t("allLobbies")}
                </button>
                {games?.map((game) => (
                   <button 

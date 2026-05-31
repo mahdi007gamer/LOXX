@@ -18,6 +18,7 @@ import { useAuth } from "../context/AuthContext";
 import { toast } from "react-hot-toast";
 import { BankCard } from "../components/premium/BankCard";
 import confetti from "canvas-confetti";
+import { useLanguage } from "../context/LanguageContext";
 
 type Step = "SELECT" | "PREVIEW" | "PAYMENT" | "STATUS";
 type PlanType = "PLUS" | "VIP";
@@ -63,6 +64,8 @@ const PLAN_DATA = {
 export const PremiumPage = () => {
   const { user, isSidebarCollapsed } = useAuth();
   const navigate = useNavigate();
+  const { language, t } = useLanguage();
+  const isRtl = language === "fa";
   const [step, setStep] = useState<Step>("SELECT");
   const [selectedPlan, setSelectedPlan] = useState<PlanType | null>(null);
   const [pendingPayment, setPendingPayment] = useState<any>(null);
@@ -283,7 +286,7 @@ export const PremiumPage = () => {
   return (
     <div className="flex min-h-[calc(100vh-64px)] bg-[#050507]">
       <Sidebar />
-      <main className={cn("flex-1 px-4 py-8 lg:px-8 pb-32 md:pb-8 transition-all duration-300", !isSidebarCollapsed ? "md:mr-64" : "md:mr-20")}>
+      <main className={cn("flex-1 px-4 py-8 lg:px-8 pb-32 md:pb-8 transition-all duration-300", isRtl ? (!isSidebarCollapsed ? "md:mr-64" : "md:mr-20") : (!isSidebarCollapsed ? "md:ml-64" : "md:ml-20"))} dir={isRtl ? "rtl" : "ltr"}>
         <div className="container mx-auto max-w-6xl">
           <AnimatePresence mode="wait">
             {step === "SELECT" ? (

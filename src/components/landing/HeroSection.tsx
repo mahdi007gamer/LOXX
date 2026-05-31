@@ -3,10 +3,13 @@ import { motion } from "motion/react";
 import { Play, Zap, Gamepad2, Download } from "lucide-react";
 import { GlowButton } from "../ui/GlowButton";
 import { Link } from "react-router-dom";
+import { useLanguage } from "../../context/LanguageContext";
 
 import { CyberGrid } from "./CyberGrid";
 
 export const HeroSection = () => {
+  const { t } = useLanguage();
+
   return (
     <section className="relative flex min-h-[100vh] flex-col items-center justify-center overflow-hidden px-4 py-20 text-center lg:py-32">
       <CyberGrid />
@@ -24,7 +27,7 @@ export const HeroSection = () => {
           className="mb-8 inline-flex items-center gap-3 rounded-full border border-neon-blue/30 bg-neon-blue/10 px-6 py-2 text-sm font-black text-neon-blue shadow-[0_0_30px_rgba(0,229,255,0.2)] backdrop-blur-md"
         >
           <Zap size={18} className="animate-pulse" />
-          <span className="tracking-widest uppercase">درگاه ورود به لوکس باز شد</span>
+          <span className="tracking-widest uppercase">{t("entryPortalOpen")}</span>
         </motion.div>
         
         <motion.div
@@ -44,11 +47,10 @@ export const HeroSection = () => {
             className="relative z-10 w-full max-w-[300px] md:max-w-[500px] drop-shadow-[0_0_50px_rgba(0,229,255,0.4)] mb-4"
           />
           <h1 className="text-7xl font-black leading-[1.1] tracking-tighter text-white sm:text-8xl md:text-9xl lg:text-[11rem] hidden">
-            <span className="block drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)]">لوکس</span>
-            <span className="neon-text-blue block drop-shadow-[0_0_60px_rgba(0,229,255,0.9)]">LOXX</span>
+            <span className="block drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)]">LOXX</span>
           </h1>
         </motion.div>
-
+        
         <div className="relative mx-auto mb-12 max-w-2xl px-4 py-6">
            {/* Cyberpunk brackets */}
            <div className="absolute left-0 top-0 h-4 w-4 border-l-2 border-t-2 border-neon-pink" />
@@ -56,10 +58,10 @@ export const HeroSection = () => {
            <div className="absolute bottom-0 left-0 h-4 w-4 border-b-2 border-l-2 border-neon-pink" />
            <div className="absolute bottom-0 right-0 h-4 w-4 border-b-2 border-r-2 border-neon-pink" />
 
-           <p className="text-xl font-medium text-gray-300 md:text-2xl">
-             به پیشرفته‌ترین پلتفرم گیمینگ فارسی خوش آمدید.
+           <p className="text-xl font-medium text-gray-300 md:text-2xl leading-relaxed">
+             {t("landingTitle")}
              <br />
-             جایی که قهرمان‌ها متولد می‌شوند.
+             {t("landingSubtitle")}
            </p>
         </div>
 
@@ -68,7 +70,7 @@ export const HeroSection = () => {
             <GlowButton variant="pink" size="lg" className="group relative w-full overflow-hidden !rounded-2xl justify-center whitespace-nowrap flex-nowrap shrink-0">
               <span className="relative z-10 flex items-center gap-3 whitespace-nowrap flex-nowrap shrink-0">
                 <Play size={20} fill="currentColor" className="shrink-0" />
-                <span className="text-lg whitespace-nowrap shrink-0">همین حالا شروع کنید</span>
+                <span className="text-lg whitespace-nowrap shrink-0">{t("startNowBtn")}</span>
               </span>
               <motion.div 
                 className="absolute inset-0 bg-white/20"
@@ -81,7 +83,7 @@ export const HeroSection = () => {
           <Link to="/lobbies" className="w-full sm:w-1/2 shrink-0 whitespace-nowrap flex-nowrap">
             <GlowButton variant="blue" size="lg" className="group w-full !rounded-2xl text-lg backdrop-blur-md justify-center mt-4 sm:mt-0 whitespace-nowrap flex-nowrap shrink-0">
               <Gamepad2 size={24} className="ml-2 group-hover:rotate-12 transition-transform shrink-0" />
-              <span className="whitespace-nowrap shrink-0">اتاق‌های بازی</span>
+              <span className="whitespace-nowrap shrink-0">{t("gameRoomsBtn")}</span>
             </GlowButton>
           </Link>
         </div>
@@ -112,19 +114,17 @@ export const HeroSection = () => {
                   <Download size={20} className="text-neon-blue animate-bounce group-hover:text-neon-pink transition-colors duration-300" />
                   
                   <span className="bg-gradient-to-r from-white to-gray-200 bg-clip-text text-transparent group-hover:from-neon-blue group-hover:to-teal-300 transition-all duration-500">
-                    دریافت و دانلود اپلیکیشن لوکس
+                    {t("downloadLoxxApp")}
                   </span>
                   
                   <span className="text-[10px] bg-neon-blue/15 border border-neon-blue/30 text-neon-blue px-2 py-0.5 rounded-md font-bold group-hover:bg-neon-pink/15 group-hover:border-neon-pink/30 group-hover:text-neon-pink transition-colors">
-                    آخرین نسخه
+                    {t("latestVersion")}
                   </span>
                </div>
             </motion.div>
           </Link>
         </div>
       </motion.div>
-
-      {/* Floating Particles or Circuits (Simulated) removed in favor of CyberGrid */}
     </section>
   );
 };

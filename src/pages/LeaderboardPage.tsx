@@ -17,6 +17,7 @@ import { useProfilePopover } from "../context/ProfilePopoverContext";
 import { MembershipType } from "../types";
 import { SmartImage } from "../components/ui/SmartImage";
 import { getAvatarFallbacks } from "../lib/avatar";
+import { useLanguage } from "../context/LanguageContext";
 
 const SCORING_RULES = [
   { icon: <PlusCircle size={18} />, label: "ایجاد لابی", points: "+20 XP", detail: "یک بار در هر ساعت" },
@@ -29,6 +30,8 @@ const SCORING_RULES = [
 
 export const LeaderboardPage = () => {
   const { isSidebarCollapsed } = useAuth();
+  const { language, t } = useLanguage();
+  const isRtl = language === "fa";
   const [timeLeftStr, setTimeLeftStr] = useState("0d 0h 0m");
   const [topUsers, setTopUsers] = useState<any[]>([]);
   const [showAll, setShowAll] = useState(false);
@@ -97,17 +100,21 @@ export const LeaderboardPage = () => {
   return (
     <div className="flex min-h-[calc(100vh-64px)] bg-[#050507]">
       <Sidebar />
-      <main className={cn("flex-1 px-4 py-8 lg:px-8 pb-32 md:pb-8 transition-all duration-300", !isSidebarCollapsed ? "md:mr-64" : "md:mr-20")}>
+      <main className={cn("flex-1 px-4 py-8 lg:px-8 pb-32 md:pb-8 transition-all duration-300", isRtl ? (!isSidebarCollapsed ? "md:mr-64" : "md:mr-20") : (!isSidebarCollapsed ? "md:ml-64" : "md:ml-20"))} dir={isRtl ? "rtl" : "ltr"}>
         <div className="container mx-auto max-w-6xl">
-          <header className="mb-12 flex flex-col items-center justify-between gap-8 md:flex-row md:mb-16">
-            <div className="text-center md:text-right">
-              <div className="flex items-center justify-center md:justify-start gap-3 mb-2">
+          <header className={cn("mb-12 flex flex-col items-center justify-between gap-8 md:flex-row md:mb-16", isRtl ? "" : "md:flex-row-reverse")}>
+            <div className={cn("text-center", isRtl ? "md:text-right" : "md:text-left")}>
+              <div className={cn("flex items-center justify-center gap-3 mb-2", isRtl ? "md:justify-start" : "md:justify-start")}>
                 <div className="h-10 w-10 rounded-xl bg-neon-blue/20 flex items-center justify-center text-neon-blue shadow-[0_0_20px_rgba(0,229,255,0.2)]">
                    <Trophy size={24} />
                 </div>
-                <h1 className="text-3xl md:text-5xl font-black text-white tracking-tighter italic uppercase">قهرمانان هفته لوکس</h1>
+                <h1 className="text-3xl md:text-5xl font-black text-white tracking-tighter italic uppercase">
+                  {isRtl ? "قهرمانان هفته لوکس" : "Loxx Weekly Rank"}
+                </h1>
               </div>
-              <p className="text-gray-500 font-bold max-w-md">هر هفته ۳ نفر برتر لابی‌های لوکس جوایز ویژه و اشتراک VIP دریافت می‌کنند.</p>
+              <p className="text-gray-500 font-bold max-w-md">
+                {isRtl ? "هر هفته ۳ نفر برتر لابی‌های لوکس جوایز ویژه و اشتراک VIP دریافت می‌کنند." : "Each week, the top 3 players on Loxx lobbies receive special prizes and active VIP membership."}
+              </p>
             </div>
 
             <div className="flex flex-col items-center md:items-end gap-3">

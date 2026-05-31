@@ -4,10 +4,12 @@ import { LayoutDashboard, Users, MessageSquare, Gamepad2, Trophy } from 'lucide-
 import { cn } from '../../lib/utils';
 import { useAuth } from '../../context/AuthContext';
 import { useGames } from '../../context/GamesContext';
+import { useLanguage } from '../../context/LanguageContext';
 
 export const BottomNav = () => {
   const { user } = useAuth();
   const { myGames } = useGames();
+  const { t } = useLanguage();
   const [channelsUnread, setChannelsUnread] = React.useState(0);
 
   React.useEffect(() => {
@@ -38,11 +40,11 @@ export const BottomNav = () => {
   }, [user?.id, myGames]);
 
   const menuItems = [
-    { icon: LayoutDashboard, label: "داشبورد", path: "/dashboard" },
-    { icon: Gamepad2, label: "بازی‌ها", path: "/games" },
-    { icon: MessageSquare, label: "چت", path: "/chat", isSpecial: true },
-    { icon: Users, label: "لابی‌ها", path: "/lobbies" },
-    { icon: Trophy, label: "رتبه‌بندی", path: "/ranking" },
+    { icon: LayoutDashboard, label: t("dashboard"), path: "/dashboard" },
+    { icon: Gamepad2, label: t("games"), path: "/games" },
+    { icon: MessageSquare, label: t("globalChat"), path: "/chat", isSpecial: true },
+    { icon: Users, label: t("lobbies"), path: "/lobbies" },
+    { icon: Trophy, label: t("rankings"), path: "/ranking" },
   ];
 
   return (

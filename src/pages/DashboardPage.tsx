@@ -42,6 +42,7 @@ import { getAvatarFallbacks } from "../lib/avatar";
 
 import { useProfilePopover } from "../context/ProfilePopoverContext";
 import { MembershipType } from "../types";
+import { useLanguage } from "../context/LanguageContext";
 
 const DashboardSkeleton = () => (
   <div className="container mx-auto max-w-6xl animate-pulse">
@@ -100,6 +101,8 @@ export const DashboardPage = () => {
   const { friends, openChat } = useFriends();
   const { user, isSidebarCollapsed } = useAuth();
   const { openProfile } = useProfilePopover();
+  const { language } = useLanguage();
+  const isRtl = language === "fa";
 
   const [loading, setLoading] = useState(true);
   const [isLobbyModalOpen, setIsLobbyModalOpen] = useState(false);
@@ -212,7 +215,7 @@ export const DashboardPage = () => {
     return (
       <div className={cn("flex", isElectron ? "min-h-[calc(100vh-100px)]" : "min-h-[calc(100vh-64px)]")}>
         <Sidebar />
-        <main className={cn("flex-1 px-4 py-8 lg:px-8 pb-24 md:pb-8 transition-all duration-300 min-w-0 w-full", !isSidebarCollapsed ? "md:mr-64" : "md:mr-20")}>
+        <main className={cn("flex-1 px-4 py-8 lg:px-8 pb-24 md:pb-8 transition-all duration-300 min-w-0 w-full", isRtl ? (!isSidebarCollapsed ? "md:mr-64" : "md:mr-20") : (!isSidebarCollapsed ? "md:ml-64" : "md:ml-20"))}>
           <DashboardSkeleton />
         </main>
       </div>
@@ -222,7 +225,7 @@ export const DashboardPage = () => {
   return (
     <div className={cn("flex", isElectron ? "min-h-[calc(100vh-100px)]" : "min-h-[calc(100vh-64px)]")}>
       <Sidebar />
-      <main className={cn("flex-1 px-4 py-8 lg:px-8 pb-24 md:pb-8 transition-all duration-300 min-w-0 w-full", !isSidebarCollapsed ? "md:mr-64" : "md:mr-20")}>
+      <main className={cn("flex-1 px-4 py-8 lg:px-8 pb-24 md:pb-8 transition-all duration-300 min-w-0 w-full", isRtl ? (!isSidebarCollapsed ? "md:mr-64" : "md:mr-20") : (!isSidebarCollapsed ? "md:ml-64" : "md:ml-20"))}>
         <div className="container mx-auto max-w-6xl">
           {/* STREAMER BANNER */}
           {isStreamer ? (

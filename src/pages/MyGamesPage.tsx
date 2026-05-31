@@ -19,6 +19,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { cn } from "../lib/utils";
+import { useLanguage } from "../context/LanguageContext";
 
 const MyGameCard: React.FC<{ game: Game }> = ({ game }) => {
   const { toggleMyGame } = useGames();
@@ -97,6 +98,8 @@ const MyGameCard: React.FC<{ game: Game }> = ({ game }) => {
 export const MyGamesPage = () => {
   const { isSidebarCollapsed } = useAuth();
   const { allGames, myGames, loading } = useGames();
+  const { language, t } = useLanguage();
+  const isRtl = language === "fa";
 
   const favoriteGames = useMemo(() => 
     allGames.filter(g => myGames.includes(g.id))
@@ -109,16 +112,20 @@ export const MyGamesPage = () => {
   return (
     <div className="flex min-h-[calc(100vh-64px)] overflow-x-hidden">
       <Sidebar />
-      <main className={cn("flex-1 px-4 py-8 lg:px-8 pb-32 md:pb-8 w-full transition-all duration-300", !isSidebarCollapsed ? "md:mr-64" : "md:mr-20")} dir="rtl">
+      <main className={cn("flex-1 px-4 py-8 lg:px-8 pb-32 md:pb-8 w-full transition-all duration-300", isRtl ? (!isSidebarCollapsed ? "md:mr-64" : "md:mr-20") : (!isSidebarCollapsed ? "md:ml-64" : "md:ml-20"))} dir={isRtl ? "rtl" : "ltr"}>
         <div className="container mx-auto max-w-5xl">
           <header className="mb-8 md:mb-12">
-            <div className="flex items-center gap-4 text-[10px] md:text-xs font-bold text-gray-500 mb-2 uppercase tracking-widest justify-center md:justify-start">
-              <Link to="/games" className="hover:text-neon-blue">بازی‌ها</Link>
-              <ChevronLeft size={12} />
-              <span className="text-neon-purple">برگزیدگان من</span>
+            <div className={cn("flex items-center gap-4 text-[10px] md:text-xs font-bold text-gray-500 mb-2 uppercase tracking-widest justify-center", isRtl ? "md:justify-start" : "md:justify-start")}>
+              <Link to="/games" className="hover:text-neon-blue">{t("gamesMenu") || "Games"}</Link>
+              <ChevronLeft size={12} className={cn(isRtl ? "" : "rotate-180")} />
+              <span className="text-neon-purple">{isRtl ? "برگزیدگان من" : "My Favorites"}</span>
             </div>
-            <h1 className="text-3xl md:text-4xl font-black text-white text-center md:text-right">بازی‌های مورد علاقه من</h1>
-            <p className="text-gray-400 mt-2 text-xs md:text-sm text-center md:text-right">مدیریت بازی‌هایی که هر روز تجربه می‌کنید</p>
+            <h1 className={cn("text-3xl md:text-4xl font-black text-white text-center", isRtl ? "md:text-right" : "md:text-left")}>
+              {isRtl ? "بازی‌های مورد علاقه من" : "My Favorite Games"}
+            </h1>
+            <p className={cn("text-gray-400 mt-2 text-xs md:text-sm text-center", isRtl ? "md:text-right" : "md:text-left")}>
+              {isRtl ? "مدیریت بازی‌هایی که هر روز تجربه می‌کنید" : "Manage the games you play every day"}
+            </p>
           </header>
 
           <div className="space-y-12">
