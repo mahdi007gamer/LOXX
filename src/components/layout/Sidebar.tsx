@@ -77,6 +77,7 @@ export const Sidebar = () => {
   
   return (
     <aside 
+      dir={isRtl ? "rtl" : "ltr"}
       className={cn(
         "fixed hidden bg-dark-[#050507]/50 bg-dark-bg/50 backdrop-blur-lg md:block z-[40] transition-all duration-300",
         isElectron 
@@ -84,8 +85,8 @@ export const Sidebar = () => {
           : "top-16 h-[calc(100vh-64px)]",
         isSidebarCollapsed ? "w-20" : "w-64",
         isRtl 
-          ? "right-0 border-l border-white/10" 
-          : "left-0 border-r border-white/10"
+          ? "right-0 border-l border-white/10 text-right" 
+          : "left-0 border-r border-white/10 text-left"
       )}
     >
       <div className="flex h-full flex-col justify-between py-6">
@@ -182,7 +183,7 @@ export const Sidebar = () => {
             <>
               <NavLink
                 to="/admin"
-                title={isSidebarCollapsed ? "پنل مدیریت" : undefined}
+                title={isSidebarCollapsed ? t("adminPanel") : undefined}
                 className={({ isActive }) => cn(
                   "flex items-center rounded-lg py-3 transition-all duration-300 overflow-hidden",
                   isActive 
@@ -195,12 +196,12 @@ export const Sidebar = () => {
                 )}
               >
                 <Shield size={20} className="shrink-0" />
-                {!isSidebarCollapsed && <span className="font-medium whitespace-nowrap">پنل مدیریت</span>}
+                {!isSidebarCollapsed && <span className="font-medium whitespace-nowrap">{t("adminPanel")}</span>}
               </NavLink>
 
               <NavLink
                 to="/email"
-                title={isSidebarCollapsed ? "ایمیل سازمانی" : undefined}
+                title={isSidebarCollapsed ? t("corporateEmail") : undefined}
                 className={({ isActive }) => cn(
                   "flex items-center rounded-lg py-3 transition-all duration-300 overflow-hidden",
                   isActive 
@@ -213,7 +214,7 @@ export const Sidebar = () => {
                 )}
               >
                 <Mail size={20} className="shrink-0" />
-                {!isSidebarCollapsed && <span className="font-medium whitespace-nowrap">ایمیل سازمانی</span>}
+                {!isSidebarCollapsed && <span className="font-medium whitespace-nowrap">{t("corporateEmail")}</span>}
               </NavLink>
             </>
           )}

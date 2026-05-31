@@ -303,11 +303,15 @@ export const PremiumPage = () => {
                      className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-neon-purple/20 border border-neon-purple/30 text-neon-purple text-[10px] font-black uppercase tracking-widest mb-6 italic"
                    >
                      <Sparkles size={14} className="animate-pulse" />
-                     تجربه نسل جدید گیمینگ
+                     {isRtl ? "تجربه نسل جدید گیمینگ" : "Next Gen Gaming Experience"}
                    </motion.div>
-                   <h1 className="text-4xl md:text-7xl font-black text-white italic uppercase tracking-tighter mb-4">ارتقای سطح کاربری</h1>
-                   <p className="text-gray-500 max-w-2xl mx-auto font-bold">
-                     برای حمایت از لوکس و باز کردن قابلیت‌های استثنایی، یکی از اشتراک‌های ویژه را انتخاب کنید. <br/>
+                   <h1 className="text-4xl md:text-7xl font-black text-white italic uppercase tracking-tighter mb-4">
+                     {isRtl ? "ارتقای سطح کاربری" : "Upgrade Membership"}
+                   </h1>
+                   <p className="text-gray-500 max-w-2xl mx-auto font-bold text-center">
+                     {isRtl 
+                       ? "برای حمایت از لوکس و باز کردن قابلیت‌های استثنایی، یکی از اشتراک‌های ویژه را انتخاب کنید."
+                       : "Support LOXX and unlock pristine, elite features by selecting one of our premium offerings."} <br/>
                      <span className="text-[10px] text-neon-blue font-black italic uppercase tracking-[0.3em] mt-3 block opacity-60">Elevate Your Loxx Experience</span>
                    </p>
                 </header>
@@ -319,37 +323,43 @@ export const PremiumPage = () => {
                         <Zap size={200} className="rotate-12" />
                      </div>
                      <div className="flex items-center justify-between mb-8 relative z-10">
-                        <div>
+                        <div className={isRtl ? "text-right" : "text-left"}>
                            <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter">LOXX PLUS</h2>
-                           <p className="text-neon-blue font-bold uppercase text-xs tracking-widest">تجربه ارتقا یافته</p>
+                           <p className="text-neon-blue font-bold uppercase text-xs tracking-widest">
+                             {isRtl ? "تجربه ارتقا یافته" : "Upgraded Experience"}
+                           </p>
                         </div>
-                        <div className="text-right">
+                        <div className={isRtl ? "text-right" : "text-left"}>
                            <span className="text-2xl font-black text-white italic">{PLAN_DATA.PLUS.price}</span>
-                           <span className="text-gray-500 text-[10px] font-bold block italic uppercase">تومان / ماه</span>
+                           <span className="text-gray-500 text-[10px] font-bold block italic uppercase">
+                             {isRtl ? "تومان / ماه" : "Toman / Month"}
+                           </span>
                         </div>
                      </div>
                      <div className="space-y-4 mb-10 relative z-10">
                         {PLAN_FEATURES.PLUS.map((feat, i) => (
                            <motion.div 
                              key={i} 
-                             initial={{ opacity: 0, x: -10 }}
+                             initial={{ opacity: 0, x: isRtl ? 10 : -10 }}
                              whileInView={{ opacity: 1, x: 0 }}
                              viewport={{ once: true }}
                              transition={{ delay: i * 0.05 }}
-                             className="flex gap-4 items-center group/item hover:translate-x-1 transition-transform"
+                             className={cn("flex gap-4 items-center group/item hover:translate-x-1 transition-transform", isRtl ? "flex-row" : "flex-row-reverse justify-end")}
                            >
                               <div className="h-10 w-10 rounded-xl bg-neon-blue/10 flex items-center justify-center text-neon-blue shrink-0 transition-all group-hover/item:scale-110 group-hover/item:rotate-6 group-hover/item:bg-neon-blue/20 shadow-neon-blue/0 group-hover/item:shadow-neon-blue/20 shadow-lg">
                                 {feat.icon}
                               </div>
-                              <div className="flex flex-col">
+                              <div className={cn("flex flex-col", isRtl ? "text-right" : "text-left")}>
                                 <p className="text-[12px] font-black text-white italic uppercase tracking-tight leading-none mb-1 group-hover/item:text-neon-blue transition-colors">{feat.label}</p>
-                                <p className="text-[10px] text-gray-500 font-bold italic leading-none">{feat.detail}</p>
+                                <p className="text-[10px] text-gray-500 font-bold italic leading-none">
+                                  {isRtl ? feat.detail : feat.label}
+                                </p>
                               </div>
                            </motion.div>
                         ))}
                      </div>
                      <GlowButton onClick={() => handleSelectPlan("PLUS")} variant="blue" className="w-full py-5 text-sm font-black uppercase italic tracking-widest">
-                        دریافت پلاس <ArrowRight size={18} className="mr-2 inline" />
+                        {isRtl ? "دریافت پلاس" : "GET PLUS"} <ArrowRight size={18} className="mr-2 inline" />
                      </GlowButton>
                   </NeonCard>
 
@@ -359,37 +369,43 @@ export const PremiumPage = () => {
                         <Crown size={200} className="rotate-12" />
                      </div>
                      <div className="flex items-center justify-between mb-8 relative z-10">
-                        <div>
+                        <div className={isRtl ? "text-right" : "text-left"}>
                            <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter">LOXX VIP</h2>
-                           <p className="text-yellow-400 font-bold uppercase text-xs tracking-widest">سطح نخبگان لوکس</p>
+                           <p className="text-yellow-400 font-bold uppercase text-xs tracking-widest">
+                             {isRtl ? "سطح نخبگان لوکس" : "Elite Tier Lounge"}
+                           </p>
                         </div>
-                        <div className="text-right">
+                        <div className={isRtl ? "text-right" : "text-left"}>
                            <span className="text-2xl font-black text-white italic">{PLAN_DATA.VIP.price}</span>
-                           <span className="text-gray-500 text-[10px] font-bold block italic uppercase">تومان / ماه</span>
+                           <span className="text-gray-500 text-[10px] font-bold block italic uppercase">
+                             {isRtl ? "تومان / ماه" : "Toman / Month"}
+                           </span>
                         </div>
                      </div>
                      <div className="space-y-4 mb-10 relative z-10">
                         {PLAN_FEATURES.VIP.map((feat, i) => (
                            <motion.div 
                              key={i} 
-                             initial={{ opacity: 0, x: -10 }}
+                             initial={{ opacity: 0, x: isRtl ? 10 : -10 }}
                              whileInView={{ opacity: 1, x: 0 }}
                              viewport={{ once: true }}
                              transition={{ delay: i * 0.05 }}
-                             className="flex gap-4 items-center group/item hover:translate-x-1 transition-transform"
+                             className={cn("flex gap-4 items-center group/item hover:translate-x-1 transition-transform", isRtl ? "flex-row" : "flex-row-reverse justify-end")}
                            >
                               <div className="h-10 w-10 rounded-xl bg-yellow-400/10 flex items-center justify-center text-yellow-400 shrink-0 transition-all group-hover/item:scale-110 group-hover/item:rotate-6 group-hover/item:bg-yellow-400/20 shadow-yellow-400/0 group-hover/item:shadow-yellow-400/20 shadow-lg">
                                 {feat.icon}
                               </div>
-                              <div className="flex flex-col">
+                              <div className={cn("flex flex-col", isRtl ? "text-right" : "text-left")}>
                                 <p className="text-[12px] font-black text-white italic uppercase tracking-tight leading-none mb-1 group-hover/item:text-yellow-400 transition-colors">{feat.label}</p>
-                                <p className="text-[10px] text-gray-500 font-bold italic leading-none">{feat.detail}</p>
+                                <p className="text-[10px] text-gray-500 font-bold italic leading-none">
+                                  {isRtl ? feat.detail : feat.label}
+                                </p>
                               </div>
                            </motion.div>
                         ))}
                      </div>
                      <GlowButton onClick={() => handleSelectPlan("VIP")} variant="pink" className="w-full py-5 text-sm font-black uppercase italic tracking-widest bg-gradient-to-r from-neon-purple to-neon-pink">
-                        دریافت VIP <Crown size={18} className="mr-2 inline" />
+                        {isRtl ? "دریافت VIP" : "GET VIP"} <Crown size={18} className="mr-2 inline" />
                      </GlowButton>
                   </NeonCard>
                 </div>
@@ -405,7 +421,7 @@ export const PremiumPage = () => {
                 className="max-w-4xl mx-auto"
               >
                 <button onClick={() => setStep("SELECT")} className="mb-8 flex items-center gap-2 text-gray-500 hover:text-white transition-colors font-bold uppercase text-xs italic">
-                  <X size={16} /> بازگشت به انتخاب طرح
+                  <X size={16} /> {isRtl ? "بازگشت به انتخاب طرح" : "Back to Plans Selection"}
                 </button>
                 
                 <NeonCard 
@@ -431,7 +447,9 @@ export const PremiumPage = () => {
                     <p className={cn("font-bold uppercase tracking-widest italic animate-pulse", 
                       selectedPlan === "VIP" ? "text-yellow-400" : "text-neon-blue"
                     )}>
-                      {selectedPlan === "PLUS" ? "شما در حال خرید نسخه ارتقا یافته هستید" : "شما در حال خرید نسخه نخبگان هستید"}
+                      {selectedPlan === "PLUS" 
+                        ? (isRtl ? "شما در حال خرید نسخه ارتقا یافته هستید" : "YOU ARE ORDERING LOXX PLUS UPGRADE") 
+                        : (isRtl ? "شما در حال خرید نسخه نخبگان هستید" : "YOU ARE ORDERING LOXX VIP ELITE")}
                     </p>
                   </div>
 
@@ -463,7 +481,7 @@ export const PremiumPage = () => {
                     variant={selectedPlan === "VIP" ? "gold" : "blue"} 
                     className="w-full py-6 text-lg font-black italic uppercase tracking-widest relative z-10"
                   >
-                    ادامه به مرحله پرداخت <CreditCard size={20} className="mr-2 inline" />
+                    {isRtl ? "ادامه به مرحله پرداخت" : "CONTINUE TO PAYMENT"} <CreditCard size={20} className="mr-2 inline" />
                   </GlowButton>
                 </NeonCard>
               </motion.div>
@@ -478,25 +496,25 @@ export const PremiumPage = () => {
                 className="max-w-4xl mx-auto"
               >
                 <button onClick={() => setStep("PREVIEW")} className="mb-8 flex items-center gap-2 text-gray-500 hover:text-white transition-colors font-bold uppercase text-xs italic">
-                  <X size={16} /> بازگشت به پیش‌نمایش
+                  <X size={16} /> {isRtl ? "بازگشت به پیش‌نمایش" : "Back to Preview"}
                 </button>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center justify-center">
                    <div className="space-y-8 flex flex-col items-center lg:items-end w-full">
                       <div className="text-center lg:text-right w-full">
-                         <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter mb-2">اطلاعات پرداخت</h2>
-                         <p className="text-gray-500 font-bold text-sm italic">لطفاً مبلغ را کارت‌به‌کارت کنید و تصویر رسید را بارگذاری نمایید.</p>
+                         <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter mb-2">{isRtl ? "اطلاعات پرداخت" : "Payment Details"}</h2>
+                         <p className="text-gray-500 font-bold text-sm italic">{isRtl ? "لطفاً مبلغ را کارت‌به‌کارت کنید و تصویر رسید را بارگذاری نمایید." : "Please transfer the amount via Card-to-Card and upload your receipt snapshot."}</p>
                       </div>
 
                       <div className="w-full max-w-lg space-y-6">
                         <BankCard 
                           cardNumber="6063-7311-8109-6737"
-                          cardHolder="مهدی دلال زاده احمدی"
+                          cardHolder={isRtl ? "مهدی دلال زاده احمدی" : "Mehdi DalalZadeh Ahmadi"}
                         />
 
                         <div className="p-8 rounded-[40px] bg-white/[0.03] border border-white/5 space-y-5 shadow-2xl backdrop-blur-md">
                            <div className="flex justify-between items-center">
-                              <span className="text-gray-500 font-black uppercase text-[10px] italic tracking-widest leading-none">نوع اشتراک</span>
+                              <span className="text-gray-500 font-black uppercase text-[10px] italic tracking-widest leading-none">{isRtl ? "نوع اشتراک" : "PLAN TYPE"}</span>
                               <span className={cn(
                                 "text-[10px] font-black px-4 py-1.5 rounded-full uppercase italic",
                                 selectedPlan === "VIP" 
@@ -507,11 +525,11 @@ export const PremiumPage = () => {
                               </span>
                            </div>
                            <div className="flex justify-between items-center bg-white/[0.02] p-4 rounded-2xl border-2 border-dashed border-white/10 relative overflow-hidden">
-                              <span className="text-gray-500 font-black uppercase text-[10px] italic tracking-widest relative z-10">مشخصات کد تخفیف</span>
+                              <span className="text-gray-500 font-black uppercase text-[10px] italic tracking-widest relative z-10">{isRtl ? "مشخصات کد تخفیف" : "PROMOCODE"}</span>
                               <div className="flex flex-col items-end w-1/2 relative z-10">
                                 <input
                                    type="text"
-                                   placeholder="کد تخفیف (الزاماً با حروف بزرگ)"
+                                   placeholder={isRtl ? "کد تخفیف (الزاماً با حروف بزرگ)" : "COUPON CODE (UPPERCASE)"}
                                    value={promoCode}
                                    onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
                                    className={cn(
@@ -532,7 +550,7 @@ export const PremiumPage = () => {
                            </div>
                            
                            <div className="flex justify-between items-center mt-4">
-                              <span className="text-gray-500 font-black uppercase text-[10px] italic tracking-widest">مبلغ نهایی</span>
+                              <span className="text-gray-500 font-black uppercase text-[10px] italic tracking-widest">{isRtl ? "مبلغ نهایی" : "FINAL AMOUNT"}</span>
                               <div className="flex flex-col items-end">
                                 <span className={cn(
                                   "font-black text-2xl italic tracking-tighter",
@@ -540,10 +558,10 @@ export const PremiumPage = () => {
                                 )}>
                                   {promoDiscount > 0 
                                     ? (parseInt(PLAN_DATA[selectedPlan].price.replace(/,/g, '')) * (1 - promoDiscount / 100)).toLocaleString()
-                                    : PLAN_DATA[selectedPlan].price} <span className="text-[10px]">تومان</span>
+                                    : PLAN_DATA[selectedPlan].price} <span className="text-[10px]">{isRtl ? "تومان" : "Toman"}</span>
                                 </span>
                                 {promoDiscount > 0 ? (
-                                  <span className="text-[9px] text-purple-400 font-bold animate-pulse mt-1">تخفیف {promoDiscount}% اعمال شد</span>
+                                  <span className="text-[9px] text-purple-400 font-bold animate-pulse mt-1">{isRtl ? `تخفیف ${promoDiscount}% اعمال شد` : `Discount ${promoDiscount}% Applied`}</span>
                                 ) : (
                                   <span className="text-[9px] text-gray-600 font-bold mt-1 line-through">{PLAN_DATA[selectedPlan].price}</span>
                                 )}
@@ -552,12 +570,12 @@ export const PremiumPage = () => {
                            
                            <div className="pt-5 border-t border-white/5 space-y-3">
                              <div className="flex flex-col gap-2">
-                                <p className="text-[10px] text-gray-400 font-black uppercase italic tracking-widest text-right">کپی شماره کارت سریع:</p>
+                                <p className="text-[10px] text-gray-400 font-black uppercase italic tracking-widest text-right">{isRtl ? "کپی شماره کارت سریع:" : "QUICK CARD COPY:"}</p>
                                 <div 
                                   className="flex items-center justify-between bg-white/5 p-4 rounded-2xl border border-white/5 cursor-pointer hover:bg-white/10 group/copy transition-all"
                                   onClick={() => {
                                     navigator.clipboard.writeText("6063731181096737");
-                                    toast.success("شماره کارت کپی شد");
+                                    toast.success(isRtl ? "شماره کارت کپی شد" : "Card number copied successfully");
                                   }}
                                 >
                                    <Copy size={18} className="text-neon-blue group-hover/copy:scale-110 transition-transform" />
@@ -570,7 +588,7 @@ export const PremiumPage = () => {
                    </div>
 
                    <div className="space-y-6">
-                      <h4 className="text-white font-black italic uppercase tracking-tight">آپلود تصویر رسید</h4>
+                      <h4 className="text-white font-black italic uppercase tracking-tight">{isRtl ? "آپلود تصویر رسید" : "Upload Receipt Snapshot"}</h4>
                       
                       <div 
                         onClick={() => fileInputRef.current?.click()}
@@ -583,7 +601,7 @@ export const PremiumPage = () => {
                           <>
                             <img src={receiptPreview} className="w-full h-full object-cover" />
                             <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                              <p className="text-white font-black italic uppercase text-xs">تغییر تصویر</p>
+                              <p className="text-white font-black italic uppercase text-xs">{isRtl ? "تغییر تصویر" : "Change Image"}</p>
                             </div>
                           </>
                         ) : (
@@ -592,7 +610,7 @@ export const PremiumPage = () => {
                                <Upload size={32} />
                             </div>
                             <div className="text-center">
-                               <p className="text-white font-black italic uppercase text-sm">انتخاب عکس رسید</p>
+                               <p className="text-white font-black italic uppercase text-sm">{isRtl ? "انتخاب عکس رسید" : "Select Receipt Snapshot"}</p>
                                <p className="text-[10px] text-gray-500 font-bold mt-1 uppercase tracking-widest">Maximum size 3MB</p>
                             </div>
                           </>
@@ -612,11 +630,11 @@ export const PremiumPage = () => {
                         variant="blue" 
                         className="w-full py-5 text-sm font-black italic uppercase tracking-widest"
                       >
-                        {submitting ? "در حال ارسال..." : "ارسال برای تایید"} <Check size={18} className="mr-2 inline" />
+                        {submitting ? (isRtl ? "در حال ارسال..." : "SUBMITTING...") : (isRtl ? "ارسال برای تایید" : "SUBMIT PAYMENT FOR APPROVAL")} <Check size={18} className="mr-2 inline" />
                       </GlowButton>
                       
                       <p className="text-[9px] text-gray-600 font-bold uppercase text-center leading-relaxed">
-                        با زدن دکمه ارسال، شما تایید می‌کنید که مبلغ را به درستی واریز کرده‌اید. فعال‌سازی بین ۱ تا ۱۵ دقیقه زمان می‌برد.
+                        {isRtl ? "با زدن دکمه ارسال، شما تایید می‌کنید که مبلغ را به درستی واریز کرده‌اید. فعال‌سازی بین ۱ تا ۱۵ دقیقه زمان می‌برد." : "By clicking submit, you verify the funds are fully transferred. Activations take between 1 to 15 minutes."}
                       </p>
                    </div>
                 </div>
@@ -676,36 +694,36 @@ export const PremiumPage = () => {
                     "text-4xl font-black italic uppercase tracking-tighter mb-4 transition-colors duration-500",
                     paymentStatus === "APPROVED" ? "text-green-400" : "text-white"
                   )}>
-                    {paymentStatus === "APPROVED" ? "تبریک! اشتراک فعال شد" : 
-                     paymentStatus === "REJECTED" ? "خطا در تایید تراکنش" : 
-                     "در انتظار تأیید"}
+                    {paymentStatus === "APPROVED" ? (isRtl ? "تبریک! اشتراک فعال شد" : "CONGRATULATIONS! PREMIUM ACTIVATED") : 
+                     paymentStatus === "REJECTED" ? (isRtl ? "خطا در تایید تراکنش" : "TRANSACTION REJECTED") : 
+                     (isRtl ? "در انتظار تأیید" : "PENDING APPROVAL")}
                   </h2>
                   
                   <p className="text-gray-400 font-bold text-sm mb-8 leading-relaxed max-w-sm mx-auto">
-                    {paymentStatus === "APPROVED" ? "پرداخت شما تایید شد و تمامی امکانات ویژه برای شما باز شده است. از تجربه لوکس لذت ببرید!" : 
-                     paymentStatus === "REJECTED" ? "متاسفانه رسید شما مورد تایید قرار نگرفت. ممکن است تصویر ناخوانا باشد یا تراکنش ثبت نشده باشد." :
-                     "رسید شما با موفقیت دریافت شد و در صف بررسی قرار گرفت. تا دقایقی دیگر اشتراک شما فعال خواهد شد."}
+                    {paymentStatus === "APPROVED" ? (isRtl ? "پرداخت شما تایید شد و تمامی امکانات ویژه برای شما باز شده است. از تجربه لوکس لذت ببرید!" : "Your payment has been successfully confirmed and all elite advantages are active. Enjoy LOXX!") : 
+                     paymentStatus === "REJECTED" ? (isRtl ? "متاسفانه رسید شما مورد تایید قرار نگرفت. ممکن است تصویر ناخوانا باشد یا تراکنش ثبت نشده باشد." : "Apologies, your receipt snapshot was rejected by the auditing console. Please try submitting again.") :
+                     (isRtl ? "رسید شما با موفقیت دریافت شد و در صف بررسی قرار گرفت. تا دقایقی دیگر اشتراک شما فعال خواهد شد." : "Receipt received successfully and put in admin verification queue. Your profile will upgrade in a few moments.")}
                   </p>
 
                   <div className="flex flex-col gap-4">
-                     <div className="p-4 rounded-3xl bg-white/5 border border-white/5 flex justify-between items-center text-right">
+                     <div className={cn("p-4 rounded-3xl bg-white/5 border border-white/5 flex justify-between items-center", isRtl ? "text-right flex-row" : "text-left flex-row-reverse")}>
                         <div>
-                           <p className="text-[10px] text-gray-500 font-bold uppercase italic">تاریخ ثبت</p>
-                           <p className="text-white font-black italic text-sm">{new Date(pendingPayment.createdAt).toLocaleString('fa-IR')}</p>
+                           <p className="text-[10px] text-gray-500 font-bold uppercase italic">{isRtl ? "تاریخ ثبت" : "REGISTRATION DATE"}</p>
+                           <p className="text-white font-black italic text-sm">{new Date(pendingPayment.createdAt).toLocaleString(isRtl ? "fa-IR" : "en-US")}</p>
                         </div>
                         <div>
-                           <p className="text-[10px] text-gray-500 font-bold uppercase italic">کد پیگیری</p>
+                           <p className="text-[10px] text-gray-500 font-bold uppercase italic">{isRtl ? "کد پیگیری" : "TRACKING ID"}</p>
                            <p className="text-white font-black italic text-sm">#{pendingPayment.id.slice(0, 8).toUpperCase()}</p>
                         </div>
                      </div>
 
                      {paymentStatus === "APPROVED" ? (
                         <GlowButton variant="blue" onClick={() => navigate("/")} className="w-full py-5">
-                          ورود به پنل کاربری <ArrowRight size={18} className="mr-2 inline" />
+                          {isRtl ? "ورود به پنل کاربری" : "GO TO MAIN PANEL"} <ArrowRight size={18} className="mr-2 inline" />
                         </GlowButton>
                      ) : paymentStatus === "REJECTED" ? (
                         <GlowButton onClick={() => setStep("SELECT")} variant="secondary" className="w-full py-5">
-                          تلاش دوباره <RefreshCw size={18} className="mr-2 inline" />
+                          {isRtl ? "تلاش دوباره" : "TRY AGAIN"} <RefreshCw size={18} className="mr-2 inline" />
                         </GlowButton>
                      ) : (
                         <GlowButton 
@@ -713,7 +731,7 @@ export const PremiumPage = () => {
                           disabled={submitting}
                           className="w-full py-4 text-xs font-black italic uppercase tracking-widest bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500/20"
                         >
-                          {submitting ? "در حال لغو..." : "لغو درخواست پرداخت"} <X size={16} className="mr-2 inline" />
+                          {submitting ? (isRtl ? "در حال لغو..." : "CANCELLING...") : (isRtl ? "لغو درخواست پرداخت" : "CANCEL PAYMENT REQUEST")} <X size={16} className="mr-2 inline" />
                         </GlowButton>
                      )}
                   </div>
@@ -727,22 +745,22 @@ export const PremiumPage = () => {
                 <div className="h-12 w-12 rounded-2xl bg-neon-blue/10 flex items-center justify-center text-neon-blue mx-auto mb-4">
                   <Shield size={24} />
                 </div>
-                <h4 className="text-white font-black uppercase italic mb-2">پرداخت امن</h4>
-                <p className="text-[10px] text-gray-500 font-bold uppercase leading-relaxed">تراکنش‌ها توسط ادمین تایید و بررسی می‌شوند.</p>
+                <h4 className="text-white font-black uppercase italic mb-2">{isRtl ? "پرداخت امن" : "SECURE PAYMENT"}</h4>
+                <p className="text-[10px] text-gray-500 font-bold uppercase leading-relaxed">{isRtl ? "تراکنش‌ها توسط ادمین تایید و بررسی می‌شوند." : "All transactions are reviewed and verified by administrators."}</p>
              </div>
              <div className="p-6 rounded-3xl bg-white/[0.03] border border-white/5 backdrop-blur-xl text-center">
                 <div className="h-12 w-12 rounded-2xl bg-neon-pink/10 flex items-center justify-center text-neon-pink mx-auto mb-4">
                   <Clock size={24} />
                 </div>
-                <h4 className="text-white font-black uppercase italic mb-2">تایید سریع</h4>
-                <p className="text-[10px] text-gray-500 font-bold uppercase leading-relaxed">فعال‌سازی اشتراک در کمتر از ۱۵ دقیقه.</p>
+                <h4 className="text-white font-black uppercase italic mb-2">{isRtl ? "تایید سریع" : "FAST APPROVAL"}</h4>
+                <p className="text-[10px] text-gray-500 font-bold uppercase leading-relaxed">{isRtl ? "فعال‌سازی اشتراک در کمتر از ۱۵ دقیقه." : "Rapid activation in less than 15 minutes."}</p>
              </div>
              <div className="p-6 rounded-3xl bg-white/[0.03] border border-white/5 backdrop-blur-xl text-center">
                 <div className="h-12 w-12 rounded-2xl bg-neon-purple/10 flex items-center justify-center text-neon-purple mx-auto mb-4">
                   <Users size={24} />
                 </div>
-                <h4 className="text-white font-black uppercase italic mb-2">حمایت از پلتفرم</h4>
-                <p className="text-[10px] text-gray-500 font-bold uppercase leading-relaxed">با خرید پلاس به توسعه لوکس کمک می‌کنید.</p>
+                <h4 className="text-white font-black uppercase italic mb-2">{isRtl ? "حمایت از پلتفرم" : "SUPPORT PLATFORM"}</h4>
+                <p className="text-[10px] text-gray-500 font-bold uppercase leading-relaxed">{isRtl ? "با خرید پلاس به توسعه لوکس کمک می‌کنید." : "By purchasing, you directly power LOXX future developments."}</p>
              </div>
           </div>
         </div>

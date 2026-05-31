@@ -37,6 +37,8 @@ const GameCardSkeleton = () => (
 
 const GameCard: React.FC<{ game: Game; index: number }> = ({ game, index }) => {
   const { myGames, toggleMyGame } = useGames();
+  const { language } = useLanguage();
+  const isRtl = language === "fa";
   const isAdded = myGames.includes(game.id);
 
   return (
@@ -61,7 +63,9 @@ const GameCard: React.FC<{ game: Game; index: number }> = ({ game, index }) => {
           {/* Active Lobbies Badge */}
           <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 flex items-center gap-2">
              <div className="h-1.5 w-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.8)]" />
-             <span className="text-[10px] font-bold text-white whitespace-nowrap">{game.activeLobbies} لابی فعال</span>
+             <span className="text-[10px] font-bold text-white whitespace-nowrap">
+               {isRtl ? `${game.activeLobbies} لابی فعال` : `${game.activeLobbies} Active Lobbies`}
+             </span>
           </div>
           
           {/* Friends Icons */}
@@ -99,7 +103,7 @@ const GameCard: React.FC<{ game: Game; index: number }> = ({ game, index }) => {
             </div>
             <div className="flex items-center gap-1.5">
               <Trophy size={11} className="text-neon-purple" />
-              <span className="text-[10px] text-gray-400">مسابقات دارد</span>
+              <span className="text-[10px] text-gray-400">{isRtl ? "مسابقات دارد" : "Has Tournaments"}</span>
             </div>
           </div>
 
@@ -111,15 +115,15 @@ const GameCard: React.FC<{ game: Game; index: number }> = ({ game, index }) => {
               onClick={() => toggleMyGame(game.id)}
             >
               {isAdded ? (
-                <span className="flex items-center justify-center gap-1.5"><Check size={14} className="shrink-0" /> <span className="truncate">در لیست من</span></span>
+                <span className="flex items-center justify-center gap-1.5"><Check size={14} className="shrink-0" /> <span className="truncate">{isRtl ? "در لیست من" : "My Interest List"}</span></span>
               ) : (
-                <span className="flex items-center justify-center gap-1.5"><Plus size={14} className="shrink-0" /> <span className="truncate">افزودن به لیست</span></span>
+                <span className="flex items-center justify-center gap-1.5"><Plus size={14} className="shrink-0" /> <span className="truncate">{isRtl ? "افزودن به لیست" : "Add to List"}</span></span>
               )}
             </GlowButton>
             <Link 
               to="/lobbies" 
               className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:bg-white/10 transition-all group/btn shrink-0"
-              title="مشاهده لابی‌ها"
+              title={isRtl ? "مشاهده لابی‌ها" : "View Lobbies"}
             >
               <ExternalLink size={16} className="group-hover/btn:scale-110 transition-transform" />
             </Link>

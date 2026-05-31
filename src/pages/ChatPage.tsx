@@ -18,6 +18,7 @@ import { BadgeType, ChatMessage, Channel, MembershipType, FriendStatus } from ".
 
 import { useProfilePopover } from "../context/ProfilePopoverContext";
 import { useAuth } from "../context/AuthContext";
+import { useLanguage } from "../context/LanguageContext";
 import { UserBadges } from "../components/ui/UserBadges";
 import { MessageContextMenu, ContextMenuAction } from "../components/ui/MessageContextMenu";
 import { chatSocket } from "../lib/socket";
@@ -66,6 +67,8 @@ interface MessageItemProps {
 }
 
 function MessageItem({ message, isConsecutive = false, onReaction, onSaveGif, onReply, activeChannelId, onDelete, onReport, onPin, isGroupOwner, onWarnUser, onMuteUser }: MessageItemProps) {
+  const { direction } = useLanguage();
+  const isRtl = direction === "rtl";
   const { openProfile } = useProfilePopover();
   const { user } = useAuth();
   const isAdmin = (user as any)?.role === 'ADMIN';
@@ -398,7 +401,8 @@ function MessageItem({ message, isConsecutive = false, onReaction, onSaveGif, on
               style={getBubbleStyle()}
               className={cn(
                 "relative rounded-2xl overflow-hidden shadow-2xl transition-all border w-fit max-w-full",
-                "rtl text-right break-words",
+                isRtl ? "rtl text-right" : "ltr text-left",
+                "break-words",
                 activeChannelId === 'news'
                   ? "bg-[#0b0c14] text-white border-white/5 shadow-none rounded-xl px-0"
                   : isMsgSenderAdmin
@@ -745,6 +749,8 @@ const GIF_GALLERY = [
 ];
 
 export const ChatPage: React.FC = () => {
+  const { direction, t } = useLanguage();
+  const isRtl = direction === "rtl";
   const { allGames: games, myGames } = useGames();
   const { user, isSidebarCollapsed: authIsSidebarCollapsed } = useAuth();
   const isSidebarCollapsed = authIsSidebarCollapsed;
@@ -1737,7 +1743,8 @@ export const ChatPage: React.FC = () => {
   return (
     <div 
       className={cn(
-        "flex overflow-hidden bg-dark-bg rtl text-right relative overscroll-none",
+        isRtl ? "rtl text-right" : "ltr text-left",
+        "flex overflow-hidden bg-dark-bg relative overscroll-none",
         isElectron ? "h-[calc(100dvh-164px)] md:h-[calc(100vh-100px)]" : "h-[calc(100dvh-128px)] md:h-[calc(100vh-64px)]"
       )}
       style={{ overscrollBehavior: 'none' }} 

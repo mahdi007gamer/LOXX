@@ -4,6 +4,7 @@ import { NeonCard } from "../components/ui/NeonCard";
 import { GlowButton } from "../components/ui/GlowButton";
 import { Input } from "../components/ui/Input";
 import { useAuth } from "../context/AuthContext";
+import { useLanguage } from "../context/LanguageContext";
 import api from "../lib/api";
 import { toast } from "react-hot-toast";
 import { 
@@ -46,6 +47,7 @@ export const SettingsPage = () => {
   const navigate = useNavigate();
   const { tab } = useParams();
   const { user: authUser, refreshUser, isSidebarCollapsed } = useAuth();
+  const { language, setLanguage } = useLanguage();
   const [activeTab, setActiveTab] = useState<SettingsTab>((tab as SettingsTab) || "profile");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -247,16 +249,17 @@ export const SettingsPage = () => {
   };
 
     const isVip = authUser?.membership === "VIP" || authUser?.membership === "PLUS" || (authUser as any)?.role === "STREAMER";
+    const isRtlStyle = language === "fa";
     const tabs = [
-    ...(isVip ? [{ id: "elite" as const, icon: Crown, label: "تنظیمات نخبگان" }] : []),
-    { id: "profile" as const, icon: User, label: "پروفایل عمومی" },
-    { id: "badges" as const, icon: Award, label: "نشان‌ها" },
-    { id: "security" as const, icon: Shield, label: "امنیت و حساب" },
-    { id: "notifications" as const, icon: Bell, label: "اعلان‌ها" },
-    { id: "ui" as const, icon: Monitor, label: "رابط کاربری" },
-    { id: "region" as const, icon: Globe, label: "زبان و منطقه" },
-    { id: "support" as const, icon: MessageSquare, label: "تماس با مدیریت" },
-    { id: "rules" as const, icon: BookOpen, label: "قوانین و مقررات" },
+    ...(isVip ? [{ id: "elite" as const, icon: Crown, label: isRtlStyle ? "تنظیمات نخبگان" : "Elite Settings" }] : []),
+    { id: "profile" as const, icon: User, label: isRtlStyle ? "پروفایل عمومی" : "Public Profile" },
+    { id: "badges" as const, icon: Award, label: isRtlStyle ? "نشان‌ها" : "Badges & Flags" },
+    { id: "security" as const, icon: Shield, label: isRtlStyle ? "امنیت و حساب" : "Security & Account" },
+    { id: "notifications" as const, icon: Bell, label: isRtlStyle ? "اعلان‌ها" : "Notifications" },
+    { id: "ui" as const, icon: Monitor, label: isRtlStyle ? "رابط کاربری" : "Interface & UI" },
+    { id: "region" as const, icon: Globe, label: isRtlStyle ? "زبان و منطقه" : "Language & Region" },
+    { id: "support" as const, icon: MessageSquare, label: isRtlStyle ? "تماس با مدیریت" : "Support Ticket" },
+    { id: "rules" as const, icon: BookOpen, label: isRtlStyle ? "قوانین و مقررات" : "Platform Terms" },
   ] as const;
 
   const renderProfile = () => (
@@ -1028,54 +1031,64 @@ export const SettingsPage = () => {
     </div>
   );
 
-  const renderRegion = () => (
-    <div className="space-y-6">
-      <NeonCard variant="blue" className="space-y-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div>
-            <h4 className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-4 italic flex items-center gap-2">
-              <Languages size={14} /> انتخاب زبان
-            </h4>
-            <select 
-              value={settings.language}
-              onChange={(e) => updateSetting("language", e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-neon-blue/50 font-black italic"
-            >
-               <option value="fa" className="bg-dark-bg">Persian / فارسی</option>
-            </select>
+  const renderRegion = () => {
+    const isRtl = language === "fa";
+    return (
+      <div className="space-y-6" dir={isRtl ? "rtl" : "ltr"}>
+        <NeonCard variant="blue" className="space-y-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className={isRtl ? "text-right" : "text-left"}>
+              <h4 className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-4 italic flex items-center gap-2">
+                <Languages size={14} /> {isRtl ? "انتخاب زبان" : "Select Language"}
+              </h4>
+              <select 
+                value={language}
+                onChange={(e) => {
+                  const val = e.target.value as "en" | "fa";
+                  updateSetting("language", val);
+                  setLanguage(val);
+                }}
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-neon-blue/50 font-black italic select"
+              >
+                 <option value="fa" className="bg-dark-bg text-white">Persian / فارسی</option>
+                 <option value="en" className="bg-dark-bg text-white">English / انگلیسی</option>
+              </select>
+            </div>
+            <div className={isRtl ? "text-right" : "text-left"}>
+              <h4 className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-4 italic flex items-center gap-2">
+                <MapPin size={14} /> {isRtl ? "منطقه بازی (Server Region)" : "Gaming Region (Server Region)"}
+              </h4>
+              <select 
+                value={formData.region}
+                onChange={(e) => setFormData(p => ({ ...p, region: e.target.value }))}
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-neon-blue/50 font-black italic select"
+              >
+                 <option value="IR" className="bg-dark-bg text-white">Iran (Tehran)</option>
+                 <option value="ME" className="bg-dark-bg text-white">Middle East (Dubai)</option>
+                 <option value="EU" className="bg-dark-bg text-white">Europe West (Frankfurt)</option>
+              </select>
+            </div>
           </div>
-          <div>
-            <h4 className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-4 italic flex items-center gap-2">
-              <MapPin size={14} /> منطقه بازی (Server Region)
-            </h4>
-            <select 
-              value={formData.region}
-              onChange={(e) => setFormData(p => ({ ...p, region: e.target.value }))}
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-neon-blue/50 font-black italic"
-            >
-               <option value="IR" className="bg-dark-bg">Iran (Tehran)</option>
-               <option value="ME" className="bg-dark-bg">Middle East (Dubai)</option>
-               <option value="EU" className="bg-dark-bg">Europe West (Frankfurt)</option>
-            </select>
+
+          <hr className="border-white/5" />
+
+          <div className="p-6 rounded-2xl bg-neon-blue/5 border border-neon-blue/20 flex items-center gap-4">
+             <div className="h-12 w-12 rounded-xl bg-neon-blue/10 flex items-center justify-center text-neon-blue shrink-0">
+                <Heart size={24} />
+             </div>
+             <div className={isRtl ? "text-right" : "text-left"}>
+                <h4 className="text-sm font-black text-white italic">{isRtl ? "محتوای بومی شده" : "Localized Content"}</h4>
+                <p className="text-[10px] text-gray-500 font-bold italic uppercase leading-relaxed">
+                  {isRtl 
+                    ? "لوکس همزمان با زبان انتخابی شما، محتوای بازی‌ها و رویدادهای محلی منطقه شما را در اولویت قرار می‌دهد."
+                    : "LOXX prioritizes matching local region events and gaming latency metrics aligned with your chosen configuration."}
+                </p>
+             </div>
           </div>
-        </div>
-
-        <hr className="border-white/5" />
-
-        <div className="p-6 rounded-2xl bg-neon-blue/5 border border-neon-blue/20 flex items-center gap-4">
-           <div className="h-12 w-12 rounded-xl bg-neon-blue/10 flex items-center justify-center text-neon-blue shrink-0">
-              <Heart size={24} />
-           </div>
-           <div>
-              <h4 className="text-sm font-black text-white italic">محتوای بومی شده</h4>
-              <p className="text-[10px] text-gray-500 font-bold italic uppercase leading-relaxed">
-                لوکس همزمان با زبان انتخابی شما، محتوای بازی‌ها و رویدادهای محلی منطقه شما را در اولویت قرار می‌دهد.
-              </p>
-           </div>
-        </div>
-      </NeonCard>
-    </div>
-  );
+        </NeonCard>
+      </div>
+    );
+  };
 
   const [supportMessage, setSupportMessage] = useState("");
 
@@ -1492,14 +1505,20 @@ export const SettingsPage = () => {
     </div>
   );
 
+  const isRtl = language === "fa";
+
   return (
-    <div className="flex min-h-[calc(100vh-64px)] pb-20 md:pb-0">
+    <div className="flex min-h-[calc(100vh-64px)] pb-20 md:pb-0" dir={isRtl ? "rtl" : "ltr"}>
       <Sidebar />
-      <main className={cn("flex-1 px-4 py-8 lg:px-8 transition-all duration-300", !isSidebarCollapsed ? "md:mr-64" : "md:mr-20")}>
+      <main className={cn("flex-1 px-4 py-8 lg:px-8 transition-all duration-300", isRtl ? (!isSidebarCollapsed ? "md:mr-64" : "md:mr-20") : (!isSidebarCollapsed ? "md:ml-64" : "md:ml-20"))}>
         <div className="container mx-auto max-w-5xl">
-           <header className="mb-10 text-center md:text-right">
-            <h1 className="text-3xl md:text-4xl font-black text-white italic uppercase tracking-tighter shadow-text-glow">تنظیمات</h1>
-            <p className="text-xs md:text-sm text-gray-500 font-bold uppercase tracking-widest mt-1">حساب کاربری و اولویت‌های خود را شخصی‌سازی کنید</p>
+           <header className={cn("mb-10 text-center", isRtl ? "md:text-right" : "md:text-left")}>
+            <h1 className="text-3xl md:text-4xl font-black text-white italic uppercase tracking-tighter shadow-text-glow">
+              {isRtl ? "تنظیمات" : "Settings"}
+            </h1>
+            <p className="text-xs md:text-sm text-gray-500 font-bold uppercase tracking-widest mt-1">
+              {isRtl ? "حساب کاربری و اولویت‌های خود را شخصی‌سازی کنید" : "Customize your account and platform preferences"}
+            </p>
           </header>
 
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-4">

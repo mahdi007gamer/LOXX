@@ -154,12 +154,15 @@ export const translations: TranslationDictionary = {
   typingPlaceholder: { fa: "پیام در چت عمومی...", en: "Type your thoughts in Lounge..." },
   sendMsg: { fa: "ارسالپیام", en: "Send Msg" },
   friendsActivityTitle: { fa: "فعالیت دوستان", en: "Friends Action Hub" },
+  adminPanel: { fa: "پنل مدیریت", en: "Admin Panel" },
+  corporateEmail: { fa: "ایمیل سازمانی", en: "Corporate Email" },
 };
 
 interface LanguageContextProps {
   language: Language;
   direction: "rtl" | "ltr";
   toggleLanguage: () => void;
+  setLanguage: (lang: Language) => void;
   t: (key: string) => string;
 }
 
@@ -189,7 +192,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   return (
-    <LanguageContext.Provider value={{ language, direction, toggleLanguage, t }}>
+    <LanguageContext.Provider value={{ language, direction, toggleLanguage, setLanguage, t }}>
       {children}
     </LanguageContext.Provider>
   );

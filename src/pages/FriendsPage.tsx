@@ -386,7 +386,7 @@ export const FriendsPage = () => {
                 <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500" size={20} />
                 <input 
                   type="text" 
-                  placeholder="جستجو در لیست دوستان..."
+                  placeholder={isRtl ? "جستجو در لیست دوستان..." : "Search in friends list..."}
                   className="w-full rounded-2xl border border-white/10 bg-white/5 py-4 pr-12 text-sm text-white focus:border-neon-blue/50 focus:outline-none transition-all placeholder:text-gray-600"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -401,7 +401,7 @@ export const FriendsPage = () => {
                       <div className="space-y-2 mb-8">
                         <div className="flex items-center gap-2 text-xs font-bold text-neon-blue uppercase tracking-wider px-2">
                           <Star size={10} className="fill-neon-blue" />
-                          علاقه‌مندی‌ها
+                          {isRtl ? "علاقه‌مندی‌ها" : "Favorites"}
                         </div>
                         {favorites.map(friend => (
                           <FriendItem 
@@ -420,10 +420,10 @@ export const FriendsPage = () => {
 
                   {/* Regular Categories */}
                   {[
-                    { id: 'inGame', label: 'در حال بازی', items: inGame, count: inGame.length, color: 'text-neon-purple' },
-                    { id: 'inLobby', label: 'در لابی', items: inLobby, count: inLobby.length, color: 'text-neon-blue' },
-                    { id: 'online', label: 'آنلاین', items: online, count: online.length, color: 'text-green-500' },
-                    { id: 'offline', label: 'آفلاین', items: offline, count: offline.length, color: 'text-gray-500' },
+                    { id: 'inGame', label: isRtl ? 'در حال بازی' : 'Playing Game', items: inGame, count: inGame.length, color: 'text-neon-purple' },
+                    { id: 'inLobby', label: isRtl ? 'در لابی' : 'In Lobby', items: inLobby, count: inLobby.length, color: 'text-neon-blue' },
+                    { id: 'online', label: isRtl ? 'آنلاین' : 'Online', items: online, count: online.length, color: 'text-green-500' },
+                    { id: 'offline', label: isRtl ? 'آفلاین' : 'Offline', items: offline, count: offline.length, color: 'text-gray-500' },
                   ].map((cat) => (
                     <div key={cat.id} className="space-y-2">
                        <button 
@@ -456,7 +456,7 @@ export const FriendsPage = () => {
                                 openChat={openChat}
                               />
                             ))}
-                            {cat.count === 0 && <p className="py-4 text-center text-[10px] text-gray-600 italic">هیچ موردی یافت نشد</p>}
+                            {cat.count === 0 && <p className="py-4 text-center text-[10px] text-gray-600 italic">{isRtl ? "هیچ موردی یافت نشد" : "No results found"}</p>}
                           </motion.div>
                         )}
                        </AnimatePresence>
@@ -501,22 +501,22 @@ export const FriendsPage = () => {
                         <button 
                           onClick={() => {
                             if(user) navigator.clipboard.writeText(`@${user.username}`);
-                            toast.success("آیدی کپی شد");
+                            toast.success(isRtl ? "آیدی کپی شد" : "ID Copied");
                           }}
                           className="p-1 text-gray-600 hover:text-neon-purple transition-colors shrink-0"
-                          title="کپی کردن نام کاربری"
+                          title={isRtl ? "کپی کردن نام کاربری" : "Copy Username"}
                         >
                           <Copy size={12} />
                         </button>
                       </div>
                       <div className="flex items-center gap-3 mt-2">
                          <div className="flex flex-col">
-                           <span className="text-[8px] md:text-[10px] text-gray-600 uppercase font-bold">سطح</span>
+                           <span className="text-[8px] md:text-[10px] text-gray-600 uppercase font-bold">{isRtl ? "سطح" : "Level"}</span>
                            <span className="text-xs md:text-sm font-black text-neon-purple">{userStats.level}</span>
                          </div>
                          <div className="w-px h-6 bg-white/5" />
                          <div className="flex flex-col">
-                           <span className="text-[8px] md:text-[10px] text-gray-600 uppercase font-bold">امتیاز</span>
+                           <span className="text-[8px] md:text-[10px] text-gray-600 uppercase font-bold">{isRtl ? "امتیاز" : "XP"}</span>
                            <span className="text-xs md:text-sm font-black text-neon-blue">{userStats.points}</span>
                          </div>
                       </div>
@@ -529,13 +529,13 @@ export const FriendsPage = () => {
 
                {/* Global User Search */}
                <NeonCard variant="blue" className="p-6">
-                 <h3 className="text-lg font-bold text-white mb-4">یافتن همراه جدید</h3>
+                 <h3 className="text-lg font-bold text-white mb-4">{isRtl ? "یافتن همراه جدید" : "Find Companion"}</h3>
                  <div className="space-y-4">
                     <div className="relative">
                       <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
                       <input 
                         type="text" 
-                        placeholder="آیدی کاربر..."
+                        placeholder={isRtl ? "آیدی کاربر..." : "User ID..."}
                         className="w-full rounded-xl border border-white/10 bg-white/5 py-2.5 pr-10 text-xs text-white focus:border-neon-blue/50 focus:outline-none transition-all"
                         value={userSearchTerm}
                         onChange={(e) => setUserSearchTerm(e.target.value)}
@@ -548,7 +548,7 @@ export const FriendsPage = () => {
                       />
                     </div>
                     <p className="text-[10px] text-gray-500 mt-2 text-center border-t border-white/5 pt-2">
-                      جهت ارسال درخواست دوستی، آیدی دقیق کاربر را وارد کرده و دکمه Enter را بزنید.
+                       {isRtl ? "جهت ارسال درخواست دوستی، آیدی دقیق کاربر را وارد کرده و دکمه Enter را بزنید." : "To send a friend request, enter the exact ID and press Enter."}
                     </p>
                  </div>
                </NeonCard>
@@ -556,7 +556,7 @@ export const FriendsPage = () => {
                {/* Friend Requests */}
                <div className="space-y-4">
                   <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                    درخواست‌ها
+                    {isRtl ? "درخواست‌ها" : "Requests"}
                     {requests.filter(r => r.type === 'incoming').length > 0 && <span className="bg-neon-pink text-white text-[10px] px-1.5 rounded-full">{requests.filter(r => r.type === 'incoming').length}</span>}
                   </h3>
                   
@@ -586,7 +586,7 @@ export const FriendsPage = () => {
                            </div>
                            <div>
                              <p className="text-xs font-bold text-white">{req.displayName}</p>
-                             <p className="text-[10px] text-gray-500">{(req as any).reqType === 'elite_invite' ? "دعوت به گروه نخبگان" : req.type === 'incoming' ? "درخواست دوستی" : "در انتظار تایید"}</p>
+                             <p className="text-[10px] text-gray-500">{(req as any).reqType === 'elite_invite' ? (isRtl ? "دعوت به گروه نخبگان" : "Elite Invite") : req.type === 'incoming' ? (isRtl ? "درخواست دوستی" : "Friend Request") : (isRtl ? "در انتظار تایید" : "Pending Confirmation")}</p>
                            </div>
                          </div>
                          <p className="text-[9px] text-gray-600">{req.timestamp}</p>
@@ -595,11 +595,11 @@ export const FriendsPage = () => {
                        <div className="flex gap-2">
                          {req.type === 'incoming' ? (
                            <>
-                             <GlowButton variant="purple" size="sm" className="flex-1 text-[10px]" onClick={() => acceptRequest(req.id)}>تایید</GlowButton>
-                             <button className="flex-1 rounded-lg border border-white/5 bg-white/5 text-[10px] text-gray-400 hover:bg-neon-pink/10 hover:text-neon-pink transition-all" onClick={() => declineRequest(req.id)}>رد کردن</button>
+                             <GlowButton variant="purple" size="sm" className="flex-1 text-[10px]" onClick={() => acceptRequest(req.id)}>{isRtl ? "تایید" : "Accept"}</GlowButton>
+                             <button className="flex-1 rounded-lg border border-white/5 bg-white/5 text-[10px] text-gray-400 hover:bg-neon-pink/10 hover:text-neon-pink transition-all" onClick={() => declineRequest(req.id)}>{isRtl ? "رد کردن" : "Decline"}</button>
                            </>
                          ) : (
-                           <button className="w-full rounded-lg border border-white/5 bg-white/5 py-2 text-[10px] text-gray-400 hover:text-neon-pink transition-all" onClick={() => cancelRequest(req.userId)}>لغو درخواست</button>
+                           <button className="w-full rounded-lg border border-white/5 bg-white/5 py-2 text-[10px] text-gray-400 hover:text-neon-pink transition-all" onClick={() => cancelRequest(req.userId)}>{isRtl ? "لغو درخواست" : "Cancel Request"}</button>
                          )}
                        </div>
                     </NeonCard>
@@ -608,25 +608,27 @@ export const FriendsPage = () => {
                   {requests.length === 0 && (
                     <div className="flex flex-col items-center justify-center py-8 rounded-2xl border border-dashed border-white/5 opacity-50">
                        <UserPlus size={24} className="text-gray-600 mb-2" />
-                       <p className="text-[10px] text-gray-600">درخواستی ندارید</p>
+                       <p className="text-[10px] text-gray-600">{isRtl ? "درخواستی ندارید" : "No pending requests"}</p>
                     </div>
                   )}
                </div>
 
                {/* Activity Feed */}
                <div className="space-y-4">
-                  <h3 className="text-lg font-bold text-white">فعالیت‌های اخیر</h3>
+                  <h3 className="text-lg font-bold text-white">{isRtl ? "فعالیت‌های اخیر" : "Recent Activity"}</h3>
                   <div className="space-y-3">
                     {activities.length > 0 ? activities.map((act) => (
                       <div key={act.id} className="flex gap-3 text-xs border-r-2 border-neon-blue/30 pr-3">
                         <div className="flex-1">
-                          <span className="font-bold text-white">{act.user?.username || act.user?.profile?.displayName || "ناشناس"}</span>
+                          <span className="font-bold text-white">{act.user?.username || act.user?.profile?.displayName || (isRtl ? "ناشناس" : "Unknown")}</span>
                           <span className="text-gray-400 mx-1">{getActivityText(act)}</span>
-                          <p className="text-[9px] text-gray-600">{new Date(act.createdAt).toLocaleTimeString('fa-IR')} - {new Date(act.createdAt).toLocaleDateString('fa-IR')}</p>
+                          <p className="text-[9px] text-gray-600">
+                            {isRtl ? `${new Date(act.createdAt).toLocaleTimeString('fa-IR')} - ${new Date(act.createdAt).toLocaleDateString('fa-IR')}` : `${new Date(act.createdAt).toLocaleTimeString()} - ${new Date(act.createdAt).toLocaleDateString()}`}
+                          </p>
                         </div>
                       </div>
                     )) : (
-                      <div className="text-xs text-gray-500 py-4">فعالیتی وجود ندارد</div>
+                      <div className="text-xs text-gray-500 py-4">{isRtl ? "فعالیتی وجود ندارد" : "No recent activity"}</div>
                     )}
                   </div>
                </div>

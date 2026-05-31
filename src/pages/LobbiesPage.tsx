@@ -214,12 +214,12 @@ export const LobbiesPage = () => {
                        <Gamepad2 size={36} className="md:size-14 text-white/10" />
                     </div>
                  </div>
-                 <h3 className="text-xl md:text-3xl font-black text-white italic uppercase tracking-tighter mb-2 md:mb-3">لابی فعالی یافت نشد</h3>
+                 <h3 className="text-xl md:text-3xl font-black text-white italic uppercase tracking-tighter mb-2 md:mb-3">{isRtl ? "لابی فعالی یافت نشد" : "No Active Lobbies"}</h3>
                  <p className="text-[10px] md:text-xs text-gray-500 font-bold max-w-[240px] md:max-w-sm mx-auto leading-relaxed">
-                    در حال حاضر هیچ لابی فعالی با این مشخصات وجود ندارد. شما می‌توانید اولین لابی را بسازید.
+                    {isRtl ? "در حال حاضر هیچ لابی فعالی با این مشخصات وجود ندارد. شما می‌توانید اولین لابی را بسازید." : "Currently there are no lobbies matching your search filter. You can launch your own lobby!"}
                  </p>
                  <GlowButton variant="blue" className="mt-6 md:mt-8 h-10 md:h-12 px-8 rounded-xl font-black text-[10px] md:text-xs" onClick={() => setIsModalOpen(true)}>
-                    <Plus size={16} className="ml-2" /> ساخت لابی جدید
+                    <Plus size={16} className="ml-2" /> {isRtl ? "ساخت لابی جدید" : "Create New Lobby"}
                  </GlowButton>
               </div>
             ) : (
@@ -262,7 +262,7 @@ export const LobbiesPage = () => {
                                isVipLobby ? "shadow-[0_0_40px_rgba(250,204,21,0.6)]" : "shadow-[0_0_40px_rgba(0,229,255,0.6)]"
                              )}
                            >
-                             ورود به لابی
+                             {isRtl ? "ورود به لابی" : "Join Lobby"}
                            </GlowButton>
                         </div>
                       )}
@@ -318,19 +318,19 @@ export const LobbiesPage = () => {
                           </h3>
 
                           {/* Dynamic Metadata / Features */}
-                          <div className="mb-4 flex flex-wrap gap-1.5 text-right" dir="rtl">
+                          <div className="mb-4 flex flex-wrap gap-1.5 text-right" dir={isRtl ? "rtl" : "ltr"}>
                             <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-white/5 border border-white/5 text-[9px] font-bold text-gray-400">
                               <Globe size={11} className="text-neon-pink" />
                               <span>{lobby.region}</span>
                             </div>
                             {lobby.micRequired && (
                                <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-neon-blue/10 border border-neon-blue/20 text-[9px] font-bold text-neon-blue">
-                                 <Mic size={11} /> میکروفون
+                                 <Mic size={11} /> {isRtl ? "میکروفون" : "Mic"}
                                </div>
                             )}
                             {meta.discordRequired && (
                                <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-[#5865F2]/10 border border-[#5865F2]/20 text-[9px] font-bold text-[#5865F2]">
-                                 دیسکورد
+                                 {isRtl ? "دیسکورد" : "Discord"}
                                </div>
                             )}
                             {meta.ageRestricted && (
@@ -381,7 +381,7 @@ export const LobbiesPage = () => {
                                 }}
                                 disabled={lobby.isPrivate}
                               >
-                                {lobby.isPrivate ? "خصوصی" : "ورود"}
+                                {lobby.isPrivate ? (isRtl ? "خصوصی" : "Private") : (isRtl ? "ورود" : "Join")}
                               </GlowButton>
                            </div>
                         </div>
