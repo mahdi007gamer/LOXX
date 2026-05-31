@@ -70,7 +70,6 @@
   
   body {
     @apply bg-dark-bg text-gray-100 font-sans selection:bg-neon-pink selection:text-white overflow-x-hidden;
-    direction: rtl;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -79,7 +78,6 @@
     overflow-x: hidden;
     background-color: #050508;
     color: #ffffff;
-    direction: rtl;
   }
 
   select, option {

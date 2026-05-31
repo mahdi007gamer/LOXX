@@ -158,7 +158,7 @@ function MessageItem({ message, isConsecutive = false, onReaction, onSaveGif, on
       className={cn(
         "flex gap-2 md:gap-3 transition-all duration-300 px-1 md:px-0 relative w-full",
         isConsecutive ? "mb-1.5" : "mb-5",
-        message.self ? "flex-row justify-start" : "flex-row-reverse justify-start"
+        message.self === isRtl ? "flex-row justify-start" : "flex-row-reverse justify-start"
       )}
     >
       {contextMenu && (
@@ -245,7 +245,7 @@ function MessageItem({ message, isConsecutive = false, onReaction, onSaveGif, on
         {!isConsecutive && (
           <div className={cn(
             "flex items-center gap-1.5 mb-1 px-0.5",
-            message.self ? "flex-row" : "flex-row-reverse"
+            message.self === isRtl ? "flex-row" : "flex-row-reverse"
           )}>
             <span 
                 className={cn("text-[11px] font-black tracking-tight cursor-pointer hover:underline flex items-center gap-1 transition-all", nameColorClass, (metadata?.shinyName) && "animate-pulse")}
@@ -282,13 +282,13 @@ function MessageItem({ message, isConsecutive = false, onReaction, onSaveGif, on
             
             <div className={cn(
               "flex gap-1 items-center",
-              message.self ? "flex-row" : "flex-row-reverse"
+              message.self === isRtl ? "flex-row" : "flex-row-reverse"
             )}>
                {/* Dynamic Badges from Server */}
                {(message as any).badges && (
                   <UserBadges 
                     badges={(message as any).badges} 
-                    className={cn(message.self ? "flex-row" : "flex-row-reverse")}
+                    className={cn(message.self === isRtl ? "flex-row" : "flex-row-reverse")}
                   />
                )}
                {/* Legacy Badge Types */}
@@ -524,7 +524,8 @@ function MessageItem({ message, isConsecutive = false, onReaction, onSaveGif, on
           {message.reactions && message.reactions.length > 0 && (
             <div className={cn(
               "flex flex-wrap gap-1 mt-1 w-fit transition-all mb-2", 
-              message.self ? "ml-auto mr-0 flex-row" : "mr-auto ml-0 flex-row-reverse"
+              message.self ? "ml-auto mr-0" : "mr-auto ml-0",
+              message.self === isRtl ? "flex-row" : "flex-row-reverse"
             )}>
               {message.reactions.map((r, i) => (
                 <button 
@@ -1270,13 +1271,18 @@ export const ChatPage: React.FC = () => {
   const friendChat = chats.find(c => c.friendId === activeChannelId);
   const friend = friends.find(f => f.id === activeChannelId);
 
-  const activeChannel = allChannels.find(c => c.id === activeChannelId) || 
+  const rawActiveChannel = allChannels.find(c => c.id === activeChannelId) || 
     (friendChat || friend ? { 
       id: activeChannelId, 
       name: friend?.displayName || friendChat?.tempDisplayName || (isRtl ? "گفتگو" : "Chat"), 
       type: 'dm',
       icon: friend?.avatar || (friend as any)?.avatarUrl || "👤"
     } : allChannels[0] || INITIAL_CHANNELS[0]);
+    
+  const activeChannel = {
+    ...rawActiveChannel,
+    name: isRtl ? rawActiveChannel.name : (rawActiveChannel.id === 'general' ? 'General Chat' : (rawActiveChannel.id === 'news' ? 'Gaming News' : rawActiveChannel.name))
+  };
 
   // Handle typing state correctly by extracting the getter inside the effect
   useEffect(() => {
@@ -1368,7 +1374,7 @@ export const ChatPage: React.FC = () => {
   };
 
   const currentMessages = (messages[activeChannelId] || []).filter(
-    m => !m.isDeleted && m.text !== (isRtl ? "این پیام حذف شده است." : "This message has been deleted.")
+    m => !m.isDeleted && m.text !== "این پیام حذف شده است." && m.text !== "This message has been deleted."
   );
 
   // Update member count based on active channel
@@ -3105,7 +3111,7 @@ export const ChatPage: React.FC = () => {
                     className="h-10 w-10 !rounded-2xl !p-0 shadow-lg shadow-neon-blue/20"
                     onClick={() => handleSend()}
                   >
-                    <Send size={18} className="rotate-180" />
+                    <Send size={18} className={cn(isRtl ? "rotate-180" : "")} />
                   </GlowButton>
                 </div>
               </div>
