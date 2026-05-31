@@ -1,7 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Maximize2, Minimize2, MicOff, AlertCircle } from 'lucide-react';
+import { Maximize2, Minimize2, MicOff, AlertCircle, Eye, MonitorPlay } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { motion } from 'motion/react';
+import { GlowButton } from './ui/GlowButton';
+import { useLanguage } from '../context/LanguageContext';
 
 export const ScreenSharePresenter = ({
   stream,
@@ -14,15 +16,19 @@ export const ScreenSharePresenter = ({
   isLocal: boolean;
   isWarningActive?: boolean;
 }) => {
+  const { language, t } = useLanguage();
+  const isRtl = language === "fa";
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isWatching, setIsWatching] = useState(isLocal); // Default local shares to auto-watched, remote demands action
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Bind media stream only if the user has opted in to watch (demand-driven active loading)
   useEffect(() => {
-    if (videoRef.current && stream) {
+    if (videoRef.current && stream && isWatching) {
       videoRef.current.srcObject = stream;
     }
-  }, [stream]);
+  }, [stream, isWatching]);
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -52,45 +58,95 @@ export const ScreenSharePresenter = ({
       <div 
         ref={containerRef}
         className={cn(
-          "relative w-full rounded-3xl overflow-hidden bg-black border shadow-2xl flex flex-col group",
-          isWarningActive ? "border-yellow-500/50 shadow-yellow-500/20" : "border-neon-blue/30 lg:h-[600px] md:h-[400px] h-[250px]",
+          "relative w-full rounded-2xl overflow-hidden bg-[#07070c] border shadow-2xl flex flex-col group transition-all duration-300",
+          isWarningActive ? "border-yellow-500/50 shadow-yellow-500/10" : "border-white/5 hover:border-neon-pink/20 lg:min-h-[480px] md:min-h-[380px] min-h-[250px]",
           isFullscreen ? "h-screen rounded-none border-none" : ""
         )}
       >
-        <video 
-          ref={videoRef}
-          autoPlay 
-          playsInline
-          muted // If local, we don't want to hear our own desktop audio again, if remote, it might have audio track
-          className="w-full h-full object-contain"
-        />
-        
-        {/* Presenter info overlay */}
-        <div className="absolute top-4 left-4 right-4 flex items-start justify-between pointer-events-none">
-          <div className="flex items-center gap-3 bg-black/60 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10 pointer-events-auto">
-            <div className="flex flex-col">
-              <span className="text-white font-bold text-sm">
-                اسکرین شیر: {isLocal ? "شما" : presenterName}
-              </span>
-              <span className="text-neon-blue text-[10px] font-black uppercase tracking-widest">
-                LIVE
-              </span>
+        {isWatching ? (
+          <>
+            <video 
+              ref={videoRef}
+              autoPlay 
+              playsInline
+              muted // Prevent echoing local microphone sounds back into player
+              className="w-full h-full xl:min-h-[480px] md:min-h-[380px] object-contain bg-black"
+            />
+            
+            {/* Presenter info overlay */}
+            <div className={cn("absolute top-4 left-4 right-4 flex items-start justify-between pointer-events-none", isRtl ? "flex-row-reverse" : "flex-row")}>
+              <div className="flex items-center gap-3 bg-black/75 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10 pointer-events-auto select-none">
+                <div className={isRtl ? "flex flex-col text-right" : "flex flex-col text-left"}>
+                  <span className="text-white font-bold text-xs">
+                    {isRtl ? `اسکرین شیر: ${isLocal ? t("host") : presenterName}` : `Screen Share: ${isLocal ? t("host") : presenterName}`}
+                  </span>
+                  <span className="text-neon-pink text-[9px] font-black uppercase tracking-widest mt-0.5 animate-pulse">
+                    LIVE
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 pointer-events-auto">
+                {/* Option to stop watching and save bandwidth */}
+                {!isLocal && (
+                  <button 
+                    onClick={() => setIsWatching(false)}
+                    className="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 font-bold border border-red-500/20 rounded-xl text-[10px] transition-colors cursor-pointer"
+                    dir={isRtl ? "rtl" : "ltr"}
+                  >
+                    {t("stopViewStream")}
+                  </button>
+                )}
+                <button 
+                  onClick={toggleFullscreen}
+                  className="p-2.5 bg-black/75 backdrop-blur-md rounded-xl border border-white/10 text-white hover:bg-white/15 transition-colors cursor-pointer opacity-0 group-hover:opacity-100"
+                >
+                  {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+                </button>
+              </div>
+            </div>
+          </>
+        ) : (
+          /* Sleek optimized preview placeholder (Demand-Based Loading) */
+          <div className="flex flex-col items-center justify-center p-8 min-h-[350px] text-center space-y-5 relative my-auto">
+            <div className="absolute top-0 left-0 right-0 bottom-0 bg-gradient-to-tr from-[#ff007f]/5 via-transparent to-transparent opacity-80 pointer-events-none" />
+            
+            <div className="relative">
+              <div className="absolute inset-0 bg-neon-pink/20 rounded-full blur-xl scale-125 animate-pulse" />
+              <div className="h-16 w-16 bg-gradient-to-tr from-neon-pink to-pink-500 rounded-3xl flex items-center justify-center border border-neon-pink/30 relative z-10 text-white shadow-lg shadow-neon-pink/20">
+                <MonitorPlay size={28} className="animate-pulse animate-bounce" />
+              </div>
+            </div>
+
+            <div className="space-y-2 max-w-md relative z-10" dir={isRtl ? "rtl" : "ltr"}>
+              <h3 className="text-sm font-black text-white">
+                {isRtl ? `${presenterName} در حال اشتراک‌گذاری صفحه است` : `${presenterName} is sharing screen`}
+              </h3>
+              <p className="text-[11px] text-gray-400 leading-relaxed px-4">
+                {isRtl 
+                  ? "برای کاهش مصرف حجم اینترنت، صرفه‌جویی در پهنای باند و حفظ پایداری کامل پینگ بازی، دریافت استریم فقط در صورت درخواست شما لود خواهد شد."
+                  : "To conserve bandwidth and preserve latency / game ping, stream content is only loaded when watched."}
+              </p>
+            </div>
+
+            <div className="relative z-10">
+              <GlowButton 
+                variant="pink" 
+                onClick={() => setIsWatching(true)}
+                className="px-6 h-10 text-xs font-black flex items-center gap-2 rounded-xl font-mono uppercase italic tracking-wider"
+              >
+                <Eye size={14} className="shrink-0 animate-pulse" />
+                <span>{t("viewLiveStream")}</span>
+              </GlowButton>
             </div>
           </div>
-
-          <button 
-            onClick={toggleFullscreen}
-            className="p-2 bg-black/60 backdrop-blur-md rounded-xl border border-white/10 text-white hover:bg-white/20 transition-colors pointer-events-auto opacity-0 group-hover:opacity-100"
-          >
-            {isFullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
-          </button>
-        </div>
+        )}
 
         {/* Warning Banner */}
         {isWarningActive && isLocal && (
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-yellow-500/90 text-black px-4 py-2 rounded-xl font-bold flex items-center gap-2 text-sm shadow-xl backdrop-blur-md border border-yellow-400">
-            <AlertCircle size={16} />
-            شبکه شما ناپایدار است. ممکن است اسکرین شیر متوقف شود.
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-yellow-500/90 text-black px-4 py-1.5 rounded-xl font-bold flex items-center gap-2 text-xs shadow-xl backdrop-blur-md border border-yellow-400 z-15" dir={isRtl ? "rtl" : "ltr"}>
+            <AlertCircle size={14} className="shrink-0" />
+            {t("streamWarningActive")}
           </div>
         )}
       </div>

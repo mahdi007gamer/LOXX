@@ -292,10 +292,8 @@ export const LobbyRoomPage = () => {
     if (id) {
        joinLobby(id);
     }
-    const isElectron = typeof window !== "undefined" && !!(window as any).electronAPI;
-    if (isElectron) {
-      setIsSidebarCollapsed(true);
-    }
+    // Collapse right sidebar by default when entering any lobby
+    setIsSidebarCollapsed(true);
   }, [id, setIsSidebarCollapsed]);
 
   // Redirect if lobby becomes null (e.g., closed by host) or if joining fails

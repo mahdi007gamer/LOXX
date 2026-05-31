@@ -455,7 +455,7 @@ function MessageItem({ message, isConsecutive = false, onReaction, onSaveGif, on
                  </div>
               )}
   
-              <div className="px-4 pt-3 pb-1.5">
+              <div className="px-4 py-2.5 flex flex-col justify-center min-h-[38px] relative z-10">
                 {/* Image Handling - News channel shows image first */}
                 {activeChannelId === 'news' && message.image && (
                   <div className="mb-3 rounded-lg overflow-hidden border border-white/10 shadow-xl max-w-full">

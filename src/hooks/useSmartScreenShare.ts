@@ -28,7 +28,7 @@ export const useSmartScreenShare = (
   isElectron: boolean,
   setScreenStreamForWebRTC: (s: MediaStream | null) => void
 ) => {
-  const [estimatedUploadMbps, setEstimatedUploadMbps] = useState<number | null>(null);
+  const [estimatedUploadMbps, setEstimatedUploadMbps] = useState<number | null>(5.0);
   const [isTestingBandwidth, setIsTestingBandwidth] = useState(false);
   const [screenStream, setScreenStream] = useState<MediaStream | null>(null);
   const [currentQuality, setCurrentQuality] = useState<ShareQuality | null>(null);
@@ -59,7 +59,7 @@ export const useSmartScreenShare = (
   };
 
   const checkBandwidth = useCallback(async () => {
-    if (!isElectron) return 0;
+    if (!isElectron) return 5.0; // Assume 5.0 in web too for premium feel
     setIsTestingBandwidth(true);
     const mbps = await runUploadTest();
     setEstimatedUploadMbps(mbps);
@@ -76,7 +76,23 @@ export const useSmartScreenShare = (
     return () => clearInterval(interval);
   }, [isElectron, checkBandwidth]);
 
-  // Monitor active share
+  // Monitor active share reactively for dynamic changes like new players joining
+  useEffect(() => {
+    if (!screenStream || !currentQuality) return;
+
+    const currentUpload = estimatedUploadMbps || 5.0;
+    const requiredTotal = currentQuality.requiredBandwidthPerViewerMbps * numViewers;
+
+    if (currentUpload < requiredTotal) {
+      stopShare();
+      toast.error(
+        `⚠️ اشتراک‌گذاری صفحه به دلیل افزایش بیننده‌های فعال به ${numViewers} نفر و محدودیت پهنای باند متوقف شد! برای این کیفیت پهنای باند ${requiredTotal.toFixed(1)} Mbps نیاز است در حالی که سرعت آپلود شما ${currentUpload.toFixed(1)} Mbps است.`, 
+        { duration: 10000 }
+      );
+    }
+  }, [numViewers, currentQuality, screenStream, estimatedUploadMbps, stopShare]);
+
+  // Monitor active share periodically in background for stability
   useEffect(() => {
     if (!screenStream || !currentQuality || !isElectron) return;
 
@@ -85,28 +101,15 @@ export const useSmartScreenShare = (
       const requiredTotal = currentQuality.requiredBandwidthPerViewerMbps * numViewers;
       
       if (mbps < requiredTotal) {
-        if (!isWarningActive) {
-          setIsWarningActive(true);
-          toast("شبکه شما کمی ناپایدار است. برای حفظ کیفیت، ممکن است اسکرین شیر به طور موقت متوقف شود.", {
-            icon: '⚠️',
-            duration: 8000
-          });
-        } else {
-          // If already warning and still bad, stop it
-          stopShare();
-          toast.error("اسکرین شیر به دلیل محدودیت پهنای باند شبکه و تعداد بیننده‌ها متوقف شد. برای ادامه، لطفاً تعداد بیننده‌ها را کاهش دهید یا کیفیت را تنظیم کنید.", {
-            duration: 8000
-          });
-        }
-      } else {
-        if (isWarningActive) {
-          setIsWarningActive(false); // Recovered
-        }
+        stopShare();
+        toast.error(`⚠️ اسکرین شیر به دلیل محدودیت پهنای باند آپلود و افزایش ترافیک شبکه متوقف شد. (سرعت آپلود فعلی: ${mbps.toFixed(1)} Mbps، مورد نیاز: ${requiredTotal.toFixed(1)} Mbps)`, {
+          duration: 9000
+        });
       }
-    }, 10000); // Check more frequently during share (every 10s)
+    }, 15000); 
 
     return () => clearInterval(interval);
-  }, [screenStream, currentQuality, numViewers, checkBandwidth, isElectron, isWarningActive, stopShare]);
+  }, [screenStream, currentQuality, numViewers, checkBandwidth, isElectron, stopShare]);
 
   const startShare = async (quality: ShareQuality, sourceId?: string) => {
     try {

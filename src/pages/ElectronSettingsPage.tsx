@@ -135,7 +135,7 @@ export const ElectronSettingsPage = () => {
         <div className="max-w-4xl mx-auto" dir="rtl">
           <div>
             <h1 className="text-3xl font-black text-white tracking-tighter flex items-center gap-3">
-              <MonitorPlay className="text-indigo-400" size={32} /> تنظیمات ویندوز <span className="text-sm bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded border border-indigo-500/30">Loxx Client</span>
+              <MonitorPlay className="text-indigo-400" size={32} /> تنظیمات ویندوز <span className="text-sm bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded border border-indigo-500/30">Loxx Client v1.2.23</span>
             </h1>
             <p className="text-gray-400 mt-2 text-sm">این تنظیمات مخصوص نسخه ویندوز می‌باشند و روی مرورگر تاثیری ندارند.</p>
           </div>

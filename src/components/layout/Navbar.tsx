@@ -1,11 +1,12 @@
 import React, { useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
-import { Gamepad2, User, Bell, Menu, X, LayoutDashboard, Target, Users, MessageSquare, Trophy, Settings, Shield, LogOut, Zap, Crown, Phone } from "lucide-react";
+import { Gamepad2, User, Bell, Menu, X, LayoutDashboard, Target, Users, MessageSquare, Trophy, Settings, Shield, LogOut, Zap, Crown, Phone, Globe } from "lucide-react";
 import { GlowButton } from "../ui/GlowButton";
 import { SmartImage } from "../ui/SmartImage";
 import { motion, AnimatePresence, useScroll, useMotionValueEvent } from "motion/react";
 import { cn } from "@/src/lib/utils";
 import { useAuth } from "../../context/AuthContext";
+import { useLanguage } from "../../context/LanguageContext";
 import { NotificationCenter } from "../ui/NotificationCenter";
 import { useProfilePopover } from "../../context/ProfilePopoverContext";
 import { BadgeType, MembershipType } from "../../types";
@@ -25,6 +26,7 @@ const menuItems = [
 
 export const Navbar = () => {
   const { user, logout, isSidebarCollapsed, setIsSidebarCollapsed } = useAuth();
+  const { language, toggleLanguage, t } = useLanguage();
   const { openProfile } = useProfilePopover();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { scrollY } = useScroll();
@@ -138,13 +140,13 @@ export const Navbar = () => {
                     )
                   }
                 >
-                  داشبورد
+                  {t("dashboard")}
                 </NavLink>
               )}
-              <NavLink to="/lobbies" className={({ isActive }) => cn("transition-all font-black text-[10px] uppercase tracking-[0.2em] italic", isActive ? "text-neon-blue drop-shadow-[0_0_8px_rgba(0,229,255,0.5)]" : "text-gray-400 hover:text-white ripple-active")}>لابی‌ها</NavLink>
-              <NavLink to="/chat" className={({ isActive }) => cn("transition-all font-black text-[10px] uppercase tracking-[0.2em] italic", isActive ? "text-neon-blue drop-shadow-[0_0_8px_rgba(0,229,255,0.5)]" : "text-gray-400 hover:text-white ripple-active")}>چت سراسری</NavLink>
-              <NavLink to="/games" className={({ isActive }) => cn("transition-all font-black text-[10px] uppercase tracking-[0.2em] italic", isActive ? "text-neon-blue drop-shadow-[0_0_8px_rgba(0,229,255,0.5)]" : "text-gray-400 hover:text-white ripple-active")}>بازی‌ها</NavLink>
-              <NavLink to="/contact" className={({ isActive }) => cn("transition-all font-black text-[10px] uppercase tracking-[0.2em] italic", isActive ? "text-neon-blue drop-shadow-[0_0_8px_rgba(0,229,255,0.5)]" : "text-gray-400 hover:text-white ripple-active")}>ارتباط با ما</NavLink>
+              <NavLink to="/lobbies" className={({ isActive }) => cn("transition-all font-black text-[10px] uppercase tracking-[0.2em] italic", isActive ? "text-neon-blue drop-shadow-[0_0_8px_rgba(0,229,255,0.5)]" : "text-gray-400 hover:text-white ripple-active")}>{t("lobbies")}</NavLink>
+              <NavLink to="/chat" className={({ isActive }) => cn("transition-all font-black text-[10px] uppercase tracking-[0.2em] italic", isActive ? "text-neon-blue drop-shadow-[0_0_8px_rgba(0,229,255,0.5)]" : "text-gray-400 hover:text-white ripple-active")}>{t("globalChat")}</NavLink>
+              <NavLink to="/games" className={({ isActive }) => cn("transition-all font-black text-[10px] uppercase tracking-[0.2em] italic", isActive ? "text-neon-blue drop-shadow-[0_0_8px_rgba(0,229,255,0.5)]" : "text-gray-400 hover:text-white ripple-active")}>{t("games")}</NavLink>
+              <NavLink to="/contact" className={({ isActive }) => cn("transition-all font-black text-[10px] uppercase tracking-[0.2em] italic", isActive ? "text-neon-blue drop-shadow-[0_0_8px_rgba(0,229,255,0.5)]" : "text-gray-400 hover:text-white ripple-active")}>{t("contactUs")}</NavLink>
               {isLanding && (
                 <button onClick={() => document.getElementById('download')?.scrollIntoView({ behavior: 'smooth' })} className="transition-all font-black text-[10px] uppercase tracking-[0.2em] italic text-gray-400 hover:text-white ripple-active">دانلود</button>
               )}
@@ -153,6 +155,18 @@ export const Navbar = () => {
 
           {/* Right: Actions */}
           <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
+            {/* Elegant Fixed Language Toggle Switcher */}
+            <button
+              onClick={toggleLanguage}
+              className="px-2.5 py-1 text-[10px] font-black tracking-wider rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white flex items-center gap-1.5 transition-all active:scale-95 duration-200 cursor-pointer shadow-[0_0_15px_rgba(0,229,255,0.05)] h-9"
+              title="تغییر زبان / Switch Language"
+            >
+              <Globe size={12} className="text-neon-blue animate-pulse shrink-0" />
+              <span className={cn(language === "fa" ? "text-orange-400 font-extrabold" : "text-gray-500")}>فا</span>
+              <span className="text-gray-600">|</span>
+              <span className={cn(language === "en" ? "text-neon-blue font-extrabold" : "text-gray-500")}>EN</span>
+            </button>
+
             {user && <NotificationCenter />}
             
             {user ? (
@@ -179,7 +193,7 @@ export const Navbar = () => {
             ) : (
                 <Link to="/auth">
                   <GlowButton variant="blue" size="sm" className="h-10 px-6 rounded-full font-black text-[10px] tracking-widest uppercase italic">
-                    ورود به حساب
+                    {t("login")}
                   </GlowButton>
                 </Link>
             )}

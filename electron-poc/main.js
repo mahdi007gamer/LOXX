@@ -279,6 +279,11 @@ function launchMainWindow() {
           splashWindow.close();
         }
         if (mainWindow && !mainWindow.isDestroyed()) {
+          try {
+            mainWindow.maximize();
+          } catch (maxErr) {
+            console.error("Failed to maximize main window on startup:", maxErr);
+          }
           mainWindow.show();
           mainWindow.focus();
         }
@@ -382,7 +387,7 @@ function createMainWindow() {
 
   // Provide custom User-Agent to easily identify Launcher on the server
   const defaultUA = mainWindow.webContents.getUserAgent();
-  mainWindow.webContents.setUserAgent(`${defaultUA} LoxxLauncher/1.2.22`);
+  mainWindow.webContents.setUserAgent(`${defaultUA} LoxxLauncher/1.2.23`);
 
   // Listen for maximize / restore updates
   mainWindow.on('maximize', () => {

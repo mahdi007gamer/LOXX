@@ -60,7 +60,13 @@ export const ElectronTitlebar = () => {
           </span>
         </div>
         <span className="text-[8px] bg-neon-pink/10 text-neon-pink border border-neon-pink/20 px-1.5 py-0.5 rounded-md font-mono font-bold ml-1">
-          ELITE LAUNCHER
+          ELITE LAUNCHER | Beta
+        </span>
+        <span className="text-[8px] bg-neon-blue/10 text-neon-blue border border-neon-blue/20 px-1.5 py-0.5 rounded-md font-mono font-bold ml-1">
+          v1.2.23
+        </span>
+        <span className="text-[8px] bg-orange-500/10 text-orange-400 border border-orange-500/20 px-1.5 py-0.5 rounded-md font-sans font-bold ml-1 animate-pulse">
+          Beta | آزمایشی
         </span>
       </div>
 
@@ -69,8 +75,8 @@ export const ElectronTitlebar = () => {
         className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden md:flex items-center gap-2 pointer-events-none select-none text-[9px] text-gray-400 font-normal bg-white/5 border border-white/5 px-3 py-1 rounded-full z-10 shadow-[0_0_12px_rgba(255,0,127,0.03)]"
         dir="rtl"
       >
-        <span className="h-1 w-1 rounded-full bg-neon-pink animate-pulse shrink-0" />
-        <span className="tracking-tight text-white/90 font-normal">لوکس | اولین پلتفرم پیشرفته گیمینگ فارسی</span>
+        <span className="h-1 w-1 rounded-full bg-orange-500 animate-pulse shrink-0" />
+        <span className="tracking-tight text-white/90 font-normal">لوکس | اولین پلتفرم پیشرفته گیمینگ فارسی <span className="text-orange-400 font-extrabold mr-1 text-[8px] bg-orange-500/10 px-1 py-0.2 rounded border border-orange-500/10">BETA</span></span>
       </div>
 
       {/* Windows Style Control Buttons (Absolute Right for standard Windows positioning) */}

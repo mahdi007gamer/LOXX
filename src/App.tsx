@@ -44,6 +44,7 @@ import NotFoundPage from "./pages/NotFoundPage";
 import { EliteDashboardPage } from "./pages/EliteDashboardPage";
 
 import { AuthProvider, useAuth } from "./context/AuthContext";
+import { LanguageProvider } from "./context/LanguageContext";
 import { Toaster, toast, ToastBar, resolveValue } from "react-hot-toast";
 
 import { ProtectedRoute } from "./components/ProtectedRoute";
@@ -537,19 +538,21 @@ function App() {
   
   return (
     <Router>
-      <AuthProvider>
-        <GamesProvider>
-          <FriendsProvider>
-            <LobbyProvider>
-              <ProfilePopoverProvider>
-                <ScrollToTop />
-                <AppContent />
-                <DiscordOverlayHUD />
-              </ProfilePopoverProvider>
-            </LobbyProvider>
-          </FriendsProvider>
-        </GamesProvider>
-      </AuthProvider>
+      <LanguageProvider>
+        <AuthProvider>
+          <GamesProvider>
+            <FriendsProvider>
+              <LobbyProvider>
+                <ProfilePopoverProvider>
+                  <ScrollToTop />
+                  <AppContent />
+                  <DiscordOverlayHUD />
+                </ProfilePopoverProvider>
+              </LobbyProvider>
+            </FriendsProvider>
+          </GamesProvider>
+        </AuthProvider>
+      </LanguageProvider>
     </Router>
   );
 }
