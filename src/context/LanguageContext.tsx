@@ -73,6 +73,13 @@ export const translations: TranslationDictionary = {
   voiceConnectedBtn: { fa: "متصل به ویس لابی", en: "Voice Connected" },
   searchLabel: { fa: "جستجو...", en: "Search..." },
   noAlerts: { fa: "اعلانی برای نمایش وجود ندارد.", en: "No notifications to show." },
+  notificationsTitle: { fa: "اعلان‌ها", en: "Notifications" },
+  markAllRead: { fa: "خواندن همه", en: "Mark all read" },
+  errorNotifications: { fa: "خطا در به روزرسانی اعلان ها", en: "Error updating notifications" },
+  congrats: { fa: "تبریک!", en: "Congratulations!" },
+  claimReward: { fa: "دریافت جایزه", en: "Claim Reward" },
+  newNotification: { fa: "شما یک اعلان جدید دارید.", en: "You have a new notification." },
+  weeklyRank: { fa: "رتبه {rank} هفتگی", en: "Weekly Rank {rank}" },
 
   // Launcher Custom Title Bar / Meta
   betaLabel: { fa: "Beta | آزمایشی", en: "Beta Edition" },

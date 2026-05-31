@@ -52,6 +52,7 @@ import { DesktopSourcePickerModal } from "../components/DesktopSourcePickerModal
 import { ScreenSharePresenter } from "../components/ScreenSharePresenter";
 import { UserBadges } from "../components/ui/UserBadges";
 import { useProfilePopover } from "../context/ProfilePopoverContext";
+import { useLanguage } from "../context/LanguageContext";
 import { MembershipType } from "../types";
 import { SmartImage } from "../components/ui/SmartImage";
 import { cn } from "../lib/utils";
@@ -173,6 +174,7 @@ export const LobbyRoomPage = () => {
   } = useLobby();
 
   const { user, isSidebarCollapsed, setIsSidebarCollapsed } = useAuth();
+  const { direction, t } = useLanguage();
   const { openChat, addFriend } = useFriends();
   const { openProfile } = useProfilePopover();
   
@@ -180,7 +182,7 @@ export const LobbyRoomPage = () => {
   const [isChatOpen, setIsChatOpen] = useState(false); // Mobile chat
   const messages = useMemo(() => {
     return [
-      { id: "system-1", user: "LOXX BOT", text: "لابی ساخته شد. منتظر همرزمان هستیم...", time: "System", isSystem: true, fromUserId: "system" },
+      { id: "system-1", user: "LOXX BOT", text: t("lobbyCreated"), time: "System", isSystem: true, fromUserId: "system" },
       ...(lobby?.messages?.map(m => ({
         id: m.id,
         fromUserId: m.from?.userId || m.senderId,

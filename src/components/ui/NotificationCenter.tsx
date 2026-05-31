@@ -8,6 +8,7 @@ import { SmartImage } from "./SmartImage";
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "react-hot-toast";
 import { useFriends } from "../../context/FriendsContext";
+import { useLanguage } from "../../context/LanguageContext";
 
 interface AppNotification {
   id: string;
@@ -24,12 +25,38 @@ interface AppNotification {
 }
 
 export const NotificationCenter = () => {
+  const { language, t } = useLanguage();
+  const isRtl = language === "fa";
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [specialRewardModal, setSpecialRewardModal] = useState<AppNotification | null>(null);
   const navigate = useNavigate();
   const { openChat } = useFriends();
+
+  const getDistanceToNow = (dateString: string) => {
+    if (isRtl) {
+      try {
+        return formatDistanceToNow(new Date(dateString), { addSuffix: true });
+      } catch (_) {
+        return "اخیراً";
+      }
+    }
+    try {
+      const diffMs = Date.now() - new Date(dateString).getTime();
+      const diffSecs = Math.floor(diffMs / 1000);
+      const diffMins = Math.floor(diffSecs / 60);
+      const diffHours = Math.floor(diffMins / 60);
+      const diffDays = Math.floor(diffHours / 24);
+
+      if (diffSecs < 60) return "Just now";
+      if (diffMins < 60) return `${diffMins}m ago`;
+      if (diffHours < 24) return `${diffHours}h ago`;
+      return `${diffDays}d ago`;
+    } catch (_) {
+      return "Recently";
+    }
+  };
 
   const fetchNotifications = async () => {
     try {
@@ -82,7 +109,7 @@ export const NotificationCenter = () => {
         setUnreadCount(0);
       }
     } catch (error) {
-      toast.error("خطا در به روزرسانی اعلان ها");
+      toast.error(t("errorNotifications"));
     }
   };
 
@@ -139,14 +166,14 @@ export const NotificationCenter = () => {
               exit={{ opacity: 0, y: 10, scale: 0.95 }}
               className="absolute left-0 mt-2 w-80 sm:w-96 rounded-xl border border-white/10 bg-dark-bg shadow-2xl z-50 overflow-hidden ring-1 ring-black/5"
             >
-              <div className="flex items-center justify-between border-b border-white/10 bg-white/5 p-4">
-                <h3 className="font-semibold text-white">اعلان‌ها</h3>
+              <div className="flex items-center justify-between border-b border-white/10 bg-white/5 p-4" dir={isRtl ? "rtl" : "ltr"}>
+                <h3 className="font-semibold text-white">{t("notificationsTitle")}</h3>
                 {unreadCount > 0 && (
                   <button 
                     onClick={() => markAsRead()}
-                    className="text-xs text-brand-primary hover:text-brand-light transition-colors"
+                    className="text-xs text-brand-primary hover:text-brand-light transition-colors cursor-pointer"
                   >
-                    خواندن همه
+                    {t("markAllRead")}
                   </button>
                 )}
               </div>
@@ -154,7 +181,7 @@ export const NotificationCenter = () => {
                 {notifications.length === 0 ? (
                   <div className="p-8 text-center text-sm text-gray-400">
                     <Bell className="mx-auto h-8 w-8 opacity-20 mb-3" />
-                    هیچ اعلانی ندارید
+                    {t("noAlerts")}
                   </div>
                 ) : (
                   <div className="divide-y divide-white/5 w-full">
@@ -174,12 +201,12 @@ export const NotificationCenter = () => {
                             <Bell className="w-5 h-5 text-gray-400" />
                           </div>
                         )}
-                        <div className="flex-1 w-full min-w-0 flex flex-col items-start text-right">
-                          <p className={cn("text-sm text-right", !n.isRead ? "text-white font-medium" : "text-gray-300")}>
-                            {n.data?.message || 'شما یک اعلان جدید دارید.'}
+                        <div className={cn("flex-1 w-full min-w-0 flex flex-col items-start", isRtl ? "text-right" : "text-left")}>
+                          <p className={cn("text-sm", isRtl ? "text-right" : "text-left", !n.isRead ? "text-white font-medium" : "text-gray-300")}>
+                            {n.data?.message || t("newNotification")}
                           </p>
-                          <span className="mt-1 text-xs text-gray-500 w-full text-right block">
-                            {formatDistanceToNow(new Date(n.createdAt), { addSuffix: true })}
+                          <span className={cn("mt-1 text-xs text-gray-500 w-full block", isRtl ? "text-right" : "text-left")}>
+                            {getDistanceToNow(n.createdAt)}
                           </span>
                         </div>
                         {!n.isRead && (
@@ -219,8 +246,8 @@ export const NotificationCenter = () => {
                 </div>
               </div>
 
-              <h2 className="text-2xl font-black text-white italic capitalize mb-2">تبریک!</h2>
-              <p className="text-xs text-yellow-400 font-bold uppercase tracking-widest mb-6">رتبه {specialRewardModal.data?.rank} هفتگی</p>
+              <h2 className="text-2xl font-black text-white italic capitalize mb-2">{t("congrats")}</h2>
+              <p className="text-xs text-yellow-400 font-bold uppercase tracking-widest mb-6">{t("weeklyRank").replace("{rank}", specialRewardModal.data?.rank)}</p>
 
               <p className="text-sm text-gray-300 font-bold leading-relaxed mb-8">
                 {specialRewardModal.data?.message}
@@ -233,7 +260,7 @@ export const NotificationCenter = () => {
                 }}
                 className="w-full py-4 rounded-xl bg-gradient-to-r from-yellow-600 to-yellow-400 text-dark-bg font-black uppercase italic tracking-widest hover:scale-105 transition-transform shadow-[0_0_20px_rgba(234,179,8,0.4)] relative z-10 cursor-pointer"
               >
-                دریافت جایزه
+                {t("claimReward")}
               </button>
             </motion.div>
           </motion.div>
