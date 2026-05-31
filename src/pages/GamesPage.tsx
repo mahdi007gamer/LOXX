@@ -161,7 +161,7 @@ export const GamesPage = () => {
       <main className={cn("flex-1 px-4 py-8 lg:px-8 pb-32 md:pb-8 min-w-0 transition-all duration-300", isRtl ? (!isSidebarCollapsed ? "md:mr-64" : "md:mr-20") : (!isSidebarCollapsed ? "md:ml-64" : "md:ml-20"))} dir={isRtl ? "rtl" : "ltr"}>
         <div className="container mx-auto max-w-7xl">
           <header className="mb-8 md:mb-12">
-            <div className={cn("flex flex-col md:flex-row md:items-end justify-between gap-6", isRtl ? "" : "md:flex-row-reverse")}>
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
               <div className={cn("text-center", isRtl ? "md:text-right" : "md:text-left")}>
                 <motion.h1 
                   initial={{ opacity: 0, x: isRtl ? 20 : -20 }}
@@ -221,12 +221,12 @@ export const GamesPage = () => {
                 <div className="h-20 w-20 rounded-full bg-white/5 flex items-center justify-center text-gray-600 mb-4 border border-dashed border-white/10">
                   <Gamepad2 size={40} />
                 </div>
-                <p className="text-gray-400 font-bold">متاسفانه بازی با این مشخصات یافت نشد</p>
+                <p className="text-gray-400 font-bold">{isRtl ? "متاسفانه بازی با این مشخصات یافت نشد" : "Sorry, no games matching your search were found."}</p>
                 <button 
                   onClick={() => setSearchTerm("")}
                   className="mt-4 text-neon-blue hover:underline text-sm font-bold"
                 >
-                  نمایش همه بازی‌ها
+                  {isRtl ? "نمایش همه بازی‌ها" : "Show All Games"}
                 </button>
               </div>
             )}

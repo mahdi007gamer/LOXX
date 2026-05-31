@@ -1830,16 +1830,16 @@ export const ChatPage: React.FC = () => {
                 {/* Invite Link Section for VIP */}
                 {isVipUser && (
                   <div className="pt-4 border-t border-white/5 space-y-3">
-                    <label className="text-xs font-bold text-gray-400 block">لینک دعوت اختصاصی</label>
+                    <label className="text-xs font-bold text-gray-400 block">{isRtl ? "لینک دعوت اختصاصی" : "Exclusive Invite Link"}</label>
                     <div className="flex gap-2">
                        <Input 
-                         value={(activeChannel as any).inviteCode ? `${window.location.origin}/invite/${(activeChannel as any).inviteCode}` : "در حال ساخت..."}
+                         value={(activeChannel as any).inviteCode ? `${window.location.origin}/invite/${(activeChannel as any).inviteCode}` : (isRtl ? "در حال ساخت..." : "Generating...")}
                          readOnly
                          dir="ltr"
                          className="flex-1 text-xs"
                        />
                        <button onClick={handleRegenerateInviteLink} className="h-10 px-4 rounded-xl bg-neon-blue/10 text-neon-blue hover:bg-neon-blue/20 transition-colors shrink-0 font-bold text-xs">
-                         بازتولید
+                         {isRtl ? "بازتولید" : "Regenerate"}
                        </button>
                     </div>
                   </div>
@@ -2229,12 +2229,13 @@ export const ChatPage: React.FC = () => {
                     key={chat.friendId}
                     onClick={() => openChat(chat.friendId, displayName, chat.tempAvatarUrl)}
                     className={cn(
-                      "w-full group flex items-center justify-between p-2.5 rounded-2xl transition-all text-right border border-transparent",
+                      "w-full group flex items-center justify-between p-2.5 rounded-2xl transition-all border border-transparent",
+                      isRtl ? "text-right" : "text-left",
                       activeChatId === chat.friendId 
                         ? "bg-neon-blue/10 border-neon-blue/20 shadow-[0_0_20px_rgba(0,229,255,0.05)]" 
                         : membership === "VIP" ? "hover:bg-yellow-400/5" : membership === "PLUS" ? "hover:bg-neon-blue/5" : "hover:bg-white/5"
                     )}
-                    dir="rtl"
+                    dir={isRtl ? "rtl" : "ltr"}
                   >
                     <div className="flex items-center gap-3">
                       <div className="relative">
@@ -2673,7 +2674,7 @@ export const ChatPage: React.FC = () => {
           onScroll={handleScroll}
           className="flex-1 overflow-y-auto overflow-x-hidden px-2 md:px-6 py-2 md:py-4 space-y-2 md:space-y-4 scroll-smooth custom-scrollbar relative min-h-0 flex flex-col no-scrollbar overscroll-contain"
           style={{ overscrollBehavior: 'contain' }}
-          dir="rtl"
+          dir={isRtl ? "rtl" : "ltr"}
         >
           {/* Pinned Message */}
           {(() => {
@@ -2836,16 +2837,16 @@ export const ChatPage: React.FC = () => {
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95, y: 15 }}
                     className="absolute bottom-20 left-0 right-0 md:left-auto md:right-0 z-40 bg-[#0d0d14]/95 border border-white/10 rounded-[28px] shadow-[0_10px_50px_rgba(0,0,0,0.8)] backdrop-blur-2xl p-4 w-full md:w-[480px] h-[380px] flex flex-col font-sans"
-                    dir="rtl"
+                    dir={isRtl ? "rtl" : "ltr"}
                   >
                     {/* Tabs row */}
                     <div className="flex gap-2 border-b border-white/5 pb-2 mb-3 text-xs md:text-sm overflow-x-auto shrink-0 scrollbar-none">
                       {["emojis", "saved", "builtin", "upload"].map((tab) => {
                         const labels: Record<string, string> = {
-                          emojis: "😀 شکلک‌ها",
-                          saved: "⭐ ذخیره شده",
-                          builtin: "🔥 گالری گیف‌ها",
-                          upload: "🚀 آپلود GIF"
+                          emojis: isRtl ? "😀 شکلک‌ها" : "😀 Emojis",
+                          saved: isRtl ? "⭐ ذخیره شده" : "⭐ Saved",
+                          builtin: isRtl ? "🔥 گالری گیف‌ها" : "🔥 Curated Gifs",
+                          upload: isRtl ? "🚀 آپلود GIF" : "🚀 Upload GIF"
                         };
                         const isActive = gifTab === tab;
                         return (
@@ -2920,9 +2921,9 @@ export const ChatPage: React.FC = () => {
                           ) : (
                             <div className="h-48 flex flex-col items-center justify-center text-center px-4">
                               <Crown size={32} className="text-[#00e5ff] mb-2 animate-pulse" />
-                              <p className="text-xs text-gray-300 font-bold">بخش مخصوص کاربران Plus و VIP</p>
-                              <p className="text-[10px] text-gray-500 leading-relaxed mt-2" dir="rtl">
-                                برای ارسال گیف و یا استفاده از بانک هوشمند گیف‌های لوکس اشتراک Plus و یا VIP تهیه کنید.
+                              <p className="text-xs text-gray-300 font-bold">{isRtl ? "بخش مخصوص کاربران Plus و VIP" : "Exclusive to Plus & VIP Users"}</p>
+                              <p className="text-[10px] text-gray-500 leading-relaxed mt-2" dir={isRtl ? "rtl" : "ltr"}>
+                                {isRtl ? "برای ارسال گیف و یا استفاده از بانک هوشمند گیف‌های لوکس اشتراک Plus و یا VIP تهیه کنید." : "To send GIFs or use the Loxx smart GIF bank, get a Plus or VIP subscription."}
                               </p>
                             </div>
                           )}
@@ -2930,23 +2931,23 @@ export const ChatPage: React.FC = () => {
                       )}
 
                       {gifTab === "builtin" && (
-                        <div className="space-y-3 font-sans h-full min-h-[200px]" dir="rtl">
+                        <div className="space-y-3 font-sans h-full min-h-[200px]" dir={isRtl ? "rtl" : "ltr"}>
                           {isVipOrPlus ? (
                             <>
                               {/* Search box inside GIF tab */}
                               <div className="relative">
-                                <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500" size={14} />
+                                <Search className={cn("absolute top-1/2 -translate-y-1/2 text-gray-500", isRtl ? "right-3" : "left-3")} size={14} />
                                 <input 
                                   type="text" 
                                   value={builtinSearch}
                                   onChange={(e) => setBuiltinSearch(e.target.value)}
-                                  placeholder="جستجو در گالری گیف‌ها با عنوان یا هشتگ..."
-                                  className="w-full bg-white/5 border border-white/5 rounded-xl pr-9 pl-4 py-2 text-xs text-white focus:outline-none focus:border-neon-pink/40 font-bold"
+                                  placeholder={isRtl ? "جستجو در گالری گیف‌ها با عنوان یا هشتگ..." : "Search GIF gallery by title or tag..."}
+                                  className={cn("w-full bg-white/5 border border-white/5 rounded-xl py-2 text-xs text-white focus:outline-none focus:border-neon-pink/40 font-bold", isRtl ? "pr-9 pl-4" : "pl-9 pr-4")}
                                 />
                                 {builtinSearch && (
                                   <button 
                                     onClick={() => setBuiltinSearch("")}
-                                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white"
+                                    className={cn("absolute top-1/2 -translate-y-1/2 text-gray-500 hover:text-white", isRtl ? "left-3" : "right-3")}
                                   >
                                     <X size={12} />
                                   </button>
@@ -2982,9 +2983,9 @@ export const ChatPage: React.FC = () => {
                           ) : (
                             <div className="h-48 flex flex-col items-center justify-center text-center px-4">
                               <Crown size={32} className="text-[#00e5ff] mb-2 animate-pulse" />
-                              <p className="text-xs text-gray-300 font-bold">بخش مخصوص کاربران Plus و VIP</p>
-                              <p className="text-[10px] text-gray-500 leading-relaxed mt-2" dir="rtl">
-                                برای ارسال گیف و یا استفاده از بانک هوشمند گیف‌های لوکس اشتراک Plus و یا VIP تهیه کنید.
+                              <p className="text-xs text-gray-300 font-bold">{isRtl ? "بخش مخصوص کاربران Plus و VIP" : "Exclusive to Plus & VIP Users"}</p>
+                              <p className="text-[10px] text-gray-500 leading-relaxed mt-2" dir={isRtl ? "rtl" : "ltr"}>
+                                {isRtl ? "برای ارسال گیف و یا استفاده از بانک هوشمند گیف‌های لوکس اشتراک Plus و یا VIP تهیه کنید." : "To send GIFs or use the Loxx smart GIF bank, get a Plus or VIP subscription."}
                               </p>
                             </div>
                           )}
@@ -3035,9 +3036,9 @@ export const ChatPage: React.FC = () => {
                           ) : (
                             <div className="h-full flex flex-col items-center justify-center text-center px-4">
                               <Crown size={32} className="text-yellow-400 mb-2 animate-bounce" />
-                              <p className="text-xs text-yellow-400 font-black">قابلیت طلایی مخصوص کاربران VIP</p>
-                              <p className="text-[11px] text-gray-300 leading-relaxed mt-2 text-right" dir="rtl">
-                                هم‌اکنون شما مجاز به آپلود گیف‌های اختصاصی جدید نیستید. برای دریافت <strong className="text-yellow-400">VIP رایگان</strong> نام کاربری خود را به دوستانتان بدهید تا زمان ثبت‌نام وارد کنند و هردو پاداش بگیرید!
+                              <p className="text-xs text-yellow-400 font-black">{isRtl ? "قابلیت طلایی مخصوص کاربران VIP" : "Golden Feature for VIP Users"}</p>
+                              <p className={cn("text-[11px] text-gray-300 leading-relaxed mt-2", isRtl ? "text-right" : "text-left")} dir={isRtl ? "rtl" : "ltr"}>
+                                {isRtl ? <>هم‌اکنون شما مجاز به آپلود گیف‌های اختصاصی جدید نیستید. برای دریافت <strong className="text-yellow-400">VIP رایگان</strong> نام کاربری خود را به دوستانتان بدهید تا زمان ثبت‌نام وارد کنند و هردو پاداش بگیرید!</> : <>You are currently not allowed to upload new custom GIFs. To get <strong className="text-yellow-400">free VIP</strong>, give your username to your friends to enter during registration and both get rewarded!</>}
                               </p>
                             </div>
                           )}

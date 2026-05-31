@@ -174,7 +174,8 @@ export const LobbyRoomPage = () => {
   } = useLobby();
 
   const { user, isSidebarCollapsed, setIsSidebarCollapsed } = useAuth();
-  const { direction, t } = useLanguage();
+  const { direction, t, language } = useLanguage();
+  const isRtl = direction === "rtl" || language === "fa";
   const { openChat, addFriend } = useFriends();
   const { openProfile } = useProfilePopover();
   
@@ -1034,9 +1035,9 @@ export const LobbyRoomPage = () => {
                  <p className="text-neon-blue text-sm font-black uppercase tracking-widest mt-1">Global Elite</p>
                </div>
                <div className="grid grid-cols-3 gap-4 w-full">
-                  <StatCard label="بُردها" value="1,242" />
+                  <StatCard label={isRtl ? "بُردها" : "Wins"} value="1,242" />
                   <StatCard label="K/D" value="1.42" />
-                  <StatCard label="ساعت" value="3.5K" />
+                  <StatCard label={isRtl ? "ساعت" : "Hours"} value="3.5K" />
                </div>
                <GlowButton 
                 variant="blue" 
@@ -1044,24 +1045,24 @@ export const LobbyRoomPage = () => {
                 onClick={() => window.open('/profile', '_blank')}
                >
                  <img src="/logo.png" className="h-5 w-auto" />
-                 مشاهده پروفایل لوکس
+                 {isRtl ? "مشاهده پروفایل لوکس" : "View LOXX Profile"}
                </GlowButton>
             </div>
           </Modal>
         )}
 
         {isSettingsModalOpen && (
-          <Modal title="تنظیمات لابی" onClose={() => setIsSettingsModalOpen(false)}>
+          <Modal title={isRtl ? "تنظیمات لابی" : "Lobby Settings"} onClose={() => setIsSettingsModalOpen(false)}>
             <div className="space-y-6">
               {/* Host specific settings */}
               {isHost ? (
                 <div className="space-y-4">
-                  <h4 className="text-sm font-black text-neon-blue uppercase tracking-widest border-b border-white/10 pb-2">تنظیمات اصلی لابی</h4>
+                  <h4 className="text-sm font-black text-neon-blue uppercase tracking-widest border-b border-white/10 pb-2">{isRtl ? "تنظیمات اصلی لابی" : "Core Lobby Settings"}</h4>
                   
                   <div className="flex items-center justify-between p-3 rounded-2xl bg-white/5">
                     <div>
-                      <p className="text-sm font-black text-white">لابی خصوصی</p>
-                      <p className="text-[10px] text-gray-500 font-bold">فقط با کد دعوت یا لینک</p>
+                      <p className="text-sm font-black text-white">{isRtl ? "لابی خصوصی" : "Private Lobby"}</p>
+                      <p className="text-[10px] text-gray-500 font-bold">{isRtl ? "فقط با کد دعوت یا لینک" : "Only via invite link or code"}</p>
                     </div>
                     <div 
                       onClick={() => updateLobbySettings({ isPrivate: !lobby?.isPrivate })}
@@ -1079,8 +1080,8 @@ export const LobbyRoomPage = () => {
 
                   <div className="flex items-center justify-between p-3 rounded-2xl bg-white/5">
                     <div>
-                      <p className="text-sm font-black text-white">دسترسی میکروفون</p>
-                      <p className="text-[10px] text-gray-500 font-bold">بازیکنان برای چت صوتی نیاز به میکروفون دارند</p>
+                      <p className="text-sm font-black text-white">{isRtl ? "دسترسی میکروفون" : "Microphone Required"}</p>
+                      <p className="text-[10px] text-gray-500 font-bold">{isRtl ? "بازیکنان برای چت صوتی نیاز به میکروفون دارند" : "Players require microhpone for voice chat"}</p>
                     </div>
                     <div 
                       onClick={() => updateLobbySettings({ micRequired: !lobby?.micRequired })}
@@ -1104,17 +1105,17 @@ export const LobbyRoomPage = () => {
                 <div className="space-y-3 p-3.5 rounded-2xl bg-white/5 border border-white/5">
                   <p className="text-xs font-black text-white border-b border-white/5 pb-1.5 flex items-center gap-2">
                     <span className="h-1.5 w-1.5 rounded-full bg-neon-pink shadow-[0_0_8px_rgba(255,0,127,1)]" />
-                    تنظیمات ورودی و خروجی صدا (Hardware Audio Routing)
+                    {isRtl ? "تنظیمات ورودی و خروجی صدا (Hardware Audio Routing)" : "Audio Input & Output Hardware Routing"}
                   </p>
 
                   <div className="space-y-1">
-                    <label className="text-[9px] text-gray-400 font-bold block">دستگاه ورودی میکروفون (Input Microphone)</label>
+                    <label className="text-[9px] text-gray-400 font-bold block">{isRtl ? "دستگاه ورودی میکروفون (Input Microphone)" : "Input Microphone Device"}</label>
                     <select
                       value={selectedAudioInput}
                       onChange={(e) => setSelectedAudioInput(e.target.value)}
                       className="w-full py-2 px-3 rounded-xl bg-black/40 border border-white/10 text-xs text-white focus:outline-none focus:border-neon-blue font-bold font-sans transition appearance-none cursor-pointer"
                     >
-                      <option value="default" className="bg-zinc-950 text-gray-300">Default Device (میکروفون پیش‌فرض سیستم)</option>
+                      <option value="default" className="bg-zinc-950 text-gray-300">{isRtl ? "Default Device (میکروفون پیش‌فرض سیستم)" : "Default Device (System Default Mic)"}</option>
                       {audioInputDevices.map((d) => (
                         <option key={d.deviceId} value={d.deviceId} className="bg-zinc-950 text-white">
                           {d.label || `Microphone (${d.deviceId.slice(0, 5)}...)`}
@@ -1124,13 +1125,13 @@ export const LobbyRoomPage = () => {
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-[9px] text-gray-400 font-bold block">دستگاه خروجی هدفون / بلندگو (Output Destination)</label>
+                    <label className="text-[9px] text-gray-400 font-bold block">{isRtl ? "دستگاه خروجی هدفون / بلندگو (Output Destination)" : "Output Destination Device"}</label>
                     <select
                       value={selectedAudioOutput}
                       onChange={(e) => setSelectedAudioOutput(e.target.value)}
                       className="w-full py-2 px-3 rounded-xl bg-black/40 border border-white/10 text-xs text-white focus:outline-none focus:border-neon-pink font-bold font-sans transition appearance-none cursor-pointer"
                     >
-                      <option value="default" className="bg-zinc-950 text-gray-300">Default Device (بلندگوی پیش‌فرض سیستم)</option>
+                      <option value="default" className="bg-zinc-950 text-gray-300">{isRtl ? "Default Device (بلندگوی پیش‌فرض سیستم)" : "Default Device (System Default Speaker)"}</option>
                       {audioOutputDevices.map((d) => (
                         <option key={d.deviceId} value={d.deviceId} className="bg-zinc-950 text-white">
                           {d.label || `Output Speaker (${d.deviceId.slice(0, 5)}...)`}
@@ -1144,13 +1145,13 @@ export const LobbyRoomPage = () => {
                 <div className="space-y-4 pt-4 border-t border-white/10">
                   <h4 className="text-sm font-black text-neon-blue uppercase tracking-widest border-b border-white/10 pb-2 flex items-center gap-1.5">
                     <span className="h-1.5 w-1.5 rounded-full bg-neon-blue shadow-[0_0_8px_rgba(0,229,255,1)]" />
-                    تنظیمات اختصاصی دسکتاپ و سیستم صوتی
+                    {isRtl ? "تنظیمات اختصاصی دسکتاپ و سیستم صوتی" : "Desktop client & Audio Engine Settings"}
                   </h4>
 
                   {isElectron ? (
                     <div className="p-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/25 text-xs text-white flex flex-col items-center gap-3 text-center">
                       <Settings size={32} className="text-indigo-400" />
-                      <p>تنظیمات لابی مخصوص ویندوز (Push to Talk، Overlay، Performance) به بخش جدیدی منتقل شده است.</p>
+                      <p>{isRtl ? "تنظیمات لابی مخصوص ویندوز (Push to Talk، Overlay، Performance) به بخش جدیدی منتقل شده است." : "Windows-specific settings (Push to Talk, Overlay, Performance) have moved to the Launcher section."}</p>
                       <button 
                         onClick={() => {
                           setIsSettingsModalOpen(false);
@@ -1158,30 +1159,30 @@ export const LobbyRoomPage = () => {
                         }}
                         className="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 rounded-xl text-white font-bold transition"
                       >
-                         باز کردن تنظیمات ویندوز
+                         {isRtl ? "باز کردن تنظیمات ویندوز" : "Open Windows Settings"}
                       </button>
                     </div>
                   ) : (
                     /* Web Browser Showcase for Desktop Client */
                     <div className="p-4 rounded-2xl bg-gradient-to-br from-neon-blue/10 via-transparent to-neon-pink/10 border border-white/5 space-y-3">
-                      <p className="text-xs font-black text-white">🔥 پتانسیل واقعی سیستم صوتی Loxx را آزاد کنید!</p>
+                      <p className="text-xs font-black text-white">{isRtl ? "🔥 پتانسیل واقعی سیستم صوتی Loxx را آزاد کنید!" : "🔥 Unlock the full potential of LOXX Audio Engine!"}</p>
                       <p className="text-[10px] text-gray-400 leading-relaxed font-bold">
-                        آیا می‌دانستید با استفاده از کلاینت دسکتاپ (Windows / macOS / Linux)، قابلیت‌هایی در اختیارتان قرار می‌گیرد که در مرورگر وب ممکن نیستند؟
+                        {isRtl ? "آیا می‌دانستید با استفاده از کلاینت دسکتاپ (Windows / macOS / Linux)، قابلیت‌هایی در اختیارتان قرار می‌گیرد که در مرورگر وب ممکن نیستند؟" : "Did you know that by running the official Desktop Client, you gain advanced abilities not supported by regular web browsers?"}
                       </p>
                       <ul className="text-[9px] text-[#00e5ff] space-y-1 font-bold list-disc list-inside">
-                        <li>کلید Push to Talk سیستمی (حتی زمانی که داخل بازی‌های سنگین مانند CS:GO و Valorant آلت‌تب هستید)</li>
-                        <li>منوی هوشمند تسک‌بار (System Tray) به همراه کلید قطع صدای گلوبال</li>
-                        <li>اجرای اتوماتیک و اتصال بدون دردسر همزمان با روشن کردن رایانه شخصی شما</li>
-                        <li>قابلیت Hardware Acceleration برای کاهش فشار روی CPU</li>
+                        <li>{isRtl ? "کلید Push to Talk سیستمی (حتی زمانی که داخل بازی‌های سنگین مانند CS:GO و Valorant آلت‌تب هستید)" : "System-wide Push to Talk hotkey (even while alt-tabbed in heavy fullscreen games like CS:GO or Valorant)"}</li>
+                        <li>{isRtl ? "منوی هوشمند تسک‌بار (System Tray) به همراه کلید قطع صدای گلوبال" : "Intelligent System Tray menu with a global active microphone mute switch"}</li>
+                        <li>{isRtl ? "اجرای اتوماتیک و اتصال بدون دردسر همزمان با روشن کردن رایانه شخصی شما" : "Auto-launch and instant connection upon starting your personal computer"}</li>
+                        <li>{isRtl ? "قابلیت Hardware Acceleration برای کاهش فشار روی CPU" : "Engine-level Hardware Acceleration to bypass browser engine overhead and lower CPU usage"}</li>
                       </ul>
                       <div className="pt-1 select-all">
                         <button 
                           onClick={() => {
-                            toast.success("درخواست دانلود کلاینت دسکتاپ ثبت شد. به زودی نسخه لانچر برای شما ارسال می‌شود!");
+                            toast.success(isRtl ? "درخواست دانلود کلاینت دسکتاپ ثبت شد. به زودی نسخه لانچر برای شما ارسال می‌شود!" : "Launcher download request registered! The setup file will be delivered shortly.");
                           }}
                           className="w-full py-2.5 rounded-xl bg-neon-blue hover:bg-neon-blue/80 text-black text-xs font-black transition-all shadow-[0_0_12px_rgba(0,229,255,0.4)]"
                         >
-                          دریافت لانچر دسکتاپ (Loxx Desktop Launcher)
+                          {isRtl ? "دریافت لانچر دسکتاپ (Loxx Desktop Launcher)" : "Download Desktop Launcher"}
                         </button>
                       </div>
                     </div>
@@ -1190,13 +1191,13 @@ export const LobbyRoomPage = () => {
                   {/* Shared Web-Only Overlay appearance settings (redundant in Desktop) */}
                   {!isElectron && (
                     <div className="border-t border-white/5 pt-4 space-y-3">
-                      <p className="text-xs font-black text-white select-none">تنظیمات ظاهر ویترین زنده (HUD Overlay Appearance)</p>
+                      <p className="text-xs font-black text-white select-none">{isRtl ? "تنظیمات ظاهر ویترین زنده (HUD Overlay Appearance)" : "HUD Desktop Overlay Appearance Config"}</p>
 
                       {/* Overlay Toggle Switch */}
                       <div className="flex items-center justify-between p-3 rounded-2xl bg-white/5">
                         <div>
-                          <p className="text-xs font-black text-white">طرح زنده روی بازی‌ها (Live Overlay)</p>
-                          <p className="text-[9px] text-gray-500 font-bold font-sans">نمایش لیست فعال کانال صوتی روی گوشه تصویر بقیه برنامه‌ها</p>
+                          <p className="text-xs font-black text-white">{isRtl ? "طرح زنده روی بازی‌ها (Live Overlay)" : "Live In-game HUD Overlay"}</p>
+                          <p className="text-[9px] text-gray-500 font-bold font-sans">{isRtl ? "نمایش لیست فعال کانال صوتی روی گوشه تصویر بقیه برنامه‌ها" : "Render active speaker list on top of fullscreen programs & games"}</p>
                         </div>
                         <div 
                           onClick={() => setOverlayEnabled(!overlayEnabled)}
@@ -1215,8 +1216,8 @@ export const LobbyRoomPage = () => {
                       {/* Hide non-talking toggle */}
                       <div className={cn("flex items-center justify-between p-3 rounded-2xl bg-white/5 transition-opacity", !overlayEnabled && "opacity-50 pointer-events-none")}>
                         <div>
-                          <p className="text-xs font-black text-white">فقط نمایش کاربران در حال صحبت</p>
-                          <p className="text-[9px] text-gray-500 font-bold font-sans">مخفی کردن اعضای ساکت از کادر روی صفحه زمان سکوت</p>
+                          <p className="text-xs font-black text-white">{isRtl ? "فقط نمایش کاربران در حال صحبت" : "Show speaking users only"}</p>
+                          <p className="text-[9px] text-gray-500 font-bold font-sans">{isRtl ? "مخفی کردن اعضای ساکت از کادر روی صفحه زمان سکوت" : "Hide quiet players from the HUD panel to minimize layout clutter"}</p>
                         </div>
                         <div 
                           onClick={() => setOverlayOnlyTalking(!overlayOnlyTalking)}
@@ -1235,8 +1236,8 @@ export const LobbyRoomPage = () => {
                       {/* Display members list display toggle */}
                       <div className={cn("flex items-center justify-between p-3 rounded-2xl bg-white/5 transition-opacity", !overlayEnabled && "opacity-50 pointer-events-none")}>
                         <div>
-                          <p className="text-xs font-black text-white">نمایش لیست اعضا روی اورلی</p>
-                          <p className="text-[9px] text-gray-400 font-bold font-sans">نمایش یا پنهان‌سازی اسامی و آواتار اعضا در لابی روی تصویر</p>
+                          <p className="text-xs font-black text-white">{isRtl ? "نمایش لیست اعضا روی اورلی" : "Render members roster list"}</p>
+                          <p className="text-[9px] text-gray-400 font-bold font-sans">{isRtl ? "نمایش یا پنهان‌سازی اسامی و آواتار اعضا در لابی روی تصویر" : "Control the visibility of individual names & avatars in the overlay box"}</p>
                         </div>
                         <div 
                           onClick={() => setOverlayMembersVisible(!overlayMembersVisible)}
@@ -1257,7 +1258,7 @@ export const LobbyRoomPage = () => {
                         <div className="space-y-1">
                           <div className="flex justify-between text-gray-400 text-[10px] font-bold">
                             <span className="font-mono text-neon-blue">{Math.round(overlayNormalOpacity * 100)}%</span>
-                            <span>شفافیت عضو در حالت سکوت (Quiet)</span>
+                            <span>{isRtl ? "شفافیت عضو در حالت سکوت (Quiet)" : "Roster Opacity in Quiet State"}</span>
                           </div>
                           <input 
                             type="range" min="0.1" max="1.0" step="0.05"
@@ -1270,7 +1271,7 @@ export const LobbyRoomPage = () => {
                         <div className="space-y-1">
                           <div className="flex justify-between text-gray-400 text-[10px] font-bold">
                             <span className="font-mono text-neon-blue">{Math.round(overlaySpeakingOpacity * 100)}%</span>
-                            <span>شفافیت عضو در حال صحبت (Speaking)</span>
+                            <span>{isRtl ? "شفافیت عضو در حال صحبت (Speaking)" : "Roster Opacity in Speaking State"}</span>
                           </div>
                           <input 
                             type="range" min="0.1" max="1.0" step="0.05"
@@ -1283,13 +1284,13 @@ export const LobbyRoomPage = () => {
 
                       {/* Overlay Position selector */}
                       <div className={cn("space-y-2 transition-opacity", !overlayEnabled && "opacity-50 pointer-events-none")}>
-                        <label className="text-xs font-black text-gray-400">موقعیت قرارگیری اورلی روی صفحه</label>
+                        <label className="text-xs font-black text-gray-400">{isRtl ? "موقعیت قرارگیری اورلی روی صفحه" : "HUD Screen Orientation Position"}</label>
                         <div className="grid grid-cols-2 gap-2">
                           {[
-                            { id: "top-left", name: "بالا چپ" },
-                            { id: "top-right", name: "بالا راست" },
-                            { id: "bottom-left", name: "پایین چپ" },
-                            { id: "bottom-right", name: "پایین راست" }
+                            { id: "top-left", name: isRtl ? "بالا چپ" : "Top Left" },
+                            { id: "top-right", name: isRtl ? "بالا راست" : "Top Right" },
+                            { id: "bottom-left", name: isRtl ? "پایین چپ" : "Bottom Left" },
+                            { id: "bottom-right", name: isRtl ? "پایین راست" : "Bottom Right" }
                           ].map(pos => (
                             <button 
                               key={pos.id}
@@ -1301,7 +1302,7 @@ export const LobbyRoomPage = () => {
                                   : "bg-white/5 border-white/5 text-gray-400 hover:bg-white/10"
                               )}
                             >
-                              {pos.name}
+                               {pos.name}
                             </button>
                           ))}
                         </div>
@@ -1309,12 +1310,12 @@ export const LobbyRoomPage = () => {
 
                       {/* Overlay Size selector */}
                       <div className={cn("space-y-2 transition-opacity", !overlayEnabled && "opacity-50 pointer-events-none")}>
-                        <label className="text-xs font-black text-gray-400">اندازه نمایشگر اورلی دسکتاپ</label>
+                        <label className="text-xs font-black text-gray-400">{isRtl ? "اندازه نمایشگر اورلی دسکتاپ" : "Desktop HUD Scaled Size"}</label>
                         <div className="flex gap-2">
                           {[
-                            { id: "small", name: "کوچک" },
-                            { id: "medium", name: "متوسط" },
-                            { id: "large", name: "بزرگ" }
+                            { id: "small", name: isRtl ? "کوچک" : "Small" },
+                            { id: "medium", name: isRtl ? "متوسط" : "Medium" },
+                            { id: "large", name: isRtl ? "بزرگ" : "Large" }
                           ].map(sz => (
                             <button 
                               key={sz.id}
@@ -1326,7 +1327,7 @@ export const LobbyRoomPage = () => {
                                   : "bg-white/5 border-white/5 text-gray-400 hover:bg-white/10"
                               )}
                             >
-                              {sz.name}
+                               {sz.name}
                             </button>
                           ))}
                         </div>

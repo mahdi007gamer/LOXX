@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
-import { Gamepad2, User, Bell, Menu, X, LayoutDashboard, Target, Users, MessageSquare, Trophy, Settings, Shield, LogOut, Zap, Crown, Phone, Globe } from "lucide-react";
+import { Gamepad2, User, Bell, Menu, X, LayoutDashboard, Target, Users, MessageSquare, Trophy, Settings, Shield, LogOut, Zap, Crown, Phone, Globe, Download } from "lucide-react";
 import { GlowButton } from "../ui/GlowButton";
 import { SmartImage } from "../ui/SmartImage";
 import { motion, AnimatePresence, useScroll, useMotionValueEvent } from "motion/react";
@@ -131,27 +131,87 @@ export const Navbar = () => {
 
           {/* Middle: Centered Navigation (OMITTED entirely on Desktop Client as requested) */}
           {!isElectron && (
-            <div className="hidden md:flex items-center gap-6 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+            <div className="hidden md:flex items-center gap-4 lg:gap-6 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
               {user && (
                 <NavLink 
                   to="/dashboard" 
+                  title={t("dashboard")}
                   className={({ isActive }) => 
                     cn(
-                      "transition-all font-black text-[11px] uppercase tracking-[0.12em] italic px-3 py-1 border border-neon-blue/30 bg-neon-blue/5 text-neon-blue shadow-[0_0_12px_rgba(0,229,255,0.1)] hover:bg-neon-blue/20 hover:border-neon-blue/60 hover:text-white ripple-active transition-all duration-300 rounded-lg",
+                      "transition-all font-black text-[11px] uppercase tracking-[0.12em] italic px-3 py-1.5 border border-neon-blue/30 bg-neon-blue/5 text-neon-blue shadow-[0_0_12px_rgba(0,229,255,0.1)] hover:bg-neon-blue/20 hover:border-neon-blue/60 hover:text-white ripple-active transition-all duration-300 rounded-lg flex items-center gap-2",
                       isActive && "border-neon-blue/80 bg-neon-blue/15 text-white shadow-[0_0_18px_rgba(0,229,255,0.3)]"
                     )
                   }
                 >
-                  {t("dashboard")}
+                  <LayoutDashboard size={14} className="shrink-0" />
+                  {!(isLanding && isScrolled) && <span>{t("dashboard")}</span>}
                 </NavLink>
               )}
-              <NavLink to="/lobbies" className={({ isActive }) => cn("transition-all font-black text-[10px] uppercase tracking-[0.2em] italic", isActive ? "text-neon-blue drop-shadow-[0_0_8px_rgba(0,229,255,0.5)]" : "text-gray-400 hover:text-white ripple-active")}>{t("lobbies")}</NavLink>
-              <NavLink to="/chat" className={({ isActive }) => cn("transition-all font-black text-[10px] uppercase tracking-[0.2em] italic", isActive ? "text-neon-blue drop-shadow-[0_0_8px_rgba(0,229,255,0.5)]" : "text-gray-400 hover:text-white ripple-active")}>{t("globalChat")}</NavLink>
-              <NavLink to="/games" className={({ isActive }) => cn("transition-all font-black text-[10px] uppercase tracking-[0.2em] italic", isActive ? "text-neon-blue drop-shadow-[0_0_8px_rgba(0,229,255,0.5)]" : "text-gray-400 hover:text-white ripple-active")}>{t("games")}</NavLink>
-              <NavLink to="/contact" className={({ isActive }) => cn("transition-all font-black text-[10px] uppercase tracking-[0.2em] italic", isActive ? "text-neon-blue drop-shadow-[0_0_8px_rgba(0,229,255,0.5)]" : "text-gray-400 hover:text-white ripple-active")}>{t("contactUs")}</NavLink>
+              
+              <NavLink 
+                to="/lobbies" 
+                title={t("lobbies")}
+                className={({ isActive }) => 
+                  cn(
+                    "transition-all font-black text-[10px] uppercase tracking-[0.2em] italic flex items-center gap-2 px-3 py-1.5 rounded-lg border border-transparent transition-all duration-300", 
+                    isActive ? "text-neon-blue border-neon-blue/20 bg-neon-blue/5 shadow-[0_0_12px_rgba(0,229,255,0.1)]" : "text-gray-400 hover:text-white hover:bg-white/5"
+                  )
+                }
+              >
+                <Users size={14} className="shrink-0" />
+                {!(isLanding && isScrolled) && <span>{t("lobbies")}</span>}
+              </NavLink>
+
+              <NavLink 
+                to="/chat" 
+                title={t("globalChat")}
+                className={({ isActive }) => 
+                  cn(
+                    "transition-all font-black text-[10px] uppercase tracking-[0.2em] italic flex items-center gap-2 px-3 py-1.5 rounded-lg border border-transparent transition-all duration-300", 
+                    isActive ? "text-neon-blue border-neon-blue/20 bg-neon-blue/5 shadow-[0_0_12px_rgba(0,229,255,0.1)]" : "text-gray-400 hover:text-white hover:bg-white/5"
+                  )
+                }
+              >
+                <MessageSquare size={14} className="shrink-0" />
+                {!(isLanding && isScrolled) && <span>{t("globalChat")}</span>}
+              </NavLink>
+
+              <NavLink 
+                to="/games" 
+                title={t("games")}
+                className={({ isActive }) => 
+                  cn(
+                    "transition-all font-black text-[10px] uppercase tracking-[0.2em] italic flex items-center gap-2 px-3 py-1.5 rounded-lg border border-transparent transition-all duration-300", 
+                    isActive ? "text-neon-blue border-neon-blue/20 bg-neon-blue/5 shadow-[0_0_12px_rgba(0,229,255,0.1)]" : "text-gray-400 hover:text-white hover:bg-white/5"
+                  )
+                }
+              >
+                <Gamepad2 size={14} className="shrink-0" />
+                {!(isLanding && isScrolled) && <span>{t("games")}</span>}
+              </NavLink>
+
+              <NavLink 
+                to="/contact" 
+                title={t("contactUs")}
+                className={({ isActive }) => 
+                  cn(
+                    "transition-all font-black text-[10px] uppercase tracking-[0.2em] italic flex items-center gap-2 px-3 py-1.5 rounded-lg border border-transparent transition-all duration-300", 
+                    isActive ? "text-neon-blue border-neon-blue/20 bg-neon-blue/5 shadow-[0_0_12px_rgba(0,229,255,0.1)]" : "text-gray-400 hover:text-white hover:bg-white/5"
+                  )
+                }
+              >
+                <Phone size={14} className="shrink-0" />
+                {!(isLanding && isScrolled) && <span>{t("contactUs")}</span>}
+              </NavLink>
+
               {isLanding && (
-                <button onClick={() => document.getElementById('download')?.scrollIntoView({ behavior: 'smooth' })} className="transition-all font-black text-[10px] uppercase tracking-[0.2em] italic text-gray-400 hover:text-white ripple-active">
-                  {isRtl ? "دانلود" : "DOWNLOAD"}
+                <button 
+                  onClick={() => document.getElementById('download')?.scrollIntoView({ behavior: 'smooth' })} 
+                  title={isRtl ? "دانلود" : "DOWNLOAD"}
+                  className="transition-all font-black text-[10px] uppercase tracking-[0.2em] italic text-gray-400 hover:text-white hover:bg-white/5 px-3 py-1.5 rounded-lg flex items-center gap-2 cursor-pointer duration-300"
+                >
+                  <Download size={14} className="shrink-0" />
+                  {!(isLanding && isScrolled) && <span>{isRtl ? "دانلود" : "DOWNLOAD"}</span>}
                 </button>
               )}
             </div>

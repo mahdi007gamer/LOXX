@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { useLanguage } from "../../context/LanguageContext";
 
 export const ScreenSplash = ({ onComplete }: { onComplete: () => void }) => {
+  const { language } = useLanguage();
+  const isRtl = language === "fa";
   const [progress, setProgress] = useState(0);
   const [isUpdating, setIsUpdating] = useState(false);
   const [appVersion, setAppVersion] = useState("1.0.6");
@@ -63,7 +66,7 @@ export const ScreenSplash = ({ onComplete }: { onComplete: () => void }) => {
   return (
     <div 
       className="fixed inset-0 bg-[#040408] z-[999999] flex flex-col items-center justify-center select-none overflow-hidden"
-      dir="rtl"
+      dir={isRtl ? "rtl" : "ltr"}
     >
       {/* Visual background decorations */}
       <div className="absolute top-[20%] left-[-10%] w-[45%] h-[45%] bg-neon-blue/15 rounded-full blur-[130px]" />
@@ -108,10 +111,10 @@ export const ScreenSplash = ({ onComplete }: { onComplete: () => void }) => {
             {isElectron ? "LOXX CLIENT" : "LOXX"}
           </h1>
           <p className="text-sm font-black text-neon-blue tracking-wider uppercase font-sans">
-            لوکس | اولین پلتفرم پیشرفته گیمینگ فارسی
+            {isRtl ? "لوکس | اولین پلتفرم پیشرفته گیمینگ فارسی" : "LOXX | First Advanced Gaming Platform"}
           </p>
           <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1">
-            بستر امن چت صوتی و لابی بازی‌ها
+            {isRtl ? "بستر امن چت صوتی و لابی بازی‌ها" : "Secure Real-time Voice Chat & Multiplayer Lobby"}
           </p>
         </motion.div>
 
@@ -124,15 +127,19 @@ export const ScreenSplash = ({ onComplete }: { onComplete: () => void }) => {
         >
           <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden border border-white/5 relative">
             <motion.div 
-              className="h-full bg-gradient-to-l from-neon-blue to-neon-pink shadow-[0_0_12px_rgba(0,229,255,0.8)] rounded-full"
-              style={{ width: `${progress}%` }}
-              transition={{ ease: "easeInOut" }}
+               className="h-full bg-gradient-to-l from-neon-blue to-neon-pink shadow-[0_0_12px_rgba(0,229,255,0.8)] rounded-full"
+               style={{ width: `${progress}%` }}
+               transition={{ ease: "easeInOut" }}
             />
           </div>
           
           <div className="flex items-center justify-between text-[9px] text-gray-400 font-black font-sans uppercase">
             <span className={isUpdating ? "text-neon-blue animate-pulse" : "text-neon-pink"}>{isUpdating ? "UPDATING" : `${progress}%`}</span>
-            <span className="animate-pulse">{isUpdating ? "در حال دریافت آپدیت جدید لوکس..." : "در حال اتصال به شبکه لوکس..."}</span>
+            <span className="animate-pulse">
+              {isUpdating 
+                ? (isRtl ? "در حال دریافت آپدیت جدید لوکس..." : "Downloading latest LOXX update...") 
+                : (isRtl ? "در حال اتصال به شبکه لوکس..." : "Connecting to LOXX Network...")}
+            </span>
           </div>
         </motion.div>
       </div>

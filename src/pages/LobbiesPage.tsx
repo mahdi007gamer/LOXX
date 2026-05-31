@@ -105,7 +105,7 @@ export const LobbiesPage = () => {
         <div className="px-4 py-8 md:px-8 lg:px-10 max-w-7xl mx-auto w-full">
           {/* Mobile Header: Beautifully aligned and spaced */}
           <header className="mb-6 md:mb-12 space-y-6 md:space-y-8 w-full max-w-full">
-            <div className={cn("flex flex-col sm:flex-row sm:items-end justify-between gap-4 w-full", isRtl ? "" : "sm:flex-row-reverse")}>
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 w-full">
               <div className={cn("w-full sm:w-auto", isRtl ? "text-right sm:text-right" : "text-left sm:text-left")}>
                 <h1 className="text-2xl md:text-3xl lg:text-4xl font-black text-white italic tracking-tighter uppercase leading-tight">
                   {isRtl ? (
@@ -155,7 +155,7 @@ export const LobbiesPage = () => {
 
           {/* Game Filters - Better padding and mask for mobile */}
           <div className="mb-6 md:mb-8 relative w-full overflow-hidden">
-            <div className={cn("flex items-center justify-between mb-3 px-1", isRtl ? "" : "flex-row-reverse")}>
+            <div className="flex items-center justify-between mb-3 px-1">
                <div className="flex items-center gap-1.5 md:gap-2">
                  <Filter size={12} className="text-neon-blue shrink-0" />
                  <span className="text-[9px] font-black text-white/30 uppercase tracking-[0.2em] truncate">{t("gameFilter")}</span>
@@ -318,7 +318,7 @@ export const LobbiesPage = () => {
                           </h3>
 
                           {/* Dynamic Metadata / Features */}
-                          <div className="mb-4 flex flex-wrap gap-1.5 text-right" dir={isRtl ? "rtl" : "ltr"}>
+                          <div className={cn("mb-4 flex flex-wrap gap-1.5", isRtl ? "text-right" : "text-left")} dir={isRtl ? "rtl" : "ltr"}>
                             <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-white/5 border border-white/5 text-[9px] font-bold text-gray-400">
                               <Globe size={11} className="text-neon-pink" />
                               <span>{lobby.region}</span>
