@@ -450,7 +450,7 @@ const AppContent = () => {
       {!isOverlayWidget && <Navbar />}
       
       <main className={cn("relative", !isLanding && !isOverlayWidget && (isElectron ? "pt-[100px]" : "pt-16"))}>
-        <Routes key={location.pathname}>
+        <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/download" element={<DownloadPage />} />
           <Route path="/auth" element={<AuthPage />} />
