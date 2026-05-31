@@ -1914,19 +1914,19 @@ export const ChatPage: React.FC = () => {
               className="bg-[#0b0c10] border border-white/10 rounded-[32px] w-full max-w-sm overflow-hidden shadow-2xl p-6 flex flex-col max-h-[80vh]"
             >
               <div className="flex justify-between items-center mb-6 shrink-0">
-                <h3 className="text-xl font-black text-white italic tracking-tighter">دعوت دوستان به گروه</h3>
+                <h3 className="text-xl font-black text-white italic tracking-tighter">{isRtl ? "دعوت دوستان به گروه" : "Invite Friends"}</h3>
                 <button onClick={() => setShowEliteInviteModal(false)} className="text-gray-500 hover:text-white"><X size={24}/></button>
               </div>
               <div className="space-y-4 mb-6 shrink-0">
                 <div>
                   <div className="relative">
-                    <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                    <Search className={cn("absolute top-1/2 -translate-y-1/2 text-gray-400", isRtl ? "right-4" : "left-4")} size={16} />
                     <input 
                       type="text"
-                      className="w-full bg-[#15151a] border border-white/5 rounded-2xl px-12 py-3.5 text-sm text-white focus:outline-none focus:border-neon-pink/50 transition-colors"
+                      className={cn("w-full bg-[#15151a] border border-white/5 rounded-2xl py-3.5 text-sm text-white focus:outline-none focus:border-neon-pink/50 transition-colors", isRtl ? "pr-12 pl-4" : "pl-12 pr-4")}
                       value={inviteSearchQuery}
                       onChange={(e) => setInviteSearchQuery(e.target.value)}
-                      placeholder="جستجوی دوست..."
+                      placeholder={isRtl ? "جستجوی دوست..." : "Search friend..."}
                     />
                   </div>
                 </div>
@@ -1979,12 +1979,12 @@ export const ChatPage: React.FC = () => {
                   );
                 })}
                 {friends.length === 0 && (
-                   <div className="text-center py-6 text-gray-500 text-sm font-bold">دوستی یافت نشد</div>
+                   <div className="text-center py-6 text-gray-500 text-sm font-bold">{isRtl ? "دوستی یافت نشد" : "No friend found"}</div>
                 )}
               </div>
               
               <div className="flex gap-3 shrink-0">
-                 <GlowButton variant="pink" className="flex-1 font-black" onClick={handleInviteToEliteGroup} disabled={selectedInvitees.length === 0}>ارسال دعوتنامه ({selectedInvitees.length})</GlowButton>
+                 <GlowButton variant="pink" className="flex-1 font-black" onClick={handleInviteToEliteGroup} disabled={selectedInvitees.length === 0}>{isRtl ? `ارسال دعوتنامه (${selectedInvitees.length})` : `Send Invite (${selectedInvitees.length})`}</GlowButton>
               </div>
             </motion.div>
           </div>
@@ -2001,7 +2001,7 @@ export const ChatPage: React.FC = () => {
               className="bg-[#0b0c10] border border-white/10 rounded-[32px] w-full max-w-[500px] overflow-hidden shadow-2xl p-6"
             >
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-black text-white italic tracking-tighter">ارسال محتوا به اخبار</h3>
+                <h3 className="text-xl font-black text-white italic tracking-tighter">{isRtl ? "ارسال محتوا به اخبار" : "Post to News"}</h3>
                 <button onClick={() => setShowImagePostModal(false)} className="text-gray-500 hover:text-white"><X size={24}/></button>
               </div>
               
@@ -2012,14 +2012,14 @@ export const ChatPage: React.FC = () => {
               <textarea
                 value={newsPostText}
                 onChange={(e) => setNewsPostText(e.target.value)}
-                placeholder="توضیحات خبر را اینجا بنویسید..."
+                placeholder={isRtl ? "توضیحات خبر را اینجا بنویسید..." : "Write news description here..."}
                 className="w-full bg-white/5 border border-white/5 rounded-2xl p-4 outline-none focus:border-neon-blue/50 transition-all text-white font-medium text-sm resize-none mb-6"
                 rows={4}
               />
 
               <div className="flex gap-3">
-                 <GlowButton variant="blue" className="flex-1 font-black" onClick={handleSendNewsPost}>انتشار خبر</GlowButton>
-                 <button onClick={() => setShowImagePostModal(false)} className="px-6 py-3 rounded-2xl bg-white/5 text-gray-400 font-bold hover:bg-white/10 transition-colors">انصراف</button>
+                 <GlowButton variant="blue" className="flex-1 font-black" onClick={handleSendNewsPost}>{isRtl ? "انتشار خبر" : "Publish News"}</GlowButton>
+                 <button onClick={() => setShowImagePostModal(false)} className="px-6 py-3 rounded-2xl bg-white/5 text-gray-400 font-bold hover:bg-white/10 transition-colors">{isRtl ? "انصراف" : "Cancel"}</button>
               </div>
             </motion.div>
           </div>
@@ -2041,7 +2041,7 @@ export const ChatPage: React.FC = () => {
                     {(user as any)?.role === "STREAMER" ? <Radio size={24} /> : <Crown size={24} />}
                   </div>
                   <div>
-                    <h3 className="text-xl font-black text-white italic tracking-tighter">{(user as any)?.role === "STREAMER" ? "ایجاد گروه اختصاصی استریمرها" : "ایجاد گروه نخبگان"}</h3>
+                    <h3 className="text-xl font-black text-white italic tracking-tighter">{(user as any)?.role === "STREAMER" ? (isRtl ? "ایجاد گروه اختصاصی استریمرها" : "Create Streamer Exclusive Group") : (isRtl ? "ایجاد گروه نخبگان" : "Create Elite Group")}</h3>
                     <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">{(user as any)?.role === "STREAMER" ? "Streamer Exclusive Group" : "VIP Group System"}</p>
                   </div>
                 </div>
@@ -2052,9 +2052,9 @@ export const ChatPage: React.FC = () => {
               
               <div className="space-y-6">
                 <div>
-                  <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2 italic px-2">نام گروه</label>
+                  <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2 italic px-2">{isRtl ? "نام گروه" : "Group Name"}</label>
                   <Input 
-                    placeholder="نام گروه رویایی خود را بنویسید..." 
+                    placeholder={isRtl ? "نام گروه رویایی خود را بنویسید..." : "Write your dream group name..."} 
                     value={vipGroupName}
                     onChange={(e) => setVipGroupName(e.target.value)}
                   />
@@ -2065,24 +2065,24 @@ export const ChatPage: React.FC = () => {
                     variant="yellow" 
                     className="flex-1 h-14 font-black italic uppercase text-xs"
                     onClick={async () => {
-                      if (!vipGroupName.trim()) { toast.error("نام گروه الزامی است"); return; }
+                      if (!vipGroupName.trim()) { toast.error(isRtl ? "نام گروه الزامی است" : "Group name is required"); return; }
                       try {
                         await api.post("/elite", { title: vipGroupName });
-                        toast.success("گروه VIP با موفقیت ایجاد شد");
+                        toast.success(isRtl ? "گروه VIP با موفقیت ایجاد شد" : "VIP group created successfully");
                         loadEliteGroups();
                         setShowVipGroupModal(false);
                       } catch (err: any) {
-                        toast.error(err.response?.data?.error?.message || "خطا در ایجاد گروه");
+                        toast.error(err.response?.data?.error?.message || (isRtl ? "خطا در ایجاد گروه" : "Error creating group"));
                       }
                     }}
                    >
-                    تاسیس گروه نخبگان
+                    {isRtl ? "تاسیس گروه نخبگان" : "Found Elite Group"}
                    </GlowButton>
                    <button 
                     onClick={() => setShowVipGroupModal(false)} 
                     className="px-8 h-14 rounded-2xl bg-white/5 text-gray-400 font-black italic text-xs hover:bg-white/10 transition-colors uppercase"
                    >
-                    انصراف
+                    {isRtl ? "انصراف" : "Cancel"}
                    </button>
                 </div>
               </div>
@@ -2092,12 +2092,12 @@ export const ChatPage: React.FC = () => {
       </AnimatePresence>
       
       {/* Channels Sidebar */}
-      <div className={cn("hidden w-80 border-r border-white/5 bg-black/20 backdrop-blur-3xl lg:flex flex-col relative z-20 transition-all duration-300", !isSidebarCollapsed ? "md:mr-64" : "md:mr-20")}>
+      <div className={cn("hidden w-80 border-r border-white/5 bg-black/20 backdrop-blur-3xl lg:flex flex-col relative z-20 transition-all duration-300", isRtl ? (!isSidebarCollapsed ? "md:mr-64" : "md:mr-20") : (!isSidebarCollapsed ? "md:ml-64" : "md:ml-20"))}>
         <div className="p-6 border-b border-white/5">
           <div className="flex items-center justify-between mb-2">
-            <h2 className="text-xl font-black text-white tracking-widest uppercase">کانال‌ها</h2>
+            <h2 className="text-xl font-black text-white tracking-widest uppercase">{isRtl ? "کانال‌ها" : "Channels"}</h2>
             <button 
-              title="ایجاد گروه"
+              title={isRtl ? "ایجاد گروه" : "Create Group"}
               onClick={() => setShowVipGroupModal(true)}
               className={cn(
                 "group p-2 rounded-xl transition-all border relative",
@@ -2127,14 +2127,14 @@ export const ChatPage: React.FC = () => {
           <div className="px-4">
             <h3 className="px-4 text-[10px] font-black text-gray-600 uppercase tracking-widest mb-3 flex items-center gap-2">
               <span className="h-px flex-1 bg-white/5"></span>
-              عمومی
+              {isRtl ? "عمومی" : "Public"}
               <span className="h-px flex-1 bg-white/5"></span>
             </h3>
             <div className="space-y-1">
               {INITIAL_CHANNELS.map((channel) => (
                 <ChannelButton 
                   key={channel.id}
-                  channel={{ ...channel, users: channelUsers[channel.id] ?? channel.users }}
+                  channel={{ ...channel, name: isRtl ? channel.name : (channel.id === 'general' ? 'General Chat' : (channel.id === 'news' ? 'Gaming News' : channel.name)), users: channelUsers[channel.id] ?? channel.users }}
                   active={activeChannelId === channel.id}
                   unreadCount={unreadCounts[channel.id]}
                   onClick={() => setActiveChannelId(channel.id)}
@@ -2148,7 +2148,7 @@ export const ChatPage: React.FC = () => {
             <div className="px-4">
               <h3 className="px-4 text-[10px] font-black text-yellow-500/50 uppercase tracking-widest mb-3 flex items-center gap-2">
                 <span className="h-px flex-1 bg-yellow-500/10"></span>
-                گروه‌های نخبگان
+                {isRtl ? "گروه‌های نخبگان" : "Elite Groups"}
                 <span className="h-px flex-1 bg-yellow-500/10"></span>
               </h3>
               <div className="space-y-1">
@@ -2170,7 +2170,7 @@ export const ChatPage: React.FC = () => {
             <div className="px-4">
               <h3 className="px-4 text-[10px] font-black text-neon-blue/50 uppercase tracking-widest mb-3 flex items-center gap-2">
                 <span className="h-px flex-1 bg-neon-blue/10"></span>
-                گروه‌های حرفه‌ای
+                {isRtl ? "گروه‌های حرفه‌ای" : "Pro Groups"}
                 <span className="h-px flex-1 bg-neon-blue/10"></span>
               </h3>
               <div className="space-y-1">
@@ -2192,7 +2192,7 @@ export const ChatPage: React.FC = () => {
             <div className="px-4">
                <h3 className="px-4 text-[10px] font-black text-neon-blue/40 uppercase tracking-widest mb-3 flex items-center gap-2">
                 <span className="h-px flex-1 bg-neon-blue/5"></span>
-                بازی‌های من
+                {isRtl ? "بازی‌های من" : "My Games"}
                 <span className="h-px flex-1 bg-neon-blue/5"></span>
               </h3>
               <div className="space-y-1">
@@ -2213,13 +2213,13 @@ export const ChatPage: React.FC = () => {
           <div className="px-4">
             <h3 className="px-4 text-[10px] font-black text-gray-600 uppercase tracking-widest mb-3 flex items-center gap-2">
               <span className="h-px flex-1 bg-white/5"></span>
-              گفتگوهای اخیر
+              {isRtl ? "گفتگوهای اخیر" : "Recent Chats"}
               <span className="h-px flex-1 bg-white/5"></span>
             </h3>
             <div className="space-y-1 mb-6">
               {chats.map((chat) => {
                 const friend = friends.find(f => f.id === chat.friendId);
-                const displayName = friend?.displayName || chat.tempDisplayName || "گیمر";
+                const displayName = friend?.displayName || chat.tempDisplayName || (isRtl ? "گیمر" : "Gamer");
                 const avatar = friend?.avatar;
                 const status = friend?.status || FriendStatus.OFFLINE;
                 const membership = (friend as any)?.membership || MembershipType.NONE;
@@ -2277,7 +2277,7 @@ export const ChatPage: React.FC = () => {
                               {chat.messages[chat.messages.length - 1].text}
                             </span>
                           ) : (
-                            <span className="text-[9px] text-gray-600 italic tracking-tight">بدون پیام</span>
+                            <span className="text-[9px] text-gray-600 italic tracking-tight">{isRtl ? "بدون پیام" : "No messages"}</span>
                           )}
                         </div>
                       </div>
@@ -2291,7 +2291,7 @@ export const ChatPage: React.FC = () => {
                 );
               })}
               {chats.length === 0 && (
-                <p className="text-[9px] text-gray-700 text-center py-2 italic font-medium opacity-50">هیچ گفتگوی اخیری یافت نشد</p>
+                <p className="text-[9px] text-gray-700 text-center py-2 italic font-medium opacity-50">{isRtl ? "هیچ گفتگوی اخیری یافت نشد" : "No recent chats found"}</p>
               )}
             </div>
 
@@ -2338,7 +2338,7 @@ export const ChatPage: React.FC = () => {
       </div>
 
       {/* Main Chat Area */}
-      <div className={cn("relative flex flex-1 flex-col min-w-0 overflow-hidden transition-all duration-300 transition-colors", CHAT_THEMES[chatTheme].bgClass, !isSidebarCollapsed ? "md:mr-64 lg:mr-0" : "md:mr-20 lg:mr-0")}>
+      <div className={cn("relative flex flex-1 flex-col min-w-0 overflow-hidden transition-all duration-300 transition-colors", CHAT_THEMES[chatTheme].bgClass, isRtl ? (!isSidebarCollapsed ? "md:mr-64 lg:mr-0" : "md:mr-20 lg:mr-0") : (!isSidebarCollapsed ? "md:ml-64 lg:ml-0" : "md:ml-20 lg:ml-0"))}>
         {/* Themes Overlays */}
         {CHAT_THEMES[chatTheme].radial}
         {CHAT_THEMES[chatTheme].overlay}
@@ -2396,10 +2396,10 @@ export const ChatPage: React.FC = () => {
                 )}
               </div>
               <div className="flex items-center gap-1.5 md:gap-2 truncate">
-                <div className={`h-1 w-1 md:h-1.5 md:w-1.5 rounded-full ${isSocketConnected ? 'bg-blue-500' : 'bg-red-500'} shrink-0`} title={isSocketConnected ? "متصل" : "قطع ارتباط"}></div>
-                <p className="text-[8px] md:text-[10px] text-gray-500 font-bold uppercase tracking-tighter truncate">{memberCount.toLocaleString()} عضو</p>
+                <div className={`h-1 w-1 md:h-1.5 md:w-1.5 rounded-full ${isSocketConnected ? 'bg-blue-500' : 'bg-red-500'} shrink-0`} title={isSocketConnected ? (isRtl ? "متصل" : "Connected") : (isRtl ? "قطع ارتباط" : "Disconnected")}></div>
+                <p className="text-[8px] md:text-[10px] text-gray-500 font-bold uppercase tracking-tighter truncate">{memberCount.toLocaleString()} {isRtl ? "عضو" : "Members"}</p>
                 {!isSocketConnected && (
-                  <span className="text-[10px] text-red-500 font-bold animate-pulse mr-2">در حال اتصال...</span>
+                  <span className="text-[10px] text-red-500 font-bold animate-pulse mr-2">{isRtl ? "در حال اتصال..." : "Connecting..."}</span>
                 )}
                 {gameMembers.length > 0 && (
                   <div className="hidden sm:flex items-center -space-x-2 mr-2">
@@ -2441,16 +2441,16 @@ export const ChatPage: React.FC = () => {
               <div className="flex items-center gap-1 md:gap-2">
                  {((activeChannel as any).ownerId === user?.id) ? (
                    <>
-                     <GlowButton onClick={() => setShowEliteInviteModal(true)} variant="pink" size="sm" className="hidden sm:flex h-8 px-3 text-[10px] font-black uppercase">دعوت دوستان</GlowButton>
-                     <button title="دعوت دوستان" onClick={() => setShowEliteInviteModal(true)} className="sm:hidden p-1.5 rounded-lg bg-neon-pink/10 text-neon-pink hover:bg-neon-pink/20 transition-colors">
+                     <GlowButton onClick={() => setShowEliteInviteModal(true)} variant="pink" size="sm" className="hidden sm:flex h-8 px-3 text-[10px] font-black uppercase">{isRtl ? "دعوت دوستان" : "Invite Friends"}</GlowButton>
+                     <button title={isRtl ? "دعوت دوستان" : "Invite Friends"} onClick={() => setShowEliteInviteModal(true)} className="sm:hidden p-1.5 rounded-lg bg-neon-pink/10 text-neon-pink hover:bg-neon-pink/20 transition-colors">
                         <UserPlusIcon size={16} />
                      </button>
-                     <button title="تنظیمات گروه" onClick={() => { setEliteSettingsData({ title: activeChannel.name, avatarUrl: (activeChannel as any).avatarUrl || "" }); setShowEliteSettingsModal(true); }} className="p-1.5 rounded-lg bg-white/5 text-gray-400 hover:text-white transition-colors">
+                     <button title={isRtl ? "تنظیمات گروه" : "Group Settings"} onClick={() => { setEliteSettingsData({ title: activeChannel.name, avatarUrl: (activeChannel as any).avatarUrl || "" }); setShowEliteSettingsModal(true); }} className="p-1.5 rounded-lg bg-white/5 text-gray-400 hover:text-white transition-colors">
                         <Settings size={16} />
                      </button>
                    </>
                  ) : (
-                   <button onClick={handleLeaveEliteGroup} className="h-8 px-2 md:px-3 rounded-lg bg-red-500/10 text-red-500 text-[10px] font-black hover:bg-red-500/20 transition-colors uppercase border border-red-500/20">خروج</button>
+                   <button onClick={handleLeaveEliteGroup} className="h-8 px-2 md:px-3 rounded-lg bg-red-500/10 text-red-500 text-[10px] font-black hover:bg-red-500/20 transition-colors uppercase border border-red-500/20">{isRtl ? "خروج" : "Leave"}</button>
                  )}
               </div>
             )}
@@ -2464,7 +2464,7 @@ export const ChatPage: React.FC = () => {
                   sendLobbyInvite();
                 }}
               >
-                 دعوت
+                 {isRtl ? "دعوت" : "Invite"}
               </GlowButton>
             )}
             <div className="hidden md:block h-6 w-px bg-white/5 mx-1"></div>
@@ -2479,7 +2479,7 @@ export const ChatPage: React.FC = () => {
                   "p-1.5 md:p-2 rounded-lg transition-all",
                   showThemeMenu ? "bg-neon-blue text-dark-bg" : "bg-white/5 text-gray-400 hover:text-white"
                 )}
-                title="تغییر تم"
+                title={isRtl ? "تغییر تم" : "Change Theme"}
               >
                 <Palette size={16} />
               </button>
@@ -2490,9 +2490,9 @@ export const ChatPage: React.FC = () => {
                     initial={{ opacity: 0, y: 10, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    className="absolute top-full left-0 mt-2 w-48 bg-[#0a0a0f]/95 border border-white/10 rounded-xl shadow-2xl z-50 p-1 backdrop-blur-xl"
+                    className={cn("absolute top-full mt-2 w-48 bg-[#0a0a0f]/95 border border-white/10 rounded-xl shadow-2xl z-50 p-1 backdrop-blur-xl", isRtl ? "left-0" : "right-0")}
                   >
-                    <p className="px-3 py-2 text-[10px] font-black text-gray-600 uppercase italic">انتخاب تم پس‌زمینه</p>
+                    <p className={cn("px-3 py-2 text-[10px] font-black text-gray-600 uppercase italic", isRtl ? "text-right" : "text-left")}>{isRtl ? "انتخاب تم پس‌زمینه" : "Select Theme"}</p>
                     {Object.entries(CHAT_THEMES).map(([key, theme]) => (
                       <button
                         key={key}
@@ -2501,7 +2501,8 @@ export const ChatPage: React.FC = () => {
                           setShowThemeMenu(false);
                         }}
                         className={cn(
-                          "w-full text-right px-3 py-2 rounded-lg text-xs font-bold transition-colors",
+                          "w-full px-3 py-2 rounded-lg text-xs font-bold transition-colors",
+                          isRtl ? "text-right" : "text-left",
                           chatTheme === key ? "bg-neon-blue/10 text-neon-blue" : "text-gray-400 hover:bg-white/5 hover:text-white"
                         )}
                       >
@@ -2540,17 +2541,17 @@ export const ChatPage: React.FC = () => {
                 className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm md:hidden"
               />
               <motion.div
-                initial={{ x: "-100%" }}
+                initial={{ x: isRtl ? "100%" : "-100%" }}
                 animate={{ x: 0 }}
-                exit={{ x: "-100%" }}
+                exit={{ x: isRtl ? "100%" : "-100%" }}
                 transition={{ type: "spring", damping: 30, stiffness: 300 }}
-                className="fixed left-0 top-0 bottom-0 z-[101] w-72 bg-dark-bg/95 border-r border-white/10 p-6 backdrop-blur-xl md:hidden"
+                className={cn("fixed top-0 bottom-0 z-[101] w-72 bg-dark-bg/95 border-white/10 p-6 backdrop-blur-xl md:hidden", isRtl ? "right-0 border-l" : "left-0 border-r")}
               >
                 <div className="flex items-center justify-between mb-8">
                   <div className="flex items-center gap-3">
-                    <h2 className="text-xl font-black text-white tracking-widest uppercase text-right">کانال‌ها</h2>
+                    <h2 className={cn("text-xl font-black text-white tracking-widest uppercase", isRtl ? "text-right" : "text-left")}>{isRtl ? "کانال‌ها" : "Channels"}</h2>
                     <button 
-                      title="ایجاد گروه"
+                      title={isRtl ? "ایجاد گروه" : "Create Group"}
                       onClick={() => {
                         setShowVipGroupModal(true);
                         setShowChannelMenu(false);
@@ -2583,12 +2584,12 @@ export const ChatPage: React.FC = () => {
                 <div className="space-y-6">
                   {/* Public Channels */}
                   <div>
-                    <h3 className="text-[10px] font-black text-gray-600 uppercase tracking-widest mb-3 text-right">عمومی</h3>
+                    <h3 className={cn("text-[10px] font-black text-gray-600 uppercase tracking-widest mb-3", isRtl ? "text-right" : "text-left")}>{isRtl ? "عمومی" : "Public"}</h3>
                     <div className="space-y-1">
                       {INITIAL_CHANNELS.map((channel) => (
                         <ChannelButton 
                           key={channel.id}
-                          channel={{ ...channel, users: channelUsers[channel.id] ?? channel.users }}
+                          channel={{ ...channel, name: isRtl ? channel.name : (channel.id === 'general' ? 'General Chat' : (channel.id === 'news' ? 'Gaming News' : channel.name)), users: channelUsers[channel.id] ?? channel.users }}
                           active={activeChannelId === channel.id}
                           unreadCount={unreadCounts[channel.id]}
                           onClick={() => {
@@ -2603,7 +2604,7 @@ export const ChatPage: React.FC = () => {
                   {/* Elite Groups */}
                   {eliteGroups.length > 0 && (
                     <div>
-                      <h3 className="text-[10px] font-black text-yellow-500/50 uppercase tracking-widest mb-3 text-right">گروه‌های نخبگان</h3>
+                      <h3 className={cn("text-[10px] font-black text-yellow-500/50 uppercase tracking-widest mb-3", isRtl ? "text-right" : "text-left")}>{isRtl ? "گروه‌های نخبگان" : "Elite Groups"}</h3>
                       <div className="space-y-1">
                         {eliteGroups.map((channel) => (
                           <ChannelButton 
@@ -2624,7 +2625,7 @@ export const ChatPage: React.FC = () => {
                   {/* Pro Groups */}
                   {proGroups.length > 0 && (
                     <div>
-                      <h3 className="text-[10px] font-black text-neon-blue/50 uppercase tracking-widest mb-3 text-right">گروه‌های حرفه‌ای</h3>
+                      <h3 className={cn("text-[10px] font-black text-neon-blue/50 uppercase tracking-widest mb-3", isRtl ? "text-right" : "text-left")}>{isRtl ? "گروه‌های حرفه‌ای" : "Pro Groups"}</h3>
                       <div className="space-y-1">
                         {proGroups.map((channel) => (
                           <ChannelButton 
@@ -2645,7 +2646,7 @@ export const ChatPage: React.FC = () => {
                   {/* Game Specific Channels */}
                   {myGamesChannels.length > 0 && (
                     <div>
-                      <h3 className="text-[10px] font-black text-neon-blue/40 uppercase tracking-widest mb-3 text-right">بازی‌های من</h3>
+                      <h3 className={cn("text-[10px] font-black text-neon-blue/40 uppercase tracking-widest mb-3", isRtl ? "text-right" : "text-left")}>{isRtl ? "بازی‌های من" : "My Games"}</h3>
                       <div className="space-y-1">
                         {myGamesChannels.map((channel) => (
                           <ChannelButton 
@@ -2690,7 +2691,7 @@ export const ChatPage: React.FC = () => {
                }}>
                  <div className="flex items-center gap-2 mb-1">
                    <Star size={12} className="text-yellow-500" />
-                   <span className="text-[10px] font-black text-yellow-500 uppercase">پیام پین شده</span>
+                   <span className="text-[10px] font-black text-yellow-500 uppercase">{isRtl ? "پیام پین شده" : "Pinned Message"}</span>
                  </div>
                  <p className="text-xs text-white/80 line-clamp-1">{pinnedMessage.content}</p>
                </div>
@@ -2706,9 +2707,11 @@ export const ChatPage: React.FC = () => {
                const isYesterday = d.toDateString() === new Date(today.getTime() - 86400000).toDateString();
                
                const formatOpt: Intl.DateTimeFormatOptions = { year: 'numeric', month: '2-digit', day: '2-digit' };
-               const faDate = d.toLocaleDateString("fa-IR", formatOpt);
+               const faDate = d.toLocaleDateString(isRtl ? "fa-IR" : "en-US", formatOpt);
 
-               const label = isToday ? "امروز" : isYesterday ? `دیروز (${faDate})` : faDate;
+               const label = isRtl ? 
+                 (isToday ? "امروز" : isYesterday ? `دیروز (${faDate})` : faDate) :
+                 (isToday ? "Today" : isYesterday ? `Yesterday (${faDate})` : faDate);
 
                if (!groups[label]) groups[label] = [];
                groups[label].push(msg);
@@ -2760,9 +2763,9 @@ export const ChatPage: React.FC = () => {
                <span className="text-[10px] text-gray-400 font-black">
                   {(() => {
                     const names = Object.values(typers[activeChannelId] || {});
-                    if (names.length === 1) return `${names[0]} در حال نوشتن...`;
-                    if (names.length === 2) return `${names[0]} و ${names[1]} در حال نوشتن...`;
-                    return `${names[0]}، ${names[1]} و ${names.length - 2} نفر دیگر در حال نوشتن...`;
+                    if (names.length === 1) return isRtl ? `${names[0]} در حال نوشتن...` : `${names[0]} is typing...`;
+                    if (names.length === 2) return isRtl ? `${names[0]} و ${names[1]} در حال نوشتن...` : `${names[0]} and ${names[1]} are typing...`;
+                    return isRtl ? `${names[0]}، ${names[1]} و ${names.length - 2} نفر دیگر در حال نوشتن...` : `${names[0]}, ${names[1]} and ${names.length - 2} others are typing...`;
                   })()}
                </span>
             </div>
@@ -2781,7 +2784,7 @@ export const ChatPage: React.FC = () => {
               className="absolute bottom-28 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 rounded-xl bg-green-500 text-white font-black text-[10px] shadow-2xl z-40 backdrop-blur-md"
             >
               <Check size={14} />
-              گیف با موفقیت ذخیره شد
+              {isRtl ? "گیف با موفقیت ذخیره شد" : "GIF saved successfully"}
             </motion.div>
           )}
 
@@ -2794,14 +2797,14 @@ export const ChatPage: React.FC = () => {
               className="absolute bottom-28 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 rounded-full bg-neon-blue text-dark-bg font-black text-[10px] shadow-[0_10px_30px_rgba(0,229,255,0.3)] z-40 hover:scale-105 transition-transform"
             >
               <ChevronDown size={14} />
-              پیام‌های جدید
+              {isRtl ? "پیام‌های جدید" : "New Messages"}
             </motion.button>
           )}
         </AnimatePresence>
              {/* Input Area - Adjusted for mobile */}
         {activeChannelId === 'news' && !isAdmin ? (
           <div className="p-8 pb-12 text-center opacity-50">
-             <p className="text-gray-500 font-bold text-sm tracking-tighter">فقط ادمین‌ها می‌توانند در این کانال محتوا منتشر کنند</p>
+             <p className="text-gray-500 font-bold text-sm tracking-tighter">{isRtl ? "فقط ادمین‌ها می‌توانند در این کانال محتوا منتشر کنند" : "Only admins can post here"}</p>
           </div>
         ) : (
           <div className="p-3 md:p-8 bg-gradient-to-t from-dark-bg to-transparent relative z-30 flex flex-col items-center shrink-0 w-full overflow-visible">
@@ -2817,7 +2820,7 @@ export const ChatPage: React.FC = () => {
                   >
                     <div className="flex items-center gap-3 overflow-hidden">
                       <Reply size={14} className="text-neon-blue shrink-0" />
-                      <span className="text-gray-500 font-bold whitespace-nowrap">در پاسخ به <span className="text-neon-blue">{replyingTo.senderName}</span>:</span>
+                      <span className="text-gray-500 font-bold whitespace-nowrap">{isRtl ? "در پاسخ به" : "Replying to"} <span className="text-neon-blue">{replyingTo.senderName}</span>:</span>
                       <span className="text-gray-300 truncate opacity-60 italic">{replyingTo.text}</span>
                     </div>
                     <button 
@@ -2886,8 +2889,8 @@ export const ChatPage: React.FC = () => {
                             savedGifs.length === 0 ? (
                               <div className="h-48 flex flex-col items-center justify-center text-center opacity-60">
                                 <Star size={24} className="text-gray-500 mb-2" />
-                                <p className="text-xs text-gray-400">گیف ذخیره شده‌ای ندارید.</p>
-                                <p className="text-[10px] text-gray-500 mt-1">توی چت، روی ستاره‌ی بالای گیف کلیک کنید تا ذخیره بشه!</p>
+                                <p className="text-xs text-gray-400">{isRtl ? "گیف ذخیره شده‌ای ندارید." : "No saved GIFs."}</p>
+                                <p className="text-[10px] text-gray-500 mt-1">{isRtl ? "توی چت، روی ستاره‌ی بالای گیف کلیک کنید تا ذخیره بشه!" : "Click the star above any GIF in chat to save it!"}</p>
                               </div>
                             ) : (
                               <div className="grid grid-cols-2 gap-3 p-1">
@@ -2907,10 +2910,10 @@ export const ChatPage: React.FC = () => {
                                         if (user) {
                                           localStorage.setItem(`loxx_saved_gifs_${user.id}`, JSON.stringify(updated));
                                         }
-                                        toast.success("گیف از علاقه‌مندی‌ها حذف شد.");
+                                        toast.success(isRtl ? "گیف از علاقه‌مندی‌ها حذف شد." : "GIF removed from favorites.");
                                       }}
                                       className="absolute top-1 right-1 p-1 bg-black/85 hover:bg-red-500/20 rounded-md text-red-500 opacity-0 group-hover/saveditem:opacity-100 transition-opacity"
-                                      title="حذف از علاقه‌مندی‌ها"
+                                      title={isRtl ? "حذف از علاقه‌مندی‌ها" : "Remove from favorites"}
                                     >
                                       <Trash size={12} />
                                     </button>
@@ -2957,8 +2960,8 @@ export const ChatPage: React.FC = () => {
                               {builtinGifs.length === 0 ? (
                                 <div className="h-40 flex flex-col items-center justify-center text-center opacity-60">
                                   <ImageIcon size={24} className="text-gray-500 mb-2" />
-                                  <p className="text-xs text-gray-400">گیفی یافت نشد.</p>
-                                  <p className="text-[10px] text-gray-500 mt-1">با مدیریت لوکس هماهنگ کنید تا گیف‌های جدید آپلود کند.</p>
+                                  <p className="text-xs text-gray-400">{isRtl ? "گیفی یافت نشد." : "No GIFs found."}</p>
+                                  <p className="text-[10px] text-gray-500 mt-1">{isRtl ? "با مدیریت لوکس هماهنگ کنید تا گیف‌های جدید آپلود کند." : "Coordinate with Loxx admins to upload new GIFs."}</p>
                                 </div>
                               ) : (
                                 <div className="grid grid-cols-3 gap-2">
@@ -2973,7 +2976,7 @@ export const ChatPage: React.FC = () => {
                                         />
                                       </div>
                                       <span className="text-[9px] text-gray-400 mt-1 text-center font-bold truncate w-full px-0.5" title={gif.title}>
-                                        {gif.title || "بدون عنوان"}
+                                        {gif.title || (isRtl ? "بدون عنوان" : "Untitled")}
                                       </span>
                                     </div>
                                   ))}
@@ -3019,15 +3022,15 @@ export const ChatPage: React.FC = () => {
                                 {isUploadingGif ? (
                                   <div className="flex flex-col items-center gap-2 justify-center">
                                     <div className="w-8 h-8 border-2 border-t-neon-pink border-white/10 rounded-full animate-spin" />
-                                    <p className="text-xs text-gray-400">در حال فشرده‌سازی و آپلود گیف...</p>
-                                    <p className="text-[10px] text-gray-500">جلوگیری از آپلود تکراری فعال است</p>
+                                    <p className="text-xs text-gray-400">{isRtl ? "در حال فشرده‌سازی و آپلود گیف..." : "Compressing & uploading GIF..."}</p>
+                                    <p className="text-[10px] text-gray-500">{isRtl ? "جلوگیری از آپلود تکراری فعال است" : "Duplicate upload prevention is active"}</p>
                                   </div>
                                 ) : (
                                   <div className="flex flex-col items-center">
                                     <Plus size={32} className="text-neon-pink mb-2 animate-bounce" />
-                                    <p className="text-xs text-gray-300 font-bold">انتخاب یا رها کردن فایل GIF (گیف)</p>
+                                    <p className="text-xs text-gray-300 font-bold">{isRtl ? "انتخاب یا رها کردن فایل GIF (گیف)" : "Select or drop GIF file"}</p>
                                     <p className="text-[10px] text-gray-500 mt-2">
-                                      حداکثر حجم ۱۰ مگابایت. گیف شما بهینه‌سازی و ذخیره می‌شود.
+                                      {isRtl ? "حداکثر حجم ۱۰ مگابایت. گیف شما بهینه‌سازی و ذخیره می‌شود." : "Max size 10MB. Your GIF will be optimized & saved."}
                                     </p>
                                   </div>
                                 )}
@@ -3059,7 +3062,7 @@ export const ChatPage: React.FC = () => {
                       "p-2 rounded-xl transition-all outline-none",
                       showGifPicker ? "text-neon-pink bg-neon-pink/10" : "text-gray-500 hover:text-neon-blue hover:bg-neon-blue/5"
                     )}
-                    title="شکلک‌ها و گیف"
+                    title={isRtl ? "شکلک‌ها و گیف" : "Emojis & GIFs"}
                   >
                     <Smile size={20} />
                   </button>
@@ -3092,8 +3095,8 @@ export const ChatPage: React.FC = () => {
                     if (e.key === "Enter") handleSend();
                   }}
                   maxLength={300}
-                  placeholder={`پیام در ${activeChannel.name}...`}
-                  className="flex-1 bg-transparent py-4 px-6 text-white text-sm focus:outline-none placeholder:text-gray-600 placeholder:font-bold text-right"
+                  placeholder={isRtl ? `پیام در ${activeChannel.name}...` : `Message in ${activeChannel.name}...`}
+                  className={cn("flex-1 bg-transparent py-4 px-6 text-white text-sm focus:outline-none placeholder:text-gray-600 placeholder:font-bold", isRtl ? "text-right" : "text-left")}
                 />
                 <div className="flex items-center gap-2 pl-2 border-r border-white/5">
                    <GlowButton 
@@ -3133,7 +3136,7 @@ export const ChatPage: React.FC = () => {
             >
             <div className="p-6 border-b border-white/5 flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-black text-white tracking-widest uppercase">لیست دوستان</h3>
+                <h3 className="text-lg font-black text-white tracking-widest uppercase">{isRtl ? "لیست دوستان" : "Friends List"}</h3>
                 <p className="text-[10px] text-neon-blue font-bold tracking-widest uppercase">Social Hub</p>
               </div>
               <button 
@@ -3212,7 +3215,7 @@ export const ChatPage: React.FC = () => {
                             <p className={cn("text-xs font-black truncate", isVip ? "text-yellow-400 drop-shadow-[0_0_5px_rgba(250,204,21,0.5)]" : isPlus ? "text-neon-blue drop-shadow-[0_0_5px_rgba(0,229,255,0.5)]" : "text-white")}>{friend.displayName}</p>
                             {friend.isFavorite && <Star size={10} className="fill-neon-blue text-neon-blue shrink-0" />}
                           </div>
-                          <p className="text-[10px] text-gray-500 font-bold">سطح {friend.level}</p>
+                          <p className="text-[10px] text-gray-500 font-bold">{isRtl ? "سطح" : "Level"} {friend.level}</p>
                         </div>
 
                         {/* Actions Overlay - Sticky for active friend */}
@@ -3228,7 +3231,7 @@ export const ChatPage: React.FC = () => {
                                  setShowFriendsSidebar(false);
                                }}
                                className="h-9 w-9 rounded-xl bg-neon-blue/20 text-neon-blue hover:bg-neon-blue hover:text-dark-bg transition-all flex items-center justify-center shadow-lg shadow-neon-blue/10 border border-neon-blue/20"
-                               title="پیام"
+                               title={isRtl ? "پیام" : "Message"}
                              >
                                <MessageSquare size={16} />
                              </button>
@@ -3247,7 +3250,7 @@ export const ChatPage: React.FC = () => {
                                  }, false);
                                }}
                                className="h-9 w-9 rounded-xl bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-all flex items-center justify-center border border-white/5"
-                               title="پروفایل"
+                               title={isRtl ? "پروفایل" : "Profile"}
                              >
                                <User size={16} />
                              </button>
@@ -3259,7 +3262,7 @@ export const ChatPage: React.FC = () => {
                   ) : (
                     <div className="py-20 text-center space-y-4 opacity-50">
                        <Users size={40} className="mx-auto text-gray-600" />
-                       <p className="text-xs font-bold text-gray-500">لیست دوستان خالی است</p>
+                       <p className="text-xs font-bold text-gray-500">{isRtl ? "لیست دوستان خالی است" : "Friends list is empty"}</p>
                     </div>
                   )}
                 </div>
@@ -3270,7 +3273,7 @@ export const ChatPage: React.FC = () => {
             <div className="p-4 pb-20 md:pb-4 bg-white/5 border-t border-white/5">
               <Link to="/friends" onClick={() => setShowFriendsSidebar(false)}>
                 <GlowButton variant="blue" className="w-full !rounded-2xl text-xs font-black h-12 shadow-neon-blue/10">
-                  یافتن دوستان جدید
+                  {isRtl ? "یافتن دوستان جدید" : "Find New Friends"}
                 </GlowButton>
               </Link>
             </div>
@@ -3301,25 +3304,25 @@ export const ChatPage: React.FC = () => {
                   <AlertTriangle size={20} />
                 </div>
                 <div>
-                  <h3 className="text-xl font-black text-white italic tracking-tighter">گزارش تخلف</h3>
+                  <h3 className="text-xl font-black text-white italic tracking-tighter">{isRtl ? "گزارش تخلف" : "Report Violation"}</h3>
                   <p className="text-[10px] text-gray-500 uppercase tracking-widest font-black">Report Content</p>
                 </div>
               </div>
 
               <div className="bg-white/5 border border-white/5 p-4 rounded-xl mb-6">
-                 <p className="text-xs text-gray-400 mb-2">پیام مورد گزارش:</p>
+                 <p className="text-xs text-gray-400 mb-2">{isRtl ? "پیام مورد گزارش:" : "Reported Message:"}</p>
                  <p className="text-sm text-gray-200 border-r-2 border-red-500/50 pr-3 line-clamp-3">{reportingMessage.content}</p>
                  <p className="text-[10px] font-bold text-gray-500 mt-2 text-left">- {reportingMessage.senderName}</p>
               </div>
 
               <div className="space-y-4">
                  <div>
-                    <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2 block">دلیل گزارش</label>
+                    <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2 block">{isRtl ? "دلیل گزارش" : "Reason for reporting"}</label>
                     <textarea 
                       value={reportReason}
                       onChange={(e) => setReportReason(e.target.value)}
                       className="w-full h-24 bg-white/5 border border-white/10 rounded-xl p-3 text-sm text-white focus:border-red-500/50 transition-colors resize-none"
-                      placeholder="دلیل گزارش خود را به صورت کامل توضیح دهید..."
+                      placeholder={isRtl ? "دلیل گزارش خود را به صورت کامل توضیح دهید..." : "Provide a fully detailed reason for your report..."}
                     />
                  </div>
               </div>
@@ -3329,11 +3332,11 @@ export const ChatPage: React.FC = () => {
                    onClick={() => { setReportingMessage(null); setReportReason(""); }}
                    className="flex-1 h-12 rounded-xl bg-white/5 text-gray-400 font-bold hover:bg-white/10 hover:text-white transition-colors"
                  >
-                   انصراف
+                   {isRtl ? "انصراف" : "Cancel"}
                  </button>
                  <button 
                    onClick={async () => {
-                     if (!reportReason.trim()) { toast.error("لطفاً دلیل گزارش را بنویسید"); return; }
+                     if (!reportReason.trim()) { toast.error(isRtl ? "لطفاً دلیل گزارش را بنویسید" : "Please provide a reason for the report"); return; }
                      try {
                        await api.post("/reports", {
                          reportedUserId: reportingMessage.senderId,
@@ -3341,17 +3344,17 @@ export const ChatPage: React.FC = () => {
                          targetType: "MESSAGE",
                          reason: reportReason
                        });
-                       toast.success("گزارش شما با موفقیت ثبت شد");
+                       toast.success(isRtl ? "گزارش شما با موفقیت ثبت شد" : "Report submitted successfully");
                        setReportingMessage(null);
                        setReportReason("");
                      } catch (e: any) {
-                       toast.error(e.response?.data?.error?.message || "خطا در ثبت گزارش");
+                       toast.error(e.response?.data?.error?.message || (isRtl ? "خطا در ثبت گزارش" : "Error submitting report"));
                        setReportingMessage(null);
                      }
                    }}
                    className="flex-1 h-12 rounded-xl bg-red-500/20 border border-red-500/30 text-red-500 font-bold hover:bg-red-500 hover:text-white transition-all shadow-[0_0_15px_rgba(239,68,68,0.2)] hover:shadow-[0_0_20px_rgba(239,68,68,0.4)]"
                  >
-                   ارسال گزارش
+                   {isRtl ? "ارسال گزارش" : "Submit Report"}
                  </button>
               </div>
            </motion.div>

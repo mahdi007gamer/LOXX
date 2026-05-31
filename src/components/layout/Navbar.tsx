@@ -89,18 +89,20 @@ export const Navbar = () => {
             {!isInvitePage && (
               <>
                 <button 
-                  className="p-2 text-gray-400 hover:text-white md:hidden animate-fade-in"
+                  className={cn("p-2 text-gray-400 hover:text-white animate-fade-in", isElectron ? "hidden" : "md:hidden")}
                   onClick={() => setIsMenuOpen(!isMenuOpen)}
                 >
                   {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
                 </button>
-                <button 
-                  className="p-2 text-gray-400 hover:text-white hidden md:block cursor-pointer transition-colors hover:bg-white/5 rounded-lg"
-                  onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-                  title={isRtl ? (isSidebarCollapsed ? "نمایش منوی اصلی" : "پنهان کردن منوی اصلی") : (isSidebarCollapsed ? "Show main menu" : "Hide main menu")}
-                >
-                  <Menu size={21} className={cn("transition-transform duration-300", isSidebarCollapsed && "rotate-180")} />
-                </button>
+                {!isElectron && (
+                  <button 
+                    className="p-2 text-gray-400 hover:text-white hidden md:block cursor-pointer transition-colors hover:bg-white/5 rounded-lg"
+                    onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+                    title={isRtl ? (isSidebarCollapsed ? "نمایش منوی اصلی" : "پنهان کردن منوی اصلی") : (isSidebarCollapsed ? "Show main menu" : "Hide main menu")}
+                  >
+                    <Menu size={21} className={cn("transition-transform duration-300", isSidebarCollapsed && "rotate-180")} />
+                  </button>
+                )}
               </>
             )}
             <Link to="/" className="flex items-center gap-4 group">
@@ -147,20 +149,6 @@ export const Navbar = () => {
                   {!(isLanding && isScrolled) && <span>{t("dashboard")}</span>}
                 </NavLink>
               )}
-              
-              <NavLink 
-                to="/lobbies" 
-                title={t("lobbies")}
-                className={({ isActive }) => 
-                  cn(
-                    "transition-all font-black text-[10px] uppercase tracking-[0.2em] italic flex items-center gap-2 px-3 py-1.5 rounded-lg border border-transparent transition-all duration-300", 
-                    isActive ? "text-neon-blue border-neon-blue/20 bg-neon-blue/5 shadow-[0_0_12px_rgba(0,229,255,0.1)]" : "text-gray-400 hover:text-white hover:bg-white/5"
-                  )
-                }
-              >
-                <Users size={14} className="shrink-0" />
-                {!(isLanding && isScrolled) && <span>{t("lobbies")}</span>}
-              </NavLink>
 
               <NavLink 
                 to="/chat" 
@@ -174,34 +162,6 @@ export const Navbar = () => {
               >
                 <MessageSquare size={14} className="shrink-0" />
                 {!(isLanding && isScrolled) && <span>{t("globalChat")}</span>}
-              </NavLink>
-
-              <NavLink 
-                to="/games" 
-                title={t("games")}
-                className={({ isActive }) => 
-                  cn(
-                    "transition-all font-black text-[10px] uppercase tracking-[0.2em] italic flex items-center gap-2 px-3 py-1.5 rounded-lg border border-transparent transition-all duration-300", 
-                    isActive ? "text-neon-blue border-neon-blue/20 bg-neon-blue/5 shadow-[0_0_12px_rgba(0,229,255,0.1)]" : "text-gray-400 hover:text-white hover:bg-white/5"
-                  )
-                }
-              >
-                <Gamepad2 size={14} className="shrink-0" />
-                {!(isLanding && isScrolled) && <span>{t("games")}</span>}
-              </NavLink>
-
-              <NavLink 
-                to="/contact" 
-                title={t("contactUs")}
-                className={({ isActive }) => 
-                  cn(
-                    "transition-all font-black text-[10px] uppercase tracking-[0.2em] italic flex items-center gap-2 px-3 py-1.5 rounded-lg border border-transparent transition-all duration-300", 
-                    isActive ? "text-neon-blue border-neon-blue/20 bg-neon-blue/5 shadow-[0_0_12px_rgba(0,229,255,0.1)]" : "text-gray-400 hover:text-white hover:bg-white/5"
-                  )
-                }
-              >
-                <Phone size={14} className="shrink-0" />
-                {!(isLanding && isScrolled) && <span>{t("contactUs")}</span>}
               </NavLink>
 
               {isLanding && (
