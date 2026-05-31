@@ -40,6 +40,7 @@ import { PwaInstaller } from "./components/PwaInstaller";
 import { DesktopOverlayWidget } from "./pages/DesktopOverlayWidget";
 import { ElectronTitlebar } from "./components/layout/ElectronTitlebar";
 import { cn } from "./lib/utils";
+import { chatSocket } from "./lib/socket";
 import NotFoundPage from "./pages/NotFoundPage";
 import { EliteDashboardPage } from "./pages/EliteDashboardPage";
 
@@ -100,6 +101,40 @@ const AppContent = () => {
   const isLanding = (location.pathname === "/" || location.pathname === "/download") && !currentHash.startsWith("#/");
   const hideSidebar = isLanding || location.pathname === "/auth" || isOverlayWidget;
   const isElectron = typeof window !== "undefined" && !!(window as any).electronAPI;
+  useEffect(() => {
+    const handleWarned = (data: { warningsToday: number, message: string }) => {
+      toast.custom((t) => (
+        <div className={`${t.visible ? 'animate-fade-in' : 'animate-fade-out'} bg-red-950/90 border border-red-500/30 p-5 rounded-2xl shadow-[0_0_40px_rgba(239,68,68,0.2)] flex flex-col gap-3 min-w-[320px] max-w-[400px] pointer-events-auto backdrop-blur-xl transition-all`}>
+           <div className="flex items-center gap-3">
+             <div className="h-2 w-2 rounded-full bg-red-500 animate-ping"></div>
+             <span className="font-bold text-[13px] text-red-500">اخطار انضباطی دریافت کردید</span>
+           </div>
+           <p className="text-[12px] text-red-200 font-bold leading-relaxed">{data.message}</p>
+        </div>
+      ), { duration: 8000 });
+    };
+
+    const handleMuted = (data: { until: number, message: string }) => {
+       toast.custom((t) => (
+        <div className={`${t.visible ? 'animate-fade-in' : 'animate-fade-out'} bg-orange-950/90 border border-orange-500/30 p-5 rounded-2xl shadow-[0_0_40px_rgba(249,115,22,0.2)] flex flex-col gap-3 min-w-[320px] max-w-[400px] pointer-events-auto backdrop-blur-xl transition-all`}>
+           <div className="flex items-center gap-3">
+             <div className="h-2 w-2 rounded-full bg-orange-500 animate-ping"></div>
+             <span className="font-bold text-[13px] text-orange-500">محدودیت ارسال پیام (Mited)</span>
+           </div>
+           <p className="text-[12px] text-orange-200 font-bold leading-relaxed">{data.message}</p>
+        </div>
+      ), { duration: 10000 });
+    };
+
+    chatSocket.on("chat.warning_received", handleWarned);
+    chatSocket.on("chat.muted", handleMuted);
+
+    return () => {
+      chatSocket.off("chat.warning_received", handleWarned);
+      chatSocket.off("chat.muted", handleMuted);
+    };
+  }, []);
+
   const [isMaximized, setIsMaximized] = useState(false);
   const [isDesktop, setIsDesktop] = useState(typeof window !== "undefined" ? window.innerWidth >= 768 : false);
   const [showSplash, setShowSplash] = useState(() => {

@@ -797,6 +797,20 @@ export const ChatPage: React.FC = () => {
   const [savedGifs, setSavedGifs] = useState<string[]>([]);
   const [showSaveFeedback, setShowSaveFeedback] = useState(false);
   const gifUploadRef = useRef<HTMLInputElement>(null);
+  const [muteUntil, setMuteUntil] = useState<number | null>(null);
+  const [muteMessage, setMuteMessage] = useState<string>("");
+
+  useEffect(() => {
+    if (muteUntil && Date.now() >= muteUntil) {
+       setMuteUntil(null);
+    } else if (muteUntil) {
+       const timer = setTimeout(() => {
+          setMuteUntil(null);
+       }, muteUntil - Date.now());
+       return () => clearTimeout(timer);
+    }
+  }, [muteUntil]);
+
   const [showFriendsSidebar, setShowFriendsSidebar] = useState(false);
   const [showChannelMenu, setShowChannelMenu] = useState(false);
   const [chatTheme, setChatTheme] = useState<keyof typeof CHAT_THEMES>((localStorage.getItem("loxx-chat-theme") as any) || "aura");
@@ -1248,12 +1262,19 @@ export const ChatPage: React.FC = () => {
     };
     chatSocket.on("chat.message_removed", handleRemove);
 
+    const handleMuted = (data: { until: number, message: string }) => {
+      setMuteUntil(data.until);
+      setMuteMessage(data.message);
+    };
+    chatSocket.on("chat.muted", handleMuted);
+
     return () => {
        chatSocket.off("chat.message", handleNewMessage);
        chatSocket.off("chat.typing", handleTyping);
        chatSocket.off("chat.reaction", handleReactionUpdate);
        chatSocket.off("chat.delete", handleDelete);
        chatSocket.off("chat.message_removed", handleRemove);
+       chatSocket.off("chat.muted", handleMuted);
     };
   }, [activeChannelId, user?.id]);
 
@@ -1458,6 +1479,10 @@ export const ChatPage: React.FC = () => {
       replyToId: replyingTo?.id
     }, (res: any) => {
        if (res.status === "error") {
+          if (res.error?.code === "BANNED") {
+             setMuteUntil(Date.now() + 600000); // Approximate
+             setMuteMessage(res.error.message);
+          }
           toast.error(res.error?.message || "Error sending message");
           setMessages(prev => ({
              ...prev,
@@ -3058,64 +3083,81 @@ export const ChatPage: React.FC = () => {
                 )}
               </AnimatePresence>
   
-            <div className="relative group flex flex-row-reverse">
-              <div className="absolute inset-0 bg-neon-blue/5 rounded-[24px] blur-2xl group-focus-within:bg-neon-blue/10 transition-all"></div>
-              <div className="relative flex flex-1 items-center p-2 rounded-[24px] border border-white/5 bg-black/40 backdrop-blur-2xl shadow-2xl focus-within:border-neon-blue/30 transition-all">
-                <div className="flex items-center gap-1 px-2 border-l border-white/5">
-                  <button 
-                    onClick={() => setShowGifPicker(!showGifPicker)}
-                    className={cn(
-                      "p-2 rounded-xl transition-all outline-none",
-                      showGifPicker ? "text-neon-pink bg-neon-pink/10" : "text-gray-500 hover:text-neon-blue hover:bg-neon-blue/5"
-                    )}
-                    title={isRtl ? "شکلک‌ها و گیف" : "Emojis & GIFs"}
-                  >
-                    <Smile size={20} />
-                  </button>
-                  {activeChannelId === 'news' && isAdmin && (
+            {muteUntil && Date.now() < muteUntil ? (
+              <div className="relative group w-full">
+                 <div className="absolute inset-0 bg-red-500/10 rounded-[24px] blur-sm mt-1 mb-1"></div>
+                 <div className="relative flex flex-1 items-center justify-center p-5 rounded-[24px] border border-red-500/20 bg-red-950/40 backdrop-blur-2xl shadow-inner my-1">
+                   <div className="flex items-center gap-3 text-red-400">
+                     <Shield size={20} className="animate-pulse" />
+                     <span className="text-sm font-black tracking-tight text-center px-4">
+                       {muteMessage || (isRtl ? "شما موقتاً از ارسال پیام مسدود هستید." : "You are temporarily blocked from sending messages.")}
+                       {" "}
+                       <span className="opacity-70 font-mono text-[11px] block mt-1 tracking-widest">{isRtl ? "پایان:" : "Until:"} {new Date(muteUntil).toLocaleTimeString(isRtl ? 'fa-IR' : 'en-US')}</span>
+                     </span>
+                     <Shield size={20} className="animate-pulse" />
+                   </div>
+                 </div>
+              </div>
+            ) : (
+              <div className="relative group flex flex-row-reverse">
+                <div className="absolute inset-0 bg-neon-blue/5 rounded-[24px] blur-2xl group-focus-within:bg-neon-blue/10 transition-all"></div>
+                <div className="relative flex flex-1 items-center p-2 rounded-[24px] border border-white/5 bg-black/40 backdrop-blur-2xl shadow-2xl focus-within:border-neon-blue/30 transition-all">
+                  <div className="flex items-center gap-1 px-2 border-l border-white/5">
                     <button 
-                      onClick={() => fileInputRef.current?.click()}
-                      className="p-2 text-gray-500 hover:text-neon-blue hover:bg-neon-blue/5 rounded-xl transition-all"
+                      onClick={() => setShowGifPicker(!showGifPicker)}
+                      className={cn(
+                        "p-2 rounded-xl transition-all outline-none",
+                        showGifPicker ? "text-neon-pink bg-neon-pink/10" : "text-gray-500 hover:text-neon-blue hover:bg-neon-blue/5"
+                      )}
+                      title={isRtl ? "شکلک‌ها و گیف" : "Emojis & GIFs"}
                     >
-                      <ImageIcon size={20} />
+                      <Smile size={20} />
                     </button>
-                  )}
-                </div>
-                <input
-                  type="text"
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onFocus={(e) => {
-                    // Mobile keyboard fix
-                    setTimeout(() => {
-                      e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }, 300);
-                  }}
-                  onBlur={() => {
-                    // Optimized mobile blur handle
-                    if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-                      window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
-                    }
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") handleSend();
-                  }}
-                  maxLength={300}
-                  placeholder={isRtl ? `پیام در ${activeChannel.name}...` : `Message in ${activeChannel.name}...`}
-                  className={cn("flex-1 bg-transparent py-4 px-6 text-white text-sm focus:outline-none placeholder:text-gray-600 placeholder:font-bold", isRtl ? "text-right" : "text-left")}
-                />
-                <div className="flex items-center gap-2 pl-2 border-r border-white/5">
-                   <GlowButton 
-                    variant="blue" 
-                    size="sm" 
-                    className="h-10 w-10 !rounded-2xl !p-0 shadow-lg shadow-neon-blue/20"
-                    onClick={() => handleSend()}
-                  >
-                    <Send size={18} className={cn(isRtl ? "rotate-180" : "")} />
-                  </GlowButton>
+                    {activeChannelId === 'news' && isAdmin && (
+                      <button 
+                        onClick={() => fileInputRef.current?.click()}
+                        className="p-2 text-gray-500 hover:text-neon-blue hover:bg-neon-blue/5 rounded-xl transition-all"
+                      >
+                        <ImageIcon size={20} />
+                      </button>
+                    )}
+                  </div>
+                  <input
+                    type="text"
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onFocus={(e) => {
+                      // Mobile keyboard fix
+                      setTimeout(() => {
+                        e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      }, 300);
+                    }}
+                    onBlur={() => {
+                      // Optimized mobile blur handle
+                      if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+                        window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleSend();
+                    }}
+                    maxLength={300}
+                    placeholder={isRtl ? `پیام در ${activeChannel.name}...` : `Message in ${activeChannel.name}...`}
+                    className={cn("flex-1 bg-transparent py-4 px-6 text-white text-sm focus:outline-none placeholder:text-gray-600 placeholder:font-bold", isRtl ? "text-right" : "text-left")}
+                  />
+                  <div className="flex items-center gap-2 pl-2 border-r border-white/5">
+                     <GlowButton 
+                      variant="blue" 
+                      size="sm" 
+                      className="h-10 w-10 !rounded-2xl !p-0 shadow-lg shadow-neon-blue/20"
+                      onClick={() => handleSend()}
+                    >
+                      <Send size={18} className={cn(isRtl ? "rotate-180" : "")} />
+                    </GlowButton>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
         )}

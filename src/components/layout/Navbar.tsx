@@ -86,7 +86,7 @@ export const Navbar = () => {
         >
           {/* Left: Logo & Mobile Toggle */}
           <div className="flex items-center gap-4 flex-shrink-0">
-            {!isInvitePage && (
+            {!isInvitePage && (!isElectron) && (
               <>
                 <button 
                   className={cn("p-2 text-gray-400 hover:text-white animate-fade-in", "md:hidden")}
@@ -122,51 +122,52 @@ export const Navbar = () => {
             </Link>
           </div>
 
-          {/* Middle: Centered Navigation (OMITTED entirely on Desktop Client as requested) */}
-          {!isElectron && (
-            <div className="hidden md:flex items-center gap-4 lg:gap-6 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-              {user && (
-                <NavLink 
-                  to="/dashboard" 
-                  title={t("dashboard")}
-                  className={({ isActive }) => 
-                    cn(
-                      "transition-all font-black text-[11px] uppercase tracking-[0.12em] italic px-3 py-1.5 border border-neon-blue/30 bg-neon-blue/5 text-neon-blue shadow-[0_0_12px_rgba(0,229,255,0.1)] hover:bg-neon-blue/20 hover:border-neon-blue/60 hover:text-white ripple-active transition-all duration-300 rounded-lg flex items-center gap-2",
-                      isActive && "border-neon-blue/80 bg-neon-blue/15 text-white shadow-[0_0_18px_rgba(0,229,255,0.3)]"
-                    )
-                  }
-                >
-                  <LayoutDashboard size={14} className="shrink-0" />
-                  {!(isLanding && isScrolled) && <span>{t("dashboard")}</span>}
-                </NavLink>
-              )}
-
+          {/* Middle: Centered Navigation */}
+          <div className="hidden md:flex items-center gap-4 lg:gap-6 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+            {user && (
               <NavLink 
-                to="/chat" 
-                title={t("globalChat")}
+                to="/dashboard" 
+                title={t("dashboard")}
                 className={({ isActive }) => 
                   cn(
-                    "transition-all font-black text-[10px] uppercase tracking-[0.2em] italic flex items-center gap-2 px-3 py-1.5 rounded-lg border border-transparent transition-all duration-300", 
-                    isActive ? "text-neon-blue border-neon-blue/20 bg-neon-blue/5 shadow-[0_0_12px_rgba(0,229,255,0.1)]" : "text-gray-400 hover:text-white hover:bg-white/5"
+                    "transition-all font-black text-[11px] uppercase tracking-[0.12em] italic px-3 py-1.5 border border-neon-blue/30 bg-neon-blue/5 text-neon-blue shadow-[0_0_12px_rgba(0,229,255,0.1)] hover:bg-neon-blue/20 hover:border-neon-blue/60 hover:text-white ripple-active transition-all duration-300 rounded-lg flex items-center gap-2",
+                    isActive && "border-neon-blue/80 bg-neon-blue/15 text-white shadow-[0_0_18px_rgba(0,229,255,0.3)]"
                   )
                 }
               >
-                <MessageSquare size={14} className="shrink-0" />
-                {!(isLanding && isScrolled) && <span>{t("globalChat")}</span>}
+                <LayoutDashboard size={14} className="shrink-0" />
+                {!(isLanding && isScrolled) && <span>{t("dashboard")}</span>}
               </NavLink>
+            )}
 
-              {isLanding && (
-                <button 
-                  onClick={() => document.getElementById('download')?.scrollIntoView({ behavior: 'smooth' })} 
-                  title={isRtl ? "دانلود" : "DOWNLOAD"}
-                  className="transition-all font-black text-[10px] uppercase tracking-[0.2em] italic text-gray-400 hover:text-white hover:bg-white/5 px-3 py-1.5 rounded-lg flex items-center gap-2 cursor-pointer duration-300"
-                >
-                  <Download size={14} className="shrink-0" />
-                  {!(isLanding && isScrolled) && <span>{isRtl ? "دانلود" : "DOWNLOAD"}</span>}
-                </button>
-              )}
-            </div>
-          )}
+            <NavLink 
+              to="/chat" 
+              title={t("globalChat")}
+              className={({ isActive }) => 
+                cn(
+                  "transition-all font-black text-[10px] uppercase tracking-[0.2em] italic flex items-center gap-2 px-3 py-1.5 rounded-lg border border-transparent transition-all duration-300", 
+                  isActive ? "text-neon-blue border-neon-blue/20 bg-neon-blue/5 shadow-[0_0_12px_rgba(0,229,255,0.1)]" : "text-gray-400 hover:text-white hover:bg-white/5"
+                )
+              }
+            >
+              <MessageSquare size={14} className="shrink-0" />
+              {!(isLanding && isScrolled) && <span>{t("globalChat")}</span>}
+            </NavLink>
+
+            <NavLink 
+              to="/download" 
+              title={isRtl ? "دانلود" : "Download"}
+              className={({ isActive }) => 
+                cn(
+                  "transition-all font-black text-[10px] uppercase tracking-[0.2em] italic flex items-center gap-2 px-3 py-1.5 rounded-lg border border-transparent transition-all duration-300", 
+                  isActive ? "text-neon-blue border-neon-blue/20 bg-neon-blue/5 shadow-[0_0_12px_rgba(0,229,255,0.1)]" : "text-gray-400 hover:text-white hover:bg-white/5"
+                )
+              }
+            >
+              <Download size={14} className="shrink-0" />
+              {!(isLanding && isScrolled) && <span>{isRtl ? "دانلود" : "Download"}</span>}
+            </NavLink>
+          </div>
 
           {/* Right: Actions */}
           <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
