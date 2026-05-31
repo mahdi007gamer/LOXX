@@ -89,20 +89,11 @@ export const Navbar = () => {
             {!isInvitePage && (
               <>
                 <button 
-                  className={cn("p-2 text-gray-400 hover:text-white animate-fade-in", isElectron ? "hidden" : "md:hidden")}
+                  className={cn("p-2 text-gray-400 hover:text-white animate-fade-in", "md:hidden")}
                   onClick={() => setIsMenuOpen(!isMenuOpen)}
                 >
                   {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
                 </button>
-                {!isElectron && (
-                  <button 
-                    className="p-2 text-gray-400 hover:text-white hidden md:block cursor-pointer transition-colors hover:bg-white/5 rounded-lg"
-                    onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-                    title={isRtl ? (isSidebarCollapsed ? "نمایش منوی اصلی" : "پنهان کردن منوی اصلی") : (isSidebarCollapsed ? "Show main menu" : "Hide main menu")}
-                  >
-                    <Menu size={21} className={cn("transition-transform duration-300", isSidebarCollapsed && "rotate-180")} />
-                  </button>
-                )}
               </>
             )}
             <Link to="/" className="flex items-center gap-4 group">

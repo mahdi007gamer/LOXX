@@ -108,7 +108,7 @@ function MessageItem({ message, isConsecutive = false, onReaction, onSaveGif, on
       actions.push({ id: 'save-gif', label: 'ذخیره گیف', icon: <Save size={14} />, onClick: () => handleSaveMedia(message.gif!, 'gif') });
     }
     if (message.self || isAdmin || isGroupOwner) {
-      actions.push({ id: 'delete', label: 'حذف پیام', icon: <Trash2 size={14} />, destructive: true, onClick: () => onDelete(message.id) });
+      actions.push({ id: 'delete', label: isRtl ? 'حذف پیام' : 'Delete Message', icon: <Trash2 size={14} />, destructive: true, onClick: () => onDelete(message.id) });
     }
     return actions;
   };
@@ -340,7 +340,7 @@ function MessageItem({ message, isConsecutive = false, onReaction, onSaveGif, on
                  <button
                    className="h-6 w-6 md:h-7 md:w-7 flex items-center justify-center text-gray-400 hover:text-red-500 transition-colors rounded-lg hover:bg-white/5 relative z-10 shrink-0"
                    onClick={(e) => { e.stopPropagation(); onReport(message); setShowActions(false); }}
-                   title="گزارش محتوا"
+                   title={isRtl ? "گزارش محتوا" : "Report Content"}
                  >
                    <Flag size={14} />
                  </button>
@@ -349,7 +349,7 @@ function MessageItem({ message, isConsecutive = false, onReaction, onSaveGif, on
                  <button 
                    className="h-6 w-6 md:h-7 md:w-7 flex items-center justify-center text-gray-400 hover:text-yellow-500 transition-colors rounded-lg hover:bg-white/5 relative z-10 shrink-0" 
                    onClick={(e) => { e.stopPropagation(); onPin(); setShowActions(false); }}
-                   title="پین پیام"
+                   title={isRtl ? "پین پیام" : "Pin Message"}
                  >
                    <Star size={14} />
                  </button>
@@ -358,7 +358,7 @@ function MessageItem({ message, isConsecutive = false, onReaction, onSaveGif, on
                 <button 
                   className="h-6 w-6 md:h-7 md:w-7 flex items-center justify-center text-gray-400 hover:text-red-500 transition-colors rounded-lg hover:bg-white/5 relative z-10 shrink-0" 
                   onClick={(e) => { e.stopPropagation(); onDelete(message.id); setShowActions(false); }}
-                  title="حذف پیام"
+                  title={isRtl ? "حذف پیام" : "Delete Message"}
                 >
                   <Trash size={14} />
                 </button>
@@ -368,14 +368,14 @@ function MessageItem({ message, isConsecutive = false, onReaction, onSaveGif, on
                   <button 
                     className="h-6 w-6 md:h-7 md:w-7 flex items-center justify-center text-gray-400 hover:text-yellow-500 transition-colors rounded-lg hover:bg-white/5 relative z-10 shrink-0" 
                     onClick={(e) => { e.stopPropagation(); onWarnUser?.(message.senderId, message.senderName); setShowActions(false); }}
-                    title="ثبت اخطار برای کاربر"
+                    title={isRtl ? "ثبت اخطار برای کاربر" : "Warn User"}
                   >
                     <AlertTriangle size={14} className="text-yellow-500" />
                   </button>
                   <button 
                     className="h-6 w-6 md:h-7 md:w-7 flex items-center justify-center text-gray-400 hover:text-red-500 transition-colors rounded-lg hover:bg-white/5 relative z-10 shrink-0" 
                     onClick={(e) => { e.stopPropagation(); onMuteUser?.(message.senderId, message.senderName); setShowActions(false); }}
-                    title="ساکت کردن (Mute)"
+                    title={isRtl ? "ساکت کردن (Mute)" : "Mute (Timeout)"}
                   >
                     <VolumeX size={14} className="text-red-500" />
                   </button>
@@ -665,16 +665,16 @@ const INITIAL_CHANNELS: Channel[] = [
       { id: "news", name: "اخبار گیمینگ", type: "public", users: 0 },
 ];
 
-const MOCK_MESSAGES: Record<string, ChatMessage[]> = {
+const getMockMessages = (isRtl: boolean): Record<string, ChatMessage[]> => ({
   general: [
     { 
       id: "1", 
       senderId: "u1", 
-      senderName: "مازیار", 
+      senderName: isRtl ? "مازیار" : "Maziar", 
       senderLevel: 24, 
       senderBadges: [BadgeType.PRO, BadgeType.CHAMPION],
-      text: "سلام بچه‌ها! کسی پایه هست بریم CS2؟", 
-      timestamp: "۱۲:۳۰", 
+      text: isRtl ? "سلام بچه‌ها! کسی پایه هست بریم CS2؟" : "Hi guys! Anyone up for CS2?", 
+      timestamp: isRtl ? "۱۲:۳۰" : "12:30", 
       isRead: true,
       self: false,
       reactions: [{ emoji: "🔥", count: 2, users: ["u2", "me"] }]
@@ -682,46 +682,46 @@ const MOCK_MESSAGES: Record<string, ChatMessage[]> = {
     { 
       id: "2", 
       senderId: "u2", 
-      senderName: "امیر", 
+      senderName: isRtl ? "امیر" : "Amir", 
       senderLevel: 35,
       senderBadges: [BadgeType.VIP, BadgeType.CHAMPION, BadgeType.FOUNDER],
-      text: "من هستم، لابی بساز جوین شیم.", 
-      timestamp: "۱۲:۳۱", 
+      text: isRtl ? "من هستم، لابی بساز جوین شیم." : "I'm in, make a lobby and let's join.", 
+      timestamp: isRtl ? "۱۲:۳۱" : "12:31", 
       isRead: true,
       self: false 
     },
     { 
       id: "3", 
       senderId: "me", 
-      senderName: "خودم", 
+      senderName: isRtl ? "خودم" : "Me", 
       senderLevel: 42,
       senderColor: "#00e5ff",
       senderBadges: [BadgeType.STREAMER, BadgeType.PLUS, BadgeType.PRO],
-      text: "منم میام، فقط پینگ چطوره؟", 
-      timestamp: "۱۲:۳۲", 
+      text: isRtl ? "منم میام، فقط پینگ چطوره؟" : "I'll come too, how's the ping?", 
+      timestamp: isRtl ? "۱۲:۳۲" : "12:32", 
       isRead: true,
       self: true 
     },
     { 
       id: "4", 
       senderId: "u1", 
-      senderName: "مازیار", 
+      senderName: isRtl ? "مازیار" : "Maziar", 
       senderLevel: 24,
       senderBadges: [BadgeType.PRO],
-      text: "پینگ عالیه، زیر ۵۰ هست.", 
-      timestamp: "۱۲:۳۳", 
+      text: isRtl ? "پینگ عالیه، زیر ۵۰ هست." : "Ping is great, under 50.", 
+      timestamp: isRtl ? "۱۲:۳۳" : "12:33", 
       isRead: true,
       self: false,
-      replyTo: { id: "3", user: "خودم", text: "منم میام، فقط پینگ چطوره؟" }
+      replyTo: { id: "3", user: isRtl ? "خودم" : "Me", text: isRtl ? "منم میام، فقط پینگ چطوره؟" : "I'll come too, how's the ping?" }
     },
     {
       id: "5",
       senderId: "u1",
-      senderName: "مازیار",
+      senderName: isRtl ? "مازیار" : "Maziar",
       senderLevel: 24,
       senderBadges: [BadgeType.PRO],
-      text: "دعوتتون می‌کنم به لابی، زود بیاید!",
-      timestamp: "۱۲:۳۵",
+      text: isRtl ? "دعوتتون می‌کنم به لابی، زود بیاید!" : "I'll invite you to the lobby, come quick!",
+      timestamp: isRtl ? "۱۲:۳۵" : "12:35",
       isRead: true,
       self: false,
       lobbyInvite: {
@@ -735,7 +735,7 @@ const MOCK_MESSAGES: Record<string, ChatMessage[]> = {
   ],
   news: [],
   lfg: [],
-};
+});
 
 const GIF_GALLERY = [
   { name: "Laughing Cat", url: "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3VxdXFxdXFxdXFxdXFxdXFxdXFxdXFxdXFxdXFxdXFxdXFxdXF&ep=v1_gifs_search&rid=giphy.gif&ct=g" },
@@ -847,17 +847,17 @@ export const ChatPage: React.FC = () => {
 
     const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
     if (!allowedTypes.includes(file.type)) {
-      toast.error("فقط فایل‌های JPG، PNG، GIF و WEBP مجاز هستند");
+      toast.error(isRtl ? "فقط فایل‌های JPG، PNG، GIF و WEBP مجاز هستند" : "Only JPG, PNG, GIF and WEBP files are allowed");
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      toast.error("حجم فایل نباید بیشتر از ۵ مگابایت باشد");
+      toast.error(isRtl ? "حجم فایل نباید بیشتر از ۵ مگابایت باشد" : "File size cannot exceed 5MB");
       return;
     }
 
     if (!file.type.match(/^image\/(jpeg|png)$/)) {
-      toast.error("فقط فرمت‌های jpg و png مجاز هستند");
+      toast.error(isRtl ? "فقط فرمت‌های jpg و png مجاز هستند" : "Only JPG and PNG formats are allowed");
       return;
     }
 
@@ -869,9 +869,9 @@ export const ChatPage: React.FC = () => {
         headers: { "Content-Type": "multipart/form-data" }
       });
       setEliteSettingsData(p => ({ ...p, avatarUrl: data.url }));
-      toast.success("تصویر با موفقیت آپلود شد");
+      toast.success(isRtl ? "تصویر با موفقیت آپلود شد" : "Image uploaded successfully");
     } catch (err: any) {
-      toast.error(err.response?.data?.error?.message || "خطا در آپلود تصویر");
+      toast.error(err.response?.data?.error?.message || (isRtl ? "خطا در آپلود تصویر" : "Error uploading image"));
     }
   };
 
@@ -879,9 +879,9 @@ export const ChatPage: React.FC = () => {
     try {
       const res = await api.post(`/elite/${activeChannelId}/regenerate-link`);
       // Update local state by forcing a refresh or just showing link
-      toast.success("لینک جدید تولید شد: " + window.location.origin + "/invite/" + res.data.data.inviteCode);
+      toast.success((isRtl ? "لینک جدید تولید شد: " : "New link generated: ") + window.location.origin + "/invite/" + res.data.data.inviteCode);
     } catch(err: any) {
-      toast.error(err.response?.data?.error?.message || "خطا در ساخت لینک اختصاصی");
+      toast.error(err.response?.data?.error?.message || (isRtl ? "خطا در ساخت لینک اختصاصی" : "Error generating invite link"));
     }
   };
   const [showEliteInviteModal, setShowEliteInviteModal] = useState(false);
@@ -1003,98 +1003,98 @@ export const ChatPage: React.FC = () => {
 
   const handleUpdateEliteGroup = async () => {
     if (!eliteSettingsData.title.trim()) {
-       toast.error("نام گروه نمی‌تواند خالی باشد");
+       toast.error(isRtl ? "نام گروه نمی‌تواند خالی باشد" : "Group name cannot be empty");
        return;
     }
     try {
       await api.put(`/elite/${activeChannelId}`, eliteSettingsData);
-      toast.success("تنظیمات گروه با موفقیت به‌روز شد");
+      toast.success(isRtl ? "تنظیمات گروه با موفقیت به‌روز شد" : "Group settings updated successfully");
       loadEliteGroups();
       setShowEliteSettingsModal(false);
     } catch (err: any) {
-      toast.error(err.response?.data?.error?.message || "خطا در به‌روزرسانی گروه");
+      toast.error(err.response?.data?.error?.message || (isRtl ? "خطا در به‌روزرسانی گروه" : "Error updating group"));
     }
   };
 
   const handleDeleteEliteGroup = async () => {
-    if (!confirm("آیا از حذف کامل این گروه اطمینان دارید؟")) return;
+    if (!confirm(isRtl ? "آیا از حذف کامل این گروه اطمینان دارید؟" : "Are you sure you want to completely delete this group?")) return;
     try {
       await api.delete(`/elite/${activeChannelId}`);
-      toast.success("گروه با موفقیت حذف شد");
+      toast.success(isRtl ? "گروه با موفقیت حذف شد" : "Group deleted successfully");
       setShowEliteSettingsModal(false);
       setActiveChannelId("global");
       loadEliteGroups();
     } catch (err: any) {
-      toast.error(err.response?.data?.error?.message || "خطا در حذف گروه");
+      toast.error(err.response?.data?.error?.message || (isRtl ? "خطا در حذف گروه" : "Error deleting group"));
     }
   };
 
   const handleRemoveEliteMember = async (memberId: string) => {
-    if (!confirm("آیا از اخراج این کاربر اطمینان دارید؟")) return;
+    if (!confirm(isRtl ? "آیا از اخراج این کاربر اطمینان دارید؟" : "Are you sure you want to kick this user?")) return;
     try {
       await api.delete("/elite/members", { data: { groupId: activeChannelId, memberId } });
-      toast.success("کاربر از گروه اخراج شد");
+      toast.success(isRtl ? "کاربر از گروه اخراج شد" : "User kicked from group");
       loadEliteGroups();
     } catch (err: any) {
-      toast.error(err.response?.data?.error?.message || "خطا در اخراج کاربر");
+      toast.error(err.response?.data?.error?.message || (isRtl ? "خطا در اخراج کاربر" : "Error kicking user"));
     }
   };
 
   const handleTimeoutEliteMember = async (targetUserId: string, durationMinutes: number) => {
     try {
-      if (!confirm(`آیا مطمئن هستید که می‌خواهید کاربر را برای ${durationMinutes} دقیقه معلق کنید؟`)) return;
+      if (!confirm(isRtl ? `آیا مطمئن هستید که می‌خواهید کاربر را برای ${durationMinutes} دقیقه معلق کنید؟` : `Are you sure you want to suspend this user for ${durationMinutes} minutes?`)) return;
       await api.post(`/elite/${activeChannelId}/timeout`, { targetUserId, durationMinutes });
-      toast.success(`کاربر برای ${durationMinutes} دقیقه معلق شد`);
+      toast.success(isRtl ? `کاربر برای ${durationMinutes} دقیقه معلق شد` : `User suspended for ${durationMinutes} minutes`);
     } catch (err: any) {
-      toast.error(err.response?.data?.error?.message || "خطا در معلق کردن کاربر");
+      toast.error(err.response?.data?.error?.message || (isRtl ? "خطا در معلق کردن کاربر" : "Error suspending user"));
     }
   };
 
   const handleBanEliteMember = async (targetUserId: string) => {
-    if (!confirm("آیا مطمئن هستید؟ کاربر برای همیشه از گروه بن خواهد شد")) return;
+    if (!confirm(isRtl ? "آیا مطمئن هستید؟ کاربر برای همیشه از گروه بن خواهد شد" : "Are you sure? User will be permanently banned from the group")) return;
     try {
       await api.post(`/elite/${activeChannelId}/ban`, { targetUserId });
-      toast.success("کاربر با موفقیت از گروه بن شد");
+      toast.success(isRtl ? "کاربر با موفقیت از گروه بن شد" : "User banned successfully");
       loadEliteGroups();
     } catch (err: any) {
-      toast.error(err.response?.data?.error?.message || "خطا در بن کردن کاربر");
+      toast.error(err.response?.data?.error?.message || (isRtl ? "خطا در بن کردن کاربر" : "Error banning user"));
     }
   };
 
   const handlePinMessage = async (messageId: string) => {
     try {
        await api.post(`/elite/${activeChannelId}/pin`, { messageId });
-       toast.success("پیام با موفقیت پین شد!");
+       toast.success(isRtl ? "پیام با موفقیت پین شد!" : "Message pinned successfully!");
        loadEliteGroups();
     } catch (err: any) {
-       toast.error(err.response?.data?.error?.message || "خطا در پین کردن پیام");
+       toast.error(err.response?.data?.error?.message || (isRtl ? "خطا در پین کردن پیام" : "Error pinning message"));
     }
   };
 
   const handleInviteToEliteGroup = async () => {
     if (selectedInvitees.length === 0) {
-      toast.error("دوستانی که می‌خواهید دعوت کنید را انتخاب کنید");
+      toast.error(isRtl ? "دوستانی که می‌خواهید دعوت کنید را انتخاب کنید" : "Select friends you want to invite");
       return;
     }
     try {
       await api.post("/elite/members/invite", { groupId: activeChannelId, userIds: selectedInvitees });
-      toast.success("دعوتنامه با موفقیت ارسال شد");
+      toast.success(isRtl ? "دعوتنامه با موفقیت ارسال شد" : "Invitation sent successfully");
       setInviteSearchQuery("");
       setSelectedInvitees([]);
       setShowEliteInviteModal(false);
     } catch (err: any) {
-       toast.error(err.response?.data?.error?.message || "خطا در ارسال دعوتنامه");
+       toast.error(err.response?.data?.error?.message || (isRtl ? "خطا در ارسال دعوتنامه" : "Error sending invitation"));
     }
   };
 
   const handleLeaveEliteGroup = async () => {
     try {
       await api.post("/elite/members/leave", { groupId: activeChannelId });
-      toast.success("با موفقیت از گروه خارج شدید");
+      toast.success(isRtl ? "با موفقیت از گروه خارج شدید" : "Successfully left the group");
       loadEliteGroups();
       setActiveChannelId("general");
     } catch(err: any) {
-      toast.error(err.response?.data?.error?.message || "خطا در خروج از گروه");
+      toast.error(err.response?.data?.error?.message || (isRtl ? "خطا در خروج از گروه" : "Error leaving group"));
     }
   };
 
@@ -1146,7 +1146,7 @@ export const ChatPage: React.FC = () => {
           setUnreadCounts(prev => ({ ...prev, [activeChannelId]: 0 }));
         } else if (res.status === "error") {
           console.error("[CHAT] Error joining channel:", activeChannelId, res.error);
-          toast.error(`خطا در اتصال به کانال: ${res.error?.message || "نامشخص"}`);
+          toast.error(isRtl ? `خطا در اتصال به کانال: ${res.error?.message || "نامشخص"}` : `Error joining channel: ${res.error?.message || "Unknown"}`);
         }
       });
     };
@@ -1228,7 +1228,7 @@ export const ChatPage: React.FC = () => {
         return {
           ...prev,
           [targetChannelId]: prev[targetChannelId].map(m => 
-            m.id === data.messageId ? { ...m, isDeleted: true, text: "این پیام حذف شده است." } : m
+            m.id === data.messageId ? { ...m, isDeleted: true, text: isRtl ? "این پیام حذف شده است." : "This message has been deleted." } : m
           )
         };
       });
@@ -1260,7 +1260,7 @@ export const ChatPage: React.FC = () => {
     .filter(g => myGames?.includes(g.id))
     .map(g => ({
       id: `game-${g.id}`,
-      name: `چت ${g.title}`,
+      name: isRtl ? `چت ${g.title}` : `${g.title} Chat`,
       type: "game" as const,
       users: (g as any).memberCount || parseInt(g.playerCount?.replace(/[^0-9]/g, '') || '0') || 0,
       icon: g.image
@@ -1273,7 +1273,7 @@ export const ChatPage: React.FC = () => {
   const activeChannel = allChannels.find(c => c.id === activeChannelId) || 
     (friendChat || friend ? { 
       id: activeChannelId, 
-      name: friend?.displayName || friendChat?.tempDisplayName || "گفتگو", 
+      name: friend?.displayName || friendChat?.tempDisplayName || (isRtl ? "گفتگو" : "Chat"), 
       type: 'dm',
       icon: friend?.avatar || (friend as any)?.avatarUrl || "👤"
     } : allChannels[0] || INITIAL_CHANNELS[0]);
@@ -1342,7 +1342,7 @@ export const ChatPage: React.FC = () => {
      return {
        id: msg.id,
        senderId: isNewsChannel ? "loxx-system" : (from.userId || "unknown"),
-       senderName: isNewsChannel ? "لوکس" : (from.username || "کاربر ناشناس"),
+       senderName: isNewsChannel ? (isRtl ? "لوکس" : "Loxx") : (from.username || (isRtl ? "کاربر ناشناس" : "Unknown User")),
        senderAvatar: isNewsChannel ? "/logo.png" : (from.avatar || from.avatarUrl || ""),
        bannerUrl: isNewsChannel ? undefined : from.bannerUrl,
        vipMetadata: isNewsChannel ? undefined : from.vipMetadata,
@@ -1354,21 +1354,21 @@ export const ChatPage: React.FC = () => {
        gif,
        lobbyInvite: lobbyInvite || msg.lobbyInvite,
        isOnline: isNewsChannel ? true : !!from.isOnline,
-       timestamp: new Date(msg.createdAt || Date.now()).toLocaleTimeString("fa-IR", { hour: "2-digit", minute: "2-digit" }),
+       timestamp: new Date(msg.createdAt || Date.now()).toLocaleTimeString(isRtl ? "fa-IR" : "en-US", { hour: "2-digit", minute: "2-digit" }),
        isRead: true,
        self: from.userId === currentUserId,
         createdAt: msg.createdAt,
        reactions: msg.reactions || [],
        replyTo: msg.replyTo ? { 
            id: msg.replyTo.id, 
-           user: isNewsChannel ? "لوکس" : (msg.replyTo.user || "ناشناس"), 
-           text: msg.replyTo.text || "پیام ریپلای شده..." 
-        } : (msg.replyToId ? { id: msg.replyToId.toString(), user: "ناشناس", text: "پیام ریپلای شده..." } : undefined)
+           user: isNewsChannel ? (isRtl ? "لوکس" : "Loxx") : (msg.replyTo.user || (isRtl ? "ناشناس" : "Unknown")), 
+           text: msg.replyTo.text || (isRtl ? "پیام ریپلای شده..." : "Replied message...") 
+        } : (msg.replyToId ? { id: msg.replyToId.toString(), user: isRtl ? "ناشناس" : "Unknown", text: isRtl ? "پیام ریپلای شده..." : "Replied message..." } : undefined)
      };
   };
 
   const currentMessages = (messages[activeChannelId] || []).filter(
-    m => !m.isDeleted && m.text !== "این پیام حذف شده است."
+    m => !m.isDeleted && m.text !== (isRtl ? "این پیام حذف شده است." : "This message has been deleted.")
   );
 
   // Update member count based on active channel
@@ -1418,14 +1418,14 @@ export const ChatPage: React.FC = () => {
     const newMsgObj: ChatMessage = {
        id: tempId,
        senderId: user?.id || "me",
-       senderName: user?.username || "شما",
+       senderName: user?.username || (isRtl ? "شما" : "You"),
        senderAvatar: user?.avatarUrl || "",
        bannerUrl: user?.bannerUrl,
        vipMetadata: user?.vipMetadata,
        senderLevel: 1,
        text: messageText,
        createdAt: new Date().toISOString(),
-       timestamp: new Date().toLocaleTimeString("fa-IR", { hour: "2-digit", minute: "2-digit" }),
+       timestamp: new Date().toLocaleTimeString(isRtl ? "fa-IR" : "en-US", { hour: "2-digit", minute: "2-digit" }),
        isRead: true,
        self: true,
        replyTo: replyingTo ? { id: replyingTo.id, user: replyingTo.senderName, text: replyingTo.text } : undefined
@@ -1520,12 +1520,12 @@ export const ChatPage: React.FC = () => {
 
   const handleSaveGif = (url: string) => {
     if (!isVipOrPlus) {
-      toast.error("ذخیره کردن پیام گیف مخصوص کاربران دارای اشتراک VIP یا Plus است.");
+      toast.error(isRtl ? "ذخیره کردن پیام گیف مخصوص کاربران دارای اشتراک VIP یا Plus است." : "Saving GIFs is exclusive to VIP or Plus subscribers.");
       return;
     }
 
     if (savedGifs.includes(url)) {
-      toast.success("این گیف قبلاً ذخیره شده است.");
+      toast.success(isRtl ? "این گیف قبلاً ذخیره شده است." : "This GIF is already saved.");
       return;
     }
     const updated = [url, ...savedGifs];
@@ -1533,7 +1533,7 @@ export const ChatPage: React.FC = () => {
     if (user) {
       localStorage.setItem(`loxx_saved_gifs_${user.id}`, JSON.stringify(updated));
     }
-    toast.success("گیف با موفقیت در علاقه‌مندی‌ها ذخیره شد!");
+    toast.success(isRtl ? "گیف با موفقیت در علاقه‌مندی‌ها ذخیره شد!" : "GIF successfully saved to favorites!");
   };
 
   const handleSendGif = (gifUrl: string) => {
@@ -1541,7 +1541,7 @@ export const ChatPage: React.FC = () => {
     const newMsgObj: ChatMessage = {
        id: tempId,
        senderId: user?.id || "me",
-       senderName: user?.username || "شما",
+       senderName: user?.username || (isRtl ? "شما" : "You"),
        senderAvatar: user?.avatarUrl || "",
        bannerUrl: user?.bannerUrl,
        vipMetadata: user?.vipMetadata,
@@ -1549,7 +1549,7 @@ export const ChatPage: React.FC = () => {
        text: "",
        gif: gifUrl,
        createdAt: new Date().toISOString(),
-       timestamp: new Date().toLocaleTimeString("fa-IR", { hour: "2-digit", minute: "2-digit" }),
+       timestamp: new Date().toLocaleTimeString(isRtl ? "fa-IR" : "en-US", { hour: "2-digit", minute: "2-digit" }),
        isRead: true,
        self: true,
        replyTo: replyingTo ? { id: replyingTo.id, user: replyingTo.senderName, text: replyingTo.text } : undefined
@@ -1595,7 +1595,7 @@ export const ChatPage: React.FC = () => {
 
   const handleGifUploadAction = async (file: File) => {
     if (file.type !== "image/gif") {
-      toast.error("لطفاً فقط فایل‌های با فرمت GIF ارسال کنید.");
+      toast.error(isRtl ? "لطفاً فقط فایل‌های با فرمت GIF ارسال کنید." : "Please send only GIF files.");
       return;
     }
     setIsUploadingGif(true);
@@ -1621,11 +1621,11 @@ export const ChatPage: React.FC = () => {
           }
         }
         
-        toast.success(res.data.status === "duplicate" ? "گیف قبلا آپلود شده بود و فورا متصل شد!" : "گیف جدید با موفقیت آپلود شد!");
+        toast.success(res.data.status === "duplicate" ? (isRtl ? "گیف قبلا آپلود شده بود و فورا متصل شد!" : "GIF was already uploaded and linked immediately!") : (isRtl ? "گیف جدید با موفقیت آپلود شد!" : "New GIF uploaded successfully!"));
       }
     } catch (e: any) {
       console.error(e);
-      toast.error(e.response?.data?.error?.message || "خطا در آپلود فایل گیف.");
+      toast.error(e.response?.data?.error?.message || (isRtl ? "خطا در آپلود فایل گیف." : "Error uploading GIF file."));
     } finally {
       setIsUploadingGif(false);
     }
@@ -1646,11 +1646,11 @@ export const ChatPage: React.FC = () => {
      
      chatSocket.emit("chat.send", {
        target: { type: "channel", id: activeChannelId },
-       content: `بیاین لابی، من منتظرم!\n[LOBBY_INVITE]:${JSON.stringify(inviteData)}`,
+       content: (isRtl ? `بیاین لابی، من منتظرم!\n[LOBBY_INVITE]:${JSON.stringify(inviteData)}` : `Come to the lobby, I'm waiting!\n[LOBBY_INVITE]:${JSON.stringify(inviteData)}`),
        tempId
      });
      
-     toast.success("دعوت‌نامه ارسال شد");
+     toast.success(isRtl ? "دعوت‌نامه ارسال شد" : "Invitation sent");
   };
 
   const scrollToBottom = () => {
@@ -1698,44 +1698,44 @@ export const ChatPage: React.FC = () => {
         setNewsPostPreview(null);
         setNewsPostText("");
       } else {
-        alert("خطا در ارسال خبر: " + res.error?.message);
+        alert(isRtl ? "خطا در ارسال خبر: " : "Error sending news: " + res.error?.message);
       }
     });
   };
 
   const deleteMessage = (msgId: string) => {
-    if (confirm("آیا از حذف این پیام اطمینان دارید؟")) {
+    if (confirm(isRtl ? "آیا از حذف این پیام اطمینان دارید؟" : "Are you sure you want to delete this message?")) {
       chatSocket.emit("chat.delete", { messageId: msgId });
     }
   };
 
   const handleWarnUser = (targetUserId: string, senderName: string) => {
-    if (confirm(`آیا مطمئن هستید که می‌خواهید به کاربر "${senderName}" اخطار بدهید؟`)) {
+    if (confirm(isRtl ? `آیا مطمئن هستید که می‌خواهید به کاربر "${senderName}" اخطار بدهید؟` : `Are you sure you want to warn user "${senderName}"?`)) {
       chatSocket.emit("chat.warn_user", { targetUserId }, (res: any) => {
         if (res.status === "ok") {
-          toast.success(`اخطار با موفقیت به کاربر ${senderName} اعطا شد. تعداد اخطارهای امروز: ${res.data.warningsToday}`);
+          toast.success(isRtl ? `اخطار با موفقیت به کاربر ${senderName} اعطا شد. تعداد اخطارهای امروز: ${res.data.warningsToday}` : `Warning successfully issued to ${senderName}. Today's warnings: ${res.data.warningsToday}`);
         } else {
-          toast.error(res.error?.message || "خطا در ثبت اخطار");
+          toast.error(res.error?.message || (isRtl ? "خطا در ثبت اخطار" : "Error issuing warning"));
         }
       });
     }
   };
 
   const handleMuteUser = (targetUserId: string, senderName: string) => {
-    const minStr = prompt("مدت زمان سکوت (Mute) را بین ۲ تا ۱۰ دقیقه وارد کنید:");
+    const minStr = prompt(isRtl ? "مدت زمان سکوت (Mute) را بین ۲ تا ۱۰ دقیقه وارد کنید:" : "Enter mute duration (2-10 minutes):");
     if (minStr === null) return; // user cancelled
 
     const duration = parseInt(minStr);
     if (isNaN(duration) || duration < 2 || duration > 10) {
-      toast.error("مدت زمان باید یک عدد بین ۲ تا ۱۰ دقیقه باشد.");
+      toast.error(isRtl ? "مدت زمان باید یک عدد بین ۲ تا ۱۰ دقیقه باشد." : "Duration must be a number between 2 and 10 minutes.");
       return;
     }
 
     chatSocket.emit("chat.mute_user", { targetUserId, durationMinutes: duration }, (res: any) => {
       if (res.status === "ok") {
-        toast.success(`کاربر ${senderName} به مدت ${duration} دقیقه با موفقیت ساکت (Mute) شد.`);
+        toast.success(isRtl ? `کاربر ${senderName} به مدت ${duration} دقیقه با موفقیت ساکت (Mute) شد.` : `User ${senderName} muted successfully for ${duration} minutes.`);
       } else {
-        toast.error(res.error?.message || "خطا در اعمال سکوت");
+        toast.error(res.error?.message || (isRtl ? "خطا در اعمال سکوت" : "Error applying mute"));
       }
     });
   };
@@ -1773,12 +1773,12 @@ export const ChatPage: React.FC = () => {
             handleGifUploadAction(file);
             setShowGifPicker(false);
           } else {
-            toast.error("برای آپلود گیف‌های اختصاصی به اشتراک VIP نیاز دارید!");
+            toast.error(isRtl ? "برای آپلود گیف‌های اختصاصی به اشتراک VIP نیاز دارید!" : "VIP subscription is required to upload custom GIFs!");
             setShowGifPicker(true);
             setGifTab("upload");
           }
         } else {
-          toast.error("در گروه‌ها و چت‌های سراسری تنها آپلود فایل‌های گیف (مخصوص VIP) مجاز است.");
+          toast.error(isRtl ? "در گروه‌ها و چت‌های سراسری تنها آپلود فایل‌های گیف (مخصوص VIP) مجاز است." : "Only GIF format is allowed in global chat (exclusive to VIP).");
         }
       }}
     >
@@ -1805,20 +1805,20 @@ export const ChatPage: React.FC = () => {
               className="bg-[#0b0c10] border border-white/10 rounded-[32px] w-full max-w-md overflow-hidden shadow-2xl p-6"
             >
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-black text-white italic tracking-tighter">تنظیمات گروه نخبگان</h3>
+                <h3 className="text-xl font-black text-white italic tracking-tighter">{isRtl ? "تنظیمات گروه نخبگان" : "Elite Group Settings"}</h3>
                 <button onClick={() => setShowEliteSettingsModal(false)} className="text-gray-500 hover:text-white"><X size={24}/></button>
               </div>
               <div className="space-y-4 mb-6">
                 <div>
-                  <label className="text-xs font-bold text-gray-400 mb-2 block">نام گروه</label>
+                  <label className="text-xs font-bold text-gray-400 mb-2 block">{isRtl ? "نام گروه" : "Group Name"}</label>
                   <Input 
                     value={eliteSettingsData.title}
                     onChange={(e) => setEliteSettingsData(p => ({ ...p, title: e.target.value }))}
-                    placeholder="نام جدید گروه"
+                    placeholder={isRtl ? "نام جدید گروه" : "New group name"}
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-gray-400 mb-2 block">تصویر پروفایل گروه</label>
+                  <label className="text-xs font-bold text-gray-400 mb-2 block">{isRtl ? "تصویر پروفایل گروه" : "Group Profile Picture"}</label>
                   <div className="flex items-center gap-4">
                     <div className="h-12 w-12 rounded-xl bg-white/5 border border-white/10 overflow-hidden flex items-center justify-center shrink-0">
                       {eliteSettingsData.avatarUrl ? <img src={eliteSettingsData.avatarUrl} alt="" className="h-full w-full object-cover" /> : <Users size={20} className="text-gray-500" />}
@@ -1847,7 +1847,7 @@ export const ChatPage: React.FC = () => {
                 
                 {/* Members List */}
                 <div className="pt-4 border-t border-white/5">
-                  <label className="text-xs font-bold text-gray-400 mb-3 block">مدیریت اعضا ({((activeChannel as any).rawMembers || []).length} نفر)</label>
+                  <label className="text-xs font-bold text-gray-400 mb-3 block">{isRtl ? "مدیریت اعضا" : "Manage Members"} ({((activeChannel as any).rawMembers || []).length} {isRtl ? "نفر" : "members"})</label>
                   <div className="max-h-48 overflow-y-auto space-y-2 custom-scrollbar pr-2">
                     {[...((activeChannel as any).rawMembers || [])].sort((a, b) => {
                       if (a.role === 'OWNER') return -1;
@@ -1871,21 +1871,21 @@ export const ChatPage: React.FC = () => {
                          {m.userId !== user?.id ? (
                            <div className="flex gap-2 shrink-0">
                                <button onClick={() => {
-                                 const mins = prompt("مدت زمان تعلیق به دقیقه (حداکثر 100)", "10");
+                                 const mins = prompt(isRtl ? "مدت زمان تعلیق به دقیقه (حداکثر 100)" : "Suspend duration in minutes (max 100)", "10");
                                  if(mins) handleTimeoutEliteMember(m.userId, Number(mins));
-                               }} title="معلق کردن کاربر" className="text-[10px] bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20 px-2 py-1.5 rounded-lg border border-yellow-500/20 font-black uppercase tracking-widest transition-colors shrink-0">
-                                 معلق
+                               }} title={isRtl ? "معلق کردن کاربر" : "Suspend user"} className="text-[10px] bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20 px-2 py-1.5 rounded-lg border border-yellow-500/20 font-black uppercase tracking-widest transition-colors shrink-0">
+                                 {isRtl ? "معلق" : "Suspend"}
                                </button>
-                               <button onClick={() => handleRemoveEliteMember(m.userId)} title="اخراج کاربر" className="text-[10px] bg-red-500/10 text-red-500 hover:bg-red-500/20 px-2 py-1.5 rounded-lg border border-red-500/20 font-black uppercase tracking-widest transition-colors shrink-0">
-                                 اخراج
+                               <button onClick={() => handleRemoveEliteMember(m.userId)} title={isRtl ? "اخراج کاربر" : "Kick user"} className="text-[10px] bg-red-500/10 text-red-500 hover:bg-red-500/20 px-2 py-1.5 rounded-lg border border-red-500/20 font-black uppercase tracking-widest transition-colors shrink-0">
+                                 {isRtl ? "اخراج" : "Kick"}
                                </button>
-                               <button onClick={() => handleBanEliteMember(m.userId)} title="بن کامل و جلوگیری از ورود مجدد" className="text-[10px] bg-red-900/30 text-red-500 hover:bg-red-900/50 px-2 py-1.5 rounded-lg border border-red-900/50 font-black uppercase tracking-widest transition-colors shrink-0">
-                                 بن
+                               <button onClick={() => handleBanEliteMember(m.userId)} title={isRtl ? "بن کامل و جلوگیری از ورود مجدد" : "Ban user"} className="text-[10px] bg-red-900/30 text-red-500 hover:bg-red-900/50 px-2 py-1.5 rounded-lg border border-red-900/50 font-black uppercase tracking-widest transition-colors shrink-0">
+                                 {isRtl ? "بن" : "Ban"}
                                </button>
                            </div>
                          ) : (
                            <span className="text-[10px] font-black uppercase tracking-widest text-[#00e5ff] bg-[#00e5ff]/10 px-3 py-1.5 rounded-lg border border-[#00e5ff]/20 shrink-0">
-                             مدیر
+                             {isRtl ? "مدیر" : "Admin"}
                            </span>
                          )}
                       </div>
@@ -1895,11 +1895,11 @@ export const ChatPage: React.FC = () => {
 
               </div>
               <div className="flex gap-3 mb-4">
-                 <GlowButton variant="yellow" className="flex-1 font-black" onClick={handleUpdateEliteGroup}>ذخیره تغییرات</GlowButton>
-                 <button onClick={() => setShowEliteSettingsModal(false)} className="px-6 py-3 rounded-2xl bg-white/5 text-gray-400 font-bold hover:bg-white/10 transition-colors">انصراف</button>
+                 <GlowButton variant="yellow" className="flex-1 font-black" onClick={handleUpdateEliteGroup}>{isRtl ? "ذخیره تغییرات" : "Save Changes"}</GlowButton>
+                 <button onClick={() => setShowEliteSettingsModal(false)} className="px-6 py-3 rounded-2xl bg-white/5 text-gray-400 font-bold hover:bg-white/10 transition-colors">{isRtl ? "انصراف" : "Cancel"}</button>
               </div>
               <div className="pt-4 border-t border-red-500/10">
-                 <button onClick={handleDeleteEliteGroup} className="w-full py-3 rounded-xl bg-red-500/10 text-red-500 font-bold hover:bg-red-500/20 transition-colors">حذف کامل گروه</button>
+                 <button onClick={handleDeleteEliteGroup} className="w-full py-3 rounded-xl bg-red-500/10 text-red-500 font-bold hover:bg-red-500/20 transition-colors">{isRtl ? "حذف کامل گروه" : "Delete group"}</button>
               </div>
             </motion.div>
           </div>
