@@ -749,6 +749,31 @@ const GIF_GALLERY = [
   { name: "Headshot", url: "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNXVxdXFxdXFxdXFxdXFxdXFxdXFxdXFxdXFxdXFxdXFxdXFxdXF&ep=v1_gifs_search&rid=8.gif&ct=g" },
 ];
 
+const RemainingTime = ({ until, isRtl }: { until: number, isRtl: boolean }) => {
+  const [remaining, setRemaining] = useState(Math.max(0, until - Date.now()));
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setRemaining(Math.max(0, until - Date.now()));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [until]);
+
+  const hours = Math.floor(remaining / 3600000);
+  const minutes = Math.floor((remaining % 3600000) / 60000);
+  const seconds = Math.floor((remaining % 60000) / 1000);
+
+  if (remaining === 0) return <span>{isRtl ? "پایان یافته" : "Ended"}</span>;
+
+  return (
+    <span className="font-mono bg-red-950/40 px-2 py-0.5 rounded text-red-400 border border-red-500/20">
+      {hours > 0 && `${hours}:`}
+      {hours > 0 ? minutes.toString().padStart(2, '0') : minutes}:
+      {seconds.toString().padStart(2, '0')}
+    </span>
+  );
+};
+
 export const ChatPage: React.FC = () => {
   const { direction, t } = useLanguage();
   const isRtl = direction === "rtl";
@@ -796,6 +821,10 @@ export const ChatPage: React.FC = () => {
   const [isUploadingGif, setIsUploadingGif] = useState(false);
   const [savedGifs, setSavedGifs] = useState<string[]>([]);
   const [showSaveFeedback, setShowSaveFeedback] = useState(false);
+  
+  const [warningData, setWarningData] = useState<{ count: number, maxWarnings?: number, message: string } | null>(null);
+  const [muteModalData, setMuteModalData] = useState<{ until: number, message: string } | null>(null);
+  
   const gifUploadRef = useRef<HTMLInputElement>(null);
   const [muteUntil, setMuteUntil] = useState<number | null>(null);
   const [muteMessage, setMuteMessage] = useState<string>("");
@@ -1265,8 +1294,14 @@ export const ChatPage: React.FC = () => {
     const handleMuted = (data: { until: number, message: string }) => {
       setMuteUntil(data.until);
       setMuteMessage(data.message);
+      setMuteModalData(data);
     };
     chatSocket.on("chat.muted", handleMuted);
+
+    const handleWarningReceived = (data: { count: number, maxWarnings?: number, message: string }) => {
+      setWarningData(data);
+    };
+    chatSocket.on("chat.warning_received", handleWarningReceived);
 
     return () => {
        chatSocket.off("chat.message", handleNewMessage);
@@ -1275,6 +1310,7 @@ export const ChatPage: React.FC = () => {
        chatSocket.off("chat.delete", handleDelete);
        chatSocket.off("chat.message_removed", handleRemove);
        chatSocket.off("chat.muted", handleMuted);
+       chatSocket.off("chat.warning_received", handleWarningReceived);
     };
   }, [activeChannelId, user?.id]);
 
@@ -1825,6 +1861,83 @@ export const ChatPage: React.FC = () => {
           e.target.value = ""; // Reset
         }}
       />
+
+      <AnimatePresence>
+        {warningData && (
+          <div className="fixed inset-0 z-[100000] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="w-full max-w-sm bg-dark-bg border border-red-500/30 rounded-2xl p-6 shadow-[0_0_50px_rgba(239,68,68,0.2)] flex flex-col items-center justify-center text-center relative overflow-hidden"
+            >
+              <div className="absolute inset-0 bg-red-500/5 z-0"></div>
+              <div className="w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center mb-4 z-10 border border-red-500/50">
+                <AlertTriangle size={32} className="text-red-500 animate-pulse" />
+              </div>
+              <h3 className="text-xl font-black text-white mb-2 z-10">{isRtl ? "اخطار سیستمی" : "System Warning"}</h3>
+              <p className="text-gray-400 mb-6 z-10 text-sm leading-relaxed">
+                {warningData.message || (isRtl ? "شما یک اخطار از طرف مدیریت دریافت کردید." : "You have received a warning from administration.")}
+              </p>
+              
+              <div className="flex flex-col w-full gap-2 z-10">
+                <div className="bg-black/40 rounded-xl p-3 border border-white/5 flex justify-between items-center">
+                  <span className="text-gray-400 text-xs">{isRtl ? "تعداد اخطار امروز:" : "Warnings today:"}</span>
+                  <span className="font-bold text-red-400">{warningData.count} {warningData.maxWarnings ? `/ ${warningData.maxWarnings}` : ''}</span>
+                </div>
+                {warningData.maxWarnings && warningData.count >= warningData.maxWarnings - 1 && (
+                  <div className="bg-red-500/10 rounded-xl p-3 border border-red-500/20 text-red-400 text-xs text-center font-bold">
+                    {isRtl ? "شما در آستانه مسدود شدن موقت هستید!" : "You are about to be temporarily silenced!"}
+                  </div>
+                )}
+              </div>
+
+              <button 
+                onClick={() => setWarningData(null)}
+                className="mt-6 w-full py-3 bg-red-500/20 hover:bg-red-500/30 text-red-500 font-bold rounded-xl transition-colors z-10"
+              >
+                {isRtl ? "متوجه شدم" : "I understand"}
+              </button>
+            </motion.div>
+          </div>
+        )}
+
+        {muteModalData && muteUntil && muteUntil > Date.now() && (
+          <div className="fixed inset-0 z-[100000] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="w-full max-w-sm bg-dark-bg border border-red-500/30 rounded-2xl p-6 shadow-[0_0_50px_rgba(239,68,68,0.2)] flex flex-col items-center justify-center text-center relative overflow-hidden"
+            >
+              <div className="absolute inset-0 bg-red-500/5 z-0"></div>
+              <div className="w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center mb-4 z-10 border border-red-500/50">
+                <Shield size={32} className="text-red-500 animate-pulse" />
+              </div>
+              <h3 className="text-xl font-black text-white mb-2 z-10">{isRtl ? "حساب کاربری محدود شد" : "Account Silenced"}</h3>
+              <p className="text-gray-400 mb-6 z-10 text-sm leading-relaxed">
+                {muteModalData.message || (isRtl ? "شما به دلیل نقض قوانین موقتاً مسدود هستید." : "You are temporarily silenced for violating rules.")}
+              </p>
+              
+              <div className="flex flex-col w-full gap-2 z-10">
+                 <div className="bg-black/40 rounded-xl p-4 border border-white/5 flex flex-col items-center justify-center gap-2">
+                   <span className="text-gray-400 text-xs block">{isRtl ? "زمان باقی‌مانده از زمان محدودیت:" : "Remaining restriction time:"}</span>
+                   <div className="text-2xl font-black text-red-400">
+                     <RemainingTime until={muteUntil} isRtl={isRtl} />
+                   </div>
+                 </div>
+              </div>
+
+              <button 
+                onClick={() => setMuteModalData(null)}
+                className="mt-6 w-full py-3 bg-red-500/20 hover:bg-red-500/30 text-red-500 font-bold rounded-xl transition-colors z-10"
+              >
+                {isRtl ? "بستن" : "Close"}
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {showEliteSettingsModal && activeChannel.type === 'elite' && (
@@ -3092,7 +3205,9 @@ export const ChatPage: React.FC = () => {
                      <span className="text-sm font-black tracking-tight text-center px-4">
                        {muteMessage || (isRtl ? "شما موقتاً از ارسال پیام مسدود هستید." : "You are temporarily blocked from sending messages.")}
                        {" "}
-                       <span className="opacity-70 font-mono text-[11px] block mt-1 tracking-widest">{isRtl ? "پایان:" : "Until:"} {new Date(muteUntil).toLocaleTimeString(isRtl ? 'fa-IR' : 'en-US')}</span>
+                       <div className="opacity-70 text-[11px] flex justify-center items-center gap-2 mt-2 tracking-widest">
+                         {isRtl ? "مدت زمان باقی‌مانده:" : "Remaining time:"} <RemainingTime until={muteUntil} isRtl={isRtl} />
+                       </div>
                      </span>
                      <Shield size={20} className="animate-pulse" />
                    </div>
