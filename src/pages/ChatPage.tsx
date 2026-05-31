@@ -1336,10 +1336,10 @@ export const ChatPage: React.FC = () => {
       icon: friend?.avatar || (friend as any)?.avatarUrl || "👤"
     } : allChannels[0] || INITIAL_CHANNELS[0]);
     
-  const activeChannel = {
+  const activeChannel = React.useMemo(() => ({
     ...rawActiveChannel,
     name: isRtl ? rawActiveChannel.name : (rawActiveChannel.id === 'general' ? 'General Chat' : (rawActiveChannel.id === 'news' ? 'Gaming News' : rawActiveChannel.name))
-  };
+  }), [rawActiveChannel, isRtl]);
 
   // Handle typing state correctly by extracting the getter inside the effect
   useEffect(() => {
@@ -1355,7 +1355,8 @@ export const ChatPage: React.FC = () => {
         isTyping: input.length > 0 
       });
     }
-  }, [input, activeChannelId, activeChannel]);
+    // Remove activeChannel from dependencies to prevent infinite loop of typing events if it changes reference
+  }, [input, activeChannelId]);
 
   const formatIncomingMessage = (msg: any, currentUserId?: string): ChatMessage => {
      let badges: BadgeType[] = [];
@@ -1809,8 +1810,8 @@ export const ChatPage: React.FC = () => {
 
   return (
     <div 
+      dir={isRtl ? "rtl" : "ltr"}
       className={cn(
-        isRtl ? "rtl text-right" : "ltr text-left",
         "flex overflow-hidden bg-dark-bg relative overscroll-none",
         isElectron ? "h-[calc(100dvh-164px)] md:h-[calc(100vh-100px)]" : "h-[calc(100dvh-128px)] md:h-[calc(100vh-64px)]"
       )}
