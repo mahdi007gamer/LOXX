@@ -37,7 +37,7 @@ export const FriendChatOverlay = () => {
   const [showDmPrompt, setShowDmPrompt] = useState(false);
   const [friendSearch, setFriendSearch] = useState("");
   const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
-  const isOverlayWidget = isElectron && (
+  const isOverlayWidget = (
     window.location.pathname === '/overlay' || 
     window.location.pathname === '/lobby/overlay-widget' ||
     window.location.hash.includes('/overlay')
@@ -106,7 +106,7 @@ export const FriendChatOverlay = () => {
     }
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.altKey && e.key === "F1") {
+      if (isOverlayWidget && e.altKey && e.key === "F1") {
         e.preventDefault();
         // If running in Electron, the globalShortcut handles it.
         // We only toggle locally when running in a standard web browser.
