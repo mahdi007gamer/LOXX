@@ -351,6 +351,39 @@ export const DesktopOverlayWidget = () => {
 
   return (
     <>
+      {/* Full high-performance transparent dark overlay backdrop when interactive / focused */}
+      <AnimatePresence>
+        {isOverlayInteractive && (
+          <motion.div
+            id="OverlayBackdrop"
+            key="overlay-widget-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2, ease: "easeInOut" }}
+            style={{ 
+              width: "100vw", 
+              height: "100vh", 
+              background: "rgba(4, 4, 8, 0.42)", 
+              backdropFilter: "blur(24px) saturate(180%)",
+              WebkitBackdropFilter: "blur(24px) saturate(180%)",
+              zIndex: 8000 
+            }}
+            className="fixed inset-0 flex flex-col items-center justify-start pt-8 pointer-events-auto select-none border-4 border-neon-blue/20 backdrop-blur-sm"
+            dir="rtl"
+          >
+            <div className="bg-black/90 border border-white/10 px-6 py-2.5 rounded-full backdrop-blur-md shadow-[0_0_30px_rgba(0,0,0,0.8)] flex items-center gap-3 relative z-[999999999]">
+              <div className="h-2 w-2 rounded-full bg-neon-pink animate-ping" />
+              <p className="text-white text-sm font-bold flex items-center gap-2">
+                حالت تعاملی لوکس فعال است. برای خروج از این حالت دکمه
+                <kbd className="bg-white/10 border border-white/20 rounded px-2 text-neon-blue font-mono text-xs mx-1 leading-none shadow-inner h-6 flex items-center justify-center">Alt+F1</kbd> 
+                را بفشارید.
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Roster Container */}
       <div className={cn("fixed z-[9999] flex flex-col pointer-events-none select-none", positionClasses)}>
         {/* Title tag - minimal, matches Discord Overlay appearance */}
@@ -456,7 +489,7 @@ export const DesktopOverlayWidget = () => {
       </div>
 
       {/* Real-time FPS Overlay Box (Opposite Corner) */}
-      {localShowOverlayFps && membersVisibleVal && players && players.length > 0 && (
+      {localShowOverlayFps && membersVisibleVal && (
         <div className={cn("fixed z-[9999] flex flex-col pointer-events-none select-none transition-all duration-300", fpsPositionClasses)} style={{ opacity: normalOpacityVal }}>
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-black/75 border border-white/5 backdrop-blur-md shadow-lg shadow-black/40">
             <span className="h-1.5 w-1.5 bg-emerald-400 rounded-full animate-pulse" />
