@@ -1495,6 +1495,8 @@ function MatchInfoPanel({ isStarting, isMatchStarted, countdown, players, lobby,
   isVipLobby?: boolean,
   isStreamerLobby?: boolean
 }) {
+  const { language } = useLanguage();
+  const isRtl = language === "fa";
   const activePlayers = players.filter(p => !p.id.startsWith("slot-"));
   const readyCount = activePlayers.filter(p => p.isReady).length;
 
