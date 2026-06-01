@@ -98,9 +98,11 @@ export const FriendChatOverlay = () => {
   const dragControls = useDragControls();
 
   useEffect(() => {
+    console.log("FriendChatOverlay evaluate isOverlayWidget:", isOverlayWidget, window.location.hash, window.location.pathname);
     let unsubscribe: any = null;
     if (isOverlayWidget && (window as any).electronAPI?.onOverlayInteractionMode) {
       unsubscribe = (window as any).electronAPI.onOverlayInteractionMode((interactive: boolean) => {
+        console.log("FriendChatOverlay received interactive change:", interactive);
         setIsOverlayInteractive(interactive);
       });
     }
