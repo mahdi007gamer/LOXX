@@ -1,6 +1,7 @@
 import axios from "axios";
 import https from "https";
 import http from "http";
+const Kavenegar = require("kavenegar");
 
 export class KavenegarService {
   /**
@@ -28,62 +29,41 @@ export class KavenegarService {
       return true;
     }
 
-    // Try Lookup API (Pattern/Template) first as it delivers instantly and handles AD-blocks
-    try {
-      const lookupUrl = `https://api.kavenegar.com/v1/${KAVENEGAR_API_KEY}/verify/lookup.json`;
+    const api = Kavenegar.KavenegarApi({ apikey: KAVENEGAR_API_KEY });
+
+    return new Promise((resolve) => {
       console.log(`[KavenegarService] Calling Lookup API for pattern template: "${KAVENEGAR_TEMPLATE}" to ${formattedPhone}`);
-      
-      const response = await axios.get(lookupUrl, {
-        params: {
-          receptor: formattedPhone,
-          token: token,
-          template: KAVENEGAR_TEMPLATE
-        },
-        timeout: 10000
-      });
 
-      if (response.data && response.data.return && response.data.return.status === 200) {
-        console.log(`[KavenegarService] Lookup SMS queued successfully by Kavenegar:`, response.data.entries);
-        return true;
-      } else {
-        throw new Error(response.data?.return?.message || "Invalid status code from Kavenegar");
-      }
-    } catch (lookupError: any) {
-      console.error(`[KavenegarService] Lookup template failed. Message: ${lookupError.message}`);
-      if (lookupError.response && lookupError.response.data) {
-         console.error(`[KavenegarService] Kavenegar error details:`, lookupError.response.data);
-      }
-      
-      // Fallback: Send standard SMS via the purchased sender number "10009000400099"
-      try {
-        const sendUrl = `https://api.kavenegar.com/v1/${KAVENEGAR_API_KEY}/sms/send.json`;
-        const messageText = `کد شما در پلتفرم لوکس: ${token}`;
-        
-        console.log(`[KavenegarService] Falling back to standard send API with sender: "${KAVENEGAR_SENDER}"`);
-        const response = await axios.get(sendUrl, {
-          params: {
-            sender: KAVENEGAR_SENDER,
-            receptor: formattedPhone,
-            message: messageText
-          },
-          timeout: 10000
-        });
-
-        if (response.data && response.data.return && response.data.return.status === 200) {
-          console.log(`[KavenegarService] Standard fallback SMS queued successfully.`);
-          return true;
+      api.VerifyLookup({
+        receptor: formattedPhone,
+        token: token,
+        template: KAVENEGAR_TEMPLATE
+      }, function(entries: any, status: number, message: string) {
+        if (status === 200) {
+          console.log(`[KavenegarService] Lookup SMS queued successfully by Kavenegar:`, entries);
+          resolve(true);
         } else {
-          console.error(`[KavenegarService] Standard fallback SMS failed.`, response.data);
-          return false;
+          console.error(`[KavenegarService] Lookup template failed. Status: ${status}, Message: ${message}`);
+          
+          console.log(`[KavenegarService] Falling back to standard send API with sender: "${KAVENEGAR_SENDER}"`);
+          const messageText = `کد شما در پلتفرم لوکس: ${token}`;
+          
+          api.Send({
+            message: messageText,
+            sender: KAVENEGAR_SENDER,
+            receptor: formattedPhone
+          }, function(fallbackEntries: any, fallbackStatus: number, fallbackMessage: string) {
+            if (fallbackStatus === 200) {
+              console.log(`[KavenegarService] Standard fallback SMS queued successfully.`);
+              resolve(true);
+            } else {
+              console.error(`[KavenegarService] Standard fallback SMS failed. Status: ${fallbackStatus}, Message: ${fallbackMessage}`);
+              resolve(false);
+            }
+          });
         }
-      } catch (sendError: any) {
-        console.error(`[KavenegarService] Kavenegar standard API connection error:`, sendError.message);
-        if (sendError.response && sendError.response.data) {
-           console.error(`[KavenegarService] Standard API error details:`, sendError.response.data);
-        }
-        return false;
-      }
-    }
+      });
+    });
   }
 
   /**
