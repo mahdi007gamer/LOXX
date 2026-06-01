@@ -674,39 +674,44 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         const bufferLength = analyzer.frequencyBinCount;
         const dataArray = new Uint8Array(bufferLength);
 
-        const analyzeVoice = () => {
-          if (localStream.getAudioTracks().length > 0 && localStream.getAudioTracks()[0].enabled) {
-            analyzer.getByteFrequencyData(dataArray);
-            let sum = 0;
-            for(let i = 0; i < bufferLength; i++) {
-              sum += dataArray[i];
-            }
-            const avg = sum / bufferLength;
-            const newVol = Math.min(100, Math.round(avg * 2));
-            
-            if (Math.abs(newVol - lastVol) > 20 || (newVol === 0 && lastVol !== 0)) {
-              lastVol = newVol;
-              setLocalVolume(newVol);
-            }
+        let lastAnalysisTime = 0;
+        const analyzeVoice = (timestamp: number) => {
+          const now = timestamp || performance.now();
+          if (now - lastAnalysisTime >= 100) {
+            lastAnalysisTime = now;
+            if (localStream.getAudioTracks().length > 0 && localStream.getAudioTracks()[0].enabled) {
+              analyzer.getByteFrequencyData(dataArray);
+              let sum = 0;
+              for(let i = 0; i < bufferLength; i++) {
+                sum += dataArray[i];
+              }
+              const avg = sum / bufferLength;
+              const newVol = Math.min(100, Math.round(avg * 2));
+              
+              if (Math.abs(newVol - lastVol) > 15 || (newVol === 0 && lastVol !== 0) || (newVol > 10 && lastVol === 0)) {
+                lastVol = newVol;
+                setLocalVolume(newVol);
+              }
 
-            const talkingNow = avg > 20; 
-            if (talkingNow !== isTalking) {
-              isTalking = talkingNow;
-              voiceSocket.emit("voice.talking", { roomId: lobby.id, isTalking });
-            }
-          } else {
-            if (lastVol !== 0) {
-              lastVol = 0;
-              setLocalVolume(0);
-            }
-            if (isTalking) {
-              isTalking = false;
-              voiceSocket.emit("voice.talking", { roomId: lobby.id, isTalking: false });
+              const talkingNow = avg > 15; 
+              if (talkingNow !== isTalking) {
+                isTalking = talkingNow;
+                voiceSocket.emit("voice.talking", { roomId: lobby.id, isTalking });
+              }
+            } else {
+              if (lastVol !== 0) {
+                lastVol = 0;
+                setLocalVolume(0);
+              }
+              if (isTalking) {
+                isTalking = false;
+                voiceSocket.emit("voice.talking", { roomId: lobby.id, isTalking: false });
+              }
             }
           }
           rafId = requestAnimationFrame(analyzeVoice);
         };
-        analyzeVoice();
+        rafId = requestAnimationFrame(analyzeVoice);
       } catch (err) {
         console.error("Local stream analyzer error:", err);
       }

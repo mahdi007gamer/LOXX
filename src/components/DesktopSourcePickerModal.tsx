@@ -4,6 +4,7 @@ import { Monitor, AppWindow, Search, RefreshCw } from 'lucide-react';
 import { GlowButton } from './ui/GlowButton';
 import { cn } from '../lib/utils';
 import { toast } from 'react-hot-toast';
+import { useLanguage } from '../context/LanguageContext';
 
 export interface DesktopSource {
   id: string;
@@ -22,6 +23,8 @@ export const DesktopSourcePickerModal = ({
   onClose: () => void;
   onSelect: (sourceId: string) => void;
 }) => {
+  const { language } = useLanguage();
+  const isRtl = language === "fa";
   const [sources, setSources] = useState<DesktopSource[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedSourceId, setSelectedSourceId] = useState<string | null>(null);
@@ -37,11 +40,11 @@ export const DesktopSourcePickerModal = ({
         setLoading(false);
       }).catch((err: any) => {
         console.error("Failed to get desktop sources", err);
-        toast.error("خطا در دریافت لیست مانیتورها. لطفا دسترسی های لازم را بررسی کنید.");
+        toast.error(isRtl ? "خطا در دریافت لیست مانیتورها. لطفا دسترسی های لازم را بررسی کنید." : "Failed to load desktop sources. Please check system permissions.");
         setLoading(false);
       });
     } else {
-      toast.error("دریافت منابع فقط در اپلیکیشن دسکتاپ امکان‌پذیر است");
+      toast.error(isRtl ? "دریافت منابع فقط در اپلیکیشن دسکتاپ امکان‌پذیر است" : "Source selection is only supported in Desktop client mode.");
       setLoading(false);
     }
   };
@@ -80,8 +83,8 @@ export const DesktopSourcePickerModal = ({
   };
 
   return (
-    <Modal isOpen={isOpen} title="انتخاب منبع اشتراک گذاری" onClose={onClose} maxWidth="max-w-5xl">
-      <div className="flex flex-col gap-4 max-h-[80vh] min-h-[50vh]">
+    <Modal isOpen={isOpen} title={isRtl ? "انتخاب منبع اشتراک گذاری" : "Select Window or Screen to Share"} onClose={onClose} maxWidth="max-w-5xl">
+      <div className={cn("flex flex-col gap-4 max-h-[80vh] min-h-[50vh]", isRtl ? "text-right font-sans" : "text-left font-sans")} dir={isRtl ? "rtl" : "ltr"}>
         
         {/* Header Actions */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 pb-4">
@@ -91,32 +94,35 @@ export const DesktopSourcePickerModal = ({
               className={cn("px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all", activeTab === 'screen' ? "bg-neon-blue/20 text-neon-blue border border-neon-blue/30" : "text-gray-400 hover:bg-white/5 border border-transparent")}
             >
               <Monitor size={18} />
-              تمامی صفحات (مانیتورها)
-              <span className="ml-1 bg-white/10 text-xs px-2 py-0.5 rounded-full">{sources.filter(s => s.id.startsWith('screen')).length}</span>
+              {isRtl ? "تمامی صفحات (مانیتورها)" : "Entire Screens (Monitors)"}
+              <span className={cn("bg-white/10 text-xs px-2 py-0.5 rounded-full", isRtl ? "mr-1" : "ml-1")}>{sources.filter(s => s.id.startsWith('screen')).length}</span>
             </button>
             <button 
               onClick={() => { setActiveTab('window'); setSelectedSourceId(null); }}
               className={cn("px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all", activeTab === 'window' ? "bg-neon-blue/20 text-neon-blue border border-neon-blue/30" : "text-gray-400 hover:bg-white/5 border border-transparent")}
             >
               <AppWindow size={18} />
-              پنجره‌های خاص
-              <span className="ml-1 bg-white/10 text-xs px-2 py-0.5 rounded-full">{sources.filter(s => s.id.startsWith('window')).length}</span>
+              {isRtl ? "پنجره‌های خاص" : "Specific Application Windows"}
+              <span className={cn("bg-white/10 text-xs px-2 py-0.5 rounded-full", isRtl ? "mr-1" : "ml-1")}>{sources.filter(s => s.id.startsWith('window')).length}</span>
             </button>
           </div>
           
           <div className="flex items-center gap-2">
             <div className="relative">
-              <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
+              <Search className={cn("absolute top-1/2 -translate-y-1/2 text-gray-500", isRtl ? "right-3" : "left-3")} size={16} />
               <input 
                 type="text" 
-                placeholder="جستجوی نام..." 
+                placeholder={isRtl ? "جستجوی نام..." : "Filter by name..."}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="bg-black/50 border border-white/10 rounded-xl pr-9 pl-4 py-1.5 text-sm w-48 md:w-64 focus:outline-none focus:border-neon-blue text-white"
-                dir="rtl"
+                className={cn(
+                  "bg-black/50 border border-white/10 rounded-xl py-1.5 text-sm w-48 md:w-64 focus:outline-none focus:border-neon-blue text-white",
+                  isRtl ? "pr-9 pl-4 text-right" : "pl-9 pr-4 text-left"
+                )}
+                dir={isRtl ? "rtl" : "ltr"}
               />
             </div>
-            <button onClick={fetchSources} className="p-2 rounded-xl hover:bg-white/10 text-gray-400 hover:text-white transition-colors" title="بروزرسانی لیست">
+            <button onClick={fetchSources} className="p-2 rounded-xl hover:bg-white/10 text-gray-400 hover:text-white transition-colors" title={isRtl ? "بروزرسانی لیست" : "Refresh List"}>
               <RefreshCw size={18} className={cn(loading && "animate-spin")} />
             </button>
           </div>
@@ -126,7 +132,7 @@ export const DesktopSourcePickerModal = ({
         {loading && sources.length === 0 ? (
           <div className="flex flex-1 flex-col items-center justify-center p-12">
             <div className="animate-spin w-10 h-10 rounded-full border-t-2 border-b-2 border-neon-blue mb-4"></div>
-            <span className="text-gray-400 text-sm animate-pulse">در حال دریافت صفحه‌ها...</span>
+            <span className="text-gray-400 text-sm animate-pulse">{isRtl ? "در حال دریافت صفحه‌ها..." : "Fetching active streams..."}</span>
           </div>
         ) : (
           <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 py-2">
@@ -172,13 +178,13 @@ export const DesktopSourcePickerModal = ({
             {(activeTab === 'screen' && screens.length === 0) && (
               <div className="flex flex-col items-center justify-center p-12 text-gray-500">
                 <Monitor size={48} className="mb-4 opacity-30" />
-                <span className="text-sm">مانیتوری یافت نشد</span>
+                <span className="text-sm">{isRtl ? "مانیتوری یافت نشد" : "No screens found"}</span>
               </div>
             )}
             {(activeTab === 'window' && windows.length === 0) && (
               <div className="flex flex-col items-center justify-center p-12 text-gray-500">
                 <AppWindow size={48} className="mb-4 opacity-30" />
-                <span className="text-sm">پنجره‌ای یافت نشد</span>
+                <span className="text-sm">{isRtl ? "پنجره‌ای یافت نشد" : "No windows found"}</span>
               </div>
             )}
           </div>
@@ -187,15 +193,17 @@ export const DesktopSourcePickerModal = ({
         {/* Footer */}
         <div className="pt-4 mt-2 border-t border-white/10 flex items-center justify-between">
            <span className="text-xs text-gray-500">
-             {selectedSourceId ? "برای انتخاب سریع دوبار کلیک کنید" : "لطفاً یک صفحه را برای ادامه انتخاب کنید"}
+             {selectedSourceId 
+               ? (isRtl ? "برای انتخاب سریع دوبار کلیک کنید" : "Double-click to select instantly") 
+               : (isRtl ? "لطفاً یک صفحه را برای ادامه انتخاب کنید" : "Please select a resource stream to continue")}
            </span>
            <GlowButton 
              variant="blue" 
              onClick={handleSelect} 
              disabled={!selectedSourceId}
-             className={cn("px-8 py-2.5", !selectedSourceId && "opacity-50 grayscale cursor-not-allowed")}
+             className={cn("px-8 py-2.5 font-black uppercase text-xs tracking-wider", !selectedSourceId && "opacity-50 grayscale cursor-not-allowed")}
            >
-             تایید و اشتراک
+             {isRtl ? "تایید و اشتراک" : "Confirm & Share"}
            </GlowButton>
         </div>
       </div>

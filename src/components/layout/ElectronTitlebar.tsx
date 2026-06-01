@@ -7,6 +7,30 @@ export const ElectronTitlebar = () => {
   const isRtl = language === "fa";
   const isElectron = typeof window !== "undefined" && !!(window as any).electronAPI;
   const [isMaximized, setIsMaximized] = useState(false);
+  const [fps, setFps] = useState<number>(60);
+
+  useEffect(() => {
+    let lastTime = performance.now();
+    let frameCount = 0;
+    let animationFrameId: number;
+
+    const calcFps = (time: number) => {
+      frameCount++;
+      const now = time || performance.now();
+      if (now >= lastTime + 1000) {
+        const measuredFps = Math.round((frameCount * 1000) / (now - lastTime));
+        setFps(measuredFps);
+        frameCount = 0;
+        lastTime = now;
+      }
+      animationFrameId = requestAnimationFrame(calcFps);
+    };
+
+    animationFrameId = requestAnimationFrame(calcFps);
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, []);
 
   useEffect(() => {
     if (!isElectron) return;
@@ -70,6 +94,10 @@ export const ElectronTitlebar = () => {
         </span>
         <span className="text-[8px] bg-orange-500/10 text-orange-400 border border-orange-500/20 px-1.5 py-0.5 rounded-md font-sans font-bold ml-1 animate-pulse">
           {isRtl ? "Beta | آزمایشی" : "Beta Edition"}
+        </span>
+        <span className="text-[8px] bg-emerald-500/10 text-emerald-400 border border-emerald-550/20 px-1.5 py-0.5 rounded-md font-mono font-bold ml-1 flex items-center gap-1">
+          <span className="h-1.5 w-1.5 bg-emerald-400 rounded-full animate-ping shrink-0" />
+          <span>{fps} FPS</span>
         </span>
       </div>
 
