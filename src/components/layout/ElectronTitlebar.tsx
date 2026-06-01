@@ -8,6 +8,19 @@ export const ElectronTitlebar = () => {
   const isElectron = typeof window !== "undefined" && !!(window as any).electronAPI;
   const [isMaximized, setIsMaximized] = useState(false);
   const [fps, setFps] = useState<number>(60);
+  const [showTitlebarFps, setShowTitlebarFps] = useState(() => localStorage.getItem("loxx_show_titlebar_fps") === "true");
+
+  useEffect(() => {
+    const handleToggle = () => {
+      setShowTitlebarFps(localStorage.getItem("loxx_show_titlebar_fps") === "true");
+    };
+    window.addEventListener("loxx_titlebar_fps_update", handleToggle);
+    window.addEventListener("storage", handleToggle);
+    return () => {
+      window.removeEventListener("loxx_titlebar_fps_update", handleToggle);
+      window.removeEventListener("storage", handleToggle);
+    };
+  }, []);
 
   useEffect(() => {
     let lastTime = performance.now();
@@ -95,10 +108,12 @@ export const ElectronTitlebar = () => {
         <span className="text-[8px] bg-orange-500/10 text-orange-400 border border-orange-500/20 px-1.5 py-0.5 rounded-md font-sans font-bold ml-1 animate-pulse">
           {isRtl ? "Beta | آزمایشی" : "Beta Edition"}
         </span>
-        <span className="text-[8px] bg-emerald-500/10 text-emerald-400 border border-emerald-550/20 px-1.5 py-0.5 rounded-md font-mono font-bold ml-1 flex items-center gap-1">
-          <span className="h-1.5 w-1.5 bg-emerald-400 rounded-full animate-ping shrink-0" />
-          <span>{fps} FPS</span>
-        </span>
+        {showTitlebarFps && (
+          <span className="text-[8px] bg-emerald-500/10 text-emerald-400 border border-emerald-555/20 px-1.5 py-0.5 rounded-md font-mono font-bold ml-1 flex items-center gap-1">
+            <span className="h-1.5 w-1.5 bg-emerald-400 rounded-full animate-ping shrink-0" />
+            <span>{fps} FPS</span>
+          </span>
+        )}
       </div>
 
       {/* Client Status Info (Absolute Center - fully centered on Windows) */}

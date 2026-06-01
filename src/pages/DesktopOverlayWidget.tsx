@@ -20,42 +20,89 @@ interface OverlayPlayer {
 export const DesktopOverlayWidget = () => {
   const [players, setPlayers] = useState<OverlayPlayer[]>([]);
   const [isOverlayInteractive, setIsOverlayInteractive] = useState(false);
-
-  const { 
-    overlayPosition, 
-    overlaySize, 
-    overlayOnlyTalking,
-    overlayMembersVisible,
-    overlayNormalOpacity,
-    overlaySpeakingOpacity
-  } = useLobby();
   const { user } = useAuth();
-  
   const currentUserId = user?.id;
 
-  // We read the local storage directly if the context initially misses it since it's a separate window
-  const storedPos = localStorage.getItem("loxx_overlay_position") || "top-left";
-  const storedSize = localStorage.getItem("loxx_overlay_size") || "medium";
-  const storedMembersVisible = localStorage.getItem("loxx_overlay_members_visible") !== "false";
-  const storedNormalOpacity = localStorage.getItem("loxx_overlay_normal_opacity") !== null 
-    ? parseFloat(localStorage.getItem("loxx_overlay_normal_opacity")!) 
-    : 0.75;
-  const storedSpeakingOpacity = localStorage.getItem("loxx_overlay_speaking_opacity") !== null 
-    ? parseFloat(localStorage.getItem("loxx_overlay_speaking_opacity")!) 
-    : 1.0;
+  // Sync settings instantly via storage events for Electron multi-process windows
+  const [localOverlayPos, setLocalOverlayPos] = useState(() => localStorage.getItem("loxx_overlay_position") || "top-left");
+  const [localOverlaySize, setLocalOverlaySize] = useState(() => localStorage.getItem("loxx_overlay_size") || "medium");
+  const [localMembersVisible, setLocalMembersVisible] = useState(() => localStorage.getItem("loxx_overlay_members_visible") !== "false");
+  const [localNormalOpacity, setLocalNormalOpacity] = useState(() => {
+    const val = localStorage.getItem("loxx_overlay_normal_opacity");
+    return val !== null ? parseFloat(val) : 0.75;
+  });
+  const [localSpeakingOpacity, setLocalSpeakingOpacity] = useState(() => {
+    const val = localStorage.getItem("loxx_overlay_speaking_opacity");
+    return val !== null ? parseFloat(val) : 1.0;
+  });
+  const [localOnlyTalking, setLocalOnlyTalking] = useState(() => localStorage.getItem("loxx_overlay_only_talking") === "true");
 
-  const posStr = overlayPosition || storedPos;
-  const sizeStr = overlaySize || storedSize;
-  const membersVisibleVal = overlayMembersVisible !== undefined ? overlayMembersVisible : storedMembersVisible;
-  const normalOpacityVal = overlayNormalOpacity !== undefined ? overlayNormalOpacity : storedNormalOpacity;
-  const speakingOpacityVal = overlaySpeakingOpacity !== undefined ? overlaySpeakingOpacity : storedSpeakingOpacity;
-  
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "loxx_overlay_position" && e.newValue) {
+        setLocalOverlayPos(e.newValue);
+      } else if (e.key === "loxx_overlay_size" && e.newValue) {
+        setLocalOverlaySize(e.newValue);
+      } else if (e.key === "loxx_overlay_members_visible" && e.newValue) {
+        setLocalMembersVisible(e.newValue === "true");
+      } else if (e.key === "loxx_overlay_normal_opacity" && e.newValue) {
+        setLocalNormalOpacity(parseFloat(e.newValue));
+      } else if (e.key === "loxx_overlay_speaking_opacity" && e.newValue) {
+        setLocalSpeakingOpacity(parseFloat(e.newValue));
+      } else if (e.key === "loxx_overlay_only_talking" && e.newValue) {
+        setLocalOnlyTalking(e.newValue === "true");
+      }
+    };
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
+
+  // Sync local real-time FPS calculation loop
+  const [overlayFps, setOverlayFps] = useState(60);
+  useEffect(() => {
+    let lastTime = performance.now();
+    let frames = 0;
+    let animId: number;
+    const update = (time: number) => {
+      frames++;
+      const now = time || performance.now();
+      if (now >= lastTime + 1000) {
+        setOverlayFps(Math.round((frames * 1000) / (now - lastTime)));
+        frames = 0;
+        lastTime = now;
+      }
+      animId = requestAnimationFrame(update);
+    };
+    animId = requestAnimationFrame(update);
+    return () => cancelAnimationFrame(animId);
+  }, []);
+
+  const posStr = localOverlayPos;
+  const sizeStr = localOverlaySize;
+  const membersVisibleVal = localMembersVisible;
+  const normalOpacityVal = localNormalOpacity;
+  const speakingOpacityVal = localSpeakingOpacity;
+  const overlayOnlyTalkingVal = localOnlyTalking;
+
   const positionClasses = {
     "top-left": "top-6 left-6 items-start text-left",
     "top-right": "top-6 right-6 items-end text-right",
     "bottom-left": "bottom-6 left-6 items-start text-left",
     "bottom-right": "bottom-6 right-6 items-end text-right"
   }[posStr as string] || "top-6 left-6 items-start text-left";
+
+  const getOppositePosition = (pos: string) => {
+    if (pos.endsWith("-left")) return pos.replace("-left", "-right");
+    if (pos.endsWith("-right")) return pos.replace("-right", "-left");
+    return "top-right";
+  };
+  const fpsPosStr = getOppositePosition(posStr);
+  const fpsPositionClasses = {
+    "top-left": "top-6 left-6 items-start text-left",
+    "top-right": "top-6 right-6 items-end text-right",
+    "bottom-left": "bottom-6 left-6 items-start text-left",
+    "bottom-right": "bottom-6 right-6 items-end text-right"
+  }[fpsPosStr] || "top-6 right-6 items-end text-right";
 
   const avatarSizes = {
     "small": "h-8 w-8 text-xs",
@@ -153,6 +200,7 @@ export const DesktopOverlayWidget = () => {
         )}
       </AnimatePresence>
 
+      {/* Roster Container */}
       <div className={cn("fixed z-[9999] flex flex-col pointer-events-none select-none", positionClasses)}>
         {/* Title tag - minimal, matches Discord Overlay appearance */}
         {membersVisibleVal && players && players.length > 0 && (
@@ -173,8 +221,7 @@ export const DesktopOverlayWidget = () => {
               const isMuted = player.isMuted;
 
               // If "show only talking" is enabled and player is silent, skip rendering
-              // For now let's just make it always visible if overlayOnlyTalking is true it only shows when talking
-              if (overlayOnlyTalking && !isTalking && !isMe) {
+              if (overlayOnlyTalkingVal && !isTalking && !isMe) {
                 return null;
               }
 
@@ -245,7 +292,7 @@ export const DesktopOverlayWidget = () => {
                   >
                     <div className="flex items-center gap-1.5 flex-row">
                       <span className="font-sans tracking-wide truncate max-w-[120px]">
-                        {player.username ? (player.username.length > 10 ? player.username.substring(0, 10) + "..." : player.username) : "بازیکن"}
+                        {player.username ? (player.username.length > 10 ? player.username.substring(0, 10) + "..." : player.username) : "Player"}
                       </span>
                       {isMe && <span className="text-[8px] bg-white/10 text-white/70 px-1 py-0.2 rounded font-sans scale-90">Me</span>}
                     </div>
@@ -256,8 +303,16 @@ export const DesktopOverlayWidget = () => {
           </AnimatePresence>
         </div>
       </div>
+
+      {/* Real-time FPS Overlay Box (Opposite Corner) */}
+      {membersVisibleVal && players && players.length > 0 && (
+        <div className={cn("fixed z-[9999] flex flex-col pointer-events-none select-none transition-all duration-300", fpsPositionClasses)} style={{ opacity: normalOpacityVal }}>
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#0a0f18]/90 border border-[#00e5ff]/20 backdrop-blur-md shadow-lg shadow-black/40">
+            <span className="h-1.5 w-1.5 bg-emerald-400 rounded-full animate-pulse" />
+            <span className="text-[10px] font-mono font-bold text-emerald-400">{overlayFps} FPS</span>
+          </div>
+        </div>
+      )}
     </>
   );
 };
-
-

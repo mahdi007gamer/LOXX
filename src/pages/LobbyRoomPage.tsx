@@ -194,7 +194,7 @@ export const LobbyRoomPage = () => {
         time: m.createdAt ? new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "Recently"
       })) || [])
     ];
-  }, [lobby?.messages]);
+  }, [lobby?.messages, t, language]);
 
   const [isDesktopChatOpen, setIsDesktopChatOpen] = useState(false); // Desktop chat
   const [unreadDesktopChat, setUnreadDesktopChat] = useState(0);
@@ -676,7 +676,9 @@ export const LobbyRoomPage = () => {
           )}
 
           <div className="hidden sm:flex items-center gap-2 bg-black/60 rounded-2xl p-1 border border-white/10">
-             <div className="px-4 py-2 text-[10px] font-black text-gray-500 border-l border-white/10 uppercase tracking-widest">کد لابی</div>
+             <div className={cn("px-4 py-2 text-[10px] font-black text-gray-500 uppercase tracking-widest", isRtl ? "border-l border-white/10" : "border-r border-white/10")}>
+               {isRtl ? "کد لابی" : "Lobby Code"}
+             </div>
              <div className="px-4 py-2 font-mono text-sm text-neon-blue flex items-center gap-3">
                {lobby?.id ? lobby.id.substring(0, 8).toUpperCase() : "LX-LOBBY"}
                <button onClick={handleCopyCode} className="hover:text-white transition-colors">
