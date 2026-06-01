@@ -286,6 +286,14 @@ function launchMainWindow() {
           }
           mainWindow.show();
           mainWindow.focus();
+          
+          if (config.overlayEnabled) {
+             setTimeout(() => {
+               try {
+                 ipcMain.emit('set-transparent-overlay-active', null, true);
+               } catch (e) {}
+             }, 500); // short delay after showing main window
+          }
         }
       }, 1500);
     });
@@ -849,7 +857,7 @@ updateCheckTimeout = setTimeout(() => {
     }
   };
 
-  ipcMain.on('set-transparent-overlay-active', (event, active) => {
+  function setTransparentOverlayActive(active) {
     try {
       if (active) {
         if (overlayWindow) return;
@@ -909,7 +917,7 @@ updateCheckTimeout = setTimeout(() => {
         let baseURL = 'https://loxx.ir';
         if (mainWindow && !mainWindow.isDestroyed()) {
           const currentURL = mainWindow.getURL();
-          if (currentURL) {
+          if (currentURL && currentURL.startsWith('http')) {
             baseURL = currentURL.split('/').slice(0, 3).join('/');
           }
         }
@@ -927,6 +935,12 @@ updateCheckTimeout = setTimeout(() => {
     } catch (e) {
       console.error("Overlay window control failed:", e);
     }
+  }
+
+  ipcMain.on('set-transparent-overlay-active', (event, active) => {
+    config.overlayEnabled = active;
+    saveConfig();
+    setTransparentOverlayActive(active);
   });
 
   // Cross-Window Desktop Overlay Speaking Player Syncer

@@ -383,7 +383,10 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => {
     localStorage.setItem("loxx_transparent_overlay", String(transparentOverlayEnabled));
     if (isElectron) {
-      (window as any).electronAPI.setTransparentOverlayActive(transparentOverlayEnabled);
+      if (typeof window !== "undefined" && (window as any).electronAPI) {
+        (window as any).electronAPI.setTransparentOverlayActive(transparentOverlayEnabled);
+        (window as any).electronAPI.updateLauncherSettings({ overlayEnabled: transparentOverlayEnabled });
+      }
     }
   }, [transparentOverlayEnabled, isElectron]);
 
@@ -424,6 +427,7 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           if (settings.overlayHeight !== undefined) setOverlayHeight(Number(settings.overlayHeight));
           if (settings.overlayOpacity !== undefined) setOverlayOpacity(Number(settings.overlayOpacity));
           if (settings.overlayClickThrough !== undefined) setOverlayClickThrough(!!settings.overlayClickThrough);
+          if (settings.overlayEnabled !== undefined) setTransparentOverlayEnabled(!!settings.overlayEnabled);
         }
       }).catch((err: any) => console.error("Error loading Electron launcher settings:", err));
 
