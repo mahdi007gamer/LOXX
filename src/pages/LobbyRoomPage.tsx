@@ -289,14 +289,18 @@ export const LobbyRoomPage = () => {
   };
 
   const [wasInLobby, setWasInLobby] = useState(false);
+  const hasCollapsedOnMount = useRef(false);
 
   // Join lobby on mount
   useEffect(() => {
     if (id) {
        joinLobby(id);
     }
-    // Collapse right sidebar by default when entering any lobby
-    setIsSidebarCollapsed(true);
+    // Collapse right sidebar by default only on initial enter/mount
+    if (!hasCollapsedOnMount.current) {
+       setIsSidebarCollapsed(true);
+       hasCollapsedOnMount.current = true;
+    }
   }, [id, setIsSidebarCollapsed]);
 
   // Redirect if lobby becomes null (e.g., closed by host) or if joining fails
@@ -464,20 +468,25 @@ export const LobbyRoomPage = () => {
   const { friends } = useFriends();
 
   return (
-    <div className={cn("flex bg-[#050508] overflow-hidden", isElectron ? "h-[calc(100vh-100px)] min-h-[calc(100vh-100px)] max-h-[calc(100vh-100px)]" : "h-[calc(100vh-64px)] min-h-[calc(100vh-64px)] max-h-[calc(100vh-64px)]")} dir="rtl">
+    <div className={cn("flex bg-[#050508] overflow-hidden", isElectron ? "h-[calc(100vh-100px)] min-h-[calc(100vh-100px)] max-h-[calc(100vh-100px)]" : "h-[calc(100vh-64px)] min-h-[calc(100vh-64px)] max-h-[calc(100vh-64px)]")} dir={isRtl ? "rtl" : "ltr"}>
       <Sidebar />
-      <main className={cn("flex-1 min-w-0 relative h-full max-h-full overflow-hidden transition-all duration-300", !isSidebarCollapsed ? "md:mr-64" : "md:mr-20")}>
+      <main className={cn(
+        "flex-1 min-w-0 relative h-full max-h-full overflow-hidden transition-all duration-300", 
+        isRtl 
+          ? (!isSidebarCollapsed ? "md:mr-64" : "md:mr-20") 
+          : (!isSidebarCollapsed ? "md:ml-64" : "md:ml-20")
+      )}>
         <div className="h-full w-full bg-[#050508] text-white p-2 md:p-6 lg:p-8 flex flex-col gap-4 md:gap-6 relative overflow-hidden font-sans">
       {!user?.isVerified && (
         <div className="fixed top-20 left-4 right-4 z-[100] bg-neon-pink/20 backdrop-blur-md border border-neon-pink/30 rounded-2xl p-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <ShieldAlert size={20} className="text-neon-pink" />
             <p className="text-sm font-bold text-gray-200">
-              حساب شما تایید نشده است. تا زمان تایید ایمیل، قادر به چت کردن نخواهید بود.
+              {isRtl ? "حساب شما تایید نشده است. تا زمان تایید ایمیل، قادر به چت کردن نخواهید بود." : "Your account is not verified. You won't be able to chat until you verify your email."}
             </p>
           </div>
           <Link to="/settings" className="text-xs font-black text-neon-pink uppercase italic hover:underline">
-            تایید حساب
+            {isRtl ? "تایید حساب" : "VERIFY ACCOUNT"}
           </Link>
         </div>
       )}
@@ -485,33 +494,45 @@ export const LobbyRoomPage = () => {
       {/* LAN mode banners & assistance */}
       {lobby?.isLanMode && !isElectron && (
         <div className="relative z-10 bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 flex flex-col md:flex-row items-center justify-between gap-3 animate-enter shrink-0">
-          <div className="flex items-center gap-3 text-right">
+          <div className={cn("flex items-center gap-3", isRtl ? "text-right" : "text-left")}>
             <ShieldAlert size={20} className="text-amber-400 shrink-0" />
             <div>
-              <p className="text-sm font-black text-white">⚠️ جهت بازی در حالت Lan، استفاده از اپلیکیشن ویندوز لوکس الزامی است!</p>
-              <p className="text-xs text-gray-400 mt-0.5">شما هم‌اکنون این لابی را روی مرورگر وب مشاهده می‌کنید. سیستم انتقال ترافیک خودکار Lan (بدون نیاز به برنامه جانبی) فقط روی اپلیکیشن کلاینت ویندوز فعال می‌شود.</p>
+              <p className="text-sm font-black text-white">
+                {isRtl ? "⚠️ جهت بازی در حالت Lan، استفاده از اپلیکیشن ویندوز لوکس الزامی است!" : "⚠️ Loxx Windows App is required to play in LAN mode!"}
+              </p>
+              <p className="text-xs text-gray-400 mt-0.5">
+                {isRtl 
+                  ? "شما هم‌اکنون این لابی را روی مرورگر وب مشاهده می‌کنید. سیستم انتقال ترافیک خودکار Lan (بدون نیاز به برنامه جانبی) فقط روی اپلیکیشن کلاینت ویندوز فعال می‌شود." 
+                  : "You are currently viewing this lobby inside a web browser. The automatic LAN tunneling system (Zero-TUN) only works inside the official native Windows Client."}
+              </p>
             </div>
           </div>
           <a href="/download" className="px-5 py-2 rounded-xl bg-amber-500 text-black text-xs font-black transition-all hover:bg-amber-400 shrink-0 font-sans">
-            دانلود کلاینت ویندوز
+            {isRtl ? "دانلود کلاینت ویندوز" : "Download Windows Client"}
           </a>
         </div>
       )}
 
       {lobby?.isLanMode && isElectron && (
         <div className="relative z-10 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-4 flex items-center justify-between gap-3 animate-enter shrink-0">
-          <div className="flex items-center gap-3 text-right font-sans">
+          <div className={cn("flex items-center gap-3 font-sans", isRtl ? "text-right" : "text-left")}>
             <span className="relative flex h-2 w-2 shrink-0">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
             </span>
             <div>
-              <p className="text-sm font-black text-white">⚡ سیستم پل ارتباطی لوکس (Zero-TUN) فعال است</p>
+              <p className="text-sm font-black text-white">
+                {isRtl ? "⚡ سیستم پل ارتباطی لوکس (Zero-TUN) فعال است" : "⚡ LOXX Zero-TUN Gateway is Active"}
+              </p>
               <p className="text-xs text-gray-400 mt-0.5">
                 {isHost ? (
-                  "به عنوان هاست لابی، بازی خود را در حالت LAN / Offline برای دیگران بسازید. لانچر لوکس به صورت خودکار پورت‌های شبکه بازی را برای کلاینت‌ها پروکسی کرده و پل می‌زند."
+                  isRtl 
+                    ? "به عنوان هاست لابی، بازی خود را در حالت LAN / Offline برای دیگران بسازید. لانچر لوکس به صورت خودکار پورت‌های شبکه بازی را برای کلاینت‌ها پروکسی کرده و پل می‌زند."
+                    : "As the lobby host, start your game in LAN / Offline mode. The Loxx Launcher will automatically bridge and proxy network ports for other players."
                 ) : (
-                  "به عنوان کلاینت لابی، به محض شروع، مستقیماً وارد بازی شده و به بخش Local LAN بروید. به لطف سیستم Zero-TUN لوکس، سرور هم‌تیمی‌تان خودکار نمایش داده می‌شود!"
+                  isRtl 
+                    ? "به عنوان کلاینت لابی، به محض شروع، مستقیماً وارد بازی شده و به بخش Local LAN بروید. به لطف سیستم Zero-TUN لوکس، سرور هم‌تیمی‌تان خودکار نمایش داده می‌شود!"
+                    : "As a lobby client, simply launch your game and navigate to the Local LAN section. Thanks to LOXX Zero-TUN, your teammate's server will show up automatically!"
                 )}
               </p>
             </div>
@@ -673,8 +694,8 @@ export const LobbyRoomPage = () => {
               (!allReadyPulse || isMatchStarted) && "opacity-50 grayscale cursor-not-allowed"
             )}
           >
-            <Play size={14} md:size={20} className="ml-1.5 md:ml-2" />
-            شروع
+            <Play size={14} className={isRtl ? "ml-1.5 md:ml-2" : "mr-1.5 md:mr-2"} />
+            {isRtl ? "شروع" : "START"}
           </GlowButton>
         </div>
       </motion.header>
@@ -919,14 +940,14 @@ export const LobbyRoomPage = () => {
                   (isMatchStarted || isStarting) && "opacity-50 grayscale cursor-not-allowed"
                 )}
              >
-               {isReady ? <Check size={18} className="ml-2" /> : null}
-               {isReady ? "آماده" : "اعلام آمادگی"}
+               {isReady ? <Check size={18} className={isRtl ? "ml-2" : "mr-2"} /> : null}
+               {isReady ? (isRtl ? "آماده" : "READY") : (isRtl ? "اعلام آمادگی" : "READY UP")}
              </GlowButton>
            </div>
            
            <div className="flex items-center gap-4">
-              <ControlButton icon={isMicMuted ? <MicOff size={20} /> : <Mic size={20} />} active={!isMicMuted} onClick={toggleMic} tooltip="میکروفون" />
-              <ControlButton icon={isDeafened ? <VolumeX size={20} /> : <Volume2 size={20} />} active={!isDeafened} onClick={() => setIsDeafened(!isDeafened)} tooltip="قطع صدای اسپیکر" />
+              <ControlButton icon={isMicMuted ? <MicOff size={20} /> : <Mic size={20} />} active={!isMicMuted} onClick={toggleMic} tooltip={isRtl ? "میکروفون" : "Microphone"} />
+              <ControlButton icon={isDeafened ? <VolumeX size={20} /> : <Volume2 size={20} />} active={!isDeafened} onClick={() => setIsDeafened(!isDeafened)} tooltip={isRtl ? "قطع صدای اسپیکر" : "Deafen Speakers"} />
               {typeof window !== "undefined" && !!(window as any).electronAPI && (
                 <button 
                   onClick={() => {
@@ -938,14 +959,14 @@ export const LobbyRoomPage = () => {
                     screenStream ? "bg-neon-blue/20 text-neon-blue border-neon-blue shadow-[0_0_15px_rgba(0,240,255,0.4)] border shadow-inner" :
                     (isBaseRequirementMet ? "bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white" : "bg-white/5 text-gray-700 opacity-50 cursor-not-allowed")
                   )}
-                  title={!isBaseRequirementMet ? "سرعت اینترنت شما برای اشتراک گذاری با این تعداد بیننده کافی نیست" : screenStream ? "پایان شیر اسکرین" : "اشتراک صفحه نمایش"}
+                  title={!isBaseRequirementMet ? (isRtl ? "سرعت اینترنت شما برای اشتراک گذاری با این تعداد بیننده کافی نیست" : "Your upload speed is not sufficient for screensharing with this many viewers") : screenStream ? (isRtl ? "پایان شیر اسکرین" : "End Screen Share") : (isRtl ? "اشتراک صفحه نمایش" : "Share Screen")}
                 >
                   {screenStream ? <MonitorUp size={20} /> : <Monitor size={20} />}
                   {!isBaseRequirementMet && <AlertTriangle size={10} className="absolute top-2 right-2 text-yellow-500" />}
                 </button>
               )}
-              <ControlButton icon={<UserPlus size={20} />} onClick={() => setIsInviteModalOpen(true)} tooltip="دعوت" />
-              <ControlButton icon={<Settings size={20} />} onClick={() => setIsSettingsModalOpen(true)} tooltip="تنظیمات" />
+              <ControlButton icon={<UserPlus size={20} />} onClick={() => setIsInviteModalOpen(true)} tooltip={isRtl ? "دعوت" : "Invite"} />
+              <ControlButton icon={<Settings size={20} />} onClick={() => setIsSettingsModalOpen(true)} tooltip={isRtl ? "تنظیمات" : "Settings"} />
            </div>
         </div>
 
@@ -956,15 +977,15 @@ export const LobbyRoomPage = () => {
           }}
           className="flex items-center gap-2 px-8 py-3 rounded-2xl text-xs font-black uppercase text-neon-pink hover:bg-neon-pink/10 transition-all border border-transparent hover:border-neon-pink/20"
         >
-          <LogOut size={18} className="ml-2" />
-          خروج از لابی
+          <LogOut size={18} className={isRtl ? "ml-2" : "mr-2"} />
+          {isRtl ? "خروج از لابی" : "LEAVE LOBBY"}
         </button>
       </motion.footer>
 
       {/* MODALS */}
       <AnimatePresence>
         {isInviteModalOpen && (
-          <Modal title="دعوت دوستان" onClose={() => setIsInviteModalOpen(false)}>
+          <Modal title={isRtl ? "دعوت دوستان" : "Invite Friends"} onClose={() => setIsInviteModalOpen(false)}>
             <div className="space-y-4">
                {friends.length > 0 ? friends.map((friend, i) => (
                  <div key={i} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl hover:bg-white/10 transition-colors group">
@@ -984,7 +1005,7 @@ export const LobbyRoomPage = () => {
                     <button 
                       onClick={() => {
                         lobbySocket.emit("invite_player", { lobbyId: lobby?.id, targetUserId: friend.id });
-                        toast.success(`دعوت برای ${friend.username} ارسال شد`);
+                        toast.success(isRtl ? `دعوت برای ${friend.username} ارسال شد` : `Invitation sent to ${friend.username}`);
                       }}
                       className="px-4 py-2 rounded-xl bg-neon-blue text-dark-bg text-[10px] font-black uppercase hover:scale-105 transition-transform"
                     >
@@ -993,7 +1014,7 @@ export const LobbyRoomPage = () => {
                  </div>
                )) : (
                  <div className="text-center py-10 opacity-50">
-                    <p className="text-sm">لیست دوستان خالی است</p>
+                    <p className="text-sm">{isRtl ? "لیست دوستان خالی است" : "Your friends list is empty"}</p>
                  </div>
                )}
             </div>
@@ -1016,7 +1037,7 @@ export const LobbyRoomPage = () => {
         />
 
         {activeProfileUserId && (
-          <Modal title="پروفایل بازیکن" onClose={() => setActiveProfileUserId(null)}>
+          <Modal title={isRtl ? "پروفایل بازیکن" : "Player Profile"} onClose={() => setActiveProfileUserId(null)}>
             <div className="flex flex-col items-center gap-6 py-4">
                <div className="h-32 w-32 rounded-[40px] bg-white/5 border border-white/10 flex items-center justify-center shadow-2xl overflow-hidden">
                   {(() => {
@@ -1618,6 +1639,8 @@ function MatchInfoPanel({ isStarting, isMatchStarted, countdown, players, lobby,
 function DiscordLayoutPlayerCard({ 
   player, volume, isSelected, onSelect, onVolumeChange, onMute, onInvite, onProfile, onDirectMessage, onAddFriend, onKick, onBan, isHostView, isVipLobby, isStreamerLobby
 }) {
+  const { language } = useLanguage();
+  const isRtl = language === "fa";
   const isSlot = player.name === "Empty Slot";
   return (
     <motion.div
@@ -1677,9 +1700,9 @@ function DiscordLayoutPlayerCard({
                   </div>
 
                   <div className="flex items-center justify-center gap-2">
-                     <QuickAction icon={<Users size={14} />} tooltip="پروفایل" onClick={() => onProfile(player.id)} />
-                     <QuickAction icon={<MessageSquare size={14} />} tooltip="پیام" onClick={() => onDirectMessage(player.id)} />
-                     <QuickAction icon={player.isMuted ? <Mic size={14} /> : <MicOff size={14} />} tooltip="صدا" onClick={() => onMute(player.id)} />
+                     <QuickAction icon={<Users size={14} />} tooltip={isRtl ? "پروفایل" : "Profile"} onClick={() => onProfile(player.id)} />
+                     <QuickAction icon={<MessageSquare size={14} />} tooltip={isRtl ? "پیام" : "Message"} onClick={() => onDirectMessage(player.id)} />
+                     <QuickAction icon={player.isMuted ? <Mic size={14} /> : <MicOff size={14} />} tooltip={isRtl ? "صدا" : "Voice"} onClick={() => onMute(player.id)} />
                   </div>
                 </div>
               </div>
@@ -1697,6 +1720,8 @@ function DiscordLayoutPlayerCard({
 function CompactLayoutPlayerCard({ 
   player, volume, isSelected, onSelect, onVolumeChange, onMute, onInvite, onProfile, onDirectMessage, onAddFriend, onKick, onBan, isHostView, isVipLobby, isStreamerLobby
 }) {
+  const { language } = useLanguage();
+  const isRtl = language === "fa";
   const isSlot = player.name === "Empty Slot";
   return (
     <motion.div
@@ -1747,9 +1772,9 @@ function CompactLayoutPlayerCard({
                   />
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
-                   <QuickAction icon={<Users size={14} />} tooltip="پروفایل" onClick={() => onProfile(player.id)} />
-                   <QuickAction icon={<MessageSquare size={14} />} tooltip="پیام" onClick={() => onDirectMessage(player.id)} />
-                   <QuickAction icon={player.isMuted ? <Mic size={14} /> : <MicOff size={14} />} tooltip="صدا" onClick={() => onMute(player.id)} />
+                   <QuickAction icon={<Users size={14} />} tooltip={isRtl ? "پروفایل" : "Profile"} onClick={() => onProfile(player.id)} />
+                   <QuickAction icon={<MessageSquare size={14} />} tooltip={isRtl ? "پیام" : "Message"} onClick={() => onDirectMessage(player.id)} />
+                   <QuickAction icon={player.isMuted ? <Mic size={14} /> : <MicOff size={14} />} tooltip={isRtl ? "صدا" : "Voice"} onClick={() => onMute(player.id)} />
                 </div>
              </div>
           )}
@@ -1991,12 +2016,12 @@ const PlayerCard: React.FC<{
              </div>
 
              <div className="bg-black/60 backdrop-blur-md rounded-2xl border border-white/10 p-1 flex items-center justify-between shadow-xl" onClick={(e) => e.stopPropagation()}>
-                <QuickAction icon={<Users size={14} />} tooltip="پروفایل" onClick={() => onProfile(player.id)} />
-                <QuickAction icon={<MessageSquare size={14} />} tooltip="پیام" onClick={() => onDirectMessage(player.id)} />
-                <QuickAction icon={<UserPlus size={14} />} tooltip="افزودن" onClick={() => onAddFriend(player.id)} />
+                <QuickAction icon={<Users size={14} />} tooltip={isRtl ? "پروفایل" : "Profile"} onClick={() => onProfile(player.id)} />
+                <QuickAction icon={<MessageSquare size={14} />} tooltip={isRtl ? "پیام" : "Message"} onClick={() => onDirectMessage(player.id)} />
+                <QuickAction icon={<UserPlus size={14} />} tooltip={isRtl ? "افزودن" : "Add Friend"} onClick={() => onAddFriend(player.id)} />
                 <QuickAction 
                   icon={player.isMuted ? <Mic size={14} /> : <MicOff size={14} />} 
-                  tooltip={player.isMuted ? "آن‌میوت" : "میوت"} 
+                  tooltip={player.isMuted ? (isRtl ? "آن‌میوت" : "Unmute") : (isRtl ? "میوت" : "Mute")} 
                   onClick={() => onMute(player.id)}
                   color={player.isMuted ? "blue" : "pink"}
                 />
@@ -2004,13 +2029,13 @@ const PlayerCard: React.FC<{
                   <>
                     <QuickAction 
                       icon={<ShieldAlert size={14} />} 
-                      tooltip="اخراج" 
+                      tooltip={isRtl ? "اخراج" : "Kick"} 
                       onClick={() => onKick?.(player.id)}
                       color="pink"
                     />
                     <QuickAction 
                       icon={<Gavel size={14} />} 
-                      tooltip="مسدود سازی" 
+                      tooltip={isRtl ? "مسدود سازی" : "Ban"} 
                       onClick={() => onBan?.(player.id)}
                       color="pink"
                     />
