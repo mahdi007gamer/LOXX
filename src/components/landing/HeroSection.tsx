@@ -46,9 +46,7 @@ export const HeroSection = () => {
  alt="LOXX Logo" 
  className="relative z-10 w-full max-w-[300px] md:max-w-[500px] drop-shadow-[0_0_50px_rgba(0,229,255,0.4)] mb-4"
  />
- <h1 className="text-7xl font-black leading-[1.1] text-white sm:text-8xl md:text-9xl lg:text-[11rem] hidden">
- <span className="block drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)]">LOXX</span>
- </h1>
+ <h1 className="sr-only">LOXX | لوکس / لاکس | پلتفرم هوشمند LOXX اولین پلتفرم پیشرفته فارسی | پلتفرم گیمینگ فارسی | پیام‌رسان گیمینگ فارسی | پیام رسانه گیمر ها | شبکه اجتماعی گیمر ایرانی | پلتفرم آنلاین لوکس | سامانه LOXX | خدمات LOXX | ثبت‌نام LOXX | ورود به LOXX</h1>
  </motion.div>
  
  <div className="relative mx-auto mb-12 max-w-2xl px-4 py-6">
