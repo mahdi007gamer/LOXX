@@ -11,569 +11,569 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 
 interface CreateLobbyModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSuccess: () => void;
+ isOpen: boolean;
+ onClose: () => void;
+ onSuccess: () => void;
 }
 
 export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModalProps) => {
-  const { allGames: games } = useGames();
-  const { user } = useAuth();
-  const navigate = useNavigate();
-  const { language } = useLanguage();
-  const isRtl = language === "fa";
-  const isElectron = typeof window !== "undefined" && !!(window as any).electronAPI;
+ const { allGames: games } = useGames();
+ const { user } = useAuth();
+ const navigate = useNavigate();
+ const { language } = useLanguage();
+ const isRtl = language === "fa";
+ const isElectron = typeof window !== "undefined" && !!(window as any).electronAPI;
 
-  const displaySkillLevel = (lvl: string) => {
-    if (isRtl) return lvl;
-    if (lvl === "مبتدی") return "Beginner";
-    if (lvl === "متوسط") return "Medium";
-    if (lvl === "حرفه‌ای") return "Pro";
-    if (lvl === "بدون محدودیت") return "No Limit";
-    return lvl;
-  };
+ const displaySkillLevel = (lvl: string) => {
+ if (isRtl) return lvl;
+ if (lvl === "مبتدی") return "Beginner";
+ if (lvl === "متوسط") return "Medium";
+ if (lvl === "حرفه‌ای") return "Pro";
+ if (lvl === "بدون محدودیت") return "No Limit";
+ return lvl;
+ };
 
-  const [loading, setLoading] = useState(false);
-  const [step, setStep] = useState(1);
-  const [selectedGameData, setSelectedGameData] = useState<any>(null);
-  
-  const [formData, setFormData] = useState({
-    title: "",
-    gameId: "",
-    maxPlayers: 5,
-    micRequired: false,
-    isPrivate: false,
-    isLanMode: false,
-    discordRequired: false,
-    ageRestricted: false,
-    autoClose: true,
-    autoArchive: true,
-    skillLevel: "متوسط",
-    region: "Europe",
-    description: "",
-    metadata: {} as Record<string, any>
-  });
+ const [loading, setLoading] = useState(false);
+ const [step, setStep] = useState(1);
+ const [selectedGameData, setSelectedGameData] = useState<any>(null);
+ 
+ const [formData, setFormData] = useState({
+ title: "",
+ gameId: "",
+ maxPlayers: 5,
+ micRequired: false,
+ isPrivate: false,
+ isLanMode: false,
+ discordRequired: false,
+ ageRestricted: false,
+ autoClose: true,
+ autoArchive: true,
+ skillLevel: "متوسط",
+ region: "Europe",
+ description: "",
+ metadata: {} as Record<string, any>
+ });
 
-  // Initialize with games
-  useEffect(() => {
-    if (games && games.length > 0 && !formData.gameId) {
-      handleGameChange(games[0].id);
-    }
-  }, [games]);
+ // Initialize with games
+ useEffect(() => {
+ if (games && games.length > 0 && !formData.gameId) {
+ handleGameChange(games[0].id);
+ }
+ }, [games]);
 
-  const handleGameChange = (gameId: string) => {
-    const game = games?.find(g => g.id === gameId);
-    if (!game) return;
-    
-    setSelectedGameData(game);
-    
-    // Set safe default features
-    const defaultMeta: Record<string, any> = {};
-    if (game.metadata?.features) {
-       game.metadata.features.forEach((feat: any) => {
-         if (feat.options && feat.options.length > 0) {
-           defaultMeta[feat.name] = feat.options[0];
-         }
-       });
-    }
+ const handleGameChange = (gameId: string) => {
+ const game = games?.find(g => g.id === gameId);
+ if (!game) return;
+ 
+ setSelectedGameData(game);
+ 
+ // Set safe default features
+ const defaultMeta: Record<string, any> = {};
+ if (game.metadata?.features) {
+ game.metadata.features.forEach((feat: any) => {
+ if (feat.options && feat.options.length > 0) {
+ defaultMeta[feat.name] = feat.options[0];
+ }
+ });
+ }
 
-    setFormData(prev => ({
-       ...prev, 
-       gameId,
-       maxPlayers: game.metadata?.maxPlayers || 5,
-       metadata: defaultMeta
-    }));
-  };
+ setFormData(prev => ({
+ ...prev, 
+ gameId,
+ maxPlayers: game.metadata?.maxPlayers || 5,
+ metadata: defaultMeta
+ }));
+ };
 
-  const handleSubmit = async () => {
-    if (!formData.title.trim()) {
-      toast.error(isRtl ? "لطفاً برای لابی خود یک عنوان وارد کنید" : "Please enter a title for your lobby");
-      return;
-    }
-    
-    setLoading(true);
-    try {
-      const payload = {
-        title: formData.title,
-        gameId: formData.gameId,
-        maxPlayers: formData.maxPlayers,
-        micRequired: formData.micRequired,
-        isPrivate: formData.isPrivate,
-        isLanMode: formData.isLanMode,
-        skillLevel: formData.skillLevel,
-        region: formData.region,
-        description: formData.description,
-        metadata: JSON.stringify({
-          ...formData.metadata,
-          discordRequired: formData.discordRequired,
-          ageRestricted: formData.ageRestricted,
-          autoClose: formData.autoClose,
-          autoArchive: formData.autoArchive
-        })
-      };
-      const response = await api.post("/lobbies", payload);
-      if (response.data.status === "success") {
-        toast.success(isRtl ? "لابی با موفقیت ساخته شد" : "Lobby created successfully");
-        onSuccess();
-        onClose();
-        navigate(`/lobby/${response.data.data.id}`);
-      }
-    } catch (error: any) {
-      const serverErrMsg = error.response?.data?.error?.message;
-      toast.error(serverErrMsg || (isRtl ? "خطا در ساخت لابی" : "Error creating lobby"));
-    } finally {
-      setLoading(false);
-    }
-  };
+ const handleSubmit = async () => {
+ if (!formData.title.trim()) {
+ toast.error(isRtl ? "لطفاً برای لابی خود یک عنوان وارد کنید" : "Please enter a title for your lobby");
+ return;
+ }
+ 
+ setLoading(true);
+ try {
+ const payload = {
+ title: formData.title,
+ gameId: formData.gameId,
+ maxPlayers: formData.maxPlayers,
+ micRequired: formData.micRequired,
+ isPrivate: formData.isPrivate,
+ isLanMode: formData.isLanMode,
+ skillLevel: formData.skillLevel,
+ region: formData.region,
+ description: formData.description,
+ metadata: JSON.stringify({
+ ...formData.metadata,
+ discordRequired: formData.discordRequired,
+ ageRestricted: formData.ageRestricted,
+ autoClose: formData.autoClose,
+ autoArchive: formData.autoArchive
+ })
+ };
+ const response = await api.post("/lobbies", payload);
+ if (response.data.status === "success") {
+ toast.success(isRtl ? "لابی با موفقیت ساخته شد" : "Lobby created successfully");
+ onSuccess();
+ onClose();
+ navigate(`/lobby/${response.data.data.id}`);
+ }
+ } catch (error: any) {
+ const serverErrMsg = error.response?.data?.error?.message;
+ toast.error(serverErrMsg || (isRtl ? "خطا در ساخت لابی" : "Error creating lobby"));
+ } finally {
+ setLoading(false);
+ }
+ };
 
-  const handleAI = async () => {
-     if (!formData.title && !selectedGameData?.title) return;
-     toast.success(isRtl ? "توضیحات توسط هوش مصنوعی ایجاد شد" : "Description generated by AI");
-     setFormData(p => ({
-       ...p, 
-       description: isRtl 
-         ? `به لابی من برای بازی ${selectedGameData?.title || 'دوستانه'} خوش آمدید! لطفاً با احترام برخورد کنید و از بازی لذت ببرید.`
-         : `Welcome to my lobby for ${selectedGameData?.title || 'friendly play'}! Please be respectful and let's have fun playing.`
-     }));
-  };
+ const handleAI = async () => {
+ if (!formData.title && !selectedGameData?.title) return;
+ toast.success(isRtl ? "توضیحات توسط هوش مصنوعی ایجاد شد" : "Description generated by AI");
+ setFormData(p => ({
+ ...p, 
+ description: isRtl 
+ ? `به لابی من برای بازی ${selectedGameData?.title || 'دوستانه'} خوش آمدید! لطفاً با احترام برخورد کنید و از بازی لذت ببرید.`
+ : `Welcome to my lobby for ${selectedGameData?.title || 'friendly play'}! Please be respectful and let's have fun playing.`
+ }));
+ };
 
-  if (!isOpen) return null;
+ if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 z-[500] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md shadow-2xl" dir={isRtl ? "rtl" : "ltr"}>
-      <motion.div 
-        initial={{ opacity: 0, y: 20, scale: 0.95 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        className="bg-[#0b0c10] border border-white/5 rounded-3xl w-full max-w-[1000px] overflow-hidden shadow-2xl flex max-h-[calc(100vh-2rem)] md:h-auto md:max-h-[90vh] md:flex-row flex-col relative"
-      >
-        {/* Left Panel: Live Preview (Hidden on Mobile) */}
-        <div className={`hidden lg:flex w-[350px] bg-[#111216] p-6 flex-col shrink-0 relative overflow-y-auto ${isRtl ? "border-l border-white/5" : "border-r border-white/5"}`}>
-          <div className="flex items-center gap-2 mb-6">
-            <span className="h-2 w-2 rounded-full bg-neon-blue animate-pulse" />
-            <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Live Preview</span>
-          </div>
-          
-          <div className="flex-1 flex flex-col justify-center">
-            {/* Live Card Preview */}
-            <div className="w-full rounded-3xl overflow-hidden bg-dark-card border border-white/5 relative shadow-xl">
-               {/* Background Cover */}
-               <div className="h-24 w-full relative">
-                 {formData.isPrivate && (
-                   <div className="absolute inset-0 z-10 bg-black/50 backdrop-blur-[1px] flex items-center justify-center transition-all">
-                       <div className="flex flex-col items-center gap-2 text-white/50">
-                         <Lock size={16} />
-                         <span className="text-[8px] font-black uppercase tracking-[0.2em]">PRIVATE LOBBY</span>
-                       </div>
-                   </div>
-                 )}
-                 <img src={selectedGameData?.bannerUrl || "https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&q=80&w=2070"} className="h-full w-full object-cover opacity-50" />
-                 <div className="absolute inset-0 bg-gradient-to-t from-[#16181c] to-transparent z-0" />
-                 <div className="absolute top-3 left-3 bg-neon-blue/20 text-neon-blue border border-neon-blue/30 px-3 py-1 rounded-full text-[10px] font-black flex items-center gap-1 z-20">
-                   <Sparkles size={12} /> {isRtl ? "جدید" : "New"}
-                 </div>
-               </div>
-               
-               {/* Content */}
-               <div className="p-5 pt-0 relative z-10 flex flex-col items-center text-center -mt-8">
-                 {/* App Icon */}
-                 <div className="h-16 w-16 rounded-2xl bg-black border border-white/10 overflow-hidden shadow-lg p-1 mb-3">
-                   <img src={selectedGameData?.iconUrl || ""} className="w-full h-full object-cover rounded-xl" />
-                 </div>
-                 
-                 <div className="text-[10px] font-bold text-gray-400 flex items-center justify-center gap-1 mb-1">
-                   <AlertCircle size={12}/> {isRtl ? "همین حالا" : "Right Now"}
-                 </div>
-                 
-                 <h3 className="font-black text-xl text-white mt-2 mb-1">
-                   {formData.title || (isRtl ? "عنوان لابی شما" : "Your Lobby Title")}
-                 </h3>
-                 <div className="text-neon-blue text-xs font-black uppercase mb-4 px-3 py-1 bg-neon-blue/10 rounded-full border border-neon-blue/20">
-                   {selectedGameData?.title || (isRtl ? "انتخاب بازی" : "Select Game")}
-                 </div>
+ return (
+ <div className="fixed inset-0 z-[500] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md shadow-2xl" dir={isRtl ? "rtl" : "ltr"}>
+ <motion.div 
+ initial={{ opacity: 0, y: 20, scale: 0.95 }}
+ animate={{ opacity: 1, y: 0, scale: 1 }}
+ className="bg-[#0b0c10] border border-white/5 rounded-3xl w-full max-w-[1000px] overflow-hidden shadow-2xl flex max-h-[calc(100vh-2rem)] md:h-auto md:max-h-[90vh] md:flex-row flex-col relative"
+ >
+ {/* Left Panel: Live Preview (Hidden on Mobile) */}
+ <div className={`hidden lg:flex w-[350px] bg-[#111216] p-6 flex-col shrink-0 relative overflow-y-auto ${isRtl ? "border-l border-white/5" : "border-r border-white/5"}`}>
+ <div className="flex items-center gap-2 mb-6">
+ <span className="h-2 w-2 rounded-full bg-neon-blue animate-pulse" />
+ <span className="text-[10px] font-black text-gray-500 uppercase ">Live Preview</span>
+ </div>
+ 
+ <div className="flex-1 flex flex-col justify-center">
+ {/* Live Card Preview */}
+ <div className="w-full rounded-3xl overflow-hidden bg-dark-card border border-white/5 relative shadow-xl">
+ {/* Background Cover */}
+ <div className="h-24 w-full relative">
+ {formData.isPrivate && (
+ <div className="absolute inset-0 z-10 bg-black/50 backdrop-blur-[1px] flex items-center justify-center transition-all">
+ <div className="flex flex-col items-center gap-2 text-white/50">
+ <Lock size={16} />
+ <span className="text-[8px] font-black uppercase tracking-[0.2em]">PRIVATE LOBBY</span>
+ </div>
+ </div>
+ )}
+ <img src={selectedGameData?.bannerUrl || "https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&q=80&w=2070"} className="h-full w-full object-cover opacity-50" />
+ <div className="absolute inset-0 bg-gradient-to-t from-[#16181c] to-transparent z-0" />
+ <div className="absolute top-3 left-3 bg-neon-blue/20 text-neon-blue border border-neon-blue/30 px-3 py-1 rounded-full text-[10px] font-black flex items-center gap-1 z-20">
+ <Sparkles size={12} /> {isRtl ? "جدید" : "New"}
+ </div>
+ </div>
+ 
+ {/* Content */}
+ <div className="p-5 pt-0 relative z-10 flex flex-col items-center text-center -mt-8">
+ {/* App Icon */}
+ <div className="h-16 w-16 rounded-2xl bg-black border border-white/10 overflow-hidden shadow-lg p-1 mb-3">
+ <img src={selectedGameData?.iconUrl || ""} className="w-full h-full object-cover rounded-xl" />
+ </div>
+ 
+ <div className="text-[10px] font-bold text-gray-400 flex items-center justify-center gap-1 mb-1">
+ <AlertCircle size={12}/> {isRtl ? "همین حالا" : "Right Now"}
+ </div>
+ 
+ <h3 className="font-black text-xl text-white mt-2 mb-1">
+ {formData.title || (isRtl ? "عنوان لابی شما" : "Your Lobby Title")}
+ </h3>
+ <div className="text-neon-blue text-xs font-black uppercase mb-4 px-3 py-1 bg-neon-blue/10 rounded-full border border-neon-blue/20">
+ {selectedGameData?.title || (isRtl ? "انتخاب بازی" : "Select Game")}
+ </div>
 
-                 {/* Tags */}
-                 <div className={`flex flex-wrap items-center justify-center gap-2 mb-6 w-full ${isRtl ? "text-right" : "text-left"}`} dir={isRtl ? "rtl" : "ltr"}>
-                   {formData.region && <span className="px-2 py-1 flex items-center gap-1 rounded-lg bg-white/5 border border-white/10 text-[10px] font-bold text-gray-300"><Globe size={10} className="text-neon-pink" /> {formData.region}</span>}
-                   {formData.isPrivate && (
-                      <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-neon-purple/10 border border-neon-purple/20 text-[10px] font-black text-neon-purple">
-                        <Lock size={10} /> {isRtl ? "خصوصی" : "Private"}
-                      </div>
-                   )}
-                   {formData.micRequired && (
-                      <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-neon-blue/10 border border-neon-blue/20 text-[10px] font-black text-neon-blue">
-                        <Mic size={10} /> {isRtl ? "میکروفون" : "Mic"}
-                      </div>
-                   )}
-                   {formData.discordRequired && (
-                      <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-[#5865F2]/10 border border-[#5865F2]/20 text-[10px] font-black text-[#5865F2]">
-                        <svg width="10" height="10" viewBox="0 0 127.14 96.36" fill="currentColor"><path d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.7,77.7,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1A105.25,105.25,0,0,0,126.6,80.22h0C129.24,52.84,122.09,29.11,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53s5-12.74,11.43-12.74S54,46,53.89,53,48.84,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.31,60,73.31,53s5-12.74,11.43-12.74S96.2,46,96.1,53,91.08,65.69,84.69,65.69Z"/></svg>
-                        {isRtl ? "دیسکورد" : "Discord"}
-                      </div>
-                   )}
-                   {formData.ageRestricted && (
-                      <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-red-500/10 border border-red-500/20 text-[10px] font-black text-red-500">
-                        +18
-                      </div>
-                   )}
-                   {Object.entries(formData.metadata).filter(([k]) => !['discordRequired', 'ageRestricted', 'autoClose', 'autoArchive'].includes(k)).slice(0, 2).map(([key, val]) => (
-                     <span key={key} className="px-2 py-1 rounded-lg bg-white/5 border border-white/10 text-[10px] font-bold text-gray-300">
-                       {val as string}
-                     </span>
-                   ))}
-                 </div>
+ {/* Tags */}
+ <div className={`flex flex-wrap items-center justify-center gap-2 mb-6 w-full ${isRtl ? "text-right" : "text-left"}`} dir={isRtl ? "rtl" : "ltr"}>
+ {formData.region && <span className="px-2 py-1 flex items-center gap-1 rounded-lg bg-white/5 border border-white/10 text-[10px] font-bold text-gray-300"><Globe size={10} className="text-neon-pink" /> {formData.region}</span>}
+ {formData.isPrivate && (
+ <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-neon-purple/10 border border-neon-purple/20 text-[10px] font-black text-neon-purple">
+ <Lock size={10} /> {isRtl ? "خصوصی" : "Private"}
+ </div>
+ )}
+ {formData.micRequired && (
+ <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-neon-blue/10 border border-neon-blue/20 text-[10px] font-black text-neon-blue">
+ <Mic size={10} /> {isRtl ? "میکروفون" : "Mic"}
+ </div>
+ )}
+ {formData.discordRequired && (
+ <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-[#5865F2]/10 border border-[#5865F2]/20 text-[10px] font-black text-[#5865F2]">
+ <svg width="10" height="10" viewBox="0 0 127.14 96.36" fill="currentColor"><path d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.7,77.7,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1A105.25,105.25,0,0,0,126.6,80.22h0C129.24,52.84,122.09,29.11,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53s5-12.74,11.43-12.74S54,46,53.89,53,48.84,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.31,60,73.31,53s5-12.74,11.43-12.74S96.2,46,96.1,53,91.08,65.69,84.69,65.69Z"/></svg>
+ {isRtl ? "دیسکورد" : "Discord"}
+ </div>
+ )}
+ {formData.ageRestricted && (
+ <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-red-500/10 border border-red-500/20 text-[10px] font-black text-red-500">
+ +18
+ </div>
+ )}
+ {Object.entries(formData.metadata).filter(([k]) => !['discordRequired', 'ageRestricted', 'autoClose', 'autoArchive'].includes(k)).slice(0, 2).map(([key, val]) => (
+ <span key={key} className="px-2 py-1 rounded-lg bg-white/5 border border-white/10 text-[10px] font-bold text-gray-300">
+ {val as string}
+ </span>
+ ))}
+ </div>
 
-                 {/* Stats */}
-                 <div className="flex items-center justify-between w-full p-3 bg-black/40 rounded-xl border border-white/5 mb-4">
-                   <div className="flex items-center gap-2 text-neon-blue font-bold text-xs">
-                     <Users size={14} /> 1 / {formData.maxPlayers}
-                   </div>
-                   <div className="flex items-center gap-1.5 text-xs font-bold text-green-400">
-                     {isRtl ? "سطح مهارت" : "Skill"}: {displaySkillLevel(formData.skillLevel)}
-                   </div>
-                 </div>
+ {/* Stats */}
+ <div className="flex items-center justify-between w-full p-3 bg-black/40 rounded-xl border border-white/5 mb-4">
+ <div className="flex items-center gap-2 text-neon-blue font-bold text-xs">
+ <Users size={14} /> 1 / {formData.maxPlayers}
+ </div>
+ <div className="flex items-center gap-1.5 text-xs font-bold text-green-400">
+ {isRtl ? "سطح مهارت" : "Skill"}: {displaySkillLevel(formData.skillLevel)}
+ </div>
+ </div>
 
-                 {/* Host Info */}
-                 <div className="flex items-center justify-between w-full border-t border-white/5 pt-4">
-                   <GlowButton size="sm" className="w-[100px] text-[10px]" disabled>JOIN NOW</GlowButton>
-                   <div className="flex items-center gap-2 text-xs font-black text-gray-400">
-                    {isRtl ? "عضویت: من" : "Joined: Me"} <SmartImage src={user?.profile?.avatarUrl || ""} className="h-6 w-6 rounded-full border border-white/20 inline-block align-middle mx-1" />
-                   </div>
-                 </div>
-               </div>
-            </div>
-          </div>
-        </div>
+ {/* Host Info */}
+ <div className="flex items-center justify-between w-full border-t border-white/5 pt-4">
+ <GlowButton size="sm" className="w-[100px] text-[10px]" disabled>JOIN NOW</GlowButton>
+ <div className="flex items-center gap-2 text-xs font-black text-gray-400">
+ {isRtl ? "عضویت: من" : "Joined: Me"} <SmartImage src={user?.profile?.avatarUrl || ""} className="h-6 w-6 rounded-full border border-white/20 inline-block align-middle mx-1" />
+ </div>
+ </div>
+ </div>
+ </div>
+ </div>
+ </div>
 
-        {/* Right Panel: Content */}
-        <div className="flex-1 flex flex-col h-full min-h-0 md:max-h-[90vh] overflow-hidden relative">
-          <button onClick={onClose} className={`absolute ${isRtl ? "left-4 md:left-6" : "right-4 md:right-6"} top-4 md:top-6 h-8 w-8 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:text-white transition-all hover:bg-white/10 z-50`}>
-            <X size={16} />
-          </button>
+ {/* Right Panel: Content */}
+ <div className="flex-1 flex flex-col h-full min-h-0 md:max-h-[90vh] overflow-hidden relative">
+ <button onClick={onClose} className={`absolute ${isRtl ? "left-4 md:left-6" : "right-4 md:right-6"} top-4 md:top-6 h-8 w-8 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:text-white transition-all hover:bg-white/10 z-50`}>
+ <X size={16} />
+ </button>
 
-          <div className={`flex items-center justify-between p-6 md:p-8 pb-4 ${isRtl ? "text-right" : "text-left"}`}>
-            <div>
-              <h2 className="text-2xl md:text-3xl font-black text-white tracking-tighter">
-                {isRtl ? "ایجاد لابی حرفه‌ای" : "Create Pro Lobby"}
-              </h2>
-              <p className="text-gray-500 text-[11px] md:text-sm mt-1 font-bold">
-                {isRtl ? "تیم رویایی خود را پیدا کنید" : "Find your dream team"}
-              </p>
-            </div>
-            
-            {/* Step Indicators */}
-            <div className="flex items-center gap-2 mt-4" dir="ltr">
-               {[1, 2, 3].map(s => (
-                 <div key={s} className={`h-1.5 rounded-full transition-all duration-300 ${step === s ? "w-6 md:w-8 bg-neon-blue shadow-[0_0_10px_rgba(0,229,255,0.5)]" : step > s ? "w-2.5 md:w-3 bg-neon-blue/50" : "w-2.5 md:w-3 bg-white/10"}`} />
-               ))}
-            </div>
-          </div>
+ <div className={`flex items-center justify-between p-6 md:p-8 pb-4 ${isRtl ? "text-right" : "text-left"}`}>
+ <div>
+ <h2 className="text-2xl md:text-3xl font-black text-white ">
+ {isRtl ? "ایجاد لابی حرفه‌ای" : "Create Pro Lobby"}
+ </h2>
+ <p className="text-gray-500 text-[11px] md:text-sm mt-1 font-bold">
+ {isRtl ? "تیم رویایی خود را پیدا کنید" : "Find your dream team"}
+ </p>
+ </div>
+ 
+ {/* Step Indicators */}
+ <div className="flex items-center gap-2 mt-4" dir="ltr">
+ {[1, 2, 3].map(s => (
+ <div key={s} className={`h-1.5 rounded-full transition-all duration-300 ${step === s ? "w-6 md:w-8 bg-neon-blue shadow-[0_0_10px_rgba(0,229,255,0.5)]" : step > s ? "w-2.5 md:w-3 bg-neon-blue/50" : "w-2.5 md:w-3 bg-white/10"}`} />
+ ))}
+ </div>
+ </div>
 
-          <div className="flex-1 min-h-0 overflow-y-auto p-6 md:p-8 pt-4 custom-scrollbar">
-            <AnimatePresence mode="wait">
-              {step === 1 && (
-                <motion.div key="step1" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className={isRtl ? "text-right" : "text-left"}>
-                      <label className={`text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2`}>
-                        {isRtl ? "انتخاب بازی" : "Select Game"}
-                      </label>
-                      <select 
-                        className="w-full bg-[#16181c] border border-white/5 rounded-xl px-4 py-3 outline-none focus:border-neon-blue transition-all text-white font-bold text-sm appearance-none cursor-pointer"
-                        value={formData.gameId}
-                        onChange={e => handleGameChange(e.target.value)}
-                      >
-                        {games?.map(game => (
-                          <option key={game.id} value={game.id} className="bg-dark-card">{game.title}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className={isRtl ? "text-right" : "text-left"}>
-                      <label className={`text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2`}>
-                        {isRtl ? "عنوان لابی" : "Lobby Title"}
-                      </label>
-                      <input 
-                        type="text" 
-                        placeholder={isRtl ? "مثال: رنک‌آپ سریع" : "e.g., Fast Rank-up"}
-                        className="w-full bg-[#16181c] border border-white/5 rounded-xl px-4 py-3 outline-none focus:border-neon-blue transition-all text-white font-bold text-sm"
-                        value={formData.title}
-                        onChange={e => setFormData({...formData, title: e.target.value})}
-                      />
-                    </div>
-                  </div>
+ <div className="flex-1 min-h-0 overflow-y-auto p-6 md:p-8 pt-4 custom-scrollbar">
+ <AnimatePresence mode="wait">
+ {step === 1 && (
+ <motion.div key="step1" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="space-y-6">
+ <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+ <div className={isRtl ? "text-right" : "text-left"}>
+ <label className={`text-[10px] font-black text-gray-500 uppercase block mb-2`}>
+ {isRtl ? "انتخاب بازی" : "Select Game"}
+ </label>
+ <select 
+ className="w-full bg-[#16181c] border border-white/5 rounded-xl px-4 py-3 outline-none focus:border-neon-blue transition-all text-white font-bold text-sm appearance-none cursor-pointer"
+ value={formData.gameId}
+ onChange={e => handleGameChange(e.target.value)}
+ >
+ {games?.map(game => (
+ <option key={game.id} value={game.id} className="bg-dark-card">{game.title}</option>
+ ))}
+ </select>
+ </div>
+ <div className={isRtl ? "text-right" : "text-left"}>
+ <label className={`text-[10px] font-black text-gray-500 uppercase block mb-2`}>
+ {isRtl ? "عنوان لابی" : "Lobby Title"}
+ </label>
+ <input 
+ type="text" 
+ placeholder={isRtl ? "مثال: رنک‌آپ سریع" : "e.g., Fast Rank-up"}
+ className="w-full bg-[#16181c] border border-white/5 rounded-xl px-4 py-3 outline-none focus:border-neon-blue transition-all text-white font-bold text-sm"
+ value={formData.title}
+ onChange={e => setFormData({...formData, title: e.target.value})}
+ />
+ </div>
+ </div>
 
-                  {/* Rendering Dynamic Features */}
-                  {selectedGameData?.metadata?.features?.map((feature: any) => {
-                    const featName = feature.name.toLowerCase();
-                    const isMode = featName.includes('mode') || featName.includes('حالت');
-                    const isMap = featName.includes('map') || featName.includes('نقشه');
-                    const isSide = featName.includes('side') || featName.includes('تیم');
-                    const isLevel = featName.includes('level') || featName.includes('سطح');
+ {/* Rendering Dynamic Features */}
+ {selectedGameData?.metadata?.features?.map((feature: any) => {
+ const featName = feature.name.toLowerCase();
+ const isMode = featName.includes('mode') || featName.includes('حالت');
+ const isMap = featName.includes('map') || featName.includes('نقشه');
+ const isSide = featName.includes('side') || featName.includes('تیم');
+ const isLevel = featName.includes('level') || featName.includes('سطح');
 
-                    let Icon: any = Settings2;
-                    let iconColor = "text-gray-600";
-                    
-                    if (isMode) { Icon = Gamepad; iconColor = "text-neon-blue"; }
-                    else if (isMap) { Icon = MapIcon; iconColor = "text-neon-pink"; }
-                    else if (isSide) { Icon = Users; iconColor = "text-yellow-400"; }
-                    else if (isLevel) { Icon = Sparkles; iconColor = "text-green-400"; }
+ let Icon: any = Settings2;
+ let iconColor = "text-gray-600";
+ 
+ if (isMode) { Icon = Gamepad; iconColor = "text-neon-blue"; }
+ else if (isMap) { Icon = MapIcon; iconColor = "text-neon-pink"; }
+ else if (isSide) { Icon = Users; iconColor = "text-yellow-400"; }
+ else if (isLevel) { Icon = Sparkles; iconColor = "text-green-400"; }
 
-                    return (
-                      <div key={feature.name} className="space-y-3">
-                        <div className={`flex items-center gap-2 mb-2 ${isRtl ? "justify-end" : "justify-start"}`}>
-                           {isRtl ? (
-                             <>
-                               <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">{feature.name}</span>
-                               <Icon size={14} className={iconColor} />
-                             </>
-                           ) : (
-                             <>
-                               <Icon size={14} className={iconColor} />
-                               <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">{feature.name}</span>
-                             </>
-                           )}
-                        </div>
-                        <div className={`flex flex-wrap gap-2 ${isRtl ? "justify-end text-right" : "justify-start text-left"}`}>
-                          {feature.options.map((opt: string) => (
-                            <button
-                              key={opt}
-                              type="button"
-                              onClick={() => {
-                                const newMetadata = { ...formData.metadata, [feature.name]: opt };
-                                setFormData({
-                                   ...formData, 
-                                   metadata: newMetadata
-                                 });
-                              }}
-                              className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all border ${
-                                formData.metadata[feature.name] === opt 
-                                  ? "bg-transparent border-neon-blue text-neon-blue shadow-[inset_0_0_15px_rgba(0,229,255,0.2)]" 
-                                  : "bg-white/5 text-gray-400 hover:bg-white/10 border-transparent"
-                              }`}
-                            >
-                              {opt}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </motion.div>
-              )}
+ return (
+ <div key={feature.name} className="space-y-3">
+ <div className={`flex items-center gap-2 mb-2 ${isRtl ? "justify-end" : "justify-start"}`}>
+ {isRtl ? (
+ <>
+ <span className="text-[10px] font-black text-white/40 uppercase ">{feature.name}</span>
+ <Icon size={14} className={iconColor} />
+ </>
+ ) : (
+ <>
+ <Icon size={14} className={iconColor} />
+ <span className="text-[10px] font-black text-white/40 uppercase ">{feature.name}</span>
+ </>
+ )}
+ </div>
+ <div className={`flex flex-wrap gap-2 ${isRtl ? "justify-end text-right" : "justify-start text-left"}`}>
+ {feature.options.map((opt: string) => (
+ <button
+ key={opt}
+ type="button"
+ onClick={() => {
+ const newMetadata = { ...formData.metadata, [feature.name]: opt };
+ setFormData({
+ ...formData, 
+ metadata: newMetadata
+ });
+ }}
+ className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all border ${
+ formData.metadata[feature.name] === opt 
+ ? "bg-transparent border-neon-blue text-neon-blue shadow-[inset_0_0_15px_rgba(0,229,255,0.2)]" 
+ : "bg-white/5 text-gray-400 hover:bg-white/10 border-transparent"
+ }`}
+ >
+ {opt}
+ </button>
+ ))}
+ </div>
+ </div>
+ );
+ })}
+ </motion.div>
+ )}
 
-              {step === 2 && (
-                <motion.div key="step2" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="space-y-8">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className={isRtl ? "text-right" : "text-left"}>
-                      <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">
-                        {isRtl ? "ظرفیت کل لابی" : "Lobby Max Capacity"}
-                      </label>
-                      <div className="flex items-center gap-2 bg-[#16181c] border border-white/5 rounded-xl px-2 py-1.5 h-[50px]">
-                        <button type="button" onClick={() => setFormData(p => ({...p, maxPlayers: Math.max(2, p.maxPlayers - 1)}))} className="h-full px-4 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-white text-lg font-black"> - </button>
-                        <span className="flex-1 text-center text-white font-black text-lg">{formData.maxPlayers}</span>
-                        <button 
-                          type="button" 
-                          onClick={() => {
-                            const isVIP = user?.membership === "VIP" || (user as any)?.profile?.membershipType === "VIP" || user?.role === "ADMIN";
-                            const isPlus = user?.membership === "PLUS" || (user as any)?.profile?.membershipType === "PLUS";
-                            const limit = isVIP ? 30 : (isPlus ? 15 : 10);
-                            
-                            if (formData.maxPlayers >= limit) {
-                              if (isPlus) {
-                                toast.error(isRtl ? "ظرفیت لابی شما حداکثر ۱۵ نفر است. برای افزایش ظرفیت تا ۳۰ نفر باید اشتراک VIP تهیه کنید." : "Lobby limit is 15 players with PLUS. Upgrade to VIP for up to 30.");
-                              } else if (!isVIP) {
-                                toast.error(isRtl ? "اگه ظرفیت بیشتر بخواید باید اشتراک Plus یا VIP تهییه کنید" : "Upgrading to VIP/PLUS is required for larger lobbies.");
-                              } else {
-                                toast.error(isRtl ? "ظرفیت لابی شما حداکثر ۳۰ نفر است." : "Maximum limit is 30 players.");
-                              }
-                              return;
-                            }
-                            setFormData(p => ({...p, maxPlayers: p.maxPlayers + 1}));
-                          }} 
-                          className="h-full px-4 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-white text-lg font-black"
-                        >
-                          +
-                        </button>
-                      </div>
-                    </div>
-                    <div className={isRtl ? "text-right" : "text-left"}>
-                      <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">
-                        {isRtl ? "سطح مهارت (SKILL)" : "Skill Level (SKILL)"}
-                      </label>
-                      <select 
-                        className="w-full bg-[#16181c] border border-white/5 rounded-xl px-4 py-3 h-[50px] outline-none focus:border-neon-blue transition-all text-white font-bold text-sm appearance-none cursor-pointer"
-                        value={formData.skillLevel}
-                        onChange={e => setFormData({...formData, skillLevel: e.target.value})}
-                      >
-                        <option value="مبتدی" className="bg-dark-card">{isRtl ? "مبتدی" : "Beginner"}</option>
-                        <option value="متوسط" className="bg-dark-card">{isRtl ? "متوسط" : "Medium"}</option>
-                        <option value="حرفه‌ای" className="bg-dark-card">{isRtl ? "حرفه‌ای" : "Pro"}</option>
-                        <option value="بدون محدودیت" className="bg-dark-card">{isRtl ? "بدون محدودیت" : "No Limit"}</option>
-                      </select>
-                    </div>
-                  </div>
+ {step === 2 && (
+ <motion.div key="step2" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="space-y-8">
+ <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+ <div className={isRtl ? "text-right" : "text-left"}>
+ <label className="text-[10px] font-black text-gray-500 uppercase block mb-2">
+ {isRtl ? "ظرفیت کل لابی" : "Lobby Max Capacity"}
+ </label>
+ <div className="flex items-center gap-2 bg-[#16181c] border border-white/5 rounded-xl px-2 py-1.5 h-[50px]">
+ <button type="button" onClick={() => setFormData(p => ({...p, maxPlayers: Math.max(2, p.maxPlayers - 1)}))} className="h-full px-4 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-white text-lg font-black"> - </button>
+ <span className="flex-1 text-center text-white font-black text-lg">{formData.maxPlayers}</span>
+ <button 
+ type="button" 
+ onClick={() => {
+ const isVIP = user?.membership === "VIP" || (user as any)?.profile?.membershipType === "VIP" || user?.role === "ADMIN";
+ const isPlus = user?.membership === "PLUS" || (user as any)?.profile?.membershipType === "PLUS";
+ const limit = isVIP ? 30 : (isPlus ? 15 : 10);
+ 
+ if (formData.maxPlayers >= limit) {
+ if (isPlus) {
+ toast.error(isRtl ? "ظرفیت لابی شما حداکثر ۱۵ نفر است. برای افزایش ظرفیت تا ۳۰ نفر باید اشتراک VIP تهیه کنید." : "Lobby limit is 15 players with PLUS. Upgrade to VIP for up to 30.");
+ } else if (!isVIP) {
+ toast.error(isRtl ? "اگه ظرفیت بیشتر بخواید باید اشتراک Plus یا VIP تهییه کنید" : "Upgrading to VIP/PLUS is required for larger lobbies.");
+ } else {
+ toast.error(isRtl ? "ظرفیت لابی شما حداکثر ۳۰ نفر است." : "Maximum limit is 30 players.");
+ }
+ return;
+ }
+ setFormData(p => ({...p, maxPlayers: p.maxPlayers + 1}));
+ }} 
+ className="h-full px-4 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-white text-lg font-black"
+ >
+ +
+ </button>
+ </div>
+ </div>
+ <div className={isRtl ? "text-right" : "text-left"}>
+ <label className="text-[10px] font-black text-gray-500 uppercase block mb-2">
+ {isRtl ? "سطح مهارت (SKILL)" : "Skill Level (SKILL)"}
+ </label>
+ <select 
+ className="w-full bg-[#16181c] border border-white/5 rounded-xl px-4 py-3 h-[50px] outline-none focus:border-neon-blue transition-all text-white font-bold text-sm appearance-none cursor-pointer"
+ value={formData.skillLevel}
+ onChange={e => setFormData({...formData, skillLevel: e.target.value})}
+ >
+ <option value="مبتدی" className="bg-dark-card">{isRtl ? "مبتدی" : "Beginner"}</option>
+ <option value="متوسط" className="bg-dark-card">{isRtl ? "متوسط" : "Medium"}</option>
+ <option value="حرفه‌ای" className="bg-dark-card">{isRtl ? "حرفه‌ای" : "Pro"}</option>
+ <option value="بدون محدودیت" className="bg-dark-card">{isRtl ? "بدون محدودیت" : "No Limit"}</option>
+ </select>
+ </div>
+ </div>
 
-                  <div className={isRtl ? "text-right" : "text-left"}>
-                     <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-3">
-                       {isRtl ? "ریجن سرور" : "Server Region"}
-                     </label>
-                     <div className={`flex flex-wrap gap-2 ${isRtl ? "justify-end" : "justify-start"}`}>
-                       {["Middle East", "Europe", "Asia", "North America", "Auto"].map(reg => (
-                          <button
-                            key={reg}
-                            type="button"
-                            onClick={() => setFormData({...formData, region: reg})}
-                            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
-                              formData.region === reg 
-                                ? "bg-transparent border border-white/40 text-white" 
-                                : "bg-white/5 text-gray-400 hover:bg-white/10 border border-transparent"
-                            }`}
-                          >
-                            {reg}
-                          </button>
-                       ))}
-                     </div>
-                  </div>
+ <div className={isRtl ? "text-right" : "text-left"}>
+ <label className="text-[10px] font-black text-gray-500 uppercase block mb-3">
+ {isRtl ? "ریجن سرور" : "Server Region"}
+ </label>
+ <div className={`flex flex-wrap gap-2 ${isRtl ? "justify-end" : "justify-start"}`}>
+ {["Middle East", "Europe", "Asia", "North America", "Auto"].map(reg => (
+ <button
+ key={reg}
+ type="button"
+ onClick={() => setFormData({...formData, region: reg})}
+ className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
+ formData.region === reg 
+ ? "bg-transparent border border-white/40 text-white" 
+ : "bg-white/5 text-gray-400 hover:bg-white/10 border border-transparent"
+ }`}
+ >
+ {reg}
+ </button>
+ ))}
+ </div>
+ </div>
 
-                  <div className={isRtl ? "text-right" : "text-left"}>
-                     <div className={`flex items-center justify-between mb-2 ${isRtl ? "flex-row" : "flex-row-reverse"}`}>
-                       <button type="button" onClick={handleAI} className="text-[10px] font-black text-neon-blue uppercase tracking-widest flex items-center gap-1 hover:text-neon-blue/80 transition-colors">
-                          <Sparkles size={12}/> MAGIC AI GENERATE
-                       </button>
-                       <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest block">
-                         {isRtl ? "توضیحات لابی" : "Lobby Description"}
-                       </label>
-                     </div>
-                     <textarea 
-                        rows={4}
-                        placeholder={isRtl ? "پیامی برای هم‌تیمی‌های آینده خود بنویسید..." : "Write a message for your future teammates..."}
-                        className={`w-full bg-[#16181c] border border-white/5 rounded-xl p-4 outline-none focus:border-neon-blue transition-all text-white font-bold text-sm resize-none ${isRtl ? "text-right" : "text-left"}`}
-                        value={formData.description}
-                        onChange={e => setFormData({...formData, description: e.target.value})}
-                     />
-                  </div>
-                </motion.div>
-              )}
+ <div className={isRtl ? "text-right" : "text-left"}>
+ <div className={`flex items-center justify-between mb-2 ${isRtl ? "flex-row" : "flex-row-reverse"}`}>
+ <button type="button" onClick={handleAI} className="text-[10px] font-black text-neon-blue uppercase flex items-center gap-1 hover:text-neon-blue/80 transition-colors">
+ <Sparkles size={12}/> MAGIC AI GENERATE
+ </button>
+ <label className="text-[10px] font-black text-gray-500 uppercase block">
+ {isRtl ? "توضیحات لابی" : "Lobby Description"}
+ </label>
+ </div>
+ <textarea 
+ rows={4}
+ placeholder={isRtl ? "پیامی برای هم‌تیمی‌های آینده خود بنویسید..." : "Write a message for your future teammates..."}
+ className={`w-full bg-[#16181c] border border-white/5 rounded-xl p-4 outline-none focus:border-neon-blue transition-all text-white font-bold text-sm resize-none ${isRtl ? "text-right" : "text-left"}`}
+ value={formData.description}
+ onChange={e => setFormData({...formData, description: e.target.value})}
+ />
+ </div>
+ </motion.div>
+ )}
 
-              {step === 3 && (
-                <motion.div key="step3" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="space-y-6">
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <button type="button" onClick={() => setFormData(p => ({...p, isPrivate: !p.isPrivate}))} className={`border rounded-2xl p-4 flex flex-col items-center justify-center gap-2 transition-all ${formData.isPrivate ? "border-white/20 bg-white/5 text-white" : "border-white/5 bg-[#16181c] text-gray-500 hover:border-white/10"}`}>
-                       <Globe size={20} className={formData.isPrivate ? "text-white" : ""} />
-                       <span className="font-bold text-sm text-white">
-                         {isRtl ? "لابی خصوصی" : "Private Lobby"}
-                       </span>
-                       <span className="text-[10px]">
-                         {isRtl ? "فقط با کد دعوت یا لینک" : "Only with invite code or link"}
-                       </span>
-                    </button>
-                    {isElectron && (
-                      <button type="button" onClick={() => setFormData(p => ({...p, isLanMode: !p.isLanMode}))} className={`border rounded-2xl p-4 flex flex-col items-center justify-center gap-2 transition-all ${formData.isLanMode ? "border-[#00e5ff]/50 bg-[#00e5ff]/10 text-white" : "border-white/5 bg-[#16181c] text-gray-500 hover:border-white/10"}`}>
-                          <Globe size={20} className={formData.isLanMode ? "text-[#00e5ff]" : ""} />
-                          <span className="font-bold text-sm text-white">
-                            {isRtl ? "حالت Lan (آفلاین)" : "Lan Mode (Offline)"}
-                          </span>
-                          <span className="text-[10px]">
-                            {isRtl ? "مستقیم بین بازیکنان" : "Directly between players"}
-                          </span>
-                      </button>
-                    )}
-                    <button type="button" onClick={() => setFormData(p => ({...p, micRequired: !p.micRequired}))} className={`border rounded-2xl p-4 flex flex-col items-center justify-center gap-2 transition-all ${formData.micRequired ? "border-white/20 bg-white/5 text-white" : "border-white/5 bg-[#16181c] text-gray-500 hover:border-white/10"}`}>
-                       <Mic size={20} className={formData.micRequired ? "text-white" : ""} />
-                       <span className="font-bold text-sm text-white">
-                         {isRtl ? "میکروفون اجباری" : "Mic Required"}
-                       </span>
-                       <span className="text-[10px]">
-                         {isRtl ? "ارتباط صوتی در طول بازی" : "Voice communications during game"}
-                       </span>
-                    </button>
-                    <button type="button" onClick={() => setFormData(p => ({...p, discordRequired: !p.discordRequired}))} className={`border rounded-2xl p-4 flex flex-col items-center justify-center gap-2 transition-all ${formData.discordRequired ? "border-white/20 bg-white/5 text-white" : "border-white/5 bg-[#16181c] text-gray-500 hover:border-white/10"}`}>
-                       <svg width="20" height="20" viewBox="0 0 127.14 96.36" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className={formData.discordRequired ? "text-[#5865F2]" : ""}><path d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.7,77.7,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1A105.25,105.25,0,0,0,126.6,80.22h0C129.24,52.84,122.09,29.11,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53s5-12.74,11.43-12.74S54,46,53.89,53,48.84,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.31,60,73.31,53s5-12.74,11.43-12.74S96.2,46,96.1,53,91.08,65.69,84.69,65.69Z"/></svg>
-                       <span className="font-bold text-sm text-white">
-                         {isRtl ? "دیسکورد اجباری" : "Discord Required"}
-                       </span>
-                       <span className="text-[10px]">
-                         {isRtl ? "اتصال به ویس چنل دیسکورد" : "Connect to Discord voice channel"}
-                       </span>
-                    </button>
-                    <button type="button" onClick={() => setFormData(p => ({...p, ageRestricted: !p.ageRestricted}))} className={`border rounded-2xl p-4 flex flex-col items-center justify-center gap-2 transition-all ${formData.ageRestricted ? "border-white/20 bg-white/5 text-red-500" : "border-white/5 bg-[#16181c] text-gray-500 hover:border-white/10"}`}>
-                       <span className={`text-xl font-black ${formData.ageRestricted ? "text-red-500" : ""}`}>+18</span>
-                       <span className={`font-bold text-sm text-white`}>
-                         {isRtl ? "محدودیت سنی" : "Age Restricted"}
-                       </span>
-                       <span className="text-[10px]">
-                         {isRtl ? "فقط بازیکنان بالای 18 سال" : "Only players 18 years or older"}
-                       </span>
-                    </button>
-                  </div>
+ {step === 3 && (
+ <motion.div key="step3" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="space-y-6">
+ 
+ <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+ <button type="button" onClick={() => setFormData(p => ({...p, isPrivate: !p.isPrivate}))} className={`border rounded-2xl p-4 flex flex-col items-center justify-center gap-2 transition-all ${formData.isPrivate ? "border-white/20 bg-white/5 text-white" : "border-white/5 bg-[#16181c] text-gray-500 hover:border-white/10"}`}>
+ <Globe size={20} className={formData.isPrivate ? "text-white" : ""} />
+ <span className="font-bold text-sm text-white">
+ {isRtl ? "لابی خصوصی" : "Private Lobby"}
+ </span>
+ <span className="text-[10px]">
+ {isRtl ? "فقط با کد دعوت یا لینک" : "Only with invite code or link"}
+ </span>
+ </button>
+ {isElectron && (
+ <button type="button" onClick={() => setFormData(p => ({...p, isLanMode: !p.isLanMode}))} className={`border rounded-2xl p-4 flex flex-col items-center justify-center gap-2 transition-all ${formData.isLanMode ? "border-[#00e5ff]/50 bg-[#00e5ff]/10 text-white" : "border-white/5 bg-[#16181c] text-gray-500 hover:border-white/10"}`}>
+ <Globe size={20} className={formData.isLanMode ? "text-[#00e5ff]" : ""} />
+ <span className="font-bold text-sm text-white">
+ {isRtl ? "حالت Lan (آفلاین)" : "Lan Mode (Offline)"}
+ </span>
+ <span className="text-[10px]">
+ {isRtl ? "مستقیم بین بازیکنان" : "Directly between players"}
+ </span>
+ </button>
+ )}
+ <button type="button" onClick={() => setFormData(p => ({...p, micRequired: !p.micRequired}))} className={`border rounded-2xl p-4 flex flex-col items-center justify-center gap-2 transition-all ${formData.micRequired ? "border-white/20 bg-white/5 text-white" : "border-white/5 bg-[#16181c] text-gray-500 hover:border-white/10"}`}>
+ <Mic size={20} className={formData.micRequired ? "text-white" : ""} />
+ <span className="font-bold text-sm text-white">
+ {isRtl ? "میکروفون اجباری" : "Mic Required"}
+ </span>
+ <span className="text-[10px]">
+ {isRtl ? "ارتباط صوتی در طول بازی" : "Voice communications during game"}
+ </span>
+ </button>
+ <button type="button" onClick={() => setFormData(p => ({...p, discordRequired: !p.discordRequired}))} className={`border rounded-2xl p-4 flex flex-col items-center justify-center gap-2 transition-all ${formData.discordRequired ? "border-white/20 bg-white/5 text-white" : "border-white/5 bg-[#16181c] text-gray-500 hover:border-white/10"}`}>
+ <svg width="20" height="20" viewBox="0 0 127.14 96.36" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className={formData.discordRequired ? "text-[#5865F2]" : ""}><path d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.7,77.7,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1A105.25,105.25,0,0,0,126.6,80.22h0C129.24,52.84,122.09,29.11,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53s5-12.74,11.43-12.74S54,46,53.89,53,48.84,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.31,60,73.31,53s5-12.74,11.43-12.74S96.2,46,96.1,53,91.08,65.69,84.69,65.69Z"/></svg>
+ <span className="font-bold text-sm text-white">
+ {isRtl ? "دیسکورد اجباری" : "Discord Required"}
+ </span>
+ <span className="text-[10px]">
+ {isRtl ? "اتصال به ویس چنل دیسکورد" : "Connect to Discord voice channel"}
+ </span>
+ </button>
+ <button type="button" onClick={() => setFormData(p => ({...p, ageRestricted: !p.ageRestricted}))} className={`border rounded-2xl p-4 flex flex-col items-center justify-center gap-2 transition-all ${formData.ageRestricted ? "border-white/20 bg-white/5 text-red-500" : "border-white/5 bg-[#16181c] text-gray-500 hover:border-white/10"}`}>
+ <span className={`text-xl font-black ${formData.ageRestricted ? "text-red-500" : ""}`}>+18</span>
+ <span className={`font-bold text-sm text-white`}>
+ {isRtl ? "محدودیت سنی" : "Age Restricted"}
+ </span>
+ <span className="text-[10px]">
+ {isRtl ? "فقط بازیکنان بالای 18 سال" : "Only players 18 years or older"}
+ </span>
+ </button>
+ </div>
 
-                  <div className="bg-[#16181c] border border-white/5 rounded-2xl p-5 mt-6">
-                    <div className={`flex items-center gap-2 mb-4 ${isRtl ? "justify-end" : "justify-start"}`}>
-                       {isRtl ? (
-                         <>
-                           <span className="text-xs font-bold text-neon-blue">تنظیمات خودکار</span>
-                           <Settings2 size={16} className="text-neon-blue" />
-                         </>
-                       ) : (
-                         <>
-                           <Settings2 size={16} className="text-neon-blue" />
-                           <span className="text-xs font-bold text-neon-blue">Automation Settings</span>
-                         </>
-                       )}
-                    </div>
-                    
-                    <div className={`flex flex-wrap items-center gap-6 text-sm ${isRtl ? "justify-end" : "justify-start"}`}>
-                       <label className={`flex items-center gap-2 cursor-pointer group ${isRtl ? "flex-row" : "flex-row-reverse"}`}>
-                          <span className="text-xs text-gray-400 group-hover:text-white transition-colors">
-                            {isRtl ? "بستن لابی پس از تکمیل ظرفیت" : "Close lobby when full capacity is reached"}
-                          </span>
-                          <div className={`h-5 w-5 rounded flex items-center justify-center transition-all ${formData.autoClose ? 'bg-neon-blue text-dark-bg' : 'bg-white/10 text-transparent'}`}>
-                             <Check size={14} />
-                          </div>
-                          <input type="checkbox" className="hidden" checked={formData.autoClose} onChange={() => setFormData(p => ({...p, autoClose: !p.autoClose}))} />
-                       </label>
-                       
-                       <label className={`flex items-center gap-2 cursor-pointer group ${isRtl ? "flex-row" : "flex-row-reverse"}`}>
-                          <span className="text-xs text-gray-400 group-hover:text-white transition-colors">
-                            {isRtl ? "آرشیو خودکار پس از ۱ ساعت" : "Auto-archive lobby after 1 hour"}
-                          </span>
-                          <div className={`h-5 w-5 rounded flex items-center justify-center transition-all ${formData.autoArchive ? 'bg-neon-blue text-dark-bg' : 'bg-white/10 text-transparent'}`}>
-                             <Check size={14} />
-                          </div>
-                          <input type="checkbox" className="hidden" checked={formData.autoArchive} onChange={() => setFormData(p => ({...p, autoArchive: !p.autoArchive}))} />
-                       </label>
-                    </div>
-                  </div>
+ <div className="bg-[#16181c] border border-white/5 rounded-2xl p-5 mt-6">
+ <div className={`flex items-center gap-2 mb-4 ${isRtl ? "justify-end" : "justify-start"}`}>
+ {isRtl ? (
+ <>
+ <span className="text-xs font-bold text-neon-blue">تنظیمات خودکار</span>
+ <Settings2 size={16} className="text-neon-blue" />
+ </>
+ ) : (
+ <>
+ <Settings2 size={16} className="text-neon-blue" />
+ <span className="text-xs font-bold text-neon-blue">Automation Settings</span>
+ </>
+ )}
+ </div>
+ 
+ <div className={`flex flex-wrap items-center gap-6 text-sm ${isRtl ? "justify-end" : "justify-start"}`}>
+ <label className={`flex items-center gap-2 cursor-pointer group ${isRtl ? "flex-row" : "flex-row-reverse"}`}>
+ <span className="text-xs text-gray-400 group-hover:text-white transition-colors">
+ {isRtl ? "بستن لابی پس از تکمیل ظرفیت" : "Close lobby when full capacity is reached"}
+ </span>
+ <div className={`h-5 w-5 rounded flex items-center justify-center transition-all ${formData.autoClose ? 'bg-neon-blue text-dark-bg' : 'bg-white/10 text-transparent'}`}>
+ <Check size={14} />
+ </div>
+ <input type="checkbox" className="hidden" checked={formData.autoClose} onChange={() => setFormData(p => ({...p, autoClose: !p.autoClose}))} />
+ </label>
+ 
+ <label className={`flex items-center gap-2 cursor-pointer group ${isRtl ? "flex-row" : "flex-row-reverse"}`}>
+ <span className="text-xs text-gray-400 group-hover:text-white transition-colors">
+ {isRtl ? "آرشیو خودکار پس از ۱ ساعت" : "Auto-archive lobby after 1 hour"}
+ </span>
+ <div className={`h-5 w-5 rounded flex items-center justify-center transition-all ${formData.autoArchive ? 'bg-neon-blue text-dark-bg' : 'bg-white/10 text-transparent'}`}>
+ <Check size={14} />
+ </div>
+ <input type="checkbox" className="hidden" checked={formData.autoArchive} onChange={() => setFormData(p => ({...p, autoArchive: !p.autoArchive}))} />
+ </label>
+ </div>
+ </div>
 
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+ </motion.div>
+ )}
+ </AnimatePresence>
+ </div>
 
-          <div className={`p-6 md:p-8 pt-4 flex items-center justify-between shrink-0 bg-[#0b0c10] border-t border-white/5 ${isRtl ? "flex-row" : "flex-row-reverse"}`}>
-             {step > 1 ? (
-               <button onClick={() => setStep(s => s - 1)} className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors text-sm font-bold">
-                 {isRtl ? <ChevronLeft size={16} /> : <ChevronRight size={16} />} 
-                 {isRtl ? "مرحله قبل" : "Previous Step"}
-               </button>
-             ) : (
-               <div />
-             )}
+ <div className={`p-6 md:p-8 pt-4 flex items-center justify-between shrink-0 bg-[#0b0c10] border-t border-white/5 ${isRtl ? "flex-row" : "flex-row-reverse"}`}>
+ {step > 1 ? (
+ <button onClick={() => setStep(s => s - 1)} className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors text-sm font-bold">
+ {isRtl ? <ChevronLeft size={16} /> : <ChevronRight size={16} />} 
+ {isRtl ? "مرحله قبل" : "Previous Step"}
+ </button>
+ ) : (
+ <div />
+ )}
 
-             {step < 3 ? (
-               <GlowButton onClick={() => setStep(s => s + 1)} className={`px-6 md:px-8 flex items-center justify-center gap-2 h-12 ${isRtl ? "flex-row-reverse" : "flex-row"}`} variant="blue">
-                 {isRtl ? "مرحله بعد" : "Next Step"}
-                 {isRtl ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
-               </GlowButton>
-             ) : (
-               <GlowButton onClick={handleSubmit} disabled={loading} className="px-6 md:px-8 h-12" variant="blue">
-                 {loading ? (isRtl ? "در حال پردازش..." : "Processing...") : (isRtl ? "تایید و ساخت نهایی" : "Confirm & Create")}
-               </GlowButton>
-             )}
-          </div>
+ {step < 3 ? (
+ <GlowButton onClick={() => setStep(s => s + 1)} className={`px-6 md:px-8 flex items-center justify-center gap-2 h-12 ${isRtl ? "flex-row-reverse" : "flex-row"}`} variant="blue">
+ {isRtl ? "مرحله بعد" : "Next Step"}
+ {isRtl ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
+ </GlowButton>
+ ) : (
+ <GlowButton onClick={handleSubmit} disabled={loading} className="px-6 md:px-8 h-12" variant="blue">
+ {loading ? (isRtl ? "در حال پردازش..." : "Processing...") : (isRtl ? "تایید و ساخت نهایی" : "Confirm & Create")}
+ </GlowButton>
+ )}
+ </div>
 
-        </div>
-      </motion.div>
-    </div>
-  );
+ </div>
+ </motion.div>
+ </div>
+ );
 };

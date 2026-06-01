@@ -7,103 +7,103 @@ import { Link } from "react-router-dom";
 import { useLanguage } from "../../context/LanguageContext";
 
 export const LobbiesPreview = () => {
-  const { direction } = useLanguage();
-  const isRtl = direction === "rtl";
-  const [lobbies, setLobbies] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+ const { direction } = useLanguage();
+ const isRtl = direction === "rtl";
+ const [lobbies, setLobbies] = useState<any[]>([]);
+ const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchLobbies = async () => {
-      try {
-        const res = await fetch("/api/v1/lobbies");
-        if (res.ok) {
-          const json = await res.json();
-          if (json.data && json.data.items) {
-            setLobbies(json.data.items.slice(0, 4));
-          }
-        }
-      } catch (err) {
-        console.error("Failed to fetch lobbies for preview:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchLobbies();
-  }, []);
+ useEffect(() => {
+ const fetchLobbies = async () => {
+ try {
+ const res = await fetch("/api/v1/lobbies");
+ if (res.ok) {
+ const json = await res.json();
+ if (json.data && json.data.items) {
+ setLobbies(json.data.items.slice(0, 4));
+ }
+ }
+ } catch (err) {
+ console.error("Failed to fetch lobbies for preview:", err);
+ } finally {
+ setLoading(false);
+ }
+ };
+ fetchLobbies();
+ }, []);
 
-  return (
-    <section className="py-24 relative" dir={isRtl ? "rtl" : "ltr"}>
-      <div className="container mx-auto px-4 max-w-6xl">
-        <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
-          <div className={isRtl ? "text-right" : "text-left"}>
-            <h2 className="text-3xl font-black text-white sm:text-4xl">
-              {isRtl ? "لابی‌های فعال در پلتفرم" : "Active Game Lobbies"}
-            </h2>
-            <p className="mt-4 text-gray-400">
-              {isRtl 
-                ? "بازی‌های زنده را پیدا کنید و با بهترین بازیکن‌های ایرانی وارد رقابت شوید."
-                : "Find live matches and compete with top players across the region."}
-            </p>
-          </div>
-          <Link to="/lobbies">
-            <GlowButton variant="blue" size="sm" className="hidden md:flex">
-               {isRtl ? "مشاهده همه لابی‌ها" : "View All Lobbies"}
-            </GlowButton>
-          </Link>
-        </div>
+ return (
+ <section className="py-24 relative" dir={isRtl ? "rtl" : "ltr"}>
+ <div className="container mx-auto px-4 max-w-6xl">
+ <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
+ <div className={isRtl ? "text-right" : "text-left"}>
+ <h2 className="text-3xl font-black text-white sm:text-4xl">
+ {isRtl ? "لابی‌های فعال در پلتفرم" : "Active Game Lobbies"}
+ </h2>
+ <p className="mt-4 text-gray-400">
+ {isRtl 
+ ? "بازی‌های زنده را پیدا کنید و با بهترین بازیکن‌های ایرانی وارد رقابت شوید."
+ : "Find live matches and compete with top players across the region."}
+ </p>
+ </div>
+ <Link to="/lobbies">
+ <GlowButton variant="blue" size="sm" className="hidden md:flex">
+ {isRtl ? "مشاهده همه لابی‌ها" : "View All Lobbies"}
+ </GlowButton>
+ </Link>
+ </div>
 
-        {loading ? (
-          <div className="flex items-center justify-center py-20 text-neon-blue">
-            <Loader2 className="animate-spin" size={32} />
-          </div>
-        ) : lobbies.length === 0 ? (
-          <div className="text-center py-12 text-gray-400 bg-white/5 rounded-2xl border border-white/10">
-            {isRtl 
-              ? "لابی برای نمایش یافت نشد. می‌توانید لابی خود را بسازید."
-              : "No active lobbies found. Feel free to host your own!"}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {lobbies.map((lobby, i) => (
-              <motion.div
-                key={lobby.id}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-                className="h-full"
-              >
-                <NeonCard variant={i % 2 === 0 ? "blue" : "pink"} className="p-6 h-full flex flex-col justify-between group">
-                  <div>
-                     <div className="flex justify-between items-start mb-4">
-                        <div className="rounded-lg bg-white/5 p-2 text-white group-hover:neon-text-blue transition-all">
-                           <span className="text-xs font-bold uppercase">{lobby.game?.title || (isRtl ? "بازی نامشخص" : "Unknown Game")}</span>
-                        </div>
-                        <div className="flex items-center gap-1 text-[10px] text-green-400">
-                           <div className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
-                           {lobby.region || "IR"}
-                        </div>
-                     </div>
-                     
-                     <h3 className="text-lg font-black text-white mb-2 truncate" title={lobby.title}>{lobby.title}</h3>
-                     
-                     <div className="flex items-center gap-2 text-sm text-gray-500 mb-6">
-                        <Users size={14} />
-                        <span>{lobby._count?.players || 1} / {lobby.maxPlayers} {isRtl ? "بازیکن" : "players"}</span>
-                     </div>
-                  </div>
+ {loading ? (
+ <div className="flex items-center justify-center py-20 text-neon-blue">
+ <Loader2 className="animate-spin" size={32} />
+ </div>
+ ) : lobbies.length === 0 ? (
+ <div className="text-center py-12 text-gray-400 bg-white/5 rounded-2xl border border-white/10">
+ {isRtl 
+ ? "لابی برای نمایش یافت نشد. می‌توانید لابی خود را بسازید."
+ : "No active lobbies found. Feel free to host your own!"}
+ </div>
+ ) : (
+ <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+ {lobbies.map((lobby, i) => (
+ <motion.div
+ key={lobby.id}
+ initial={{ opacity: 0, y: 20 }}
+ whileInView={{ opacity: 1, y: 0 }}
+ viewport={{ once: true }}
+ transition={{ delay: i * 0.1 }}
+ className="h-full"
+ >
+ <NeonCard variant={i % 2 === 0 ? "blue" : "pink"} className="p-6 h-full flex flex-col justify-between group">
+ <div>
+ <div className="flex justify-between items-start mb-4">
+ <div className="rounded-lg bg-white/5 p-2 text-white group-hover:neon-text-blue transition-all">
+ <span className="text-xs font-bold uppercase">{lobby.game?.title || (isRtl ? "بازی نامشخص" : "Unknown Game")}</span>
+ </div>
+ <div className="flex items-center gap-1 text-[10px] text-green-400">
+ <div className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
+ {lobby.region || "IR"}
+ </div>
+ </div>
+ 
+ <h3 className="text-lg font-black text-white mb-2 truncate" title={lobby.title}>{lobby.title}</h3>
+ 
+ <div className="flex items-center gap-2 text-sm text-gray-500 mb-6">
+ <Users size={14} />
+ <span>{lobby._count?.players || 1} / {lobby.maxPlayers} {isRtl ? "بازیکن" : "players"}</span>
+ </div>
+ </div>
 
-                  <Link to={`/rooms/${lobby.id}`}>
-                    <GlowButton variant={i % 2 === 0 ? "blue" : "pink"} size="sm" className="w-full text-xs justify-center">
-                       {isRtl ? "مشاهده لابی" : "View Lobby"}
-                    </GlowButton>
-                  </Link>
-                </NeonCard>
-              </motion.div>
-            ))}
-          </div>
-        )}
-      </div>
-    </section>
-  );
+ <Link to={`/rooms/${lobby.id}`}>
+ <GlowButton variant={i % 2 === 0 ? "blue" : "pink"} size="sm" className="w-full text-xs justify-center">
+ {isRtl ? "مشاهده لابی" : "View Lobby"}
+ </GlowButton>
+ </Link>
+ </NeonCard>
+ </motion.div>
+ ))}
+ </div>
+ )}
+ </div>
+ </section>
+ );
 };

@@ -9,40 +9,40 @@ import { chatSocket, lobbySocket, voiceSocket, getSharedAudioContext, resumeShar
 import { toast } from "react-hot-toast";
 import { getFileUrl } from "../lib/constants";
 import { 
-  Users, 
-  Shield, 
-  Mic, 
-  MicOff, 
-  Settings, 
-  LogOut, 
-  Copy, 
-  Check, 
-  MessageSquare, 
-  Send,
-  UserPlus,
-  Play,
-  RotateCcw,
-  Ban,
-  Lock,
-  Globe,
-  Clock,
-  Trophy,
-  ChevronLeft,
-  X,
-  Crown,
-  ShieldAlert,
-  Gavel,
-  Gamepad2,
-  CheckCircle2,
-  UserCheck,
-  Radio,
-  LayoutTemplate,
-  VolumeX,
-  Volume2,
-  Reply,
-  MonitorUp,
-  Monitor,
-  AlertTriangle
+ Users, 
+ Shield, 
+ Mic, 
+ MicOff, 
+ Settings, 
+ LogOut, 
+ Copy, 
+ Check, 
+ MessageSquare, 
+ Send,
+ UserPlus,
+ Play,
+ RotateCcw,
+ Ban,
+ Lock,
+ Globe,
+ Clock,
+ Trophy,
+ ChevronLeft,
+ X,
+ Crown,
+ ShieldAlert,
+ Gavel,
+ Gamepad2,
+ CheckCircle2,
+ UserCheck,
+ Radio,
+ LayoutTemplate,
+ VolumeX,
+ Volume2,
+ Reply,
+ MonitorUp,
+ Monitor,
+ AlertTriangle
 } from "lucide-react";
 import { GlowButton } from "../components/ui/GlowButton";
 import { useFriends } from "../context/FriendsContext";
@@ -58,2272 +58,2272 @@ import { SmartImage } from "../components/ui/SmartImage";
 import { cn } from "../lib/utils";
 
 interface Player {
-  id: string;
-  name: string;
-  avatar: string;
-  avatarUrl?: string; // fallback
-  level?: number;
-  membership?: MembershipType;
-  vipMetadata?: any;
-  bannerUrl?: string;
-  rank: string;
-  isHost?: boolean;
-  isReady: boolean;
-  hasMic: boolean;
-  isMuted: boolean;
-  ping: number;
-  isSpeaking: boolean;
-  volume: number;
-  activity: number;
-  badges?: any[];
-  isVerified?: boolean;
-  role?: string;
+ id: string;
+ name: string;
+ avatar: string;
+ avatarUrl?: string; // fallback
+ level?: number;
+ membership?: MembershipType;
+ vipMetadata?: any;
+ bannerUrl?: string;
+ rank: string;
+ isHost?: boolean;
+ isReady: boolean;
+ hasMic: boolean;
+ isMuted: boolean;
+ ping: number;
+ isSpeaking: boolean;
+ volume: number;
+ activity: number;
+ badges?: any[];
+ isVerified?: boolean;
+ role?: string;
 }
 
 interface Message {
-  id: string;
-  user: string;
-  avatarUrl?: string;
-  text: string;
-  time: string;
-  isSystem?: boolean;
-  toUserId?: string; // null for lobby chat
-  fromUserId?: string;
-  badges?: any[];
+ id: string;
+ user: string;
+ avatarUrl?: string;
+ text: string;
+ time: string;
+ isSystem?: boolean;
+ toUserId?: string; // null for lobby chat
+ fromUserId?: string;
+ badges?: any[];
 }
 
 export const LobbyRoomPage = () => {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const { 
-    lobby, 
-    joinLobby,
-    leaveLobby,
-    toggleReady,
-    setLobbyMuted,
-    sendMessage,
-    updateLobbySettings,
-    kickPlayer,
-    banPlayer,
-    isJoining,
-    joinError,
-
-    // Voice states fetched globally
-    localStream,
-    voiceMode,
-    setVoiceMode,
-    pttKey,
-    setPttKey,
-    isPttPressed,
-    setIsPttPressed,
-    isAudioContextResumed,
-    resumeAudio,
-    peerVolumes,
-    peerActivity,
-    localVolume,
-    setPeerVolume,
-
-    // Overlay settings fetched globally
-    overlayEnabled,
-    setOverlayEnabled,
-    overlayPosition,
-    setOverlayPosition,
-    overlaySize,
-    setOverlaySize,
-    overlayOnlyTalking,
-    setOverlayOnlyTalking,
-    overlayMembersVisible,
-    setOverlayMembersVisible,
-    overlayNormalOpacity,
-    setOverlayNormalOpacity,
-    overlaySpeakingOpacity,
-    setOverlaySpeakingOpacity,
-
-    // Electron bindings
-    isElectron,
-    launcherCloseToTray,
-    launcherStartAtLogin,
-    launcherHardwareAcceleration,
-    launcherGlobalPttKey,
-    launcherGlobalMuteKey,
-    updateLauncherSettings,
-
-    // New Desktop bindings
-    audioInputDevices,
-    audioOutputDevices,
-    selectedAudioInput,
-    setSelectedAudioInput,
-    selectedAudioOutput,
-    setSelectedAudioOutput,
-    refreshAudioDevices,
-    transparentOverlayEnabled,
-    setTransparentOverlayEnabled,
-    overlayX,
-    overlayY,
-    overlayWidth,
-    overlayHeight,
-    overlayOpacity,
-    overlayClickThrough,
-    gameDetected,
-    launcherRichPresenceEnabled,
-    setLauncherRichPresenceEnabled,
-    isDeafened,
-    setIsDeafened,
-    remoteStreams,
-    setScreenStreamForWebRTC
-  } = useLobby();
-
-  const { user, isSidebarCollapsed, setIsSidebarCollapsed } = useAuth();
-  const { direction, t, language } = useLanguage();
-  const isRtl = direction === "rtl" || language === "fa";
-  const { openChat, addFriend } = useFriends();
-  const { openProfile } = useProfilePopover();
-  
-  const [copied, setCopied] = useState(false);
-  const [isChatOpen, setIsChatOpen] = useState(false); // Mobile chat
-  const messages = useMemo(() => {
-    return [
-      { id: "system-1", user: "LOXX BOT", text: t("lobbyCreated"), time: "System", isSystem: true, fromUserId: "system" },
-      ...(lobby?.messages?.map(m => ({
-        id: m.id,
-        fromUserId: m.from?.userId || m.senderId,
-        user: m.from?.username || m.sender?.username || "بازیکن",
-        avatarUrl: (m.from as any)?.avatarUrl || m.sender?.profile?.avatarUrl,
-        badges: (m.from as any)?.badges?.map((ub: any) => ub.badge) || m.sender?.badges?.map((ub: any) => ub.badge) || [],
-        text: m.content,
-        time: m.createdAt ? new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "Recently"
-      })) || [])
-    ];
-  }, [lobby?.messages]);
-
-  const [isDesktopChatOpen, setIsDesktopChatOpen] = useState(false); // Desktop chat
-  const [unreadDesktopChat, setUnreadDesktopChat] = useState(0);
-
-  const prevLastMessage = useRef<string | null>(null);
-  useEffect(() => {
-    if (messages.length > 0) {
-      const last = messages[messages.length - 1];
-      if (last.id !== prevLastMessage.current) {
-        prevLastMessage.current = last.id;
-        if (!isDesktopChatOpen && last.fromUserId !== user?.id && !last.isSystem) {
-          setUnreadDesktopChat(p => p + 1);
-        }
-      }
-    }
-  }, [messages, isDesktopChatOpen, user?.id]);
-
-  useEffect(() => {
-    if (isDesktopChatOpen) setUnreadDesktopChat(0);
-  }, [isDesktopChatOpen]);
-
-  const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
-  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
-  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
-  const [activeProfileUserId, setActiveProfileUserId] = useState<string | null>(null);
-  const [layoutMode, setLayoutMode] = useState<'default' | 'compact' | 'discord'>(() => (localStorage.getItem('loxx-lobby-layout') as any) || 'default');
-
-  const userPlanResolved = ((user as any)?.role === "ADMIN" || (user as any)?.membership === "VIP" || (user as any)?.profile?.membershipType === "VIP") 
-    ? "VIP" 
-    : (((user as any)?.membership === "PLUS" || (user as any)?.profile?.membershipType === "PLUS") ? "PLUS" : "NORMAL");
-
-  const {
-    estimatedUploadMbps,
-    isTestingBandwidth,
-    screenStream,
-    currentQuality,
-    startShare,
-    stopShare,
-    isBaseRequirementMet,
-    isWarningActive
-  } = useSmartScreenShare(
-    userPlanResolved,
-    lobby?.players?.length || 1,
-    typeof window !== "undefined" && !!(window as any).electronAPI,
-    setScreenStreamForWebRTC
-  );
-  
-  const [isScreenShareModalOpen, setIsScreenShareModalOpen] = useState(false);
-  const [isSourcePickerOpen, setIsSourcePickerOpen] = useState(false);
-  const [pendingSourceId, setPendingSourceId] = useState<string | null>(null);
-
-  const initiateScreenShareFlow = () => {
-    const api = (window as any).electronAPI;
-    if (api && api.getDesktopSources) {
-      setIsSourcePickerOpen(true);
-    } else {
-      setIsScreenShareModalOpen(true);
-    }
-  };
-
-  const handleSourceSelected = (sourceId: string) => {
-    setPendingSourceId(sourceId);
-    setIsSourcePickerOpen(false);
-    setIsScreenShareModalOpen(true);
-  };
-
-  const handleQualitySelected = (quality: ShareQuality) => {
-    setIsScreenShareModalOpen(false);
-    startShare(quality, pendingSourceId || undefined);
-    setPendingSourceId(null);
-  };
-
-
-  // Compute active remote screen share (if any user in the lobby is sharing video tracks)
-  const activeRemoteShare = useMemo(() => {
-    if (!remoteStreams) return null;
-    for (const [peerId, stream] of remoteStreams.entries()) {
-      if (stream.getVideoTracks().length > 0) {
-        const presenter = lobby?.players?.find(p => p.userId === peerId);
-        return { peerId, stream, presenterName: presenter?.username || "Guest Player" };
-      }
-    }
-    return null;
-  }, [remoteStreams, lobby?.players]);
-
-  const toggleLayout = () => {
-    const modes: ('default' | 'compact' | 'discord')[] = ['default', 'compact', 'discord'];
-    const nextMode = modes[(modes.indexOf(layoutMode) + 1) % modes.length];
-    setLayoutMode(nextMode);
-    localStorage.setItem('loxx-lobby-layout', nextMode);
-    toast(`حالت نمایش: ${nextMode === 'default' ? 'استاندارد' : nextMode === 'compact' ? 'فشرده و ساده' : 'مدل دیسکورد'}`, { icon: "🎨" });
-  };
-
-  const [wasInLobby, setWasInLobby] = useState(false);
-  const hasCollapsedOnMount = useRef(false);
-
-  // Join lobby on mount
-  useEffect(() => {
-    if (id) {
-       joinLobby(id);
-    }
-    // Collapse right sidebar by default only on initial enter/mount
-    if (!hasCollapsedOnMount.current) {
-       setIsSidebarCollapsed(true);
-       hasCollapsedOnMount.current = true;
-    }
-  }, [id, setIsSidebarCollapsed]);
-
-  // Redirect if lobby becomes null (e.g., closed by host) or if joining fails
-  const [countdown, setCountdown] = useState(5);
-  const [isListeningForKey, setIsListeningForKey] = useState(false);
-
-  useEffect(() => {
-    if (lobby) setWasInLobby(true);
-    if ((wasInLobby && !lobby && id) || joinError) {
-       navigate("/lobbies");
-    }
-  }, [lobby, wasInLobby, id, navigate, joinError]);
-
-  const players = useMemo(() => {
-    const list = lobby?.players?.map(p => ({
-      id: p.userId,
-      name: p.username || "Guest Player",
-      avatar: p.role === "HOST" ? "👑" : "👤",
-      avatarUrl: p.avatarUrl,
-      level: p.level,
-      membership: p.membership as MembershipType,
-      vipMetadata: p.vipMetadata,
-      bannerUrl: p.bannerUrl,
-      badges: (p.user?.badges || p.badges || []).map((ub: any) => ({
-        ...(ub.badge || ub),
-        isPinned: ub.isPinned || false
-      })) || [],
-      rank: "Verified Gamer",
-      isHost: p.role === "HOST",
-      role: p.user?.role || p.role,
-      isReady: !!p.isReady,
-      hasMic: true,
-      isMuted: p.userId === user?.id ? !!p.micMuted : (peerVolumes[p.userId] === 0 || !!p.micMuted),
-      ping: 25,
-      isSpeaking: p.userId === user?.id 
-        ? localVolume > 15 
-        : (peerActivity[p.userId] || 0) > 15 || (lobby?.talkingUsers?.includes(p.userId) || false),
-      volume: p.userId === user?.id 
-        ? localVolume 
-        : (peerVolumes[p.userId] !== undefined ? peerVolumes[p.userId] : 100),
-      activity: p.userId === user?.id ? localVolume : (peerActivity[p.userId] || 0)
-    })) || [];
-
-    // Add empty slots
-    const maxPlayers = lobby?.maxPlayers || 5;
-    const result = [...list];
-    while (result.length < maxPlayers) {
-      result.push({
-        id: `slot-${result.length}`,
-        name: "Empty Slot",
-        avatar: "",
-        rank: "",
-        isReady: false,
-        hasMic: false,
-        isMuted: false,
-        ping: 0,
-        isSpeaking: false,
-        volume: 100,
-        activity: 0
-      });
-    }
-    return result;
-  }, [lobby?.players, lobby?.maxPlayers, localVolume, peerActivity, lobby?.talkingUsers, peerVolumes, user?.id, user?.username]);
-
-  const isReady = lobby?.players?.find(p => p.userId === user?.id)?.isReady || false;
-  const isMicMuted = !!(lobby?.players?.find(p => p.userId === user?.id) as any)?.micMuted;
-  const isHost = lobby?.hostId === user?.id;
-  
-  const hostPlayer = lobby?.players?.find((p: any) => p.userId === lobby?.hostId);
-  const isStreamerLobby = (hostPlayer as any)?.role === "STREAMER";
-  const isVipLobby = hostPlayer?.membership === "VIP" && !isStreamerLobby;
-  
-  const isStarting = lobby?.status === "STARTING";
-  const isMatchStarted = lobby?.status === "IN_PROGRESS";
-  
-  // Calculate if all current active players are ready
-  const activePlayersList = lobby?.players || [];
-  const activePlayersCount = activePlayersList.length;
-  const readyCountValue = activePlayersList.filter(p => p.isReady).length;
-  // Use backend status if available, fallback to dynamic check
-  const allReadyPulse = lobby?.status === "READY" || (activePlayersCount > 1 && readyCountValue === activePlayersCount);
-
-
-  // Audio context and mic loop handled globally by LobbyProvider
-        
-  // Deleted redundant loop
-
-
-  // Stream states and key shortcuts are handled globally by LobbyProvider
-
-  const toggleMic = () => {
-    if (lobby) {
-      setLobbyMuted(!isMicMuted);
-    }
-  };
-
-  const [inputMessage, setInputMessage] = useState("");
-
-  const handleCopyCode = () => {
-    navigator.clipboard.writeText(lobby?.id || "LX-LOBBY");
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  const handleSendMessage = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!inputMessage.trim() || !id) return;
-    
-    const words = inputMessage.split(/\s+/);
-    if (words.some(word => word.length > 15)) {
-      toast.error("یک کلمه نمیتواند بیشتر از 15 کاراکتر باشد (اسپم)");
-      return;
-    }
-
-    sendMessage(inputMessage);
-    setInputMessage("");
-  };
-
-  const onToggleReady = () => {
-    toggleReady(); // This already emits "lobby.ready" in LobbyContext
-  };
-
-  const handleStartMatch = () => {
-    if (isHost) {
-      lobbySocket.emit("lobby.start", { lobbyId: lobby?.id });
-    }
-  };
-
-  const handleCancelMatch = () => {
-    if (isHost) {
-      lobbySocket.emit("cancel_match", { lobbyId: lobby?.id });
-    }
-  };
-
-  const handleReopenLobby = () => {
-    if (isHost) {
-      lobbySocket.emit("reopen_lobby", { lobbyId: lobby?.id });
-    }
-  };
-  
-  useEffect(() => {
-    let timer: NodeJS.Timeout;
-    if (isStarting && countdown > 0) {
-      timer = setTimeout(() => {
-        setCountdown(prev => prev - 1);
-      }, 1000);
-    } else if (countdown === 0 && isStarting) {
-      if (isHost) {
-        lobbySocket.emit("start_match_confirm", { lobbyId: lobby?.id });
-      }
-    }
-    return () => clearTimeout(timer);
-  }, [isStarting, countdown, isHost, lobby?.id]);
-
-  useEffect(() => {
-    if (!isStarting) {
-      setCountdown(5);
-    }
-  }, [isStarting]);
-
-  const handlePlayerVolume = (id: string, vol: number) => {
-    setPeerVolume(id, vol);
-  };
-
-  const { friends } = useFriends();
-
-  return (
-    <div className={cn("flex bg-[#050508] overflow-hidden", isElectron ? "h-[calc(100vh-100px)] min-h-[calc(100vh-100px)] max-h-[calc(100vh-100px)]" : "h-[calc(100vh-64px)] min-h-[calc(100vh-64px)] max-h-[calc(100vh-64px)]")} dir={isRtl ? "rtl" : "ltr"}>
-      <Sidebar />
-      <main className={cn(
-        "flex-1 min-w-0 relative h-full max-h-full overflow-hidden transition-all duration-300", 
-        isRtl 
-          ? (!isSidebarCollapsed ? "md:mr-64" : "md:mr-20") 
-          : (!isSidebarCollapsed ? "md:ml-64" : "md:ml-20")
-      )}>
-        <div className="h-full w-full bg-[#050508] text-white p-2 md:p-6 lg:p-8 flex flex-col gap-4 md:gap-6 relative overflow-hidden font-sans">
-      {!user?.isVerified && (
-        <div className="fixed top-20 left-4 right-4 z-[100] bg-neon-pink/20 backdrop-blur-md border border-neon-pink/30 rounded-2xl p-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <ShieldAlert size={20} className="text-neon-pink" />
-            <p className="text-sm font-bold text-gray-200">
-              {isRtl ? "حساب شما تایید نشده است. تا زمان تایید ایمیل، قادر به چت کردن نخواهید بود." : "Your account is not verified. You won't be able to chat until you verify your email."}
-            </p>
-          </div>
-          <Link to="/settings" className="text-xs font-black text-neon-pink uppercase italic hover:underline">
-            {isRtl ? "تایید حساب" : "VERIFY ACCOUNT"}
-          </Link>
-        </div>
-      )}
-
-      {/* LAN mode banners & assistance */}
-      {lobby?.isLanMode && !isElectron && (
-        <div className="relative z-10 bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 flex flex-col md:flex-row items-center justify-between gap-3 animate-enter shrink-0">
-          <div className={cn("flex items-center gap-3", isRtl ? "text-right" : "text-left")}>
-            <ShieldAlert size={20} className="text-amber-400 shrink-0" />
-            <div>
-              <p className="text-sm font-black text-white">
-                {isRtl ? "⚠️ جهت بازی در حالت Lan، استفاده از اپلیکیشن ویندوز لوکس الزامی است!" : "⚠️ Loxx Windows App is required to play in LAN mode!"}
-              </p>
-              <p className="text-xs text-gray-400 mt-0.5">
-                {isRtl 
-                  ? "شما هم‌اکنون این لابی را روی مرورگر وب مشاهده می‌کنید. سیستم انتقال ترافیک خودکار Lan (بدون نیاز به برنامه جانبی) فقط روی اپلیکیشن کلاینت ویندوز فعال می‌شود." 
-                  : "You are currently viewing this lobby inside a web browser. The automatic LAN tunneling system (Zero-TUN) only works inside the official native Windows Client."}
-              </p>
-            </div>
-          </div>
-          <a href="/download" className="px-5 py-2 rounded-xl bg-amber-500 text-black text-xs font-black transition-all hover:bg-amber-400 shrink-0 font-sans">
-            {isRtl ? "دانلود کلاینت ویندوز" : "Download Windows Client"}
-          </a>
-        </div>
-      )}
-
-      {lobby?.isLanMode && isElectron && (
-        <div className="relative z-10 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-4 flex items-center justify-between gap-3 animate-enter shrink-0">
-          <div className={cn("flex items-center gap-3 font-sans", isRtl ? "text-right" : "text-left")}>
-            <span className="relative flex h-2 w-2 shrink-0">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-            </span>
-            <div>
-              <p className="text-sm font-black text-white">
-                {isRtl ? "⚡ سیستم پل ارتباطی لوکس (Zero-TUN) فعال است" : "⚡ LOXX Zero-TUN Gateway is Active"}
-              </p>
-              <p className="text-xs text-gray-400 mt-0.5">
-                {isHost ? (
-                  isRtl 
-                    ? "به عنوان هاست لابی، بازی خود را در حالت LAN / Offline برای دیگران بسازید. لانچر لوکس به صورت خودکار پورت‌های شبکه بازی را برای کلاینت‌ها پروکسی کرده و پل می‌زند."
-                    : "As the lobby host, start your game in LAN / Offline mode. The Loxx Launcher will automatically bridge and proxy network ports for other players."
-                ) : (
-                  isRtl 
-                    ? "به عنوان کلاینت لابی، به محض شروع، مستقیماً وارد بازی شده و به بخش Local LAN بروید. به لطف سیستم Zero-TUN لوکس، سرور هم‌تیمی‌تان خودکار نمایش داده می‌شود!"
-                    : "As a lobby client, simply launch your game and navigate to the Local LAN section. Thanks to LOXX Zero-TUN, your teammate's server will show up automatically!"
-                )}
-              </p>
-            </div>
-          </div>
-          <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded border border-emerald-500/20">
-            Zero-TUN Engine v1.1.0
-          </span>
-        </div>
-      )}
-
-      {/* Background Elements */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className={cn(
-          "absolute inset-0 bg-[length:60px_60px]",
-          isStreamerLobby ? "bg-[linear-gradient(rgba(168,85,247,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(168,85,247,0.03)_1px,transparent_1px)]" :
-          isVipLobby ? "bg-[linear-gradient(rgba(250,204,21,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(250,204,21,0.03)_1px,transparent_1px)]" 
-                     : "bg-[linear-gradient(rgba(0,229,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,229,255,0.03)_1px,transparent_1px)]"
-        )} />
-        <div className={cn(
-          "absolute inset-0",
-          isStreamerLobby ? "bg-[radial-gradient(circle_at_50%_0%,rgba(168,85,247,0.1)_0%,transparent_50%)]" :
-          isVipLobby ? "bg-[radial-gradient(circle_at_50%_0%,rgba(250,204,21,0.1)_0%,transparent_50%)]"
-                     : "bg-[radial-gradient(circle_at_50%_0%,rgba(0,229,255,0.1)_0%,transparent_50%)]"
-        )} />
-        <div className={cn(
-          "absolute top-[20%] left-[10%] h-96 w-96 rounded-full blur-[120px]",
-          isStreamerLobby ? "bg-neon-purple/5" :
-          isVipLobby ? "bg-yellow-400/5" : "bg-neon-blue/5"
-        )} />
-        <div className={cn(
-          "absolute bottom-[20%] right-[10%] h-96 w-96 rounded-full blur-[120px]",
-          isStreamerLobby ? "bg-purple-600/5" :
-          isVipLobby ? "bg-yellow-600/5" : "bg-neon-pink/5"
-        )} />
-      </div>
-
-      {/* Achievement Pulse Overlay */}
-      <AnimatePresence>
-        {allReadyPulse && !isStarting && !isMatchStarted && (
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 1.2 }}
-            className="fixed inset-0 z-[200] flex items-center justify-center pointer-events-none"
-          >
-            <div className="relative">
-               <motion.div 
-                 animate={{ scale: [1, 1.1, 1], opacity: [0.3, 0.6, 0.3] }}
-                 transition={{ duration: 2, repeat: Infinity }}
-                 className={cn("absolute inset-0 rounded-full blur-3xl", isStreamerLobby ? "bg-neon-purple" : isVipLobby ? "bg-yellow-400" : "bg-neon-blue")} 
-               />
-               <h2 className={cn("text-5xl md:text-7xl font-black text-white tracking-widest uppercase text-center relative z-10 px-10", isStreamerLobby ? "drop-shadow-[0_0_20px_rgba(168,85,247,0.8)]" : isVipLobby ? "drop-shadow-[0_0_20px_rgba(250,204,21,0.8)]" : "drop-shadow-[0_0_20px_rgba(0,229,255,0.8)]")}>
-                 ALL PLAYERS READY
-               </h2>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Header Bar */}
-      <motion.header 
-        initial={{ y: -20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        className="relative z-10 glass rounded-[24px] md:rounded-[32px] p-3 md:p-6 flex flex-wrap items-center justify-between gap-3 md:gap-6 border-white/5 shadow-2xl shrink-0"
-      >
-        <div className="flex items-center gap-3 md:gap-5 flex-1 min-w-0">
-           <button 
-            onClick={() => {
-              leaveLobby();
-              navigate("/lobbies");
-            }}
-            className="p-2 md:p-3 rounded-xl md:rounded-2xl bg-white/5 hover:bg-neon-pink/10 transition-colors text-gray-400 hover:text-neon-pink shrink-0"
-           >
-             <ChevronLeft size={18} className="md:size-5 rotate-180" />
-           </button>
-           
-           <div className={cn(
-             "h-10 w-10 md:h-14 md:w-14 rounded-2xl flex items-center justify-center shrink-0 overflow-hidden border",
-             isStreamerLobby ? "bg-[#0a0a0f] border-purple-500/30 shadow-[0_0_15px_rgba(168,85,247,0.2)]" :
-             isVipLobby ? "bg-[#0d0d12] border-yellow-400/30 shadow-[0_0_15px_rgba(250,204,21,0.2)]" : "bg-white/5 border-white/10"
-           )}>
-              {lobby?.game?.iconUrl ? (
-                <SmartImage src={lobby.game.iconUrl} className="w-full h-full object-contain" />
-              ) : <Gamepad2 className={isStreamerLobby ? "text-purple-400" : isVipLobby ? "text-yellow-400" : "text-neon-blue"} size={24} />}
-           </div>
-           
-           <div className="min-w-0 flex-1">
-             <div className="flex items-center gap-2 md:gap-3 mb-0.5 md:mb-1">
-               {lobby?.isLanMode && (
-                 <div className="mb-1 md:mb-2 self-start px-2 py-0.5 rounded-full border border-emerald-500/50 bg-emerald-500/20 text-emerald-300 text-[8px] md:text-[10px] font-black uppercase tracking-tighter flex items-center gap-1 font-sans">
-                   <span className="relative flex h-1.5 w-1.5 font-sans">
-                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                     <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
-                   </span>
-                   <span>LAN Zero-TUN v1.1.0</span>
-                 </div>
-               )}
-               <h1 className="text-sm md:text-3xl font-black tracking-tight text-white truncate max-w-[150px] md:max-w-none">
-                 {lobby ? (lobby.title || "Elite Lobby") : "در حال بارگذاری..."}
-               </h1>
-               <div className={cn(
-                 "px-1.5 md:px-3 py-0.5 md:py-1 rounded-full border text-[7px] md:text-[10px] font-black uppercase tracking-tighter shrink-0",
-                 isStreamerLobby ? "bg-purple-500/10 border-purple-500/20 text-purple-400" :
-                 isVipLobby ? "bg-yellow-400/10 border-yellow-400/20 text-yellow-400" : "bg-neon-blue/10 border-neon-blue/20 text-neon-blue"
-               )}>
-                 ME
-               </div>
-             </div>
-             <div className="flex items-center gap-3 md:gap-5 text-[9px] md:text-[11px] text-gray-500 font-black uppercase tracking-widest">
-               <span className="flex items-center gap-1 md:gap-1.5 font-bold"><Users size={12} className={cn("shrink-0 md:size-[14px]", isStreamerLobby ? "text-purple-400" : isVipLobby ? "text-yellow-400" : "text-neon-blue")} /> {players.filter(p => !p.id.startsWith("slot-")).length} / {lobby?.maxPlayers || 5}</span>
-               {isStreamerLobby ? (
-                 <span className="flex items-center gap-1 md:gap-1.5"><Radio size={14} className="text-purple-400 shrink-0 w-3 h-3 md:w-3.5 md:h-3.5 animate-pulse" /> Streamer Room</span>
-               ) : isVipLobby ? (
-                 <span className="flex items-center gap-1 md:gap-1.5"><Crown size={14} className="text-yellow-400 shrink-0 w-3 h-3 md:w-3.5 md:h-3.5" /> Elite Room</span>
-               ) : (
-                 <span className="flex items-center gap-1 md:gap-1.5"><Trophy size={14} className="text-neon-pink shrink-0 w-3 h-3 md:w-3.5 md:h-3.5" /> حرفه‌ای</span>
-               )}
-             </div>
-           </div>
-        </div>
-
-        <div className="flex items-center gap-2 md:gap-4 shrink-0">
-          {isElectron && (
-            <button 
-              onClick={toggleLayout}
-              className="p-2 md:p-3 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors h-10 md:h-14 flex items-center justify-center border border-white/10"
-              title="تغییر چینش لابی"
-            >
-              <LayoutTemplate size={20} />
-            </button>
-          )}
-
-          {!isAudioContextResumed && (
-            <button 
-              onClick={resumeAudio}
-              className="p-2 md:p-3 rounded-xl bg-neon-pink/20 text-neon-pink border border-neon-pink/30 animate-pulse flex items-center gap-2 text-[10px] md:text-xs font-black uppercase"
-            >
-              <Mic size={14} className="md:size-18" />
-              <span>فعال‌سازی صدا</span>
-            </button>
-          )}
-
-          <div className="hidden sm:flex items-center gap-2 bg-black/60 rounded-2xl p-1 border border-white/10">
-             <div className="px-4 py-2 text-[10px] font-black text-gray-500 border-l border-white/10 uppercase tracking-widest">کد لابی</div>
-             <div className="px-4 py-2 font-mono text-sm text-neon-blue flex items-center gap-3">
-               {lobby?.id ? lobby.id.substring(0, 8).toUpperCase() : "LX-LOBBY"}
-               <button onClick={handleCopyCode} className="hover:text-white transition-colors">
-                 {copied ? <Check size={16} /> : <Copy size={16} />}
-               </button>
-             </div>
-          </div>
-
-          <GlowButton 
-            variant="blue" 
-            onClick={handleStartMatch}
-            disabled={isStarting || !allReadyPulse || isMatchStarted}
-            className={cn(
-              "px-4 md:px-10 h-10 md:h-14 text-[10px] md:text-sm shadow-xl shrink-0 uppercase italic font-black",
-              (!allReadyPulse || isMatchStarted) && "opacity-50 grayscale cursor-not-allowed"
-            )}
-          >
-            <Play size={14} className={isRtl ? "ml-1.5 md:ml-2" : "mr-1.5 md:mr-2"} />
-            {isRtl ? "شروع" : "START"}
-          </GlowButton>
-        </div>
-      </motion.header>
-
-      <div className="flex-1 flex flex-col lg:flex-row gap-4 md:gap-6 relative z-10 overflow-hidden">
-        {/* Main Content Area */}
-        <div className="flex-1 flex flex-col gap-4 md:gap-6 overflow-y-auto overflow-x-hidden custom-scrollbar pb-24 md:pb-8 px-1 md:px-4">
-          
-          {/* Remote Audio Streams handled globally */}
-
-          {/* Top Status Panel */}
-          <MatchInfoPanel 
-            isStarting={isStarting} 
-            isMatchStarted={isMatchStarted} 
-            countdown={countdown} 
-            players={players} 
-            lobby={lobby}
-            onCancel={handleCancelMatch}
-            onReopen={handleReopenLobby}
-            isVipLobby={isVipLobby}
-            isStreamerLobby={isStreamerLobby}
-          />
-
-          {/* Screen Share View (Local or Remote) */}
-          {(screenStream || activeRemoteShare) && (
-            <ScreenSharePresenter 
-              stream={screenStream || activeRemoteShare!.stream}
-              presenterName={screenStream ? "شما" : activeRemoteShare!.presenterName}
-              isLocal={!!screenStream}
-              isWarningActive={screenStream ? isWarningActive : false}
-            />
-          )}
-
-          {/* Players Flex - Drastically improved for responsiveness & wrapping */}
-          <div className={cn(
-            "w-full justify-start items-stretch px-1",
-            layoutMode === 'discord' ? "grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-4" : 
-            layoutMode === 'compact' ? "flex flex-wrap gap-2 md:gap-3" 
-            : "flex flex-wrap gap-3 md:gap-6"
-          )}>
-            <AnimatePresence mode="popLayout">
-              {players.map((player) => (
-                <PlayerCard 
-                  key={player.id} 
-                  player={player}
-                  volume={player.volume}
-                  isVipLobby={isVipLobby}
-                  isStreamerLobby={isStreamerLobby}
-                  layoutMode={layoutMode}
-                  isSelected={selectedPlayer === player.id}
-                  onSelect={() => setSelectedPlayer(selectedPlayer === player.id ? null : player.id)}
-                  onVolumeChange={(val) => handlePlayerVolume(player.id, val)}
-                  onMute={(id) => {
-                    const p = players.find(player => player.id === id);
-                    if (p && !p.id.startsWith("slot-")) {
-                      // We don't have a specific contextual mute function, but we can set their volume to 0 locally
-                      handlePlayerVolume(id, p.volume === 0 ? 100 : 0);
-                    }
-                  }}
-                  onInvite={() => setIsInviteModalOpen(true)}
-                  onProfile={(id) => {
-                    const p = players.find(player => player.id === id);
-                    if (p && !p.id.startsWith("slot-")) {
-                      openProfile({
-                        senderName: p.name,
-                        senderAvatar: p.avatarUrl || p.avatar,
-                        senderLevel: p.level || 1,
-                        id: p.id,
-                        membership: p.membership || MembershipType.NONE,
-                        vipMetadata: p.vipMetadata,
-                        bannerUrl: p.bannerUrl || p.avatarUrl
-                      }, p.id === user?.id);
-                    }
-                  }}
-                  onDirectMessage={(id) => {
-                    const p = players.find(player => player.id === id);
-                    if (p && !p.id.startsWith("slot-")) {
-                      openChat(id, p.name, p.avatarUrl || p.avatar);
-                    }
-                  }}
-                  onAddFriend={(id) => {
-                    const p = players.find(player => player.id === id);
-                    if (p && !p.id.startsWith("slot-")) {
-                      addFriend(p.name);
-                    }
-                  }}
-                  onKick={kickPlayer}
-                  onBan={banPlayer}
-                  isHostView={isHost}
-                />
-              ))}
-            </AnimatePresence>
-          </div>
-        </div>
-
-        {/* Desktop Chat Sidebar (Right) */}
-        {!isElectron || isDesktopChatOpen ? (
-          <div className={cn("hidden lg:flex flex-col overflow-hidden shadow-2xl", isElectron ? "absolute bottom-6 right-6 z-40 bg-black/80 backdrop-blur-3xl w-[340px] h-[450px] rounded-[24px] border border-white/10" : "w-full lg:w-[280px] xl:w-[320px] h-full order-first")}>
-             <ChatPanel 
-               messages={messages} 
-               players={players}
-               inputMessage={inputMessage} 
-               setInputMessage={setInputMessage} 
-               onSend={handleSendMessage}
-               currentUserId={user?.id}
-               isVipLobby={isVipLobby}
-               onClose={isElectron ? () => setIsDesktopChatOpen(false) : undefined}
-             />
-          </div>
-        ) : (
-          isElectron && (
-            <motion.div 
-              initial={{ y: 50, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              className="hidden lg:flex absolute bottom-6 right-6 z-40 flex-col border border-white/10 bg-black/60 backdrop-blur-lg rounded-[24px] overflow-hidden shadow-2xl cursor-pointer hover:bg-black/80 w-[300px] hover:border-neon-blue/30 transition-colors duration-300"
-              onClick={() => setIsDesktopChatOpen(true)}
-            >
-              <div className="flex items-center justify-between p-4">
-                 <div className="flex flex-col">
-                   <div className="flex items-center gap-2">
-                     <div className="h-2 w-2 rounded-full bg-neon-blue animate-pulse" />
-                     <h2 className="text-xs font-black uppercase tracking-widest text-white">Lobby Comms</h2>
-                   </div>
-                   {unreadDesktopChat > 0 && <span className="text-[10px] text-neon-blue mt-1 font-bold">{unreadDesktopChat} پیام جدید</span>}
-                 </div>
-                 <MessageSquare size={18} className="text-gray-400" />
-              </div>
-            </motion.div>
-          )
-        )}
-      </div>
-
-      {/* Mobile Chat Trigger & Bottom Actions - Fixed and Styled */}
-      <div className="lg:hidden fixed bottom-20 left-4 right-4 z-50 p-3 glass rounded-[28px] border border-white/10 flex items-center justify-between gap-3 shadow-2xl overflow-hidden pb-[calc(1rem+env(safe-area-inset-bottom))]">
-        <div className="flex items-center gap-2 shrink-0">
-          <button 
-            onClick={() => {
-              leaveLobby();
-              navigate("/lobbies");
-            }}
-            className="h-12 w-12 rounded-[14px] bg-neon-pink/10 text-neon-pink flex items-center justify-center border border-neon-pink/20"
-            title="خروج"
-          >
-            <LogOut size={20} />
-          </button>
-          <button 
-            onClick={() => setIsChatOpen(true)}
-            className="h-12 w-12 rounded-[14px] bg-white/5 flex items-center justify-center text-neon-blue relative border border-white/10"
-          >
-            <MessageSquare size={20} />
-            <div className="absolute top-2.5 right-2.5 h-2 w-2 rounded-full bg-neon-pink" />
-          </button>
-        </div>
-
-        <div className="flex items-center gap-2 overflow-x-auto scrollbar-none px-1 py-1">
-           <ControlButton icon={isMicMuted ? <MicOff size={20} /> : <Mic size={20} />} active={!isMicMuted} onClick={toggleMic} className="h-12 w-12 rounded-[14px] shrink-0" />
-           {typeof window !== "undefined" && !!(window as any).electronAPI && (
-             <button 
-               onClick={() => {
-                 if (screenStream) { stopShare(); }
-                 else if (isBaseRequirementMet) { initiateScreenShareFlow(); }
-               }}
-               className={cn(
-                 "h-12 w-12 rounded-[14px] flex items-center justify-center transition-all group shrink-0 relative",
-                 screenStream ? "bg-neon-blue/20 text-neon-blue border-neon-blue shadow-[0_0_15px_rgba(0,240,255,0.4)] border shadow-inner" :
-                 (isBaseRequirementMet ? "bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white" : "bg-white/5 text-gray-700 opacity-50 cursor-not-allowed")
-               )}
-               title={!isBaseRequirementMet ? "سرعت اینترنت شما برای این کار کافی نیست" : screenStream ? "پایان شیر اسکرین" : "اشتراک صفحه نمایش"}
-             >
-               {screenStream ? <MonitorUp size={20} /> : <Monitor size={20} />}
-               {!isBaseRequirementMet && <AlertTriangle size={10} className="absolute top-2 right-2 text-yellow-500" />}
-             </button>
-           )}
-           <ControlButton icon={<UserPlus size={20} />} onClick={() => setIsInviteModalOpen(true)} className="h-12 w-12 rounded-[14px] shrink-0" />
-           <ControlButton icon={<Settings size={20} />} onClick={() => setIsSettingsModalOpen(true)} className="h-12 w-12 rounded-[14px] shrink-0" />
-        </div>
-
-        <GlowButton 
-          variant={isReady ? "blue" : "pink"} 
-          onClick={onToggleReady}
-          disabled={isMatchStarted || isStarting}
-          className={cn(
-            "h-12 px-4 min-w-[85px] text-[12px] uppercase font-black italic rounded-[14px] shrink-0",
-            (isMatchStarted || isStarting) && "opacity-50 grayscale cursor-not-allowed"
-          )}
-        >
-          {isReady ? "آماده" : "GO"}
-        </GlowButton>
-      </div>
-
-      {/* Mobile Chat Drawer */}
-      <AnimatePresence>
-        {isChatOpen && (
-          <>
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsChatOpen(false)}
-              className="fixed inset-0 bg-black/80 z-[6000] lg:hidden"
-            />
-            <motion.div 
-              initial={{ y: "100%" }}
-              animate={{ y: 0 }}
-              exit={{ y: "100%" }}
-              transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="fixed bottom-0 left-0 right-0 h-[80dvh] bg-[#0a0a0f] rounded-t-[40px] z-[6005] lg:hidden border-t border-white/10 overflow-hidden flex flex-col"
-            >
-              <div className="h-1.5 w-12 bg-white/10 rounded-full mx-auto mt-4 mb-2 shrink-0" />
-              <div className="flex-1 overflow-hidden flex flex-col">
-                <ChatPanel 
-                  currentUserId={user?.id}
-                  messages={messages} 
-                  players={players}
-                  inputMessage={inputMessage} 
-                  setInputMessage={setInputMessage} 
-                  onSend={handleSendMessage} 
-                  onClose={() => setIsChatOpen(false)}
-                  isVipLobby={isVipLobby}
-                />
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-
-      {/* Footer Controls (Fixed Desktop) */}
-      <motion.footer 
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        className="hidden lg:flex relative z-10 items-center justify-between gap-6 p-4 glass rounded-[40px] border-white/5 shadow-2xl mt-auto"
-      >
-        <div className="flex items-center gap-6">
-           <div className="flex items-center gap-4 px-8 border-l border-white/5">
-             <GlowButton 
-                variant={isReady ? "blue" : "pink"}
-                onClick={onToggleReady}
-                disabled={isMatchStarted || isStarting}
-                className={cn(
-                  "px-8 h-12 text-xs",
-                  isReady && "shadow-neon-blue/20",
-                  (isMatchStarted || isStarting) && "opacity-50 grayscale cursor-not-allowed"
-                )}
-             >
-               {isReady ? <Check size={18} className={isRtl ? "ml-2" : "mr-2"} /> : null}
-               {isReady ? (isRtl ? "آماده" : "READY") : (isRtl ? "اعلام آمادگی" : "READY UP")}
-             </GlowButton>
-           </div>
-           
-           <div className="flex items-center gap-4">
-              <ControlButton icon={isMicMuted ? <MicOff size={20} /> : <Mic size={20} />} active={!isMicMuted} onClick={toggleMic} tooltip={isRtl ? "میکروفون" : "Microphone"} />
-              <ControlButton icon={isDeafened ? <VolumeX size={20} /> : <Volume2 size={20} />} active={!isDeafened} onClick={() => setIsDeafened(!isDeafened)} tooltip={isRtl ? "قطع صدای اسپیکر" : "Deafen Speakers"} />
-              {typeof window !== "undefined" && !!(window as any).electronAPI && (
-                <button 
-                  onClick={() => {
-                    if (screenStream) { stopShare(); }
-                    else if (isBaseRequirementMet) { initiateScreenShareFlow(); }
-                  }}
-                  className={cn(
-                    "h-12 w-12 rounded-2xl flex items-center justify-center transition-all group relative shrink-0",
-                    screenStream ? "bg-neon-blue/20 text-neon-blue border-neon-blue shadow-[0_0_15px_rgba(0,240,255,0.4)] border shadow-inner" :
-                    (isBaseRequirementMet ? "bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white" : "bg-white/5 text-gray-700 opacity-50 cursor-not-allowed")
-                  )}
-                  title={!isBaseRequirementMet ? (isRtl ? "سرعت اینترنت شما برای اشتراک گذاری با این تعداد بیننده کافی نیست" : "Your upload speed is not sufficient for screensharing with this many viewers") : screenStream ? (isRtl ? "پایان شیر اسکرین" : "End Screen Share") : (isRtl ? "اشتراک صفحه نمایش" : "Share Screen")}
-                >
-                  {screenStream ? <MonitorUp size={20} /> : <Monitor size={20} />}
-                  {!isBaseRequirementMet && <AlertTriangle size={10} className="absolute top-2 right-2 text-yellow-500" />}
-                </button>
-              )}
-              <ControlButton icon={<UserPlus size={20} />} onClick={() => setIsInviteModalOpen(true)} tooltip={isRtl ? "دعوت" : "Invite"} />
-              <ControlButton icon={<Settings size={20} />} onClick={() => setIsSettingsModalOpen(true)} tooltip={isRtl ? "تنظیمات" : "Settings"} />
-           </div>
-        </div>
-
-        <button 
-          onClick={() => {
-            leaveLobby();
-            navigate("/lobbies");
-          }}
-          className="flex items-center gap-2 px-8 py-3 rounded-2xl text-xs font-black uppercase text-neon-pink hover:bg-neon-pink/10 transition-all border border-transparent hover:border-neon-pink/20"
-        >
-          <LogOut size={18} className={isRtl ? "ml-2" : "mr-2"} />
-          {isRtl ? "خروج از لابی" : "LEAVE LOBBY"}
-        </button>
-      </motion.footer>
-
-      {/* MODALS */}
-      <AnimatePresence>
-        {isInviteModalOpen && (
-          <Modal title={isRtl ? "دعوت دوستان" : "Invite Friends"} onClose={() => setIsInviteModalOpen(false)}>
-            <div className="space-y-4">
-               {friends.length > 0 ? friends.map((friend, i) => (
-                 <div key={i} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl hover:bg-white/10 transition-colors group">
-                    <div className="flex items-center gap-3">
-                       <div className="h-10 w-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden shrink-0">
-                         <SmartImage 
-                           src={friend.avatarUrl || ""}
-                           className="w-full h-full object-cover"
-                           alt={friend.username}
-                         />
-                       </div>
-                       <div>
-                          <p className="text-sm font-black text-white">{friend.username}</p>
-                          <p className="text-[10px] text-gray-500 uppercase">{friend.status} • {friend.activity}</p>
-                       </div>
-                    </div>
-                    <button 
-                      onClick={() => {
-                        lobbySocket.emit("invite_player", { lobbyId: lobby?.id, targetUserId: friend.id });
-                        toast.success(isRtl ? `دعوت برای ${friend.username} ارسال شد` : `Invitation sent to ${friend.username}`);
-                      }}
-                      className="px-4 py-2 rounded-xl bg-neon-blue text-dark-bg text-[10px] font-black uppercase hover:scale-105 transition-transform"
-                    >
-                       Invite
-                    </button>
-                 </div>
-               )) : (
-                 <div className="text-center py-10 opacity-50">
-                    <p className="text-sm">{isRtl ? "لیست دوستان خالی است" : "Your friends list is empty"}</p>
-                 </div>
-               )}
-            </div>
-          </Modal>
-        )}
-
-        <ScreenShareModal
-          isOpen={isScreenShareModalOpen}
-          onClose={() => { setIsScreenShareModalOpen(false); setPendingSourceId(null); }}
-          userPlan={userPlanResolved}
-          onStartShare={handleQualitySelected}
-          estimatedUploadMbps={estimatedUploadMbps}
-          numViewers={players.length || 1}
-        />
-
-        <DesktopSourcePickerModal
-          isOpen={isSourcePickerOpen}
-          onClose={() => { setIsSourcePickerOpen(false); setPendingSourceId(null); }}
-          onSelect={handleSourceSelected}
-        />
-
-        {activeProfileUserId && (
-          <Modal title={isRtl ? "پروفایل بازیکن" : "Player Profile"} onClose={() => setActiveProfileUserId(null)}>
-            <div className="flex flex-col items-center gap-6 py-4">
-               <div className="h-32 w-32 rounded-[40px] bg-white/5 border border-white/10 flex items-center justify-center shadow-2xl overflow-hidden">
-                  {(() => {
-                    const p = players.find(p => p.id === activeProfileUserId);
-                    return (
-                      <SmartImage 
-                         src={p?.avatarUrl || ""}
-                         className="w-full h-full object-cover"
-                         alt={p?.name || "Player"}
-                      />
-                    );
-                  })()}
-               </div>
-               <div className="text-center">
-                 <h3 className="text-2xl font-black text-white">{players.find(p => p.id === activeProfileUserId)?.name}</h3>
-                 <p className="text-neon-blue text-sm font-black uppercase tracking-widest mt-1">Global Elite</p>
-               </div>
-               <div className="grid grid-cols-3 gap-4 w-full">
-                  <StatCard label={isRtl ? "بُردها" : "Wins"} value="1,242" />
-                  <StatCard label="K/D" value="1.42" />
-                  <StatCard label={isRtl ? "ساعت" : "Hours"} value="3.5K" />
-               </div>
-               <GlowButton 
-                variant="blue" 
-                className="w-full h-12 flex items-center justify-center gap-2"
-                onClick={() => window.open('/profile', '_blank')}
-               >
-                 <img src="/logo.png" className="h-5 w-auto" />
-                 {isRtl ? "مشاهده پروفایل لوکس" : "View LOXX Profile"}
-               </GlowButton>
-            </div>
-          </Modal>
-        )}
-
-        {isSettingsModalOpen && (
-          <Modal title={isRtl ? "تنظیمات لابی" : "Lobby Settings"} onClose={() => setIsSettingsModalOpen(false)}>
-            <div className="space-y-6">
-              {/* Host specific settings */}
-              {isHost ? (
-                <div className="space-y-4">
-                  <h4 className="text-sm font-black text-neon-blue uppercase tracking-widest border-b border-white/10 pb-2">{isRtl ? "تنظیمات اصلی لابی" : "Core Lobby Settings"}</h4>
-                  
-                  <div className="flex items-center justify-between p-3 rounded-2xl bg-white/5">
-                    <div>
-                      <p className="text-sm font-black text-white">{isRtl ? "لابی خصوصی" : "Private Lobby"}</p>
-                      <p className="text-[10px] text-gray-500 font-bold">{isRtl ? "فقط با کد دعوت یا لینک" : "Only via invite link or code"}</p>
-                    </div>
-                    <div 
-                      onClick={() => updateLobbySettings({ isPrivate: !lobby?.isPrivate })}
-                      className={cn(
-                        "w-12 h-6 rounded-full relative cursor-pointer border transition-colors",
-                         lobby?.isPrivate ? "bg-neon-blue/20 border-neon-blue/30" : "bg-white/5 border-white/10"
-                      )}
-                    >
-                      <div className={cn(
-                        "absolute top-1 h-4 w-4 rounded-full transition-all",
-                        lobby?.isPrivate ? "right-1 bg-neon-blue shadow-[0_0_10px_rgba(0,229,255,1)]" : "right-7 bg-gray-500"
-                      )} />
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between p-3 rounded-2xl bg-white/5">
-                    <div>
-                      <p className="text-sm font-black text-white">{isRtl ? "دسترسی میکروفون" : "Microphone Required"}</p>
-                      <p className="text-[10px] text-gray-500 font-bold">{isRtl ? "بازیکنان برای چت صوتی نیاز به میکروفون دارند" : "Players require microhpone for voice chat"}</p>
-                    </div>
-                    <div 
-                      onClick={() => updateLobbySettings({ micRequired: !lobby?.micRequired })}
-                      className={cn(
-                        "w-12 h-6 rounded-full relative cursor-pointer border transition-colors",
-                         lobby?.micRequired ? "bg-neon-blue/20 border-neon-blue/30" : "bg-white/5 border-white/10"
-                      )}
-                    >
-                      <div className={cn(
-                        "absolute top-1 h-4 w-4 rounded-full transition-all",
-                        lobby?.micRequired ? "right-1 bg-neon-blue shadow-[0_0_10px_rgba(0,229,255,1)]" : "right-7 bg-gray-500"
-                      )} />
-                    </div>
-                  </div>
-                </div>
-              ) : null}
-
-              {/* General User settings */}
-              <div className="space-y-4">
-                {/* Input/Output Audio Selector (Hardware integrations) */}
-                <div className="space-y-3 p-3.5 rounded-2xl bg-white/5 border border-white/5">
-                  <p className="text-xs font-black text-white border-b border-white/5 pb-1.5 flex items-center gap-2">
-                    <span className="h-1.5 w-1.5 rounded-full bg-neon-pink shadow-[0_0_8px_rgba(255,0,127,1)]" />
-                    {isRtl ? "تنظیمات ورودی و خروجی صدا (Hardware Audio Routing)" : "Audio Input & Output Hardware Routing"}
-                  </p>
-
-                  <div className="space-y-1">
-                    <label className="text-[9px] text-gray-400 font-bold block">{isRtl ? "دستگاه ورودی میکروفون (Input Microphone)" : "Input Microphone Device"}</label>
-                    <select
-                      value={selectedAudioInput}
-                      onChange={(e) => setSelectedAudioInput(e.target.value)}
-                      className="w-full py-2 px-3 rounded-xl bg-black/40 border border-white/10 text-xs text-white focus:outline-none focus:border-neon-blue font-bold font-sans transition appearance-none cursor-pointer"
-                    >
-                      <option value="default" className="bg-zinc-950 text-gray-300">{isRtl ? "Default Device (میکروفون پیش‌فرض سیستم)" : "Default Device (System Default Mic)"}</option>
-                      {audioInputDevices.map((d) => (
-                        <option key={d.deviceId} value={d.deviceId} className="bg-zinc-950 text-white">
-                          {d.label || `Microphone (${d.deviceId.slice(0, 5)}...)`}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-[9px] text-gray-400 font-bold block">{isRtl ? "دستگاه خروجی هدفون / بلندگو (Output Destination)" : "Output Destination Device"}</label>
-                    <select
-                      value={selectedAudioOutput}
-                      onChange={(e) => setSelectedAudioOutput(e.target.value)}
-                      className="w-full py-2 px-3 rounded-xl bg-black/40 border border-white/10 text-xs text-white focus:outline-none focus:border-neon-pink font-bold font-sans transition appearance-none cursor-pointer"
-                    >
-                      <option value="default" className="bg-zinc-950 text-gray-300">{isRtl ? "Default Device (بلندگوی پیش‌فرض سیستم)" : "Default Device (System Default Speaker)"}</option>
-                      {audioOutputDevices.map((d) => (
-                        <option key={d.deviceId} value={d.deviceId} className="bg-zinc-950 text-white">
-                          {d.label || `Output Speaker (${d.deviceId.slice(0, 5)}...)`}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                {/* Desktop & Live Discord Overlay Panel */}
-                <div className="space-y-4 pt-4 border-t border-white/10">
-                  <h4 className="text-sm font-black text-neon-blue uppercase tracking-widest border-b border-white/10 pb-2 flex items-center gap-1.5">
-                    <span className="h-1.5 w-1.5 rounded-full bg-neon-blue shadow-[0_0_8px_rgba(0,229,255,1)]" />
-                    {isRtl ? "تنظیمات اختصاصی دسکتاپ و سیستم صوتی" : "Desktop client & Audio Engine Settings"}
-                  </h4>
-
-                  {isElectron ? (
-                    <div className="p-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/25 text-xs text-white flex flex-col items-center gap-3 text-center">
-                      <Settings size={32} className="text-indigo-400" />
-                      <p>{isRtl ? "تنظیمات لابی مخصوص ویندوز (Push to Talk، Overlay، Performance) به بخش جدیدی منتقل شده است." : "Windows-specific settings (Push to Talk, Overlay, Performance) have moved to the Launcher section."}</p>
-                      <button 
-                        onClick={() => {
-                          setIsSettingsModalOpen(false);
-                          navigate("/electron-settings");
-                        }}
-                        className="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 rounded-xl text-white font-bold transition"
-                      >
-                         {isRtl ? "باز کردن تنظیمات ویندوز" : "Open Windows Settings"}
-                      </button>
-                    </div>
-                  ) : (
-                    /* Web Browser Showcase for Desktop Client */
-                    <div className="p-4 rounded-2xl bg-gradient-to-br from-neon-blue/10 via-transparent to-neon-pink/10 border border-white/5 space-y-3">
-                      <p className="text-xs font-black text-white">{isRtl ? "🔥 پتانسیل واقعی سیستم صوتی Loxx را آزاد کنید!" : "🔥 Unlock the full potential of LOXX Audio Engine!"}</p>
-                      <p className="text-[10px] text-gray-400 leading-relaxed font-bold">
-                        {isRtl ? "آیا می‌دانستید با استفاده از کلاینت دسکتاپ (Windows / macOS / Linux)، قابلیت‌هایی در اختیارتان قرار می‌گیرد که در مرورگر وب ممکن نیستند؟" : "Did you know that by running the official Desktop Client, you gain advanced abilities not supported by regular web browsers?"}
-                      </p>
-                      <ul className="text-[9px] text-[#00e5ff] space-y-1 font-bold list-disc list-inside">
-                        <li>{isRtl ? "کلید Push to Talk سیستمی (حتی زمانی که داخل بازی‌های سنگین مانند CS:GO و Valorant آلت‌تب هستید)" : "System-wide Push to Talk hotkey (even while alt-tabbed in heavy fullscreen games like CS:GO or Valorant)"}</li>
-                        <li>{isRtl ? "منوی هوشمند تسک‌بار (System Tray) به همراه کلید قطع صدای گلوبال" : "Intelligent System Tray menu with a global active microphone mute switch"}</li>
-                        <li>{isRtl ? "اجرای اتوماتیک و اتصال بدون دردسر همزمان با روشن کردن رایانه شخصی شما" : "Auto-launch and instant connection upon starting your personal computer"}</li>
-                        <li>{isRtl ? "قابلیت Hardware Acceleration برای کاهش فشار روی CPU" : "Engine-level Hardware Acceleration to bypass browser engine overhead and lower CPU usage"}</li>
-                      </ul>
-                      <div className="pt-1 select-all">
-                        <button 
-                          onClick={() => {
-                            toast.success(isRtl ? "درخواست دانلود کلاینت دسکتاپ ثبت شد. به زودی نسخه لانچر برای شما ارسال می‌شود!" : "Launcher download request registered! The setup file will be delivered shortly.");
-                          }}
-                          className="w-full py-2.5 rounded-xl bg-neon-blue hover:bg-neon-blue/80 text-black text-xs font-black transition-all shadow-[0_0_12px_rgba(0,229,255,0.4)]"
-                        >
-                          {isRtl ? "دریافت لانچر دسکتاپ (Loxx Desktop Launcher)" : "Download Desktop Launcher"}
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Shared Web-Only Overlay appearance settings (redundant in Desktop) */}
-                  {!isElectron && (
-                    <div className="border-t border-white/5 pt-4 space-y-3">
-                      <p className="text-xs font-black text-white select-none">{isRtl ? "تنظیمات ظاهر ویترین زنده (HUD Overlay Appearance)" : "HUD Desktop Overlay Appearance Config"}</p>
-
-                      {/* Overlay Toggle Switch */}
-                      <div className="flex items-center justify-between p-3 rounded-2xl bg-white/5">
-                        <div>
-                          <p className="text-xs font-black text-white">{isRtl ? "طرح زنده روی بازی‌ها (Live Overlay)" : "Live In-game HUD Overlay"}</p>
-                          <p className="text-[9px] text-gray-500 font-bold font-sans">{isRtl ? "نمایش لیست فعال کانال صوتی روی گوشه تصویر بقیه برنامه‌ها" : "Render active speaker list on top of fullscreen programs & games"}</p>
-                        </div>
-                        <div 
-                          onClick={() => setOverlayEnabled(!overlayEnabled)}
-                          className={cn(
-                            "w-12 h-6 rounded-full relative cursor-pointer border transition-colors",
-                             overlayEnabled ? "bg-neon-blue/20 border-neon-blue/30" : "bg-white/5 border-white/10"
-                          )}
-                        >
-                          <div className={cn(
-                            "absolute top-1 h-4 w-4 rounded-full transition-all",
-                            overlayEnabled ? "right-1 bg-neon-blue shadow-[0_0_10px_rgba(0,229,255,1)]" : "right-7 bg-gray-500"
-                          )} />
-                        </div>
-                      </div>
-
-                      {/* Hide non-talking toggle */}
-                      <div className={cn("flex items-center justify-between p-3 rounded-2xl bg-white/5 transition-opacity", !overlayEnabled && "opacity-50 pointer-events-none")}>
-                        <div>
-                          <p className="text-xs font-black text-white">{isRtl ? "فقط نمایش کاربران در حال صحبت" : "Show speaking users only"}</p>
-                          <p className="text-[9px] text-gray-500 font-bold font-sans">{isRtl ? "مخفی کردن اعضای ساکت از کادر روی صفحه زمان سکوت" : "Hide quiet players from the HUD panel to minimize layout clutter"}</p>
-                        </div>
-                        <div 
-                          onClick={() => setOverlayOnlyTalking(!overlayOnlyTalking)}
-                          className={cn(
-                            "w-12 h-6 rounded-full relative cursor-pointer border transition-colors",
-                             overlayOnlyTalking ? "bg-neon-blue/20 border-neon-blue/30" : "bg-white/5 border-white/10"
-                          )}
-                        >
-                          <div className={cn(
-                            "absolute top-1 h-4 w-4 rounded-full transition-all",
-                            overlayOnlyTalking ? "right-1 bg-neon-blue shadow-[0_0_10px_rgba(0,229,255,1)]" : "right-7 bg-gray-500"
-                          )} />
-                        </div>
-                      </div>
-
-                      {/* Display members list display toggle */}
-                      <div className={cn("flex items-center justify-between p-3 rounded-2xl bg-white/5 transition-opacity", !overlayEnabled && "opacity-50 pointer-events-none")}>
-                        <div>
-                          <p className="text-xs font-black text-white">{isRtl ? "نمایش لیست اعضا روی اورلی" : "Render members roster list"}</p>
-                          <p className="text-[9px] text-gray-400 font-bold font-sans">{isRtl ? "نمایش یا پنهان‌سازی اسامی و آواتار اعضا در لابی روی تصویر" : "Control the visibility of individual names & avatars in the overlay box"}</p>
-                        </div>
-                        <div 
-                          onClick={() => setOverlayMembersVisible(!overlayMembersVisible)}
-                          className={cn(
-                            "w-12 h-6 rounded-full relative cursor-pointer border transition-colors",
-                             overlayMembersVisible ? "bg-neon-blue/20 border-neon-blue/30" : "bg-white/5 border-white/10"
-                          )}
-                        >
-                          <div className={cn(
-                            "absolute top-1 h-4 w-4 rounded-full transition-all",
-                            overlayMembersVisible ? "right-1 bg-neon-blue shadow-[0_0_10px_rgba(0,229,255,1)]" : "right-7 bg-gray-500"
-                          )} />
-                        </div>
-                      </div>
-
-                      {/* Speaking & Quiet Opacities sliders */}
-                      <div className={cn("space-y-3 p-3 rounded-2xl bg-white/5 transition-opacity", (!overlayEnabled || !overlayMembersVisible) && "opacity-50 pointer-events-none")}>
-                        <div className="space-y-1">
-                          <div className="flex justify-between text-gray-400 text-[10px] font-bold">
-                            <span className="font-mono text-neon-blue">{Math.round(overlayNormalOpacity * 100)}%</span>
-                            <span>{isRtl ? "شفافیت عضو در حالت سکوت (Quiet)" : "Roster Opacity in Quiet State"}</span>
-                          </div>
-                          <input 
-                            type="range" min="0.1" max="1.0" step="0.05"
-                            value={overlayNormalOpacity} 
-                            onChange={e => setOverlayNormalOpacity(parseFloat(e.target.value))} 
-                            className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-neon-blue" 
-                          />
-                        </div>
-
-                        <div className="space-y-1">
-                          <div className="flex justify-between text-gray-400 text-[10px] font-bold">
-                            <span className="font-mono text-neon-blue">{Math.round(overlaySpeakingOpacity * 100)}%</span>
-                            <span>{isRtl ? "شفافیت عضو در حال صحبت (Speaking)" : "Roster Opacity in Speaking State"}</span>
-                          </div>
-                          <input 
-                            type="range" min="0.1" max="1.0" step="0.05"
-                            value={overlaySpeakingOpacity} 
-                            onChange={e => setOverlaySpeakingOpacity(parseFloat(e.target.value))} 
-                            className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-neon-blue" 
-                          />
-                        </div>
-                      </div>
-
-                      {/* Overlay Position selector */}
-                      <div className={cn("space-y-2 transition-opacity", !overlayEnabled && "opacity-50 pointer-events-none")}>
-                        <label className="text-xs font-black text-gray-400">{isRtl ? "موقعیت قرارگیری اورلی روی صفحه" : "HUD Screen Orientation Position"}</label>
-                        <div className="grid grid-cols-2 gap-2">
-                          {[
-                            { id: "top-left", name: isRtl ? "بالا چپ" : "Top Left" },
-                            { id: "top-right", name: isRtl ? "بالا راست" : "Top Right" },
-                            { id: "bottom-left", name: isRtl ? "پایین چپ" : "Bottom Left" },
-                            { id: "bottom-right", name: isRtl ? "پایین راست" : "Bottom Right" }
-                          ].map(pos => (
-                            <button 
-                              key={pos.id}
-                              onClick={() => setOverlayPosition(pos.id as any)}
-                              className={cn(
-                                "py-2 rounded-xl text-xs font-black transition border",
-                                overlayPosition === pos.id 
-                                  ? "bg-neon-blue/15 border-neon-blue/30 text-neon-blue" 
-                                  : "bg-white/5 border-white/5 text-gray-400 hover:bg-white/10"
-                              )}
-                            >
-                               {pos.name}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Overlay Size selector */}
-                      <div className={cn("space-y-2 transition-opacity", !overlayEnabled && "opacity-50 pointer-events-none")}>
-                        <label className="text-xs font-black text-gray-400">{isRtl ? "اندازه نمایشگر اورلی دسکتاپ" : "Desktop HUD Scaled Size"}</label>
-                        <div className="flex gap-2">
-                          {[
-                            { id: "small", name: isRtl ? "کوچک" : "Small" },
-                            { id: "medium", name: isRtl ? "متوسط" : "Medium" },
-                            { id: "large", name: isRtl ? "بزرگ" : "Large" }
-                          ].map(sz => (
-                            <button 
-                              key={sz.id}
-                              onClick={() => setOverlaySize(sz.id as any)}
-                              className={cn(
-                                "flex-1 py-1.5 rounded-xl text-xs font-black transition border",
-                                overlaySize === sz.id 
-                                  ? "bg-neon-blue/15 border-neon-blue/35 text-neon-blue" 
-                                  : "bg-white/5 border-white/5 text-gray-400 hover:bg-white/10"
-                              )}
-                            >
-                               {sz.name}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </Modal>
-        )}
-      </AnimatePresence>
-        </div>
-      </main>
-    </div>
-  );
+ const { id } = useParams();
+ const navigate = useNavigate();
+ const { 
+ lobby, 
+ joinLobby,
+ leaveLobby,
+ toggleReady,
+ setLobbyMuted,
+ sendMessage,
+ updateLobbySettings,
+ kickPlayer,
+ banPlayer,
+ isJoining,
+ joinError,
+
+ // Voice states fetched globally
+ localStream,
+ voiceMode,
+ setVoiceMode,
+ pttKey,
+ setPttKey,
+ isPttPressed,
+ setIsPttPressed,
+ isAudioContextResumed,
+ resumeAudio,
+ peerVolumes,
+ peerActivity,
+ localVolume,
+ setPeerVolume,
+
+ // Overlay settings fetched globally
+ overlayEnabled,
+ setOverlayEnabled,
+ overlayPosition,
+ setOverlayPosition,
+ overlaySize,
+ setOverlaySize,
+ overlayOnlyTalking,
+ setOverlayOnlyTalking,
+ overlayMembersVisible,
+ setOverlayMembersVisible,
+ overlayNormalOpacity,
+ setOverlayNormalOpacity,
+ overlaySpeakingOpacity,
+ setOverlaySpeakingOpacity,
+
+ // Electron bindings
+ isElectron,
+ launcherCloseToTray,
+ launcherStartAtLogin,
+ launcherHardwareAcceleration,
+ launcherGlobalPttKey,
+ launcherGlobalMuteKey,
+ updateLauncherSettings,
+
+ // New Desktop bindings
+ audioInputDevices,
+ audioOutputDevices,
+ selectedAudioInput,
+ setSelectedAudioInput,
+ selectedAudioOutput,
+ setSelectedAudioOutput,
+ refreshAudioDevices,
+ transparentOverlayEnabled,
+ setTransparentOverlayEnabled,
+ overlayX,
+ overlayY,
+ overlayWidth,
+ overlayHeight,
+ overlayOpacity,
+ overlayClickThrough,
+ gameDetected,
+ launcherRichPresenceEnabled,
+ setLauncherRichPresenceEnabled,
+ isDeafened,
+ setIsDeafened,
+ remoteStreams,
+ setScreenStreamForWebRTC
+ } = useLobby();
+
+ const { user, isSidebarCollapsed, setIsSidebarCollapsed } = useAuth();
+ const { direction, t, language } = useLanguage();
+ const isRtl = direction === "rtl" || language === "fa";
+ const { openChat, addFriend } = useFriends();
+ const { openProfile } = useProfilePopover();
+ 
+ const [copied, setCopied] = useState(false);
+ const [isChatOpen, setIsChatOpen] = useState(false); // Mobile chat
+ const messages = useMemo(() => {
+ return [
+ { id: "system-1", user: "LOXX BOT", text: t("lobbyCreated"), time: "System", isSystem: true, fromUserId: "system" },
+ ...(lobby?.messages?.map(m => ({
+ id: m.id,
+ fromUserId: m.from?.userId || m.senderId,
+ user: m.from?.username || m.sender?.username || "بازیکن",
+ avatarUrl: (m.from as any)?.avatarUrl || m.sender?.profile?.avatarUrl,
+ badges: (m.from as any)?.badges?.map((ub: any) => ub.badge) || m.sender?.badges?.map((ub: any) => ub.badge) || [],
+ text: m.content,
+ time: m.createdAt ? new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "Recently"
+ })) || [])
+ ];
+ }, [lobby?.messages]);
+
+ const [isDesktopChatOpen, setIsDesktopChatOpen] = useState(false); // Desktop chat
+ const [unreadDesktopChat, setUnreadDesktopChat] = useState(0);
+
+ const prevLastMessage = useRef<string | null>(null);
+ useEffect(() => {
+ if (messages.length > 0) {
+ const last = messages[messages.length - 1];
+ if (last.id !== prevLastMessage.current) {
+ prevLastMessage.current = last.id;
+ if (!isDesktopChatOpen && last.fromUserId !== user?.id && !last.isSystem) {
+ setUnreadDesktopChat(p => p + 1);
+ }
+ }
+ }
+ }, [messages, isDesktopChatOpen, user?.id]);
+
+ useEffect(() => {
+ if (isDesktopChatOpen) setUnreadDesktopChat(0);
+ }, [isDesktopChatOpen]);
+
+ const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
+ const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+ const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+ const [activeProfileUserId, setActiveProfileUserId] = useState<string | null>(null);
+ const [layoutMode, setLayoutMode] = useState<'default' | 'compact' | 'discord'>(() => (localStorage.getItem('loxx-lobby-layout') as any) || 'default');
+
+ const userPlanResolved = ((user as any)?.role === "ADMIN" || (user as any)?.membership === "VIP" || (user as any)?.profile?.membershipType === "VIP") 
+ ? "VIP" 
+ : (((user as any)?.membership === "PLUS" || (user as any)?.profile?.membershipType === "PLUS") ? "PLUS" : "NORMAL");
+
+ const {
+ estimatedUploadMbps,
+ isTestingBandwidth,
+ screenStream,
+ currentQuality,
+ startShare,
+ stopShare,
+ isBaseRequirementMet,
+ isWarningActive
+ } = useSmartScreenShare(
+ userPlanResolved,
+ lobby?.players?.length || 1,
+ typeof window !== "undefined" && !!(window as any).electronAPI,
+ setScreenStreamForWebRTC
+ );
+ 
+ const [isScreenShareModalOpen, setIsScreenShareModalOpen] = useState(false);
+ const [isSourcePickerOpen, setIsSourcePickerOpen] = useState(false);
+ const [pendingSourceId, setPendingSourceId] = useState<string | null>(null);
+
+ const initiateScreenShareFlow = () => {
+ const api = (window as any).electronAPI;
+ if (api && api.getDesktopSources) {
+ setIsSourcePickerOpen(true);
+ } else {
+ setIsScreenShareModalOpen(true);
+ }
+ };
+
+ const handleSourceSelected = (sourceId: string) => {
+ setPendingSourceId(sourceId);
+ setIsSourcePickerOpen(false);
+ setIsScreenShareModalOpen(true);
+ };
+
+ const handleQualitySelected = (quality: ShareQuality) => {
+ setIsScreenShareModalOpen(false);
+ startShare(quality, pendingSourceId || undefined);
+ setPendingSourceId(null);
+ };
+
+
+ // Compute active remote screen share (if any user in the lobby is sharing video tracks)
+ const activeRemoteShare = useMemo(() => {
+ if (!remoteStreams) return null;
+ for (const [peerId, stream] of remoteStreams.entries()) {
+ if (stream.getVideoTracks().length > 0) {
+ const presenter = lobby?.players?.find(p => p.userId === peerId);
+ return { peerId, stream, presenterName: presenter?.username || "Guest Player" };
+ }
+ }
+ return null;
+ }, [remoteStreams, lobby?.players]);
+
+ const toggleLayout = () => {
+ const modes: ('default' | 'compact' | 'discord')[] = ['default', 'compact', 'discord'];
+ const nextMode = modes[(modes.indexOf(layoutMode) + 1) % modes.length];
+ setLayoutMode(nextMode);
+ localStorage.setItem('loxx-lobby-layout', nextMode);
+ toast(`حالت نمایش: ${nextMode === 'default' ? 'استاندارد' : nextMode === 'compact' ? 'فشرده و ساده' : 'مدل دیسکورد'}`, { icon: "🎨" });
+ };
+
+ const [wasInLobby, setWasInLobby] = useState(false);
+ const hasCollapsedOnMount = useRef(false);
+
+ // Join lobby on mount
+ useEffect(() => {
+ if (id) {
+ joinLobby(id);
+ }
+ // Collapse right sidebar by default only on initial enter/mount
+ if (!hasCollapsedOnMount.current) {
+ setIsSidebarCollapsed(true);
+ hasCollapsedOnMount.current = true;
+ }
+ }, [id, setIsSidebarCollapsed]);
+
+ // Redirect if lobby becomes null (e.g., closed by host) or if joining fails
+ const [countdown, setCountdown] = useState(5);
+ const [isListeningForKey, setIsListeningForKey] = useState(false);
+
+ useEffect(() => {
+ if (lobby) setWasInLobby(true);
+ if ((wasInLobby && !lobby && id) || joinError) {
+ navigate("/lobbies");
+ }
+ }, [lobby, wasInLobby, id, navigate, joinError]);
+
+ const players = useMemo(() => {
+ const list = lobby?.players?.map(p => ({
+ id: p.userId,
+ name: p.username || "Guest Player",
+ avatar: p.role === "HOST" ? "👑" : "👤",
+ avatarUrl: p.avatarUrl,
+ level: p.level,
+ membership: p.membership as MembershipType,
+ vipMetadata: p.vipMetadata,
+ bannerUrl: p.bannerUrl,
+ badges: (p.user?.badges || p.badges || []).map((ub: any) => ({
+ ...(ub.badge || ub),
+ isPinned: ub.isPinned || false
+ })) || [],
+ rank: "Verified Gamer",
+ isHost: p.role === "HOST",
+ role: p.user?.role || p.role,
+ isReady: !!p.isReady,
+ hasMic: true,
+ isMuted: p.userId === user?.id ? !!p.micMuted : (peerVolumes[p.userId] === 0 || !!p.micMuted),
+ ping: 25,
+ isSpeaking: p.userId === user?.id 
+ ? localVolume > 15 
+ : (peerActivity[p.userId] || 0) > 15 || (lobby?.talkingUsers?.includes(p.userId) || false),
+ volume: p.userId === user?.id 
+ ? localVolume 
+ : (peerVolumes[p.userId] !== undefined ? peerVolumes[p.userId] : 100),
+ activity: p.userId === user?.id ? localVolume : (peerActivity[p.userId] || 0)
+ })) || [];
+
+ // Add empty slots
+ const maxPlayers = lobby?.maxPlayers || 5;
+ const result = [...list];
+ while (result.length < maxPlayers) {
+ result.push({
+ id: `slot-${result.length}`,
+ name: "Empty Slot",
+ avatar: "",
+ rank: "",
+ isReady: false,
+ hasMic: false,
+ isMuted: false,
+ ping: 0,
+ isSpeaking: false,
+ volume: 100,
+ activity: 0
+ });
+ }
+ return result;
+ }, [lobby?.players, lobby?.maxPlayers, localVolume, peerActivity, lobby?.talkingUsers, peerVolumes, user?.id, user?.username]);
+
+ const isReady = lobby?.players?.find(p => p.userId === user?.id)?.isReady || false;
+ const isMicMuted = !!(lobby?.players?.find(p => p.userId === user?.id) as any)?.micMuted;
+ const isHost = lobby?.hostId === user?.id;
+ 
+ const hostPlayer = lobby?.players?.find((p: any) => p.userId === lobby?.hostId);
+ const isStreamerLobby = (hostPlayer as any)?.role === "STREAMER";
+ const isVipLobby = hostPlayer?.membership === "VIP" && !isStreamerLobby;
+ 
+ const isStarting = lobby?.status === "STARTING";
+ const isMatchStarted = lobby?.status === "IN_PROGRESS";
+ 
+ // Calculate if all current active players are ready
+ const activePlayersList = lobby?.players || [];
+ const activePlayersCount = activePlayersList.length;
+ const readyCountValue = activePlayersList.filter(p => p.isReady).length;
+ // Use backend status if available, fallback to dynamic check
+ const allReadyPulse = lobby?.status === "READY" || (activePlayersCount > 1 && readyCountValue === activePlayersCount);
+
+
+ // Audio context and mic loop handled globally by LobbyProvider
+ 
+ // Deleted redundant loop
+
+
+ // Stream states and key shortcuts are handled globally by LobbyProvider
+
+ const toggleMic = () => {
+ if (lobby) {
+ setLobbyMuted(!isMicMuted);
+ }
+ };
+
+ const [inputMessage, setInputMessage] = useState("");
+
+ const handleCopyCode = () => {
+ navigator.clipboard.writeText(lobby?.id || "LX-LOBBY");
+ setCopied(true);
+ setTimeout(() => setCopied(false), 2000);
+ };
+
+ const handleSendMessage = (e: React.FormEvent) => {
+ e.preventDefault();
+ if (!inputMessage.trim() || !id) return;
+ 
+ const words = inputMessage.split(/\s+/);
+ if (words.some(word => word.length > 15)) {
+ toast.error("یک کلمه نمیتواند بیشتر از 15 کاراکتر باشد (اسپم)");
+ return;
+ }
+
+ sendMessage(inputMessage);
+ setInputMessage("");
+ };
+
+ const onToggleReady = () => {
+ toggleReady(); // This already emits "lobby.ready" in LobbyContext
+ };
+
+ const handleStartMatch = () => {
+ if (isHost) {
+ lobbySocket.emit("lobby.start", { lobbyId: lobby?.id });
+ }
+ };
+
+ const handleCancelMatch = () => {
+ if (isHost) {
+ lobbySocket.emit("cancel_match", { lobbyId: lobby?.id });
+ }
+ };
+
+ const handleReopenLobby = () => {
+ if (isHost) {
+ lobbySocket.emit("reopen_lobby", { lobbyId: lobby?.id });
+ }
+ };
+ 
+ useEffect(() => {
+ let timer: NodeJS.Timeout;
+ if (isStarting && countdown > 0) {
+ timer = setTimeout(() => {
+ setCountdown(prev => prev - 1);
+ }, 1000);
+ } else if (countdown === 0 && isStarting) {
+ if (isHost) {
+ lobbySocket.emit("start_match_confirm", { lobbyId: lobby?.id });
+ }
+ }
+ return () => clearTimeout(timer);
+ }, [isStarting, countdown, isHost, lobby?.id]);
+
+ useEffect(() => {
+ if (!isStarting) {
+ setCountdown(5);
+ }
+ }, [isStarting]);
+
+ const handlePlayerVolume = (id: string, vol: number) => {
+ setPeerVolume(id, vol);
+ };
+
+ const { friends } = useFriends();
+
+ return (
+ <div className={cn("flex bg-[#050508] overflow-hidden", isElectron ? "h-[calc(100vh-100px)] min-h-[calc(100vh-100px)] max-h-[calc(100vh-100px)]" : "h-[calc(100vh-64px)] min-h-[calc(100vh-64px)] max-h-[calc(100vh-64px)]")} dir={isRtl ? "rtl" : "ltr"}>
+ <Sidebar />
+ <main className={cn(
+ "flex-1 min-w-0 relative h-full max-h-full overflow-hidden transition-all duration-300", 
+ isRtl 
+ ? (!isSidebarCollapsed ? "md:mr-64" : "md:mr-20") 
+ : (!isSidebarCollapsed ? "md:ml-64" : "md:ml-20")
+ )}>
+ <div className="h-full w-full bg-[#050508] text-white p-2 md:p-6 lg:p-8 flex flex-col gap-4 md:gap-6 relative overflow-hidden font-sans">
+ {!user?.isVerified && (
+ <div className="fixed top-20 left-4 right-4 z-[100] bg-neon-pink/20 backdrop-blur-md border border-neon-pink/30 rounded-2xl p-4 flex items-center justify-between">
+ <div className="flex items-center gap-3">
+ <ShieldAlert size={20} className="text-neon-pink" />
+ <p className="text-sm font-bold text-gray-200">
+ {isRtl ? "حساب شما تایید نشده است. تا زمان تایید ایمیل، قادر به چت کردن نخواهید بود." : "Your account is not verified. You won't be able to chat until you verify your email."}
+ </p>
+ </div>
+ <Link to="/settings" className="text-xs font-black text-neon-pink uppercase hover:underline">
+ {isRtl ? "تایید حساب" : "VERIFY ACCOUNT"}
+ </Link>
+ </div>
+ )}
+
+ {/* LAN mode banners & assistance */}
+ {lobby?.isLanMode && !isElectron && (
+ <div className="relative z-10 bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 flex flex-col md:flex-row items-center justify-between gap-3 animate-enter shrink-0">
+ <div className={cn("flex items-center gap-3", isRtl ? "text-right" : "text-left")}>
+ <ShieldAlert size={20} className="text-amber-400 shrink-0" />
+ <div>
+ <p className="text-sm font-black text-white">
+ {isRtl ? "⚠️ جهت بازی در حالت Lan، استفاده از اپلیکیشن ویندوز لوکس الزامی است!" : "⚠️ Loxx Windows App is required to play in LAN mode!"}
+ </p>
+ <p className="text-xs text-gray-400 mt-0.5">
+ {isRtl 
+ ? "شما هم‌اکنون این لابی را روی مرورگر وب مشاهده می‌کنید. سیستم انتقال ترافیک خودکار Lan (بدون نیاز به برنامه جانبی) فقط روی اپلیکیشن کلاینت ویندوز فعال می‌شود." 
+ : "You are currently viewing this lobby inside a web browser. The automatic LAN tunneling system (Zero-TUN) only works inside the official native Windows Client."}
+ </p>
+ </div>
+ </div>
+ <a href="/download" className="px-5 py-2 rounded-xl bg-amber-500 text-black text-xs font-black transition-all hover:bg-amber-400 shrink-0 font-sans">
+ {isRtl ? "دانلود کلاینت ویندوز" : "Download Windows Client"}
+ </a>
+ </div>
+ )}
+
+ {lobby?.isLanMode && isElectron && (
+ <div className="relative z-10 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-4 flex items-center justify-between gap-3 animate-enter shrink-0">
+ <div className={cn("flex items-center gap-3 font-sans", isRtl ? "text-right" : "text-left")}>
+ <span className="relative flex h-2 w-2 shrink-0">
+ <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+ <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+ </span>
+ <div>
+ <p className="text-sm font-black text-white">
+ {isRtl ? "⚡ سیستم پل ارتباطی لوکس (Zero-TUN) فعال است" : "⚡ LOXX Zero-TUN Gateway is Active"}
+ </p>
+ <p className="text-xs text-gray-400 mt-0.5">
+ {isHost ? (
+ isRtl 
+ ? "به عنوان هاست لابی، بازی خود را در حالت LAN / Offline برای دیگران بسازید. لانچر لوکس به صورت خودکار پورت‌های شبکه بازی را برای کلاینت‌ها پروکسی کرده و پل می‌زند."
+ : "As the lobby host, start your game in LAN / Offline mode. The Loxx Launcher will automatically bridge and proxy network ports for other players."
+ ) : (
+ isRtl 
+ ? "به عنوان کلاینت لابی، به محض شروع، مستقیماً وارد بازی شده و به بخش Local LAN بروید. به لطف سیستم Zero-TUN لوکس، سرور هم‌تیمی‌تان خودکار نمایش داده می‌شود!"
+ : "As a lobby client, simply launch your game and navigate to the Local LAN section. Thanks to LOXX Zero-TUN, your teammate's server will show up automatically!"
+ )}
+ </p>
+ </div>
+ </div>
+ <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded border border-emerald-500/20">
+ Zero-TUN Engine v1.1.0
+ </span>
+ </div>
+ )}
+
+ {/* Background Elements */}
+ <div className="absolute inset-0 pointer-events-none overflow-hidden">
+ <div className={cn(
+ "absolute inset-0 bg-[length:60px_60px]",
+ isStreamerLobby ? "bg-[linear-gradient(rgba(168,85,247,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(168,85,247,0.03)_1px,transparent_1px)]" :
+ isVipLobby ? "bg-[linear-gradient(rgba(250,204,21,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(250,204,21,0.03)_1px,transparent_1px)]" 
+ : "bg-[linear-gradient(rgba(0,229,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,229,255,0.03)_1px,transparent_1px)]"
+ )} />
+ <div className={cn(
+ "absolute inset-0",
+ isStreamerLobby ? "bg-[radial-gradient(circle_at_50%_0%,rgba(168,85,247,0.1)_0%,transparent_50%)]" :
+ isVipLobby ? "bg-[radial-gradient(circle_at_50%_0%,rgba(250,204,21,0.1)_0%,transparent_50%)]"
+ : "bg-[radial-gradient(circle_at_50%_0%,rgba(0,229,255,0.1)_0%,transparent_50%)]"
+ )} />
+ <div className={cn(
+ "absolute top-[20%] left-[10%] h-96 w-96 rounded-full blur-[120px]",
+ isStreamerLobby ? "bg-neon-purple/5" :
+ isVipLobby ? "bg-yellow-400/5" : "bg-neon-blue/5"
+ )} />
+ <div className={cn(
+ "absolute bottom-[20%] right-[10%] h-96 w-96 rounded-full blur-[120px]",
+ isStreamerLobby ? "bg-purple-600/5" :
+ isVipLobby ? "bg-yellow-600/5" : "bg-neon-pink/5"
+ )} />
+ </div>
+
+ {/* Achievement Pulse Overlay */}
+ <AnimatePresence>
+ {allReadyPulse && !isStarting && !isMatchStarted && (
+ <motion.div 
+ initial={{ opacity: 0, scale: 0.8 }}
+ animate={{ opacity: 1, scale: 1 }}
+ exit={{ opacity: 0, scale: 1.2 }}
+ className="fixed inset-0 z-[200] flex items-center justify-center pointer-events-none"
+ >
+ <div className="relative">
+ <motion.div 
+ animate={{ scale: [1, 1.1, 1], opacity: [0.3, 0.6, 0.3] }}
+ transition={{ duration: 2, repeat: Infinity }}
+ className={cn("absolute inset-0 rounded-full blur-3xl", isStreamerLobby ? "bg-neon-purple" : isVipLobby ? "bg-yellow-400" : "bg-neon-blue")} 
+ />
+ <h2 className={cn("text-5xl md:text-7xl font-black text-white uppercase text-center relative z-10 px-10", isStreamerLobby ? "drop-shadow-[0_0_20px_rgba(168,85,247,0.8)]" : isVipLobby ? "drop-shadow-[0_0_20px_rgba(250,204,21,0.8)]" : "drop-shadow-[0_0_20px_rgba(0,229,255,0.8)]")}>
+ ALL PLAYERS READY
+ </h2>
+ </div>
+ </motion.div>
+ )}
+ </AnimatePresence>
+
+ {/* Header Bar */}
+ <motion.header 
+ initial={{ y: -20, opacity: 0 }}
+ animate={{ y: 0, opacity: 1 }}
+ className="relative z-10 glass rounded-[24px] md:rounded-[32px] p-3 md:p-6 flex flex-wrap items-center justify-between gap-3 md:gap-6 border-white/5 shadow-2xl shrink-0"
+ >
+ <div className="flex items-center gap-3 md:gap-5 flex-1 min-w-0">
+ <button 
+ onClick={() => {
+ leaveLobby();
+ navigate("/lobbies");
+ }}
+ className="p-2 md:p-3 rounded-xl md:rounded-2xl bg-white/5 hover:bg-neon-pink/10 transition-colors text-gray-400 hover:text-neon-pink shrink-0"
+ >
+ <ChevronLeft size={18} className="md:size-5 rotate-180" />
+ </button>
+ 
+ <div className={cn(
+ "h-10 w-10 md:h-14 md:w-14 rounded-2xl flex items-center justify-center shrink-0 overflow-hidden border",
+ isStreamerLobby ? "bg-[#0a0a0f] border-purple-500/30 shadow-[0_0_15px_rgba(168,85,247,0.2)]" :
+ isVipLobby ? "bg-[#0d0d12] border-yellow-400/30 shadow-[0_0_15px_rgba(250,204,21,0.2)]" : "bg-white/5 border-white/10"
+ )}>
+ {lobby?.game?.iconUrl ? (
+ <SmartImage src={lobby.game.iconUrl} className="w-full h-full object-contain" />
+ ) : <Gamepad2 className={isStreamerLobby ? "text-purple-400" : isVipLobby ? "text-yellow-400" : "text-neon-blue"} size={24} />}
+ </div>
+ 
+ <div className="min-w-0 flex-1">
+ <div className="flex items-center gap-2 md:gap-3 mb-0.5 md:mb-1">
+ {lobby?.isLanMode && (
+ <div className="mb-1 md:mb-2 self-start px-2 py-0.5 rounded-full border border-emerald-500/50 bg-emerald-500/20 text-emerald-300 text-[8px] md:text-[10px] font-black uppercase flex items-center gap-1 font-sans">
+ <span className="relative flex h-1.5 w-1.5 font-sans">
+ <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+ <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+ </span>
+ <span>LAN Zero-TUN v1.1.0</span>
+ </div>
+ )}
+ <h1 className="text-sm md:text-3xl font-black text-white truncate max-w-[150px] md:max-w-none">
+ {lobby ? (lobby.title || "Elite Lobby") : "در حال بارگذاری..."}
+ </h1>
+ <div className={cn(
+ "px-1.5 md:px-3 py-0.5 md:py-1 rounded-full border text-[7px] md:text-[10px] font-black uppercase shrink-0",
+ isStreamerLobby ? "bg-purple-500/10 border-purple-500/20 text-purple-400" :
+ isVipLobby ? "bg-yellow-400/10 border-yellow-400/20 text-yellow-400" : "bg-neon-blue/10 border-neon-blue/20 text-neon-blue"
+ )}>
+ ME
+ </div>
+ </div>
+ <div className="flex items-center gap-3 md:gap-5 text-[9px] md:text-[11px] text-gray-500 font-black uppercase ">
+ <span className="flex items-center gap-1 md:gap-1.5 font-bold"><Users size={12} className={cn("shrink-0 md:size-[14px]", isStreamerLobby ? "text-purple-400" : isVipLobby ? "text-yellow-400" : "text-neon-blue")} /> {players.filter(p => !p.id.startsWith("slot-")).length} / {lobby?.maxPlayers || 5}</span>
+ {isStreamerLobby ? (
+ <span className="flex items-center gap-1 md:gap-1.5"><Radio size={14} className="text-purple-400 shrink-0 w-3 h-3 md:w-3.5 md:h-3.5 animate-pulse" /> Streamer Room</span>
+ ) : isVipLobby ? (
+ <span className="flex items-center gap-1 md:gap-1.5"><Crown size={14} className="text-yellow-400 shrink-0 w-3 h-3 md:w-3.5 md:h-3.5" /> Elite Room</span>
+ ) : (
+ <span className="flex items-center gap-1 md:gap-1.5"><Trophy size={14} className="text-neon-pink shrink-0 w-3 h-3 md:w-3.5 md:h-3.5" /> حرفه‌ای</span>
+ )}
+ </div>
+ </div>
+ </div>
+
+ <div className="flex items-center gap-2 md:gap-4 shrink-0">
+ {isElectron && (
+ <button 
+ onClick={toggleLayout}
+ className="p-2 md:p-3 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors h-10 md:h-14 flex items-center justify-center border border-white/10"
+ title="تغییر چینش لابی"
+ >
+ <LayoutTemplate size={20} />
+ </button>
+ )}
+
+ {!isAudioContextResumed && (
+ <button 
+ onClick={resumeAudio}
+ className="p-2 md:p-3 rounded-xl bg-neon-pink/20 text-neon-pink border border-neon-pink/30 animate-pulse flex items-center gap-2 text-[10px] md:text-xs font-black uppercase"
+ >
+ <Mic size={14} className="md:size-18" />
+ <span>فعال‌سازی صدا</span>
+ </button>
+ )}
+
+ <div className="hidden sm:flex items-center gap-2 bg-black/60 rounded-2xl p-1 border border-white/10">
+ <div className="px-4 py-2 text-[10px] font-black text-gray-500 border-l border-white/10 uppercase ">کد لابی</div>
+ <div className="px-4 py-2 font-mono text-sm text-neon-blue flex items-center gap-3">
+ {lobby?.id ? lobby.id.substring(0, 8).toUpperCase() : "LX-LOBBY"}
+ <button onClick={handleCopyCode} className="hover:text-white transition-colors">
+ {copied ? <Check size={16} /> : <Copy size={16} />}
+ </button>
+ </div>
+ </div>
+
+ <GlowButton 
+ variant="blue" 
+ onClick={handleStartMatch}
+ disabled={isStarting || !allReadyPulse || isMatchStarted}
+ className={cn(
+ "px-4 md:px-10 h-10 md:h-14 text-[10px] md:text-sm shadow-xl shrink-0 uppercase font-black",
+ (!allReadyPulse || isMatchStarted) && "opacity-50 grayscale cursor-not-allowed"
+ )}
+ >
+ <Play size={14} className={isRtl ? "ml-1.5 md:ml-2" : "mr-1.5 md:mr-2"} />
+ {isRtl ? "شروع" : "START"}
+ </GlowButton>
+ </div>
+ </motion.header>
+
+ <div className="flex-1 flex flex-col lg:flex-row gap-4 md:gap-6 relative z-10 overflow-hidden">
+ {/* Main Content Area */}
+ <div className="flex-1 flex flex-col gap-4 md:gap-6 overflow-y-auto overflow-x-hidden custom-scrollbar pb-24 md:pb-8 px-1 md:px-4">
+ 
+ {/* Remote Audio Streams handled globally */}
+
+ {/* Top Status Panel */}
+ <MatchInfoPanel 
+ isStarting={isStarting} 
+ isMatchStarted={isMatchStarted} 
+ countdown={countdown} 
+ players={players} 
+ lobby={lobby}
+ onCancel={handleCancelMatch}
+ onReopen={handleReopenLobby}
+ isVipLobby={isVipLobby}
+ isStreamerLobby={isStreamerLobby}
+ />
+
+ {/* Screen Share View (Local or Remote) */}
+ {(screenStream || activeRemoteShare) && (
+ <ScreenSharePresenter 
+ stream={screenStream || activeRemoteShare!.stream}
+ presenterName={screenStream ? "شما" : activeRemoteShare!.presenterName}
+ isLocal={!!screenStream}
+ isWarningActive={screenStream ? isWarningActive : false}
+ />
+ )}
+
+ {/* Players Flex - Drastically improved for responsiveness & wrapping */}
+ <div className={cn(
+ "w-full justify-start items-stretch px-1",
+ layoutMode === 'discord' ? "grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-4" : 
+ layoutMode === 'compact' ? "flex flex-wrap gap-2 md:gap-3" 
+ : "flex flex-wrap gap-3 md:gap-6"
+ )}>
+ <AnimatePresence mode="popLayout">
+ {players.map((player) => (
+ <PlayerCard 
+ key={player.id} 
+ player={player}
+ volume={player.volume}
+ isVipLobby={isVipLobby}
+ isStreamerLobby={isStreamerLobby}
+ layoutMode={layoutMode}
+ isSelected={selectedPlayer === player.id}
+ onSelect={() => setSelectedPlayer(selectedPlayer === player.id ? null : player.id)}
+ onVolumeChange={(val) => handlePlayerVolume(player.id, val)}
+ onMute={(id) => {
+ const p = players.find(player => player.id === id);
+ if (p && !p.id.startsWith("slot-")) {
+ // We don't have a specific contextual mute function, but we can set their volume to 0 locally
+ handlePlayerVolume(id, p.volume === 0 ? 100 : 0);
+ }
+ }}
+ onInvite={() => setIsInviteModalOpen(true)}
+ onProfile={(id) => {
+ const p = players.find(player => player.id === id);
+ if (p && !p.id.startsWith("slot-")) {
+ openProfile({
+ senderName: p.name,
+ senderAvatar: p.avatarUrl || p.avatar,
+ senderLevel: p.level || 1,
+ id: p.id,
+ membership: p.membership || MembershipType.NONE,
+ vipMetadata: p.vipMetadata,
+ bannerUrl: p.bannerUrl || p.avatarUrl
+ }, p.id === user?.id);
+ }
+ }}
+ onDirectMessage={(id) => {
+ const p = players.find(player => player.id === id);
+ if (p && !p.id.startsWith("slot-")) {
+ openChat(id, p.name, p.avatarUrl || p.avatar);
+ }
+ }}
+ onAddFriend={(id) => {
+ const p = players.find(player => player.id === id);
+ if (p && !p.id.startsWith("slot-")) {
+ addFriend(p.name);
+ }
+ }}
+ onKick={kickPlayer}
+ onBan={banPlayer}
+ isHostView={isHost}
+ />
+ ))}
+ </AnimatePresence>
+ </div>
+ </div>
+
+ {/* Desktop Chat Sidebar (Right) */}
+ {!isElectron || isDesktopChatOpen ? (
+ <div className={cn("hidden lg:flex flex-col overflow-hidden shadow-2xl", isElectron ? "absolute bottom-6 right-6 z-40 bg-black/80 backdrop-blur-3xl w-[340px] h-[450px] rounded-[24px] border border-white/10" : "w-full lg:w-[280px] xl:w-[320px] h-full order-first")}>
+ <ChatPanel 
+ messages={messages} 
+ players={players}
+ inputMessage={inputMessage} 
+ setInputMessage={setInputMessage} 
+ onSend={handleSendMessage}
+ currentUserId={user?.id}
+ isVipLobby={isVipLobby}
+ onClose={isElectron ? () => setIsDesktopChatOpen(false) : undefined}
+ />
+ </div>
+ ) : (
+ isElectron && (
+ <motion.div 
+ initial={{ y: 50, opacity: 0 }}
+ animate={{ y: 0, opacity: 1 }}
+ className="hidden lg:flex absolute bottom-6 right-6 z-40 flex-col border border-white/10 bg-black/60 backdrop-blur-lg rounded-[24px] overflow-hidden shadow-2xl cursor-pointer hover:bg-black/80 w-[300px] hover:border-neon-blue/30 transition-colors duration-300"
+ onClick={() => setIsDesktopChatOpen(true)}
+ >
+ <div className="flex items-center justify-between p-4">
+ <div className="flex flex-col">
+ <div className="flex items-center gap-2">
+ <div className="h-2 w-2 rounded-full bg-neon-blue animate-pulse" />
+ <h2 className="text-xs font-black uppercase text-white">Lobby Comms</h2>
+ </div>
+ {unreadDesktopChat > 0 && <span className="text-[10px] text-neon-blue mt-1 font-bold">{unreadDesktopChat} پیام جدید</span>}
+ </div>
+ <MessageSquare size={18} className="text-gray-400" />
+ </div>
+ </motion.div>
+ )
+ )}
+ </div>
+
+ {/* Mobile Chat Trigger & Bottom Actions - Fixed and Styled */}
+ <div className="lg:hidden fixed bottom-20 left-4 right-4 z-50 p-3 glass rounded-[28px] border border-white/10 flex items-center justify-between gap-3 shadow-2xl overflow-hidden pb-[calc(1rem+env(safe-area-inset-bottom))]">
+ <div className="flex items-center gap-2 shrink-0">
+ <button 
+ onClick={() => {
+ leaveLobby();
+ navigate("/lobbies");
+ }}
+ className="h-12 w-12 rounded-[14px] bg-neon-pink/10 text-neon-pink flex items-center justify-center border border-neon-pink/20"
+ title="خروج"
+ >
+ <LogOut size={20} />
+ </button>
+ <button 
+ onClick={() => setIsChatOpen(true)}
+ className="h-12 w-12 rounded-[14px] bg-white/5 flex items-center justify-center text-neon-blue relative border border-white/10"
+ >
+ <MessageSquare size={20} />
+ <div className="absolute top-2.5 right-2.5 h-2 w-2 rounded-full bg-neon-pink" />
+ </button>
+ </div>
+
+ <div className="flex items-center gap-2 overflow-x-auto scrollbar-none px-1 py-1">
+ <ControlButton icon={isMicMuted ? <MicOff size={20} /> : <Mic size={20} />} active={!isMicMuted} onClick={toggleMic} className="h-12 w-12 rounded-[14px] shrink-0" />
+ {typeof window !== "undefined" && !!(window as any).electronAPI && (
+ <button 
+ onClick={() => {
+ if (screenStream) { stopShare(); }
+ else if (isBaseRequirementMet) { initiateScreenShareFlow(); }
+ }}
+ className={cn(
+ "h-12 w-12 rounded-[14px] flex items-center justify-center transition-all group shrink-0 relative",
+ screenStream ? "bg-neon-blue/20 text-neon-blue border-neon-blue shadow-[0_0_15px_rgba(0,240,255,0.4)] border shadow-inner" :
+ (isBaseRequirementMet ? "bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white" : "bg-white/5 text-gray-700 opacity-50 cursor-not-allowed")
+ )}
+ title={!isBaseRequirementMet ? "سرعت اینترنت شما برای این کار کافی نیست" : screenStream ? "پایان شیر اسکرین" : "اشتراک صفحه نمایش"}
+ >
+ {screenStream ? <MonitorUp size={20} /> : <Monitor size={20} />}
+ {!isBaseRequirementMet && <AlertTriangle size={10} className="absolute top-2 right-2 text-yellow-500" />}
+ </button>
+ )}
+ <ControlButton icon={<UserPlus size={20} />} onClick={() => setIsInviteModalOpen(true)} className="h-12 w-12 rounded-[14px] shrink-0" />
+ <ControlButton icon={<Settings size={20} />} onClick={() => setIsSettingsModalOpen(true)} className="h-12 w-12 rounded-[14px] shrink-0" />
+ </div>
+
+ <GlowButton 
+ variant={isReady ? "blue" : "pink"} 
+ onClick={onToggleReady}
+ disabled={isMatchStarted || isStarting}
+ className={cn(
+ "h-12 px-4 min-w-[85px] text-[12px] uppercase font-black rounded-[14px] shrink-0",
+ (isMatchStarted || isStarting) && "opacity-50 grayscale cursor-not-allowed"
+ )}
+ >
+ {isReady ? "آماده" : "GO"}
+ </GlowButton>
+ </div>
+
+ {/* Mobile Chat Drawer */}
+ <AnimatePresence>
+ {isChatOpen && (
+ <>
+ <motion.div 
+ initial={{ opacity: 0 }}
+ animate={{ opacity: 1 }}
+ exit={{ opacity: 0 }}
+ onClick={() => setIsChatOpen(false)}
+ className="fixed inset-0 bg-black/80 z-[6000] lg:hidden"
+ />
+ <motion.div 
+ initial={{ y: "100%" }}
+ animate={{ y: 0 }}
+ exit={{ y: "100%" }}
+ transition={{ type: "spring", damping: 25, stiffness: 200 }}
+ className="fixed bottom-0 left-0 right-0 h-[80dvh] bg-[#0a0a0f] rounded-t-[40px] z-[6005] lg:hidden border-t border-white/10 overflow-hidden flex flex-col"
+ >
+ <div className="h-1.5 w-12 bg-white/10 rounded-full mx-auto mt-4 mb-2 shrink-0" />
+ <div className="flex-1 overflow-hidden flex flex-col">
+ <ChatPanel 
+ currentUserId={user?.id}
+ messages={messages} 
+ players={players}
+ inputMessage={inputMessage} 
+ setInputMessage={setInputMessage} 
+ onSend={handleSendMessage} 
+ onClose={() => setIsChatOpen(false)}
+ isVipLobby={isVipLobby}
+ />
+ </div>
+ </motion.div>
+ </>
+ )}
+ </AnimatePresence>
+
+ {/* Footer Controls (Fixed Desktop) */}
+ <motion.footer 
+ initial={{ y: 20, opacity: 0 }}
+ animate={{ y: 0, opacity: 1 }}
+ className="hidden lg:flex relative z-10 items-center justify-between gap-6 p-4 glass rounded-[40px] border-white/5 shadow-2xl mt-auto"
+ >
+ <div className="flex items-center gap-6">
+ <div className="flex items-center gap-4 px-8 border-l border-white/5">
+ <GlowButton 
+ variant={isReady ? "blue" : "pink"}
+ onClick={onToggleReady}
+ disabled={isMatchStarted || isStarting}
+ className={cn(
+ "px-8 h-12 text-xs",
+ isReady && "shadow-neon-blue/20",
+ (isMatchStarted || isStarting) && "opacity-50 grayscale cursor-not-allowed"
+ )}
+ >
+ {isReady ? <Check size={18} className={isRtl ? "ml-2" : "mr-2"} /> : null}
+ {isReady ? (isRtl ? "آماده" : "READY") : (isRtl ? "اعلام آمادگی" : "READY UP")}
+ </GlowButton>
+ </div>
+ 
+ <div className="flex items-center gap-4">
+ <ControlButton icon={isMicMuted ? <MicOff size={20} /> : <Mic size={20} />} active={!isMicMuted} onClick={toggleMic} tooltip={isRtl ? "میکروفون" : "Microphone"} />
+ <ControlButton icon={isDeafened ? <VolumeX size={20} /> : <Volume2 size={20} />} active={!isDeafened} onClick={() => setIsDeafened(!isDeafened)} tooltip={isRtl ? "قطع صدای اسپیکر" : "Deafen Speakers"} />
+ {typeof window !== "undefined" && !!(window as any).electronAPI && (
+ <button 
+ onClick={() => {
+ if (screenStream) { stopShare(); }
+ else if (isBaseRequirementMet) { initiateScreenShareFlow(); }
+ }}
+ className={cn(
+ "h-12 w-12 rounded-2xl flex items-center justify-center transition-all group relative shrink-0",
+ screenStream ? "bg-neon-blue/20 text-neon-blue border-neon-blue shadow-[0_0_15px_rgba(0,240,255,0.4)] border shadow-inner" :
+ (isBaseRequirementMet ? "bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white" : "bg-white/5 text-gray-700 opacity-50 cursor-not-allowed")
+ )}
+ title={!isBaseRequirementMet ? (isRtl ? "سرعت اینترنت شما برای اشتراک گذاری با این تعداد بیننده کافی نیست" : "Your upload speed is not sufficient for screensharing with this many viewers") : screenStream ? (isRtl ? "پایان شیر اسکرین" : "End Screen Share") : (isRtl ? "اشتراک صفحه نمایش" : "Share Screen")}
+ >
+ {screenStream ? <MonitorUp size={20} /> : <Monitor size={20} />}
+ {!isBaseRequirementMet && <AlertTriangle size={10} className="absolute top-2 right-2 text-yellow-500" />}
+ </button>
+ )}
+ <ControlButton icon={<UserPlus size={20} />} onClick={() => setIsInviteModalOpen(true)} tooltip={isRtl ? "دعوت" : "Invite"} />
+ <ControlButton icon={<Settings size={20} />} onClick={() => setIsSettingsModalOpen(true)} tooltip={isRtl ? "تنظیمات" : "Settings"} />
+ </div>
+ </div>
+
+ <button 
+ onClick={() => {
+ leaveLobby();
+ navigate("/lobbies");
+ }}
+ className="flex items-center gap-2 px-8 py-3 rounded-2xl text-xs font-black uppercase text-neon-pink hover:bg-neon-pink/10 transition-all border border-transparent hover:border-neon-pink/20"
+ >
+ <LogOut size={18} className={isRtl ? "ml-2" : "mr-2"} />
+ {isRtl ? "خروج از لابی" : "LEAVE LOBBY"}
+ </button>
+ </motion.footer>
+
+ {/* MODALS */}
+ <AnimatePresence>
+ {isInviteModalOpen && (
+ <Modal title={isRtl ? "دعوت دوستان" : "Invite Friends"} onClose={() => setIsInviteModalOpen(false)}>
+ <div className="space-y-4">
+ {friends.length > 0 ? friends.map((friend, i) => (
+ <div key={i} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl hover:bg-white/10 transition-colors group">
+ <div className="flex items-center gap-3">
+ <div className="h-10 w-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden shrink-0">
+ <SmartImage 
+ src={friend.avatarUrl || ""}
+ className="w-full h-full object-cover"
+ alt={friend.username}
+ />
+ </div>
+ <div>
+ <p className="text-sm font-black text-white">{friend.username}</p>
+ <p className="text-[10px] text-gray-500 uppercase">{friend.status} • {friend.activity}</p>
+ </div>
+ </div>
+ <button 
+ onClick={() => {
+ lobbySocket.emit("invite_player", { lobbyId: lobby?.id, targetUserId: friend.id });
+ toast.success(isRtl ? `دعوت برای ${friend.username} ارسال شد` : `Invitation sent to ${friend.username}`);
+ }}
+ className="px-4 py-2 rounded-xl bg-neon-blue text-dark-bg text-[10px] font-black uppercase hover:scale-105 transition-transform"
+ >
+ Invite
+ </button>
+ </div>
+ )) : (
+ <div className="text-center py-10 opacity-50">
+ <p className="text-sm">{isRtl ? "لیست دوستان خالی است" : "Your friends list is empty"}</p>
+ </div>
+ )}
+ </div>
+ </Modal>
+ )}
+
+ <ScreenShareModal
+ isOpen={isScreenShareModalOpen}
+ onClose={() => { setIsScreenShareModalOpen(false); setPendingSourceId(null); }}
+ userPlan={userPlanResolved}
+ onStartShare={handleQualitySelected}
+ estimatedUploadMbps={estimatedUploadMbps}
+ numViewers={players.length || 1}
+ />
+
+ <DesktopSourcePickerModal
+ isOpen={isSourcePickerOpen}
+ onClose={() => { setIsSourcePickerOpen(false); setPendingSourceId(null); }}
+ onSelect={handleSourceSelected}
+ />
+
+ {activeProfileUserId && (
+ <Modal title={isRtl ? "پروفایل بازیکن" : "Player Profile"} onClose={() => setActiveProfileUserId(null)}>
+ <div className="flex flex-col items-center gap-6 py-4">
+ <div className="h-32 w-32 rounded-[40px] bg-white/5 border border-white/10 flex items-center justify-center shadow-2xl overflow-hidden">
+ {(() => {
+ const p = players.find(p => p.id === activeProfileUserId);
+ return (
+ <SmartImage 
+ src={p?.avatarUrl || ""}
+ className="w-full h-full object-cover"
+ alt={p?.name || "Player"}
+ />
+ );
+ })()}
+ </div>
+ <div className="text-center">
+ <h3 className="text-2xl font-black text-white">{players.find(p => p.id === activeProfileUserId)?.name}</h3>
+ <p className="text-neon-blue text-sm font-black uppercase mt-1">Global Elite</p>
+ </div>
+ <div className="grid grid-cols-3 gap-4 w-full">
+ <StatCard label={isRtl ? "بُردها" : "Wins"} value="1,242" />
+ <StatCard label="K/D" value="1.42" />
+ <StatCard label={isRtl ? "ساعت" : "Hours"} value="3.5K" />
+ </div>
+ <GlowButton 
+ variant="blue" 
+ className="w-full h-12 flex items-center justify-center gap-2"
+ onClick={() => window.open('/profile', '_blank')}
+ >
+ <img src="/logo.png" className="h-5 w-auto" />
+ {isRtl ? "مشاهده پروفایل لوکس" : "View LOXX Profile"}
+ </GlowButton>
+ </div>
+ </Modal>
+ )}
+
+ {isSettingsModalOpen && (
+ <Modal title={isRtl ? "تنظیمات لابی" : "Lobby Settings"} onClose={() => setIsSettingsModalOpen(false)}>
+ <div className="space-y-6">
+ {/* Host specific settings */}
+ {isHost ? (
+ <div className="space-y-4">
+ <h4 className="text-sm font-black text-neon-blue uppercase border-b border-white/10 pb-2">{isRtl ? "تنظیمات اصلی لابی" : "Core Lobby Settings"}</h4>
+ 
+ <div className="flex items-center justify-between p-3 rounded-2xl bg-white/5">
+ <div>
+ <p className="text-sm font-black text-white">{isRtl ? "لابی خصوصی" : "Private Lobby"}</p>
+ <p className="text-[10px] text-gray-500 font-bold">{isRtl ? "فقط با کد دعوت یا لینک" : "Only via invite link or code"}</p>
+ </div>
+ <div 
+ onClick={() => updateLobbySettings({ isPrivate: !lobby?.isPrivate })}
+ className={cn(
+ "w-12 h-6 rounded-full relative cursor-pointer border transition-colors",
+ lobby?.isPrivate ? "bg-neon-blue/20 border-neon-blue/30" : "bg-white/5 border-white/10"
+ )}
+ >
+ <div className={cn(
+ "absolute top-1 h-4 w-4 rounded-full transition-all",
+ lobby?.isPrivate ? "right-1 bg-neon-blue shadow-[0_0_10px_rgba(0,229,255,1)]" : "right-7 bg-gray-500"
+ )} />
+ </div>
+ </div>
+
+ <div className="flex items-center justify-between p-3 rounded-2xl bg-white/5">
+ <div>
+ <p className="text-sm font-black text-white">{isRtl ? "دسترسی میکروفون" : "Microphone Required"}</p>
+ <p className="text-[10px] text-gray-500 font-bold">{isRtl ? "بازیکنان برای چت صوتی نیاز به میکروفون دارند" : "Players require microhpone for voice chat"}</p>
+ </div>
+ <div 
+ onClick={() => updateLobbySettings({ micRequired: !lobby?.micRequired })}
+ className={cn(
+ "w-12 h-6 rounded-full relative cursor-pointer border transition-colors",
+ lobby?.micRequired ? "bg-neon-blue/20 border-neon-blue/30" : "bg-white/5 border-white/10"
+ )}
+ >
+ <div className={cn(
+ "absolute top-1 h-4 w-4 rounded-full transition-all",
+ lobby?.micRequired ? "right-1 bg-neon-blue shadow-[0_0_10px_rgba(0,229,255,1)]" : "right-7 bg-gray-500"
+ )} />
+ </div>
+ </div>
+ </div>
+ ) : null}
+
+ {/* General User settings */}
+ <div className="space-y-4">
+ {/* Input/Output Audio Selector (Hardware integrations) */}
+ <div className="space-y-3 p-3.5 rounded-2xl bg-white/5 border border-white/5">
+ <p className="text-xs font-black text-white border-b border-white/5 pb-1.5 flex items-center gap-2">
+ <span className="h-1.5 w-1.5 rounded-full bg-neon-pink shadow-[0_0_8px_rgba(255,0,127,1)]" />
+ {isRtl ? "تنظیمات ورودی و خروجی صدا (Hardware Audio Routing)" : "Audio Input & Output Hardware Routing"}
+ </p>
+
+ <div className="space-y-1">
+ <label className="text-[9px] text-gray-400 font-bold block">{isRtl ? "دستگاه ورودی میکروفون (Input Microphone)" : "Input Microphone Device"}</label>
+ <select
+ value={selectedAudioInput}
+ onChange={(e) => setSelectedAudioInput(e.target.value)}
+ className="w-full py-2 px-3 rounded-xl bg-black/40 border border-white/10 text-xs text-white focus:outline-none focus:border-neon-blue font-bold font-sans transition appearance-none cursor-pointer"
+ >
+ <option value="default" className="bg-zinc-950 text-gray-300">{isRtl ? "Default Device (میکروفون پیش‌فرض سیستم)" : "Default Device (System Default Mic)"}</option>
+ {audioInputDevices.map((d) => (
+ <option key={d.deviceId} value={d.deviceId} className="bg-zinc-950 text-white">
+ {d.label || `Microphone (${d.deviceId.slice(0, 5)}...)`}
+ </option>
+ ))}
+ </select>
+ </div>
+
+ <div className="space-y-1">
+ <label className="text-[9px] text-gray-400 font-bold block">{isRtl ? "دستگاه خروجی هدفون / بلندگو (Output Destination)" : "Output Destination Device"}</label>
+ <select
+ value={selectedAudioOutput}
+ onChange={(e) => setSelectedAudioOutput(e.target.value)}
+ className="w-full py-2 px-3 rounded-xl bg-black/40 border border-white/10 text-xs text-white focus:outline-none focus:border-neon-pink font-bold font-sans transition appearance-none cursor-pointer"
+ >
+ <option value="default" className="bg-zinc-950 text-gray-300">{isRtl ? "Default Device (بلندگوی پیش‌فرض سیستم)" : "Default Device (System Default Speaker)"}</option>
+ {audioOutputDevices.map((d) => (
+ <option key={d.deviceId} value={d.deviceId} className="bg-zinc-950 text-white">
+ {d.label || `Output Speaker (${d.deviceId.slice(0, 5)}...)`}
+ </option>
+ ))}
+ </select>
+ </div>
+ </div>
+
+ {/* Desktop & Live Discord Overlay Panel */}
+ <div className="space-y-4 pt-4 border-t border-white/10">
+ <h4 className="text-sm font-black text-neon-blue uppercase border-b border-white/10 pb-2 flex items-center gap-1.5">
+ <span className="h-1.5 w-1.5 rounded-full bg-neon-blue shadow-[0_0_8px_rgba(0,229,255,1)]" />
+ {isRtl ? "تنظیمات اختصاصی دسکتاپ و سیستم صوتی" : "Desktop client & Audio Engine Settings"}
+ </h4>
+
+ {isElectron ? (
+ <div className="p-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/25 text-xs text-white flex flex-col items-center gap-3 text-center">
+ <Settings size={32} className="text-indigo-400" />
+ <p>{isRtl ? "تنظیمات لابی مخصوص ویندوز (Push to Talk، Overlay، Performance) به بخش جدیدی منتقل شده است." : "Windows-specific settings (Push to Talk, Overlay, Performance) have moved to the Launcher section."}</p>
+ <button 
+ onClick={() => {
+ setIsSettingsModalOpen(false);
+ navigate("/electron-settings");
+ }}
+ className="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 rounded-xl text-white font-bold transition"
+ >
+ {isRtl ? "باز کردن تنظیمات ویندوز" : "Open Windows Settings"}
+ </button>
+ </div>
+ ) : (
+ /* Web Browser Showcase for Desktop Client */
+ <div className="p-4 rounded-2xl bg-gradient-to-br from-neon-blue/10 via-transparent to-neon-pink/10 border border-white/5 space-y-3">
+ <p className="text-xs font-black text-white">{isRtl ? "🔥 پتانسیل واقعی سیستم صوتی Loxx را آزاد کنید!" : "🔥 Unlock the full potential of LOXX Audio Engine!"}</p>
+ <p className="text-[10px] text-gray-400 leading-relaxed font-bold">
+ {isRtl ? "آیا می‌دانستید با استفاده از کلاینت دسکتاپ (Windows / macOS / Linux)، قابلیت‌هایی در اختیارتان قرار می‌گیرد که در مرورگر وب ممکن نیستند؟" : "Did you know that by running the official Desktop Client, you gain advanced abilities not supported by regular web browsers?"}
+ </p>
+ <ul className="text-[9px] text-[#00e5ff] space-y-1 font-bold list-disc list-inside">
+ <li>{isRtl ? "کلید Push to Talk سیستمی (حتی زمانی که داخل بازی‌های سنگین مانند CS:GO و Valorant آلت‌تب هستید)" : "System-wide Push to Talk hotkey (even while alt-tabbed in heavy fullscreen games like CS:GO or Valorant)"}</li>
+ <li>{isRtl ? "منوی هوشمند تسک‌بار (System Tray) به همراه کلید قطع صدای گلوبال" : "Intelligent System Tray menu with a global active microphone mute switch"}</li>
+ <li>{isRtl ? "اجرای اتوماتیک و اتصال بدون دردسر همزمان با روشن کردن رایانه شخصی شما" : "Auto-launch and instant connection upon starting your personal computer"}</li>
+ <li>{isRtl ? "قابلیت Hardware Acceleration برای کاهش فشار روی CPU" : "Engine-level Hardware Acceleration to bypass browser engine overhead and lower CPU usage"}</li>
+ </ul>
+ <div className="pt-1 select-all">
+ <button 
+ onClick={() => {
+ toast.success(isRtl ? "درخواست دانلود کلاینت دسکتاپ ثبت شد. به زودی نسخه لانچر برای شما ارسال می‌شود!" : "Launcher download request registered! The setup file will be delivered shortly.");
+ }}
+ className="w-full py-2.5 rounded-xl bg-neon-blue hover:bg-neon-blue/80 text-black text-xs font-black transition-all shadow-[0_0_12px_rgba(0,229,255,0.4)]"
+ >
+ {isRtl ? "دریافت لانچر دسکتاپ (Loxx Desktop Launcher)" : "Download Desktop Launcher"}
+ </button>
+ </div>
+ </div>
+ )}
+
+ {/* Shared Web-Only Overlay appearance settings (redundant in Desktop) */}
+ {!isElectron && (
+ <div className="border-t border-white/5 pt-4 space-y-3">
+ <p className="text-xs font-black text-white select-none">{isRtl ? "تنظیمات ظاهر ویترین زنده (HUD Overlay Appearance)" : "HUD Desktop Overlay Appearance Config"}</p>
+
+ {/* Overlay Toggle Switch */}
+ <div className="flex items-center justify-between p-3 rounded-2xl bg-white/5">
+ <div>
+ <p className="text-xs font-black text-white">{isRtl ? "طرح زنده روی بازی‌ها (Live Overlay)" : "Live In-game HUD Overlay"}</p>
+ <p className="text-[9px] text-gray-500 font-bold font-sans">{isRtl ? "نمایش لیست فعال کانال صوتی روی گوشه تصویر بقیه برنامه‌ها" : "Render active speaker list on top of fullscreen programs & games"}</p>
+ </div>
+ <div 
+ onClick={() => setOverlayEnabled(!overlayEnabled)}
+ className={cn(
+ "w-12 h-6 rounded-full relative cursor-pointer border transition-colors",
+ overlayEnabled ? "bg-neon-blue/20 border-neon-blue/30" : "bg-white/5 border-white/10"
+ )}
+ >
+ <div className={cn(
+ "absolute top-1 h-4 w-4 rounded-full transition-all",
+ overlayEnabled ? "right-1 bg-neon-blue shadow-[0_0_10px_rgba(0,229,255,1)]" : "right-7 bg-gray-500"
+ )} />
+ </div>
+ </div>
+
+ {/* Hide non-talking toggle */}
+ <div className={cn("flex items-center justify-between p-3 rounded-2xl bg-white/5 transition-opacity", !overlayEnabled && "opacity-50 pointer-events-none")}>
+ <div>
+ <p className="text-xs font-black text-white">{isRtl ? "فقط نمایش کاربران در حال صحبت" : "Show speaking users only"}</p>
+ <p className="text-[9px] text-gray-500 font-bold font-sans">{isRtl ? "مخفی کردن اعضای ساکت از کادر روی صفحه زمان سکوت" : "Hide quiet players from the HUD panel to minimize layout clutter"}</p>
+ </div>
+ <div 
+ onClick={() => setOverlayOnlyTalking(!overlayOnlyTalking)}
+ className={cn(
+ "w-12 h-6 rounded-full relative cursor-pointer border transition-colors",
+ overlayOnlyTalking ? "bg-neon-blue/20 border-neon-blue/30" : "bg-white/5 border-white/10"
+ )}
+ >
+ <div className={cn(
+ "absolute top-1 h-4 w-4 rounded-full transition-all",
+ overlayOnlyTalking ? "right-1 bg-neon-blue shadow-[0_0_10px_rgba(0,229,255,1)]" : "right-7 bg-gray-500"
+ )} />
+ </div>
+ </div>
+
+ {/* Display members list display toggle */}
+ <div className={cn("flex items-center justify-between p-3 rounded-2xl bg-white/5 transition-opacity", !overlayEnabled && "opacity-50 pointer-events-none")}>
+ <div>
+ <p className="text-xs font-black text-white">{isRtl ? "نمایش لیست اعضا روی اورلی" : "Render members roster list"}</p>
+ <p className="text-[9px] text-gray-400 font-bold font-sans">{isRtl ? "نمایش یا پنهان‌سازی اسامی و آواتار اعضا در لابی روی تصویر" : "Control the visibility of individual names & avatars in the overlay box"}</p>
+ </div>
+ <div 
+ onClick={() => setOverlayMembersVisible(!overlayMembersVisible)}
+ className={cn(
+ "w-12 h-6 rounded-full relative cursor-pointer border transition-colors",
+ overlayMembersVisible ? "bg-neon-blue/20 border-neon-blue/30" : "bg-white/5 border-white/10"
+ )}
+ >
+ <div className={cn(
+ "absolute top-1 h-4 w-4 rounded-full transition-all",
+ overlayMembersVisible ? "right-1 bg-neon-blue shadow-[0_0_10px_rgba(0,229,255,1)]" : "right-7 bg-gray-500"
+ )} />
+ </div>
+ </div>
+
+ {/* Speaking & Quiet Opacities sliders */}
+ <div className={cn("space-y-3 p-3 rounded-2xl bg-white/5 transition-opacity", (!overlayEnabled || !overlayMembersVisible) && "opacity-50 pointer-events-none")}>
+ <div className="space-y-1">
+ <div className="flex justify-between text-gray-400 text-[10px] font-bold">
+ <span className="font-mono text-neon-blue">{Math.round(overlayNormalOpacity * 100)}%</span>
+ <span>{isRtl ? "شفافیت عضو در حالت سکوت (Quiet)" : "Roster Opacity in Quiet State"}</span>
+ </div>
+ <input 
+ type="range" min="0.1" max="1.0" step="0.05"
+ value={overlayNormalOpacity} 
+ onChange={e => setOverlayNormalOpacity(parseFloat(e.target.value))} 
+ className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-neon-blue" 
+ />
+ </div>
+
+ <div className="space-y-1">
+ <div className="flex justify-between text-gray-400 text-[10px] font-bold">
+ <span className="font-mono text-neon-blue">{Math.round(overlaySpeakingOpacity * 100)}%</span>
+ <span>{isRtl ? "شفافیت عضو در حال صحبت (Speaking)" : "Roster Opacity in Speaking State"}</span>
+ </div>
+ <input 
+ type="range" min="0.1" max="1.0" step="0.05"
+ value={overlaySpeakingOpacity} 
+ onChange={e => setOverlaySpeakingOpacity(parseFloat(e.target.value))} 
+ className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-neon-blue" 
+ />
+ </div>
+ </div>
+
+ {/* Overlay Position selector */}
+ <div className={cn("space-y-2 transition-opacity", !overlayEnabled && "opacity-50 pointer-events-none")}>
+ <label className="text-xs font-black text-gray-400">{isRtl ? "موقعیت قرارگیری اورلی روی صفحه" : "HUD Screen Orientation Position"}</label>
+ <div className="grid grid-cols-2 gap-2">
+ {[
+ { id: "top-left", name: isRtl ? "بالا چپ" : "Top Left" },
+ { id: "top-right", name: isRtl ? "بالا راست" : "Top Right" },
+ { id: "bottom-left", name: isRtl ? "پایین چپ" : "Bottom Left" },
+ { id: "bottom-right", name: isRtl ? "پایین راست" : "Bottom Right" }
+ ].map(pos => (
+ <button 
+ key={pos.id}
+ onClick={() => setOverlayPosition(pos.id as any)}
+ className={cn(
+ "py-2 rounded-xl text-xs font-black transition border",
+ overlayPosition === pos.id 
+ ? "bg-neon-blue/15 border-neon-blue/30 text-neon-blue" 
+ : "bg-white/5 border-white/5 text-gray-400 hover:bg-white/10"
+ )}
+ >
+ {pos.name}
+ </button>
+ ))}
+ </div>
+ </div>
+
+ {/* Overlay Size selector */}
+ <div className={cn("space-y-2 transition-opacity", !overlayEnabled && "opacity-50 pointer-events-none")}>
+ <label className="text-xs font-black text-gray-400">{isRtl ? "اندازه نمایشگر اورلی دسکتاپ" : "Desktop HUD Scaled Size"}</label>
+ <div className="flex gap-2">
+ {[
+ { id: "small", name: isRtl ? "کوچک" : "Small" },
+ { id: "medium", name: isRtl ? "متوسط" : "Medium" },
+ { id: "large", name: isRtl ? "بزرگ" : "Large" }
+ ].map(sz => (
+ <button 
+ key={sz.id}
+ onClick={() => setOverlaySize(sz.id as any)}
+ className={cn(
+ "flex-1 py-1.5 rounded-xl text-xs font-black transition border",
+ overlaySize === sz.id 
+ ? "bg-neon-blue/15 border-neon-blue/35 text-neon-blue" 
+ : "bg-white/5 border-white/5 text-gray-400 hover:bg-white/10"
+ )}
+ >
+ {sz.name}
+ </button>
+ ))}
+ </div>
+ </div>
+ </div>
+ )}
+ </div>
+ </div>
+ </div>
+ </Modal>
+ )}
+ </AnimatePresence>
+ </div>
+ </main>
+ </div>
+ );
 };
 
 function StatCard({ label, value }: { label: string, value: string }) {
-  return (
-  <div className="bg-white/5 border border-white/10 rounded-2xl p-3 text-center">
-    <p className="text-[8px] font-black text-gray-500 uppercase mb-1">{label}</p>
-    <p className="text-sm font-black text-white">{value}</p>
-  </div>
-  );
+ return (
+ <div className="bg-white/5 border border-white/10 rounded-2xl p-3 text-center">
+ <p className="text-[8px] font-black text-gray-500 uppercase mb-1">{label}</p>
+ <p className="text-sm font-black text-white">{value}</p>
+ </div>
+ );
 }
 
 function RemoteAudioPlayer({ stream, onVolumeChange, volumeLevel }: { stream: MediaStream, onVolumeChange: (vol: number) => void, volumeLevel: number, key?: any }) {
-  const audioRef = useRef<HTMLAudioElement>(null);
+ const audioRef = useRef<HTMLAudioElement>(null);
 
-  useEffect(() => {
-    if (audioRef.current && stream) {
-      if (audioRef.current.srcObject !== stream) {
-         audioRef.current.srcObject = stream;
-      }
-      audioRef.current.play().catch(e => console.warn("AutoPlay blocked:", e));
-    }
-  }, [stream]);
+ useEffect(() => {
+ if (audioRef.current && stream) {
+ if (audioRef.current.srcObject !== stream) {
+ audioRef.current.srcObject = stream;
+ }
+ audioRef.current.play().catch(e => console.warn("AutoPlay blocked:", e));
+ }
+ }, [stream]);
 
-  useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.volume = Math.min(Math.max(volumeLevel / 100, 0), 1);
-    }
-  }, [volumeLevel]);
+ useEffect(() => {
+ if (audioRef.current) {
+ audioRef.current.volume = Math.min(Math.max(volumeLevel / 100, 0), 1);
+ }
+ }, [volumeLevel]);
 
-  useEffect(() => {
-    let analyzer: AnalyserNode;
-    let microphone: MediaStreamAudioSourceNode;
-    let rafId: number;
-    let sharedAudioContext: AudioContext;
+ useEffect(() => {
+ let analyzer: AnalyserNode;
+ let microphone: MediaStreamAudioSourceNode;
+ let rafId: number;
+ let sharedAudioContext: AudioContext;
 
-    if (stream && stream.getAudioTracks().length > 0) {
-      try {
-        sharedAudioContext = getSharedAudioContext();
-        
-        analyzer = sharedAudioContext.createAnalyser();
+ if (stream && stream.getAudioTracks().length > 0) {
+ try {
+ sharedAudioContext = getSharedAudioContext();
+ 
+ analyzer = sharedAudioContext.createAnalyser();
 
-        microphone = sharedAudioContext.createMediaStreamSource(stream);
-        
-        // Only connect for analysis, NOT for playback. Playback happens via <audio> tag.
-        microphone.connect(analyzer);
-        
-        analyzer.fftSize = 256;
-        const bufferLength = analyzer.frequencyBinCount;
-        const dataArray = new Uint8Array(bufferLength);
+ microphone = sharedAudioContext.createMediaStreamSource(stream);
+ 
+ // Only connect for analysis, NOT for playback. Playback happens via <audio> tag.
+ microphone.connect(analyzer);
+ 
+ analyzer.fftSize = 256;
+ const bufferLength = analyzer.frequencyBinCount;
+ const dataArray = new Uint8Array(bufferLength);
 
-        let lastVol = 0;
-        let lastAnalysisTime = 0;
-        const analyzeVoice = (timestamp: number) => {
-          const now = timestamp || performance.now();
-          if (now - lastAnalysisTime >= 100) {
-            lastAnalysisTime = now;
-            const tracks = stream.getAudioTracks();
-            if (tracks.length > 0 && tracks[0].enabled) {
-              analyzer.getByteFrequencyData(dataArray);
-              let sum = 0;
-              for(let i = 0; i < bufferLength; i++) {
-                sum += dataArray[i];
-              }
-              const avg = sum / bufferLength;
-              const currentVol = Math.min(100, Math.round(avg * 2.5));
-              
-              if (Math.abs(currentVol - lastVol) > 15 || (currentVol === 0 && lastVol !== 0) || (currentVol > 10 && lastVol === 0)) {
-                lastVol = currentVol;
-                onVolumeChange(currentVol);
-              }
-            } else if (lastVol !== 0) {
-              lastVol = 0;
-              onVolumeChange(0);
-            }
-          }
-          rafId = requestAnimationFrame(analyzeVoice);
-        };
-        rafId = requestAnimationFrame(analyzeVoice);
-      } catch (e) {
-        console.error("Voice setup failed", e);
-      }
-    }
+ let lastVol = 0;
+ let lastAnalysisTime = 0;
+ const analyzeVoice = (timestamp: number) => {
+ const now = timestamp || performance.now();
+ if (now - lastAnalysisTime >= 100) {
+ lastAnalysisTime = now;
+ const tracks = stream.getAudioTracks();
+ if (tracks.length > 0 && tracks[0].enabled) {
+ analyzer.getByteFrequencyData(dataArray);
+ let sum = 0;
+ for(let i = 0; i < bufferLength; i++) {
+ sum += dataArray[i];
+ }
+ const avg = sum / bufferLength;
+ const currentVol = Math.min(100, Math.round(avg * 2.5));
+ 
+ if (Math.abs(currentVol - lastVol) > 15 || (currentVol === 0 && lastVol !== 0) || (currentVol > 10 && lastVol === 0)) {
+ lastVol = currentVol;
+ onVolumeChange(currentVol);
+ }
+ } else if (lastVol !== 0) {
+ lastVol = 0;
+ onVolumeChange(0);
+ }
+ }
+ rafId = requestAnimationFrame(analyzeVoice);
+ };
+ rafId = requestAnimationFrame(analyzeVoice);
+ } catch (e) {
+ console.error("Voice setup failed", e);
+ }
+ }
 
-    return () => {
-      if (rafId) cancelAnimationFrame(rafId);
-      try {
-        if (microphone) microphone.disconnect();
-        if (analyzer) analyzer.disconnect();
-      } catch(e) {}
-    };
-  }, [stream, onVolumeChange]);
+ return () => {
+ if (rafId) cancelAnimationFrame(rafId);
+ try {
+ if (microphone) microphone.disconnect();
+ if (analyzer) analyzer.disconnect();
+ } catch(e) {}
+ };
+ }, [stream, onVolumeChange]);
 
-  return (
-    <audio ref={audioRef} autoPlay playsInline className="hidden" />
-  );
+ return (
+ <audio ref={audioRef} autoPlay playsInline className="hidden" />
+ );
 }
 
 function Modal({ title, children, onClose }: { title: string, children: React.ReactNode, onClose: () => void }) {
-  return (
-  <motion.div 
-    initial={{ opacity: 0 }}
-    animate={{ opacity: 1 }}
-    exit={{ opacity: 0 }}
-    className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
-    onClick={onClose}
-  >
-     <motion.div 
-       initial={{ scale: 0.9, y: 20 }}
-       animate={{ scale: 1, y: 0 }}
-       exit={{ scale: 0.9, y: 20 }}
-       onClick={(e) => e.stopPropagation()}
-       className="w-full max-w-md bg-[#0a0a0f] rounded-[40px] border border-white/10 p-8 shadow-3xl relative flex flex-col max-h-[90vh] overflow-hidden"
-     >
-        {/* Glow Decor */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-1 bg-neon-blue rounded-full blur-sm" />
-        
-        <div className="flex items-center justify-between mb-6 shrink-0">
-           <h2 className="text-xl font-black text-white uppercase tracking-tight">{title}</h2>
-           <button onClick={onClose} className="h-10 w-10 flex items-center justify-center rounded-xl bg-white/5 text-gray-500 hover:text-white transition-colors">
-             <X size={20} />
-           </button>
-        </div>
-        <div className="flex-1 overflow-y-auto pr-1 space-y-6 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
-          {children}
-        </div>
-     </motion.div>
-  </motion.div>
-  );
+ return (
+ <motion.div 
+ initial={{ opacity: 0 }}
+ animate={{ opacity: 1 }}
+ exit={{ opacity: 0 }}
+ className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
+ onClick={onClose}
+ >
+ <motion.div 
+ initial={{ scale: 0.9, y: 20 }}
+ animate={{ scale: 1, y: 0 }}
+ exit={{ scale: 0.9, y: 20 }}
+ onClick={(e) => e.stopPropagation()}
+ className="w-full max-w-md bg-[#0a0a0f] rounded-[40px] border border-white/10 p-8 shadow-3xl relative flex flex-col max-h-[90vh] overflow-hidden"
+ >
+ {/* Glow Decor */}
+ <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-1 bg-neon-blue rounded-full blur-sm" />
+ 
+ <div className="flex items-center justify-between mb-6 shrink-0">
+ <h2 className="text-xl font-black text-white uppercase ">{title}</h2>
+ <button onClick={onClose} className="h-10 w-10 flex items-center justify-center rounded-xl bg-white/5 text-gray-500 hover:text-white transition-colors">
+ <X size={20} />
+ </button>
+ </div>
+ <div className="flex-1 overflow-y-auto pr-1 space-y-6 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+ {children}
+ </div>
+ </motion.div>
+ </motion.div>
+ );
 }
 
 function ControlButton({ icon, active = false, onClick, className, tooltip }: { icon: React.ReactNode, active?: boolean, onClick?: () => void, className?: string, tooltip?: string }) {
-  return (
-  <button 
-    onClick={onClick}
-    className={cn(
-      "h-12 w-12 rounded-2xl flex items-center justify-center transition-all group",
-      active ? "bg-white/10 text-white border border-white/10" : "bg-transparent text-gray-600 hover:text-white",
-      className
-    )}
-  >
-    <div className="group-hover:scale-110 transition-transform">{icon}</div>
-  </button>
-  );
+ return (
+ <button 
+ onClick={onClick}
+ className={cn(
+ "h-12 w-12 rounded-2xl flex items-center justify-center transition-all group",
+ active ? "bg-white/10 text-white border border-white/10" : "bg-transparent text-gray-600 hover:text-white",
+ className
+ )}
+ >
+ <div className="group-hover:scale-110 transition-transform">{icon}</div>
+ </button>
+ );
 }
 
 function MatchInfoPanel({ isStarting, isMatchStarted, countdown, players, lobby, onCancel, onReopen, isVipLobby, isStreamerLobby }: { 
-  isStarting: boolean, 
-  isMatchStarted: boolean,
-  countdown: number, 
-  players: Player[],
-  lobby: any,
-  onCancel: () => void,
-  onReopen: () => void,
-  isVipLobby?: boolean,
-  isStreamerLobby?: boolean
+ isStarting: boolean, 
+ isMatchStarted: boolean,
+ countdown: number, 
+ players: Player[],
+ lobby: any,
+ onCancel: () => void,
+ onReopen: () => void,
+ isVipLobby?: boolean,
+ isStreamerLobby?: boolean
 }) {
-  const { language } = useLanguage();
-  const isRtl = language === "fa";
-  const activePlayers = players.filter(p => !p.id.startsWith("slot-"));
-  const readyCount = activePlayers.filter(p => p.isReady).length;
+ const { language } = useLanguage();
+ const isRtl = language === "fa";
+ const activePlayers = players.filter(p => !p.id.startsWith("slot-"));
+ const readyCount = activePlayers.filter(p => p.isReady).length;
 
-  return (
-    <div className="relative">
-      <AnimatePresence mode="wait">
-        {isMatchStarted ? (
-          <motion.div 
-            key="started"
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            className="bg-green-500/10 border border-green-500/30 rounded-[28px] p-6 flex items-center justify-between overflow-hidden shadow-[0_20px_50px_rgba(34,197,94,0.1)]"
-          >
-            <div className="flex items-center gap-4">
-               <div className="h-10 w-10 rounded-full bg-green-500/20 flex items-center justify-center text-green-500">
-                  <Play size={20} />
-               </div>
-               <div>
-                  <h3 className="text-xl font-black text-white">{isRtl ? "در حال بازی کردن..." : "In Game..."}</h3>
-                  <p className="text-xs text-green-500 font-bold flex items-center gap-2">
-                    <Lock size={12} /> {isRtl ? "لابی قفل شد و امکان ورود نیست." : "Lobby is locked and joining is disabled."}
-                  </p>
-               </div>
-            </div>
-            <div className="flex items-center gap-4">
-                <div className="px-5 py-2 rounded-xl bg-green-500/20 border border-green-500/30 text-green-500 text-[10px] font-black uppercase tracking-widest">
-                   {isRtl ? "مدرج (LOBBY LOCKED)" : "LOCKED"}
-                </div>
-                <button 
-                  onClick={onReopen}
-                  className="px-5 py-2 rounded-xl bg-red-500 text-white text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-transform"
-                >
-                   {isRtl ? "باز کردن لابی" : "Unlock Lobby"}
-                </button>
-            </div>
-          </motion.div>
-        ) : isStarting ? (
-          <motion.div 
-            key="starting"
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className={cn(
-              "rounded-[28px] p-6 flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden",
-              isStreamerLobby ? "bg-purple-500/20 border border-purple-500/40 shadow-[0_20px_50px_rgba(168,85,247,0.1)]" :
-              isVipLobby ? "bg-yellow-400/20 border border-yellow-400/40 shadow-[0_20px_50px_rgba(250,204,21,0.1)]" : "bg-neon-blue/20 border border-neon-blue/40 shadow-[0_20px_50px_rgba(0,229,255,0.1)]"
-            )}
-          >
-            <div className="flex items-center gap-4">
-               <div className={cn("h-12 w-12 rounded-full border-4 border-t-white animate-spin", isStreamerLobby ? "border-purple-500" : isVipLobby ? "border-yellow-400" : "border-neon-blue")} />
-               <div>
-                  <h3 className="text-xl font-black text-white">{isRtl ? "در حال شروع بازی..." : "Match Starting..."}</h3>
-                  <p className="text-xs text-neon-blue font-bold">{isRtl ? "بچه‌ها آماده باشید، سرور در حال پیکربندی است." : "Get ready! Configuring room server details."}</p>
-               </div>
-            </div>
-            <div className="flex items-center gap-8">
-               <span className="text-6xl font-black text-white tabular-nums drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">{countdown}</span>
-               <button 
-                 onClick={onCancel}
-                 className="text-[10px] font-black text-gray-400 hover:text-white underline uppercase tracking-widest transition-colors"
-               >
-                 {isRtl ? "لغو شروع" : "Cancel"}
-               </button>
-            </div>
-          </motion.div>
-        ) : (
-          <motion.div 
-            key="waiting"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 bg-white/5 py-5 rounded-[28px] border border-white/5"
-          >
-            <div className="flex items-center gap-4">
-             <div className="relative">
-                 <div className={cn("h-3 w-3 rounded-full animate-pulse", isStreamerLobby ? "bg-purple-500" : isVipLobby ? "bg-yellow-400" : "bg-neon-blue")} />
-                 <div className={cn("absolute inset-0 h-3 w-3 rounded-full animate-ping", isStreamerLobby ? "bg-purple-500/50" : isVipLobby ? "bg-yellow-400/50" : "bg-neon-blue/50")} />
-               </div>
-               <span className="text-xs font-black uppercase text-gray-400 tracking-widest">
-                 {readyCount === activePlayers.length ? (isRtl ? "همه بازیکنان آماده هستند!" : "All players are ready!") : (isRtl ? `در انتظار بازیکنان... (${readyCount}/${activePlayers.length})` : `In queue... (${readyCount}/${activePlayers.length})`)}
-               </span>
-            </div>
+ return (
+ <div className="relative">
+ <AnimatePresence mode="wait">
+ {isMatchStarted ? (
+ <motion.div 
+ key="started"
+ initial={{ height: 0, opacity: 0 }}
+ animate={{ height: "auto", opacity: 1 }}
+ className="bg-green-500/10 border border-green-500/30 rounded-[28px] p-6 flex items-center justify-between overflow-hidden shadow-[0_20px_50px_rgba(34,197,94,0.1)]"
+ >
+ <div className="flex items-center gap-4">
+ <div className="h-10 w-10 rounded-full bg-green-500/20 flex items-center justify-center text-green-500">
+ <Play size={20} />
+ </div>
+ <div>
+ <h3 className="text-xl font-black text-white">{isRtl ? "در حال بازی کردن..." : "In Game..."}</h3>
+ <p className="text-xs text-green-500 font-bold flex items-center gap-2">
+ <Lock size={12} /> {isRtl ? "لابی قفل شد و امکان ورود نیست." : "Lobby is locked and joining is disabled."}
+ </p>
+ </div>
+ </div>
+ <div className="flex items-center gap-4">
+ <div className="px-5 py-2 rounded-xl bg-green-500/20 border border-green-500/30 text-green-500 text-[10px] font-black uppercase ">
+ {isRtl ? "مدرج (LOBBY LOCKED)" : "LOCKED"}
+ </div>
+ <button 
+ onClick={onReopen}
+ className="px-5 py-2 rounded-xl bg-red-500 text-white text-[10px] font-black uppercase hover:scale-105 transition-transform"
+ >
+ {isRtl ? "باز کردن لابی" : "Unlock Lobby"}
+ </button>
+ </div>
+ </motion.div>
+ ) : isStarting ? (
+ <motion.div 
+ key="starting"
+ initial={{ height: 0, opacity: 0 }}
+ animate={{ height: "auto", opacity: 1 }}
+ exit={{ height: 0, opacity: 0 }}
+ className={cn(
+ "rounded-[28px] p-6 flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden",
+ isStreamerLobby ? "bg-purple-500/20 border border-purple-500/40 shadow-[0_20px_50px_rgba(168,85,247,0.1)]" :
+ isVipLobby ? "bg-yellow-400/20 border border-yellow-400/40 shadow-[0_20px_50px_rgba(250,204,21,0.1)]" : "bg-neon-blue/20 border border-neon-blue/40 shadow-[0_20px_50px_rgba(0,229,255,0.1)]"
+ )}
+ >
+ <div className="flex items-center gap-4">
+ <div className={cn("h-12 w-12 rounded-full border-4 border-t-white animate-spin", isStreamerLobby ? "border-purple-500" : isVipLobby ? "border-yellow-400" : "border-neon-blue")} />
+ <div>
+ <h3 className="text-xl font-black text-white">{isRtl ? "در حال شروع بازی..." : "Match Starting..."}</h3>
+ <p className="text-xs text-neon-blue font-bold">{isRtl ? "بچه‌ها آماده باشید، سرور در حال پیکربندی است." : "Get ready! Configuring room server details."}</p>
+ </div>
+ </div>
+ <div className="flex items-center gap-8">
+ <span className="text-6xl font-black text-white tabular-nums drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">{countdown}</span>
+ <button 
+ onClick={onCancel}
+ className="text-[10px] font-black text-gray-400 hover:text-white underline uppercase transition-colors"
+ >
+ {isRtl ? "لغو شروع" : "Cancel"}
+ </button>
+ </div>
+ </motion.div>
+ ) : (
+ <motion.div 
+ key="waiting"
+ initial={{ opacity: 0 }}
+ animate={{ opacity: 1 }}
+ className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 bg-white/5 py-5 rounded-[28px] border border-white/5"
+ >
+ <div className="flex items-center gap-4">
+ <div className="relative">
+ <div className={cn("h-3 w-3 rounded-full animate-pulse", isStreamerLobby ? "bg-purple-500" : isVipLobby ? "bg-yellow-400" : "bg-neon-blue")} />
+ <div className={cn("absolute inset-0 h-3 w-3 rounded-full animate-ping", isStreamerLobby ? "bg-purple-500/50" : isVipLobby ? "bg-yellow-400/50" : "bg-neon-blue/50")} />
+ </div>
+ <span className="text-xs font-black uppercase text-gray-400 ">
+ {readyCount === activePlayers.length ? (isRtl ? "همه بازیکنان آماده هستند!" : "All players are ready!") : (isRtl ? `در انتظار بازیکنان... (${readyCount}/${activePlayers.length})` : `In queue... (${readyCount}/${activePlayers.length})`)}
+ </span>
+ </div>
 
-             <div className="flex flex-wrap items-center gap-6">
-                <div className="flex items-center gap-3 border-r border-white/10 pr-6">
-                   <span className="text-[10px] font-black text-gray-600 uppercase tracking-widest">REGION</span>
-                   <span className="text-xs font-black text-neon-pink uppercase">{lobby?.region || "ME"}</span>
-                </div>
-                
-                {/* Dynamic Metadata */}
-                {(() => {
-                  let meta: any = {};
-                  try { 
-                    meta = typeof lobby?.metadata === 'string' ? JSON.parse(lobby.metadata || "{}") : (lobby?.metadata || {}); 
-                  } catch(e) {}
-                  
-                  const excludedKeys = [
-                    'discordRequired', 'ageRestricted', 'autoClose', 'autoArchive',
-                    'modes', 'maps', 'features', 'slug', 'description', 'imageUrl',
-                    'genre', 'developer', 'platform'
-                  ];
+ <div className="flex flex-wrap items-center gap-6">
+ <div className="flex items-center gap-3 border-r border-white/10 pr-6">
+ <span className="text-[10px] font-black text-gray-600 uppercase ">REGION</span>
+ <span className="text-xs font-black text-neon-pink uppercase">{lobby?.region || "ME"}</span>
+ </div>
+ 
+ {/* Dynamic Metadata */}
+ {(() => {
+ let meta: any = {};
+ try { 
+ meta = typeof lobby?.metadata === 'string' ? JSON.parse(lobby.metadata || "{}") : (lobby?.metadata || {}); 
+ } catch(e) {}
+ 
+ const excludedKeys = [
+ 'discordRequired', 'ageRestricted', 'autoClose', 'autoArchive',
+ 'modes', 'maps', 'features', 'slug', 'description', 'imageUrl',
+ 'genre', 'developer', 'platform'
+ ];
 
-                  return Object.entries(meta)
-                    .filter(([key, v]) => !excludedKeys.includes(key) && typeof v !== 'object')
-                    .map(([key, value]) => (
-                      <div key={key} className="flex items-center gap-3">
-                        <span className="text-[10px] font-black text-gray-600 uppercase tracking-widest">{key}</span>
-                        <span className="text-xs font-black text-white bg-white/5 px-3 py-1 rounded-lg border border-white/10">{value as string}</span>
-                      </div>
-                    ));
-                })()}
-             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
+ return Object.entries(meta)
+ .filter(([key, v]) => !excludedKeys.includes(key) && typeof v !== 'object')
+ .map(([key, value]) => (
+ <div key={key} className="flex items-center gap-3">
+ <span className="text-[10px] font-black text-gray-600 uppercase ">{key}</span>
+ <span className="text-xs font-black text-white bg-white/5 px-3 py-1 rounded-lg border border-white/10">{value as string}</span>
+ </div>
+ ));
+ })()}
+ </div>
+ </motion.div>
+ )}
+ </AnimatePresence>
+ </div>
+ );
 };
 
 function DiscordLayoutPlayerCard({ 
-  player, volume, isSelected, onSelect, onVolumeChange, onMute, onInvite, onProfile, onDirectMessage, onAddFriend, onKick, onBan, isHostView, isVipLobby, isStreamerLobby
+ player, volume, isSelected, onSelect, onVolumeChange, onMute, onInvite, onProfile, onDirectMessage, onAddFriend, onKick, onBan, isHostView, isVipLobby, isStreamerLobby
 }) {
-  const { language } = useLanguage();
-  const isRtl = language === "fa";
-  const isSlot = player.name === "Empty Slot";
-  return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.9 }}
-      onClick={!isSlot ? () => onProfile(player.id) : () => onInvite()}
-      onContextMenu={(e) => {
-        if (!isSlot) {
-          e.preventDefault();
-          onSelect();
-        }
-      }}
-      className={cn(
-        "relative rounded-[16px] border transition-all duration-300 cursor-pointer overflow-hidden group flex flex-col justify-end p-2 md:p-3 items-center text-center aspect-square md:aspect-auto md:h-[180px] w-full",
-        isSlot ? "border-dashed border-white/10 bg-transparent opacity-40 hover:opacity-100 items-center justify-center" : "bg-[#0a0a0f] border-white/10 shadow-lg",
-        player.isReady && !isSlot ? "ring-1 ring-neon-blue/40 border-neon-blue/30 shadow-[0_10px_20px_-5px_rgba(0,229,255,0.15)]" : "",
-        player.isSpeaking && "ring-2 ring-green-500/50"
-      )}
-    >
-      {!isSlot ? (
-        <>
-           {/* Avatar Area */}
-           <div className="absolute inset-0 z-0">
-             <SmartImage src={player.avatarUrl || player.avatar} className="w-full h-full object-cover opacity-30 group-hover:opacity-40 transition-opacity blur-sm scale-110" />
-           </div>
-           
-           <div className="relative z-10 w-12 h-12 md:w-16 md:h-16 rounded-full overflow-hidden mb-2 border-2 border-white/10">
-              <SmartImage src={player.avatarUrl || player.avatar} className="w-full h-full object-cover" />
-           </div>
+ const { language } = useLanguage();
+ const isRtl = language === "fa";
+ const isSlot = player.name === "Empty Slot";
+ return (
+ <motion.div
+ layout
+ initial={{ opacity: 0, y: 10 }}
+ animate={{ opacity: 1, y: 0 }}
+ exit={{ opacity: 0, scale: 0.9 }}
+ onClick={!isSlot ? () => onProfile(player.id) : () => onInvite()}
+ onContextMenu={(e) => {
+ if (!isSlot) {
+ e.preventDefault();
+ onSelect();
+ }
+ }}
+ className={cn(
+ "relative rounded-[16px] border transition-all duration-300 cursor-pointer overflow-hidden group flex flex-col justify-end p-2 md:p-3 items-center text-center aspect-square md:aspect-auto md:h-[180px] w-full",
+ isSlot ? "border-dashed border-white/10 bg-transparent opacity-40 hover:opacity-100 items-center justify-center" : "bg-[#0a0a0f] border-white/10 shadow-lg",
+ player.isReady && !isSlot ? "ring-1 ring-neon-blue/40 border-neon-blue/30 shadow-[0_10px_20px_-5px_rgba(0,229,255,0.15)]" : "",
+ player.isSpeaking && "ring-2 ring-green-500/50"
+ )}
+ >
+ {!isSlot ? (
+ <>
+ {/* Avatar Area */}
+ <div className="absolute inset-0 z-0">
+ <SmartImage src={player.avatarUrl || player.avatar} className="w-full h-full object-cover opacity-30 group-hover:opacity-40 transition-opacity blur-sm scale-110" />
+ </div>
+ 
+ <div className="relative z-10 w-12 h-12 md:w-16 md:h-16 rounded-full overflow-hidden mb-2 border-2 border-white/10">
+ <SmartImage src={player.avatarUrl || player.avatar} className="w-full h-full object-cover" />
+ </div>
 
-           <div className="relative z-10 w-full bg-black/60 backdrop-blur-md rounded-xl p-1.5 md:p-2 border border-white/10 flex flex-col items-center">
-              <span className="text-[10px] md:text-xs font-bold text-white truncate max-w-full">
-                {player.name ? (player.name.length > 10 ? player.name.substring(0, 10) + "..." : player.name) : ""}
-              </span>
-              <div className="flex items-center gap-1 mt-0.5">
-                {player.isMuted ? <MicOff size={10} className="text-red-400" /> : <Mic size={10} className="text-gray-400" />}
-                <span className="text-[8px] font-mono text-gray-500">{player.ping}ms</span>
-              </div>
-           </div>
+ <div className="relative z-10 w-full bg-black/60 backdrop-blur-md rounded-xl p-1.5 md:p-2 border border-white/10 flex flex-col items-center">
+ <span className="text-[10px] md:text-xs font-bold text-white truncate max-w-full">
+ {player.name ? (player.name.length > 10 ? player.name.substring(0, 10) + "..." : player.name) : ""}
+ </span>
+ <div className="flex items-center gap-1 mt-0.5">
+ {player.isMuted ? <MicOff size={10} className="text-red-400" /> : <Mic size={10} className="text-gray-400" />}
+ <span className="text-[8px] font-mono text-gray-500">{player.ping}ms</span>
+ </div>
+ </div>
 
-           {isSelected && (
-              <div className="absolute inset-0 bg-[#0a0a0f]/95 backdrop-blur-md z-20 flex flex-col p-4 border border-neon-blue/50 rounded-[16px] justify-center items-center shadow-2xl" onClick={e => e.stopPropagation()}>
-                
-                <div className="w-full flex-1 flex flex-col justify-center gap-6">
-                  <div className="w-full px-2 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-bold text-gray-400">VOLUME</span>
-                      <span className="text-[10px] font-bold text-white">{player.volume}%</span>
-                    </div>
-                    <input 
-                      type="range" min="0" max="200" value={player.volume} 
-                      onChange={(e) => onVolumeChange(parseInt(e.target.value))}
-                      className="w-full h-1.5 bg-white/10 rounded-lg appearance-none accent-neon-blue"
-                    />
-                  </div>
+ {isSelected && (
+ <div className="absolute inset-0 bg-[#0a0a0f]/95 backdrop-blur-md z-20 flex flex-col p-4 border border-neon-blue/50 rounded-[16px] justify-center items-center shadow-2xl" onClick={e => e.stopPropagation()}>
+ 
+ <div className="w-full flex-1 flex flex-col justify-center gap-6">
+ <div className="w-full px-2 space-y-2">
+ <div className="flex items-center justify-between">
+ <span className="text-[10px] font-bold text-gray-400">VOLUME</span>
+ <span className="text-[10px] font-bold text-white">{player.volume}%</span>
+ </div>
+ <input 
+ type="range" min="0" max="200" value={player.volume} 
+ onChange={(e) => onVolumeChange(parseInt(e.target.value))}
+ className="w-full h-1.5 bg-white/10 rounded-lg appearance-none accent-neon-blue"
+ />
+ </div>
 
-                  <div className="flex items-center justify-center gap-2">
-                     <QuickAction icon={<Users size={14} />} tooltip={isRtl ? "پروفایل" : "Profile"} onClick={() => onProfile(player.id)} />
-                     <QuickAction icon={<MessageSquare size={14} />} tooltip={isRtl ? "پیام" : "Message"} onClick={() => onDirectMessage(player.id)} />
-                     <QuickAction icon={player.isMuted ? <Mic size={14} /> : <MicOff size={14} />} tooltip={isRtl ? "صدا" : "Voice"} onClick={() => onMute(player.id)} />
-                  </div>
-                </div>
-              </div>
-           )}
-        </>
-      ) : (
-        <div className="flex flex-col items-center justify-center h-full text-white/20">
-          <UserPlus size={24} className="mb-2" />
-        </div>
-      )}
-    </motion.div>
-  )
+ <div className="flex items-center justify-center gap-2">
+ <QuickAction icon={<Users size={14} />} tooltip={isRtl ? "پروفایل" : "Profile"} onClick={() => onProfile(player.id)} />
+ <QuickAction icon={<MessageSquare size={14} />} tooltip={isRtl ? "پیام" : "Message"} onClick={() => onDirectMessage(player.id)} />
+ <QuickAction icon={player.isMuted ? <Mic size={14} /> : <MicOff size={14} />} tooltip={isRtl ? "صدا" : "Voice"} onClick={() => onMute(player.id)} />
+ </div>
+ </div>
+ </div>
+ )}
+ </>
+ ) : (
+ <div className="flex flex-col items-center justify-center h-full text-white/20">
+ <UserPlus size={24} className="mb-2" />
+ </div>
+ )}
+ </motion.div>
+ )
 }
 
 function CompactLayoutPlayerCard({ 
-  player, volume, isSelected, onSelect, onVolumeChange, onMute, onInvite, onProfile, onDirectMessage, onAddFriend, onKick, onBan, isHostView, isVipLobby, isStreamerLobby
+ player, volume, isSelected, onSelect, onVolumeChange, onMute, onInvite, onProfile, onDirectMessage, onAddFriend, onKick, onBan, isHostView, isVipLobby, isStreamerLobby
 }) {
-  const { language } = useLanguage();
-  const isRtl = language === "fa";
-  const isSlot = player.name === "Empty Slot";
-  return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.9 }}
-      onClick={!isSlot ? () => onProfile(player.id) : () => onInvite()}
-      onContextMenu={(e) => {
-        if (!isSlot) {
-          e.preventDefault();
-          onSelect();
-        }
-      }}
-      className={cn(
-        "relative rounded-[16px] border transition-all duration-300 cursor-pointer overflow-hidden group flex w-full sm:w-[calc(50%-6px)] lg:w-[calc(33.333%-10px)] h-[60px] md:h-[72px] items-center p-2 md:p-3 shrink-0",
-        isSlot ? "border-dashed border-white/10 bg-transparent opacity-40 hover:opacity-100" : "bg-[#0a0a0f] border-white/10 hover:bg-[#12121a]",
-        player.isReady && !isSlot ? "border-neon-blue/30 shadow-[0_0_15px_rgba(0,229,255,0.1)]" : "",
-        player.isSpeaking && "ring-1 ring-green-500/50"
-      )}
-    >
-      {!isSlot ? (
-        <>
-          <div className="relative w-10 h-10 md:w-12 md:h-12 rounded-xl overflow-hidden shrink-0 border border-white/10 mr-3">
-             <SmartImage src={player.avatarUrl || player.avatar} className="w-full h-full object-cover" />
-          </div>
-          <div className="flex-1 min-w-0 pr-2">
-             <div className="flex items-center justify-between">
-                <span className="text-xs md:text-sm font-bold text-white truncate">
-                  {player.name ? (player.name.length > 10 ? player.name.substring(0, 10) + "..." : player.name) : ""}
-                </span>
-                <div className="flex items-center gap-1.5 shrink-0">
-                  {player.isMuted ? <MicOff size={12} className="text-red-400" /> : <Mic size={12} className="text-green-400" />}
-                  <span className="text-[9px] font-mono text-gray-500">{player.ping}ms</span>
-                </div>
-             </div>
-             <div className="text-[10px] text-gray-500 truncate mt-0.5">{player.rank}</div>
-          </div>
+ const { language } = useLanguage();
+ const isRtl = language === "fa";
+ const isSlot = player.name === "Empty Slot";
+ return (
+ <motion.div
+ layout
+ initial={{ opacity: 0, y: 10 }}
+ animate={{ opacity: 1, y: 0 }}
+ exit={{ opacity: 0, scale: 0.9 }}
+ onClick={!isSlot ? () => onProfile(player.id) : () => onInvite()}
+ onContextMenu={(e) => {
+ if (!isSlot) {
+ e.preventDefault();
+ onSelect();
+ }
+ }}
+ className={cn(
+ "relative rounded-[16px] border transition-all duration-300 cursor-pointer overflow-hidden group flex w-full sm:w-[calc(50%-6px)] lg:w-[calc(33.333%-10px)] h-[60px] md:h-[72px] items-center p-2 md:p-3 shrink-0",
+ isSlot ? "border-dashed border-white/10 bg-transparent opacity-40 hover:opacity-100" : "bg-[#0a0a0f] border-white/10 hover:bg-[#12121a]",
+ player.isReady && !isSlot ? "border-neon-blue/30 shadow-[0_0_15px_rgba(0,229,255,0.1)]" : "",
+ player.isSpeaking && "ring-1 ring-green-500/50"
+ )}
+ >
+ {!isSlot ? (
+ <>
+ <div className="relative w-10 h-10 md:w-12 md:h-12 rounded-xl overflow-hidden shrink-0 border border-white/10 mr-3">
+ <SmartImage src={player.avatarUrl || player.avatar} className="w-full h-full object-cover" />
+ </div>
+ <div className="flex-1 min-w-0 pr-2">
+ <div className="flex items-center justify-between">
+ <span className="text-xs md:text-sm font-bold text-white truncate">
+ {player.name ? (player.name.length > 10 ? player.name.substring(0, 10) + "..." : player.name) : ""}
+ </span>
+ <div className="flex items-center gap-1.5 shrink-0">
+ {player.isMuted ? <MicOff size={12} className="text-red-400" /> : <Mic size={12} className="text-green-400" />}
+ <span className="text-[9px] font-mono text-gray-500">{player.ping}ms</span>
+ </div>
+ </div>
+ <div className="text-[10px] text-gray-500 truncate mt-0.5">{player.rank}</div>
+ </div>
 
-          {isSelected && (
-             <div className="absolute inset-0 bg-[#0a0a0f]/95 backdrop-blur-md z-20 flex items-center px-4 border border-neon-blue/40 rounded-[16px] justify-between shadow-2xl" onClick={e => e.stopPropagation()}>
-                <div className="flex items-center gap-3 w-[100px]">
-                  <span className="text-[10px] font-bold text-gray-400">VOL</span>
-                  <input 
-                    type="range" min="0" max="200" value={player.volume} 
-                    onChange={(e) => onVolumeChange(parseInt(e.target.value))}
-                    className="w-full h-1.5 bg-white/10 rounded-lg appearance-none accent-neon-blue"
-                  />
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                   <QuickAction icon={<Users size={14} />} tooltip={isRtl ? "پروفایل" : "Profile"} onClick={() => onProfile(player.id)} />
-                   <QuickAction icon={<MessageSquare size={14} />} tooltip={isRtl ? "پیام" : "Message"} onClick={() => onDirectMessage(player.id)} />
-                   <QuickAction icon={player.isMuted ? <Mic size={14} /> : <MicOff size={14} />} tooltip={isRtl ? "صدا" : "Voice"} onClick={() => onMute(player.id)} />
-                </div>
-             </div>
-          )}
-        </>
-      ) : (
-        <div className="flex items-center gap-3 w-full text-white/20">
-           <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl border border-dashed border-white/20 flex items-center justify-center">
-             <UserPlus size={16} />
-           </div>
-           <span className="text-xs lowercase tracking-widest font-mono">empty_slot</span>
-        </div>
-      )}
-    </motion.div>
-  )
+ {isSelected && (
+ <div className="absolute inset-0 bg-[#0a0a0f]/95 backdrop-blur-md z-20 flex items-center px-4 border border-neon-blue/40 rounded-[16px] justify-between shadow-2xl" onClick={e => e.stopPropagation()}>
+ <div className="flex items-center gap-3 w-[100px]">
+ <span className="text-[10px] font-bold text-gray-400">VOL</span>
+ <input 
+ type="range" min="0" max="200" value={player.volume} 
+ onChange={(e) => onVolumeChange(parseInt(e.target.value))}
+ className="w-full h-1.5 bg-white/10 rounded-lg appearance-none accent-neon-blue"
+ />
+ </div>
+ <div className="flex items-center gap-2 shrink-0">
+ <QuickAction icon={<Users size={14} />} tooltip={isRtl ? "پروفایل" : "Profile"} onClick={() => onProfile(player.id)} />
+ <QuickAction icon={<MessageSquare size={14} />} tooltip={isRtl ? "پیام" : "Message"} onClick={() => onDirectMessage(player.id)} />
+ <QuickAction icon={player.isMuted ? <Mic size={14} /> : <MicOff size={14} />} tooltip={isRtl ? "صدا" : "Voice"} onClick={() => onMute(player.id)} />
+ </div>
+ </div>
+ )}
+ </>
+ ) : (
+ <div className="flex items-center gap-3 w-full text-white/20">
+ <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl border border-dashed border-white/20 flex items-center justify-center">
+ <UserPlus size={16} />
+ </div>
+ <span className="text-xs lowercase font-mono">empty_slot</span>
+ </div>
+ )}
+ </motion.div>
+ )
 }
 
 const PlayerCard: React.FC<{
-  player: Player;
-  volume?: number;
-  isSelected: boolean;
-  onSelect: () => void;
-  onVolumeChange: (val: number) => void;
-  onMute: (id: string) => void;
-  onInvite: () => void;
-  onProfile: (id: string) => void;
-  onDirectMessage: (id: string) => void;
-  onAddFriend: (id: string) => void;
-  onKick?: (id: string) => void;
-  onBan?: (id: string) => void;
-  isHostView?: boolean;
-  disabled?: boolean;
-  isVipLobby?: boolean;
-  isStreamerLobby?: boolean;
-  layoutMode?: 'default' | 'compact' | 'discord';
+ player: Player;
+ volume?: number;
+ isSelected: boolean;
+ onSelect: () => void;
+ onVolumeChange: (val: number) => void;
+ onMute: (id: string) => void;
+ onInvite: () => void;
+ onProfile: (id: string) => void;
+ onDirectMessage: (id: string) => void;
+ onAddFriend: (id: string) => void;
+ onKick?: (id: string) => void;
+ onBan?: (id: string) => void;
+ isHostView?: boolean;
+ disabled?: boolean;
+ isVipLobby?: boolean;
+ isStreamerLobby?: boolean;
+ layoutMode?: 'default' | 'compact' | 'discord';
 }> = ({
-  player, 
-  volume,
-  isSelected, 
-  onSelect, 
-  onVolumeChange, 
-  onMute, 
-  onInvite, 
-  onProfile, 
-  onDirectMessage, 
-  onAddFriend, 
-  onKick,
-  onBan,
-  isHostView,
-  disabled,
-  isVipLobby,
-  isStreamerLobby,
-  layoutMode = 'default'
+ player, 
+ volume,
+ isSelected, 
+ onSelect, 
+ onVolumeChange, 
+ onMute, 
+ onInvite, 
+ onProfile, 
+ onDirectMessage, 
+ onAddFriend, 
+ onKick,
+ onBan,
+ isHostView,
+ disabled,
+ isVipLobby,
+ isStreamerLobby,
+ layoutMode = 'default'
 }) => {
-  const isSlot = player.name === "Empty Slot";
-  const { user } = useAuth();
-  const isMe = user?.id === player.id;
-  const { language } = useLanguage();
-  const isRtl = language === "fa";
+ const isSlot = player.name === "Empty Slot";
+ const { user } = useAuth();
+ const isMe = user?.id === player.id;
+ const { language } = useLanguage();
+ const isRtl = language === "fa";
 
-  if (layoutMode === 'discord') {
-    return <DiscordLayoutPlayerCard player={player} isSelected={isSelected} onSelect={onSelect} onInvite={onInvite} isVipLobby={isVipLobby} isStreamerLobby={isStreamerLobby} volume={volume} onVolumeChange={onVolumeChange} onMute={onMute} onProfile={onProfile} onDirectMessage={onDirectMessage} onAddFriend={onAddFriend} onKick={onKick} onBan={onBan} isHostView={isHostView} />
-  }
+ if (layoutMode === 'discord') {
+ return <DiscordLayoutPlayerCard player={player} isSelected={isSelected} onSelect={onSelect} onInvite={onInvite} isVipLobby={isVipLobby} isStreamerLobby={isStreamerLobby} volume={volume} onVolumeChange={onVolumeChange} onMute={onMute} onProfile={onProfile} onDirectMessage={onDirectMessage} onAddFriend={onAddFriend} onKick={onKick} onBan={onBan} isHostView={isHostView} />
+ }
 
-  if (layoutMode === 'compact') {
-    return <CompactLayoutPlayerCard player={player} isSelected={isSelected} onSelect={onSelect} onInvite={onInvite} isVipLobby={isVipLobby} isStreamerLobby={isStreamerLobby} volume={volume} onVolumeChange={onVolumeChange} onMute={onMute} onProfile={onProfile} onDirectMessage={onDirectMessage} onAddFriend={onAddFriend} onKick={onKick} onBan={onBan} isHostView={isHostView} />
-  }
+ if (layoutMode === 'compact') {
+ return <CompactLayoutPlayerCard player={player} isSelected={isSelected} onSelect={onSelect} onInvite={onInvite} isVipLobby={isVipLobby} isStreamerLobby={isStreamerLobby} volume={volume} onVolumeChange={onVolumeChange} onMute={onMute} onProfile={onProfile} onDirectMessage={onDirectMessage} onAddFriend={onAddFriend} onKick={onKick} onBan={onBan} isHostView={isHostView} />
+ }
 
-  return (
-      <motion.div
-      layout
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.9 }}
-      whileHover={!isSlot ? { y: -8, transition: { duration: 0.2 } } : {}}
-      onClick={!isSlot ? () => onProfile(player.id) : () => onInvite()}
-      onContextMenu={(e) => {
-        if (!isSlot) {
-          e.preventDefault();
-          onSelect();
-        }
-      }}
-      className={cn(
-        "relative p-3 md:p-6 rounded-[24px] md:rounded-[32px] border transition-all duration-300 backdrop-blur-md cursor-pointer group flex flex-col justify-between min-h-[220px] md:min-h-[360px] w-full sm:w-[calc(50%-6px)] md:w-[calc(50%-12px)] lg:w-[calc(33.333%-10px)] xl:w-[calc(25%-18px)] shrink-0 grow min-w-[140px] sm:min-w-[220px] md:min-w-[245px]",
-        isSlot ? "border-dashed border-white/10 bg-transparent opacity-40 hover:opacity-100" : "bg-[#0a0a0f] border-white/10 shadow-2xl overflow-hidden",
-        player.isReady && !isSlot && (
-          isStreamerLobby ? "scale-[1.02] ring-1 ring-purple-500/40 border-purple-500/30 shadow-[0_20px_40px_-5px_rgba(168,85,247,0.15)] bg-gradient-to-b from-[#0a0a0f] to-purple-900/10" :
-          isVipLobby ? "scale-[1.02] ring-1 ring-yellow-400/40 border-yellow-400/30 shadow-[0_20px_40px_-5px_rgba(250,204,21,0.15)] bg-gradient-to-b from-[#0a0a0f] to-yellow-900/10" : "scale-[1.02] ring-1 ring-neon-blue/40 border-neon-blue/30 shadow-[0_20px_40px_-5px_rgba(0,229,255,0.15)]"
-        ),
-        (isVipLobby || isStreamerLobby) && !isSlot && (isStreamerLobby ? "border-purple-500/20 hover:border-purple-500/40 shadow-[0_0_20px_rgba(168,85,247,0.05)] bg-purple-500/5 bg-blend-soft-light" : "border-yellow-400/20 hover:border-yellow-400/40 shadow-[0_0_20px_rgba(250,204,21,0.05)] bg-yellow-400/5 bg-blend-soft-light"),
-        player.isSpeaking && "ring-2 ring-green-500/50 shadow-[0_0_30px_rgba(34,197,94,0.1)]"
-      )}
-    >
-      {!isSlot ? (
-        <>
-          <div className="flex-1 flex flex-col">
-            {/* Rank & Ping */}
-            <div className="mb-2 md:mb-4 flex items-center justify-between">
-               <div className="flex items-center gap-1.5 md:gap-2">
-                 <Trophy size={10} className="md:size-[14px] text-neon-pink shrink-0" />
-                 <span className="text-[7px] md:text-[9px] font-black text-gray-500 uppercase tracking-widest truncate max-w-[50px] md:max-w-none">{player.rank}</span>
-               </div>
-               <div className="flex items-center gap-1 md:gap-1.5">
-                  <span className="text-[7px] md:text-[9px] font-bold text-gray-600 font-mono shrink-0">{player.ping}ms</span>
-                  <PingChart ping={player.ping} />
-               </div>
-            </div>
+ return (
+ <motion.div
+ layout
+ initial={{ opacity: 0, y: 20 }}
+ animate={{ opacity: 1, y: 0 }}
+ exit={{ opacity: 0, scale: 0.9 }}
+ whileHover={!isSlot ? { y: -8, transition: { duration: 0.2 } } : {}}
+ onClick={!isSlot ? () => onProfile(player.id) : () => onInvite()}
+ onContextMenu={(e) => {
+ if (!isSlot) {
+ e.preventDefault();
+ onSelect();
+ }
+ }}
+ className={cn(
+ "relative p-3 md:p-6 rounded-[24px] md:rounded-[32px] border transition-all duration-300 backdrop-blur-md cursor-pointer group flex flex-col justify-between min-h-[220px] md:min-h-[360px] w-full sm:w-[calc(50%-6px)] md:w-[calc(50%-12px)] lg:w-[calc(33.333%-10px)] xl:w-[calc(25%-18px)] shrink-0 grow min-w-[140px] sm:min-w-[220px] md:min-w-[245px]",
+ isSlot ? "border-dashed border-white/10 bg-transparent opacity-40 hover:opacity-100" : "bg-[#0a0a0f] border-white/10 shadow-2xl overflow-hidden",
+ player.isReady && !isSlot && (
+ isStreamerLobby ? "scale-[1.02] ring-1 ring-purple-500/40 border-purple-500/30 shadow-[0_20px_40px_-5px_rgba(168,85,247,0.15)] bg-gradient-to-b from-[#0a0a0f] to-purple-900/10" :
+ isVipLobby ? "scale-[1.02] ring-1 ring-yellow-400/40 border-yellow-400/30 shadow-[0_20px_40px_-5px_rgba(250,204,21,0.15)] bg-gradient-to-b from-[#0a0a0f] to-yellow-900/10" : "scale-[1.02] ring-1 ring-neon-blue/40 border-neon-blue/30 shadow-[0_20px_40px_-5px_rgba(0,229,255,0.15)]"
+ ),
+ (isVipLobby || isStreamerLobby) && !isSlot && (isStreamerLobby ? "border-purple-500/20 hover:border-purple-500/40 shadow-[0_0_20px_rgba(168,85,247,0.05)] bg-purple-500/5 bg-blend-soft-light" : "border-yellow-400/20 hover:border-yellow-400/40 shadow-[0_0_20px_rgba(250,204,21,0.05)] bg-yellow-400/5 bg-blend-soft-light"),
+ player.isSpeaking && "ring-2 ring-green-500/50 shadow-[0_0_30px_rgba(34,197,94,0.1)]"
+ )}
+ >
+ {!isSlot ? (
+ <>
+ <div className="flex-1 flex flex-col">
+ {/* Rank & Ping */}
+ <div className="mb-2 md:mb-4 flex items-center justify-between">
+ <div className="flex items-center gap-1.5 md:gap-2">
+ <Trophy size={10} className="md:size-[14px] text-neon-pink shrink-0" />
+ <span className="text-[7px] md:text-[9px] font-black text-gray-500 uppercase truncate max-w-[50px] md:max-w-none">{player.rank}</span>
+ </div>
+ <div className="flex items-center gap-1 md:gap-1.5">
+ <span className="text-[7px] md:text-[9px] font-bold text-gray-600 font-mono shrink-0">{player.ping}ms</span>
+ <PingChart ping={player.ping} />
+ </div>
+ </div>
 
-            <div className="flex flex-col items-center flex-1 justify-center py-2 md:py-4">
-              {/* Avatar & Volume Indicator */}
-              <div className="relative flex items-center justify-center h-16 w-16 sm:h-28 sm:w-28 md:h-32 md:w-32 mb-3 md:mb-6">
-                {/* Volume Level Ring */}
-                <svg className="absolute inset-0 w-full h-full -rotate-90 pointer-events-none opacity-20">
-                  <circle 
-                    cx="50%" cy="50%" r="46%" 
-                    fill="none" 
-                    stroke="currentColor" 
-                    strokeWidth="2" 
-                    className="text-gray-800"
-                  />
-                  <motion.circle 
-                    cx="50%" cy="50%" r="46%" 
-                    fill="none" 
-                    stroke="currentColor" 
-                    strokeWidth="3" 
-                    className={isStreamerLobby ? "text-purple-500" : isVipLobby ? "text-yellow-400" : "text-neon-blue"}
-                    style={{ strokeDasharray: "290" }}
-                    initial={{ strokeDashoffset: 290 }}
-                    animate={{ strokeDashoffset: 290 - (290 * (player.activity || 0)) / 100 }}
-                    transition={{ type: "spring", bounce: 0, damping: 20 }}
-                  />
-                </svg>
+ <div className="flex flex-col items-center flex-1 justify-center py-2 md:py-4">
+ {/* Avatar & Volume Indicator */}
+ <div className="relative flex items-center justify-center h-16 w-16 sm:h-28 sm:w-28 md:h-32 md:w-32 mb-3 md:mb-6">
+ {/* Volume Level Ring */}
+ <svg className="absolute inset-0 w-full h-full -rotate-90 pointer-events-none opacity-20">
+ <circle 
+ cx="50%" cy="50%" r="46%" 
+ fill="none" 
+ stroke="currentColor" 
+ strokeWidth="2" 
+ className="text-gray-800"
+ />
+ <motion.circle 
+ cx="50%" cy="50%" r="46%" 
+ fill="none" 
+ stroke="currentColor" 
+ strokeWidth="3" 
+ className={isStreamerLobby ? "text-purple-500" : isVipLobby ? "text-yellow-400" : "text-neon-blue"}
+ style={{ strokeDasharray: "290" }}
+ initial={{ strokeDashoffset: 290 }}
+ animate={{ strokeDashoffset: 290 - (290 * (player.activity || 0)) / 100 }}
+ transition={{ type: "spring", bounce: 0, damping: 20 }}
+ />
+ </svg>
 
-                <div 
-                  className={cn(
-                    "h-10 w-10 sm:h-16 sm:w-16 md:h-20 md:w-20 rounded-[18px] md:rounded-[28px] flex items-center justify-center text-xl md:text-3xl relative z-10 transition-all duration-500 shadow-2xl cursor-pointer hover:scale-110 hover:ring-2",
-                    isStreamerLobby ? "hover:ring-purple-500/50" : isVipLobby ? "hover:ring-yellow-400/50" : "hover:ring-neon-blue/50",
-                    player.isReady ? "bg-white/10" : "bg-white/5",
-                    player.isSpeaking ? "scale-105" : ""
-                  )}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onProfile(player.id);
-                  }}
-                >
-                  <div className="relative z-10 h-full w-full flex items-center justify-center overflow-hidden rounded-[18px] md:rounded-[28px]">
-                    <SmartImage 
-                      src={player.avatarUrl || ""}
-                      className="w-full h-full object-cover"
-                      alt={player.name}
-                    />
-                  </div>
-                  <div className="absolute inset-0 bg-gradient-to-tr from-black/20 to-transparent rounded-[18px] md:rounded-[28px]" />
-                  
-                  {/* Voice Glow Overlay */}
-                  {player.isSpeaking && (
-                     <motion.div 
-                       animate={{ opacity: [0.2, 0.4, 0.2] }} 
-                       transition={{ duration: 1.5, repeat: Infinity }}
-                       className="absolute -inset-1 md:-inset-2 bg-green-500 rounded-[24px] md:rounded-[32px] blur-lg md:blur-xl -z-10" 
-                     />
-                  )}
-                </div>
+ <div 
+ className={cn(
+ "h-10 w-10 sm:h-16 sm:w-16 md:h-20 md:w-20 rounded-[18px] md:rounded-[28px] flex items-center justify-center text-xl md:text-3xl relative z-10 transition-all duration-500 shadow-2xl cursor-pointer hover:scale-110 hover:ring-2",
+ isStreamerLobby ? "hover:ring-purple-500/50" : isVipLobby ? "hover:ring-yellow-400/50" : "hover:ring-neon-blue/50",
+ player.isReady ? "bg-white/10" : "bg-white/5",
+ player.isSpeaking ? "scale-105" : ""
+ )}
+ onClick={(e) => {
+ e.stopPropagation();
+ onProfile(player.id);
+ }}
+ >
+ <div className="relative z-10 h-full w-full flex items-center justify-center overflow-hidden rounded-[18px] md:rounded-[28px]">
+ <SmartImage 
+ src={player.avatarUrl || ""}
+ className="w-full h-full object-cover"
+ alt={player.name}
+ />
+ </div>
+ <div className="absolute inset-0 bg-gradient-to-tr from-black/20 to-transparent rounded-[18px] md:rounded-[28px]" />
+ 
+ {/* Voice Glow Overlay */}
+ {player.isSpeaking && (
+ <motion.div 
+ animate={{ opacity: [0.2, 0.4, 0.2] }} 
+ transition={{ duration: 1.5, repeat: Infinity }}
+ className="absolute -inset-1 md:-inset-2 bg-green-500 rounded-[24px] md:rounded-[32px] blur-lg md:blur-xl -z-10" 
+ />
+ )}
+ </div>
 
-                {/* Ready Indicator */}
-                <AnimatePresence>
-                  {player.isReady && (
-                    <motion.div 
-                      initial={{ scale: 0, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      className={cn(
-                        "absolute -bottom-1 -left-1 md:-bottom-2 md:-left-2 h-6 w-6 md:h-8 md:w-8 rounded-lg md:rounded-2xl border-2 md:border-4 border-[#0a0a0f] flex items-center justify-center shadow-lg z-20",
-                        isVipLobby ? "bg-yellow-400" : "bg-neon-blue"
-                      )}
-                    >
-                      <Check size={10} className="md:size-[14px] text-dark-bg" />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+ {/* Ready Indicator */}
+ <AnimatePresence>
+ {player.isReady && (
+ <motion.div 
+ initial={{ scale: 0, opacity: 0 }}
+ animate={{ scale: 1, opacity: 1 }}
+ className={cn(
+ "absolute -bottom-1 -left-1 md:-bottom-2 md:-left-2 h-6 w-6 md:h-8 md:w-8 rounded-lg md:rounded-2xl border-2 md:border-4 border-[#0a0a0f] flex items-center justify-center shadow-lg z-20",
+ isVipLobby ? "bg-yellow-400" : "bg-neon-blue"
+ )}
+ >
+ <Check size={10} className="md:size-[14px] text-dark-bg" />
+ </motion.div>
+ )}
+ </AnimatePresence>
 
-                {/* Speaker Indicator */}
-                {player.isSpeaking && (
-                  <div className="absolute -top-1 -right-1 h-6 w-6 md:h-8 md:w-8 rounded-lg md:rounded-2xl bg-green-500 border-2 md:border-4 border-[#0a0a0f] flex items-center justify-center text-dark-bg z-20">
-                     <Mic size={10} className="md:size-[14px]" />
-                  </div>
-                )}
-              </div>
+ {/* Speaker Indicator */}
+ {player.isSpeaking && (
+ <div className="absolute -top-1 -right-1 h-6 w-6 md:h-8 md:w-8 rounded-lg md:rounded-2xl bg-green-500 border-2 md:border-4 border-[#0a0a0f] flex items-center justify-center text-dark-bg z-20">
+ <Mic size={10} className="md:size-[14px]" />
+ </div>
+ )}
+ </div>
 
-              <div className="flex items-center gap-1.5 md:gap-2 mb-0.5 md:mb-2 max-w-full">
-                <h3 className="text-xs md:text-xl font-black text-white truncate flex items-center gap-1.5">
-                  {player.role === "STREAMER" && (
-                    <CheckCircle2 size={18} className="text-white fill-purple-500 drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]" />
-                  )}
-                  {player.membership === "VIP" && player.role !== "STREAMER" && (
-                    <Crown size={16} className="text-yellow-500 fill-yellow-500 drop-shadow-[0_0_8px_rgba(250,204,21,0.8)]" />
-                  )}
-                  {player.name ? (player.name.length > 10 ? player.name.substring(0, 10) + "..." : player.name) : ""}
-                  {player.isVerified && player.role !== "STREAMER" && (
-                    <CheckCircle2 size={14} className="text-neon-blue" fill="currentColor" />
-                  )}
-                </h3>
-                <UserBadges badges={player.badges || []} />
-              </div>
-              
-              {/* Voice Status */}
-              <div className="flex items-center gap-1 md:gap-2 mb-2 md:mb-4">
-                 {player.isMuted ? (
-                   <span className="text-[6px] md:text-[9px] text-neon-pink font-black uppercase flex items-center gap-0.5 md:gap-1">
-                     <MicOff size={8} className="md:size-[10px]" /> Muted
-                   </span>
-                 ) : player.isSpeaking ? (
-                   <span className="text-[6px] md:text-[9px] text-green-500 font-black uppercase flex items-center gap-0.5 md:gap-1 animate-pulse">
-                     <Mic size={8} className="md:size-[10px]" /> Speaking
-                   </span>
-                 ) : (
-                   <span className="text-[6px] md:text-[9px] text-gray-600 font-black uppercase flex items-center gap-0.5 md:gap-1 text-[7px]">
-                     <Mic size={8} className="md:size-[10px]" /> IDLE
-                   </span>
-                 )}
-              </div>
-            </div>
-          </div>
+ <div className="flex items-center gap-1.5 md:gap-2 mb-0.5 md:mb-2 max-w-full">
+ <h3 className="text-xs md:text-xl font-black text-white truncate flex items-center gap-1.5">
+ {player.role === "STREAMER" && (
+ <CheckCircle2 size={18} className="text-white fill-purple-500 drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]" />
+ )}
+ {player.membership === "VIP" && player.role !== "STREAMER" && (
+ <Crown size={16} className="text-yellow-500 fill-yellow-500 drop-shadow-[0_0_8px_rgba(250,204,21,0.8)]" />
+ )}
+ {player.name ? (player.name.length > 10 ? player.name.substring(0, 10) + "..." : player.name) : ""}
+ {player.isVerified && player.role !== "STREAMER" && (
+ <CheckCircle2 size={14} className="text-neon-blue" fill="currentColor" />
+ )}
+ </h3>
+ <UserBadges badges={player.badges || []} />
+ </div>
+ 
+ {/* Voice Status */}
+ <div className="flex items-center gap-1 md:gap-2 mb-2 md:mb-4">
+ {player.isMuted ? (
+ <span className="text-[6px] md:text-[9px] text-neon-pink font-black uppercase flex items-center gap-0.5 md:gap-1">
+ <MicOff size={8} className="md:size-[10px]" /> Muted
+ </span>
+ ) : player.isSpeaking ? (
+ <span className="text-[6px] md:text-[9px] text-green-500 font-black uppercase flex items-center gap-0.5 md:gap-1 animate-pulse">
+ <Mic size={8} className="md:size-[10px]" /> Speaking
+ </span>
+ ) : (
+ <span className="text-[6px] md:text-[9px] text-gray-600 font-black uppercase flex items-center gap-0.5 md:gap-1 text-[7px]">
+ <Mic size={8} className="md:size-[10px]" /> IDLE
+ </span>
+ )}
+ </div>
+ </div>
+ </div>
 
-          {/* Quick Actions & Volume Panel */}
-          <div className="mt-auto pt-2 md:pt-6 border-t border-white/5 space-y-2 md:space-y-6">
-             {/* Dynamic Volume Bar */}
-             <div className="space-y-1 md:space-y-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300">
-                <div className="flex items-center justify-between px-0.5 md:px-1">
-                   <span className="text-[6px] md:text-[8px] font-black text-gray-700 uppercase tracking-tighter">Volume</span>
-                   <span className="text-[9px] font-bold text-white">{player.volume}%</span>
-                </div>
-                <input 
-                  type="range" 
-                  min="0" max="200" 
-                  value={player.volume} 
-                  onChange={(e) => onVolumeChange(parseInt(e.target.value))}
-                  onClick={(e) => e.stopPropagation()}
-                  className={cn("w-full h-1 bg-white/5 rounded-lg appearance-none cursor-pointer", isVipLobby ? "accent-yellow-400" : "accent-neon-blue")}
-                />
-             </div>
+ {/* Quick Actions & Volume Panel */}
+ <div className="mt-auto pt-2 md:pt-6 border-t border-white/5 space-y-2 md:space-y-6">
+ {/* Dynamic Volume Bar */}
+ <div className="space-y-1 md:space-y-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300">
+ <div className="flex items-center justify-between px-0.5 md:px-1">
+ <span className="text-[6px] md:text-[8px] font-black text-gray-700 uppercase ">Volume</span>
+ <span className="text-[9px] font-bold text-white">{player.volume}%</span>
+ </div>
+ <input 
+ type="range" 
+ min="0" max="200" 
+ value={player.volume} 
+ onChange={(e) => onVolumeChange(parseInt(e.target.value))}
+ onClick={(e) => e.stopPropagation()}
+ className={cn("w-full h-1 bg-white/5 rounded-lg appearance-none cursor-pointer", isVipLobby ? "accent-yellow-400" : "accent-neon-blue")}
+ />
+ </div>
 
-             <div className="bg-black/60 backdrop-blur-md rounded-2xl border border-white/10 p-1 flex items-center justify-between shadow-xl" onClick={(e) => e.stopPropagation()}>
-                <QuickAction icon={<Users size={14} />} tooltip={isRtl ? "پروفایل" : "Profile"} onClick={() => onProfile(player.id)} />
-                <QuickAction icon={<MessageSquare size={14} />} tooltip={isRtl ? "پیام" : "Message"} onClick={() => onDirectMessage(player.id)} />
-                <QuickAction icon={<UserPlus size={14} />} tooltip={isRtl ? "افزودن" : "Add Friend"} onClick={() => onAddFriend(player.id)} />
-                <QuickAction 
-                  icon={player.isMuted ? <Mic size={14} /> : <MicOff size={14} />} 
-                  tooltip={player.isMuted ? (isRtl ? "آن‌میوت" : "Unmute") : (isRtl ? "میوت" : "Mute")} 
-                  onClick={() => onMute(player.id)}
-                  color={player.isMuted ? "blue" : "pink"}
-                />
-                {isHostView && !isMe && (
-                  <>
-                    <QuickAction 
-                      icon={<ShieldAlert size={14} />} 
-                      tooltip={isRtl ? "اخراج" : "Kick"} 
-                      onClick={() => onKick?.(player.id)}
-                      color="pink"
-                    />
-                    <QuickAction 
-                      icon={<Gavel size={14} />} 
-                      tooltip={isRtl ? "مسدود سازی" : "Ban"} 
-                      onClick={() => onBan?.(player.id)}
-                      color="pink"
-                    />
-                  </>
-                )}
-             </div>
-          </div>
+ <div className="bg-black/60 backdrop-blur-md rounded-2xl border border-white/10 p-1 flex items-center justify-between shadow-xl" onClick={(e) => e.stopPropagation()}>
+ <QuickAction icon={<Users size={14} />} tooltip={isRtl ? "پروفایل" : "Profile"} onClick={() => onProfile(player.id)} />
+ <QuickAction icon={<MessageSquare size={14} />} tooltip={isRtl ? "پیام" : "Message"} onClick={() => onDirectMessage(player.id)} />
+ <QuickAction icon={<UserPlus size={14} />} tooltip={isRtl ? "افزودن" : "Add Friend"} onClick={() => onAddFriend(player.id)} />
+ <QuickAction 
+ icon={player.isMuted ? <Mic size={14} /> : <MicOff size={14} />} 
+ tooltip={player.isMuted ? (isRtl ? "آن‌میوت" : "Unmute") : (isRtl ? "میوت" : "Mute")} 
+ onClick={() => onMute(player.id)}
+ color={player.isMuted ? "blue" : "pink"}
+ />
+ {isHostView && !isMe && (
+ <>
+ <QuickAction 
+ icon={<ShieldAlert size={14} />} 
+ tooltip={isRtl ? "اخراج" : "Kick"} 
+ onClick={() => onKick?.(player.id)}
+ color="pink"
+ />
+ <QuickAction 
+ icon={<Gavel size={14} />} 
+ tooltip={isRtl ? "مسدود سازی" : "Ban"} 
+ onClick={() => onBan?.(player.id)}
+ color="pink"
+ />
+ </>
+ )}
+ </div>
+ </div>
 
-          {player.isHost && (
-            <div className={cn(
-              "absolute top-8 left-8 h-8 w-8 rounded-2xl border flex items-center justify-center shadow-lg",
-              isVipLobby 
-                ? "bg-yellow-400/10 border-yellow-400/20 text-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.2)]"
-                : "bg-neon-pink/10 border-neon-pink/20 text-neon-pink shadow-[0_0_15px_rgba(255,69,143,0.2)]"
-            )}>
-               <Crown size={14} />
-            </div>
-          )}
-        </>
-      ) : (
-        <div className="h-full flex flex-col items-center justify-center py-6 min-h-[300px]">
-          <div className="h-20 w-20 rounded-[32px] border-2 border-dashed border-white/10 flex items-center justify-center text-white/20 mb-6 group-hover:border-white/30 transition-all duration-300 group-hover:scale-110">
-            <UserPlus size={40} />
-          </div>
-          <span className="text-[11px] font-black uppercase text-gray-600 tracking-widest group-hover:text-white transition-colors">
-            {isRtl ? "دعوت بازیکن" : "Invite Player"}
-          </span>
-        </div>
-      )}
-    </motion.div>
-  );
+ {player.isHost && (
+ <div className={cn(
+ "absolute top-8 left-8 h-8 w-8 rounded-2xl border flex items-center justify-center shadow-lg",
+ isVipLobby 
+ ? "bg-yellow-400/10 border-yellow-400/20 text-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.2)]"
+ : "bg-neon-pink/10 border-neon-pink/20 text-neon-pink shadow-[0_0_15px_rgba(255,69,143,0.2)]"
+ )}>
+ <Crown size={14} />
+ </div>
+ )}
+ </>
+ ) : (
+ <div className="h-full flex flex-col items-center justify-center py-6 min-h-[300px]">
+ <div className="h-20 w-20 rounded-[32px] border-2 border-dashed border-white/10 flex items-center justify-center text-white/20 mb-6 group-hover:border-white/30 transition-all duration-300 group-hover:scale-110">
+ <UserPlus size={40} />
+ </div>
+ <span className="text-[11px] font-black uppercase text-gray-600 group-hover:text-white transition-colors">
+ {isRtl ? "دعوت بازیکن" : "Invite Player"}
+ </span>
+ </div>
+ )}
+ </motion.div>
+ );
 };
 
 function QuickAction({ icon, tooltip, color = "blue", onClick }: { icon: React.ReactNode, tooltip: string, color?: "blue" | "pink", onClick?: () => void }) {
-  return (
-  <div className="relative group/btn cursor-pointer" onClick={onClick}>
-    <div className={cn(
-      "h-8 w-8 rounded-lg flex items-center justify-center transition-all",
-      color === "blue" ? "bg-white/5 text-gray-400 hover:bg-neon-blue hover:text-dark-bg" : "bg-white/5 text-gray-400 hover:bg-neon-pink hover:text-dark-bg"
-    )}>
-       {icon}
-    </div>
-    <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-black/90 rounded text-[8px] font-black text-white whitespace-nowrap opacity-0 group-hover/btn:opacity-100 transition-opacity pointer-events-none">
-      {tooltip}
-    </div>
-  </div>
-  );
+ return (
+ <div className="relative group/btn cursor-pointer" onClick={onClick}>
+ <div className={cn(
+ "h-8 w-8 rounded-lg flex items-center justify-center transition-all",
+ color === "blue" ? "bg-white/5 text-gray-400 hover:bg-neon-blue hover:text-dark-bg" : "bg-white/5 text-gray-400 hover:bg-neon-pink hover:text-dark-bg"
+ )}>
+ {icon}
+ </div>
+ <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-black/90 rounded text-[8px] font-black text-white whitespace-nowrap opacity-0 group-hover/btn:opacity-100 transition-opacity pointer-events-none">
+ {tooltip}
+ </div>
+ </div>
+ );
 }
 
 function PingChart({ ping }: { ping: number }) {
-  const bars = [1, 2, 3];
-  const color = ping < 30 ? "bg-green-500" : ping < 60 ? "bg-yellow-500" : "bg-red-500";
-  const activeCount = ping < 30 ? 3 : ping < 60 ? 2 : 1;
+ const bars = [1, 2, 3];
+ const color = ping < 30 ? "bg-green-500" : ping < 60 ? "bg-yellow-500" : "bg-red-500";
+ const activeCount = ping < 30 ? 3 : ping < 60 ? 2 : 1;
 
-  return (
-    <div className="flex items-end gap-0.5 h-3">
-      {bars.map((i) => (
-        <div 
-          key={i} 
-          className={cn(
-            "w-0.5 rounded-sm transition-colors",
-            i <= activeCount ? color : "bg-white/10",
-            i === 1 ? "h-1" : i === 2 ? "h-2" : "h-3"
-          )} 
-        />
-      ))}
-    </div>
-  );
+ return (
+ <div className="flex items-end gap-0.5 h-3">
+ {bars.map((i) => (
+ <div 
+ key={i} 
+ className={cn(
+ "w-0.5 rounded-sm transition-colors",
+ i <= activeCount ? color : "bg-white/10",
+ i === 1 ? "h-1" : i === 2 ? "h-2" : "h-3"
+ )} 
+ />
+ ))}
+ </div>
+ );
 };
 
 function ChatPanel({ messages, players, inputMessage, setInputMessage, onSend, onClose, currentUserId, isVipLobby, isStreamerLobby }: { 
-  messages: Message[], 
-  players: Player[],
-  inputMessage: string, 
-  setInputMessage: React.Dispatch<React.SetStateAction<string>>,
-  onSend: (e: React.FormEvent) => void,
-  onClose?: () => void,
-  currentUserId?: string,
-  isVipLobby?: boolean,
-  isStreamerLobby?: boolean
+ messages: Message[], 
+ players: Player[],
+ inputMessage: string, 
+ setInputMessage: React.Dispatch<React.SetStateAction<string>>,
+ onSend: (e: React.FormEvent) => void,
+ onClose?: () => void,
+ currentUserId?: string,
+ isVipLobby?: boolean,
+ isStreamerLobby?: boolean
 }) {
-  const { language } = useLanguage();
-  const isRtl = language === "fa";
-  const filteredMessages = messages.filter(msg => !msg.toUserId || msg.isSystem);
-  const scrollRef = useRef<HTMLDivElement>(null);
-  
-  const [contextMenu, setContextMenu] = useState<{ id: string, x: number, y: number } | null>(null);
+ const { language } = useLanguage();
+ const isRtl = language === "fa";
+ const filteredMessages = messages.filter(msg => !msg.toUserId || msg.isSystem);
+ const scrollRef = useRef<HTMLDivElement>(null);
+ 
+ const [contextMenu, setContextMenu] = useState<{ id: string, x: number, y: number } | null>(null);
 
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
-    }
-  }, [filteredMessages.length]);
-  
-  useEffect(() => {
-    const handleGlobalClick = () => setContextMenu(null);
-    window.addEventListener('click', handleGlobalClick);
-    return () => window.removeEventListener('click', handleGlobalClick);
-  }, []);
+ useEffect(() => {
+ if (scrollRef.current) {
+ scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
+ }
+ }, [filteredMessages.length]);
+ 
+ useEffect(() => {
+ const handleGlobalClick = () => setContextMenu(null);
+ window.addEventListener('click', handleGlobalClick);
+ return () => window.removeEventListener('click', handleGlobalClick);
+ }, []);
 
-  const handleContextMenu = (e: React.MouseEvent, msgId: string) => {
-    e.preventDefault();
-    setContextMenu({ id: msgId, x: e.clientX, y: e.clientY });
-  };
+ const handleContextMenu = (e: React.MouseEvent, msgId: string) => {
+ e.preventDefault();
+ setContextMenu({ id: msgId, x: e.clientX, y: e.clientY });
+ };
 
-  return (
-    <div className="flex-1 flex flex-col h-full bg-[#0d0d14]/40 backdrop-blur-xl border-l md:border-r border-white/5">
-      <div className="flex flex-col">
-        <div className="p-6 border-b border-white/5 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-             <div className="h-2 w-2 rounded-full bg-neon-blue shadow-[0_0_10px_rgba(0,229,255,0.8)]" />
-             <h2 className="text-xs font-black uppercase tracking-widest text-white">Lobby Comms</h2>
-          </div>
-          {onClose && (
-            <button onClick={onClose} className="text-gray-500 hover:text-white">
-              <X size={20} />
-            </button>
-          )}
-        </div>
-      </div>
+ return (
+ <div className="flex-1 flex flex-col h-full bg-[#0d0d14]/40 backdrop-blur-xl border-l md:border-r border-white/5">
+ <div className="flex flex-col">
+ <div className="p-6 border-b border-white/5 flex items-center justify-between">
+ <div className="flex items-center gap-3">
+ <div className="h-2 w-2 rounded-full bg-neon-blue shadow-[0_0_10px_rgba(0,229,255,0.8)]" />
+ <h2 className="text-xs font-black uppercase text-white">Lobby Comms</h2>
+ </div>
+ {onClose && (
+ <button onClick={onClose} className="text-gray-500 hover:text-white">
+ <X size={20} />
+ </button>
+ )}
+ </div>
+ </div>
 
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
-        {filteredMessages.map((msg, index) => {
-          const isYou = msg.fromUserId === currentUserId && currentUserId !== undefined;
-          const sender = players.find(p => p.id === msg.fromUserId);
-          const isVIP = sender?.membership === "VIP" || msg.badges?.includes("VIP");
-          const isPLUS = sender?.membership === "PLUS" || msg.badges?.includes("PLUS");
-          const isStreamer = sender?.role === "STREAMER" || msg.badges?.includes("STREAMER");
-          
-          return (
-          <div key={`${msg.id}-${index}`} className={cn(
-            "group flex flex-col gap-1.5", 
-            msg.isSystem ? "items-center my-4" : isYou ? "items-start" : "items-end"
-          )}>
-            {msg.isSystem ? (
-              <div className={cn(
-                "relative w-full flex items-center justify-center p-3 rounded-2xl border", 
-                isStreamerLobby ? "border-purple-500/20 bg-purple-500/[0.02]" :
-                isVipLobby ? "border-yellow-400/20 bg-yellow-400/[0.02]" : "border-neon-blue/10 bg-neon-blue/[0.02]"
-              )}>
-                 <span className={cn("text-[10px] font-black uppercase tracking-widest text-center px-4", isStreamerLobby ? "text-purple-400" : isVipLobby ? "text-yellow-400" : "text-neon-blue")}>
-                  {msg.text}
-                 </span>
-              </div>
-            ) : (
-              <div 
-                className={cn(
-                  "flex items-start gap-3 max-w-[95%] sm:max-w-[85%]",
-                  isYou ? "flex-row" : "flex-row-reverse"
-                )}
-                onContextMenu={(e) => handleContextMenu(e, msg.id || `${index}`)}
-              >
-                <div className="h-8 w-8 rounded-xl bg-white/5 border border-white/10 flex-shrink-0 flex items-center justify-center text-lg mt-1 font-black uppercase overflow-hidden">
-                   <SmartImage 
-                     src={msg.avatarUrl || ""}
-                     className="w-full h-full object-cover"
-                     alt={msg.user}
-                   />
-                </div>
-                <div className={cn("flex-1 space-y-1", isYou ? "text-right" : "text-left")}>
-                  <div className={cn("flex items-center gap-2 md:gap-3", isYou ? "flex-row" : "flex-row-reverse")}>
-                    <div className="flex items-center gap-1.5 min-w-0">
-                      <span className={cn(
-                        "text-[10px] font-black uppercase tracking-widest truncate max-w-[120px] flex items-center gap-1",
-                        isYou ? "text-neon-pink" : "text-neon-blue"
-                      )}>
-                        {isStreamer && <CheckCircle2 className="w-[14px] h-[14px] shrink-0 fill-purple-500 text-white drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]" />}
-                        {isVIP && !isStreamer && <Crown className="w-[14px] h-[14px] shrink-0 fill-yellow-500 text-yellow-500 drop-shadow-[0_0_8px_rgba(250,204,21,0.8)]" />}
-                        {msg.user}
-                      </span>
-                      <UserBadges badges={msg.badges || []} className={cn(isYou ? "flex-row" : "flex-row-reverse")} />
-                    </div>
-                    <span className="text-[8px] font-bold text-gray-700 opacity-0 group-hover:opacity-100 transition-opacity">{msg.time}</span>
-                  </div>
-                  <div className={cn(
-                    "relative overflow-hidden border rounded-2xl px-4 py-2.5 text-xs text-gray-300 leading-relaxed shadow-lg",
-                    isYou ? "bg-neon-pink/5 rounded-tr-none border-neon-pink/10" : "bg-white/5 rounded-tl-none border-white/10",
-                    isVIP && !isStreamer && "border-yellow-400/40 bg-gradient-to-br from-yellow-400/[0.12] to-transparent shadow-[0_0_40px_rgba(250,204,21,0.12)]",
-                    isPLUS && !isStreamer && "border-neon-blue/40 bg-gradient-to-br from-neon-blue/[0.12] to-transparent shadow-[0_0_30px_rgba(0,229,255,0.12)]",
-                    isStreamer && "border-purple-500/50 bg-gradient-to-br from-purple-500/[0.15] to-transparent shadow-[0_0_20px_rgba(168,85,247,0.3)]"
-                  )}>
-                    {/* VIP/PLUS/STREAMER Shimmer Effect */}
-                    {(isVIP || isPLUS || isStreamer) && (
-                      <motion.div 
-                        animate={{ x: ["-100%", "200%"] }}
-                        transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-                        className={cn(
-                          "absolute inset-0 skew-x-12 pointer-events-none z-0 mix-blend-overlay",
-                          isStreamer ? "bg-gradient-to-r from-transparent via-purple-400/60 to-transparent" :
-                          isVIP ? "bg-gradient-to-r from-transparent via-yellow-400/50 to-transparent" : "bg-gradient-to-r from-transparent via-neon-blue/40 to-transparent"
-                        )}
-                      />
-                    )}
-                    <span className="relative z-10">{msg.text}</span>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        )})}
-      </div>
+ <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
+ {filteredMessages.map((msg, index) => {
+ const isYou = msg.fromUserId === currentUserId && currentUserId !== undefined;
+ const sender = players.find(p => p.id === msg.fromUserId);
+ const isVIP = sender?.membership === "VIP" || msg.badges?.includes("VIP");
+ const isPLUS = sender?.membership === "PLUS" || msg.badges?.includes("PLUS");
+ const isStreamer = sender?.role === "STREAMER" || msg.badges?.includes("STREAMER");
+ 
+ return (
+ <div key={`${msg.id}-${index}`} className={cn(
+ "group flex flex-col gap-1.5", 
+ msg.isSystem ? "items-center my-4" : isYou ? "items-start" : "items-end"
+ )}>
+ {msg.isSystem ? (
+ <div className={cn(
+ "relative w-full flex items-center justify-center p-3 rounded-2xl border", 
+ isStreamerLobby ? "border-purple-500/20 bg-purple-500/[0.02]" :
+ isVipLobby ? "border-yellow-400/20 bg-yellow-400/[0.02]" : "border-neon-blue/10 bg-neon-blue/[0.02]"
+ )}>
+ <span className={cn("text-[10px] font-black uppercase text-center px-4", isStreamerLobby ? "text-purple-400" : isVipLobby ? "text-yellow-400" : "text-neon-blue")}>
+ {msg.text}
+ </span>
+ </div>
+ ) : (
+ <div 
+ className={cn(
+ "flex items-start gap-3 max-w-[95%] sm:max-w-[85%]",
+ isYou ? "flex-row" : "flex-row-reverse"
+ )}
+ onContextMenu={(e) => handleContextMenu(e, msg.id || `${index}`)}
+ >
+ <div className="h-8 w-8 rounded-xl bg-white/5 border border-white/10 flex-shrink-0 flex items-center justify-center text-lg mt-1 font-black uppercase overflow-hidden">
+ <SmartImage 
+ src={msg.avatarUrl || ""}
+ className="w-full h-full object-cover"
+ alt={msg.user}
+ />
+ </div>
+ <div className={cn("flex-1 space-y-1", isYou ? "text-right" : "text-left")}>
+ <div className={cn("flex items-center gap-2 md:gap-3", isYou ? "flex-row" : "flex-row-reverse")}>
+ <div className="flex items-center gap-1.5 min-w-0">
+ <span className={cn(
+ "text-[10px] font-black uppercase truncate max-w-[120px] flex items-center gap-1",
+ isYou ? "text-neon-pink" : "text-neon-blue"
+ )}>
+ {isStreamer && <CheckCircle2 className="w-[14px] h-[14px] shrink-0 fill-purple-500 text-white drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]" />}
+ {isVIP && !isStreamer && <Crown className="w-[14px] h-[14px] shrink-0 fill-yellow-500 text-yellow-500 drop-shadow-[0_0_8px_rgba(250,204,21,0.8)]" />}
+ {msg.user}
+ </span>
+ <UserBadges badges={msg.badges || []} className={cn(isYou ? "flex-row" : "flex-row-reverse")} />
+ </div>
+ <span className="text-[8px] font-bold text-gray-700 opacity-0 group-hover:opacity-100 transition-opacity">{msg.time}</span>
+ </div>
+ <div className={cn(
+ "relative overflow-hidden border rounded-2xl px-4 py-2.5 text-xs text-gray-300 leading-relaxed shadow-lg",
+ isYou ? "bg-neon-pink/5 rounded-tr-none border-neon-pink/10" : "bg-white/5 rounded-tl-none border-white/10",
+ isVIP && !isStreamer && "border-yellow-400/40 bg-gradient-to-br from-yellow-400/[0.12] to-transparent shadow-[0_0_40px_rgba(250,204,21,0.12)]",
+ isPLUS && !isStreamer && "border-neon-blue/40 bg-gradient-to-br from-neon-blue/[0.12] to-transparent shadow-[0_0_30px_rgba(0,229,255,0.12)]",
+ isStreamer && "border-purple-500/50 bg-gradient-to-br from-purple-500/[0.15] to-transparent shadow-[0_0_20px_rgba(168,85,247,0.3)]"
+ )}>
+ {/* VIP/PLUS/STREAMER Shimmer Effect */}
+ {(isVIP || isPLUS || isStreamer) && (
+ <motion.div 
+ animate={{ x: ["-100%", "200%"] }}
+ transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+ className={cn(
+ "absolute inset-0 skew-x-12 pointer-events-none z-0 mix-blend-overlay",
+ isStreamer ? "bg-gradient-to-r from-transparent via-purple-400/60 to-transparent" :
+ isVIP ? "bg-gradient-to-r from-transparent via-yellow-400/50 to-transparent" : "bg-gradient-to-r from-transparent via-neon-blue/40 to-transparent"
+ )}
+ />
+ )}
+ <span className="relative z-10">{msg.text}</span>
+ </div>
+ </div>
+ </div>
+ )}
+ </div>
+ )})}
+ </div>
 
-      <AnimatePresence>
-        {contextMenu && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.1 }}
-            className="fixed z-[9999] w-48 bg-[#0a0a0f] border border-white/10 rounded-xl shadow-2xl py-1 overflow-hidden"
-            style={{ 
-              top: contextMenu.y, 
-              left: contextMenu.x,
-            }}
-          >
-            <button
-              onClick={() => {
-                const message = messages.find(m => (m.id || m.id) === contextMenu.id);
-                if (message?.text) {
-                  navigator.clipboard.writeText(message.text);
-                  toast.success(isRtl ? "متن پیام کپی شد!" : "Message copied!");
-                }
-              }}
-              className={cn("w-full px-4 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white flex items-center gap-3 transition-colors group", isRtl ? "justify-end text-right" : "justify-start text-left")}
-            >
-              {isRtl ? (
-                <>
-                  کپی متن
-                  <Copy size={14} className="text-gray-500 group-hover:text-white transition-colors" />
-                </>
-              ) : (
-                <>
-                  <Copy size={14} className="text-gray-500 group-hover:text-white transition-colors" />
-                  Copy TEXT
-                </>
-              )}
-            </button>
-            <button
-              onClick={() => {
-                const message = messages.find(m => (m.id || m.id) === contextMenu.id);
-                if (message) {
-                  setInputMessage((prev: string) => isRtl ? `در پاسخ به ${message.user}:\n${prev}` : `In reply to ${message.user}:\n${prev}`);
-                }
-              }}
-              className={cn("w-full px-4 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white flex items-center gap-3 transition-colors group", isRtl ? "justify-end text-right" : "justify-start text-left")}
-            >
-              {isRtl ? (
-                <>
-                  پاسخ دادن
-                  <Reply size={14} className="text-gray-500 group-hover:text-white transition-colors" />
-                </>
-              ) : (
-                <>
-                  <Reply size={14} className="text-gray-500 group-hover:text-white transition-colors" />
-                  Reply
-                </>
-              )}
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
+ <AnimatePresence>
+ {contextMenu && (
+ <motion.div
+ initial={{ opacity: 0, scale: 0.95 }}
+ animate={{ opacity: 1, scale: 1 }}
+ exit={{ opacity: 0, scale: 0.95 }}
+ transition={{ duration: 0.1 }}
+ className="fixed z-[9999] w-48 bg-[#0a0a0f] border border-white/10 rounded-xl shadow-2xl py-1 overflow-hidden"
+ style={{ 
+ top: contextMenu.y, 
+ left: contextMenu.x,
+ }}
+ >
+ <button
+ onClick={() => {
+ const message = messages.find(m => (m.id || m.id) === contextMenu.id);
+ if (message?.text) {
+ navigator.clipboard.writeText(message.text);
+ toast.success(isRtl ? "متن پیام کپی شد!" : "Message copied!");
+ }
+ }}
+ className={cn("w-full px-4 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white flex items-center gap-3 transition-colors group", isRtl ? "justify-end text-right" : "justify-start text-left")}
+ >
+ {isRtl ? (
+ <>
+ کپی متن
+ <Copy size={14} className="text-gray-500 group-hover:text-white transition-colors" />
+ </>
+ ) : (
+ <>
+ <Copy size={14} className="text-gray-500 group-hover:text-white transition-colors" />
+ Copy TEXT
+ </>
+ )}
+ </button>
+ <button
+ onClick={() => {
+ const message = messages.find(m => (m.id || m.id) === contextMenu.id);
+ if (message) {
+ setInputMessage((prev: string) => isRtl ? `در پاسخ به ${message.user}:\n${prev}` : `In reply to ${message.user}:\n${prev}`);
+ }
+ }}
+ className={cn("w-full px-4 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white flex items-center gap-3 transition-colors group", isRtl ? "justify-end text-right" : "justify-start text-left")}
+ >
+ {isRtl ? (
+ <>
+ پاسخ دادن
+ <Reply size={14} className="text-gray-500 group-hover:text-white transition-colors" />
+ </>
+ ) : (
+ <>
+ <Reply size={14} className="text-gray-500 group-hover:text-white transition-colors" />
+ Reply
+ </>
+ )}
+ </button>
+ </motion.div>
+ )}
+ </AnimatePresence>
 
-      <form onSubmit={onSend} className="p-4 md:p-6 pb-6 bg-black/20 border-t border-white/5">
-        <div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-2xl p-1 pr-4 focus-within:border-neon-blue/50 transition-all relative">
-          <input
-            type="text"
-            value={inputMessage}
-            onChange={(e) => setInputMessage(e.target.value)}
-            placeholder={isRtl ? "چیزی بنویسید..." : "Type message..."}
-            className="flex-1 bg-transparent py-4 text-xs text-white placeholder:text-gray-700 focus:outline-none font-medium pr-2"
-          />
-          <button 
-            type="submit"
-            className={cn(
-              "h-10 w-10 flex-shrink-0 flex items-center justify-center rounded-xl text-dark-bg transition-colors shadow-lg",
-              isStreamerLobby ? "bg-purple-500 hover:bg-purple-400 text-white shadow-purple-500/20" :
-              isVipLobby ? "bg-yellow-400 hover:bg-yellow-400/90 shadow-yellow-400/20" : "bg-neon-blue hover:bg-neon-blue/90 shadow-neon-blue/20"
-            )}
-          >
-            <Send size={18} className="translate-y-[1px] translate-x-[1px]" />
-          </button>
-        </div>
-      </form>
-    </div>
-  );
+ <form onSubmit={onSend} className="p-4 md:p-6 pb-6 bg-black/20 border-t border-white/5">
+ <div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-2xl p-1 pr-4 focus-within:border-neon-blue/50 transition-all relative">
+ <input
+ type="text"
+ value={inputMessage}
+ onChange={(e) => setInputMessage(e.target.value)}
+ placeholder={isRtl ? "چیزی بنویسید..." : "Type message..."}
+ className="flex-1 bg-transparent py-4 text-xs text-white placeholder:text-gray-700 focus:outline-none font-medium pr-2"
+ />
+ <button 
+ type="submit"
+ className={cn(
+ "h-10 w-10 flex-shrink-0 flex items-center justify-center rounded-xl text-dark-bg transition-colors shadow-lg",
+ isStreamerLobby ? "bg-purple-500 hover:bg-purple-400 text-white shadow-purple-500/20" :
+ isVipLobby ? "bg-yellow-400 hover:bg-yellow-400/90 shadow-yellow-400/20" : "bg-neon-blue hover:bg-neon-blue/90 shadow-neon-blue/20"
+ )}
+ >
+ <Send size={18} className="translate-y-[1px] translate-x-[1px]" />
+ </button>
+ </div>
+ </form>
+ </div>
+ );
 };

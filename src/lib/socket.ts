@@ -3,25 +3,25 @@ import { io } from "socket.io-client";
 const SOCKET_URL = window.location.origin;
 
 export const createNamespaceSocket = (namespace: string, withAuth = true) => {
-  // Determine if we should force WSS (useful if Runflare configures HTTP but forwards to HTTPS)
-  // By using location.origin, we respect the current protocol (HTTP vs HTTPS)
-  // Force websocket transport to fix session unknown errors in VPS/Runflare load balancers
-  
-  const authConfig = withAuth ? {
-    auth: (cb: any) => {
-      const token = localStorage.getItem("loxx_token");
-      cb({ token: `Bearer ${token}` });
-    }
-  } : {};
+ // Determine if we should force WSS (useful if Runflare configures HTTP but forwards to HTTPS)
+ // By using location.origin, we respect the current protocol (HTTP vs HTTPS)
+ // Force websocket transport to fix session unknown errors in VPS/Runflare load balancers
+ 
+ const authConfig = withAuth ? {
+ auth: (cb: any) => {
+ const token = localStorage.getItem("loxx_token");
+ cb({ token: `Bearer ${token}` });
+ }
+ } : {};
 
-  return io(`${SOCKET_URL}/${namespace}`, {
-    path: '/api/v1/socket.io',
-    autoConnect: false,
-    transports: ['polling', 'websocket'], // Use polling fallback for reverse proxies
-    reconnectionDelay: 1000,
-    reconnectionDelayMax: 5000,
-    ...authConfig
-  });
+ return io(`${SOCKET_URL}/${namespace}`, {
+ path: '/api/v1/socket.io',
+ autoConnect: false,
+ transports: ['polling', 'websocket'], // Use polling fallback for reverse proxies
+ reconnectionDelay: 1000,
+ reconnectionDelayMax: 5000,
+ ...authConfig
+ });
 };
 
 // Global sockets that can be reused
@@ -39,27 +39,27 @@ export const voiceSocket = createNamespaceSocket("voice");
 let sharedAudioContext: AudioContext | null = null;
 
 export const getSharedAudioContext = () => {
-  if (!sharedAudioContext) {
-    const AudioCtx = (window as any).AudioContext || (window as any).webkitAudioContext;
-    if (AudioCtx) {
-      sharedAudioContext = new AudioCtx();
-    }
-  }
-  return sharedAudioContext;
+ if (!sharedAudioContext) {
+ const AudioCtx = (window as any).AudioContext || (window as any).webkitAudioContext;
+ if (AudioCtx) {
+ sharedAudioContext = new AudioCtx();
+ }
+ }
+ return sharedAudioContext;
 };
 
 export const resumeSharedAudioContext = async () => {
-  const ctx = getSharedAudioContext();
-  if (ctx && ctx.state === "suspended") {
-    try {
-      await ctx.resume();
-      console.log("Shared AudioContext resumed successfully.");
-      return true;
-    } catch (e) {
-      console.error("Failed to resume shared AudioContext", e);
-      return false;
-    }
-  }
-  return true;
+ const ctx = getSharedAudioContext();
+ if (ctx && ctx.state === "suspended") {
+ try {
+ await ctx.resume();
+ console.log("Shared AudioContext resumed successfully.");
+ return true;
+ } catch (e) {
+ console.error("Failed to resume shared AudioContext", e);
+ return false;
+ }
+ }
+ return true;
 };
 
