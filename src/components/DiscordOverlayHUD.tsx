@@ -24,40 +24,6 @@ export const DiscordOverlayHUD = () => {
 
   const isLobbyPage = location.pathname.startsWith("/lobby/");
 
-  // Sync real-time FPS calculation loop
-  const [overlayFps, setOverlayFps] = useState(60);
-  const [showOverlayFps, setShowOverlayFps] = useState(() => localStorage.getItem("loxx_show_overlay_fps") !== "false");
-
-  useEffect(() => {
-    const handleStorage = () => {
-      setShowOverlayFps(localStorage.getItem("loxx_show_overlay_fps") !== "false");
-    };
-    window.addEventListener("storage", handleStorage);
-    window.addEventListener("loxx_overlay_fps_update", handleStorage);
-    return () => {
-      window.removeEventListener("storage", handleStorage);
-      window.removeEventListener("loxx_overlay_fps_update", handleStorage);
-    };
-  }, []);
-
-  useEffect(() => {
-    let lastTime = performance.now();
-    let frames = 0;
-    let animId: number;
-    const update = (time: number) => {
-      frames++;
-      const now = time || performance.now();
-      if (now >= lastTime + 1000) {
-        setOverlayFps(Math.round((frames * 1000) / (now - lastTime)));
-        frames = 0;
-        lastTime = now;
-      }
-      animId = requestAnimationFrame(update);
-    };
-    animId = requestAnimationFrame(update);
-    return () => cancelAnimationFrame(animId);
-  }, []);
-
   // If overlay is disabled or user is not in any lobby, do not render HUD
   if (!overlayEnabled || !lobby) return null;
   if (isElectron) return null;
@@ -75,19 +41,6 @@ export const DiscordOverlayHUD = () => {
     "bottom-left": "bottom-6 left-6 items-start text-left",
     "bottom-right": "bottom-6 right-6 items-end text-right"
   }[overlayPosition || "top-left"];
-
-  const getOppositePosition = (pos: string) => {
-    if (pos.endsWith("-left")) return pos.replace("-left", "-right");
-    if (pos.endsWith("-right")) return pos.replace("-right", "-left");
-    return "top-right";
-  };
-  const fpsPosStr = getOppositePosition(overlayPosition || "top-left");
-  const fpsPositionClasses = {
-    "top-left": "top-6 left-6 items-start text-left",
-    "top-right": "top-6 right-6 items-end text-right",
-    "bottom-left": "bottom-6 left-6 items-start text-left",
-    "bottom-right": "bottom-6 right-6 items-end text-right"
-  }[fpsPosStr] || "top-6 right-6 items-end text-right";
 
   // Determine size classes
   const avatarSizes = {
@@ -107,7 +60,7 @@ export const DiscordOverlayHUD = () => {
       <div className={cn("fixed z-[9999] flex flex-col pointer-events-none select-none", positionClasses)}>
         {/* Title tag - minimal, matches Discord Overlay appearance */}
         {lobby.players && lobby.players.length > 0 && (
-          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#030306]/95 border border-white/5 mb-2 shadow-lg shadow-black/30 w-fit">
+          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/75 border border-white/5 backdrop-blur-md mb-2 shadow-lg shadow-black/30 w-fit">
             <span className="h-2 w-2 rounded-full bg-[#22c55e] animate-ping" />
             <span className="text-[10px] font-black tracking-wider text-white uppercase font-sans">LOXX LOBBY</span>
             <span className="text-[9px] text-gray-400 font-mono">({lobby.players?.length || 0})</span>
@@ -186,10 +139,10 @@ export const DiscordOverlayHUD = () => {
                   {/* Player Name Tag with speak indicators */}
                   <div 
                     className={cn(
-                      "px-3 py-1 rounded-lg transition-all duration-150 border",
+                      "px-3 py-1 rounded-lg backdrop-blur-md transition-all duration-150 border",
                       isTalking 
-                        ? "bg-[#22c55e]/90 border-[#22c55e]/50 text-white font-black shadow-[0_0_10px_rgba(34,197,94,0.15)]" 
-                        : "bg-[#0a0f18]/95 border-white/5 text-gray-300 font-bold",
+                        ? "bg-[#22c55e]/15 border-[#22c55e]/30 text-white font-black shadow-[0_0_10px_rgba(34,197,94,0.1)]" 
+                        : "bg-[#10141a]/85 border-white/5 text-gray-300 font-bold",
                       nameSizes
                     )}
                   >
@@ -207,15 +160,6 @@ export const DiscordOverlayHUD = () => {
         </div>
       </div>
 
-      {/* Real-time FPS Overlay Box (Opposite Corner) */}
-      {showOverlayFps && lobby.players && lobby.players.length > 0 && (
-        <div className={cn("fixed z-[9999] flex flex-col pointer-events-none select-none transition-all duration-300", fpsPositionClasses)} style={{ opacity: normalOpacityVal }}>
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#0a0f18]/98 border border-[#00e5ff]/20 shadow-lg shadow-black/40">
-            <span className="h-1.5 w-1.5 bg-emerald-400 rounded-full animate-pulse" />
-            <span className="text-[10px] font-mono font-bold text-emerald-400">{overlayFps} FPS</span>
-          </div>
-        </div>
-      )}
     </>
   );
 };

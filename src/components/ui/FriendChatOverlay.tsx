@@ -37,7 +37,7 @@ export const FriendChatOverlay = () => {
   const [showDmPrompt, setShowDmPrompt] = useState(false);
   const [friendSearch, setFriendSearch] = useState("");
   const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
-  const isOverlayWidget = (
+  const isOverlayWidget = isElectron && (
     window.location.pathname === '/overlay' || 
     window.location.pathname === '/lobby/overlay-widget' ||
     window.location.hash.includes('/overlay')
@@ -106,7 +106,7 @@ export const FriendChatOverlay = () => {
     }
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (isOverlayWidget && e.altKey && e.key === "F1") {
+      if (e.altKey && e.key === "F1") {
         e.preventDefault();
         // If running in Electron, the globalShortcut handles it.
         // We only toggle locally when running in a standard web browser.
@@ -189,13 +189,15 @@ export const FriendChatOverlay = () => {
             style={{ 
               width: "100vw", 
               height: "100vh", 
-              background: "rgba(3, 3, 6, 0.68)", 
+              background: "rgba(4, 4, 8, 0.42)", 
+              backdropFilter: "blur(24px) saturate(180%)",
+              WebkitBackdropFilter: "blur(24px) saturate(180%)",
               zIndex: 8000 
             }}
-            className="fixed inset-0 flex flex-col items-center justify-start pt-8 pointer-events-auto select-none border-4 border-neon-blue/20"
+            className="fixed inset-0 flex flex-col items-center justify-start pt-8 pointer-events-auto select-none border-4 border-neon-blue/20 backdrop-blur-sm"
             dir="rtl"
           >
-            <div className="bg-black/95 border border-white/10 px-6 py-2.5 rounded-full shadow-[0_0_30px_rgba(0,0,0,0.82)] flex items-center gap-3 relative z-[999999999]">
+            <div className="bg-black/90 border border-white/10 px-6 py-2.5 rounded-full backdrop-blur-md shadow-[0_0_30px_rgba(0,0,0,0.8)] flex items-center gap-3 relative z-[999999999]">
               <div className="h-2 w-2 rounded-full bg-neon-pink animate-ping"></div>
               <p className="text-white text-sm font-bold flex items-center gap-2">
                 حالت تعاملی لوکس فعال است. برای خروج از این حالت دکمه
@@ -220,7 +222,7 @@ export const FriendChatOverlay = () => {
             className="fixed top-8 left-0 right-0 flex justify-center pointer-events-none select-none"
             dir="rtl"
           >
-            <div className="bg-[#0c0c14]/98 border border-neon-pink/30 px-6 py-2.5 rounded-full shadow-[0_0_30px_rgba(255,0,127,0.28)] flex items-center gap-3 pointer-events-auto">
+            <div className="bg-[#0c0c14]/95 border border-neon-pink/30 px-6 py-2.5 rounded-full backdrop-blur-md shadow-[0_0_30px_rgba(255,0,127,0.25)] flex items-center gap-3 pointer-events-auto">
               <MessageSquare size={16} className="text-neon-pink animate-bounce" />
               <p className="text-white text-xs font-bold flex items-center gap-2">
                 پیام جدید؛ برای گفتگو دکمه
@@ -832,7 +834,7 @@ export const FriendChatOverlay = () => {
                   }
                 }}
                 className={cn(
-                  "flex items-center gap-2.5 rounded-t-2xl pl-10 pr-4 py-2.5 border-x border-t transition-all duration-300 min-w-[120px] max-w-[180px] justify-center relative select-none",
+                  "flex items-center gap-2.5 rounded-t-2xl pl-10 pr-4 py-2.5 border-x border-t transition-all duration-300 backdrop-blur-md min-w-[120px] max-w-[180px] justify-center relative select-none",
                   needsAttention 
                     ? "bg-yellow-500/20 text-yellow-400 border-yellow-500 animate-pulse shadow-[0_-4px_15px_rgba(234,179,8,0.3)]"
                     : isActive && !isMinimized
