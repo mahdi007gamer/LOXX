@@ -1804,6 +1804,8 @@ const PlayerCard: React.FC<{
   const isSlot = player.name === "Empty Slot";
   const { user } = useAuth();
   const isMe = user?.id === player.id;
+  const { language } = useLanguage();
+  const isRtl = language === "fa";
 
   if (layoutMode === 'discord') {
     return <DiscordLayoutPlayerCard player={player} isSelected={isSelected} onSelect={onSelect} onInvite={onInvite} isVipLobby={isVipLobby} isStreamerLobby={isStreamerLobby} volume={volume} onVolumeChange={onVolumeChange} onMute={onMute} onProfile={onProfile} onDirectMessage={onDirectMessage} onAddFriend={onAddFriend} onKick={onKick} onBan={onBan} isHostView={isHostView} />
@@ -2088,6 +2090,8 @@ function ChatPanel({ messages, players, inputMessage, setInputMessage, onSend, o
   isVipLobby?: boolean,
   isStreamerLobby?: boolean
 }) {
+  const { language } = useLanguage();
+  const isRtl = language === "fa";
   const filteredMessages = messages.filter(msg => !msg.toUserId || msg.isSystem);
   const scrollRef = useRef<HTMLDivElement>(null);
   
