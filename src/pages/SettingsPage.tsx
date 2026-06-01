@@ -767,11 +767,17 @@ export const SettingsPage = () => {
       <NeonCard variant="purple">
          <div className="flex items-center justify-between mb-8">
             <div>
-               <h3 className="text-xl font-black text-white italic uppercase tracking-tighter">نشان‌های من</h3>
-               <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1 italic">نشان‌هایی که برای نمایش در مینی‌-پروفایل پین می‌کنید (حداکثر ۵ عدد)</p>
+               <h3 className="text-xl font-black text-white italic uppercase tracking-tighter">
+                 {isRtlStyle ? "نشان‌های من" : "My Badges"}
+               </h3>
+               <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1 italic">
+                 {isRtlStyle ? "نشان‌هایی که برای نمایش در مینی‌-پروفایل پین می‌کنید (حداکثر ۵ عدد)" : "Pin badges to show up highlighted inside your miniature user profile (Max 5)"}
+               </p>
             </div>
             <div className="px-4 py-2 rounded-xl bg-neon-blue/10 border border-neon-blue/20">
-               <span className="text-xs font-black text-neon-blue italic">{userBadges.filter(b => b.isPinned).length} / 5 پین شده</span>
+               <span className="text-xs font-black text-neon-blue italic">
+                 {userBadges.filter(b => b.isPinned).length} / 5 {isRtlStyle ? "پین شده" : "Pinned"}
+               </span>
             </div>
          </div>
 
@@ -803,7 +809,7 @@ export const SettingsPage = () => {
                      badge.isPinned ? "bg-red-500/20" : "bg-neon-blue/20"
                   )}>
                      <span className="text-[10px] font-black text-white uppercase italic">
-                        {badge.isPinned ? "برداشتن پین" : "پین کردن"}
+                        {badge.isPinned ? (isRtlStyle ? "برداشتن پین" : "Unpin") : (isRtlStyle ? "پین کردن" : "Pin Badge")}
                      </span>
                   </div>
               </motion.div>
@@ -811,7 +817,9 @@ export const SettingsPage = () => {
             {userBadges.length === 0 && (
                <div className="col-span-full py-20 text-center flex flex-col items-center gap-4 opacity-30">
                   <Award size={48} />
-                  <p className="text-xs font-black italic uppercase tracking-widest">هنوز هیچ نشانی کسب نکرده‌اید</p>
+                  <p className="text-xs font-black italic uppercase tracking-widest">
+                    {isRtlStyle ? "هنوز هیچ نشانی کسب نکرده‌اید" : "You have not earned any custom badges yet."}
+                  </p>
                </div>
             )}
          </div>
@@ -820,8 +828,12 @@ export const SettingsPage = () => {
       <NeonCard variant="blue">
          <div className="flex items-center justify-between mb-8">
             <div>
-               <h3 className="text-xl font-black text-white italic uppercase tracking-tighter">نشان‌های انتخابی</h3>
-               <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1 italic">نشان‌هایی که می‌توانید برای خود انتخاب کنید</p>
+               <h3 className="text-xl font-black text-white italic uppercase tracking-tighter">
+                 {isRtlStyle ? "نشان‌های انتخابی" : "Customizable Choice Badges"}
+               </h3>
+               <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1 italic">
+                 {isRtlStyle ? "نشان‌هایی که می‌توانید برای خود انتخاب کنید" : "Choice badges you can freely equip/unequip"}
+               </p>
             </div>
          </div>
 
@@ -849,7 +861,7 @@ export const SettingsPage = () => {
                        hasBadge ? "bg-red-500/20" : "bg-neon-pink/20"
                     )}>
                        <span className="text-[10px] font-black text-white uppercase italic">
-                          {hasBadge ? "حذف کردن" : "اضافه کردن"}
+                          {hasBadge ? (isRtlStyle ? "حذف کردن" : "Unequip Style") : (isRtlStyle ? "اضافه کردن" : "Equip Badge")}
                        </span>
                     </div>
                 </motion.div>

@@ -5,6 +5,7 @@ import { GlowButton } from "../components/ui/GlowButton";
 import { SmartImage } from "../components/ui/SmartImage";
 import { Input } from "../components/ui/Input";
 import { useAuth } from "../context/AuthContext";
+import { useLanguage } from "../context/LanguageContext";
 import api from "../lib/api";
 import { toast } from "react-hot-toast";
 import { 
@@ -22,6 +23,7 @@ import {
   Monitor,
   MessageSquare,
   ArrowRight,
+  ArrowLeft,
   Camera,
   Trash2,
   RefreshCw,
@@ -88,10 +90,13 @@ interface VIPMetadata {
 export const EliteSettingsPage = () => {
   const navigate = useNavigate();
   const { user, updateUser, isSidebarCollapsed } = useAuth();
+  const { language } = useLanguage();
+  const isRtl = language === "fa";
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingBanner, setUploadingBanner] = useState(false);
+  const [uploadingBg, setUploadingBg] = useState(false);
   
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
@@ -137,7 +142,6 @@ export const EliteSettingsPage = () => {
 
   const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl || "");
   const [bannerUrl, setBannerUrl] = useState(user?.bannerUrl || "");
-  const [uploadingBg, setUploadingBg] = useState(false);
 
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
@@ -189,7 +193,10 @@ export const EliteSettingsPage = () => {
   }, [user]);
 
   const handleReset = () => {
-    if (window.confirm("آیا مطمئن هستید که می‌خواهید تمامی تنظیمات نخبگان را به حالت پیش‌فرض برگردانید؟")) {
+    const msg = isRtl 
+      ? "آیا مطمئن هستید که می‌خواهید تمامی تنظیمات نخبگان را به حالت پیش‌فرض برگردانید؟"
+      : "Are you sure you want to revert all Elite settings back to default?";
+    if (window.confirm(msg)) {
       setMetadata({
         auraEffect: false,
         shinyName: false,
@@ -218,7 +225,7 @@ export const EliteSettingsPage = () => {
           }
         }
       });
-      toast.success("تنظیمات به حالت پیش‌فرض بازگشت");
+      toast.success(isRtl ? "تنظیمات به حالت پیش‌فرض بازگشت" : "Settings reverted to defaults");
     }
   };
 
@@ -228,12 +235,12 @@ export const EliteSettingsPage = () => {
 
     const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
     if (!allowedTypes.includes(file.type)) {
-      toast.error("فقط فایل‌های JPG، PNG، GIF و WEBP مجاز هستند");
+      toast.error(isRtl ? "فقط فایل‌های JPG، PNG، GIF و WEBP مجاز هستند" : "Only JPG, PNG, GIF, and WEBP files are allowed");
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      toast.error("حجم فایل نباید بیشتر از ۵ مگابایت باشد");
+      toast.error(isRtl ? "حجم فایل نباید بیشتر از ۵ مگابایت باشد" : "File size must not exceed 5MB");
       return;
     }
 
@@ -254,9 +261,9 @@ export const EliteSettingsPage = () => {
       if (type === 'avatar') setAvatarUrl(data.url);
       else if (type === 'banner') setBannerUrl(data.url);
       else setMetadata(m => ({ ...m, bgImage: data.url }));
-      toast.success("فایل با موفقیت آپلود شد");
+      toast.success(isRtl ? "فایل با موفقیت آپلود شد" : "File uploaded successfully");
     } catch (err: any) {
-      toast.error("خطا در آپلود فایل");
+      toast.error(isRtl ? "خطا در آپلود فایل" : "Error uploading file");
     } finally {
       setter(false);
     }
@@ -271,22 +278,22 @@ export const EliteSettingsPage = () => {
         vipMetadata: JSON.stringify(metadata)
       });
       updateUser({ avatarUrl, bannerUrl, vipMetadata: metadata });
-      toast.success("تنظیمات نخبگان با موفقیت ذخیره شد");
+      toast.success(isRtl ? "تنظیمات نخبگان با موفقیت ذخیره شد" : "Elite settings saved successfully");
     } catch (err: any) {
-      toast.error(err.response?.data?.error?.message || "خطا در ذخیره‌سازی");
+      toast.error(err.response?.data?.error?.message || (isRtl ? "خطا در ذخیره‌سازی" : "Error saving settings"));
     } finally {
       setSaving(false);
     }
   };
 
   const frames: { id: FrameType; label: string; icon: any; color: string; disabled?: boolean }[] = [
-    { id: "none", label: "بدون فریم", icon: User, color: "gray" },
-    { id: "gold_aura", label: "هاله طلایی", icon: Crown, color: "yellow" },
-    { id: "diamond", label: "دیاموند", icon: Trophy, color: "blue" },
-    { id: "lightning", label: "رعد و برق", icon: Zap, color: "blue" },
-    { id: "glitch", label: "گلیچ", icon: Monitor, color: "pink" },
-    { id: "fire", label: "آتشین", icon: Flame, color: "orange" },
-    { id: "neon_pulse", label: "نئون پالز", icon: CircleDashed, color: "cyan" },
+    { id: "none", label: isRtl ? "بدون فریم" : "No Frame", icon: User, color: "gray" },
+    { id: "gold_aura", label: isRtl ? "هاله طلایی" : "Gold Aura", icon: Crown, color: "yellow" },
+    { id: "diamond", label: isRtl ? "دیاموند" : "Diamond", icon: Trophy, color: "blue" },
+    { id: "lightning", label: isRtl ? "رعد و برق" : "Lightning", icon: Zap, color: "blue" },
+    { id: "glitch", label: isRtl ? "گلیچ" : "Glitch", icon: Monitor, color: "pink" },
+    { id: "fire", label: isRtl ? "آتشین" : "Fiery", icon: Flame, color: "orange" },
+    { id: "neon_pulse", label: isRtl ? "نئون پالز" : "Neon Pulse", icon: CircleDashed, color: "cyan" },
   ];
 
   const getFontStyle = () => {
@@ -318,9 +325,9 @@ export const EliteSettingsPage = () => {
         return (
           <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
             <motion.div 
-              animate={{ opacity: [0, 0.4, 0.2, 0.5, 0] }}
-              transition={{ repeat: Infinity, duration: 1.5 }}
-              className="absolute inset-0 bg-blue-400/20 blur-2xl"
+               animate={{ opacity: [0, 0.4, 0.2, 0.5, 0] }}
+               transition={{ repeat: Infinity, duration: 1.5 }}
+               className="absolute inset-0 bg-blue-400/20 blur-2xl"
             />
             <div className="absolute inset-0 border-[3px] border-blue-400/30 rounded-[2.5rem]" />
             {[1, 2, 3].map(i => (
@@ -362,9 +369,9 @@ export const EliteSettingsPage = () => {
         return (
           <motion.div 
             animate={{ 
-              x: ["-2px", "2px", "-1px", "1px", "0px"],
-              y: ["1px", "-1px", "0px"],
-              filter: ["hue-rotate(0deg)", "hue-rotate(180deg)", "hue-rotate(0deg)"]
+               x: ["-2px", "2px", "-1px", "1px", "0px"],
+               y: ["1px", "-1px", "0px"],
+               filter: ["hue-rotate(0deg)", "hue-rotate(180deg)", "hue-rotate(0deg)"]
             }}
             transition={{ repeat: Infinity, duration: 0.2, repeatDelay: 3 }}
             className="absolute inset-0 z-0 border-[3px] border-pink-500 rounded-[2.5rem] shadow-[inset_0_0_20px_rgba(236,72,153,0.5),0_0_15px_rgba(236,72,153,0.5)]"
@@ -374,12 +381,12 @@ export const EliteSettingsPage = () => {
         return (
           <motion.div 
             animate={{ 
-              boxShadow: [
-                "0 0 10px #00e5ff, inset 0 0 10px #00e5ff",
-                "0 0 30px #00e5ff, inset 0 0 15px #00e5ff",
-                "0 0 10px #00e5ff, inset 0 0 10px #00e5ff"
-              ],
-              borderColor: ["#00e5ff", "#ffffff", "#00e5ff"]
+               boxShadow: [
+                 "0 0 10px #00e5ff, inset 0 0 10px #00e5ff",
+                 "0 0 30px #00e5ff, inset 0 0 15px #00e5ff",
+                 "0 0 10px #00e5ff, inset 0 0 10px #00e5ff"
+               ],
+               borderColor: ["#00e5ff", "#ffffff", "#00e5ff"]
             }}
             transition={{ repeat: Infinity, duration: 1.5 }}
             className="absolute inset-0 z-0 border-[3px] border-cyan-400 rounded-[2.5rem]"
@@ -413,50 +420,69 @@ export const EliteSettingsPage = () => {
   
   if (!isVip && !loading) {
     return (
-      <div className="flex min-h-[calc(100vh-64px)] items-center justify-center">
+      <div className="flex min-h-[calc(100vh-64px)] items-center justify-center" dir={isRtl ? "rtl" : "ltr"}>
         <Sidebar />
         <div className="text-center p-8 bg-white/5 border border-white/10 rounded-3xl max-w-md mx-auto">
           <div className="h-20 w-20 rounded-full bg-yellow-400/10 flex items-center justify-center text-yellow-400 mx-auto mb-6">
             <Crown size={40} />
           </div>
-          <h2 className="text-2xl font-black text-white italic mb-4">دسترسی محدود!</h2>
-          <p className="text-gray-400 font-bold mb-8 italic">تنظیمات نخبگان فقط برای اعضای دارای اشتراک VIP فعال است. با ارتقای حساب کاربری، قفل این قابلیت را باز کنید.</p>
+          <h2 className="text-2xl font-black text-white italic mb-4">
+            {isRtl ? "دسترسی محدود!" : "Access Denied!"}
+          </h2>
+          <p className="text-gray-400 font-bold mb-8 italic">
+            {isRtl 
+              ? "تنظیمات نخبگان فقط برای اعضای دارای اشتراک VIP فعال است. با ارتقای حساب کاربری، قفل این قابلیت را باز کنید." 
+              : "Elite settings are exclusive to VIP members. Upgrade your subscription to unlock this feature."}
+          </p>
           <GlowButton 
             variant="gold" 
             className="w-full h-12 uppercase italic font-black"
             onClick={() => navigate("/premium")}
           >
-            مشاهده پنل اشتراک
+            {isRtl ? "مشاهده پنل اشتراک" : "View Premium Subscriptions"}
           </GlowButton>
         </div>
       </div>
     );
   }
 
+  const effectsList = [
+    { id: "auraEffect", label: isRtl ? "هاله نورانی (Aura)" : "Avatar Aura Effect", icon: Flame, color: "text-orange-400", desc: isRtl ? "هاله متحرک دور آواتار" : "Animated glow around avatar" },
+    { id: "shinyName", label: isRtl ? "نام درخشان (Shiny)" : "Shiny Nickname", icon: Sparkles, color: "text-white", desc: isRtl ? "افکت درخشش روی نام" : "Pulsating shine on user name" },
+    { id: "specialFrame", label: isRtl ? "فریم متحرک" : "Animated Border Profile", icon: Zap, color: "text-neon-blue", desc: isRtl ? "فریم متحرک دور کل پروفایل" : "Animated thin frame around card" },
+    { id: "fullGlow", label: isRtl ? "ویژگی Glow" : "Outer Glow Effect", icon: Zap, color: "text-yellow-400", desc: isRtl ? "هاله نورانی دور مینی پروفایل" : "Bright backlight on card focus" },
+    { id: "floatingParticles", label: isRtl ? "ذرات معلق" : "Floating Dust Particles", icon: Sparkles, color: "text-purple-400", desc: isRtl ? "ذرات نوری شناور در بک‌گراند" : "Slow moving specs in standard background" },
+    { id: "tiltEffect", label: isRtl ? "افکت ۳-بعدی" : "Interactive 3D Tilt", icon: Layers, color: "text-green-400", desc: isRtl ? "چرخش کارت با حرکت موس" : "Interactive 3D isometric mouse rotation" },
+  ];
+
   return (
-    <div className="flex min-h-[calc(100vh-64px)] pb-20 md:pb-0">
+    <div className="flex min-h-[calc(100vh-64px)] pb-20 md:pb-0" dir={isRtl ? "rtl" : "ltr"}>
       <Sidebar />
       <input type="file" ref={avatarInputRef} className="hidden" accept="image/png, image/jpeg, image/gif, image/webp" onChange={(e) => handleFileUpload(e, 'avatar')} />
       <input type="file" ref={bannerInputRef} className="hidden" accept="image/png, image/jpeg, image/gif, image/webp" onChange={(e) => handleFileUpload(e, 'banner')} />
       <input type="file" ref={bgImageInputRef} className="hidden" accept="image/png, image/jpeg, image/gif, image/webp" onChange={(e) => handleFileUpload(e, 'bg')} />
       
-      <main className={cn("flex-1 px-4 py-8 lg:px-8 transition-all duration-300", !isSidebarCollapsed ? "md:mr-64" : "md:mr-20")}>
+      <main className={cn("flex-1 px-4 py-8 lg:px-8 transition-all duration-300", !isSidebarCollapsed ? (isRtl ? "md:mr-64" : "md:ml-64") : (isRtl ? "md:mr-20" : "md:ml-20"))}>
         <div className="container mx-auto max-w-6xl">
-          <header className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
-            <div className="text-right">
-              <div className="flex items-center gap-2 mb-2 justify-end">
+          <header className={`mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6 ${isRtl ? "text-right" : "text-left"}`}>
+            <div>
+              <div className={`flex items-center gap-2 mb-2 ${isRtl ? "justify-end" : "justify-start"}`}>
                 <span className={cn("text-[10px] font-black text-dark-bg px-2 py-0.5 rounded uppercase tracking-widest italic", primaryBg)}>Elite Access</span>
                 {isStreamer ? <Radio size={20} className={primaryText} /> : <Crown size={20} className={primaryText} />}
               </div>
-              <h1 className="text-4xl md:text-5xl font-black text-white italic uppercase tracking-tighter">تنظیمات نخبگان</h1>
-              <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mt-1 italic">پروفایل خود را به سطح افسانه‌ای برسانید</p>
+              <h1 className="text-4xl md:text-5xl font-black text-white italic uppercase tracking-tighter">
+                {isRtl ? "تنظیمات نخبگان" : "Elite Creator Settings"}
+              </h1>
+              <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mt-1 italic">
+                {isRtl ? "پروفایل خود را به سطح افسانه‌ای برسانید" : "Elevate your profile presentation to a legendary status"}
+              </p>
             </div>
             
-            <div className="flex gap-3">
+            <div className={`flex gap-3 ${!isRtl ? "flex-row-reverse" : ""}`}>
               <button 
                 onClick={handleReset}
                 className="h-12 px-6 rounded-2xl bg-red-500/10 border border-red-500/20 text-xs font-black text-red-500 italic hover:bg-red-500/20 transition-all flex items-center gap-2"
-                title="بازگشت به تنظیمات کارخانه"
+                title={isRtl ? "بازگشت به تنظیمات کارخانه" : "Reset all customizations to default"}
               >
                 <Trash2 size={16} />
               </button>
@@ -464,7 +490,8 @@ export const EliteSettingsPage = () => {
                 onClick={() => navigate("/settings")}
                 className="h-12 px-6 rounded-2xl bg-white/5 border border-white/10 text-xs font-black text-white italic hover:bg-white/10 transition-all flex items-center gap-2"
               >
-                <ArrowRight size={16} /> بازگشت به تنظیمات
+                {isRtl ? <ArrowRight size={16} /> : <ArrowLeft size={16} />} 
+                {isRtl ? "بازگشت به تنظیمات" : "Back to Settings"}
               </button>
               <GlowButton 
                 variant={primaryVariant as any} 
@@ -472,7 +499,7 @@ export const EliteSettingsPage = () => {
                 onClick={handleSave}
                 disabled={saving}
               >
-                {saving ? "در حال ذخیره..." : "اعمال تغییرات نخبگان"}
+                {saving ? (isRtl ? "در حال ذخیره..." : "Saving...") : (isRtl ? "اعمال تغییرات نخبگان" : "Apply Customizations")}
               </GlowButton>
             </div>
           </header>
@@ -483,25 +510,35 @@ export const EliteSettingsPage = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   {/* Media & Background */}
                   <NeonCard variant={primaryVariant as any} className="space-y-6">
-                    <h3 className="text-lg font-black text-white italic flex items-center gap-2 border-b border-white/5 pb-4">
+                    <h3 className={`text-lg font-black text-white italic flex items-center gap-2 border-b border-white/5 pb-4 ${isRtl ? "flex-row" : "flex-row-reverse"}`}>
                       <ImageIcon size={20} className={primaryText} />
-                      <span>رسانه و پس‌زمینه نخبگان</span>
+                      <span>{isRtl ? "رسانه و پس‌زمینه نخبگان" : "Elite Assets & Backgrounds"}</span>
                     </h3>
                     
                     <div className="space-y-6">
                       <div className="flex gap-4">
                         <div className="flex-1 space-y-2">
-                          <label className="text-[10px] font-black text-gray-400 uppercase italic">تصویر آواتار</label>
-                          <GlowButton variant={primaryVariant as any} size="sm" className="w-full h-10 text-[10px]" onClick={() => avatarInputRef.current?.click()}>تغییر آواتار</GlowButton>
+                          <label className="text-[10px] font-black text-gray-400 uppercase italic">
+                            {isRtl ? "تصویر آواتار" : "Avatar Photo"}
+                          </label>
+                          <GlowButton variant={primaryVariant as any} size="sm" className="w-full h-10 text-[10px]" onClick={() => avatarInputRef.current?.click()}>
+                            {isRtl ? "تغییر آواتار" : "Change Avatar"}
+                          </GlowButton>
                         </div>
                         <div className="flex-1 space-y-2">
-                          <label className="text-[10px] font-black text-gray-400 uppercase italic">بنر پروفایل</label>
-                          <GlowButton variant={primaryVariant as any} size="sm" className="w-full h-10 text-[10px]" onClick={() => bannerInputRef.current?.click()}>تغییر بنر</GlowButton>
+                          <label className="text-[10px] font-black text-gray-400 uppercase italic">
+                            {isRtl ? "بنر پروفایل" : "Profile Cover"}
+                          </label>
+                          <GlowButton variant={primaryVariant as any} size="sm" className="w-full h-10 text-[10px]" onClick={() => bannerInputRef.current?.click()}>
+                            {isRtl ? "تغییر بنر" : "Change Banner"}
+                          </GlowButton>
                         </div>
                       </div>
 
                       <div className="space-y-4 pt-4 border-t border-white/5">
-                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest italic">پس‌زمینه مینی پروفایل (JPG, PNG, GIF, WEBP)</label>
+                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest italic">
+                          {isRtl ? "پس‌زمینه مینی پروفایل (JPG, PNG, GIF, WEBP)" : "Mini Profile Background Card (JPG, PNG, GIF, WEBP)"}
+                        </label>
                         <div className="relative group">
                           <div className={cn(
                             "h-32 w-full rounded-2xl bg-white/5 border border-white/10 overflow-hidden flex items-center justify-center transition-all",
@@ -512,7 +549,9 @@ export const EliteSettingsPage = () => {
                             ) : (
                               <div className="text-center">
                                 <ImageIcon size={32} className="text-gray-700 mb-2 mx-auto" />
-                                <p className="text-[8px] text-gray-600 font-bold uppercase italic">بدون بک‌گراند اختصاصی</p>
+                                <p className="text-[8px] text-gray-600 font-bold uppercase italic">
+                                  {isRtl ? "بدون بک‌گراند اختصاصی" : "No Custom Card Background"}
+                                </p>
                               </div>
                             )}
                             <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
@@ -523,10 +562,13 @@ export const EliteSettingsPage = () => {
                                 onClick={() => bgImageInputRef.current?.click()}
                                 disabled={uploadingBg}
                               >
-                                <Upload size={12} className="ml-1" /> {uploadingBg ? "در حال آپلود..." : "آپلود فایل"}
+                                <Upload size={12} className={isRtl ? "ml-1" : "mr-1"} /> 
+                                {uploadingBg ? (isRtl ? "در حال آپلود..." : "Uploading...") : (isRtl ? "آپلود فایل" : "Upload Image")}
                               </GlowButton>
                               {metadata.bgImage && (
-                                <button onClick={() => setMetadata(m => ({ ...m, bgImage: undefined }))} className="text-[10px] font-black text-neon-pink uppercase italic hover:scale-110 transition-transform">حذف تصویر</button>
+                                <button onClick={() => setMetadata(m => ({ ...m, bgImage: undefined }))} className="text-[10px] font-black text-neon-pink uppercase italic hover:scale-110 transition-transform">
+                                  {isRtl ? "حذف تصویر" : "Remove Background"}
+                                </button>
                               )}
                             </div>
                           </div>
@@ -534,7 +576,9 @@ export const EliteSettingsPage = () => {
                         
                         <div className="space-y-3">
                           <div className="flex justify-between items-center">
-                            <label className="text-[10px] font-black text-gray-500 uppercase italic">میزان شفافیت بک‌گراند ({Math.round(metadata.opacity * 100)}%)</label>
+                            <label className="text-[10px] font-black text-gray-500 uppercase italic">
+                              {isRtl ? `میزان شفافیت بک‌گراند (${Math.round(metadata.opacity * 100)}%)` : `Background Opacity (${Math.round(metadata.opacity * 100)}%)`}
+                            </label>
                             <span className="text-[10px] font-mono text-yellow-400">{metadata.opacity.toFixed(2)}</span>
                           </div>
                           <input 
@@ -550,31 +594,24 @@ export const EliteSettingsPage = () => {
 
                   {/* Effects */}
                   <NeonCard variant="blue" className="space-y-6">
-                    <h3 className="text-lg font-black text-white italic flex items-center gap-2 border-b border-white/5 pb-4">
+                    <h3 className={`text-lg font-black text-white italic flex items-center gap-2 border-b border-white/5 pb-4 ${isRtl ? "flex-row" : "flex-row-reverse"}`}>
                       <Sparkles size={20} className="text-neon-blue" />
-                      <span>امکانات پیشرفته نخبگان</span>
+                      <span>{isRtl ? "امکانات پیشرفته نخبگان" : "Elite Dynamic Effects"}</span>
                     </h3>
                     
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {[
-                        { id: "auraEffect", label: "هاله نورانی (Aura)", icon: Flame, color: "text-orange-400", desc: "هاله متحرک دور آواتار" },
-                        { id: "shinyName", label: "نام درخشان (Shiny)", icon: Sparkles, color: "text-white", desc: "افکت درخشش روی نام" },
-                        { id: "specialFrame", label: "فریم متحرک", icon: Zap, color: "text-neon-blue", desc: "فریم متحرک دور کل پروفایل" },
-                        { id: "fullGlow", label: "ویژگی Glow", icon: Zap, color: "text-yellow-400", desc: "هاله نورانی دور مینی پروفایل" },
-                        { id: "floatingParticles", label: "ذرات معلق", icon: Sparkles, color: "text-purple-400", desc: "ذرات نوری شناور در بک‌گراند" },
-                        { id: "tiltEffect", label: "افکت ۳-بعدی", icon: Layers, color: "text-green-400", desc: "چرخش کارت با حرکت موس" },
-                      ].map(effect => (
+                      {effectsList.map(effect => (
                         <div 
                           key={effect.id} 
                           className={cn(
                             "group cursor-pointer flex flex-col p-4 rounded-2xl border transition-all duration-300",
                             (metadata as any)[effect.id] 
-                              ? "bg-white/10 border-white/20" 
+                              ? "bg-white/10 border-white/20 shadow-[inset_0_0_15px_rgba(255,255,255,0.05)]" 
                               : "bg-white/5 border-white/5 hover:border-white/10"
                           )}
                           onClick={() => setMetadata(m => ({ ...m, [effect.id]: !((m as any)[effect.id]) }))}
                         >
-                          <div className="flex items-center justify-between mb-2">
+                          <div className={`flex items-center justify-between mb-2 ${isRtl ? "flex-row" : "flex-row-reverse"}`}>
                              <div className={cn("p-2 rounded-xl bg-white/5", effect.color)}>
                                 <effect.icon size={16} />
                              </div>
@@ -582,23 +619,26 @@ export const EliteSettingsPage = () => {
                                "w-8 h-4 rounded-full relative transition-all",
                                (metadata as any)[effect.id] ? "bg-neon-blue shadow-[0_0_10px_rgba(0,229,255,0.4)]" : "bg-gray-800"
                              )}>
-                                <div className={cn("absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all", (metadata as any)[effect.id] ? "right-0.5" : "left-0.5")} />
+                                <div className={cn("absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all", (metadata as any)[effect.id] ? (isRtl ? "right-0.5" : "left-4") : (isRtl ? "right-4" : "left-0.5"))} />
                              </div>
                           </div>
                           <span className="text-[11px] font-black text-white italic">{effect.label}</span>
+                          <span className="text-[9px] text-gray-500 mt-1">{effect.desc}</span>
                         </div>
                       ))}
                     </div>
 
                     <div className="pt-4 border-t border-white/5 space-y-6">
-                      <div>
-                        <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-4 italic">فونت استایل (Font Style)</label>
+                      <div className={isRtl ? "text-right" : "text-left"}>
+                        <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-4 italic">
+                          {isRtl ? "فونت استایل (Font Style)" : "Special Name Font Glow"}
+                        </label>
                         <div className="grid grid-cols-2 gap-3">
                           {[
-                            { id: "none", label: "بدون افکت" },
-                            { id: "lightning", label: "برقی" },
-                            { id: "glitch", label: "گیلیچ" },
-                            { id: "fire", label: "آتیش" }
+                            { id: "none", label: isRtl ? "بدون افکت" : "No Glow Effect" },
+                            { id: "lightning", label: isRtl ? "برقی" : "Lightning Spark" },
+                            { id: "glitch", label: isRtl ? "گیلیچ" : "Glitch Scanline" },
+                            { id: "fire", label: isRtl ? "آتیش" : "Fire Flame" }
                           ].map((style) => (
                             <button
                               key={style.id}
@@ -617,9 +657,9 @@ export const EliteSettingsPage = () => {
                       </div>
 
                       {metadata.specialFrame && (
-                        <div>
-                          <label className="block text-[10px] font-black text-neon-blue uppercase tracking-widest mb-4 italic flex items-center gap-2">
-                             <CircleDashed size={14} /> فریم اختصاصی (Frame Type)
+                        <div className={isRtl ? "text-right" : "text-left"}>
+                          <label className={`block text-[10px] font-black text-neon-blue uppercase tracking-widest mb-4 italic flex items-center gap-2 ${isRtl ? "justify-start" : "justify-start"}`}>
+                             <CircleDashed size={14} /> {isRtl ? "فریم اختصاصی (Frame Type)" : "Animated Card Border Custom Frame"}
                           </label>
                           <div className="grid grid-cols-2 gap-3">
                             {frames.map((f) => (
@@ -647,77 +687,97 @@ export const EliteSettingsPage = () => {
                {/* Streamer Links & Promo */}
                {isStreamer && (
                  <NeonCard variant="purple" className="space-y-6">
-                    <h3 className="text-lg font-black text-white italic flex items-center gap-2 border-b border-white/5 pb-4">
+                    <h3 className={`text-lg font-black text-white italic flex items-center gap-2 border-b border-white/5 pb-4 ${isRtl ? "flex-row" : "flex-row-reverse"}`}>
                       <Radio size={20} className="text-neon-purple" />
-                      <span>لینک‌های شبکه اجتماعی استریمر</span>
+                      <span>{isRtl ? "لینک‌های شبکه اجتماعی استریمر" : "Streamer External Channel Links"}</span>
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                        <div className="space-y-2">
-                         <label className="text-[10px] font-black text-gray-400 uppercase italic">استریم آپارات</label>
-                         <Input 
-                           value={metadata.streamerLinks?.aparat || ""} 
-                           placeholder="https://aparat.com/username"
-                           onChange={(e) => setMetadata(m => ({ ...m, streamerLinks: { ...m.streamerLinks, aparat: e.target.value } }))} 
-                         />
+                          <label className="text-[10px] font-black text-gray-400 uppercase italic">
+                            {isRtl ? "استریم آپارات" : "Aparat Stream Link"}
+                          </label>
+                          <Input 
+                            value={metadata.streamerLinks?.aparat || ""} 
+                            placeholder="https://aparat.com/username"
+                            onChange={(e) => setMetadata(m => ({ ...m, streamerLinks: { ...m.streamerLinks, aparat: e.target.value } }))} 
+                          />
                        </div>
                        <div className="space-y-2">
-                         <label className="text-[10px] font-black text-gray-400 uppercase italic">استریم توییچ</label>
-                         <Input 
-                           value={metadata.streamerLinks?.twitch || ""} 
-                           placeholder="https://twitch.tv/username"
-                           onChange={(e) => setMetadata(m => ({ ...m, streamerLinks: { ...m.streamerLinks, twitch: e.target.value } }))} 
-                         />
+                          <label className="text-[10px] font-black text-gray-400 uppercase italic">
+                            {isRtl ? "استریم توییچ" : "Twitch Stream Link"}
+                          </label>
+                          <Input 
+                            value={metadata.streamerLinks?.twitch || ""} 
+                            placeholder="https://twitch.tv/username"
+                            onChange={(e) => setMetadata(m => ({ ...m, streamerLinks: { ...m.streamerLinks, twitch: e.target.value } }))} 
+                          />
                        </div>
                        <div className="space-y-2">
-                         <label className="text-[10px] font-black text-gray-400 uppercase italic">یوتیوب</label>
-                         <Input 
-                           value={metadata.streamerLinks?.youtube || ""} 
-                           placeholder="https://youtube.com/@username"
-                           onChange={(e) => setMetadata(m => ({ ...m, streamerLinks: { ...m.streamerLinks, youtube: e.target.value } }))} 
-                         />
+                          <label className="text-[10px] font-black text-gray-400 uppercase italic">
+                            {isRtl ? "یوتیوب" : "YouTube Channel"}
+                          </label>
+                          <Input 
+                            value={metadata.streamerLinks?.youtube || ""} 
+                            placeholder="https://youtube.com/@username"
+                            onChange={(e) => setMetadata(m => ({ ...m, streamerLinks: { ...m.streamerLinks, youtube: e.target.value } }))} 
+                          />
                        </div>
                        <div className="space-y-2">
-                         <label className="text-[10px] font-black text-gray-400 uppercase italic">Kick</label>
-                         <Input 
-                           value={metadata.streamerLinks?.kick || ""} 
-                           placeholder="https://kick.com/username"
-                           onChange={(e) => setMetadata(m => ({ ...m, streamerLinks: { ...m.streamerLinks, kick: e.target.value } }))} 
-                         />
+                          <label className="text-[10px] font-black text-gray-400 uppercase italic">Kick</label>
+                          <Input 
+                            value={metadata.streamerLinks?.kick || ""} 
+                            placeholder="https://kick.com/username"
+                            onChange={(e) => setMetadata(m => ({ ...m, streamerLinks: { ...m.streamerLinks, kick: e.target.value } }))} 
+                          />
                        </div>
                        <div className="space-y-2 lg:col-span-2">
-                         <label className="text-[10px] font-black text-gray-400 uppercase italic">لینک دونیت (حمایت مالی)</label>
-                         <Input 
-                           value={metadata.streamerLinks?.donate || ""} 
-                           placeholder="https://zarinp.al/username"
-                           onChange={(e) => setMetadata(m => ({ ...m, streamerLinks: { ...m.streamerLinks, donate: e.target.value } }))} 
-                         />
+                          <label className="text-[10px] font-black text-gray-400 uppercase italic">
+                            {isRtl ? "لینک دونیت (حمایت مالی)" : "Donate/Support Link"}
+                          </label>
+                          <Input 
+                            value={metadata.streamerLinks?.donate || ""} 
+                            placeholder="https://zarinp.al/username"
+                            onChange={(e) => setMetadata(m => ({ ...m, streamerLinks: { ...m.streamerLinks, donate: e.target.value } }))} 
+                          />
                        </div>
                     </div>
 
                     <div className="mt-8 pt-6 border-t border-white/5">
                       <div className="relative overflow-hidden rounded-[32px] bg-[#0d0d12] border border-neon-purple/30 p-8 shadow-[0_0_50px_rgba(168,85,247,0.15)] group">
                         <div className="absolute inset-0 bg-gradient-to-br from-neon-purple/10 via-transparent to-neon-purple/5 opacity-50 transition-opacity group-hover:opacity-100" />
-                        <div className="relative z-10 flex flex-col md:flex-row items-center gap-8 justify-between">
-                           <div>
-                             <p className="text-[11px] text-gray-400 font-bold uppercase tracking-widest italic mb-2">کد تخفیف اختصاصی شما</p>
-                             <div className="flex items-center gap-4">
-                                <span className="text-3xl font-black text-white tracking-widest bg-white/5 px-6 py-2 rounded-2xl border border-white/10 uppercase font-mono">{((user as any)?.streamerStats?.discountCode) || (user?.username || "STREAMER").toUpperCase()}</span>
-                                <button className="p-3 bg-neon-purple/10 text-neon-purple rounded-xl hover:bg-neon-purple/20 transition-all border border-neon-purple/20" title="کپی کردن">
-                                  <Copy size={20} />
-                                </button>
-                             </div>
-                           </div>
-                           <div className="flex gap-8 items-center text-center">
-                              <div>
-                                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest italic mb-1">تخفیف کاربر</p>
-                                <p className="text-2xl font-black text-neon-purple italic">{((user as any)?.streamerStats?.userDiscountPercent) || 10}٪</p>
+                        <div className={`relative z-10 flex flex-col md:flex-row items-center gap-8 justify-between ${isRtl ? "text-right" : "text-left"}`}>
+                            <div>
+                              <p className="text-[11px] text-gray-400 font-bold uppercase tracking-widest italic mb-2">
+                                {isRtl ? "کد تخفیف اختصاصی شما" : "Your Creator Discount Promo Code"}
+                              </p>
+                              <div className="flex items-center gap-4">
+                                 <span className="text-3xl font-black text-white tracking-widest bg-white/5 px-6 py-2 rounded-2xl border border-white/10 uppercase font-mono">{((user as any)?.streamerStats?.discountCode) || (user?.username || "STREAMER").toUpperCase()}</span>
+                                 <button onClick={() => {
+                                   navigator.clipboard.writeText(((user as any)?.streamerStats?.discountCode) || (user?.username || "STREAMER").toUpperCase());
+                                   toast.success(isRtl ? "کد تخفیف کپی شد" : "Discount code copied!");
+                                 }} className="p-3 bg-neon-purple/10 text-neon-purple rounded-xl hover:bg-neon-purple/20 transition-all border border-neon-purple/20" title={isRtl ? "کپی کردن" : "Copy to clipboard"}>
+                                   <Copy size={20} />
+                                 </button>
                               </div>
-                              <div className="w-px h-12 bg-white/10" />
-                              <div>
-                                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest italic mb-1">درآمد فعلی شما</p>
-                                <p className="text-2xl font-black text-green-400 italic">{((user as any)?.streamerStats?.streamerCommissionPercent) || 10}٪ پورسانت</p>
-                              </div>
-                           </div>
+                            </div>
+                            <div className="flex gap-8 items-center text-center">
+                               <div>
+                                 <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest italic mb-1">
+                                   {isRtl ? "تخفیف کاربر" : "Customer Discount"}
+                                 </p>
+                                 <p className="text-2xl font-black text-neon-purple italic">{((user as any)?.streamerStats?.userDiscountPercent) || 10}٪</p>
+                               </div>
+                               <div className="w-px h-12 bg-white/10" />
+                               <div>
+                                 <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest italic mb-1">
+                                   {isRtl ? "درآمد فعلی شما" : "Your Net Commission"}
+                                 </p>
+                                 <p className="text-2xl font-black text-green-400 italic">
+                                   {((user as any)?.streamerStats?.streamerCommissionPercent) || 10}
+                                   {isRtl ? "٪ پورسانت" : "% Commission Share"}
+                                 </p>
+                               </div>
+                            </div>
                         </div>
                       </div>
                     </div>
@@ -728,53 +788,65 @@ export const EliteSettingsPage = () => {
                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                   {/* Color Controls */}
                   <NeonCard variant="purple" className="lg:col-span-12 xl:col-span-5 space-y-6 self-start">
-                     <h3 className="text-lg font-black text-white italic flex items-center gap-2 border-b border-white/5 pb-4">
+                     <h3 className={`text-lg font-black text-white italic flex items-center gap-2 border-b border-white/5 pb-4 ${isRtl ? "flex-row" : "flex-row-reverse"}`}>
                        <Palette size={20} className="text-neon-purple" />
-                       <span>سفارشی‌سازی متون و رنگ‌ها</span>
+                       <span>{isRtl ? "سفارشی‌سازی متون و رنگ‌ها" : "Color & Style Theme Swatches"}</span>
                      </h3>
- 
+  
                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-6">
                         <div className="space-y-4">
                            <div className="space-y-2">
-                              <label className="text-[10px] font-black text-gray-400 uppercase italic">رنگ نام کاربری</label>
+                              <label className="text-[10px] font-black text-gray-400 uppercase italic">
+                                {isRtl ? "رنگ نام کاربری" : "Username Forecolor"}
+                              </label>
                               <div className="flex gap-2">
                                 <input type="color" value={metadata.colors.text} onChange={(e) => setMetadata(m => ({ ...m, colors: { ...m.colors, text: e.target.value } }))} className="w-12 h-10 rounded-xl border-none cursor-pointer bg-white/5" />
                                 <Input value={metadata.colors.text} onChange={(e) => setMetadata(m => ({ ...m, colors: { ...m.colors, text: e.target.value } }))} className="flex-1" />
                               </div>
                            </div>
                            <div className="space-y-2">
-                              <label className="text-[10px] font-black text-gray-400 uppercase italic">رنگ تایتل (ثانویه)</label>
+                              <label className="text-[10px] font-black text-gray-400 uppercase italic">
+                                {isRtl ? "رنگ تایتل (ثانویه)" : "Secondary Subtitle Color"}
+                              </label>
                               <div className="flex gap-2">
                                 <input type="color" value={metadata.colors.textGradient || metadata.colors.text} onChange={(e) => setMetadata(m => ({ ...m, colors: { ...m.colors, textGradient: e.target.value } }))} className="w-12 h-10 rounded-xl border-none cursor-pointer bg-white/5" />
                                 <Input value={metadata.colors.textGradient || metadata.colors.text} onChange={(e) => setMetadata(m => ({ ...m, colors: { ...m.colors, textGradient: e.target.value } }))} className="flex-1" />
                               </div>
                            </div>
                            <div className="space-y-2">
-                              <label className="text-[10px] font-black text-gray-400 uppercase italic">رنگ تم (Accent)</label>
+                              <label className="text-[10px] font-black text-gray-400 uppercase italic">
+                                {isRtl ? "رنگ تم (Accent)" : "Lobby Accent Color"}
+                              </label>
                               <div className="flex gap-2">
                                 <input type="color" value={metadata.colors.accent} onChange={(e) => setMetadata(m => ({ ...m, colors: { ...m.colors, accent: e.target.value } }))} className="w-12 h-10 rounded-xl border-none cursor-pointer bg-white/5" />
                                 <Input value={metadata.colors.accent} onChange={(e) => setMetadata(m => ({ ...m, colors: { ...m.colors, accent: e.target.value } }))} className="flex-1" />
                               </div>
                            </div>
                         </div>
- 
+  
                         <div className="space-y-4">
                            <div className="space-y-2">
-                              <label className="text-[10px] font-black text-gray-400 uppercase italic">رنگ مقادیر آمار (Stats)</label>
+                              <label className="text-[10px] font-black text-gray-400 uppercase italic">
+                                {isRtl ? "رنگ مقادیر آمار (Stats)" : "Stats Value Highlight"}
+                              </label>
                               <div className="flex gap-2">
                                 <input type="color" value={metadata.colors.statsText || "#ffffff"} onChange={(e) => setMetadata(m => ({ ...m, colors: { ...m.colors, statsText: e.target.value } }))} className="w-12 h-10 rounded-xl border-none cursor-pointer bg-white/5" />
                                 <Input value={metadata.colors.statsText || "#ffffff"} onChange={(e) => setMetadata(m => ({ ...m, colors: { ...m.colors, statsText: e.target.value } }))} className="flex-1" />
                               </div>
                            </div>
                            <div className="space-y-2">
-                              <label className="text-[10px] font-black text-gray-400 uppercase italic">رنگ لیبل‌ها</label>
+                              <label className="text-[10px] font-black text-gray-400 uppercase italic">
+                                {isRtl ? "رنگ لیبل‌ها" : "Label Text Color"}
+                              </label>
                               <div className="flex gap-2">
                                 <input type="color" value={metadata.colors.statsLabel || "#4b5563"} onChange={(e) => setMetadata(m => ({ ...m, colors: { ...m.colors, statsLabel: e.target.value } }))} className="w-12 h-10 rounded-xl border-none cursor-pointer bg-white/5" />
                                 <Input value={metadata.colors.statsLabel || "#4b5563"} onChange={(e) => setMetadata(m => ({ ...m, colors: { ...m.colors, statsLabel: e.target.value } }))} className="flex-1" />
                               </div>
                            </div>
                            <div className="space-y-2">
-                              <label className="text-[10px] font-black text-gray-400 uppercase italic">رنگ متن نشان‌ها</label>
+                              <label className="text-[10px] font-black text-gray-400 uppercase italic">
+                                {isRtl ? "رنگ متن نشان‌ها" : "Badge Text Color"}
+                              </label>
                               <div className="flex gap-2">
                                 <input type="color" value={metadata.colors.badgeText || "#ffffff"} onChange={(e) => setMetadata(m => ({ ...m, colors: { ...m.colors, badgeText: e.target.value } }))} className="w-12 h-10 rounded-xl border-none cursor-pointer bg-white/5" />
                                 <Input value={metadata.colors.badgeText || "#ffffff"} onChange={(e) => setMetadata(m => ({ ...m, colors: { ...m.colors, badgeText: e.target.value } }))} className="flex-1" />
@@ -782,7 +854,9 @@ export const EliteSettingsPage = () => {
                            </div>
                            {metadata.auraEffect && (
                              <div className="space-y-2">
-                                <label className="text-[10px] font-black text-gray-400 uppercase italic">رنگ هاله نورانی</label>
+                                <label className="text-[10px] font-black text-gray-400 uppercase italic">
+                                  {isRtl ? "رنگ هاله نورانی" : "Avatar Aura Glow Color"}
+                                </label>
                                 <div className="flex gap-2">
                                   <input type="color" value={metadata.colors.auraColor || "#eab308"} onChange={(e) => setMetadata(m => ({ ...m, colors: { ...m.colors, auraColor: e.target.value } }))} className="w-12 h-10 rounded-xl border-none cursor-pointer bg-white/5" />
                                   <Input value={metadata.colors.auraColor || "#eab308"} onChange={(e) => setMetadata(m => ({ ...m, colors: { ...m.colors, auraColor: e.target.value } }))} className="flex-1" />
@@ -791,7 +865,9 @@ export const EliteSettingsPage = () => {
                            )}
                            {metadata.fullGlow && (
                              <div className="space-y-2">
-                                <label className="text-[10px] font-black text-gray-400 uppercase italic">رنگ ویژگی Glow</label>
+                                <label className="text-[10px] font-black text-gray-400 uppercase italic">
+                                  {isRtl ? "رنگ ویژگی Glow" : "Outer Card Glow Color"}
+                                </label>
                                 <div className="flex gap-2">
                                   <input type="color" value={metadata.colors.glowColor || "#facc15"} onChange={(e) => setMetadata(m => ({ ...m, colors: { ...m.colors, glowColor: e.target.value } }))} className="w-12 h-10 rounded-xl border-none cursor-pointer bg-white/5" />
                                   <Input value={metadata.colors.glowColor || "#facc15"} onChange={(e) => setMetadata(m => ({ ...m, colors: { ...m.colors, glowColor: e.target.value } }))} className="flex-1" />
@@ -800,10 +876,12 @@ export const EliteSettingsPage = () => {
                            )}
                         </div>
                      </div>
- 
+  
                      <div className="pt-6 border-t border-white/5">
                         <div className="flex items-center justify-between mb-4">
-                           <span className="text-[11px] font-black text-white italic">پس‌زمینه گرادینت کارت</span>
+                           <span className="text-[11px] font-black text-white italic">
+                             {isRtl ? "پس‌زمینه گرادینت کارت" : "Custom Card Gradient Overlay"}
+                           </span>
                            <button 
                               onClick={() => setMetadata(m => ({ ...m, colors: { ...m.colors, gradient: { ...m.colors.gradient!, enabled: !m.colors.gradient?.enabled } } }))}
                               className={cn(
@@ -811,7 +889,7 @@ export const EliteSettingsPage = () => {
                                 metadata.colors.gradient?.enabled ? "bg-neon-pink" : "bg-gray-800"
                               )}
                            >
-                              <div className={cn("absolute top-1 w-3 h-3 rounded-full bg-white transition-all", metadata.colors.gradient?.enabled ? "right-1" : "left-1")} />
+                              <div className={cn("absolute top-1 w-3 h-3 rounded-full bg-white transition-all", metadata.colors.gradient?.enabled ? (isRtl ? "right-1" : "left-6") : (isRtl ? "right-6" : "left-1"))} />
                            </button>
                         </div>
                         
@@ -819,193 +897,221 @@ export const EliteSettingsPage = () => {
                           <div className="space-y-4">
                              <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-1">
-                                   <span className="text-[8px] font-black text-gray-500 uppercase italic">رنگ اول</span>
+                                   <span className="text-[8px] font-black text-gray-500 uppercase italic">
+                                     {isRtl ? "رنگ اول" : "Color Start"}
+                                   </span>
                                    <input type="color" value={metadata.colors.gradient.color1} onChange={(e) => setMetadata(m => ({ ...m, colors: { ...m.colors, gradient: { ...m.colors.gradient!, color1: e.target.value } } }))} className="w-full h-10 rounded-xl cursor-pointer" />
                                 </div>
                                 <div className="space-y-1">
-                                   <span className="text-[8px] font-black text-gray-500 uppercase italic">رنگ دوم</span>
+                                   <span className="text-[8px] font-black text-gray-500 uppercase italic">
+                                     {isRtl ? "رنگ دوم" : "Color End"}
+                                   </span>
                                    <input type="color" value={metadata.colors.gradient.color2} onChange={(e) => setMetadata(m => ({ ...m, colors: { ...m.colors, gradient: { ...m.colors.gradient!, color2: e.target.value } } }))} className="w-full h-10 rounded-xl cursor-pointer" />
                                 </div>
                              </div>
                              <div className="space-y-2">
-                                <label className="text-[10px] font-black text-gray-500 uppercase italic">زاویه ({metadata.colors.gradient.angle}°)</label>
+                                <label className="text-[10px] font-black text-gray-500 uppercase italic">
+                                  {isRtl ? `زاویه (${metadata.colors.gradient.angle}°)` : `Gradient Angle (${metadata.colors.gradient.angle}°)`}
+                                </label>
                                 <input type="range" min="0" max="360" value={metadata.colors.gradient.angle} onChange={(e) => setMetadata(m => ({ ...m, colors: { ...m.colors, gradient: { ...m.colors.gradient!, angle: parseInt(e.target.value) } } }))} className="w-full h-1 bg-white/10 rounded-full appearance-none cursor-pointer accent-neon-pink" />
                              </div>
                           </div>
                         )}
                      </div>
                   </NeonCard>
- 
+  
                   {/* Preview Section */}
                   <div className="lg:col-span-12 xl:col-span-7 flex flex-col items-center justify-start py-4">
-                     <div className="mb-6 flex items-center gap-2 px-6 py-2 rounded-full bg-yellow-400/10 border border-yellow-400/20 text-yellow-400">
-                        <Sparkles size={16} />
-                        <span className="text-[10px] font-black uppercase italic tracking-widest">پیش‌نمایش نهایی مینی پروفایل</span>
-                     </div>
-                     
-                     <div className="relative group scale-[1.1] transition-transform">
-                       <motion.div 
-                         initial={{ y: 20, opacity: 0 }}
-                         animate={{ y: 0, opacity: 1 }}
-                         className={cn(
-                           "relative w-[340px] rounded-[48px] overflow-hidden border backdrop-blur-3xl transition-all duration-500",
-                           metadata.fullGlow ? "border-yellow-400" : "shadow-[0_40px_100px_rgba(0,0,0,0.8)] border-white/10"
-                         )}
-                         style={{
-                           ...getBackgroundStyle(),
-                           boxShadow: metadata.fullGlow ? `0 0 60px ${metadata.colors.glowColor || primaryColorHex}4d` : undefined,
-                           rotateX: metadata.tiltEffect ? tiltX : 0,
-                           rotateY: metadata.tiltEffect ? tiltY : 0,
-                           transformPerspective: metadata.tiltEffect ? 1000 : "none"
-                         }}
-                         onMouseMove={metadata.tiltEffect ? handleMouseMove : undefined}
-                         onMouseLeave={metadata.tiltEffect ? handleMouseLeave : undefined}
-                       >
-                         {/* Background Image Layer */}
-                         {metadata.bgImage && (
-                           <div 
-                             className="absolute inset-0 z-0 pointer-events-none" 
-                             style={{ 
-                               backgroundImage: `url(${metadata.bgImage})`, 
-                               backgroundSize: 'cover', 
-                               backgroundPosition: 'center', 
-                               opacity: metadata.opacity 
-                             }} 
-                           />
-                         )}
+                      <div className="mb-6 flex items-center gap-2 px-6 py-2 rounded-full bg-yellow-400/10 border border-yellow-400/20 text-yellow-400">
+                         <Sparkles size={16} />
+                         <span className="text-[10px] font-black uppercase italic tracking-widest">
+                           {isRtl ? "پیش‌نمایش نهایی مینی پروفایل" : "Live Real-Time Miniature Preview"}
+                         </span>
+                      </div>
+                      
+                      <div className="relative group scale-[1.1] transition-transform">
+                        <motion.div 
+                          initial={{ y: 20, opacity: 0 }}
+                          animate={{ y: 0, opacity: 1 }}
+                          className={cn(
+                            "relative w-[340px] rounded-[48px] overflow-hidden border backdrop-blur-3xl transition-all duration-500",
+                            metadata.fullGlow ? "border-yellow-400" : "shadow-[0_40px_100px_rgba(0,0,0,0.8)] border-white/10"
+                          )}
+                          style={{
+                            ...getBackgroundStyle(),
+                            boxShadow: metadata.fullGlow ? `0 0 60px ${metadata.colors.glowColor || primaryColorHex}4d` : undefined,
+                            rotateX: metadata.tiltEffect ? tiltX : 0,
+                            rotateY: metadata.tiltEffect ? tiltY : 0,
+                            transformPerspective: metadata.tiltEffect ? 1000 : "none"
+                          }}
+                          onMouseMove={metadata.tiltEffect ? handleMouseMove : undefined}
+                          onMouseLeave={metadata.tiltEffect ? handleMouseLeave : undefined}
+                        >
+                          {/* Background Image Layer */}
+                          {metadata.bgImage && (
+                            <div 
+                              className="absolute inset-0 z-0 pointer-events-none" 
+                              style={{ 
+                                backgroundImage: `url(${metadata.bgImage})`, 
+                                backgroundSize: 'cover', 
+                                backgroundPosition: 'center', 
+                                opacity: metadata.opacity 
+                              }} 
+                            />
+                          )}
+  
+                          {/* Enhanced Readability Overlay - exactly as in Popover */}
+                          <div className="absolute inset-0 z-0 bg-gradient-to-t from-[#0a0a0f] via-[#0a0a0f]/60 to-transparent" />
  
-                         {/* Enhanced Readability Overlay - exactly as in Popover */}
-                         <div className="absolute inset-0 z-0 bg-gradient-to-t from-[#0a0a0f] via-[#0a0a0f]/60 to-transparent" />
-
-                         {/* Floating Particles */}
-                         {metadata.floatingParticles && (
-                           <div className="absolute inset-0 pointer-events-none z-[5] overflow-hidden">
-                             {[...Array(15)].map((_, i) => (
-                               <motion.div
-                                 key={`particle-${i}`}
-                                 className="absolute w-1 h-1 rounded-full bg-white/40 blur-[1px]"
-                                 initial={{
-                                   x: Math.random() * 340,
-                                   y: Math.random() * 500,
-                                   scale: Math.random() * 1.5 + 0.5,
-                                 }}
-                                 animate={{
-                                   y: [null, -100, Math.random() * 500],
-                                   x: [null, Math.random() * 50 - 25, Math.random() * 50 - 25],
-                                   opacity: [0, 1, 0]
-                                 }}
-                                 transition={{
-                                   duration: Math.random() * 5 + 5,
-                                   repeat: Infinity,
-                                   ease: "linear",
-                                   delay: Math.random() * 3
-                                 }}
-                                 style={{
-                                   backgroundColor: metadata.colors.glowColor || primaryColorHex
-                                 }}
-                               />
-                             ))}
-                           </div>
-                         )}
- 
-                         {renderFrameEffect(metadata.frame)}
- 
-                         <div className="h-32 relative overflow-hidden z-10">
-                            {bannerUrl ? <img src={bannerUrl} alt="Banner" className="w-full h-full object-cover" /> : <div className={cn("absolute inset-0 bg-gradient-to-br to-[#0a0a0f]", isStreamer ? "from-purple-400/20" : "from-yellow-400/20")} />}
-                            <div className="absolute inset-0 bg-black/40" />
-                         </div>
- 
-                         <div className="px-8 pb-10 pt-0 relative z-10">
-                           <div className="flex items-start justify-between">
-                              <div className="relative -mt-14 mb-4 inline-block">
-                                 {metadata.auraEffect && (
-                                   <motion.div 
-                                     animate={{ opacity: [0.4, 0.9, 0.4], scale: [0.95, 1.05, 0.95] }} 
-                                     transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }} 
-                                     className="absolute -inset-2 rounded-[38px] blur-xl z-0 pointer-events-none"
-                                     style={{ backgroundColor: metadata.colors.auraColor || primaryColorHex }}
-                                   />
-                                 )}
-                                 <div className={cn(
-                                    "h-24 w-24 rounded-[32px] bg-[#0a0a0f] p-[2px] relative z-20",
-                                    metadata.frame === "lightning" ? "border-blue-400 shadow-[0_0_15px_blue]" : 
-                                    isStreamer ? "bg-gradient-to-tr from-purple-400 via-purple-200 to-purple-600" :
-                                    "bg-gradient-to-tr from-yellow-400 via-yellow-200 to-yellow-600"
-                                 )}>
-                                    <div className="h-full w-full rounded-[30px] bg-[#0d0d12] flex items-center justify-center overflow-hidden">
-                                       {avatarUrl ? <SmartImage src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" /> : <User size={40} className="text-gray-700" />}
-                                    </div>
-                                 </div>
-                                 <div className="absolute top-1 right-1 h-6 w-6 bg-green-500 rounded-full border-4 border-[#0a0a0f] z-[25]"></div>
-                              </div>
-                           </div>
- 
-                           <div className="space-y-6">
-                             <div>
-                                <h4 
-                                  className={cn("text-2xl font-black italic tracking-tighter uppercase", metadata.shinyName && "animate-pulse")}
-                                  style={{ 
-                                    color: metadata.colors.text,
-                                    ...getFontStyle()
+                          {/* Floating Particles */}
+                          {metadata.floatingParticles && (
+                            <div className="absolute inset-0 pointer-events-none z-[5] overflow-hidden">
+                              {[...Array(15)].map((_, i) => (
+                                <motion.div
+                                  key={`particle-${i}`}
+                                  className="absolute w-1 h-1 rounded-full bg-white/40 blur-[1px]"
+                                  initial={{
+                                    x: Math.random() * 340,
+                                    y: Math.random() * 500,
+                                    scale: Math.random() * 1.5 + 0.5,
                                   }}
-                                >
-                                  {user?.displayName || "Elite User"}
-                                </h4>
-                                <span className="text-[9px] font-black uppercase tracking-[0.2em] flex items-center gap-2 mt-1" style={{ color: metadata.colors.accent }}>
-                                   <div className="h-1 w-1 rounded-full bg-current animate-ping" />
-                                   {isStreamer ? "عضو تیم استریم" : "عضو ویژه لوکس (VIP)"}
-                                </span>
-                             </div>
- 
-                             <div className="grid grid-cols-4 gap-2 py-4 border-y border-white/5">
-                                 <div className="text-center">
-                                    <p className="text-[8px] font-black uppercase mb-1 italic" style={{ color: metadata.colors.statsLabel || "#4b5563" }}>عضویت</p>
-                                    <p className="text-xs font-black italic" style={{ color: metadata.colors.statsText || metadata.colors.text || "white", textShadow: "0 2px 4px rgba(0,0,0,0.5)" }}>742 روز</p>
+                                  animate={{
+                                    y: [null, -100, Math.random() * 500],
+                                    x: [null, Math.random() * 50 - 25, Math.random() * 50 - 25],
+                                    opacity: [0, 1, 0]
+                                  }}
+                                  transition={{
+                                    duration: Math.random() * 5 + 5,
+                                    repeat: Infinity,
+                                    ease: "linear",
+                                    delay: Math.random() * 3
+                                  }}
+                                  style={{
+                                    backgroundColor: metadata.colors.glowColor || primaryColorHex
+                                  }}
+                                />
+                              ))}
+                            </div>
+                          )}
+  
+                          {renderFrameEffect(metadata.frame)}
+  
+                          <div className="h-32 relative overflow-hidden z-10">
+                             {bannerUrl ? <img src={bannerUrl} alt="Banner" className="w-full h-full object-cover" /> : <div className={cn("absolute inset-0 bg-gradient-to-br to-[#0a0a0f]", isStreamer ? "from-purple-400/20" : "from-yellow-400/20")} />}
+                             <div className="absolute inset-0 bg-black/40" />
+                          </div>
+  
+                          <div className="px-8 pb-10 pt-0 relative z-10">
+                            <div className="flex items-start justify-between">
+                               <div className="relative -mt-14 mb-4 inline-block">
+                                  {metadata.auraEffect && (
+                                    <motion.div 
+                                      animate={{ opacity: [0.4, 0.9, 0.4], scale: [0.95, 1.05, 0.95] }} 
+                                      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }} 
+                                      className="absolute -inset-2 rounded-[38px] blur-xl z-0 pointer-events-none"
+                                      style={{ backgroundColor: metadata.colors.auraColor || primaryColorHex }}
+                                    />
+                                  )}
+                                  <div className={cn(
+                                     "h-24 w-24 rounded-[32px] bg-[#0a0a0f] p-[2px] relative z-20",
+                                     metadata.frame === "lightning" ? "border-blue-400 shadow-[0_0_15px_blue]" : 
+                                     isStreamer ? "bg-gradient-to-tr from-purple-400 via-purple-200 to-purple-600" :
+                                     "bg-gradient-to-tr from-yellow-400 via-yellow-200 to-yellow-600"
+                                  )}>
+                                     <div className="h-full w-full rounded-[30px] bg-[#0d0d12] flex items-center justify-center overflow-hidden">
+                                        {avatarUrl ? <SmartImage src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" /> : <User size={40} className="text-gray-700" />}
+                                     </div>
+                                  </div>
+                                  <div className="absolute top-1 right-1 h-6 w-6 bg-green-500 rounded-full border-4 border-[#0a0a0f] z-[25]"></div>
+                               </div>
+                            </div>
+  
+                            <div className="space-y-6">
+                              <div className={isRtl ? "text-right" : "text-left"}>
+                                 <h4 
+                                   className={cn("text-2xl font-black italic tracking-tighter uppercase", metadata.shinyName && "animate-pulse")}
+                                   style={{ 
+                                     color: metadata.colors.text,
+                                     ...getFontStyle()
+                                   }}
+                                 >
+                                   {user?.displayName || "Elite User"}
+                                 </h4>
+                                 <span className={`text-[9px] font-black uppercase tracking-[0.2em] flex items-center gap-2 mt-1 ${isRtl ? "justify-start" : "justify-start"}`} style={{ color: metadata.colors.accent }}>
+                                    <div className="h-1 w-1 rounded-full bg-current animate-ping" />
+                                    {isStreamer 
+                                      ? (isRtl ? "عضو تیم استریم" : "Streamer Team Creator") 
+                                      : (isRtl ? "عضو ویژه لوکس (VIP)" : "LOXX Premium Exclusive (VIP)")}
+                                 </span>
+                              </div>
+  
+                              <div className="grid grid-cols-4 gap-2 py-4 border-y border-white/5">
+                                  <div className="text-center">
+                                     <p className="text-[8px] font-black uppercase mb-1 italic" style={{ color: metadata.colors.statsLabel || "#4b5563" }}>
+                                       {isRtl ? "عضویت" : "Member"}
+                                     </p>
+                                     <p className="text-xs font-black italic" style={{ color: metadata.colors.statsText || metadata.colors.text || "white", textShadow: "0 2px 4px rgba(0,0,0,0.5)" }}>
+                                       {isRtl ? "۷۴۲ روز" : "742 Days"}
+                                     </p>
+                                  </div>
+                                  <div className="text-center">
+                                     <p className="text-[8px] font-black uppercase mb-1 italic" style={{ color: metadata.colors.statsLabel || "#4b5563" }}>
+                                       {isRtl ? "دوستان" : "Friends"}
+                                     </p>
+                                     <p className="text-xs font-black italic" style={{ color: metadata.colors.statsText || metadata.colors.text || "white", textShadow: "0 2px 4px rgba(0,0,0,0.5)" }}>128</p>
+                                  </div>
+                                  <div className="text-center">
+                                     <p className="text-[8px] font-black uppercase mb-1 italic" style={{ color: metadata.colors.statsLabel || "#4b5563" }}>
+                                       {isRtl ? "لابی‌ها" : "Lobbies"}
+                                     </p>
+                                     <p className="text-xs font-black italic" style={{ color: metadata.colors.statsText || metadata.colors.text || "white", textShadow: "0 2px 4px rgba(0,0,0,0.5)" }}>42</p>
+                                  </div>
+                                  <div className="text-center">
+                                     <p className="text-[8px] font-black uppercase mb-1 italic" style={{ color: metadata.colors.statsLabel || "#4b5563" }}>
+                                       {isRtl ? "رتبه" : "Rank"}
+                                     </p>
+                                     <p className="text-xs font-black italic" style={{ color: metadata.colors.statsText || metadata.colors.text || "white", textShadow: "0 2px 4px rgba(0,0,0,0.5)" }}>Supreme</p>
+                                  </div>
+                              </div>
+  
+                              <div className={`flex flex-wrap gap-2 ${isRtl ? "justify-start" : "justify-start"}`}>
+                                 <div className="px-3 py-1 rounded-lg bg-neon-blue/10 border border-neon-blue/20">
+                                    <span className="text-[8px] font-black uppercase italic" style={{ color: metadata.colors.badgeText || "white", textShadow: "0 1px 2px rgba(0,0,0,0.5)" }}>FOUNDER</span>
                                  </div>
-                                 <div className="text-center">
-                                    <p className="text-[8px] font-black uppercase mb-1 italic" style={{ color: metadata.colors.statsLabel || "#4b5563" }}>دوستان</p>
-                                    <p className="text-xs font-black italic" style={{ color: metadata.colors.statsText || metadata.colors.text || "white", textShadow: "0 2px 4px rgba(0,0,0,0.5)" }}>128</p>
+                                 <div className="px-3 py-1 rounded-lg bg-white/5 border border-white/10">
+                                    <span className="text-[8px] font-black uppercase italic" style={{ color: metadata.colors.badgeText || "#6b7280" }}>CHAMPION</span>
                                  </div>
-                                 <div className="text-center">
-                                    <p className="text-[8px] font-black uppercase mb-1 italic" style={{ color: metadata.colors.statsLabel || "#4b5563" }}>لابی‌ها</p>
-                                    <p className="text-xs font-black italic" style={{ color: metadata.colors.statsText || metadata.colors.text || "white", textShadow: "0 2px 4px rgba(0,0,0,0.5)" }}>42</p>
-                                 </div>
-                                 <div className="text-center">
-                                    <p className="text-[8px] font-black uppercase mb-1 italic" style={{ color: metadata.colors.statsLabel || "#4b5563" }}>رتبه</p>
-                                    <p className="text-xs font-black italic" style={{ color: metadata.colors.statsText || metadata.colors.text || "white", textShadow: "0 2px 4px rgba(0,0,0,0.5)" }}>Supreme</p>
-                                 </div>
-                             </div>
- 
-                             <div className="flex flex-wrap gap-2">
-                                <div className="px-3 py-1 rounded-lg bg-neon-blue/10 border border-neon-blue/20">
-                                   <span className="text-[8px] font-black uppercase italic" style={{ color: metadata.colors.badgeText || "white", textShadow: "0 1px 2px rgba(0,0,0,0.5)" }}>FOUNDER</span>
-                                </div>
-                                <div className="px-3 py-1 rounded-lg bg-white/5 border border-white/10">
-                                   <span className="text-[8px] font-black uppercase italic" style={{ color: metadata.colors.badgeText || "#6b7280" }}>CHAMPION</span>
-                                </div>
-                             </div>
- 
-                             <GlowButton variant="gold" className="w-full h-12 !rounded-2xl font-black text-xs uppercase italic tracking-widest bg-gradient-to-r from-yellow-500 to-yellow-600 text-dark-bg border-none" disabled>ویرایش پروفایل</GlowButton>
-                           </div>
-                         </div>
-                       </motion.div>
-                    </div>
+                              </div>
+  
+                              <GlowButton variant="gold" className="w-full h-12 !rounded-2xl font-black text-xs uppercase italic tracking-widest bg-gradient-to-r from-yellow-500 to-yellow-600 text-dark-bg border-none" disabled>
+                                {isRtl ? "ویرایش پروفایل" : "Edit Profile"}
+                              </GlowButton>
+                            </div>
+                          </div>
+                        </motion.div>
+                     </div>
                   </div>
                </div>
-
-              <div className="pt-8">
-                <NeonCard variant="blue" className="p-5 border-neon-blue/20 bg-neon-blue/5">
-                  <div className="flex items-start gap-4">
-                    <div className="h-10 w-10 rounded-xl bg-neon-blue/20 flex items-center justify-center text-neon-blue shrink-0">
-                      <RefreshCw size={20} />
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-black text-white italic">اتصال زنده برقرار است</h4>
-                      <p className="text-[10px] text-gray-500 font-bold italic uppercase mt-1">تغییرات شما بلافاصله در مینی پروفایل اعمال می‌شود.</p>
-                    </div>
-                  </div>
-                </NeonCard>
-              </div>
+ 
+               <div className="pt-8 text-right">
+                 <NeonCard variant="blue" className="p-5 border-neon-blue/20 bg-neon-blue/5">
+                   <div className={`flex items-start gap-4 ${isRtl ? "flex-row text-right" : "flex-row-reverse text-left"}`}>
+                     <div className="h-10 w-10 rounded-xl bg-neon-blue/20 flex items-center justify-center text-neon-blue shrink-0">
+                       <RefreshCw size={20} />
+                     </div>
+                     <div className="flex-1">
+                       <h4 className="text-sm font-black text-white italic">
+                         {isRtl ? "اتصال زنده برقرار است" : "Live Sync Active"}
+                       </h4>
+                       <p className="text-[10px] text-gray-500 font-bold italic uppercase mt-1">
+                         {isRtl 
+                           ? "تغییرات شما بلافاصله در مینی پروفایل اعمال می‌شود." 
+                           : "Your edits are synced synchronously to the mini profile presentation canvas above."}
+                       </p>
+                     </div>
+                   </div>
+                 </NeonCard>
+               </div>
             </div>
           </div>
         </div>

@@ -1513,21 +1513,21 @@ function MatchInfoPanel({ isStarting, isMatchStarted, countdown, players, lobby,
                   <Play size={20} />
                </div>
                <div>
-                  <h3 className="text-xl font-black text-white">در حال بازی کردن...</h3>
+                  <h3 className="text-xl font-black text-white">{isRtl ? "در حال بازی کردن..." : "In Game..."}</h3>
                   <p className="text-xs text-green-500 font-bold flex items-center gap-2">
-                    <Lock size={12} /> لابی قفل شد و امکان ورود نیست.
+                    <Lock size={12} /> {isRtl ? "لابی قفل شد و امکان ورود نیست." : "Lobby is locked and joining is disabled."}
                   </p>
                </div>
             </div>
             <div className="flex items-center gap-4">
                 <div className="px-5 py-2 rounded-xl bg-green-500/20 border border-green-500/30 text-green-500 text-[10px] font-black uppercase tracking-widest">
-                   مدرج (LOBBY LOCKED)
+                   {isRtl ? "مدرج (LOBBY LOCKED)" : "LOCKED"}
                 </div>
                 <button 
                   onClick={onReopen}
                   className="px-5 py-2 rounded-xl bg-red-500 text-white text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-transform"
                 >
-                   باز کردن لابی
+                   {isRtl ? "باز کردن لابی" : "Unlock Lobby"}
                 </button>
             </div>
           </motion.div>
@@ -1546,8 +1546,8 @@ function MatchInfoPanel({ isStarting, isMatchStarted, countdown, players, lobby,
             <div className="flex items-center gap-4">
                <div className={cn("h-12 w-12 rounded-full border-4 border-t-white animate-spin", isStreamerLobby ? "border-purple-500" : isVipLobby ? "border-yellow-400" : "border-neon-blue")} />
                <div>
-                  <h3 className="text-xl font-black text-white">در حال شروع بازی...</h3>
-                  <p className="text-xs text-neon-blue font-bold">بچه‌ها آماده باشید، سرور در حال پیکربندی است.</p>
+                  <h3 className="text-xl font-black text-white">{isRtl ? "در حال شروع بازی..." : "Match Starting..."}</h3>
+                  <p className="text-xs text-neon-blue font-bold">{isRtl ? "بچه‌ها آماده باشید، سرور در حال پیکربندی است." : "Get ready! Configuring room server details."}</p>
                </div>
             </div>
             <div className="flex items-center gap-8">
@@ -1556,7 +1556,7 @@ function MatchInfoPanel({ isStarting, isMatchStarted, countdown, players, lobby,
                  onClick={onCancel}
                  className="text-[10px] font-black text-gray-400 hover:text-white underline uppercase tracking-widest transition-colors"
                >
-                 لغو شروع
+                 {isRtl ? "لغو شروع" : "Cancel"}
                </button>
             </div>
           </motion.div>
@@ -1573,7 +1573,7 @@ function MatchInfoPanel({ isStarting, isMatchStarted, countdown, players, lobby,
                  <div className={cn("absolute inset-0 h-3 w-3 rounded-full animate-ping", isStreamerLobby ? "bg-purple-500/50" : isVipLobby ? "bg-yellow-400/50" : "bg-neon-blue/50")} />
                </div>
                <span className="text-xs font-black uppercase text-gray-400 tracking-widest">
-                 {readyCount === activePlayers.length ? "همه بازیکنان آماده هستند!" : `در انتظار بازیکنان... (${readyCount}/${activePlayers.length})`}
+                 {readyCount === activePlayers.length ? (isRtl ? "همه بازیکنان آماده هستند!" : "All players are ready!") : (isRtl ? `در انتظار بازیکنان... (${readyCount}/${activePlayers.length})` : `In queue... (${readyCount}/${activePlayers.length})`)}
                </span>
             </div>
 
@@ -2031,7 +2031,9 @@ const PlayerCard: React.FC<{
           <div className="h-20 w-20 rounded-[32px] border-2 border-dashed border-white/10 flex items-center justify-center text-white/20 mb-6 group-hover:border-white/30 transition-all duration-300 group-hover:scale-110">
             <UserPlus size={40} />
           </div>
-          <span className="text-[11px] font-black uppercase text-gray-600 tracking-widest group-hover:text-white transition-colors">دعوت بازیکن</span>
+          <span className="text-[11px] font-black uppercase text-gray-600 tracking-widest group-hover:text-white transition-colors">
+            {isRtl ? "دعوت بازیکن" : "Invite Player"}
+          </span>
         </div>
       )}
     </motion.div>
@@ -2223,25 +2225,43 @@ function ChatPanel({ messages, players, inputMessage, setInputMessage, onSend, o
                 const message = messages.find(m => (m.id || m.id) === contextMenu.id);
                 if (message?.text) {
                   navigator.clipboard.writeText(message.text);
-                  toast.success("متن پیام کپی شد!");
+                  toast.success(isRtl ? "متن پیام کپی شد!" : "Message copied!");
                 }
               }}
-              className="w-full text-left px-4 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white flex items-center justify-end gap-3 transition-colors group"
+              className={cn("w-full px-4 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white flex items-center gap-3 transition-colors group", isRtl ? "justify-end text-right" : "justify-start text-left")}
             >
-              کپی متن
-              <Copy size={14} className="text-gray-500 group-hover:text-white transition-colors" />
+              {isRtl ? (
+                <>
+                  کپی متن
+                  <Copy size={14} className="text-gray-500 group-hover:text-white transition-colors" />
+                </>
+              ) : (
+                <>
+                  <Copy size={14} className="text-gray-500 group-hover:text-white transition-colors" />
+                  Copy TEXT
+                </>
+              )}
             </button>
             <button
               onClick={() => {
                 const message = messages.find(m => (m.id || m.id) === contextMenu.id);
                 if (message) {
-                  setInputMessage((prev: string) => `در پاسخ به ${message.user}:\n${prev}`);
+                  setInputMessage((prev: string) => isRtl ? `در پاسخ به ${message.user}:\n${prev}` : `In reply to ${message.user}:\n${prev}`);
                 }
               }}
-              className="w-full text-left px-4 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white flex items-center justify-end gap-3 transition-colors group"
+              className={cn("w-full px-4 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white flex items-center gap-3 transition-colors group", isRtl ? "justify-end text-right" : "justify-start text-left")}
             >
-              پاسخ دادن
-              <Reply size={14} className="text-gray-500 group-hover:text-white transition-colors" />
+              {isRtl ? (
+                <>
+                  پاسخ دادن
+                  <Reply size={14} className="text-gray-500 group-hover:text-white transition-colors" />
+                </>
+              ) : (
+                <>
+                  <Reply size={14} className="text-gray-500 group-hover:text-white transition-colors" />
+                  Reply
+                </>
+              )}
             </button>
           </motion.div>
         )}
@@ -2253,7 +2273,7 @@ function ChatPanel({ messages, players, inputMessage, setInputMessage, onSend, o
             type="text"
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
-            placeholder="چیزی بنویسید..."
+            placeholder={isRtl ? "چیزی بنویسید..." : "Type message..."}
             className="flex-1 bg-transparent py-4 text-xs text-white placeholder:text-gray-700 focus:outline-none font-medium pr-2"
           />
           <button 

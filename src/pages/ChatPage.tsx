@@ -309,17 +309,17 @@ function MessageItem({ message, isConsecutive = false, onReaction, onSaveGif, on
           <div className={cn("relative group/bubble-container flex items-center w-fit", message.self ? "ml-auto" : "mr-auto")}>
             {/* Admin Glow Backing */}
             {isMsgSenderAdmin && (
-              <div className="absolute inset-0 bg-red-500/10 blur-3xl rounded-full scale-150 animate-pulse pointer-events-none hidden md:block" />
+              <div className="absolute inset-0 bg-red-500/5 blur-xl rounded-full scale-110 pointer-events-none hidden md:block" />
             )}
             
             {/* VIP Glow Backing */}
             {!isMsgSenderAdmin && isVIP && (
-              <div className="absolute inset-0 bg-yellow-400/5 blur-3xl rounded-full scale-150 animate-pulse pointer-events-none hidden md:block" />
+              <div className="absolute inset-0 bg-yellow-400/5 blur-xl rounded-full scale-110 pointer-events-none hidden md:block" />
             )}
             
             {/* Streamer Glow Backing */}
             {!isMsgSenderAdmin && isStreamer && !isVIP && (
-              <div className="absolute inset-0 bg-neon-purple/10 blur-3xl rounded-full scale-110 animate-pulse pointer-events-none hidden md:block" />
+              <div className="absolute inset-0 bg-neon-purple/5 blur-xl rounded-full scale-110 pointer-events-none hidden md:block" />
             )}
             
             {/* Action Buttons - Repositioned to prevent horizontal scroll */}

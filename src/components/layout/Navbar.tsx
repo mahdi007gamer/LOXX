@@ -86,6 +86,16 @@ export const Navbar = () => {
         >
           {/* Left: Logo & Mobile Toggle */}
           <div className="flex items-center gap-4 flex-shrink-0">
+            {!isLanding && (
+              <button 
+                id="navbar-sidebar-toggle"
+                onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+                className="p-2 text-gray-400 hover:text-white transition-colors cursor-pointer rounded-lg hover:bg-white/5 active:scale-95"
+                title={isSidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+              >
+                <Menu size={22} />
+              </button>
+            )}
             {!isInvitePage && (!isElectron) && (
               <>
                 <button 
