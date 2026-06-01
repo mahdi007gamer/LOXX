@@ -148,10 +148,15 @@ export const DesktopOverlayWidget = () => {
 
   // Sync local real-time FPS calculation loop
   useEffect(() => {
+    if (!localShowOverlayFps) return;
+
     let lastTime = performance.now();
     let frames = 0;
     let animId: number;
+    let isActive = true;
+
     const update = (time: number) => {
+      if (!isActive) return;
       frames++;
       const now = time || performance.now();
       if (now >= lastTime + 1000) {
@@ -162,11 +167,15 @@ export const DesktopOverlayWidget = () => {
       animId = requestAnimationFrame(update);
     };
     animId = requestAnimationFrame(update);
-    return () => cancelAnimationFrame(animId);
-  }, []);
+    
+    return () => {
+      isActive = false;
+      cancelAnimationFrame(animId);
+    };
+  }, [localShowOverlayFps]);
 
-  const posStr = localOverlayPos;
-  const sizeStr = localOverlaySize;
+  const posStr = localOverlayPos || "top-left";
+  const sizeStr = localOverlaySize || "medium";
   const membersVisibleVal = localMembersVisible;
   const normalOpacityVal = localNormalOpacity;
   const speakingOpacityVal = localSpeakingOpacity;
@@ -180,6 +189,7 @@ export const DesktopOverlayWidget = () => {
   }[posStr as string] || "top-6 left-6 items-start text-left";
 
   const getOppositePosition = (pos: string) => {
+    if (!pos) return "top-right";
     if (pos.endsWith("-left")) return pos.replace("-left", "-right");
     if (pos.endsWith("-right")) return pos.replace("-right", "-left");
     return "top-right";
