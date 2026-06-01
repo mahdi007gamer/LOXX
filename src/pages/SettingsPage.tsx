@@ -286,7 +286,7 @@ export const SettingsPage = () => {
  <h3 className="text-xl font-black text-white uppercase ">
  {isRtl ? "تنظیمات نخبگان (Elite Settings)" : "Elite Settings (VIP & Streamer)"}
  </h3>
- <p className="text-[10px] text-yellow-400/70 font-bold uppercase tracking-[0.2em] mt-1">
+ <p className="text-[10px] text-yellow-400/70 font-bold uppercase mt-1">
  {isRtl ? "شخصی‌سازی پیشرفته مینی‌پروفایل، فریم‌ها و افکت‌های VIP" : "Advanced customization of mini-profile, frames, and VIP aura effects"}
  </p>
  </div>

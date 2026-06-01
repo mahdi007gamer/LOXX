@@ -27,7 +27,7 @@ export const HeroSection = () => {
  className="mb-8 inline-flex items-center gap-3 rounded-full border border-neon-blue/30 bg-neon-blue/10 px-6 py-2 text-sm font-black text-neon-blue shadow-[0_0_30px_rgba(0,229,255,0.2)] backdrop-blur-md"
  >
  <Zap size={18} className="animate-pulse" />
- <span className=" uppercase">{t("entryPortalOpen")}</span>
+ <span className="uppercase">{t("entryPortalOpen")}</span>
  </motion.div>
  
  <motion.div

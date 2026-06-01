@@ -330,7 +330,7 @@ export const EliteDashboardPage = () => {
  }
  }}
  >
- <span className="text-lg font-black tracking-[0.2em] text-purple-400 uppercase font-mono">
+ <span className="text-lg font-black text-purple-400 uppercase font-mono">
  {discountCode || "موجود نیست"}
  </span>
  <Copy className="w-4 h-4 text-gray-500 group-hover/code:text-white transition-colors" />

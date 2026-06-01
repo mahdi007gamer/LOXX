@@ -356,7 +356,7 @@ export const ProfilePage = () => {
  <NeonCard className="p-10 text-center relative overflow-hidden group">
  <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(0,229,255,0.05),transparent_50%)]" />
  <h3 className="text-2xl font-black text-white mb-2 relative z-10">پیش‌نمایش مینی‌پروفایل یکپارچه</h3>
- <p className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.2em] mb-12 relative z-10 ">این دقیقاً همان چیزی است که کاربران دیگر از شما می‌بینند</p>
+ <p className="text-[10px] text-gray-500 font-bold uppercase mb-12 relative z-10 ">این دقیقاً همان چیزی است که کاربران دیگر از شما می‌بینند</p>
  
  <div className="relative mx-auto w-fit scale-110 drop-shadow-[0_30px_60px_rgba(0,0,0,0.8)]">
  <QuickProfilePopover 

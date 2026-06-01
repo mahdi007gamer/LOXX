@@ -158,7 +158,7 @@ export const LobbiesPage = () => {
  <div className="flex items-center justify-between mb-3 px-1">
  <div className="flex items-center gap-1.5 md:gap-2">
  <Filter size={12} className="text-neon-blue shrink-0" />
- <span className="text-[9px] font-black text-white/30 uppercase tracking-[0.2em] truncate">{t("gameFilter")}</span>
+ <span className="text-[9px] font-black text-white/30 uppercase truncate">{t("gameFilter")}</span>
  </div>
  {activeFilter !== 'all' && (
  <button onClick={() => setActiveFilter('all')} className="text-[9px] font-bold text-neon-blue hover:text-white transition-colors uppercase shrink-0">{isRtl ? "پاک کردن" : "Clear"}</button>
@@ -274,7 +274,7 @@ export const LobbiesPage = () => {
  <div className="absolute inset-0 z-10 bg-black/60 backdrop-blur-[2px] flex items-center justify-center">
  <div className="flex flex-col items-center gap-2 text-white">
  <Lock size={28} className="text-neon-purple animate-pulse" />
- <span className="text-[9px] font-black uppercase tracking-[0.3em] text-neon-purple">PRIVATE</span>
+ <span className="text-[9px] font-black uppercase text-neon-purple">PRIVATE</span>
  </div>
  </div>
  )}

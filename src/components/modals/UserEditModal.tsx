@@ -215,7 +215,7 @@ export const UserEditModal = ({ isOpen, onClose, user, onSuccess }: UserEditModa
  {/* Editing Controls */}
  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
  <div className="space-y-4">
- <label className="text-[10px] font-black text-gray-600 uppercase tracking-[0.2em] pr-2">نقش سیستمی کاربر</label>
+ <label className="text-[10px] font-black text-gray-600 uppercase pr-2">نقش سیستمی کاربر</label>
  <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
  {["USER", "STREAMER", "HELPER", "ADMIN"].map(r => (
  <button
@@ -242,7 +242,7 @@ export const UserEditModal = ({ isOpen, onClose, user, onSuccess }: UserEditModa
  </div>
 
  <div className="space-y-4">
- <label className="text-[10px] font-black text-gray-600 uppercase tracking-[0.2em] pr-2">سطح اشتراک ویژه</label>
+ <label className="text-[10px] font-black text-gray-600 uppercase pr-2">سطح اشتراک ویژه</label>
  <div className="grid grid-cols-3 gap-3">
  {["NONE", "PLUS", "VIP"].map(m => (
  <button
@@ -271,7 +271,7 @@ export const UserEditModal = ({ isOpen, onClose, user, onSuccess }: UserEditModa
  <div className="space-y-4 border-t border-white/5 pt-8">
  <div className="flex items-center gap-2 pr-2">
  <Shield className="text-neon-blue" size={20} />
- <label className="text-[10px] font-black text-gray-600 uppercase tracking-[0.2em] ">نشان‌های ویژه و اهدایی</label>
+ <label className="text-[10px] font-black text-gray-600 uppercase ">نشان‌های ویژه و اهدایی</label>
  </div>
  
  <div className="flex flex-wrap gap-3">

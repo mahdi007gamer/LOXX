@@ -40,7 +40,7 @@ export const BankCard: React.FC<BankCardProps> = ({ cardNumber, cardHolder }) =>
  <div className="border-r border-yellow-500" />
  </div>
  </div>
- <p className="text-lg md:text-2xl font-mono tracking-[0.15em] font-bold text-shadow-glow truncate">
+ <p className="text-lg md:text-2xl font-mono font-bold text-shadow-glow truncate">
  {cardNumber}
  </p>
  </div>

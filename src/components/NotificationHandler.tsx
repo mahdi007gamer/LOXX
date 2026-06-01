@@ -78,7 +78,7 @@ const InviteToast = ({ t, inviteData, navigate }: { t: any, inviteData: any, nav
  </div>
  <div className="flex-1 text-right">
  <div className="flex flex-col">
- <span className="text-neon-blue text-[10px] uppercase font-black tracking-[0.2em] mb-1">{username}</span>
+ <span className="text-neon-blue text-[10px] uppercase font-black mb-1">{username}</span>
  <div className="text-sm font-bold text-white/95 leading-tight">شما را به لابی دعوت کرد</div>
  </div>
  <div className="text-[11px] text-white/40 font-medium mt-1 bg-white/5 w-fit px-2 py-0.5 rounded-full border border-white/5">

@@ -107,7 +107,7 @@ export const ElectronTitlebar = () => {
  dir={isRtl ? "rtl" : "ltr"}
  >
  <span className="h-1 w-1 rounded-full bg-orange-500 animate-pulse shrink-0" />
- <span className=" text-white/90 font-normal">
+ <span className="text-white/90 font-normal">
  {isRtl 
  ? "لوکس | اولین پلتفرم پیشرفته گیمینگ فارسی " 
  : "LOXX | First Advanced Gaming Platform "}

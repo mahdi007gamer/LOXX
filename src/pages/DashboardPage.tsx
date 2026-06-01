@@ -297,7 +297,7 @@ export const DashboardPage = () => {
  <div className={isRtl ? "text-right" : "text-left"}>
  <h3 className="text-lg md:text-xl font-black text-white uppercase mb-1">LOXX PLUS</h3>
  <p className="text-[10px] text-gray-400 font-bold uppercase ">{isRtl ? "نشان اختصاصی و استیکرهای متحرک" : "Exclusive Badge & Animated Status Stickers"}</p>
- <div className="mt-2 text-[8px] text-neon-blue font-black uppercase tracking-[0.2em] animate-pulse">{isRtl ? "کلیک کنید و ارتقا دهید" : "Click to Upgrade Now"}</div>
+ <div className="mt-2 text-[8px] text-neon-blue font-black uppercase animate-pulse">{isRtl ? "کلیک کنید و ارتقا دهید" : "Click to Upgrade Now"}</div>
  </div>
  </div>
  {/* VIP PROMO */}
@@ -308,7 +308,7 @@ export const DashboardPage = () => {
  <div className={isRtl ? "text-right" : "text-left"}>
  <h3 className="text-lg md:text-xl font-black text-white uppercase mb-1">LOXX VIP</h3>
  <p className="text-[10px] text-gray-400 font-bold uppercase ">{isRtl ? "پروفایل و بنر متحرک GIF + تم طلایی" : "Animated Profile Banner & Custom Gold Theme"}</p>
- <div className="mt-2 text-[8px] text-yellow-400 font-black uppercase tracking-[0.2em] animate-pulse">{isRtl ? "تجربه نخبگان گیمینگ" : "Access the Elite Tier Club"}</div>
+ <div className="mt-2 text-[8px] text-yellow-400 font-black uppercase animate-pulse">{isRtl ? "تجربه نخبگان گیمینگ" : "Access the Elite Tier Club"}</div>
  </div>
  </div>
  </div>
@@ -357,7 +357,7 @@ export const DashboardPage = () => {
  { label: isRtl ? "روز عضویت" : "Days Joined", val: memberDays === 0 ? 1 : memberDays, icon: Activity, color: "blue" },
  { label: isRtl ? "لابی‌های جوین شده" : "Lobbies Joined", val: stats.lobbiesCount, icon: Target, color: "pink" },
  { label: isRtl ? "تعداد دوستان" : "Friends Count", val: friends.length, icon: Users, color: "purple" },
-  ].map((stat, i) => (
+ ].map((stat, i) => (
  <motion.div
  key={i}
  initial={{ opacity: 0, scale: 0.9 }}
@@ -417,7 +417,7 @@ export const DashboardPage = () => {
  {isStreamer ? <Radio size={54} className="animate-pulse" /> : currentMembership === "VIP" ? <Crown size={54} /> : currentMembership === "PLUS" ? <Zap size={54} /> : <User size={54} />}
  </div>
  <div className={cn("text-center", isRtl ? "md:text-right" : "md:text-left")}>
- <p className="text-[10px] text-gray-500 font-black uppercase tracking-[0.2em] mb-1 ">
+ <p className="text-[10px] text-gray-500 font-black uppercase mb-1 ">
  {isStreamer ? (isRtl ? "سطح احراز هویت همکاران" : "Co-Partner Verification Status") : (currentMembership !== "NONE" && currentMembership !== "FREE" ? (isRtl ? "وضعیت اشتراک فعال" : "Active Subscription Status") : (isRtl ? "اطلاعات سطح کاربری" : "User Profile Level Status"))}
  </p>
  <h2 className={cn(
@@ -461,7 +461,7 @@ export const DashboardPage = () => {
  ) : (currentMembership !== "NONE" && currentMembership !== "FREE" ? (
  <div className="flex items-center gap-10 bg-white/[0.02] backdrop-blur-md p-8 rounded-[40px] border border-white/5 min-w-[280px]">
  <div className="text-center">
- <p className="text-[10px] text-gray-500 font-black uppercase tracking-[0.2em] mb-2 ">{isRtl ? "باقیمانده اشتراک" : "Days Remaining"}</p>
+ <p className="text-[10px] text-gray-500 font-black uppercase mb-2 ">{isRtl ? "باقیمانده اشتراک" : "Days Remaining"}</p>
  <div className="flex items-baseline justify-center gap-1">
  <p className={cn(
  "text-5xl font-black leading-none",
@@ -648,12 +648,12 @@ export const DashboardPage = () => {
  </div>
 
  {/* Friends Activity */}
- <div className="flex flex-col h-full min-h-[400px]">
+ <div className="flex flex-col">
  <div className="flex items-center justify-between mb-6">
  <h2 className="text-xl font-bold text-white">{isRtl ? "فعالیت دوستان" : "Friends Activity"}</h2>
  <div className="h-1 w-12 rounded-full bg-neon-purple/50" />
  </div>
- <NeonCard variant="purple" className="flex flex-col flex-1 p-2">
+ <NeonCard variant="purple" className="flex flex-col p-2">
  <div className={`space-y-1 ${isFriendsExpanded ? "max-h-[350px] overflow-y-auto custom-scrollbar" : ""}`}>
  <AnimatePresence>
  {visibleFriends.map((friend, idx) => { 

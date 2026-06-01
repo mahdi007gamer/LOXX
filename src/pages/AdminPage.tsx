@@ -791,7 +791,7 @@ export const AdminPage = () => {
  </div>
  <div className="text-center md:text-right relative z-10">
  <h2 className="text-3xl font-black text-white uppercase mb-1">مدیریت ژانرهای بازی</h2>
- <p className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.2em] ">دسته‌بندی‌های موضوعی و المان‌های بصری بازی‌ها را شخصی‌سازی کنید</p>
+ <p className="text-[10px] text-gray-500 font-bold uppercase ">دسته‌بندی‌های موضوعی و المان‌های بصری بازی‌ها را شخصی‌سازی کنید</p>
  </div>
  <div className="flex flex-wrap justify-center gap-3 relative z-10">
  <GlowButton 
@@ -867,7 +867,7 @@ export const AdminPage = () => {
  <div className="h-24 w-24 rounded-[40px] bg-white/5 border border-white/5 flex items-center justify-center text-gray-700 mb-6 group-hover:scale-110 transition-transform">
  <Icons.Ghost size={64} />
  </div>
- <h3 className="text-xl font-black text-white uppercase tracking-[0.2em]">ژانری یافت نشد</h3>
+ <h3 className="text-xl font-black text-white uppercase ">ژانری یافت نشد</h3>
  <p className="text-[10px] text-gray-600 font-bold uppercase mt-2 ">برای شروع، روی "افزودن ژانرهای پیش‌فرض" کلیک کنید</p>
  </motion.div>
  )}
@@ -880,7 +880,7 @@ export const AdminPage = () => {
  </div>
  <div className="text-center md:text-right relative z-10">
  <h2 className="text-3xl font-black text-white uppercase mb-1">مدیریت نشان‌ها (Badges)</h2>
- <p className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.2em] ">نشان‌های بازی، عمومی و ویژه را مدیریت کنید</p>
+ <p className="text-[10px] text-gray-500 font-bold uppercase ">نشان‌های بازی، عمومی و ویژه را مدیریت کنید</p>
  </div>
  <div className="flex flex-wrap justify-center gap-3 relative z-10">
  <GlowButton 
@@ -1364,7 +1364,7 @@ export const AdminPage = () => {
  </div>
  <div className="text-center md:text-right relative z-10">
  <h2 className="text-3xl font-black text-white uppercase mb-1">گالری گیف‌های آماده لوکس</h2>
- <p className="text-[10px] text-gray-400 font-bold uppercase tracking-[0.2em] ">گیف‌های آماده‌ای که کاربران در چت به آن‌ها دسترسی دارند را مدیریت کنید</p>
+ <p className="text-[10px] text-gray-400 font-bold uppercase ">گیف‌های آماده‌ای که کاربران در چت به آن‌ها دسترسی دارند را مدیریت کنید</p>
  </div>
  <div className="flex flex-wrap justify-center gap-3 relative z-10">
  <div className="h-10 w-10 rounded-2xl bg-neon-blue/10 flex items-center justify-center text-neon-blue border border-neon-blue/20">

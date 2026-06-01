@@ -140,7 +140,7 @@ export const Navbar = () => {
  title={t("dashboard")}
  className={({ isActive }) => 
  cn(
- "transition-all font-black text-[11px] uppercase tracking-[0.12em] px-3 py-1.5 border border-neon-blue/30 bg-neon-blue/5 text-neon-blue shadow-[0_0_12px_rgba(0,229,255,0.1)] hover:bg-neon-blue/20 hover:border-neon-blue/60 hover:text-white ripple-active transition-all duration-300 rounded-lg flex items-center gap-2",
+ "transition-all font-black text-[11px] uppercase px-3 py-1.5 border border-neon-blue/30 bg-neon-blue/5 text-neon-blue shadow-[0_0_12px_rgba(0,229,255,0.1)] hover:bg-neon-blue/20 hover:border-neon-blue/60 hover:text-white ripple-active transition-all duration-300 rounded-lg flex items-center gap-2",
  isActive && "border-neon-blue/80 bg-neon-blue/15 text-white shadow-[0_0_18px_rgba(0,229,255,0.3)]"
  )
  }
@@ -155,7 +155,7 @@ export const Navbar = () => {
  title={t("globalChat")}
  className={({ isActive }) => 
  cn(
- "transition-all font-black text-[10px] uppercase tracking-[0.2em] flex items-center gap-2 px-3 py-1.5 rounded-lg border border-transparent transition-all duration-300", 
+ "transition-all font-black text-[10px] uppercase flex items-center gap-2 px-3 py-1.5 rounded-lg border border-transparent transition-all duration-300", 
  isActive ? "text-neon-blue border-neon-blue/20 bg-neon-blue/5 shadow-[0_0_12px_rgba(0,229,255,0.1)]" : "text-gray-400 hover:text-white hover:bg-white/5"
  )
  }
@@ -170,7 +170,7 @@ export const Navbar = () => {
  title={isRtl ? "دانلود" : "Download"}
  className={({ isActive }) => 
  cn(
- "transition-all font-black text-[10px] uppercase tracking-[0.2em] flex items-center gap-2 px-3 py-1.5 rounded-lg border border-transparent transition-all duration-300", 
+ "transition-all font-black text-[10px] uppercase flex items-center gap-2 px-3 py-1.5 rounded-lg border border-transparent transition-all duration-300", 
  isActive ? "text-neon-blue border-neon-blue/20 bg-neon-blue/5 shadow-[0_0_12px_rgba(0,229,255,0.1)]" : "text-gray-400 hover:text-white hover:bg-white/5"
  )
  }

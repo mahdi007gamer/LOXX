@@ -290,7 +290,7 @@ const EnvelopeIntro = ({ onOpen, streamerName }: { onOpen: () => void, streamerN
  initial={{ opacity: 0, y: 10 }}
  animate={{ opacity: 1, y: 0 }}
  exit={{ opacity: 0, y: -10 }}
- className={`font-mono text-sm tracking-[0.2em] font-bold ${decryptText === "ACCESS GRANTED" ? "text-green-400 drop-shadow-[0_0_8px_rgba(74,222,128,1)]" : "text-neon-pink drop-shadow-[0_0_8px_rgba(255,0,128,1)]"}`}
+ className={`font-mono text-sm font-bold ${decryptText === "ACCESS GRANTED" ? "text-green-400 drop-shadow-[0_0_8px_rgba(74,222,128,1)]" : "text-neon-pink drop-shadow-[0_0_8px_rgba(255,0,128,1)]"}`}
  dir="ltr"
  >
  {decryptText}
@@ -1108,12 +1108,12 @@ const StreamerProposalPage = ({ overrideName }: StreamerProposalPageProps = {}) 
  className="flex-1 min-w-[200px] flex items-center justify-center gap-3 py-4 px-6 rounded-2xl bg-[#0088cc]/10 hover:bg-[#0088cc]/20 border border-[#0088cc]/30 text-[#00e5ff] hover:text-white font-bold transition-all group"
  >
  <Send className="w-5 h-5 group-hover:scale-110 transition-transform" />
- <span dir="ltr" className=" text-lg mt-0.5">@loxxiran</span>
+ <span dir="ltr" className="text-lg mt-0.5">@loxxiran</span>
  </a>
  
  <div className="flex-1 min-w-[200px] flex items-center justify-center gap-3 py-4 px-6 rounded-2xl bg-white/5 border border-white/10 text-white font-bold">
  <Phone className="w-5 h-5 text-gray-400" />
- <span dir="ltr" className=" text-lg mt-0.5">09930893466</span>
+ <span dir="ltr" className="text-lg mt-0.5">09930893466</span>
  </div>
  </div>
  </div>

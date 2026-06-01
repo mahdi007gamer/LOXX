@@ -663,14 +663,14 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({
  <div className="flex items-center gap-2 mt-1">
  {isAdminUnified ? (
  <span
- className="text-xs font-black uppercase tracking-[0.1em] flex items-center gap-2 text-red-500 bg-red-500/10 px-3 py-1 rounded-full border border-red-500/20 shadow-[0_0_15px_rgba(239,68,68,0.1)]"
+ className="text-xs font-black uppercase flex items-center gap-2 text-red-500 bg-red-500/10 px-3 py-1 rounded-full border border-red-500/20 shadow-[0_0_15px_rgba(239,68,68,0.1)]"
  >
  <div className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
  {isRtl ? "مدیریت رسمی پلتفرم لوکس" : "LOXX Platform Official Administration"}
  </span>
  ) : isStreamer ? (
  <span
- className="text-[11px] font-black uppercase tracking-[0.2em] flex items-center gap-2"
+ className="text-[11px] font-black uppercase flex items-center gap-2"
  style={{ color: metadata?.colors?.accent || "#c084fc" }}
  >
  <div className="h-1.5 w-1.5 rounded-full bg-current animate-ping" />
@@ -678,7 +678,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({
  </span>
  ) : isVIP ? (
  <span
- className="text-[11px] font-black uppercase tracking-[0.2em] flex items-center gap-2"
+ className="text-[11px] font-black uppercase flex items-center gap-2"
  style={{ color: metadata?.colors?.accent || "#facc15" }}
  >
  <div className="h-1.5 w-1.5 rounded-full bg-current animate-ping" />
@@ -686,14 +686,14 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({
  </span>
  ) : isPLUS ? (
  <span
- className="text-[11px] font-black uppercase tracking-[0.2em] flex items-center gap-2"
+ className="text-[11px] font-black uppercase flex items-center gap-2"
  style={{ color: metadata?.colors?.accent || "#00e5ff" }}
  >
  <div className="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />
  {isRtl ? "عضو طلایی پلاس (PLUS)" : "PLUS Gold Member"}
  </span>
  ) : (
- <p className="text-[11px] text-gray-500 font-black uppercase tracking-[0.2em]">
+ <p className="text-[11px] text-gray-500 font-black uppercase ">
  {isRtl ? `گیمر تایید شده لول ${user.senderLevel}` : `Verified Gamer Level ${user.senderLevel}`}
  </p>
  )}
@@ -1158,7 +1158,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({
  <GlowButton
  variant={sentRequest ? "purple" : isVIP ? "purple" : "blue"}
  className={cn(
- "w-full h-16 !rounded-3xl font-black text-base uppercase tracking-[0.2em] shadow-2xl relative overflow-hidden group",
+ "w-full h-16 !rounded-3xl font-black text-base uppercase shadow-2xl relative overflow-hidden group",
  isVIP &&
  "bg-gradient-to-r from-yellow-600 via-yellow-400 to-yellow-600 text-dark-bg border-none shadow-[0_10px_40px_rgba(250,204,21,0.3)] hover:scale-[1.02]",
  isStreamer &&
@@ -1181,7 +1181,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({
  ) : (
  <GlowButton
  variant={isVIP ? "gold" : "blue"}
- className="w-full h-16 !rounded-3xl font-black text-base uppercase tracking-[0.2em] shadow-xl hover:scale-[1.02] transition-all"
+ className="w-full h-16 !rounded-3xl font-black text-base uppercase shadow-xl hover:scale-[1.02] transition-all"
  onClick={() => {
  onClose();
  navigate("/settings");

@@ -196,7 +196,7 @@ export const SmartImage: React.FC<SmartImageProps> = ({
 
  return (
  <div className={cn("flex items-center justify-center text-white font-black select-none !shadow-inner border border-white/10", bgColor, className)}>
- <span className=" drop-shadow-md text-sm md:text-base">{initials}</span>
+ <span className="drop-shadow-md text-sm md:text-base">{initials}</span>
  </div>
  );
  }

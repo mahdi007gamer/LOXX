@@ -324,7 +324,7 @@ export const AuthPage = () => {
  name="smsVerificationCode" 
  placeholder="123456" 
  dir="ltr" 
- className="text-center font-black tracking-[0.5em] text-lg" 
+ className="text-center font-black text-lg" 
  value={verificationCode} 
  onChange={(e) => setVerificationCode(e.target.value)} 
  icon={<KeyRound size={18} />} 

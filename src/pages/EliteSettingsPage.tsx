@@ -1037,7 +1037,7 @@ export const EliteSettingsPage = () => {
  >
  {user?.displayName || "Elite User"}
  </h4>
- <span className={`text-[9px] font-black uppercase tracking-[0.2em] flex items-center gap-2 mt-1 ${isRtl ? "justify-start" : "justify-start"}`} style={{ color: metadata.colors.accent }}>
+ <span className={`text-[9px] font-black uppercase flex items-center gap-2 mt-1 ${isRtl ? "justify-start" : "justify-start"}`} style={{ color: metadata.colors.accent }}>
  <div className="h-1 w-1 rounded-full bg-current animate-ping" />
  {isStreamer 
  ? (isRtl ? "عضو تیم استریم" : "Streamer Team Creator") 

@@ -312,7 +312,7 @@ export const PremiumPage = () => {
  {isRtl 
  ? "برای حمایت از لوکس و باز کردن قابلیت‌های استثنایی، یکی از اشتراک‌های ویژه را انتخاب کنید."
  : "Support LOXX and unlock pristine, elite features by selecting one of our premium offerings."} <br/>
- <span className="text-[10px] text-neon-blue font-black uppercase tracking-[0.3em] mt-3 block opacity-60">Elevate Your Loxx Experience</span>
+ <span className="text-[10px] text-neon-blue font-black uppercase mt-3 block opacity-60">Elevate Your Loxx Experience</span>
  </p>
  </header>
 
@@ -579,7 +579,7 @@ export const PremiumPage = () => {
  }}
  >
  <Copy size={18} className="text-neon-blue group-hover/copy:scale-110 transition-transform" />
- <span className="text-white font-mono font-black tracking-[0.15em] text-sm md:text-base">6063-7311-8109-6737</span>
+ <span className="text-white font-mono font-black text-sm md:text-base">6063-7311-8109-6737</span>
  </div>
  </div>
  </div>
