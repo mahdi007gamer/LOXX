@@ -347,6 +347,31 @@ if (!config.hardwareAcceleration) {
   app.disableHardwareAcceleration();
 }
 
+// Determine if Windows Bug Detection / Debug Mode is active
+const winbugPath = path.join(app.getAppPath(), 'winbug.txt');
+const isWinbugActive = process.env.VITE_WINBUG === 'true' || 
+                       fs.existsSync(winbugPath) || 
+                       fs.existsSync(path.join(path.dirname(process.execPath), 'winbug.txt')) ||
+                       (config && config.winbug === true);
+
+if (isWinbugActive) {
+  logMsg('INFO', '--- LOXX SYSTEM WINDOWS DEBUGGER (WINBUG ACTIVE) ---');
+  logMsg('INFO', `Log Target is: ${logFile}`);
+  
+  if (process.platform === 'win32') {
+    const { exec } = require('child_process');
+    const sanitizedLogFile = logFile.replace(/\\/g, '\\\\');
+    const debugCmd = `start cmd.exe /k "title [LOXX CLIENT SYSTEM DEBUG LOGS] & color 0b & echo ========================================================= & echo [LOXX SYSTEM ACTIVE] LOGS TARGET FILE: ${sanitizedLogFile} & echo ========================================================= & powershell -Command Get-Content -Path '${sanitizedLogFile.replace(/'/g, "''")}' -Wait -Tail 20"`;
+    exec(debugCmd, (spawnErr) => {
+      if (spawnErr) {
+        logMsg('ERROR', 'Failed to spawn debug command prompt:', spawnErr);
+      } else {
+        logMsg('INFO', 'Debug cmd.exe console window launched successfully.');
+      }
+    });
+  }
+}
+
 function createMainWindow() {
   if (!gotTheLock) return;
   if (mainWindow) {
@@ -388,6 +413,18 @@ function createMainWindow() {
   // Provide custom User-Agent to easily identify Launcher on the server
   const defaultUA = mainWindow.webContents.getUserAgent();
   mainWindow.webContents.setUserAgent(`${defaultUA} LoxxLauncher/1.2.23`);
+
+  // Log all console output from the main renderer window
+  mainWindow.webContents.on('console-message', (event, level, message, line, sourceId) => {
+    logMsg('MAIN_RENDERER_CONSOLE', `[Level ${level}] ${message} (Source: ${sourceId}:${line})`);
+  });
+
+  // Automatically activate developer tools when debug mode is enabled
+  if (isWinbugActive) {
+    mainWindow.webContents.on('did-finish-load', () => {
+      mainWindow.webContents.openDevTools({ mode: 'detach' });
+    });
+  }
 
   // Listen for maximize / restore updates
   mainWindow.on('maximize', () => {
@@ -759,6 +796,14 @@ updateCheckTimeout = setTimeout(() => {
     applyStartupSetting();
     registerGlobalShortcuts();
     
+    // Broadcast config update to both main window and overlay window for active real-time synchronization
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('launcher-settings-update', config);
+    }
+    if (overlayWindow && !overlayWindow.isDestroyed()) {
+      overlayWindow.webContents.send('launcher-settings-update', config);
+    }
+    
     // Dynamically update active overlay window dimensions/style in real-time
     if (overlayWindow && !overlayWindow.isDestroyed()) {
       try {
@@ -904,6 +949,18 @@ updateCheckTimeout = setTimeout(() => {
         // Make it click-through, sitting perfectly on top of any low-level screen
         let clickThrough = config.overlayClickThrough !== false;
         overlayWindow.setIgnoreMouseEvents(true, { forward: clickThrough });
+
+        // Log all console output from the transparent overlay renderer window
+        overlayWindow.webContents.on('console-message', (event, level, message, line, sourceId) => {
+          logMsg('OVERLAY_RENDERER_CONSOLE', `[Level ${level}] ${message} (Source: ${sourceId}:${line})`);
+        });
+
+        // Automatically activate developer tools for transparent overlay when debug mode is enabled
+        if (isWinbugActive) {
+          overlayWindow.webContents.on('did-finish-load', () => {
+            overlayWindow.webContents.openDevTools({ mode: 'detach' });
+          });
+        }
         
         // Compute dynamic local server URL route
         let baseURL = 'https://loxx.ir';

@@ -68,6 +68,7 @@ export const ElectronSettingsPage = () => {
   const toggleDebugOverlay = (enabled: boolean) => {
     setDebugOverlayEnabled(enabled);
     localStorage.setItem("loxx_debug_overlay", String(enabled));
+    updateSetting("debugOverlay", enabled);
     window.dispatchEvent(new Event("storage"));
     toast.success(
       isRtl
@@ -79,6 +80,7 @@ export const ElectronSettingsPage = () => {
   const toggleDebugMock = (enabled: boolean) => {
     setDebugMockEnabled(enabled);
     localStorage.setItem("loxx_debug_use_mock", String(enabled));
+    updateSetting("debugMock", enabled);
     window.dispatchEvent(new Event("storage"));
     toast.success(
       isRtl
@@ -145,7 +147,17 @@ export const ElectronSettingsPage = () => {
     const isElectron = typeof window !== "undefined" && !!(window as any).electronAPI;
     if (isElectron) {
       (window as any).electronAPI.getLauncherSettings().then((res: any) => {
-        setConfig(res);
+        if (res) {
+          setConfig(res);
+          if (res.debugOverlay !== undefined) {
+            setDebugOverlayEnabled(res.debugOverlay);
+            localStorage.setItem("loxx_debug_overlay", String(res.debugOverlay));
+          }
+          if (res.debugMock !== undefined) {
+            setDebugMockEnabled(res.debugMock);
+            localStorage.setItem("loxx_debug_use_mock", String(res.debugMock));
+          }
+        }
       });
     }
   }, []);

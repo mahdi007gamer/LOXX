@@ -93,9 +93,56 @@ export const DesktopOverlayWidget = () => {
 
     window.addEventListener("storage", handleStorageChange);
     window.addEventListener("loxx_overlay_fps_update", handleCustomFpsUpdate);
+
+    // Sync via Electron settings synchronization IPC channel
+    const api = (window as any).electronAPI;
+    let unsubscribeSettings: any = null;
+
+    const applyConfig = (config: any) => {
+      if (!config) return;
+      if (config.overlayPosition !== undefined) setLocalOverlayPos(config.overlayPosition);
+      if (config.overlaySize !== undefined) setLocalOverlaySize(config.overlaySize);
+      if (config.overlayMembersVisible !== undefined) setLocalMembersVisible(config.overlayMembersVisible);
+      if (config.overlayNormalOpacity !== undefined) setLocalNormalOpacity(config.overlayNormalOpacity);
+      if (config.overlaySpeakingOpacity !== undefined) setLocalSpeakingOpacity(config.overlaySpeakingOpacity);
+      if (config.overlayOnlyTalking !== undefined) setLocalOnlyTalking(config.overlayOnlyTalking);
+      if (config.showOverlayFps !== undefined) setLocalShowOverlayFps(config.showOverlayFps);
+      if (config.debugOverlay !== undefined) setShowDebugPanel(config.debugOverlay);
+      if (config.debugMock !== undefined) {
+        const useMock = config.debugMock;
+        setIsUsingMockPlayers(useMock);
+        if (useMock) {
+          setPlayers([
+            { userId: "mock1", username: "LoxxAdmin [DEBUG]", isSpeaking: true, isMuted: false },
+            { userId: "mock2", username: "Esports_God_IR", isSpeaking: false, isMuted: false },
+            { userId: "mock3", username: "Silent_Assassin", isSpeaking: false, isMuted: true },
+            { userId: "mock4", username: "Talking_Gamer", isSpeaking: true, isMuted: false }
+          ]);
+        } else {
+          if (api && api.getOverlayPlayers) {
+            api.getOverlayPlayers().then((p: any) => setPlayers(p || [])).catch(() => setPlayers([]));
+          } else {
+            setPlayers([]);
+          }
+        }
+      }
+    };
+
+    if (api) {
+      if (api.getLauncherSettings) {
+        api.getLauncherSettings().then(applyConfig).catch((err: any) => console.error(err));
+      }
+      if (api.onLauncherSettingsUpdate) {
+        unsubscribeSettings = api.onLauncherSettingsUpdate((cfg: any) => {
+          applyConfig(cfg);
+        });
+      }
+    }
+
     return () => {
       window.removeEventListener("storage", handleStorageChange);
       window.removeEventListener("loxx_overlay_fps_update", handleCustomFpsUpdate);
+      if (unsubscribeSettings) unsubscribeSettings();
     };
   }, []);
 
@@ -233,10 +280,13 @@ export const DesktopOverlayWidget = () => {
       if (api.onOverlayPlayersUpdate) {
         unsubscribePlayers = api.onOverlayPlayersUpdate((updatedPlayers: OverlayPlayer[]) => {
           console.log("Received updated players list from onOverlayPlayersUpdate IPC event:", updatedPlayers);
-          // Only update if not overridden by mock mode
-          if (localStorage.getItem("loxx_debug_use_mock") !== "true") {
-            setPlayers(updatedPlayers || []);
-          }
+          // Only update if not overridden by mock mode state or local storage
+          setIsUsingMockPlayers(currentMock => {
+            if (!currentMock && localStorage.getItem("loxx_debug_use_mock") !== "true") {
+              setPlayers(updatedPlayers || []);
+            }
+            return currentMock;
+          });
         });
       } else {
         console.warn("api.onOverlayPlayersUpdate is not defined on electronAPI");

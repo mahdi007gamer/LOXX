@@ -24,6 +24,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Setup options (Tray, Startup, Hardware Acceleration)
   updateLauncherSettings: (settings) => ipcRenderer.send('update-launcher-settings', settings),
   getLauncherSettings: () => ipcRenderer.invoke('get-launcher-settings'),
+  onLauncherSettingsUpdate: (callback) => {
+    const subscription = (event, config) => callback(config);
+    ipcRenderer.on('launcher-settings-update', subscription);
+    return () => ipcRenderer.removeListener('launcher-settings-update', subscription);
+  },
   
   // Transparent Overlay settings
   setTransparentOverlayActive: (active) => ipcRenderer.send('set-transparent-overlay-active', active),
