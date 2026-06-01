@@ -378,6 +378,7 @@ export const ElectronSettingsPage = () => {
                       </div>
 
                       {/* Debugging Panel / Simulation Toggles */}
+                      {import.meta.env.VITE_WINBUG === "true" && (
                       <div className={cn("grid grid-cols-1 md:grid-cols-2 gap-3.5 transition-opacity duration-300 border border-red-500/10 bg-red-500/5 p-3 rounded-xl", !overlayEnabled && "opacity-40 pointer-events-none")}>
                         <div className="flex items-center justify-between">
                           <div className="flex flex-col">
@@ -409,6 +410,7 @@ export const ElectronSettingsPage = () => {
                           </label>
                         </div>
                       </div>
+                      )}
 
                       {/* Sliders for Normal and Talking Opacity */}
                       <div className={cn("space-y-4 bg-black/35 p-3.5 rounded-xl border border-white/5 transition-all duration-300", (!overlayEnabled || !overlayMembersVisible) && "opacity-30 pointer-events-none scale-95 origin-top mb-1")}>

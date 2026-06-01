@@ -45,7 +45,7 @@ export const DesktopOverlayWidget = () => {
     return localStorage.getItem("loxx_debug_overlay") === "true";
   });
   const [isUsingMockPlayers, setIsUsingMockPlayers] = useState(() => {
-    return localStorage.getItem("loxx_debug_use_mock") === "true";
+    return import.meta.env.VITE_WINBUG === "true" && localStorage.getItem("loxx_debug_use_mock") === "true";
   });
 
   useEffect(() => {
@@ -109,7 +109,7 @@ export const DesktopOverlayWidget = () => {
       if (config.showOverlayFps !== undefined) setLocalShowOverlayFps(config.showOverlayFps);
       if (config.debugOverlay !== undefined) setShowDebugPanel(config.debugOverlay);
       if (config.debugMock !== undefined) {
-        const useMock = config.debugMock;
+        const useMock = import.meta.env.VITE_WINBUG === "true" && config.debugMock;
         setIsUsingMockPlayers(useMock);
         if (useMock) {
           setPlayers([
@@ -479,7 +479,7 @@ export const DesktopOverlayWidget = () => {
       )}
 
       {/* Advanced Diagnostics Overlay (Loxx Debug HUD) */}
-      {showDebugPanel && (
+      {import.meta.env.VITE_WINBUG === "true" && showDebugPanel && (
         <div 
           className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[92vw] max-w-[480px] bg-black/95 border-2 border-red-500/40 rounded-2xl shadow-[0_0_30px_rgba(239,68,68,0.3)] p-4 flex flex-col gap-3 font-sans pb-4 pointer-events-auto z-[999999] backdrop-blur-xl animate-fade-in"
           dir="rtl"
