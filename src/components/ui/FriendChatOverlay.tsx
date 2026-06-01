@@ -99,8 +99,11 @@ export const FriendChatOverlay = () => {
 
   useEffect(() => {
     let unsubscribe: any = null;
-    if (isOverlayWidget && (window as any).electronAPI?.onOverlayInteractionMode) {
+    console.log("FriendChatOverlay 100", { isOverlayWidget, api: (window as any).electronAPI });
+    if ((window as any).electronAPI?.onOverlayInteractionMode) {
+      console.log("FriendChatOverlay: Subscribing to onOverlayInteractionMode");
       unsubscribe = (window as any).electronAPI.onOverlayInteractionMode((interactive: boolean) => {
+        console.log("FriendChatOverlay: Event received. Setting isOverlayInteractive to", interactive);
         setIsOverlayInteractive(interactive);
       });
     }
@@ -500,11 +503,11 @@ export const FriendChatOverlay = () => {
 
             {/* Friends list scrollable */}
             <div className="flex-1 overflow-y-auto p-2 space-y-1.5 custom-scrollbar">
-              {friends.filter(f => f.displayName.toLowerCase().includes(friendSearch.toLowerCase())).length === 0 ? (
+              {friends.filter(f => (f.displayName || f.username || "").toLowerCase().includes(friendSearch.toLowerCase())).length === 0 ? (
                 <div className="text-center py-8 text-gray-500 text-xs font-bold">هیچ دوستی یافت نشد</div>
               ) : (
                 friends
-                  .filter(f => f.displayName.toLowerCase().includes(friendSearch.toLowerCase()))
+                  .filter(f => (f.displayName || f.username || "").toLowerCase().includes(friendSearch.toLowerCase()))
                   .sort((a, b) => {
                     // Sort by status activity (ONLINE/IN_GAME/IN_LOBBY first)
                     const statusVal = (status: FriendStatus) => {
