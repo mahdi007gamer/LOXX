@@ -204,7 +204,7 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
                         <Mic size={10} /> {isRtl ? "میکروفون" : "Mic"}
                       </div>
                    )}
-                   {false && (
+                   {formData.discordRequired && (
                       <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-[#5865F2]/10 border border-[#5865F2]/20 text-[10px] font-black text-[#5865F2]">
                         <svg width="10" height="10" viewBox="0 0 127.14 96.36" fill="currentColor"><path d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.7,77.7,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1A105.25,105.25,0,0,0,126.6,80.22h0C129.24,52.84,122.09,29.11,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53s5-12.74,11.43-12.74S54,46,53.89,53,48.84,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.31,60,73.31,53s5-12.74,11.43-12.74S96.2,46,96.1,53,91.08,65.69,84.69,65.69Z"/></svg>
                         {isRtl ? "دیسکورد" : "Discord"}
@@ -487,6 +487,15 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
                          {isRtl ? "ارتباط صوتی در طول بازی" : "Voice communications during game"}
                        </span>
                     </button>
+                    <button type="button" onClick={() => setFormData(p => ({...p, discordRequired: !p.discordRequired}))} className={`border rounded-2xl p-4 flex flex-col items-center justify-center gap-2 transition-all ${formData.discordRequired ? "border-white/20 bg-white/5 text-white" : "border-white/5 bg-[#16181c] text-gray-500 hover:border-white/10"}`}>
+                       <svg width="20" height="20" viewBox="0 0 127.14 96.36" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className={formData.discordRequired ? "text-[#5865F2]" : ""}><path d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.7,77.7,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1A105.25,105.25,0,0,0,126.6,80.22h0C129.24,52.84,122.09,29.11,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53s5-12.74,11.43-12.74S54,46,53.89,53,48.84,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.31,60,73.31,53s5-12.74,11.43-12.74S96.2,46,96.1,53,91.08,65.69,84.69,65.69Z"/></svg>
+                       <span className="font-bold text-sm text-white">
+                         {isRtl ? "دیسکورد اجباری" : "Discord Required"}
+                       </span>
+                       <span className="text-[10px]">
+                         {isRtl ? "اتصال به ویس چنل دیسکورد" : "Connect to Discord voice channel"}
+                       </span>
+                    </button>
                     <button type="button" onClick={() => setFormData(p => ({...p, ageRestricted: !p.ageRestricted}))} className={`border rounded-2xl p-4 flex flex-col items-center justify-center gap-2 transition-all ${formData.ageRestricted ? "border-white/20 bg-white/5 text-red-500" : "border-white/5 bg-[#16181c] text-gray-500 hover:border-white/10"}`}>
                        <span className={`text-xl font-black ${formData.ageRestricted ? "text-red-500" : ""}`}>+18</span>
                        <span className={`font-bold text-sm text-white`}>
@@ -496,6 +505,44 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
                          {isRtl ? "فقط بازیکنان بالای 18 سال" : "Only players 18 years or older"}
                        </span>
                     </button>
+                  </div>
+
+                  <div className="bg-[#16181c] border border-white/5 rounded-2xl p-5 mt-6">
+                    <div className={`flex items-center gap-2 mb-4 ${isRtl ? "justify-end" : "justify-start"}`}>
+                       {isRtl ? (
+                         <>
+                           <span className="text-xs font-bold text-neon-blue">تنظیمات خودکار</span>
+                           <Settings2 size={16} className="text-neon-blue" />
+                         </>
+                       ) : (
+                         <>
+                           <Settings2 size={16} className="text-neon-blue" />
+                           <span className="text-xs font-bold text-neon-blue">Automation Settings</span>
+                         </>
+                       )}
+                    </div>
+                    
+                    <div className={`flex flex-wrap items-center gap-6 text-sm ${isRtl ? "justify-end" : "justify-start"}`}>
+                       <label className={`flex items-center gap-2 cursor-pointer group ${isRtl ? "flex-row" : "flex-row-reverse"}`}>
+                          <span className="text-xs text-gray-400 group-hover:text-white transition-colors">
+                            {isRtl ? "بستن لابی پس از تکمیل ظرفیت" : "Close lobby when full capacity is reached"}
+                          </span>
+                          <div className={`h-5 w-5 rounded flex items-center justify-center transition-all ${formData.autoClose ? 'bg-neon-blue text-dark-bg' : 'bg-white/10 text-transparent'}`}>
+                             <Check size={14} />
+                          </div>
+                          <input type="checkbox" className="hidden" checked={formData.autoClose} onChange={() => setFormData(p => ({...p, autoClose: !p.autoClose}))} />
+                       </label>
+                       
+                       <label className={`flex items-center gap-2 cursor-pointer group ${isRtl ? "flex-row" : "flex-row-reverse"}`}>
+                          <span className="text-xs text-gray-400 group-hover:text-white transition-colors">
+                            {isRtl ? "آرشیو خودکار پس از ۱ ساعت" : "Auto-archive lobby after 1 hour"}
+                          </span>
+                          <div className={`h-5 w-5 rounded flex items-center justify-center transition-all ${formData.autoArchive ? 'bg-neon-blue text-dark-bg' : 'bg-white/10 text-transparent'}`}>
+                             <Check size={14} />
+                          </div>
+                          <input type="checkbox" className="hidden" checked={formData.autoArchive} onChange={() => setFormData(p => ({...p, autoArchive: !p.autoArchive}))} />
+                       </label>
+                    </div>
                   </div>
 
                 </motion.div>

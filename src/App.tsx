@@ -144,6 +144,21 @@ const AppContent = () => {
     return true;
   });
 
+  const [isOverlayInteractive, setIsOverlayInteractive] = useState(false);
+
+  useEffect(() => {
+    if (!isElectron || !isOverlayWidget) return;
+    const api = (window as any).electronAPI;
+    if (api && api.onOverlayInteractionMode) {
+      const unsubscribe = api.onOverlayInteractionMode((interactive: boolean) => {
+        setIsOverlayInteractive(interactive);
+      });
+      return () => {
+        if (unsubscribe) unsubscribe();
+      };
+    }
+  }, [isElectron, isOverlayWidget]);
+
   useEffect(() => {
     if (!isElectron || isOverlayWidget) return;
     const api = (window as any).electronAPI;

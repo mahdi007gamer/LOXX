@@ -61,7 +61,7 @@ interface LobbyState {
 
 interface LobbyContextType {
   lobby: LobbyState | null;
-  joinLobby: (lobbyId: string, isInvite?: boolean) => void;
+  joinLobby: (lobbyId: string) => void;
   leaveLobby: () => void;
   toggleReady: () => void;
   setLobbyMuted: (muted: boolean) => void;
@@ -1159,12 +1159,12 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [isJoining, setIsJoining] = useState<string | null>(null);
   const [joinError, setJoinError] = useState<string | null>(null);
 
-  const joinLobby = (lobbyId: string, isInvite = false) => {
+  const joinLobby = (lobbyId: string) => {
     if (lobby?.id === lobbyId || isJoining === lobbyId) return;
     
     setIsJoining(lobbyId);
     setJoinError(null);
-    lobbySocket.emit("lobby.join", { lobbyId, isInvite }, (ack: any) => {
+    lobbySocket.emit("lobby.join", { lobbyId }, (ack: any) => {
       setIsJoining(null);
       if (ack?.status === "ok") {
         setJoinError(null);
