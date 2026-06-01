@@ -50,6 +50,8 @@ export const ElectronSettingsPage = () => {
   // State for Titlebar FPS
   const [showTitlebarFps, setShowTitlebarFps] = useState(() => localStorage.getItem("loxx_show_titlebar_fps") === "true");
   const [showOverlayFps, setShowOverlayFps] = useState(() => localStorage.getItem("loxx_show_overlay_fps") !== "false");
+  const [debugOverlayEnabled, setDebugOverlayEnabled] = useState(() => localStorage.getItem("loxx_debug_overlay") === "true");
+  const [debugMockEnabled, setDebugMockEnabled] = useState(() => localStorage.getItem("loxx_debug_use_mock") === "true");
 
   const toggleOverlayFps = (enabled: boolean) => {
     setShowOverlayFps(enabled);
@@ -60,6 +62,28 @@ export const ElectronSettingsPage = () => {
       isRtl 
         ? (enabled ? "نمایش FPS مانیتور روی اورلی فعال شد." : "نمایش FPS مانیتور روی اورلی غیرفعال شد.") 
         : (enabled ? "Display FPS display enabled on transparent overlay." : "Display FPS display disabled on transparent overlay.")
+    );
+  };
+
+  const toggleDebugOverlay = (enabled: boolean) => {
+    setDebugOverlayEnabled(enabled);
+    localStorage.setItem("loxx_debug_overlay", String(enabled));
+    window.dispatchEvent(new Event("storage"));
+    toast.success(
+      isRtl
+        ? (enabled ? "پنل عیب‌یابی اورلی فعال شد." : "پنل عیب‌یابی اورلی غیرفعال شد.")
+        : (enabled ? "Overlay debug panel enabled." : "Overlay debug panel disabled.")
+    );
+  };
+
+  const toggleDebugMock = (enabled: boolean) => {
+    setDebugMockEnabled(enabled);
+    localStorage.setItem("loxx_debug_use_mock", String(enabled));
+    window.dispatchEvent(new Event("storage"));
+    toast.success(
+      isRtl
+        ? (enabled ? "شبیه‌ساز وضعیت اعضای اورلی فعال شد." : "شبیه‌ساز وضعیت اعضای اورلی غیرفعال شد.")
+        : (enabled ? "Overlay player simulation activated." : "Overlay player simulation deactivated.")
     );
   };
 
@@ -339,6 +363,39 @@ export const ElectronSettingsPage = () => {
                             <input type="checkbox" className="sr-only peer" checked={showOverlayFps} onChange={(e) => toggleOverlayFps(e.target.checked)} />
                             <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#00e5ff]"></div>
                           </label>
+                      </div>
+
+                      {/* Debugging Panel / Simulation Toggles */}
+                      <div className={cn("grid grid-cols-1 md:grid-cols-2 gap-3.5 transition-opacity duration-300 border border-red-500/10 bg-red-500/5 p-3 rounded-xl", !overlayEnabled && "opacity-40 pointer-events-none")}>
+                        <div className="flex items-center justify-between">
+                          <div className="flex flex-col">
+                            <span className="text-[11px] font-black text-rose-400 uppercase tracking-wide">
+                              {isRtl ? "فعال‌سازی پنل عیب‌یابی (Debug HUD)" : "Enable Debug HUD Overlay"}
+                            </span>
+                            <span className="text-[9px] text-gray-400 leading-normal mt-0.5 max-w-[190px]">
+                              {isRtl ? "نمایش همزمان وضعیت‌ها، دکمه‌های کنترل و خطاها روی اورلی شفاف" : "Display real-time states, window logs & overlays debug cards on transparency overlay layout."}
+                            </span>
+                          </div>
+                          <label className="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" className="sr-only peer" checked={debugOverlayEnabled} onChange={(e) => toggleDebugOverlay(e.target.checked)} />
+                            <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-rose-500"></div>
+                          </label>
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                          <div className="flex flex-col">
+                            <span className="text-[11px] font-black text-rose-400 uppercase tracking-wide">
+                              {isRtl ? "شبیه‌ساز اعضای تستی (Mock Members)" : "Mock Players Simulation"}
+                            </span>
+                            <span className="text-[9px] text-gray-400 leading-normal mt-0.5 max-w-[190px]">
+                              {isRtl ? "بارگذاری ۴ بازیکن فرضی (سخنگو و بی‌صدا) برای تست ظاهر اورلی" : "Force-load 4 simulation mock teammates on the overlay window to test visual style."}
+                            </span>
+                          </div>
+                          <label className="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" className="sr-only peer" checked={debugMockEnabled} onChange={(e) => toggleDebugMock(e.target.checked)} />
+                            <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-rose-500"></div>
+                          </label>
+                        </div>
                       </div>
 
                       {/* Sliders for Normal and Talking Opacity */}

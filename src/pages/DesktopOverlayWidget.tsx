@@ -42,9 +42,11 @@ export const DesktopOverlayWidget = () => {
   // Debug Panel States
   const [debugLogs, setDebugLogs] = useState<string[]>([]);
   const [showDebugPanel, setShowDebugPanel] = useState(() => {
-    return localStorage.getItem("loxx_debug_overlay") === "true" || import.meta.env.VITE_WINBUG === "true";
+    return localStorage.getItem("loxx_debug_overlay") === "true";
   });
-  const [isUsingMockPlayers, setIsUsingMockPlayers] = useState(false);
+  const [isUsingMockPlayers, setIsUsingMockPlayers] = useState(() => {
+    return localStorage.getItem("loxx_debug_use_mock") === "true";
+  });
 
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
@@ -62,6 +64,26 @@ export const DesktopOverlayWidget = () => {
         setLocalOnlyTalking(e.newValue === "true");
       } else if (e.key === "loxx_show_overlay_fps" && e.newValue) {
         setLocalShowOverlayFps(e.newValue !== "false");
+      } else if (e.key === "loxx_debug_overlay") {
+        setShowDebugPanel(e.newValue === "true");
+      } else if (e.key === "loxx_debug_use_mock") {
+        const useMock = e.newValue === "true";
+        setIsUsingMockPlayers(useMock);
+        if (useMock) {
+          setPlayers([
+            { userId: "mock1", username: "LoxxAdmin [DEBUG]", isSpeaking: true, isMuted: false },
+            { userId: "mock2", username: "Esports_God_IR", isSpeaking: false, isMuted: false },
+            { userId: "mock3", username: "Silent_Assassin", isSpeaking: false, isMuted: true },
+            { userId: "mock4", username: "Talking_Gamer", isSpeaking: true, isMuted: false }
+          ]);
+        } else {
+          const api = (window as any).electronAPI;
+          if (api && api.getOverlayPlayers) {
+            api.getOverlayPlayers().then((p: any) => setPlayers(p || [])).catch(() => setPlayers([]));
+          } else {
+            setPlayers([]);
+          }
+        }
       }
     };
     
@@ -448,8 +470,8 @@ export const DesktopOverlayWidget = () => {
               <span className="font-bold text-white font-mono">{players.length} نفر</span>
             </div>
             <div className="flex flex-col gap-1 mt-1">
-              <span className="text-gray-400">نسخه ویژه باگ‌یاب (VITE_WINBUG):</span>
-              <span className="font-bold text-emerald-400 font-mono">فعال (TRUE)</span>
+              <span className="text-gray-400">کلاینت عیب‌یاب تستی:</span>
+              <span className="font-bold text-emerald-400 font-mono">طراحی شده (STORAGE SYNC)</span>
             </div>
           </div>
 
