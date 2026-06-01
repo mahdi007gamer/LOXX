@@ -26,6 +26,20 @@ export const DiscordOverlayHUD = () => {
 
   // Sync real-time FPS calculation loop
   const [overlayFps, setOverlayFps] = useState(60);
+  const [showOverlayFps, setShowOverlayFps] = useState(() => localStorage.getItem("loxx_show_overlay_fps") !== "false");
+
+  useEffect(() => {
+    const handleStorage = () => {
+      setShowOverlayFps(localStorage.getItem("loxx_show_overlay_fps") !== "false");
+    };
+    window.addEventListener("storage", handleStorage);
+    window.addEventListener("loxx_overlay_fps_update", handleStorage);
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+      window.removeEventListener("loxx_overlay_fps_update", handleStorage);
+    };
+  }, []);
+
   useEffect(() => {
     let lastTime = performance.now();
     let frames = 0;
@@ -194,7 +208,7 @@ export const DiscordOverlayHUD = () => {
       </div>
 
       {/* Real-time FPS Overlay Box (Opposite Corner) */}
-      {lobby.players && lobby.players.length > 0 && (
+      {showOverlayFps && lobby.players && lobby.players.length > 0 && (
         <div className={cn("fixed z-[9999] flex flex-col pointer-events-none select-none transition-all duration-300", fpsPositionClasses)} style={{ opacity: normalOpacityVal }}>
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#0a0f18]/90 border border-[#00e5ff]/20 backdrop-blur-md shadow-lg shadow-black/40">
             <span className="h-1.5 w-1.5 bg-emerald-400 rounded-full animate-pulse" />

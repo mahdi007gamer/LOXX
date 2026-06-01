@@ -338,14 +338,30 @@ export function setupWebSockets(io: Server) {
       return lobby;
     };
 
-    socket.on("lobby.join", async (data: { lobbyId: string, password?: string }, ack) => {
-      const { lobbyId, password } = data;
+    socket.on("lobby.join", async (data: { lobbyId: string, password?: string, isInvite?: boolean }, ack) => {
+      const { lobbyId, password, isInvite } = data;
       if (!userId) return ack?.({ status: "error", error: { message: "Unauthorized" } });
       
       try {
         const penalty = await PenaltyService.checkPenalty(userId, ["LOBBY_BAN"]);
         if (penalty.isBanned) {
           throw new Error("شما از ساخت و ورود به لابی محروم هستید.");
+        }
+
+        // Check if the user is local-banned from joining this specific lobby
+        const isLobbyBanned = await prisma.lobbyBan.findFirst({
+          where: { lobbyId, userId }
+        });
+
+        if (isLobbyBanned) {
+          if (isInvite) {
+            // Remove the ban since they entered via a direct invite link!
+            await prisma.lobbyBan.deleteMany({
+              where: { lobbyId, userId }
+            });
+          } else {
+            throw new Error("شما از این لابی مسدود شده‌اید و بدون لینک دعوت امکان ورود مجدد وجود ندارد.");
+          }
         }
 
         const lobby = await prisma.lobby.findUnique({

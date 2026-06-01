@@ -36,6 +36,7 @@ export const DesktopOverlayWidget = () => {
     return val !== null ? parseFloat(val) : 1.0;
   });
   const [localOnlyTalking, setLocalOnlyTalking] = useState(() => localStorage.getItem("loxx_overlay_only_talking") === "true");
+  const [localShowOverlayFps, setLocalShowOverlayFps] = useState(() => localStorage.getItem("loxx_show_overlay_fps") !== "false");
 
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
@@ -51,10 +52,19 @@ export const DesktopOverlayWidget = () => {
         setLocalSpeakingOpacity(parseFloat(e.newValue));
       } else if (e.key === "loxx_overlay_only_talking" && e.newValue) {
         setLocalOnlyTalking(e.newValue === "true");
+      } else if (e.key === "loxx_show_overlay_fps" && e.newValue) {
+        setLocalShowOverlayFps(e.newValue !== "false");
       }
     };
+    const handleCustomFpsUpdate = () => {
+      setLocalShowOverlayFps(localStorage.getItem("loxx_show_overlay_fps") !== "false");
+    };
     window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
+    window.addEventListener("loxx_overlay_fps_update", handleCustomFpsUpdate);
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("loxx_overlay_fps_update", handleCustomFpsUpdate);
+    };
   }, []);
 
   // Sync local real-time FPS calculation loop
@@ -305,7 +315,7 @@ export const DesktopOverlayWidget = () => {
       </div>
 
       {/* Real-time FPS Overlay Box (Opposite Corner) */}
-      {membersVisibleVal && players && players.length > 0 && (
+      {localShowOverlayFps && membersVisibleVal && players && players.length > 0 && (
         <div className={cn("fixed z-[9999] flex flex-col pointer-events-none select-none transition-all duration-300", fpsPositionClasses)} style={{ opacity: normalOpacityVal }}>
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#0a0f18]/90 border border-[#00e5ff]/20 backdrop-blur-md shadow-lg shadow-black/40">
             <span className="h-1.5 w-1.5 bg-emerald-400 rounded-full animate-pulse" />

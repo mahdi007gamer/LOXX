@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { useLobby } from "../context/LobbyContext";
 import { useAuth } from "../context/AuthContext";
@@ -95,6 +95,7 @@ interface Message {
 export const LobbyRoomPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { 
     lobby, 
     joinLobby,
@@ -294,14 +295,15 @@ export const LobbyRoomPage = () => {
   // Join lobby on mount
   useEffect(() => {
     if (id) {
-       joinLobby(id);
+       const isInvite = location.search.includes("invite=true");
+       joinLobby(id, isInvite);
     }
     // Collapse right sidebar by default only on initial enter/mount
     if (!hasCollapsedOnMount.current) {
        setIsSidebarCollapsed(true);
        hasCollapsedOnMount.current = true;
     }
-  }, [id, setIsSidebarCollapsed]);
+  }, [id, setIsSidebarCollapsed, location.search]);
 
   // Redirect if lobby becomes null (e.g., closed by host) or if joining fails
   const [countdown, setCountdown] = useState(5);
@@ -400,9 +402,11 @@ export const LobbyRoomPage = () => {
   const [inputMessage, setInputMessage] = useState("");
 
   const handleCopyCode = () => {
-    navigator.clipboard.writeText(lobby?.id || "LX-LOBBY");
+    const inviteLink = `${window.location.origin}/lobby/${lobby?.id || "LX-LOBBY"}?invite=true`;
+    navigator.clipboard.writeText(inviteLink);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+    toast.success(isRtl ? "لینک دعوت به کلیپ‌بورد کپی شد!" : "Invite link copied to clipboard!");
   };
 
   const handleSendMessage = (e: React.FormEvent) => {
@@ -1649,6 +1653,8 @@ function DiscordLayoutPlayerCard({
   const { language } = useLanguage();
   const isRtl = language === "fa";
   const isSlot = player.name === "Empty Slot";
+  const { user } = useAuth();
+  const isMe = user?.id === player.id;
   return (
     <motion.div
       layout
@@ -1706,10 +1712,16 @@ function DiscordLayoutPlayerCard({
                     />
                   </div>
 
-                  <div className="flex items-center justify-center gap-2">
+                  <div className="flex items-center justify-center gap-1.5 flex-wrap">
                      <QuickAction icon={<Users size={14} />} tooltip={isRtl ? "پروفایل" : "Profile"} onClick={() => onProfile(player.id)} />
                      <QuickAction icon={<MessageSquare size={14} />} tooltip={isRtl ? "پیام" : "Message"} onClick={() => onDirectMessage(player.id)} />
                      <QuickAction icon={player.isMuted ? <Mic size={14} /> : <MicOff size={14} />} tooltip={isRtl ? "صدا" : "Voice"} onClick={() => onMute(player.id)} />
+                     {isHostView && !isMe && (
+                       <>
+                         <QuickAction icon={<ShieldAlert size={14} />} tooltip={isRtl ? "اخراج" : "Kick"} onClick={() => onKick?.(player.id)} color="pink" />
+                         <QuickAction icon={<Gavel size={14} />} tooltip={isRtl ? "مسدود سازی" : "Ban"} onClick={() => onBan?.(player.id)} color="pink" />
+                       </>
+                     )}
                   </div>
                 </div>
               </div>
@@ -1730,6 +1742,8 @@ function CompactLayoutPlayerCard({
   const { language } = useLanguage();
   const isRtl = language === "fa";
   const isSlot = player.name === "Empty Slot";
+  const { user } = useAuth();
+  const isMe = user?.id === player.id;
   return (
     <motion.div
       layout
@@ -1778,10 +1792,16 @@ function CompactLayoutPlayerCard({
                     className="w-full h-1.5 bg-white/10 rounded-lg appearance-none accent-neon-blue"
                   />
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex items-center gap-1.5 shrink-0">
                    <QuickAction icon={<Users size={14} />} tooltip={isRtl ? "پروفایل" : "Profile"} onClick={() => onProfile(player.id)} />
                    <QuickAction icon={<MessageSquare size={14} />} tooltip={isRtl ? "پیام" : "Message"} onClick={() => onDirectMessage(player.id)} />
                    <QuickAction icon={player.isMuted ? <Mic size={14} /> : <MicOff size={14} />} tooltip={isRtl ? "صدا" : "Voice"} onClick={() => onMute(player.id)} />
+                   {isHostView && !isMe && (
+                     <>
+                       <QuickAction icon={<ShieldAlert size={14} />} tooltip={isRtl ? "اخراج" : "Kick"} onClick={() => onKick?.(player.id)} color="pink" />
+                       <QuickAction icon={<Gavel size={14} />} tooltip={isRtl ? "مسدود سازی" : "Ban"} onClick={() => onBan?.(player.id)} color="pink" />
+                     </>
+                   )}
                 </div>
              </div>
           )}
