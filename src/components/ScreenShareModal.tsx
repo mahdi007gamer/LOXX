@@ -91,10 +91,10 @@ export const ScreenShareModal = ({
 
  return (
  <Modal isOpen={isOpen} title={t("betaShieldTitle")} onClose={onClose} maxWidth="max-w-2xl">
- <div className={cn("space-y-5 text-gray-200", isRtl ? "text-right font-sans" : "text-left font-sans")} dir={isRtl ? "rtl" : "ltr"}>
+ <div className={cn("space-y-3 text-gray-200", isRtl ? "text-right font-sans" : "text-left font-sans")} dir={isRtl ? "rtl" : "ltr"}>
  
  {/* Banner with Beta version details and upcoming optimization features explanation */}
- <div className="bg-gradient-to-r from-orange-500/10 to-transparent border border-orange-500/20 rounded-2xl p-4 relative overflow-hidden">
+ <div className="bg-gradient-to-r from-orange-500/10 to-transparent border border-orange-500/20 rounded-2xl p-3 relative overflow-hidden">
  <div className="absolute top-0 left-0 w-24 h-24 bg-orange-500/5 rounded-br-full -ml-8 -mt-8 blur-xl pointer-events-none" />
  <div className="flex gap-3 items-start relative z-10">
  <span className="p-2.5 bg-orange-500/15 text-orange-400 rounded-xl border border-orange-500/20 font-extrabold text-xs shrink-0 self-center animate-pulse">
@@ -169,7 +169,7 @@ export const ScreenShareModal = ({
  </div>
 
  {/* Selector Grid */}
- <div className="space-y-2">
+ <div className="space-y-1">
  <label className="text-[11px] font-bold text-gray-400 uppercase block mr-1">
  {isRtl ? "گزینه‌های انتخاب هوشمند کیفیت پخش (بدون دکمه‌های غیرفعال)" : "Smart Screen Share Resolution Quality options"}
  </label>
@@ -205,7 +205,7 @@ export const ScreenShareModal = ({
  setSelectedQuality(q);
  }}
  className={cn(
- "relative p-4 rounded-xl border transition-all duration-300 text-left flex flex-col justify-between overflow-hidden group cursor-pointer",
+ "relative p-3 rounded-xl border transition-all duration-300 text-left flex flex-col justify-between overflow-hidden group cursor-pointer",
  isPlanLocked 
  ? "bg-black/50 border-red-500/10 opacity-65 cursor-not-allowed" 
  : "bg-white/5 border-white/5 hover:bg-white/10",

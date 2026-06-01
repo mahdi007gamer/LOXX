@@ -483,7 +483,32 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
  }
  }, []);
 
- // Sync PTT status and speaking indicator to Electron
+ 
+  // Sync overlay settings across electron windows in real-time via storage events
+  useEffect(() => {
+    const handleStorage = (e) => {
+      if (e.key === "loxx_overlay_members_visible" && e.newValue !== null) {
+        setOverlayMembersVisible(e.newValue === "true");
+      } else if (e.key === "loxx_overlay_normal_opacity" && e.newValue !== null) {
+        setOverlayNormalOpacity(parseFloat(e.newValue));
+      } else if (e.key === "loxx_overlay_speaking_opacity" && e.newValue !== null) {
+        setOverlaySpeakingOpacity(parseFloat(e.newValue));
+      } else if (e.key === "loxx_overlay_position" && e.newValue !== null) {
+        setOverlayPosition(e.newValue);
+      } else if (e.key === "loxx_overlay_size" && e.newValue !== null) {
+        setOverlaySize(e.newValue);
+      } else if (e.key === "loxx_overlay_only_talking" && e.newValue !== null) {
+        setOverlayOnlyTalking(e.newValue === "true");
+      }
+    };
+    if (typeof window !== "undefined") {
+      window.addEventListener("storage", handleStorage);
+      return () => window.removeEventListener("storage", handleStorage);
+    }
+  }, []);
+
+
+  // Sync PTT status and speaking indicator to Electron
  useEffect(() => {
  if (isElectron) {
  const api = (window as any).electronAPI;

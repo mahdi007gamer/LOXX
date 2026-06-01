@@ -7,7 +7,25 @@ export const ElectronTitlebar = () => {
  const isRtl = language === "fa";
  const isElectron = typeof window !== "undefined" && !!(window as any).electronAPI;
  const [isMaximized, setIsMaximized] = useState(false);
- const [fps, setFps] = useState<number>(60);
+   const [fps, setFps] = useState<number>(60);
+  const [showFps, setShowFps] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("loxx_show_fps") === "true";
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === "loxx_show_fps" && e.newValue !== null) {
+        setShowFps(e.newValue === "true");
+      }
+    };
+    if (typeof window !== "undefined") {
+      window.addEventListener("storage", handleStorage);
+      return () => window.removeEventListener("storage", handleStorage);
+    }
+  }, []);
 
  useEffect(() => {
  let lastTime = performance.now();
