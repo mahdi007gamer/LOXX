@@ -108,17 +108,22 @@ export const useWebRTC = (roomId: string | null, localStream: MediaStream | null
    console.log(`WebRTC: Received track ${event.track.kind} (${event.track.id}) from user ${targetUserId}`);
    setRemoteStreams((prev) => {
     const map = new Map<string, MediaStream>(prev);
-    let stream = map.get(targetUserId);
+    const existingStream = map.get(targetUserId);
     
-    if (!stream) {
-     stream = new MediaStream();
-     map.set(targetUserId, stream);
+    // Retrieve tracks from the existing stream if it exists
+    const tracks = existingStream ? existingStream.getTracks() : [];
+    
+    // Only add if not already present
+    if (!tracks.some((t) => t.id === event.track.id)) {
+     tracks.push(event.track);
+     console.log(`WebRTC: Track ${event.track.id} added to candidates for ${targetUserId}`);
     }
     
-    if (!stream.getTracks().some((t) => t.id === event.track.id)) {
-     stream.addTrack(event.track);
-     console.log(`WebRTC: Added track ${event.track.id} to persistent remote stream for ${targetUserId}`);
-    }
+    // Always build a BRAND NEW MediaStream reference with all current tracks
+    // This forces downstream hooks and elements (e.g. RemoteAudioPlayer and audio ref) to perceive a true reference change!
+    const newStream = new MediaStream(tracks);
+    map.set(targetUserId, newStream);
+    console.log(`WebRTC: Recreated stream for ${targetUserId} with ${tracks.length} tracks.`);
 
     // Auto-clean on ended
     event.track.onended = () => {
@@ -127,14 +132,19 @@ export const useWebRTC = (roomId: string | null, localStream: MediaStream | null
       const nextMap = new Map<string, MediaStream>(current);
       const s = nextMap.get(targetUserId);
       if (s) {
-       s.removeTrack(event.track);
-       return new Map<string, MediaStream>(nextMap);
+       const remainingTracks = s.getTracks().filter(t => t.id !== event.track.id);
+       if (remainingTracks.length === 0) {
+        nextMap.delete(targetUserId);
+       } else {
+        nextMap.set(targetUserId, new MediaStream(remainingTracks));
+       }
+       return nextMap;
       }
       return current;
      });
     };
 
-    return new Map(map);
+    return map;
    });
   };
 
