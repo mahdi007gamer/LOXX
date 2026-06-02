@@ -10,7 +10,7 @@ export const DownloadPage = () => {
  const [downloadStep, setDownloadStep] = useState<
  "connecting" | "probing" | "downloading" | "completed" | "bypassed" | "failed"
  >("connecting");
- const [activeStepText, setActiveStepText] = useState("در حال برقراری اتصال امن با سرورهای مرکزی لوکس...");
+ const [activeStepText, setActiveStepText] = useState("آماده دانلود اختصاصی از سرور ابری. برای شروع روی دکمه کلیک کنید.");
  const [resolvedUrl, setResolvedUrl] = useState("https://loxx.ir/updater/loxx-Setup-1.1.0.exe");
  const [fileName, setFileName] = useState("loxx-Setup-1.1.0.exe");
  const [sha256, setSha256] = useState("f67d82ea129f109033ba20d2a8b3014c2b740ef82c5a044d014902b3df");
@@ -329,7 +329,7 @@ export const DownloadPage = () => {
  ({formatMegaBytes(downloadedBytes)} از {formatMegaBytes(totalBytes)})
  </span>
  )}
- <span className="font-mono text-sm font-black text-white">{progress}%</span>
+ {downloadStep !== "idle" && <span className="font-mono text-sm font-black text-white">{progress}%</span>}
  </div>
  </div>
 
@@ -355,59 +355,83 @@ export const DownloadPage = () => {
  </div>
 
  {/* Action buttons area */}
- <AnimatePresence mode="wait">
- {downloadStep === "completed" || downloadStep === "bypassed" ? (
- <motion.div
- initial={{ opacity: 0, y: 10 }}
- animate={{ opacity: 1, y: 0 }}
- exit={{ opacity: 0, y: -10 }}
- className="flex flex-col items-center gap-4 animate-fade-in"
- >
- <p className="text-xs font-bold text-emerald-400/90 flex items-center gap-1.5">
- <CheckCircle size={14} />
- {downloadStep === "bypassed" 
- ? "پروسه بافر لغو شد. بلافاصله پنجره ذخیره مستقیم کلاینت برای شما گشوده شد."
- : "دانلود به طور کامل انجام شد. در صورتی که پنجره ذخیره باز نشد روی دکمه زیر صدمه بزنید."}
- </p>
- <button
- onClick={() => {
- triggerNativeDownload(resolvedUrl, fileName);
- }}
- className={`w-full sm:w-auto px-8 py-4 rounded-xl text-dark-bg font-black text-base shadow-lg transition-all cursor-pointer flex items-center justify-center gap-2 ${
- downloadStep === "bypassed"
- ? "bg-gradient-to-r from-amber-500 to-yellow-400 shadow-[0_10px_30px_rgba(245,158,11,0.3)] hover:shadow-[0_15px_40px_rgba(245,158,11,0.5)]"
- : "bg-gradient-to-r from-emerald-500 to-teal-400 shadow-[0_10px_30px_rgba(16,185,129,0.3)] hover:shadow-[0_15px_40px_rgba(16,185,129,0.5)]"
- }`}
- >
- <Download size={20} />
- شروع دانلود مجدد با لینک پرسرعت
- </button>
- </motion.div>
- ) : (
- <motion.div
- initial={{ opacity: 0 }}
- animate={{ opacity: 1 }}
- className="flex flex-col sm:flex-row justify-center gap-4 items-center"
- >
- {/* Manual Bypass Button */}
- <button
- onClick={handleBypassBuffer}
- className="w-full sm:w-auto px-6 py-3.5 rounded-xl border border-neon-blue/30 bg-neon-blue/5 hover:bg-neon-blue/15 text-white font-bold text-sm transition-all flex items-center justify-center gap-2 group cursor-pointer animate-pulse"
- >
- <Download size={18} className="text-neon-blue group-hover:translate-y-0.5 transition-transform" />
- <span>لغو بافر اینترنتی و دانلود مستقیم فوری</span>
- </button>
+            <AnimatePresence mode="wait">
+              {downloadStep === "idle" ? (
+                 <motion.div
+                   key="idle-btn"
+                   initial={{ opacity: 0, y: 10 }}
+                   animate={{ opacity: 1, y: 0 }}
+                   exit={{ opacity: 0, scale: 0.95 }}
+                   className="flex justify-center mt-6 animate-pulse"
+                 >
+                    <button
+                       onClick={(e) => {
+                          e.preventDefault();
+                          if (!downloadAttemptedRef.current) {
+                             downloadAttemptedRef.current = true;
+                             runDownloadPipeline();
+                          }
+                       }}
+                       className="w-full sm:w-auto px-10 py-5 rounded-2xl font-black text-lg shadow-lg transition-all cursor-pointer flex items-center justify-center gap-3 bg-neon-blue text-dark-bg hover:shadow-[0_15px_40px_rgba(0,229,255,0.4)] hover:scale-105"
+                    >
+                       <Download size={24} />
+                       بافر فعال ابری (شروع دانلود)
+                    </button>
+                 </motion.div>
+              ) : downloadStep === "completed" || downloadStep === "bypassed" ? (
+                <motion.div
+                  key="completed-btn"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="flex flex-col items-center gap-4 animate-fade-in"
+                >
+                  <p className="text-xs font-bold text-emerald-400/90 flex items-center gap-1.5">
+                    <CheckCircle size={14} />
+                    {downloadStep === "bypassed" 
+                      ? "پروسه بافر لغو شد. بلافاصله پنجره ذخیره مستقیم کلاینت برای شما گشوده شد."
+                      : "دانلود به طور کامل انجام شد. در صورتی که پنجره ذخیره باز نشد روی دکمه زیر صدمه بزنید."}
+                  </p>
+                  <button
+                    onClick={() => {
+                      triggerNativeDownload(resolvedUrl, fileName);
+                    }}
+                    className={`w-full sm:w-auto px-8 py-4 rounded-xl text-dark-bg font-black text-base shadow-lg transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                      downloadStep === "bypassed"
+                        ? "bg-gradient-to-r from-amber-500 to-yellow-400 shadow-[0_10px_30px_rgba(245,158,11,0.3)] hover:shadow-[0_15px_40px_rgba(245,158,11,0.5)]"
+                        : "bg-gradient-to-r from-emerald-500 to-teal-400 shadow-[0_10px_30px_rgba(16,185,129,0.3)] hover:shadow-[0_15px_40px_rgba(16,185,129,0.5)]"
+                    }`}
+                  >
+                    <Download size={20} />
+                    شروع دانلود مجدد با لینک پرسرعت
+                  </button>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="active-btns"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="flex flex-col sm:flex-row justify-center gap-4 items-center"
+                >
+                  {/* Manual Bypass Button */}
+                  <button
+                    onClick={handleBypassBuffer}
+                    className="w-full sm:w-auto px-6 py-3.5 rounded-xl border border-neon-blue/30 bg-neon-blue/5 hover:bg-neon-blue/15 text-white font-bold text-sm transition-all flex items-center justify-center gap-2 group cursor-pointer animate-pulse"
+                  >
+                    <Download size={18} className="text-neon-blue group-hover:translate-y-0.5 transition-transform" />
+                    <span>لغو بافر اینترنتی و دانلود مستقیم فوری</span>
+                  </button>
 
- <button
- onClick={handleRetry}
- className="w-full sm:w-auto px-6 py-3.5 rounded-xl border border-white/10 hover:border-white/20 text-gray-400 hover:text-white font-bold text-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
- >
- <RefreshCw size={16} />
- <span>ریستارت دانلود</span>
- </button>
- </motion.div>
- )}
- </AnimatePresence>
+                  <button
+                    onClick={handleRetry}
+                    className="w-full sm:w-auto px-6 py-3.5 rounded-xl border border-white/10 hover:border-white/20 text-gray-400 hover:text-white font-bold text-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <RefreshCw size={16} />
+                    <span>ریستارت دانلود</span>
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
  </div>
  </div>
