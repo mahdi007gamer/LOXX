@@ -12,18 +12,21 @@ export const useWebRTC = (roomId: string | null, localStream: MediaStream | null
  const candidatesQueueRef = useRef<Map<string, any[]>>(new Map());
 
  useEffect(() => {
- if (localStream && localStream !== localStreamRef.current) {
- const oldStream = localStreamRef.current;
+ if (localStream !== localStreamRef.current) {
  localStreamRef.current = localStream;
 
  peersRef.current.forEach((pc) => {
  const senders = pc.getSenders();
- const currentTracks = localStream.getTracks();
+ const currentTracks = localStream ? localStream.getTracks() : [];
 
  // 1. Remove tracks that are no longer in the new stream
  senders.forEach((sender) => {
  if (sender.track && !currentTracks.some(t => t.id === sender.track!.id)) {
+ try {
  pc.removeTrack(sender);
+ } catch (err) {
+ console.error("WebRTC: Error removing track from peer connection", err);
+ }
  }
  });
 
@@ -31,7 +34,11 @@ export const useWebRTC = (roomId: string | null, localStream: MediaStream | null
  currentTracks.forEach((track) => {
  const sender = senders.find(s => s.track?.id === track.id);
  if (!sender) {
- pc.addTrack(track, localStream);
+ try {
+ pc.addTrack(track, localStream!);
+ } catch (err) {
+ console.error("WebRTC: Error adding track to peer connection", err);
+ }
  }
  });
  });
@@ -62,91 +69,108 @@ export const useWebRTC = (roomId: string | null, localStream: MediaStream | null
  };
 
  const createPeer = (targetUserId: string) => {
- const pc = new RTCPeerConnection({
- iceServers: [
- { urls: "stun:stun.l.google.com:19302" },
- { urls: "stun:stun1.l.google.com:19302" },
- { urls: "stun:stun2.l.google.com:19302" },
- ],
- });
+  const pc = new RTCPeerConnection({
+   iceServers: [
+    { urls: "stun:stun.l.google.com:19302" },
+    { urls: "stun:stun1.l.google.com:19302" },
+    { urls: "stun:stun2.l.google.com:19302" },
+    { urls: "stun:stun.services.mozilla.com" },
+    { urls: "stun:openrelay.metered.ca:80" },
+    {
+      urls: "turn:openrelay.metered.ca:80",
+      username: "openrelay",
+      credential: "openrelay"
+    },
+    {
+      urls: "turn:openrelay.metered.ca:443",
+      username: "openrelay",
+      credential: "openrelay"
+    },
+    {
+      urls: "turn:openrelay.metered.ca:443?transport=tcp",
+      username: "openrelay",
+      credential: "openrelay"
+    }
+   ],
+   iceTransportPolicy: "all"
+  });
 
- pc.onicecandidate = ({ candidate }) => {
- if (candidate) {
- voiceSocket.emit("voice.signal", {
- targetUserId: targetUserId,
- signal: { candidate },
- });
- }
- };
+  pc.onicecandidate = ({ candidate }) => {
+   if (candidate) {
+    voiceSocket.emit("voice.signal", {
+     targetUserId: targetUserId,
+     signal: { candidate },
+    });
+   }
+  };
 
- pc.ontrack = (event) => {
- setRemoteStreams((prev) => {
- const map = new Map<string, MediaStream>(prev);
- const existing = map.get(targetUserId) as MediaStream | undefined;
- const incomingStream = event.streams[0] as MediaStream | undefined;
- 
- if (!existing) {
- const newStream = incomingStream || new MediaStream([event.track]);
- 
- // Listen for future track removals on this stream to force re-render
- newStream.onremovetrack = () => {
- setRemoteStreams(current => new Map(current));
- };
- newStream.onaddtrack = () => {
- setRemoteStreams(current => new Map(current));
- };
- 
- map.set(targetUserId, newStream);
- return map;
- } else {
- // If it's a completely new stream object ID, replace it
- if (incomingStream && existing.id !== incomingStream.id) {
- incomingStream.onremovetrack = () => {
- setRemoteStreams(current => new Map(current));
- };
- incomingStream.onaddtrack = () => {
- setRemoteStreams(current => new Map(current));
- };
- map.set(targetUserId, incomingStream);
- } else {
- // Track added to existing stream
- if (!existing.getTracks().find(t => t.id === event.track.id)) {
- existing.addTrack(event.track);
- }
- }
- return new Map(map); // trigger re-render
- }
- });
- };
+  pc.ontrack = (event) => {
+   console.log(`WebRTC: Received track ${event.track.kind} (${event.track.id}) from user ${targetUserId}`);
+   setRemoteStreams((prev) => {
+    const map = new Map<string, MediaStream>(prev);
+    let stream = map.get(targetUserId);
+    
+    if (!stream) {
+     stream = new MediaStream();
+     map.set(targetUserId, stream);
+    }
+    
+    if (!stream.getTracks().some((t) => t.id === event.track.id)) {
+     stream.addTrack(event.track);
+     console.log(`WebRTC: Added track ${event.track.id} to persistent remote stream for ${targetUserId}`);
+    }
 
- pc.onnegotiationneeded = async () => {
- try {
- makingOfferRef.current.set(targetUserId, true);
- await pc.setLocalDescription();
- voiceSocket.emit("voice.signal", {
- targetUserId: targetUserId,
- signal: { description: pc.localDescription },
- });
- } catch (err) {
- console.error(`WebRTC: Negotiation error with ${targetUserId}:`, err);
- } finally {
- makingOfferRef.current.set(targetUserId, false);
- }
- };
+    // Auto-clean on ended
+    event.track.onended = () => {
+     console.log(`WebRTC: Track ${event.track.id} ended for ${targetUserId}`);
+     setRemoteStreams((current) => {
+      const nextMap = new Map<string, MediaStream>(current);
+      const s = nextMap.get(targetUserId);
+      if (s) {
+       s.removeTrack(event.track);
+       return new Map<string, MediaStream>(nextMap);
+      }
+      return current;
+     });
+    };
 
- pc.oniceconnectionstatechange = () => {
- if (pc.iceConnectionState === "failed") {
- pc.restartIce();
- }
- };
+    return new Map(map);
+   });
+  };
 
- if (localStreamRef.current) {
- localStreamRef.current.getTracks().forEach((track) => {
- pc.addTrack(track, localStreamRef.current!);
- });
- }
+  pc.onnegotiationneeded = async () => {
+   if (pc.signalingState !== "stable") {
+    console.log(`WebRTC: skipping negotiation needed on ${targetUserId} as signalingState is ${pc.signalingState}`);
+    return;
+   }
+   try {
+    makingOfferRef.current.set(targetUserId, true);
+    await pc.setLocalDescription();
+    voiceSocket.emit("voice.signal", {
+     targetUserId: targetUserId,
+     signal: { description: pc.localDescription },
+    });
+   } catch (err) {
+    console.error(`WebRTC: Negotiation error with ${targetUserId}:`, err);
+   } finally {
+    makingOfferRef.current.set(targetUserId, false);
+   }
+  };
 
- return pc;
+  pc.oniceconnectionstatechange = () => {
+   console.log(`WebRTC: ICE connection state for ${targetUserId} is ${pc.iceConnectionState}`);
+   if (pc.iceConnectionState === "failed") {
+    pc.restartIce();
+   }
+  };
+
+  if (localStreamRef.current) {
+   localStreamRef.current.getTracks().forEach((track) => {
+    pc.addTrack(track, localStreamRef.current!);
+   });
+  }
+
+  return pc;
  };
 
  const handleSignal = async ({ fromUserId, signal }: { fromUserId: string, signal: any }) => {

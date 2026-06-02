@@ -26,7 +26,12 @@ export const ScreenSharePresenter = ({
  // Bind media stream only if the user has opted in to watch (demand-driven active loading)
  useEffect(() => {
  if (videoRef.current && stream && isWatching) {
+ if (videoRef.current.srcObject !== stream) {
  videoRef.current.srcObject = stream;
+ }
+ videoRef.current.play().catch(err => {
+ console.warn("ScreenSharePresenter: Video failed to play:", err);
+ });
  }
  }, [stream, isWatching]);
 

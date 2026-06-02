@@ -121,5 +121,5 @@ export const RemoteAudioPlayer: React.FC<RemoteAudioPlayerProps> = ({ stream, on
  };
  }, [stream, onVolumeChange]);
 
- return <audio ref={audioRef} autoPlay playsInline className="hidden" />;
+ return <audio ref={audioRef} autoPlay playsInline style={{ position: 'fixed', top: -1000, left: -1000, opacity: 0, width: 1, height: 1 }} />;
 };
