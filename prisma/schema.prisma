@@ -391,7 +391,8 @@ model Report {
   targetId       String?  // Id of message or profile
   targetType     String   // MESSAGE, PROFILE, GENERAL
   reason         String
-  status         String   @default("PENDING") // PENDING, REVIEWED, ACTIONED
+  status         String   @default("PENDING")
+  adminResponse  String? // PENDING, REVIEWED, ACTIONED
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   

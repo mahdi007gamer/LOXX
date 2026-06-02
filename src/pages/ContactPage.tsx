@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import { Phone, Mail, MapPin, Send, MessageSquare, Shield, HelpCircle } from "lucide-react";
 import { Sidebar } from "../components/layout/Sidebar";
@@ -14,6 +14,24 @@ export const ContactPage = () => {
  const { isSidebarCollapsed, user } = useAuth();
   const [supportMessage, setSupportMessage] = useState("");
   const [saving, setSaving] = useState(false);
+  const [myTickets, setMyTickets] = useState<any[]>([]);
+  const [loadingTickets, setLoadingTickets] = useState(false);
+  const [selectedTicket, setSelectedTicket] = useState<any>(null);
+
+  useEffect(() => {
+    if (user) {
+       fetchMyTickets();
+    }
+  }, [user]);
+
+  const fetchMyTickets = async () => {
+     setLoadingTickets(true);
+     try {
+       const res = await api.get("/reports/my-tickets");
+       setMyTickets(res.data.data);
+     } catch (e) { }
+     finally { setLoadingTickets(false); }
+  };
   const { t } = useLanguage();
 
   const handleSendSupport = async () => {
@@ -26,6 +44,7 @@ export const ContactPage = () => {
       });
       toast.success(isRtl ? "پیام شما با موفقیت ارسال شد" : "Your message has been successfully sent");
       setSupportMessage("");
+      fetchMyTickets();
     } catch { toast.error(isRtl ? "خطا در ارسال پیام" : "Error sending message"); }
     finally { setSaving(false); }
   };
@@ -195,6 +214,8 @@ export const ContactPage = () => {
  
 
         {/* Ticket Box - Only visible if logged in */}
+        
+        {/* Ticket Box - Only visible if logged in */}
         {user && (
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
@@ -212,27 +233,97 @@ export const ContactPage = () => {
               </div>
             </div>
 
-            <div className="space-y-4">
-              <label className="block text-[10px] font-black text-gray-500 uppercase ">{isRtl ? "شرح پیام" : "Message Description"}</label>
-              <textarea
-                value={supportMessage}
-                onChange={(e) => setSupportMessage(e.target.value)}
-                dir={isRtl ? "rtl" : "ltr"}
-                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-gray-700 transition-all focus:border-neon-blue/50 focus:outline-none h-40 resize-none"
-                placeholder={isRtl ? "گزارش مشکل، باگ، یا پیشنهاد خود را اینجا بنویسید..." : "Describe bugs, issues, or specify your suggestions here..."}
-              />
-            </div>
+            {myTickets.some(t => t.status === 'PENDING') ? (
+               <div className="p-8 text-center bg-white/5 rounded-2xl border border-white/10 mt-4">
+                 <div className="inline-flex h-12 w-12 rounded-full bg-orange-500/10 items-center justify-center text-orange-400 mb-4">
+                    <MessageSquare size={24} />
+                 </div>
+                 <h4 className="text-sm font-black text-white mb-2">{isRtl ? "شما یک تیکت در حال بررسی دارید" : "You have a pending ticket"}</h4>
+                 <p className="text-xs text-gray-400 font-medium">
+                   {isRtl 
+                     ? "تا زمانی که وضعیت تیکت فعلی شما مشخص نگردد، امکان ثبت تیکت جدید وجود ندارد." 
+                     : "You cannot submit a new ticket until your current pending ticket is resolved."}
+                 </p>
+               </div>
+            ) : (
+                <>
+                <div className="space-y-4">
+                  <label className="block text-[10px] font-black text-gray-500 uppercase ">{isRtl ? "شرح پیام" : "Message Description"}</label>
+                  <textarea
+                    value={supportMessage}
+                    onChange={(e) => setSupportMessage(e.target.value)}
+                    dir={isRtl ? "rtl" : "ltr"}
+                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-gray-700 transition-all focus:border-neon-blue/50 focus:outline-none h-40 resize-none"
+                    placeholder={isRtl ? "گزارش مشکل، باگ، یا پیشنهاد خود را اینجا بنویسید..." : "Describe bugs, issues, or specify your suggestions here..."}
+                  />
+                </div>
 
-            <div className={cn("flex pt-4 border-t border-white/5 mt-6", isRtl ? "justify-end" : "justify-start")}>
-              <GlowButton 
-                variant="blue" 
-                className="px-10 h-10 text-[11px] font-black uppercase "
-                onClick={handleSendSupport}
-                disabled={saving}
-              >
-                {saving ? (isRtl ? "در حال ارسال..." : "Sending...") : (isRtl ? "ارسال پیام" : "Send Message")}
-              </GlowButton>
-            </div>
+                <div className={cn("flex pt-4 border-t border-white/5 mt-6", isRtl ? "justify-end" : "justify-start")}>
+                  <GlowButton 
+                    variant="blue" 
+                    className="px-10 h-10 text-[11px] font-black uppercase "
+                    onClick={handleSendSupport}
+                    disabled={saving}
+                  >
+                    {saving ? (isRtl ? "در حال ارسال..." : "Sending...") : (isRtl ? "ارسال پیام" : "Send Message")}
+                  </GlowButton>
+                </div>
+                </>
+            )}
+
+            {/* Previous Tickets */}
+            {myTickets.length > 0 && (
+               <div className="mt-8 pt-8 border-t border-white/5">
+                  <h4 className="text-[11px] font-black text-gray-400 uppercase mb-4">{isRtl ? "تاریخچه تیکت‌ها" : "Ticket History"}</h4>
+                  <div className="space-y-3">
+                     {myTickets.map((ticket: any) => (
+                        <div key={ticket.id} className="bg-dark-card p-4 rounded-xl border border-white/5 flex items-center justify-between">
+                            <div className="flex-1 overflow-hidden pr-4">
+                               <p className="text-xs text-white truncate font-medium">{ticket.reason}</p>
+                               <span className="text-[9px] text-gray-500 mt-1 block">
+                                 {new Date(ticket.createdAt).toLocaleDateString(isRtl ? 'fa-IR' : 'en-US')}
+                               </span>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                {ticket.status === 'PENDING' && (
+                                   <span className="px-2 py-1 bg-orange-500/10 text-orange-400 text-[10px] font-bold rounded flex-shrink-0">
+                                      {isRtl ? "در حال بررسی" : "Pending"}
+                                   </span>
+                                )}
+                                {ticket.status === 'ACTIONED' && (
+                                   <div className="flex items-center gap-2 flex-shrink-0">
+                                     <span className="px-2 py-1 bg-emerald-500/10 text-emerald-400 text-[10px] font-bold rounded">
+                                        {isRtl ? "پاسخ داده شده" : "Answered"}
+                                     </span>
+                                     <button 
+                                        onClick={() => setSelectedTicket(ticket)}
+                                        className="text-[10px] font-black text-neon-blue bg-neon-blue/10 px-3 py-1 rounded hover:bg-neon-blue/20 transition-all font-sans"
+                                     >
+                                        {isRtl ? "پاسخ مدیریت" : "Admin Reply"}
+                                     </button>
+                                   </div>
+                                )}
+                                {ticket.status === 'REJECTED' && (
+                                   <div className="flex items-center gap-2 flex-shrink-0">
+                                     <span className="px-2 py-1 bg-red-500/10 text-red-500 text-[10px] font-bold rounded">
+                                        {isRtl ? "مردود" : "Rejected"}
+                                     </span>
+                                     {ticket.adminResponse && (
+                                        <button 
+                                        onClick={() => setSelectedTicket(ticket)}
+                                        className="text-[10px] font-black text-red-500 bg-red-500/10 px-3 py-1 rounded hover:bg-red-500/20 transition-all font-sans"
+                                        >
+                                          {isRtl ? "دلیل رد شدن" : "Reason"}
+                                        </button>
+                                     )}
+                                   </div>
+                                )}
+                            </div>
+                        </div>
+                     ))}
+                  </div>
+               </div>
+            )}
           </motion.div>
         )}
         {/* Core About LOXX Text Card */}

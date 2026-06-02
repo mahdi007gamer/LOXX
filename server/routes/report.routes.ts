@@ -4,6 +4,7 @@ import { authenticate } from "../middleware/auth.middleware.ts";
 
 const router = Router();
 
+router.get("/my-tickets", authenticate, ReportController.myTickets);
 router.post("/", authenticate, ReportController.create);
 // Admin routes for reports
 router.get("/admin", authenticate, ReportController.listAdminReports);
