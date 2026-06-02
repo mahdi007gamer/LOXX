@@ -90,7 +90,7 @@ export const Navbar = () => {
  <button 
  id="navbar-sidebar-toggle"
  onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
- className="p-2 text-gray-400 hover:text-white transition-colors cursor-pointer rounded-lg hover:bg-white/5 active:scale-95"
+ className="hidden md:inline-flex p-2 text-gray-400 hover:text-white transition-colors cursor-pointer rounded-lg hover:bg-white/5 active:scale-95"
  title={isSidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
  >
  <Menu size={22} />

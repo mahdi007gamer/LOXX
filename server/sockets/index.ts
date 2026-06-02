@@ -251,6 +251,11 @@ export function setupWebSockets(io: Server) {
       voiceNs.to(`voice:${data.roomId}`).emit("voice.talking", { userId, isTalking: data.isTalking });
     });
 
+    socket.on("voice.audio_chunk", (data: { roomId: string, chunk: any }) => {
+      // SFU Media Server Relay: Broadcast the media chunk to all other players in the room
+      socket.to(`voice:${data.roomId}`).emit("voice.audio_chunk", { userId, chunk: data.chunk });
+    });
+
     socket.on("disconnect", () => {
       untrackUser(userId, socket.id);
     });
