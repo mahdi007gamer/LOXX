@@ -9,6 +9,7 @@ export const useWebRTC = (roomId: string | null, localStream: MediaStream | null
  // Track negotiation state to prevent "glare" (polite peer implementation)
  const makingOfferRef = useRef<Map<string, boolean>>(new Map());
  const ignoreOfferRef = useRef<Map<string, boolean>>(new Map());
+ const candidatesQueueRef = useRef<Map<string, any[]>>(new Map());
 
  useEffect(() => {
  if (localStream && localStream !== localStreamRef.current) {
@@ -156,14 +157,22 @@ export const useWebRTC = (roomId: string | null, localStream: MediaStream | null
  if (signal.description) {
  const description = new RTCSessionDescription(signal.description);
  const offerCollision = description.type === "offer" &&
- (makingOfferRef.current.get(fromUserId) || pc?.signalingState !== "stable");
+ (makingOfferRef.current.get(fromUserId) || (pc && pc.signalingState !== "stable"));
 
  ignoreOfferRef.current.set(fromUserId, !isPolite && offerCollision);
- if (ignoreOfferRef.current.get(fromUserId)) return;
+ if (ignoreOfferRef.current.get(fromUserId)) {
+ console.log(`WebRTC: Glare detected. Impolite peer ignoring offer from ${fromUserId}`);
+ return;
+ }
 
  if (!pc) {
  pc = createPeer(fromUserId);
  peersRef.current.set(fromUserId, pc);
+ }
+
+ if (offerCollision && isPolite) {
+ console.log(`WebRTC: Glare detected. Polite peer rolling back for ${fromUserId}`);
+ await pc.setLocalDescription({ type: "rollback" });
  }
 
  await pc.setRemoteDescription(description);
@@ -174,12 +183,39 @@ export const useWebRTC = (roomId: string | null, localStream: MediaStream | null
  signal: { description: pc.localDescription },
  });
  }
- } else if (signal.candidate) {
+
+ // Drain cached ICE candidates for this peer
+ const queue = candidatesQueueRef.current.get(fromUserId);
+ if (queue && queue.length > 0) {
+ console.log(`WebRTC: Draining ${queue.length} cached candidates for ${fromUserId}`);
+ for (const candidate of queue) {
  try {
- if (!pc) return; // Should not happen with description-first signaling
+ await pc.addIceCandidate(new RTCIceCandidate(candidate));
+ } catch (err) {
+ console.warn("WebRTC: Error adding queued candidate", err);
+ }
+ }
+ candidatesQueueRef.current.set(fromUserId, []);
+ }
+
+ } else if (signal.candidate) {
+ if (!pc || !pc.remoteDescription) {
+ // Queue the candidate until pc is created and remoteDescription is set
+ let queue = candidatesQueueRef.current.get(fromUserId);
+ if (!queue) {
+ queue = [];
+ candidatesQueueRef.current.set(fromUserId, queue);
+ }
+ queue.push(signal.candidate);
+ console.log(`WebRTC: Queued early ICE candidate for ${fromUserId}`);
+ } else {
+ try {
  await pc.addIceCandidate(new RTCIceCandidate(signal.candidate));
  } catch (err) {
- if (!ignoreOfferRef.current.get(fromUserId)) throw err;
+ if (!ignoreOfferRef.current.get(fromUserId)) {
+  console.error(`WebRTC: Error adding ICE candidate for ${fromUserId}:`, err);
+ }
+ }
  }
  }
  } catch (err) {
@@ -203,6 +239,7 @@ export const useWebRTC = (roomId: string | null, localStream: MediaStream | null
  }
  makingOfferRef.current.delete(leftUserId);
  ignoreOfferRef.current.delete(leftUserId);
+ candidatesQueueRef.current.delete(leftUserId);
  setRemoteStreams((prev) => {
  const map = new Map(prev);
  if (map.has(leftUserId)) {
@@ -229,6 +266,7 @@ export const useWebRTC = (roomId: string | null, localStream: MediaStream | null
  peersRef.current.clear();
  makingOfferRef.current.clear();
  ignoreOfferRef.current.clear();
+ candidatesQueueRef.current.clear();
  setRemoteStreams(new Map());
  };
  }, [roomId, userId]);
