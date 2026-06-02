@@ -706,7 +706,7 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
  let lastAnalysisTime = 0;
  const analyzeVoice = (timestamp: number) => {
  const now = timestamp || performance.now();
- if (now - lastAnalysisTime >= 100) {
+ if (now - lastAnalysisTime >= 60) {
  lastAnalysisTime = now;
  if (localStream.getAudioTracks().length > 0 && localStream.getAudioTracks()[0].enabled) {
  analyzer.getByteFrequencyData(dataArray);
@@ -717,15 +717,26 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
  const avg = sum / bufferLength;
  const newVol = Math.min(100, Math.round(avg * 2));
  
- if (Math.abs(newVol - lastVol) > 15 || (newVol === 0 && lastVol !== 0) || (newVol > 10 && lastVol === 0)) {
+ if (Math.abs(newVol - lastVol) > 20 || (newVol === 0 && lastVol !== 0) || (newVol > 15 && lastVol === 0)) {
  lastVol = newVol;
  setLocalVolume(newVol);
  }
 
- const talkingNow = avg > 15; 
+ const talkingNow = avg > 8; 
  if (talkingNow !== isTalking) {
  isTalking = talkingNow;
  voiceSocket.emit("voice.talking", { roomId: lobby.id, isTalking });
+ setLobby(prev => {
+ if (!prev) return null;
+ const talkingUsers = prev.talkingUsers || [];
+ const hasMe = talkingUsers.includes(user.id);
+ if (isTalking && !hasMe) {
+ return { ...prev, talkingUsers: [...talkingUsers, user.id] };
+ } else if (!isTalking && hasMe) {
+ return { ...prev, talkingUsers: talkingUsers.filter(id => id !== user.id) };
+ }
+ return prev;
+ });
  }
  } else {
  if (lastVol !== 0) {
@@ -735,6 +746,14 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
  if (isTalking) {
  isTalking = false;
  voiceSocket.emit("voice.talking", { roomId: lobby.id, isTalking: false });
+ setLobby(prev => {
+ if (!prev) return null;
+ const talkingUsers = prev.talkingUsers || [];
+ if (talkingUsers.includes(user.id)) {
+ return { ...prev, talkingUsers: talkingUsers.filter(id => id !== user.id) };
+ }
+ return prev;
+ });
  }
  }
  }
