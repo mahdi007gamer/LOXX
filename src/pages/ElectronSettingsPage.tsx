@@ -438,7 +438,7 @@ export const ElectronSettingsPage = () => {
  </div>
  </div>
  
- <div className="bg-black/20 border border-white/5 p-4 rounded-xl text-center flex flex-col items-center justify-center space-y-4">
+ <div className="bg-black/20 border border-white/5 p-4 rounded-xl text-center flex flex-col items-center justify-center space-y-4 lg:col-span-2">
  <ShieldAlert size={48} className="text-yellow-500 animate-pulse" />
  <p className="text-sm font-bold text-[#00e5ff] px-4">سیستم هوشمند گیم بوستر و ارزیابی پرفورمنس</p>
  <div className="w-full space-y-2 text-right text-xs px-3" dir="rtl">

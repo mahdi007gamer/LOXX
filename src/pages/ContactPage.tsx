@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { motion } from "motion/react";
 import { Phone, Mail, MapPin, Send, MessageSquare, Shield, HelpCircle } from "lucide-react";
 import { Sidebar } from "../components/layout/Sidebar";
@@ -6,9 +6,30 @@ import { Footer } from "../components/landing/Footer";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
 import { cn } from "../lib/utils";
+import { toast } from "react-hot-toast";
+import api from "../lib/api";
+import { GlowButton } from "../components/ui/GlowButton";
 
 export const ContactPage = () => {
- const { isSidebarCollapsed } = useAuth();
+ const { isSidebarCollapsed, user } = useAuth();
+  const [supportMessage, setSupportMessage] = useState("");
+  const [saving, setSaving] = useState(false);
+  const { t } = useLanguage();
+
+  const handleSendSupport = async () => {
+    if (!supportMessage.trim()) { toast.error(isRtl ? "متن پیام خالی است" : "Message text cannot be empty"); return; }
+    setSaving(true);
+    try {
+      await api.post("/reports", {
+        targetType: "TICKET",
+        reason: supportMessage
+      });
+      toast.success(isRtl ? "پیام شما با موفقیت ارسال شد" : "Your message has been successfully sent");
+      setSupportMessage("");
+    } catch { toast.error(isRtl ? "خطا در ارسال پیام" : "Error sending message"); }
+    finally { setSaving(false); }
+  };
+
  const { direction } = useLanguage();
  const isRtl = direction === "rtl";
 

@@ -259,8 +259,9 @@ export const SettingsPage = () => {
  { id: "notifications" as const, icon: Bell, label: isRtlStyle ? "اعلان‌ها" : "Notifications" },
  { id: "ui" as const, icon: Monitor, label: isRtlStyle ? "رابط کاربری" : "Interface & UI" },
  { id: "region" as const, icon: Globe, label: isRtlStyle ? "زبان و منطقه" : "Language & Region" },
- { id: "support" as const, icon: MessageSquare, label: isRtlStyle ? "سوالات متداول" : "FAQ" },
-  ] as const;
+ { id: "support" as const, icon: MessageSquare, label: isRtlStyle ? "تماس با مدیریت" : "Support Ticket" },
+ { id: "rules" as const, icon: BookOpen, label: isRtlStyle ? "قوانین و مقررات" : "Platform Terms" },
+ ] as const;
 
  const renderProfile = () => (
  <div className="space-y-6">
@@ -369,7 +370,7 @@ export const SettingsPage = () => {
  </div>
  </div>
 
- <hr className="border-white/5 my-8" />
+ <hr className="border-white/5" />
 
  <div className="flex items-center gap-6">
  <div className="flex-1">
@@ -432,7 +433,7 @@ export const SettingsPage = () => {
  </div>
  </div>
 
- <hr className="border-white/5 my-8" />
+ <hr className="border-white/5" />
 
  <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
  <Input 
@@ -594,7 +595,7 @@ export const SettingsPage = () => {
  </div>
  </div>
 
- <hr className="border-white/5 my-8" />
+ <hr className="border-white/5" />
 
  <div>
  <div className="flex items-center justify-between mb-4">
@@ -668,7 +669,7 @@ export const SettingsPage = () => {
  )}
  </AnimatePresence>
 
- <hr className="border-white/5 my-8" />
+ <hr className="border-white/5" />
 
  <div>
  <h3 className="font-black text-white mb-1">{isRtl ? "تغییر رمز عبور" : "Change Password"}</h3>
@@ -705,7 +706,7 @@ export const SettingsPage = () => {
  </div>
  </div>
 
- <hr className="border-white/5 my-8" />
+ <hr className="border-white/5" />
 
  <div>
  <h3 className="font-black text-white mb-4">{isRtl ? "دستگاه‌های متصل" : "Connected Devices"}</h3>
@@ -804,7 +805,8 @@ export const SettingsPage = () => {
  )}
  
  <div className={cn(
- "absolute inset-0 rounded-[22px] flex items-end justify-center pb-2 opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-t from-black/80 to-transparent"
+ "absolute inset-0 rounded-[22px] flex items-center justify-center bg-dark-bg/80 opacity-0 group-hover:opacity-100 transition-opacity",
+ badge.isPinned ? "bg-red-500/20" : "bg-neon-blue/20"
  )}>
  <span className="text-[10px] font-black text-white uppercase ">
  {badge.isPinned ? (isRtlStyle ? "برداشتن پین" : "Unpin") : (isRtlStyle ? "پین کردن" : "Pin Badge")}
@@ -851,11 +853,12 @@ export const SettingsPage = () => {
  : "bg-white/5 border-white/5 hover:border-white/10"
  )}
  >
- <img src={badge.iconUrl} alt={badge.name} className={cn("w-16 h-16 sm:w-20 sm:h-20 object-contain mb-2", !hasBadge && "opacity-80")} />
- <span className={cn("text-[10px] font-black uppercase text-center line-clamp-1", hasBadge ? "text-neon-pink" : "text-white")}>{badge.name}</span>
+ <img src={badge.iconUrl} alt={badge.name} className={cn("w-12 h-12 object-contain mb-2", !hasBadge && "grayscale opacity-50")} />
+ <span className={cn("text-[10px] font-black uppercase text-center line-clamp-1", hasBadge ? "text-white" : "text-gray-600")}>{badge.name}</span>
  
  <div className={cn(
- "absolute inset-0 rounded-[22px] flex items-end justify-center pb-2 opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-t from-black/80 to-transparent"
+ "absolute inset-0 rounded-[22px] flex items-center justify-center bg-dark-bg/80 opacity-0 group-hover:opacity-100 transition-opacity",
+ hasBadge ? "bg-red-500/20" : "bg-neon-pink/20"
  )}>
  <span className="text-[10px] font-black text-white uppercase ">
  {hasBadge ? (isRtlStyle ? "حذف کردن" : "Unequip Style") : (isRtlStyle ? "اضافه کردن" : "Equip Badge")}
@@ -1011,8 +1014,8 @@ export const SettingsPage = () => {
  <Monitor size={16} className="text-gray-500" />
  <span className="text-xs font-black text-white uppercase">{isRtl ? "تم برنامه" : "App Theme"}</span>
  </div>
- <div className="grid grid-cols-1 gap-4">
- {['dark'].map((t) => (
+ <div className="grid grid-cols-2 gap-4">
+ {['dark', 'high-contrast'].map((t) => (
  <button 
  key={t}
  onClick={() => updateSetting("theme", t)}
@@ -1021,7 +1024,7 @@ export const SettingsPage = () => {
  settings.theme === t ? "bg-neon-blue/10 border-neon-blue text-neon-blue" : "bg-white/5 border-white/5 text-gray-500 hover:border-white/20"
  )}
  >
- {t === 'dark' ? (isRtl ? 'حالت تاریک' : 'Dark Mode') : ''}
+ {t === 'dark' ? (isRtl ? 'حالت تاریک' : 'Dark Mode') : (isRtl ? 'کنتراست بالا' : 'High Contrast')}
  </button>
  ))}
  </div>
@@ -1029,7 +1032,7 @@ export const SettingsPage = () => {
  </div>
  </div>
 
- <hr className="border-white/5 my-8" />
+ <hr className="border-white/5" />
 
  <div>
  <h3 className="font-black text-white mb-1">{isRtl ? "عملکرد" : "Performance"}</h3>
@@ -1092,7 +1095,7 @@ export const SettingsPage = () => {
  </div>
  </div>
 
- <hr className="border-white/5 my-8" />
+ <hr className="border-white/5" />
 
  <div className="p-6 rounded-2xl bg-neon-blue/5 border border-neon-blue/20 flex items-center gap-4">
  <div className="h-12 w-12 rounded-xl bg-neon-blue/10 flex items-center justify-center text-neon-blue shrink-0">
@@ -1219,6 +1222,40 @@ export const SettingsPage = () => {
  </div>
  </NeonCard>
 
+ {/* Ticket Box */}
+ <NeonCard className="space-y-6">
+ <div className="flex items-center gap-4 border-b border-white/5 pb-4">
+ <div className="h-12 w-12 rounded-xl bg-neon-blue/10 flex items-center justify-center text-neon-blue">
+ <MessageSquare size={24} />
+ </div>
+ <div>
+ <h3 className="text-xl font-black uppercase ">{isRtl ? "ارسال تیکت / گزارش" : "Submit Ticket / Report"}</h3>
+ <p className="text-[10px] uppercase font-bold text-gray-500">{isRtl ? "ارتباط مستقیم با مدیریت" : "Contact the administration directly"}</p>
+ </div>
+ </div>
+
+ <div className="space-y-4">
+ <label className="block text-[10px] font-black text-gray-500 uppercase ">{isRtl ? "شرح پیام" : "Message Description"}</label>
+ <textarea
+ value={supportMessage}
+ onChange={(e) => setSupportMessage(e.target.value)}
+ dir={isRtl ? "rtl" : "ltr"}
+ className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-gray-700 transition-all focus:border-neon-blue/50 focus:outline-none h-40 resize-none"
+ placeholder={isRtl ? "گزارش مشکل، باگ، یا پیشنهاد خود را اینجا بنویسید..." : "Describe bugs, issues, or specify your suggestions here..."}
+ />
+ </div>
+
+ <div className={cn("flex pt-4 border-t border-white/5", isRtl ? "justify-end" : "justify-start")}>
+ <GlowButton 
+ variant="blue" 
+ className="px-10 h-10 text-[11px] font-black uppercase "
+ onClick={handleSendSupport}
+ disabled={saving}
+ >
+ {saving ? (isRtl ? "در حال ارسال..." : "Sending...") : (isRtl ? "ارسال پیام" : "Send Message")}
+ </GlowButton>
+ </div>
+ </NeonCard>
  </div>
  );
 
@@ -1620,7 +1657,8 @@ export const SettingsPage = () => {
  {activeTab === "ui" && renderUI()}
  {activeTab === "region" && renderRegion()}
  {activeTab === "support" && renderSupport()}
-  </div>
+ {activeTab === "rules" && renderRules()}
+ </div>
  </div>
  </div>
  </main>
