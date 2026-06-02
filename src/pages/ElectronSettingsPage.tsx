@@ -35,7 +35,9 @@ export const ElectronSettingsPage = () => {
  updateLauncherSettings,
  gameDetected
  } = useLobby();
- const [config, setConfig] = useState<any>({});
+ const [config, setConfig] = useState<any>({
+ showFPSCounter: typeof window !== "undefined" ? localStorage.getItem("loxx_show_fps") === "true" : false
+ });
  const [recordingKey, setRecordingKey] = useState<string | null>(null);
 
  const [testingCompatibility, setTestingCompatibility] = useState(false);
@@ -95,6 +97,13 @@ export const ElectronSettingsPage = () => {
  const updated = { ...config, [key]: value };
  setConfig(updated);
  updateLauncherSettings({ [key]: value });
+ if (key === "showFPSCounter") {
+ localStorage.setItem("loxx_show_fps", String(value));
+ window.dispatchEvent(new StorageEvent('storage', {
+ key: 'loxx_show_fps',
+ newValue: String(value)
+ }));
+ }
  };
 
  const listenForKey = (settingKey: string) => {
@@ -410,7 +419,7 @@ export const ElectronSettingsPage = () => {
  <div className="flex flex-col h-full relative z-10">
  <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2"><Activity className="text-yellow-400 animate-pulse" /> پرفورمنس علمی و تنظیمات سیستم (GPU & CPU)</h3>
  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6" dir="rtl" style={{ textAlign: "right" }}>
- <div className="space-y-4">
+ <div className="space-y-4 lg:col-span-2">
  <div className="flex items-center justify-between bg-black/40 p-3 rounded-xl">
  <span className="text-sm font-bold text-white flex items-center gap-2">اجرای خودکار کلاینت با لود شدن ویندوز (Autostart)</span>
  <label className="relative inline-flex items-center cursor-pointer">
@@ -436,9 +445,16 @@ export const ElectronSettingsPage = () => {
  <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-yellow-400"></div>
  </label>
  </div>
+ <div className="flex items-center justify-between bg-black/40 p-3 rounded-xl">
+ <span className="text-sm font-bold text-white flex items-center gap-2">نمایش شمارنده نرخ فریم (FPS) سیستم</span>
+ <label className="relative inline-flex items-center cursor-pointer">
+ <input type="checkbox" className="sr-only peer" checked={!!config.showFPSCounter} onChange={(e) => updateSetting("showFPSCounter", e.target.checked)} />
+ <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-yellow-400"></div>
+ </label>
+ </div>
  </div>
  
- <div className="bg-black/20 border border-white/5 p-4 rounded-xl text-center flex flex-col items-center justify-center space-y-4 lg:col-span-2">
+ <div className="bg-black/20 border border-white/5 p-4 rounded-xl text-center flex flex-col items-center justify-center space-y-4">
  <ShieldAlert size={48} className="text-yellow-500 animate-pulse" />
  <p className="text-sm font-bold text-[#00e5ff] px-4">سیستم هوشمند گیم بوستر و ارزیابی پرفورمنس</p>
  <div className="w-full space-y-2 text-right text-xs px-3" dir="rtl">

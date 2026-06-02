@@ -62,12 +62,17 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
  }, [games]);
 
  const handleGameChange = (gameId: string) => {
- const game = games?.find(g => g.id === gameId);
- if (!game) return;
- 
- setSelectedGameData(game);
- 
- // Set safe default features
+    const game = games?.find(g => g.id === gameId);
+    if (!game) return;
+
+    setSelectedGameData(game);
+    
+    setFormData(prev => {
+      const newTitle = (!prev.title || prev.title === selectedGameData?.title || prev.title.trim() === "") ? game.title : prev.title;
+      return { ...prev, gameId: game.id, title: newTitle };
+    });
+    
+    // Set safe default features
  const defaultMeta: Record<string, any> = {};
  if (game.metadata?.features) {
  game.metadata.features.forEach((feat: any) => {

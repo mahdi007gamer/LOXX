@@ -89,6 +89,8 @@ export const SettingsPage = () => {
 
  const [devices, setDevices] = useState<any[]>([]);
  const [userBadges, setUserBadges] = useState<any[]>([]);
+  const [stagedUserBadges, setStagedUserBadges] = useState<any[]>([]);
+  const [hasUnsavedBadges, setHasUnsavedBadges] = useState(false);
  const [availableChoiceBadges, setAvailableChoiceBadges] = useState<any[]>([]);
 
  useEffect(() => {
@@ -115,46 +117,75 @@ export const SettingsPage = () => {
  const fetchUserBadges = async () => {
  try {
  const res = await api.get("/auth/me");
- setUserBadges(res.data.data.badges || []);
+ const fetched = res.data.data.badges || [];
+      setUserBadges(fetched);
+      setStagedUserBadges(fetched);
+      setHasUnsavedBadges(false);
  } catch(err) {}
  };
 
- const handleToggleBadgePin = async (badgeId: string) => {
- const badge = userBadges.find(b => b.id === badgeId);
- if (!badge) return;
+ const handleToggleBadgePin = (badgeId: string) => {
+    const badge = stagedUserBadges.find(b => b.id === badgeId);
+    if (!badge) return;
 
- const pinnedCount = userBadges.filter(b => b.isPinned).length;
- if (!badge.isPinned && pinnedCount >= 5) {
- toast.error("حداکثر می‌توانید ۵ نشان را پین کنید");
- return;
- }
+    const pinnedCount = stagedUserBadges.filter(b => b.isPinned).length;
+    if (!badge.isPinned && pinnedCount >= 5) {
+      toast.error("حداکثر می‌توانید ۵ نشان را پین کنید");
+      return;
+    }
 
- try {
- await api.patch("/user/profile", {
- badge_pins: {
- badgeId,
- isPinned: !badge.isPinned
- }
- });
- setUserBadges(prev => prev.map(b => b.id === badgeId ? { ...b, isPinned: !b.isPinned } : b));
- toast.success(badge.isPinned ? "نشان از پین خارج شد" : "نشان با موفقیت پین شد");
- } catch (err: any) {
- toast.error(err.response?.data?.error?.message || "خطا در بروزرسانی پین");
- }
- };
+    setStagedUserBadges(prev => prev.map(b => b.id === badgeId ? { ...b, isPinned: !b.isPinned } : b));
+    setHasUnsavedBadges(true);
+  };
 
- const handleToggleStandardBadge = async (badgeId: string) => {
- try {
- setSaving(true);
- await api.post(`/badges/toggle-standard/${badgeId}`);
- await fetchUserBadges();
- toast.success("لیست نشان‌ها بروزرسانی شد");
- } catch (err: any) {
- toast.error(err.response?.data?.error?.message || "خطا در بروزرسانی نشان");
- } finally {
- setSaving(false);
- }
- };
+ const handleToggleStandardBadge = (badgeId: string) => {
+    const badgeObj = availableChoiceBadges.find(b => b.id === badgeId);
+    if (!badgeObj) return;
+
+    const hasBadge = stagedUserBadges.some(ub => ub.id === badgeId);
+    if (hasBadge) {
+      setStagedUserBadges(prev => prev.filter(ub => ub.id !== badgeId));
+    } else {
+      setStagedUserBadges(prev => [...prev, { ...badgeObj, isPinned: false }]);
+    }
+    setHasUnsavedBadges(true);
+  };
+
+  const handleSaveBadges = async () => {
+    setSaving(true);
+    try {
+      const origIds = userBadges.map(b => b.id);
+      const stagedIds = stagedUserBadges.map(b => b.id);
+      
+      const added = stagedIds.filter(id => !origIds.includes(id));
+      const removed = origIds.filter(id => !stagedIds.includes(id));
+      const toggledIds = [...added, ...removed];
+      
+      for (const id of toggledIds) {
+         await api.post(`/badges/toggle-standard/${id}`);
+      }
+
+      for (const stagedBadge of stagedUserBadges) {
+         const origBadge = userBadges.find(b => b.id === stagedBadge.id);
+         if (!origBadge && stagedBadge.isPinned) {
+            await api.patch("/user/profile", {
+              badge_pins: { badgeId: stagedBadge.id, isPinned: true }
+            });
+         } else if (origBadge && origBadge.isPinned !== stagedBadge.isPinned) {
+            await api.patch("/user/profile", {
+              badge_pins: { badgeId: stagedBadge.id, isPinned: stagedBadge.isPinned }
+            });
+         }
+      }
+      
+      await fetchUserBadges();
+      toast.success(isRtlStyle ? "تغییرات نشان‌ها با موفقیت اعمال شد" : "Badges saved successfully");
+    } catch (err: any) {
+      toast.error("خطا در ذخیره سازی نشان ها");
+    } finally {
+      setSaving(false);
+    }
+  };
 
  const fetchDevices = async () => {
  try {
@@ -763,6 +794,14 @@ export const SettingsPage = () => {
 
  const renderBadges = () => (
  <div className="space-y-6">
+<div className="flex justify-between items-center mb-4">
+  <div></div>
+  {hasUnsavedBadges && (
+    <GlowButton variant="blue" className="px-6 py-2 text-xs font-black uppercase" onClick={handleSaveBadges} disabled={saving}>
+      {saving ? (isRtlStyle ? "در حال ذخیره..." : "Saving...") : (isRtlStyle ? "اعمال تغییرات" : "Apply Changes")}
+    </GlowButton>
+  )}
+</div>
  <NeonCard variant="purple">
  <div className="flex items-center justify-between mb-8">
  <div>
@@ -775,13 +814,13 @@ export const SettingsPage = () => {
  </div>
  <div className="px-4 py-2 rounded-xl bg-neon-blue/10 border border-neon-blue/20">
  <span className="text-xs font-black text-neon-blue ">
- {userBadges.filter(b => b.isPinned).length} / 5 {isRtlStyle ? "پین شده" : "Pinned"}
+ {stagedUserBadges.filter(b => b.isPinned).length} / 5 {isRtlStyle ? "پین شده" : "Pinned"}
  </span>
  </div>
  </div>
 
  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
- {userBadges.map((badge) => (
+ {stagedUserBadges.map((badge) => (
  <motion.div
  key={badge.id}
  whileHover={{ scale: 1.05 }}
@@ -812,7 +851,7 @@ export const SettingsPage = () => {
  </div>
  </motion.div>
  ))}
- {userBadges.length === 0 && (
+ {stagedUserBadges.length === 0 && (
  <div className="col-span-full py-20 text-center flex flex-col items-center gap-4 opacity-30">
  <Award size={48} />
  <p className="text-xs font-black uppercase ">
@@ -837,7 +876,7 @@ export const SettingsPage = () => {
 
  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
  {availableChoiceBadges.map((badge) => {
- const hasBadge = userBadges.some(ub => ub.id === badge.id);
+ const hasBadge = stagedUserBadges.some(ub => ub.id === badge.id);
  return (
  <motion.div
  key={badge.id}
