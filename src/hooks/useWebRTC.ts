@@ -54,8 +54,8 @@ export const useWebRTC = (roomId: string | null, localStream: MediaStream | null
 
       sourceNodeRef.current = audioContext.createMediaStreamSource(localStream);
       
-      // Use standard 4096 buffer size for maximum stability across mobile and desktop browsers
-      processorNodeRef.current = audioContext.createScriptProcessor(4096, 1, 1);
+      // Use standard 1024 buffer size for ultra-low-latency real-time voice response (~21ms chunk latency)
+      processorNodeRef.current = audioContext.createScriptProcessor(1024, 1, 1);
 
       sourceNodeRef.current.connect(processorNodeRef.current);
       
@@ -246,8 +246,12 @@ export const useWebRTC = (roomId: string | null, localStream: MediaStream | null
         source.connect(player.dest);
 
         const now = audioContext.currentTime;
-        if (player.nextPlayTime < now) {
-          player.nextPlayTime = now + 0.05; // 50ms safety buffer
+        const MAX_LATENCY_SEC = 0.08; // 80ms maximum scheduling lookahead to guarantee real-time talk
+        const SAFETY_OFFSET_SEC = 0.015; // 15ms minimal buffer to prevent crackling on packet boundary
+        
+        if (player.nextPlayTime < now || player.nextPlayTime > now + MAX_LATENCY_SEC) {
+          // If we are late (behind) or too far in the future (lag/drift), instantly snap back to real-time!
+          player.nextPlayTime = now + SAFETY_OFFSET_SEC;
         }
 
         source.start(player.nextPlayTime);
