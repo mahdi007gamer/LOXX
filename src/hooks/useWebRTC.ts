@@ -7,10 +7,10 @@ class SmoothAudioPlayer {
   private isBuffering: boolean = true;
 
   public push(data: Float32Array) {
-    const MAX_QUEUE_SAMPLES = 2400; // 150ms buffer limit
+    const MAX_QUEUE_SAMPLES = 800; // ~50ms buffer limit to instantly catch up
     if (this.queue.length > MAX_QUEUE_SAMPLES) {
-      // Trim to the latest 400 samples (~25ms) to catch up instantly
-      this.queue = this.queue.slice(this.queue.length - 400);
+      // Trim to the latest 160 samples (~10ms) to catch up instantly
+      this.queue = this.queue.slice(this.queue.length - 160);
       this.isBuffering = false; 
     }
 
@@ -19,8 +19,8 @@ class SmoothAudioPlayer {
     nextQueue.set(data, this.queue.length);
     this.queue = nextQueue;
 
-    // If we were buffering and accumulated at least 480 samples (~30ms), resume play
-    if (this.isBuffering && this.queue.length >= 480) {
+    // If we were buffering and accumulated at least 240 samples (~15ms), resume play
+    if (this.isBuffering && this.queue.length >= 240) {
       this.isBuffering = false;
     }
   }
@@ -115,8 +115,8 @@ export const useWebRTC = (roomId: string | null, localStream: MediaStream | null
 
       sourceNodeRef.current = audioContext.createMediaStreamSource(localStream);
       
-      // Use standard 1024 buffer size for real-time responsiveness (~21ms capture delay)
-      processorNodeRef.current = audioContext.createScriptProcessor(1024, 1, 1);
+      // Use standard 512 buffer size for ultra low-latency capture (~11ms delay)
+      processorNodeRef.current = audioContext.createScriptProcessor(512, 1, 1);
 
       sourceNodeRef.current.connect(processorNodeRef.current);
       
@@ -203,7 +203,8 @@ export const useWebRTC = (roomId: string | null, localStream: MediaStream | null
       const dest = audioContext.createMediaStreamDestination();
       const player = new SmoothAudioPlayer();
       
-      const node = audioContext.createScriptProcessor(1024, 0, 1);
+      // Use 256 buffer size for fast playback processing (~16ms latency at 16kHz)
+      const node = audioContext.createScriptProcessor(256, 0, 1);
       node.onaudioprocess = (e) => {
         const channel = e.outputBuffer.getChannelData(0);
         player.consume(channel, e.outputBuffer.sampleRate, 16000);
