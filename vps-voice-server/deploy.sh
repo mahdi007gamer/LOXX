@@ -139,7 +139,13 @@ fi
 
 echo -e "\n${YELLOW}Compiling TypeScript down to native CommonJS...${NC}"
 if [ "$VERBOSE" = true ]; then
-  npx tsc --verbose
+  if command -v npx &> /dev/null; then
+    npx tsc --verbose
+  elif [ -f "./node_modules/typescript/bin/tsc" ]; then
+    node "./node_modules/typescript/bin/tsc" --verbose
+  else
+    npm run build
+  fi
 else
   npm run build
 fi

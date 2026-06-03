@@ -7,6 +7,9 @@ import * as mediasoup from "mediasoup";
 import type { types } from "mediasoup";
 import os from "os";
 import dotenv from "dotenv";
+import fs from "fs";
+import path from "path";
+import { execSync } from "child_process";
 
 dotenv.config();
 
@@ -95,6 +98,36 @@ const mediaCodecs: types.RtpCodecCapability[] = [
 
 // Initialize Mediasoup Workers
 async function startMediasoup() {
+  // Ensure the mediasoup-worker binary exists at runtime before booting workers
+  const relativeWorkerPath = "node_modules/mediasoup/worker/out/Release/mediasoup-worker";
+  const absWorkerPath = path.resolve(process.cwd(), relativeWorkerPath);
+
+  if (!fs.existsSync(absWorkerPath)) {
+    console.warn(`[SFU Voice Engine] 🚨 Mediasoup worker binary not found at: ${absWorkerPath}`);
+    console.log(`[SFU Voice Engine] 🔄 Auto-executing get-worker.sh to retrieve the correct prebuilt binary...`);
+    
+    try {
+      const scriptPath = path.resolve(process.cwd(), "get-worker.sh");
+      if (fs.existsSync(scriptPath)) {
+        // Run the getter script synchronously and pipe standard I/O so logs are visible
+        execSync(`bash "${scriptPath}"`, { stdio: "inherit" });
+        console.log(`[SFU Voice Engine] ✔ get-worker.sh recovery process completed. Checking binary...`);
+        
+        if (fs.existsSync(absWorkerPath)) {
+          console.log(`[SFU Voice Engine] ✔ Excellent! mediasoup-worker successfully placed at: ${absWorkerPath}`);
+        } else {
+          console.error(`[SFU Voice Engine] ❌ Recovery script finished but binary is still missing.`);
+        }
+      } else {
+        console.error(`[SFU Voice Engine] ❌ get-worker.sh script was not found at: ${scriptPath}`);
+      }
+    } catch (err: any) {
+      console.error(`[SFU Voice Engine] ❌ Auto-recovery execution failed:`, err.message || err);
+    }
+  } else {
+    console.log(`[SFU Voice Engine] ✔ Verified: mediasoup-worker is present at: ${absWorkerPath}`);
+  }
+
   const numWorkers = os.cpus().length;
   console.log(`[SFU Voice Engine] Launching ${numWorkers} Mediasoup workers...`);
   

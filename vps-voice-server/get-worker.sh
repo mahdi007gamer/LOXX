@@ -30,42 +30,81 @@ fi
 
 echo -e "📦 Installed Mediasoup Version: ${GREEN}${VERSION}${NC}"
 
-# 2. Detect Kernel version
+# 2. Detect Kernel version & Determine Suffix Priority
 KERNEL=$(uname -r)
 echo -e "🐧 System Kernel Version: ${GREEN}${KERNEL}${NC}"
 
+# We will try both suffixes sequentially, starting with the auto-detected one, but falling back resiliently.
 if [[ "$KERNEL" =~ ^6\. ]]; then
-  KERNEL_SUFFIX="kernel6"
+  SUFFIXES=("kernel6" "kernel5")
   echo -e "🖥️ Auto-detected target architecture: ${CYAN}Linux x64 (Kernel 6)${NC}"
 else
-  KERNEL_SUFFIX="kernel5"
+  SUFFIXES=("kernel5" "kernel6")
   echo -e "🖥️ Auto-detected target architecture: ${CYAN}Linux x64 (Kernel 5)${NC}"
 fi
 
-# 3. Construct File Name & URL
-TARGET_FILE="mediasoup-worker-${VERSION}-linux-x64-${KERNEL_SUFFIX}.tgz"
-DOWNLOAD_URL="https://github.com/versatica/mediasoup/releases/download/${VERSION}/${TARGET_FILE}"
+# 3. Construct Download Function
+download_asset() {
+  local suffix=$1
+  local target="mediasoup-worker-${VERSION}-linux-x64-${suffix}.tgz"
+  local url="https://github.com/versatica/mediasoup/releases/download/${VERSION}/${target}"
 
-echo -e "🔗 GitHub Release Asset URL: ${YELLOW}${DOWNLOAD_URL}${NC}"
+  echo -e "📥 Attempting to download suffix [${CYAN}${suffix}${NC}]..."
+  echo -e "🔗 URL: ${YELLOW}${url}${NC}"
 
-# 4. Clean previous manual downloads & download clean
-echo -e "\n${YELLOW}📥 Downloading prebuilt binary pack...${NC}"
-rm -f "$TARGET_FILE" mediasoup-worker
+  # Clean any stale file first
+  rm -f "$target"
 
-# Attempt with existing environment proxy first
-wget --timeout=15 --tries=3 "$DOWNLOAD_URL" -O "$TARGET_FILE"
+  # 1. Try Direct Download
+  wget --timeout=15 --tries=2 "$url" -O "$target"
+  if [ $? -eq 0 ] && [ -s "$target" ]; then
+    echo -e "${GREEN}✔ Download succeeded directly!${NC}"
+    TARGET_FILE="$target"
+    return 0
+  fi
 
-if [ $? -ne 0 ]; then
-  echo -e "\n${YELLOW}⚠️ Direct download timed out or was blocked. Trying local startvpn proxy on port 2080...${NC}"
+  # 2. Try with startvpn Local Proxy (Port 2080)
+  echo -e "${YELLOW}⚠️ Direct download failed/timed out. Trying via local proxy (http://127.0.0.1:2080)...${NC}"
   export http_proxy="http://127.0.0.1:2080"
   export https_proxy="http://127.0.0.1:2080"
-  wget --timeout=20 --tries=3 "$DOWNLOAD_URL" -O "$TARGET_FILE"
+  wget --timeout=15 --tries=2 "$url" -O "$target"
+  local status=$?
+  unset http_proxy
+  unset https_proxy
+
+  if [ $status -eq 0 ] && [ -s "$target" ]; then
+    echo -e "${GREEN}✔ Download succeeded via local proxy!${NC}"
+    TARGET_FILE="$target"
+    return 0
+  fi
+
+  # Check if we got a 404/failure
+  echo -e "${RED}❌ Failed to download suffix [${suffix}].${NC}"
+  rm -f "$target"
+  return 1
+}
+
+# 4. Try Suffixes
+DOWNLOAD_SUCCESS=false
+for suffix in "${SUFFIXES[@]}"; do
+  if download_asset "$suffix"; then
+    DOWNLOAD_SUCCESS=true
+    break
+  fi
+done
+
+if [ "$DOWNLOAD_SUCCESS" = false ]; then
+  # Make a last-ditch effort targeting kernel6 specifically since user confirmed it's correct
+  echo -e "\n${YELLOW}🚨 All priority downloads failed. Forcing main kernel6 fallback attempt...${NC}"
+  if download_asset "kernel6"; then
+    DOWNLOAD_SUCCESS=true
+  fi
 fi
 
-if [ $? -ne 0 ]; then
-  echo -e "\n${RED}❌ Error: Failed to download the prebuilt binary pack.${NC}"
-  echo -e "💡 Try launching your VPN proxy manually first: ${CYAN}source /usr/local/bin/startvpn -h 2080${NC}"
-  echo -e "💡 Then run this script again: ${CYAN}bash get-worker.sh${NC}"
+if [ "$DOWNLOAD_SUCCESS" = false ]; then
+  echo -e "\n${RED}❌ Error: Failed to retrieve any matched mediasoup-worker prebuilt binary package.${NC}"
+  echo -e "💡 Tips: Ensure your VPN proxy is online using: ${CYAN}source /usr/local/bin/startvpn -h 2080${NC}"
+  echo -e "💡 Try downloading manually and copying to ${GREEN}node_modules/mediasoup/worker/out/Release/mediasoup-worker${NC}"
   exit 1
 fi
 
