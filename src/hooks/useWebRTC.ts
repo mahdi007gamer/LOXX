@@ -1,30 +1,24 @@
 import { useEffect, useRef, useState } from 'react';
-import { voiceSocket, getSharedAudioContext } from '../lib/socket';
+import { voiceSocket, mainPlatformVoiceSocket, getSharedAudioContext } from '../lib/socket';
+import { Device } from 'mediasoup-client';
 
-// Ultra-stable real-time audio jitter buffer & linear resampler
+// Keep the stable custom PCM linear resampler & jitter buffer for the robust fallback pipeline.
 class SmoothAudioPlayer {
   private queue: Float32Array = new Float32Array(0);
-  private currentGain: number = 0; // Soft gain tracking to prevent zero-crossing pops and click noises
+  private currentGain: number = 0;
   private isBuffering: boolean = true;
   private consecutiveUnderflows: number = 0;
 
   public push(data: Float32Array) {
-    // Keep a thin latency-friendly queue ceiling (e.g. 1920 samples = 120ms of audio at 16kHz)
     const MAX_QUEUE_SAMPLES = 1920; 
     if (this.queue.length > MAX_QUEUE_SAMPLES) {
-      // Catch up immediately by trimming old backlog to remain ultra-fresh matching real-time voice call specs
-      this.queue = this.queue.slice(this.queue.length - 320); // Maintain ~20ms queue
+      this.queue = this.queue.slice(this.queue.length - 320);
     }
-
     const nextQueue = new Float32Array(this.queue.length + data.length);
     nextQueue.set(this.queue, 0);
     nextQueue.set(data, this.queue.length);
     this.queue = nextQueue;
-
     this.consecutiveUnderflows = 0;
-    
-    // We only buffer at initial play or after real dead silent channels. 
-    // Wait until we have at least 170 samples (~10.6ms) to start playing smoothly
     if (this.isBuffering && this.queue.length >= 170) {
       this.isBuffering = false;
     }
@@ -33,25 +27,17 @@ class SmoothAudioPlayer {
   public consume(out: Float32Array, outSampleRate: number, inSampleRate: number) {
     const ratio = inSampleRate / outSampleRate;
     const neededInSamples = out.length * ratio;
-
-    // Check if we have underflow
     if (this.queue.length < neededInSamples) {
       this.consecutiveUnderflows++;
-      
-      // Only lock buffering mode if we have missed multiple consecutive cycles, signaling silent pauses.
       if (this.consecutiveUnderflows > 3) {
         this.isBuffering = true;
       }
-
-      // Smoothly fade the output down to zero instead of harsh popping clicks
       for (let i = 0; i < out.length; i++) {
-        this.currentGain = Math.max(0, this.currentGain - 0.1); // Fast clean fade-out
+        this.currentGain = Math.max(0, this.currentGain - 0.1);
         out[i] = 0;
       }
       return;
     }
-
-    // Playback active
     for (let i = 0; i < out.length; i++) {
       const srcIdx = i * ratio;
       const idx1 = Math.floor(srcIdx);
@@ -60,14 +46,11 @@ class SmoothAudioPlayer {
       const s1 = (idx1 >= 0 && idx1 < this.queue.length) ? this.queue[idx1] : 0;
       const s2 = (idx2 >= 0 && idx2 < this.queue.length) ? this.queue[idx2] : 0;
       const rawSample = s1 + t * (s2 - s1);
-
       if (this.currentGain < 1) {
-        this.currentGain = Math.min(1.0, this.currentGain + 0.1); // Very fast clean fade-in
+        this.currentGain = Math.min(1.0, this.currentGain + 0.1);
       }
       out[i] = rawSample * this.currentGain;
     }
-
-    // Cleanly advance slice queue
     const consumedCount = Math.floor(neededInSamples);
     this.queue = this.queue.slice(consumedCount);
   }
@@ -87,556 +70,627 @@ export const useWebRTC = (
   screenStream: MediaStream | null = null
 ) => {
   const [remoteStreams, setRemoteStreams] = useState<Map<string, MediaStream>>(new Map());
-  const localStreamRef = useRef<MediaStream | null>(null);
+  const [voiceMethod, setVoiceMethod] = useState<'mediasoup' | 'fallback_pcm'>('mediasoup');
 
-  // Audio nodes and references for capture
+  // References for Mediasoup
+  const deviceRef = useRef<Device | null>(null);
+  const sendTransportRef = useRef<any>(null);
+  const recvTransportRef = useRef<any>(null);
+  const audioProducerRef = useRef<any>(null);
+  const videoProducerRef = useRef<any>(null);
+  const consumersRef = useRef<Map<string, any>>(new Map()); // consumerId -> consumer
+  const peerStreamsRef = useRef<Map<string, MediaStream>>(new Map()); // userId -> MediaStream
+
+  // References for fallback PCM handler
   const processorNodeRef = useRef<ScriptProcessorNode | null>(null);
   const sourceNodeRef = useRef<MediaStreamAudioSourceNode | null>(null);
-  const remotePlayersRef = useRef<Map<string, { 
+  const fallbackPlayersRef = useRef<Map<string, { 
     dest: MediaStreamAudioDestinationNode; 
     player: SmoothAudioPlayer; 
     node: ScriptProcessorNode;
     silentGainNode: GainNode;
-    localGainNode?: GainNode;
   }>>(new Map());
 
-  // Handle local microphone capture & compression
-  useEffect(() => {
-    if (!roomId || !userId || !localStream) {
-      if (processorNodeRef.current) {
-        try { processorNodeRef.current.disconnect(); } catch (e) {}
-        processorNodeRef.current = null;
-      }
-      if (sourceNodeRef.current) {
-        try { sourceNodeRef.current.disconnect(); } catch (e) {}
-        sourceNodeRef.current = null;
-      }
-      return;
+  // Helper: Int16 to Float32 conversion for fallback playback
+  const int16ToFloat32 = (buffer: ArrayBuffer) => {
+    const int16 = new Int16Array(buffer);
+    const float32 = new Float32Array(int16.length);
+    for (let i = 0; i < int16.length; i++) {
+      float32[i] = int16[i] < 0 ? int16[i] / 0x8000 : int16[i] / 0x7FFF;
     }
+    return float32;
+  };
 
-    localStreamRef.current = localStream;
+  // --------------------------------------------------
+  // PART A: MAIN MEDIASOUP SFU PIPELINE
+  // --------------------------------------------------
+  useEffect(() => {
+    if (!roomId || !userId || voiceMethod !== 'mediasoup') return;
 
+    let active = true;
+
+    const startMediasoupSFU = async () => {
+      try {
+        console.log(`[LOXX SFU Mediasoup] Initiating WebRTC Handshake with Dedicated VPS server...`);
+        
+        // Ensure voiceSocket is connected
+        if (!voiceSocket.connected) {
+          voiceSocket.connect();
+        }
+
+        // Wait a tiny moment for socket connection
+        await new Promise<void>((resolve, reject) => {
+          if (voiceSocket.connected) return resolve();
+          let count = 0;
+          const check = setInterval(() => {
+            if (voiceSocket.connected) {
+              clearInterval(check);
+              resolve();
+            } else if (++count > 40) { // 4 seconds timeout
+              clearInterval(check);
+              reject(new Error("Voice signaling socket timeout"));
+            }
+          }, 100);
+        });
+
+        // 1. Join room and get Router RTP capabilities
+        voiceSocket.emit("join", { roomId, userId }, async (ack: any) => {
+          if (!active) return;
+          if (!ack || !ack.success) {
+            console.warn(`[LOXX SFU Mediasoup] Failed to join mediasoup router room: ${ack?.error || "Unknown"}`);
+            setVoiceMethod('fallback_pcm'); // Fallback immediately
+            return;
+          }
+
+          try {
+            // 2. Initialize Mediasoup Device
+            const device = new Device();
+            await device.load({ routerRtpCapabilities: ack.routerRtpCapabilities });
+            deviceRef.current = device;
+            console.log(`[LOXX SFU Mediasoup] Mediasoup Device loaded successfully inside client frame.`);
+
+            // 3. Create Send Transport (if mic input present)
+            if (localStream && localStream.getAudioTracks().length > 0) {
+              await setupSendTransport(device);
+            }
+
+            // 4. Create Receive Transport
+            await setupRecvTransport(device);
+
+            // 5. Query active producers already inside the room
+            voiceSocket.emit("getProducers", async (prodAck: any) => {
+              if (prodAck && prodAck.success && prodAck.producers) {
+                for (const prod of prodAck.producers) {
+                  if (prod.userId !== userId) {
+                    await consumeTrack(prod.producerId, prod.userId, prod.kind);
+                  }
+                }
+              }
+            });
+
+          } catch (deviceError: any) {
+            console.error(`[LOXX SFU Mediasoup] Device setup/handshake error:`, deviceError);
+            setVoiceMethod('fallback_pcm');
+          }
+        });
+
+      } catch (err) {
+        console.warn(`[LOXX SFU Mediasoup] VPS Voice Connection failed. Triaging fallback...`, err);
+        setVoiceMethod('fallback_pcm');
+      }
+    };
+
+    // --- SETUP SEND TRANSPORT ---
+    const setupSendTransport = async (device: Device) => {
+      return new Promise<void>((resolve) => {
+        voiceSocket.emit("createWebRtcTransport", { direction: "send" }, async (resp: any) => {
+          if (!active) return resolve();
+          if (!resp || !resp.success) {
+            console.error("[LOXX SFU Mediasoup] Failed to create send transport:", resp?.error);
+            return resolve();
+          }
+
+          try {
+            const sendTransport = device.createSendTransport(resp.params);
+            sendTransportRef.current = sendTransport;
+
+            sendTransport.on("connect", ({ dtlsParameters }, callback, errback) => {
+              voiceSocket.emit("connectWebRtcTransport", { transportId: sendTransport.id, dtlsParameters }, (connectAck: any) => {
+                if (connectAck && connectAck.success) callback();
+                else errback(connectAck?.error || new Error("Connection failed"));
+              });
+            });
+
+            sendTransport.on("produce", ({ kind, rtpParameters, appData }, callback, errback) => {
+              voiceSocket.emit("produce", { transportId: sendTransport.id, kind, rtpParameters, appData }, (produceAck: any) => {
+                if (produceAck && produceAck.success) {
+                  callback({ id: produceAck.id });
+                } else {
+                  errback(produceAck?.error || new Error("Production failed"));
+                }
+              });
+            });
+
+            // Start producing microphone track immediately
+            const audioTrack = localStream!.getAudioTracks()[0];
+            if (audioTrack) {
+              const audioProducer = await sendTransport.produce({ 
+                track: audioTrack,
+                appData: { userId }
+              });
+              audioProducerRef.current = audioProducer;
+              console.log(`[LOXX SFU Mediasoup] Microphones produced stream over RTP [ID: ${audioProducer.id}]`);
+            }
+            resolve();
+          } catch (err) {
+            console.error("[LOXX SFU Mediasoup] Error building send transport producing track:", err);
+            resolve();
+          }
+        });
+      });
+    };
+
+    // --- SETUP RECV TRANSPORT ---
+    const setupRecvTransport = async (device: Device) => {
+      return new Promise<void>((resolve) => {
+        voiceSocket.emit("createWebRtcTransport", { direction: "recv" }, async (resp: any) => {
+          if (!active) return resolve();
+          if (!resp || !resp.success) {
+            console.error("[LOXX SFU Mediasoup] Failed to create recv transport:", resp?.error);
+            return resolve();
+          }
+
+          try {
+            const recvTransport = device.createRecvTransport(resp.params);
+            recvTransportRef.current = recvTransport;
+
+            recvTransport.on("connect", ({ dtlsParameters }, callback, errback) => {
+              voiceSocket.emit("connectWebRtcTransport", { transportId: recvTransport.id, dtlsParameters }, (connectAck: any) => {
+                if (connectAck && connectAck.success) callback();
+                else errback(connectAck?.error || new Error("Connection failed"));
+              });
+            });
+
+            resolve();
+          } catch (err) {
+            console.error("[LOXX SFU Mediasoup] Error building receive transport:", err);
+            resolve();
+          }
+        });
+      });
+    };
+
+    // --- CONSUME TRACK ---
+    const consumeTrack = async (producerId: string, peerUserId: string, kind: "audio" | "video") => {
+      const device = deviceRef.current;
+      const recvTransport = recvTransportRef.current;
+      if (!device || !recvTransport) return;
+
+      voiceSocket.emit("consume", {
+        rtpCapabilities: device.rtpCapabilities,
+        producerId,
+        transportId: recvTransport.id
+      }, async (resp: any) => {
+        if (!active) return;
+        if (!resp || !resp.success) {
+          console.warn(`[LOXX SFU Mediasoup] Failed to consume track from ${peerUserId}:`, resp?.error);
+          return;
+        }
+
+        try {
+          const consumer = await recvTransport.consume(resp.params);
+          consumersRef.current.set(consumer.id, consumer);
+
+          // Resume consumer playing state on server
+          voiceSocket.emit("resumeConsumer", { consumerId: consumer.id });
+
+          const newTrack = consumer.track;
+          
+          setRemoteStreams((prev) => {
+            const nextMap = new Map<string, MediaStream>(prev);
+            let userStream = nextMap.get(peerUserId) as MediaStream | undefined;
+            if (!userStream) {
+              userStream = new MediaStream();
+            }
+
+            if (kind === "audio") {
+              userStream.getAudioTracks().forEach(t => userStream?.removeTrack(t));
+              userStream.addTrack(newTrack);
+              
+              // Attach custom GainNode for client master-volume handling
+              try {
+                const audioCtx = getSharedAudioContext();
+                const source = audioCtx.createMediaStreamSource(userStream);
+                const gainNode = audioCtx.createGain();
+                source.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                (userStream as any).gainNode = gainNode;
+              } catch (e) {
+                console.warn("[LOXX SFU Mediasoup] Direct AudioContext gain node routing not supported:", e);
+              }
+            } else {
+              userStream.getVideoTracks().forEach(t => userStream?.removeTrack(t));
+              userStream.addTrack(newTrack);
+            }
+
+            nextMap.set(peerUserId, new MediaStream(userStream.getTracks()));
+            return nextMap;
+          });
+
+          // Watch consumer ending triggers
+          consumer.on("transportclose", () => {
+            closeSpecificConsumer(consumer.id, peerUserId, kind);
+          });
+          consumer.on("trackended", () => {
+            closeSpecificConsumer(consumer.id, peerUserId, kind);
+          });
+
+          console.log(`[LOXX SFU Mediasoup] Subscribed successfully to peer ${peerUserId} track [${kind}]`);
+        } catch (err) {
+          console.error(`[LOXX SFU Mediasoup] Error consuming track internally:`, err);
+        }
+      });
+    };
+
+    const closeSpecificConsumer = (consumerId: string, peerUserId: string, kind: "audio" | "video") => {
+      const consumer = consumersRef.current.get(consumerId);
+      if (consumer) {
+        try { consumer.close(); } catch (e) {}
+        consumersRef.current.delete(consumerId);
+      }
+
+      setRemoteStreams((prev) => {
+        const nextMap = new Map<string, MediaStream>(prev);
+        const userStream = nextMap.get(peerUserId) as MediaStream | undefined;
+        if (userStream) {
+          if (kind === "audio") {
+            userStream.getAudioTracks().forEach(t => userStream?.removeTrack(t));
+          } else {
+            userStream.getVideoTracks().forEach(t => userStream?.removeTrack(t));
+          }
+          if (userStream.getTracks().length === 0) {
+            nextMap.delete(peerUserId);
+          } else {
+            nextMap.set(peerUserId, new MediaStream(userStream.getTracks()));
+          }
+        }
+        return nextMap;
+      });
+    };
+
+    // --- REALTIME EVENT LISTENERS FROM Dedicated VPS ---
+    const handleNewProducer = async (data: { producerId: string; userId: string; kind: "audio" | "video"; appData?: any }) => {
+      if (data.userId === userId) return;
+      console.log(`[LOXX SFU Mediasoup] Remote peer started publishing: ${data.userId} kind: ${data.kind}`);
+      await consumeTrack(data.producerId, data.userId, data.kind);
+    };
+
+    const handleProducerClosed = ({ producerId }: { producerId: string }) => {
+      // Clean up local consumers subscribing to this producer
+      consumersRef.current.forEach((consumer, consumerId) => {
+        if (consumer.producerId === producerId) {
+          // Identify associated peer
+          let targetPeerUserId = "";
+          remoteStreams.forEach((stream, peerId) => {
+            // Find which peer possesses this stream
+            targetPeerUserId = peerId;
+          });
+          closeSpecificConsumer(consumerId, targetPeerUserId, consumer.kind);
+        }
+      });
+    };
+
+    const handleConsumerClosed = ({ consumerId }: { consumerId: string }) => {
+      let targetPeerUserId = "";
+      remoteStreams.forEach((stream, peerId) => { targetPeerUserId = peerId; });
+      closeSpecificConsumer(consumerId, targetPeerUserId, "audio");
+    };
+
+    voiceSocket.on("newProducer", handleNewProducer);
+    voiceSocket.on("producerClosed", handleProducerClosed);
+    voiceSocket.on("consumerClosed", handleConsumerClosed);
+
+    startMediasoupSFU();
+
+    return () => {
+      active = false;
+      
+      voiceSocket.off("newProducer", handleNewProducer);
+      voiceSocket.off("producerClosed", handleProducerClosed);
+      voiceSocket.off("consumerClosed", handleConsumerClosed);
+
+      // Tell signaling server we are leaving
+      voiceSocket.emit("leave");
+
+      // Tear down producers/transports
+      try {
+        if (audioProducerRef.current) {
+          audioProducerRef.current.close();
+          audioProducerRef.current = null;
+        }
+        if (videoProducerRef.current) {
+          videoProducerRef.current.close();
+          videoProducerRef.current = null;
+        }
+        consumersRef.current.forEach(c => c.close());
+        consumersRef.current.clear();
+
+        if (sendTransportRef.current) {
+          sendTransportRef.current.close();
+          sendTransportRef.current = null;
+        }
+        if (recvTransportRef.current) {
+          recvTransportRef.current.close();
+          recvTransportRef.current = null;
+        }
+      } catch (err) {}
+      
+      deviceRef.current = null;
+      setRemoteStreams(new Map());
+    };
+
+  }, [roomId, userId, voiceMethod]);
+
+  // Handle dynamic Screen sharing track publication via Mediasoup Send Transport
+  useEffect(() => {
+    if (!roomId || !userId || voiceMethod !== 'mediasoup' || !sendTransportRef.current) return;
+
+    const screenVideoTrack = screenStream ? screenStream.getVideoTracks()[0] : null;
+
+    const updateScreenShare = async () => {
+      try {
+        if (screenVideoTrack) {
+          console.log("[LOXX SFU Mediasoup] Producing Local Screenshare track to Media Server...");
+          
+          // Close old screenshare if existing
+          if (videoProducerRef.current) {
+            try {
+              voiceSocket.emit("closeProducer", { producerId: videoProducerRef.current.id });
+              videoProducerRef.current.close();
+            } catch (e) {}
+          }
+
+          const videoProducer = await sendTransportRef.current.produce({
+            track: screenVideoTrack,
+            appData: { type: "screen", userId }
+          });
+          videoProducerRef.current = videoProducer;
+
+          // Listen if the screen share track ends mechanically
+          screenVideoTrack.onended = () => {
+            if (videoProducerRef.current) {
+              voiceSocket.emit("closeProducer", { producerId: videoProducerRef.current.id });
+              try { videoProducerRef.current.close(); } catch (e) {}
+              videoProducerRef.current = null;
+            }
+          };
+
+        } else {
+          // Track removed or screenshare stopped
+          if (videoProducerRef.current) {
+            console.log("[LOXX SFU Mediasoup] Screenshare stopped. Releasing producer.");
+            voiceSocket.emit("closeProducer", { producerId: videoProducerRef.current.id });
+            try { videoProducerRef.current.close(); } catch(e) {}
+            videoProducerRef.current = null;
+          }
+        }
+      } catch (e) {
+        console.error("[LOXX SFU Mediasoup] Failed producing Screenshare video track:", e);
+      }
+    };
+
+    updateScreenShare();
+
+  }, [screenStream, voiceMethod]);
+
+  // --------------------------------------------------
+  // PART B: SECURE PCM OVER WEBSOCKET FALLBACK SYSTEM
+  // --------------------------------------------------
+  useEffect(() => {
+    if (!roomId || !userId || voiceMethod !== 'fallback_pcm') return;
+
+    console.warn(`[LOXX VOICE PIPELINE] ⚠️ Mediasoup SFU unavailable or failed. Switching to reliable high stability PCM fallback over primary server!`);
+    
     let audioContext: AudioContext;
     try {
       audioContext = getSharedAudioContext();
       if (!audioContext) return;
     } catch (e) {
-      console.error("WebSocket SFU: Could not retrieve shared AudioContext", e);
+      console.error("VoiP Fallback: AudioContext lookup error", e);
       return;
     }
 
-    try {
-      if (sourceNodeRef.current) {
-        try { sourceNodeRef.current.disconnect(); } catch (e) {}
-      }
-      if (processorNodeRef.current) {
-        try { processorNodeRef.current.disconnect(); } catch (e) {}
-      }
-
-      const audioTracks = localStream.getAudioTracks();
-      if (audioTracks.length === 0) return;
-
-      sourceNodeRef.current = audioContext.createMediaStreamSource(localStream);
-      
-      // Use standard 512 buffer size for ultra low-latency capture (~11ms delay)
-      processorNodeRef.current = audioContext.createScriptProcessor(512, 1, 1);
-
-      sourceNodeRef.current.connect(processorNodeRef.current);
-      
-      // Silent destination route to maintain execution in modern desktop frames
-      const silentGainNode = audioContext.createGain();
-      silentGainNode.gain.value = 0;
-      processorNodeRef.current.connect(silentGainNode);
-      silentGainNode.connect(audioContext.destination);
-
-      // Ultra-efficient anti-aliased downsampler + Int16 compressor
-      const downsampleAndToInt16 = (buffer: Float32Array, inputSampleRate: number, outputSampleRate: number) => {
-        const ratio = inputSampleRate / outputSampleRate;
-        const newLength = Math.floor(buffer.length / ratio);
-        const result = new Int16Array(newLength);
-        for (let i = 0; i < newLength; i++) {
-          const start = Math.floor(i * ratio);
-          const end = Math.max(start + 1, Math.floor((i + 1) * ratio));
-          let sum = 0;
-          let count = 0;
-          for (let j = start; j < end; j++) {
-            if (j < buffer.length) {
-              sum += buffer[j];
-              count++;
-            }
-          }
-          const sample = count > 0 ? sum / count : 0;
-          const s = Math.max(-1, Math.min(1, sample));
-          result[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
-        }
-        return result.buffer;
-      };
-
-      // Accumulator for packet bundling
-      const chunkBuffer: Int16Array[] = [];
-      const CHUNK_ACCUMULATE_COUNT = 2; // Bundles ~20ms of audio (standard RTP frame) to reduce delay by 50% while operating with extreme stability.
-
-      processorNodeRef.current.onaudioprocess = (event) => {
-        const tracks = localStreamRef.current ? localStreamRef.current.getAudioTracks() : [];
-        if (tracks.length > 0 && tracks[0].enabled) {
-          const inputData = event.inputBuffer.getChannelData(0);
-          
-          // No manual noise gate to avoid clipping words/syllables.
-          // Browser native echoCancellation and noiseSuppression handle background hiss perfectly.
-
-          // Downsample and Compress in a single contiguous step (Native crisp 16kHz)
-          const compressedPCMBuffer = downsampleAndToInt16(inputData, event.inputBuffer.sampleRate, 16000);
-          const compressedPCM = new Int16Array(compressedPCMBuffer);
-          
-          chunkBuffer.push(compressedPCM);
-
-          if (chunkBuffer.length >= CHUNK_ACCUMULATE_COUNT) {
-            let totalLength = 0;
-            for (const c of chunkBuffer) totalLength += c.length;
-            
-            const merged = new Int16Array(totalLength);
-            let offset = 0;
-            for (const c of chunkBuffer) {
-              merged.set(c, offset);
-              offset += c.length;
-            }
-            chunkBuffer.length = 0; // Clear accumulator
-
-            // Broadcast to Lobby server securely with bundled packet
-            voiceSocket.emit("voice.audio_chunk", {
-              roomId: roomId,
-              chunk: merged.buffer
-            });
-          }
-        } else {
-          chunkBuffer.length = 0;
-        }
-      };
-
-      console.log("WebSocket SFU: Local low-latency mic capture active.");
-    } catch (err) {
-      console.error("WebSocket SFU: Local flow capture error", err);
+    if (!mainPlatformVoiceSocket.connected) {
+      mainPlatformVoiceSocket.connect();
     }
 
-    return () => {
-      if (processorNodeRef.current) {
-        try { processorNodeRef.current.disconnect(); } catch (e) {}
-        processorNodeRef.current = null;
-      }
-      if (sourceNodeRef.current) {
-        try { sourceNodeRef.current.disconnect(); } catch (e) {}
-        sourceNodeRef.current = null;
-      }
-    };
-  }, [roomId, userId, localStream]);
+    // Capture Local Microphone Audio Chunks
+    if (localStream && localStream.getAudioTracks().length > 0) {
+      try {
+        sourceNodeRef.current = audioContext.createMediaStreamSource(localStream);
+        
+        // 512 samples buffer for crisp low delay transmission
+        processorNodeRef.current = audioContext.createScriptProcessor(512, 1, 1);
+        sourceNodeRef.current.connect(processorNodeRef.current);
 
-  // Handle incoming voice subscriber chunks with low-latency resampler queue
-  useEffect(() => {
-    if (!roomId || !userId) return;
+        const silentGainNode = audioContext.createGain();
+        silentGainNode.gain.value = 0;
+        processorNodeRef.current.connect(silentGainNode);
+        silentGainNode.connect(audioContext.destination);
 
-    let audioContext: AudioContext;
-    try {
-      audioContext = getSharedAudioContext();
-    } catch (e) {
-      console.error("WebSocket SFU: Receiver context error:", e);
-      return;
+        const downsampleAndToInt16 = (buffer: Float32Array, inputSR: number, outputSR: number) => {
+          const ratio = inputSR / outputSR;
+          const newLength = Math.floor(buffer.length / ratio);
+          const result = new Int16Array(newLength);
+          for (let i = 0; i < newLength; i++) {
+            const start = Math.floor(i * ratio);
+            const end = Math.max(start + 1, Math.floor((i + 1) * ratio));
+            let s = 0, count = 0;
+            for (let j = start; j < end; j++) {
+              if (j < buffer.length) { s += buffer[j]; count++; }
+            }
+            const sample = count > 0 ? s / count : 0;
+            const capped = Math.max(-1, Math.min(1, sample));
+            result[i] = capped < 0 ? capped * 0x8000 : capped * 0x7FFF;
+          }
+          return result.buffer;
+        };
+
+        const chunkBuffer: Int16Array[] = [];
+        const CHUNK_ACC_COUNT = 2; // Pack bundles into ~20ms frames
+
+        processorNodeRef.current.onaudioprocess = (event) => {
+          const micEnabled = localStream.getAudioTracks()[0]?.enabled;
+          if (micEnabled) {
+            const inputData = event.inputBuffer.getChannelData(0);
+            const compressed = downsampleAndToInt16(inputData, event.inputBuffer.sampleRate, 16000);
+            chunkBuffer.push(new Int16Array(compressed));
+
+            if (chunkBuffer.length >= CHUNK_ACC_COUNT) {
+              let totalLen = 0;
+              for (const c of chunkBuffer) totalLen += c.length;
+              const merged = new Int16Array(totalLen);
+              let offset = 0;
+              for (const c of chunkBuffer) {
+                merged.set(c, offset);
+                offset += c.length;
+              }
+              chunkBuffer.length = 0;
+
+              mainPlatformVoiceSocket.emit("voice.audio_chunk", {
+                roomId,
+                chunk: merged.buffer
+              });
+            }
+          }
+        };
+
+      } catch (err) {
+        console.error("VoIP Fallback local capture initialization error:", err);
+      }
     }
 
-    // Convert high-efficiency 16-bit PCM back to Float32 sample blocks
-    const int16ToFloat32 = (buffer: ArrayBuffer) => {
-      const src = new Int16Array(buffer);
-      const dest = new Float32Array(src.length);
-      for (let i = 0; i < src.length; i++) {
-        dest[i] = src[i] < 0 ? src[i] / 0x8000 : src[i] / 0x7FFF;
-      }
-      return dest;
-    };
-
+    // Remote Peer Playback Setup
     const getOrCreateRemotePlayer = (targetId: string) => {
-      if (remotePlayersRef.current.has(targetId)) {
-        return remotePlayersRef.current.get(targetId)!;
-      }
+      const existing = fallbackPlayersRef.current.get(targetId);
+      if (existing) return existing;
 
-      console.log(`WebSocket SFU: Generating dynamic low-latency output for peer ${targetId}`);
-      const dest = audioContext.createMediaStreamDestination();
+      console.log(`VoIP Fallback: Registering smooth audio pipeline for remote peer: ${targetId}`);
       const player = new SmoothAudioPlayer();
-      
-      // Use 512 buffer size for stable playback processing while maintaining ultra-low latency
-      const node = audioContext.createScriptProcessor(512, 0, 1);
-      node.onaudioprocess = (e) => {
-        const channel = e.outputBuffer.getChannelData(0);
-        player.consume(channel, e.outputBuffer.sampleRate, 16000);
+      const dest = audioContext.createMediaStreamDestination();
+      const node = audioContext.createScriptProcessor(1024, 0, 1);
+
+      // Playback consumer logic
+      node.onaudioprocess = (event) => {
+        const out = event.outputBuffer.getChannelData(0);
+        player.consume(out, event.outputBuffer.sampleRate, 16000);
       };
-      
-      // Keep dest connection for visual analyzer
-      node.connect(dest);
-      
-      // Connect to silent output purely to keep Audio graph pump running in the background tab/windows
-      const silentGainNode = audioContext.createGain();
-      silentGainNode.gain.value = 0;
-      node.connect(silentGainNode);
-      silentGainNode.connect(audioContext.destination);
 
-      // Create a direct low-latency audio gain node connected straight to the speaker destination
-      const localGainNode = audioContext.createGain();
-      localGainNode.gain.value = 1.0; // Controlled by RemoteAudioPlayer
-      node.connect(localGainNode);
-      localGainNode.connect(audioContext.destination);
+      const silentGain = audioContext.createGain();
+      silentGain.gain.value = 1.0; // Volume managed inside RemoteAudioPlayer
 
-      // Bind the gainNode directly to the stream object as an accessor property
-      (dest.stream as any).gainNode = localGainNode;
+      node.connect(silentGain);
+      silentGain.connect(dest);
+      silentGain.connect(audioContext.destination);
 
-      const entry = { dest, player, node, silentGainNode, localGainNode };
-      remotePlayersRef.current.set(targetId, entry);
+      const stream = dest.stream;
+      (stream as any).gainNode = silentGain;
+
+      fallbackPlayersRef.current.set(targetId, { dest, player, node, silentGainNode: silentGain });
 
       setRemoteStreams((prev) => {
-        const nextMap = new Map(prev);
-        nextMap.set(targetId, dest.stream);
-        return nextMap;
+        const next = new Map(prev);
+        next.set(targetId, stream);
+        return next;
       });
 
-      return entry;
+      return { dest, player, node, silentGainNode: silentGain };
     };
 
     const destroyRemotePlayer = (targetId: string) => {
-      const entry = remotePlayersRef.current.get(targetId);
+      const entry = fallbackPlayersRef.current.get(targetId);
       if (entry) {
         try { entry.node.disconnect(); } catch (e) {}
         try { entry.silentGainNode.disconnect(); } catch (e) {}
-        try { entry.localGainNode?.disconnect(); } catch (e) {}
-        remotePlayersRef.current.delete(targetId);
+        fallbackPlayersRef.current.delete(targetId);
       }
       setRemoteStreams((prev) => {
-        const nextMap = new Map(prev);
-        nextMap.delete(targetId);
-        return nextMap;
+        const next = new Map(prev);
+        next.delete(targetId);
+        return next;
       });
     };
 
     const handleJoinResponse = (response?: { users: string[] }) => {
       if (response && response.users) {
         response.users.forEach((otherId) => {
-          if (otherId !== userId) {
-            getOrCreateRemotePlayer(otherId);
-          }
+          if (otherId !== userId) getOrCreateRemotePlayer(otherId);
         });
       }
     };
 
-    voiceSocket.emit('voice.join', { roomId }, (resp?: any) => {
+    mainPlatformVoiceSocket.emit("voice.join", { roomId }, (resp?: any) => {
       handleJoinResponse(resp);
     });
 
     const handleExistingUsers = ({ users }: { users: string[] }) => {
       users.forEach((otherId) => {
-        if (otherId !== userId) {
-          getOrCreateRemotePlayer(otherId);
-        }
+        if (otherId !== userId) getOrCreateRemotePlayer(otherId);
       });
     };
 
     const handleUserJoined = ({ userId: otherId }: { userId: string }) => {
-      if (otherId !== userId) {
-        getOrCreateRemotePlayer(otherId);
-      }
+      if (otherId !== userId) getOrCreateRemotePlayer(otherId);
     };
 
     const handleUserLeft = ({ userId: otherId }: { userId: string }) => {
-      console.log(`WebSocket SFU: Cleaning up memory of removed user ${otherId}`);
       destroyRemotePlayer(otherId);
     };
 
     const handleAudioChunk = ({ userId: senderId, chunk }: { userId: string, chunk: ArrayBuffer }) => {
       if (senderId === userId) return;
-
       try {
         if (audioContext.state === "suspended") {
           audioContext.resume().catch(() => {});
         }
-
-        const playerEntry = getOrCreateRemotePlayer(senderId);
+        const entry = getOrCreateRemotePlayer(senderId);
         const floatData = int16ToFloat32(chunk);
-        
-        // Push incoming samples straight into the smooth resampler queue
-        playerEntry.player.push(floatData);
+        entry.player.push(floatData);
       } catch (err) {
-        console.error("WebSocket SFU: Playback ingestion error", err);
+        console.error("VoIP Fallback play ingest error:", err);
       }
     };
 
-    voiceSocket.on('voice.user_joined', handleUserJoined);
-    voiceSocket.on('voice.existing_users', handleExistingUsers);
-    voiceSocket.on('voice.user_left', handleUserLeft);
-    voiceSocket.on('voice.audio_chunk', handleAudioChunk);
+    mainPlatformVoiceSocket.on('voice.user_joined', handleUserJoined);
+    mainPlatformVoiceSocket.on('voice.existing_users', handleExistingUsers);
+    mainPlatformVoiceSocket.on('voice.user_left', handleUserLeft);
+    mainPlatformVoiceSocket.on('voice.audio_chunk', handleAudioChunk);
 
     return () => {
-      voiceSocket.emit('voice.leave', { roomId });
-      voiceSocket.off('voice.user_joined', handleUserJoined);
-      voiceSocket.off('voice.existing_users', handleExistingUsers);
-      voiceSocket.off('voice.user_left', handleUserLeft);
-      voiceSocket.off('voice.audio_chunk', handleAudioChunk);
+      mainPlatformVoiceSocket.emit('voice.leave', { roomId });
+      mainPlatformVoiceSocket.off('voice.user_joined', handleUserJoined);
+      mainPlatformVoiceSocket.off('voice.existing_users', handleExistingUsers);
+      mainPlatformVoiceSocket.off('voice.user_left', handleUserLeft);
+      mainPlatformVoiceSocket.off('voice.audio_chunk', handleAudioChunk);
 
-      // Total cleanup to release resources
-      remotePlayersRef.current.forEach((entry, targetId) => {
+      if (processorNodeRef.current) {
+        try { processorNodeRef.current.disconnect(); } catch (e) {}
+        processorNodeRef.current = null;
+      }
+      if (sourceNodeRef.current) {
+        try { sourceNodeRef.current.disconnect(); } catch (e) {}
+        sourceNodeRef.current = null;
+      }
+
+      fallbackPlayersRef.current.forEach((entry) => {
         try { entry.node.disconnect(); } catch (e) {}
         try { entry.silentGainNode.disconnect(); } catch (e) {}
       });
-      remotePlayersRef.current.clear();
+      fallbackPlayersRef.current.clear();
       setRemoteStreams(new Map());
     };
-  }, [roomId, userId]);
 
-  // --- WebRTC Screensharing Mesh Pipeline ---
-  const pcsRef = useRef<Map<string, RTCPeerConnection>>(new Map());
-  const candidateQueuesRef = useRef<Map<string, RTCIceCandidateInit[]>>(new Map());
+  }, [roomId, userId, voiceMethod]);
 
-  useEffect(() => {
-    if (!roomId || !userId) return;
-
-    // Get the video track if any is present in screenStream
-    const videoTrack = screenStream ? screenStream.getVideoTracks()[0] : null;
-
-    const closePC = (peerId: string) => {
-      const pc = pcsRef.current.get(peerId);
-      if (pc) {
-        try {
-          pc.onicecandidate = null;
-          pc.ontrack = null;
-          pc.onconnectionstatechange = null;
-          pc.close();
-        } catch (e) {}
-        pcsRef.current.delete(peerId);
-      }
-      candidateQueuesRef.current.delete(peerId);
-    };
-
-    const flushCandidates = async (peerId: string, pc: RTCPeerConnection) => {
-      const queue = candidateQueuesRef.current.get(peerId);
-      if (queue && queue.length > 0) {
-        console.log(`[WebRTC Screenshare] Flushing ${queue.length} queued ICE candidates for peer ${peerId}`);
-        for (const candidate of queue) {
-          try {
-            await pc.addIceCandidate(new RTCIceCandidate(candidate));
-          } catch (e) {
-            console.warn(`[WebRTC Screenshare] Failed to add queued ICE candidate for peer ${peerId}:`, e);
-          }
-        }
-        candidateQueuesRef.current.delete(peerId);
-      }
-    };
-
-    const getOrCreatePC = (peerId: string) => {
-      if (pcsRef.current.has(peerId)) {
-        return pcsRef.current.get(peerId)!;
-      }
-
-      console.log(`[WebRTC Screenshare] Creating RTCPeerConnection for peer ${peerId}`);
-      const pc = new RTCPeerConnection({
-        iceServers: [
-          { urls: "stun:stun.iranserver.com:3478" },
-          { urls: "stun:stun.l.google.com:19302" },
-          { urls: "stun:stun1.l.google.com:19302" },
-          { urls: "stun:stun2.l.google.com:19302" },
-          { urls: "stun:stun3.l.google.com:19302" },
-          { urls: "stun:stun4.l.google.com:19302" },
-          { urls: "stun:stun.sipgate.net:3478" },
-          { urls: "stun:stun.voipbuster.com:3478" },
-          { urls: "stun:stun.turnserver.cl:3478" }
-        ]
-      });
-
-      // Handle ice candidates
-      pc.onicecandidate = (event) => {
-        if (event.candidate) {
-          voiceSocket.emit("voice.signal", {
-            targetUserId: peerId,
-            signal: { type: "candidate", candidate: event.candidate }
-          });
-        }
-      };
-
-      // Handle remote video tracks
-      pc.ontrack = (event) => {
-        if (event.track.kind === "video") {
-          console.log(`[WebRTC Screenshare] Received remote video track from ${peerId}`);
-          setRemoteStreams((prev) => {
-            const nextMap = new Map<string, MediaStream>(prev);
-            let stream = nextMap.get(peerId) as MediaStream | undefined;
-            if (!stream) {
-              stream = new MediaStream();
-            }
-            // Remove any existing video track and add the new one
-            stream.getVideoTracks().forEach(t => stream.removeTrack(t));
-            stream.addTrack(event.track);
-
-            // Re-create MediaStream container to force re-render in react
-            nextMap.set(peerId, new MediaStream(stream.getTracks()));
-            return nextMap;
-          });
-
-          event.track.onended = () => {
-            console.log(`[WebRTC Screenshare] Remote track ended for ${peerId}`);
-            setRemoteStreams((prev) => {
-              const nextMap = new Map<string, MediaStream>(prev);
-              const stream = nextMap.get(peerId) as MediaStream | undefined;
-              if (stream) {
-                stream.getVideoTracks().forEach(t => stream.removeTrack(t));
-                nextMap.set(peerId, new MediaStream(stream.getTracks()));
-              }
-              return nextMap;
-            });
-          };
-        }
-      };
-
-      pc.onconnectionstatechange = () => {
-        console.log(`[WebRTC Screenshare] Connection state with ${peerId}: ${pc.connectionState}`);
-        if (pc.connectionState === "failed" || pc.connectionState === "disconnected") {
-          closePC(peerId);
-        }
-      };
-
-      pcsRef.current.set(peerId, pc);
-      return pc;
-    };
-
-    // If we are sharing screen, we must attach our video track to peer connections
-    const addMyVideoTrack = async (peerId: string) => {
-      if (!videoTrack) return;
-      try {
-        const pc = getOrCreatePC(peerId);
-        
-        // Remove existing video sender to avoid duplicates
-        const senders = pc.getSenders();
-        const videoSender = senders.find(s => s.track && s.track.kind === "video");
-        if (videoSender) {
-          await videoSender.replaceTrack(videoTrack);
-        } else {
-          pc.addTrack(videoTrack, screenStream!);
-        }
-
-        console.log(`[WebRTC Screenshare] Added video track for ${peerId}, initiating offer`);
-        const offer = await pc.createOffer();
-        await pc.setLocalDescription(offer);
-
-        voiceSocket.emit("voice.signal", {
-          targetUserId: peerId,
-          signal: { type: "offer", offer }
-        });
-      } catch (err) {
-        console.error(`[WebRTC Screenshare] Error sending offer to ${peerId}:`, err);
-      }
-    };
-
-    // If we are sharing, broadcast to all existing users or when someone joins
-    if (videoTrack) {
-      // Find all remote players and initiate offer sharing
-      remotePlayersRef.current.forEach((_, otherId) => {
-        addMyVideoTrack(otherId);
-      });
-    }
-
-    // Handle incoming webrtc signaling
-    const handleVoiceSignal = async (data: { fromUserId: string; signal: any }) => {
-      const { fromUserId, signal } = data;
-      if (fromUserId === userId) return;
-
-      try {
-        if (signal.type === "offer") {
-          console.log(`[WebRTC Screenshare] Received offer from ${fromUserId}`);
-          const pc = getOrCreatePC(fromUserId);
-          await pc.setRemoteDescription(new RTCSessionDescription(signal.offer));
-          await flushCandidates(fromUserId, pc);
-          const answer = await pc.createAnswer();
-          await pc.setLocalDescription(answer);
-
-          voiceSocket.emit("voice.signal", {
-            targetUserId: fromUserId,
-            signal: { type: "answer", answer }
-          });
-        } 
-        else if (signal.type === "answer") {
-          console.log(`[WebRTC Screenshare] Received answer from ${fromUserId}`);
-          const pc = pcsRef.current.get(fromUserId);
-          if (pc) {
-            await pc.setRemoteDescription(new RTCSessionDescription(signal.answer));
-            await flushCandidates(fromUserId, pc);
-          }
-        } 
-        else if (signal.type === "candidate") {
-          const pc = pcsRef.current.get(fromUserId);
-          if (pc && pc.remoteDescription && pc.remoteDescription.type) {
-            try {
-              await pc.addIceCandidate(new RTCIceCandidate(signal.candidate));
-            } catch (e) {
-              console.warn(`[WebRTC Screenshare] Error adding ICE candidate directly:`, e);
-            }
-          } else {
-            // Queue candidate until PC is ready and setRemoteDescription completes
-            let q = candidateQueuesRef.current.get(fromUserId);
-            if (!q) {
-              q = [];
-              candidateQueuesRef.current.set(fromUserId, q);
-            }
-            q.push(signal.candidate);
-          }
-        }
-        else if (signal.type === "stop-share") {
-          console.log(`[WebRTC Screenshare] Received stop-share signal from ${fromUserId}`);
-          setRemoteStreams((prev) => {
-            const nextMap = new Map<string, MediaStream>(prev);
-            const stream = nextMap.get(fromUserId) as MediaStream | undefined;
-            if (stream) {
-              stream.getVideoTracks().forEach(t => stream.removeTrack(t));
-              nextMap.set(fromUserId, new MediaStream(stream.getTracks()));
-            }
-            return nextMap;
-          });
-          closePC(fromUserId);
-        }
-      } catch (err) {
-        console.error(`[WebRTC Screenshare] Error handling signal from ${fromUserId}:`, err);
-      }
-    };
-
-    const handleUserJoinedMesh = ({ userId: otherId }: { userId: string }) => {
-      if (otherId === userId) return;
-      if (videoTrack) {
-        // We are sharing and a new user joined, send them our screenshare
-        setTimeout(() => {
-          addMyVideoTrack(otherId);
-        }, 800); // Give socket room a tiny moment to settle
-      }
-    };
-
-    const handleUserLeftMesh = ({ userId: otherId }: { userId: string }) => {
-      closePC(otherId);
-    };
-
-    voiceSocket.on("voice.signal", handleVoiceSignal);
-    voiceSocket.on("voice.user_joined", handleUserJoinedMesh);
-    voiceSocket.on("voice.user_left", handleUserLeftMesh);
-
-    // If we stop sharing, send a stop-share signal to everyone
-    return () => {
-      voiceSocket.off("voice.signal", handleVoiceSignal);
-      voiceSocket.off("voice.user_joined", handleUserJoinedMesh);
-      voiceSocket.off("voice.user_left", handleUserLeftMesh);
-
-      if (videoTrack) {
-        remotePlayersRef.current.forEach((_, otherId) => {
-          voiceSocket.emit("voice.signal", {
-            targetUserId: otherId,
-            signal: { type: "stop-share" }
-          });
-        });
-      }
-
-      pcsRef.current.forEach((_, otherId) => {
-        closePC(otherId);
-      });
-    };
-  }, [roomId, userId, screenStream]);
-
-  return { remoteStreams };
+  return { remoteStreams, isMediasoupSFU: voiceMethod === 'mediasoup' };
 };

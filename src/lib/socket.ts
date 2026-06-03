@@ -31,7 +31,33 @@ export const lobbySocket = createNamespaceSocket("lobby");
 export const chatSocket = createNamespaceSocket("chat");
 export const notifySocket = createNamespaceSocket("notify");
 export const rankingSocket = createNamespaceSocket("ranking");
-export const voiceSocket = createNamespaceSocket("voice");
+
+// Helper to determine the dedicated high-performance voice server URL dynamically.
+const getVoiceServerUrl = () => {
+  if (import.meta.env.VITE_VOICE_SERVER_URL) {
+    return import.meta.env.VITE_VOICE_SERVER_URL;
+  }
+  // Dedicated Voice Server VPS IP
+  const defaultIP = "146.19.212.212";
+  const port = "4000";
+  
+  // Choose secure (wss) vs insecure (ws) matching the browser protocol.
+  const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+  
+  return `${protocol}//${defaultIP}:${port}`;
+};
+
+// Create a direct WebSocket connection pointing to the standalone mediasoup signaling server.
+export const voiceSocket = io(getVoiceServerUrl(), {
+  path: "/socket.io",
+  autoConnect: false,
+  transports: ["websocket", "polling"],
+  reconnectionDelay: 1000,
+  reconnectionDelayMax: 5000,
+});
+
+// Fallback voice socket connected directly to the main platform's downsampler room channel.
+export const mainPlatformVoiceSocket = createNamespaceSocket("voice");
 
 // We export a shared AudioContext manager so it can be resumed on user interaction
 // and used everywhere to bypass mobile autoplay policies.

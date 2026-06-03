@@ -27,7 +27,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-import { presenceSocket, lobbySocket, chatSocket, notifySocket, rankingSocket, voiceSocket } from "../lib/socket";
+import { presenceSocket, lobbySocket, chatSocket, notifySocket, rankingSocket, voiceSocket, mainPlatformVoiceSocket } from "../lib/socket";
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
  const [user, setUser] = useState<User | null>(null);
@@ -59,6 +59,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
  notifySocket.connect();
  rankingSocket.connect();
  voiceSocket.connect();
+ mainPlatformVoiceSocket.connect();
  };
 
  const disconnectSockets = () => {
@@ -68,6 +69,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
  notifySocket.disconnect();
  rankingSocket.disconnect();
  voiceSocket.disconnect();
+ mainPlatformVoiceSocket.disconnect();
  };
 
  useEffect(() => {
