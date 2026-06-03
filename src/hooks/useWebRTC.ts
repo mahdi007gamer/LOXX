@@ -317,5 +317,223 @@ export const useWebRTC = (roomId: string | null, localStream: MediaStream | null
     };
   }, [roomId, userId]);
 
+  // --- WebRTC Screensharing Mesh Pipeline ---
+  const pcsRef = useRef<Map<string, RTCPeerConnection>>(new Map());
+
+  useEffect(() => {
+    if (!roomId || !userId) return;
+
+    // Get the video track if any is present in localStream
+    const videoTrack = localStream ? localStream.getVideoTracks()[0] : null;
+
+    const closePC = (peerId: string) => {
+      const pc = pcsRef.current.get(peerId);
+      if (pc) {
+        try {
+          pc.onicecandidate = null;
+          pc.ontrack = null;
+          pc.onconnectionstatechange = null;
+          pc.close();
+        } catch (e) {}
+        pcsRef.current.delete(peerId);
+      }
+    };
+
+    const getOrCreatePC = (peerId: string) => {
+      if (pcsRef.current.has(peerId)) {
+        return pcsRef.current.get(peerId)!;
+      }
+
+      console.log(`[WebRTC Screenshare] Creating RTCPeerConnection for peer ${peerId}`);
+      const pc = new RTCPeerConnection({
+        iceServers: [
+          { urls: "stun:stun.l.google.com:19302" },
+          { urls: "stun:stun1.l.google.com:19302" },
+          { urls: "stun:stun2.l.google.com:19302" }
+        ]
+      });
+
+      // Handle ice candidates
+      pc.onicecandidate = (event) => {
+        if (event.candidate) {
+          voiceSocket.emit("voice.signal", {
+            targetUserId: peerId,
+            signal: { type: "candidate", candidate: event.candidate }
+          });
+        }
+      };
+
+      // Handle remote video tracks
+      pc.ontrack = (event) => {
+        if (event.track.kind === "video") {
+          console.log(`[WebRTC Screenshare] Received remote video track from ${peerId}`);
+          setRemoteStreams((prev) => {
+            const nextMap = new Map<string, MediaStream>(prev);
+            let stream = nextMap.get(peerId) as MediaStream | undefined;
+            if (!stream) {
+              stream = new MediaStream();
+            }
+            // Remove any existing video track and add the new one
+            stream.getVideoTracks().forEach(t => stream.removeTrack(t));
+            stream.addTrack(event.track);
+
+            // Re-create MediaStream container to force re-render in react
+            nextMap.set(peerId, new MediaStream(stream.getTracks()));
+            return nextMap;
+          });
+
+          event.track.onended = () => {
+            console.log(`[WebRTC Screenshare] Remote track ended for ${peerId}`);
+            setRemoteStreams((prev) => {
+              const nextMap = new Map<string, MediaStream>(prev);
+              const stream = nextMap.get(peerId) as MediaStream | undefined;
+              if (stream) {
+                stream.getVideoTracks().forEach(t => stream.removeTrack(t));
+                nextMap.set(peerId, new MediaStream(stream.getTracks()));
+              }
+              return nextMap;
+            });
+          };
+        }
+      };
+
+      pc.onconnectionstatechange = () => {
+        console.log(`[WebRTC Screenshare] Connection state with ${peerId}: ${pc.connectionState}`);
+        if (pc.connectionState === "failed" || pc.connectionState === "disconnected") {
+          closePC(peerId);
+        }
+      };
+
+      pcsRef.current.set(peerId, pc);
+      return pc;
+    };
+
+    // If we are sharing screen, we must attach our video track to peer connections
+    const addMyVideoTrack = async (peerId: string) => {
+      if (!videoTrack) return;
+      try {
+        const pc = getOrCreatePC(peerId);
+        
+        // Remove existing video sender to avoid duplicates
+        const senders = pc.getSenders();
+        const videoSender = senders.find(s => s.track && s.track.kind === "video");
+        if (videoSender) {
+          await videoSender.replaceTrack(videoTrack);
+        } else {
+          pc.addTrack(videoTrack, localStream!);
+        }
+
+        console.log(`[WebRTC Screenshare] Added video track for ${peerId}, initiating offer`);
+        const offer = await pc.createOffer({
+          offerToReceiveVideo: false,
+          offerToReceiveAudio: false
+        });
+        await pc.setLocalDescription(offer);
+
+        voiceSocket.emit("voice.signal", {
+          targetUserId: peerId,
+          signal: { type: "offer", offer }
+        });
+      } catch (err) {
+        console.error(`[WebRTC Screenshare] Error sending offer to ${peerId}:`, err);
+      }
+    };
+
+    // If we are sharing, broadcast to all existing users or when someone joins
+    if (videoTrack) {
+      // Find all remote players and initiate offer sharing
+      remotePlayersRef.current.forEach((_, otherId) => {
+        addMyVideoTrack(otherId);
+      });
+    }
+
+    // Handle incoming webrtc signaling
+    const handleVoiceSignal = async (data: { fromUserId: string; signal: any }) => {
+      const { fromUserId, signal } = data;
+      if (fromUserId === userId) return;
+
+      try {
+        if (signal.type === "offer") {
+          console.log(`[WebRTC Screenshare] Received offer from ${fromUserId}`);
+          const pc = getOrCreatePC(fromUserId);
+          await pc.setRemoteDescription(new RTCSessionDescription(signal.offer));
+          const answer = await pc.createAnswer();
+          await pc.setLocalDescription(answer);
+
+          voiceSocket.emit("voice.signal", {
+            targetUserId: fromUserId,
+            signal: { type: "answer", answer }
+          });
+        } 
+        else if (signal.type === "answer") {
+          console.log(`[WebRTC Screenshare] Received answer from ${fromUserId}`);
+          const pc = pcsRef.current.get(fromUserId);
+          if (pc) {
+            await pc.setRemoteDescription(new RTCSessionDescription(signal.answer));
+          }
+        } 
+        else if (signal.type === "candidate") {
+          const pc = pcsRef.current.get(fromUserId);
+          if (pc && signal.candidate) {
+            await pc.addIceCandidate(new RTCIceCandidate(signal.candidate));
+          }
+        }
+        else if (signal.type === "stop-share") {
+          console.error(`[WebRTC Screenshare] Received stop-share signal from ${fromUserId}`);
+          setRemoteStreams((prev) => {
+            const nextMap = new Map<string, MediaStream>(prev);
+            const stream = nextMap.get(fromUserId) as MediaStream | undefined;
+            if (stream) {
+              stream.getVideoTracks().forEach(t => stream.removeTrack(t));
+              nextMap.set(fromUserId, new MediaStream(stream.getTracks()));
+            }
+            return nextMap;
+          });
+          closePC(fromUserId);
+        }
+      } catch (err) {
+        console.error(`[WebRTC Screenshare] Error handling signal from ${fromUserId}:`, err);
+      }
+    };
+
+    const handleUserJoinedMesh = ({ userId: otherId }: { userId: string }) => {
+      if (otherId === userId) return;
+      if (videoTrack) {
+        // We are sharing and a new user joined, send them our screenshare
+        setTimeout(() => {
+          addMyVideoTrack(otherId);
+        }, 800); // Give socket room a tiny moment to settle
+      }
+    };
+
+    const handleUserLeftMesh = ({ userId: otherId }: { userId: string }) => {
+      closePC(otherId);
+    };
+
+    voiceSocket.on("voice.signal", handleVoiceSignal);
+    voiceSocket.on("voice.user_joined", handleUserJoinedMesh);
+    voiceSocket.on("voice.user_left", handleUserLeftMesh);
+
+    // If we stop sharing, send a stop-share signal to everyone
+    return () => {
+      voiceSocket.off("voice.signal", handleVoiceSignal);
+      voiceSocket.off("voice.user_joined", handleUserJoinedMesh);
+      voiceSocket.off("voice.user_left", handleUserLeftMesh);
+
+      if (videoTrack) {
+        remotePlayersRef.current.forEach((_, otherId) => {
+          voiceSocket.emit("voice.signal", {
+            targetUserId: otherId,
+            signal: { type: "stop-share" }
+          });
+        });
+      }
+
+      pcsRef.current.forEach((_, otherId) => {
+        closePC(otherId);
+      });
+    };
+  }, [roomId, userId, localStream]);
+
   return { remoteStreams };
 };

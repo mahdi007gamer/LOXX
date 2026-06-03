@@ -24,16 +24,36 @@ export const ScreenSharePresenter = ({
  const containerRef = useRef<HTMLDivElement>(null);
 
  // Bind media stream only if the user has opted in to watch (demand-driven active loading)
- useEffect(() => {
- if (videoRef.current && stream && isWatching) {
- if (videoRef.current.srcObject !== stream) {
- videoRef.current.srcObject = stream;
- }
- videoRef.current.play().catch(err => {
- console.warn("ScreenSharePresenter: Video failed to play:", err);
- });
- }
- }, [stream, isWatching]);
+useEffect(() => {
+  const video = videoRef.current;
+  if (video && stream && isWatching) {
+    if (video.srcObject !== stream) {
+      video.srcObject = stream;
+    }
+    
+    // Ensure absolute maximum mobile browser compatibility with explicit props
+    video.muted = true;
+    video.defaultMuted = true;
+    video.playsInline = true;
+    video.setAttribute("playsinline", "true");
+    video.setAttribute("webkit-playsinline", "true");
+    video.setAttribute("autoplay", "true");
+    
+    const playPromise = video.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(err => {
+        console.warn("ScreenSharePresenter: Auto-play blocked. Adding touch fallbacks:", err);
+        const forcePlay = () => {
+          video.play().catch(e => console.warn("touch recovery fail", e));
+          document.removeEventListener("click", forcePlay);
+          document.removeEventListener("touchstart", forcePlay);
+        };
+        document.addEventListener("click", forcePlay);
+        document.addEventListener("touchstart", forcePlay);
+      });
+    }
+  }
+}, [stream, isWatching]);
 
  const toggleFullscreen = () => {
  if (!document.fullscreenElement) {
