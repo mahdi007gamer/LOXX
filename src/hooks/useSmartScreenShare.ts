@@ -176,24 +176,33 @@ export const useSmartScreenShare = (
  }
  }
  } else {
- // Screen sources are fully supported natively via getDisplayMedia without audio
-  stream = await navigator.mediaDevices.getDisplayMedia({
-    video: true,
-    audio: false
-  });
-  }
-  } else {
-  if (!navigator.mediaDevices.getDisplayMedia) {
-    throw new Error("مرورگر شما از getDisplayMedia پشتیبانی نمی‌کند یا دسترسی به آن در محیط فعلی مسدود است.");
-  }
-  // Standard Web API or native Electron interceptor without audio
-  stream = await navigator.mediaDevices.getDisplayMedia({
-    video: true,
-    audio: false
-  });
-  }
+ // Screen sources are fully supported natively via getDisplayMedia
+ try {
+ stream = await navigator.mediaDevices.getDisplayMedia({
+ video: true,
+ audio: true
+ });
+ } catch (desktopError) {
+ console.warn("Retrying screen share without audio due to error:", desktopError);
+ stream = await navigator.mediaDevices.getDisplayMedia({
+ video: true,
+ audio: false
+ });
+ }
+ }
+ } else {
+ if (!navigator.mediaDevices.getDisplayMedia) {
+ throw new Error("مرورگر شما از getDisplayMedia پشتیبانی نمی‌کند یا دسترسی به آن در محیط فعلی مسدود است.");
+ }
+ // Standard Web API or native Electron interceptor
+ stream = await navigator.mediaDevices.getDisplayMedia({
+ video: true,
+ audio: true 
+ });
+ }
 
-const videoTrack = stream.getVideoTracks()[0];
+ // Apply quality constraints if possible
+ const videoTrack = stream.getVideoTracks()[0];
  if (videoTrack) {
  try {
  await videoTrack.applyConstraints({

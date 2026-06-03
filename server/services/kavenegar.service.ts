@@ -1,8 +1,6 @@
 import axios from "axios";
 import https from "https";
 import http from "http";
-import { createRequire } from "module";
-const require = createRequire(import.meta.url);
 const Kavenegar = require("kavenegar");
 
 export class KavenegarService {

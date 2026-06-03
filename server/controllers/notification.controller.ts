@@ -1,8 +1,6 @@
 import { Response } from "express";
 import { NotificationService } from "../services/notification.service.ts";
 import { AuthenticatedRequest } from "../middleware/auth.middleware.ts";
-import { createRequire } from "module";
-const require = createRequire(import.meta.url);
 
 export class NotificationController {
   static async list(req: AuthenticatedRequest, res: Response) {
