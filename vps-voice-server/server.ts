@@ -65,6 +65,7 @@ const mediaCodecs: types.RtpCodecCapability[] = [
     mimeType: "audio/opus",
     clockRate: 48000,
     channels: 2,
+    preferredPayloadType: 111,
     parameters: {
       useinbandfec: 1, // Enable Forward Error Correction (crucial for packet loss)
       usedtx: 1,        // Discontinuous Transmission - turns off stream when silent to save bandwidth
@@ -76,6 +77,7 @@ const mediaCodecs: types.RtpCodecCapability[] = [
     kind: "video",
     mimeType: "video/VP8",
     clockRate: 90000,
+    preferredPayloadType: 96,
     parameters: {
       "x-google-start-bitrate": 1000 // Boost initial bitrate for high quality screen shares
     }

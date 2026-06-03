@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Ensure /usr/local/bin and standard node path is loaded even inside secure_path sudo
+export PATH=$PATH:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
+
 # --- Colorized Logger ---
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -67,17 +70,37 @@ npm install
 echo -e "\n${YELLOW}Compiling TypeScript down to native CommonJS...${NC}"
 npm run build
 
+# PM2 runner function to locate pm2 robustly
+run_pm2() {
+  if command -v pm2 &> /dev/null; then
+    pm2 "$@"
+  elif [ -f "./node_modules/pm2/bin/pm2" ]; then
+    node "./node_modules/pm2/bin/pm2" "$@"
+  elif command -v npx &> /dev/null; then
+    npx pm2 "$@"
+  elif [ -f "/usr/local/bin/pm2" ]; then
+    /usr/local/bin/pm2 "$@"
+  elif [ -f "/usr/bin/pm2" ]; then
+    /usr/bin/pm2 "$@"
+  elif [ -f "/root/.npm-global/bin/pm2" ]; then
+    /root/.npm-global/bin/pm2 "$@"
+  else
+    echo -e "${RED}Error: pm2 not found! Attempting direct npx run...${NC}"
+    npx pm2 "$@"
+  fi
+}
+
 # Start or restart PM2 process
 echo -e "\n${YELLOW}Launching processes via PM2...${NC}"
-npx pm2 delete loxx-voice-sfu &> /dev/null || true
-npx pm2 start dist/server.js --name "loxx-voice-sfu" --update-env
+run_pm2 delete loxx-voice-sfu &> /dev/null || true
+run_pm2 start dist/server.js --name "loxx-voice-sfu" --update-env
 
 # Save PM2 state and configure startup scripts
-npx pm2 save
-npx pm2 startup | tail -n 1 | bash
+run_pm2 save
+run_pm2 startup | tail -n 1 | bash
 
 echo -e "\n${GREEN}================================================================${NC}"
 echo -e "${GREEN}🎉 CONGRATULATIONS! LOXX VOICE SFU INSTALLED & ACTIVE ON PM2!${NC}"
 echo -e "${GREEN}================================================================${NC}"
 echo -e "To view live mediasoup signaling log flows, run:"
-echo -e "${YELLOW}npx pm2 logs loxx-voice-sfu${NC}\n"
+echo -e "${YELLOW}pm2 logs loxx-voice-sfu${NC}\n"
