@@ -106,8 +106,8 @@ async function startMediasoup() {
       rtcMaxPort: 49999
     });
 
-    worker.on("died", () => {
-      console.error(`[SFU Voice Engine] Mediasoup worker has died! Exiting process...`);
+    worker.on("died", (error) => {
+      console.error(`[SFU Voice Engine] Mediasoup worker with PID ${worker.pid} has died!`, error || "");
       process.exit(1);
     });
 

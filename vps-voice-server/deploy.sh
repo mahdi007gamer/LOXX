@@ -124,17 +124,18 @@ else
 fi
 
 echo -e "\n${YELLOW}========================================================================${NC}"
-echo -e "${YELLOW}💡 INFO: Mediasoup automatic rebuild step has been commented out.       ${NC}"
+echo -e "${YELLOW}🛠️ AUTOMATING MEDIASOUP WORKER EXTRACTION...                         ${NC}"
 echo -e "${YELLOW}========================================================================${NC}"
-echo -e "💡 can copy/place the 'mediasoup-worker' manual binary to:"
-echo -e "💡 ${GREEN}node_modules/mediasoup/worker/out/Release/mediasoup-worker${NC}"
+echo -e "💡 Running helper script './get-worker.sh' to download correctly paired worker binary."
+echo -e "------------------------------------------------------------------------"
+echo -e "💡 در حال اجرای خودکار اسکریپت کمکی تهیه باینری هماهنگ mediasoup-worker..."
 echo -e "${YELLOW}========================================================================${NC}\n"
 
-# if [ "$VERBOSE" = true ]; then
-#   npm rebuild mediasoup --foreground-scripts --loglevel verbose
-# else
-#   npm rebuild mediasoup
-# fi
+if [ -f "./get-worker.sh" ]; then
+  bash ./get-worker.sh
+else
+  echo -e "${RED}⚠️ Warning: get-worker.sh script not found! Setup may need manual worker extraction.${NC}"
+fi
 
 echo -e "\n${YELLOW}Compiling TypeScript down to native CommonJS...${NC}"
 if [ "$VERBOSE" = true ]; then
