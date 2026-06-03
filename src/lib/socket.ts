@@ -7,6 +7,8 @@ export const createNamespaceSocket = (namespace: string, withAuth = true) => {
  // By using location.origin, we respect the current protocol (HTTP vs HTTPS)
  // Force websocket transport to fix session unknown errors in VPS/Runflare load balancers
  
+ const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
+
  const authConfig = withAuth ? {
  auth: (cb: any) => {
  const token = localStorage.getItem("loxx_token");
@@ -20,6 +22,7 @@ export const createNamespaceSocket = (namespace: string, withAuth = true) => {
  transports: ['websocket', 'polling'], // Start with websocket directly for lowest latency, fallback to polling if blocked
  reconnectionDelay: 1000,
  reconnectionDelayMax: 5000,
+ query: { isElectron: isElectron ? "true" : "false" },
  ...authConfig
  });
 };

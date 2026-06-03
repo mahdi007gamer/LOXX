@@ -261,7 +261,7 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
  </div>
  
  {/* Step Indicators */}
- <div className="flex items-center gap-2 mt-4" dir="ltr">
+ <div className="flex items-center gap-2 mt-4" dir={isRtl ? "rtl" : "ltr"}>
  {[1, 2, 3].map(s => (
  <div key={s} className={`h-1.5 rounded-full transition-all duration-300 ${step === s ? "w-6 md:w-8 bg-neon-blue shadow-[0_0_10px_rgba(0,229,255,0.5)]" : step > s ? "w-2.5 md:w-3 bg-neon-blue/50" : "w-2.5 md:w-3 bg-white/10"}`} />
  ))}
@@ -468,8 +468,8 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
  <motion.div key="step3" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="space-y-6">
  
  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
- <button type="button" onClick={() => setFormData(p => ({...p, isPrivate: !p.isPrivate}))} className={`border rounded-2xl p-4 flex flex-col items-center justify-center gap-2 transition-all ${formData.isPrivate ? "border-white/20 bg-white/5 text-white" : "border-white/5 bg-[#16181c] text-gray-500 hover:border-white/10"}`}>
- <Globe size={20} className={formData.isPrivate ? "text-white" : ""} />
+ <button type="button" onClick={() => setFormData(p => ({...p, isPrivate: !p.isPrivate}))} className={`border rounded-2xl p-4 flex flex-col items-center justify-center gap-2 transition-all ${formData.isPrivate ? "border-purple-500 bg-[#a855f7]/20 text-purple-400 shadow-[0_0_15px_rgba(168,85,247,0.4),_inset_0_0_15px_rgba(168,85,247,0.2)]" : "border-white/5 bg-[#16181c] text-gray-500 hover:border-white/10"}`}>
+ <Globe size={20} className={formData.isPrivate ? "text-purple-400" : ""} />
  <span className="font-bold text-sm text-white">
  {isRtl ? "لابی خصوصی" : "Private Lobby"}
  </span>
@@ -477,19 +477,20 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
  {isRtl ? "فقط با کد دعوت یا لینک" : "Only with invite code or link"}
  </span>
  </button>
- {isElectron && (
- <button type="button" onClick={() => setFormData(p => ({...p, isLanMode: !p.isLanMode}))} className={`border rounded-2xl p-4 flex flex-col items-center justify-center gap-2 transition-all ${formData.isLanMode ? "border-[#00e5ff]/50 bg-[#00e5ff]/10 text-white" : "border-white/5 bg-[#16181c] text-gray-500 hover:border-white/10"}`}>
- <Globe size={20} className={formData.isLanMode ? "text-[#00e5ff]" : ""} />
- <span className="font-bold text-sm text-white">
- {isRtl ? "حالت Lan (آفلاین)" : "Lan Mode (Offline)"}
+ <div className="relative overflow-hidden border border-yellow-500/20 bg-yellow-500/5 rounded-2xl p-4 flex flex-col items-center justify-center gap-2 transition-all select-none opacity-80 shadow-[0_0_10px_rgba(234,179,8,0.1)]">
+ <div className="absolute top-2 right-2 bg-yellow-500/20 text-yellow-400 text-[8px] px-2 py-0.5 rounded-full font-black border border-yellow-500/30 uppercase tracking-widest animate-pulse">
+ {isRtl ? "به‌زودی" : "Soon"}
+ </div>
+ <Globe size={20} className="text-yellow-500/60" />
+ <span className="font-bold text-sm text-yellow-500/90">
+ {isRtl ? "حالت LAN (آفلاین)" : "LAN Mode (Offline)"}
  </span>
- <span className="text-[10px]">
- {isRtl ? "مستقیم بین بازیکنان" : "Directly between players"}
+ <span className="text-[10px] text-yellow-500/70">
+ {isRtl ? "تکنولوژی Zero-TUN لوکس" : "Zero-TUN Direct Bridge Connection"}
  </span>
- </button>
- )}
- <button type="button" onClick={() => setFormData(p => ({...p, micRequired: !p.micRequired}))} className={`border rounded-2xl p-4 flex flex-col items-center justify-center gap-2 transition-all ${formData.micRequired ? "border-white/20 bg-white/5 text-white" : "border-white/5 bg-[#16181c] text-gray-500 hover:border-white/10"}`}>
- <Mic size={20} className={formData.micRequired ? "text-white" : ""} />
+ </div>
+ <button type="button" onClick={() => setFormData(p => ({...p, micRequired: !p.micRequired}))} className={`border rounded-2xl p-4 flex flex-col items-center justify-center gap-2 transition-all ${formData.micRequired ? "border-neon-blue bg-neon-blue/20 text-neon-blue shadow-[0_0_15px_rgba(0,229,255,0.4),_inset_0_0_15px_rgba(0,229,255,0.2)]" : "border-white/5 bg-[#16181c] text-gray-500 hover:border-white/10"}`}>
+ <Mic size={20} className={formData.micRequired ? "text-neon-blue" : ""} />
  <span className="font-bold text-sm text-white">
  {isRtl ? "میکروفون اجباری" : "Mic Required"}
  </span>
@@ -497,8 +498,8 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
  {isRtl ? "ارتباط صوتی در طول بازی" : "Voice communications during game"}
  </span>
  </button>
- <button type="button" onClick={() => setFormData(p => ({...p, ageRestricted: !p.ageRestricted}))} className={`border rounded-2xl p-4 flex flex-col items-center justify-center gap-2 transition-all ${formData.ageRestricted ? "border-white/20 bg-white/5 text-red-500" : "border-white/5 bg-[#16181c] text-gray-500 hover:border-white/10"}`}>
- <span className={`text-xl font-black ${formData.ageRestricted ? "text-red-500" : ""}`}>+18</span>
+ <button type="button" onClick={() => setFormData(p => ({...p, ageRestricted: !p.ageRestricted}))} className={`border rounded-2xl p-4 flex flex-col items-center justify-center gap-2 transition-all ${formData.ageRestricted ? "border-neon-pink bg-neon-pink/20 text-neon-pink shadow-[0_0_15px_rgba(255,0,127,0.4),_inset_0_0_15px_rgba(255,0,127,0.2)]" : "border-white/5 bg-[#16181c] text-gray-500 hover:border-white/10"}`}>
+ <span className={`text-xl font-black ${formData.ageRestricted ? "text-neon-pink" : ""}`}>+18</span>
  <span className={`font-bold text-sm text-white`}>
  {isRtl ? "محدودیت سنی" : "Age Restricted"}
  </span>
@@ -513,10 +514,10 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
  </AnimatePresence>
  </div>
 
- <div className={`p-6 md:p-8 pt-4 flex items-center justify-between shrink-0 bg-[#0b0c10] border-t border-white/5 ${isRtl ? "flex-row" : "flex-row-reverse"}`}>
+ <div className="p-6 md:p-8 pt-4 flex items-center justify-between shrink-0 bg-[#0b0c10] border-t border-white/5" dir={isRtl ? "rtl" : "ltr"}>
  {step > 1 ? (
  <button onClick={() => setStep(s => s - 1)} className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors text-sm font-bold">
- {isRtl ? <ChevronLeft size={16} /> : <ChevronRight size={16} />} 
+ {isRtl ? <ChevronRight size={16} /> : <ChevronLeft size={16} />} 
  {isRtl ? "مرحله قبل" : "Previous Step"}
  </button>
  ) : (
@@ -524,7 +525,7 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
  )}
 
  {step < 3 ? (
- <GlowButton onClick={() => setStep(s => s + 1)} className={`px-6 md:px-8 flex items-center justify-center gap-2 h-12 ${isRtl ? "flex-row-reverse" : "flex-row"}`} variant="blue">
+ <GlowButton onClick={() => setStep(s => s + 1)} className="px-6 md:px-8 flex items-center justify-center gap-2 h-12" variant="blue">
  {isRtl ? "مرحله بعد" : "Next Step"}
  {isRtl ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
  </GlowButton>

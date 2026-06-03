@@ -373,7 +373,7 @@ export function setupWebSockets(io: Server) {
         const member = await prisma.lobbyMember.upsert({
           where: { lobbyId_userId: { lobbyId, userId } },
           update: {},
-          create: { lobbyId, userId, role: "PLAYER", isReady: false }
+          create: { lobbyId, userId, role: "PLAYER", isReady: false, micStatus: true }
         });
 
         // Award XP if first time join
@@ -837,6 +837,48 @@ export function setupWebSockets(io: Server) {
 
     socket.on("disconnect", async () => {
       untrackUser(userId, socket.id);
+
+      if (socket.handshake.query?.isElectron === "true") {
+        console.log(`[LOBBY ELECTRON CLEANUP] Host/user with Electron disconnected: ${userId}`);
+        
+        // Find any lobby they host and close it
+        const hostedLobbies = await prisma.lobby.findMany({
+          where: { hostId: userId }
+        });
+        
+        for (const l of hostedLobbies) {
+          const lobbyId = l.id;
+          await prisma.message.deleteMany({ where: { lobbyId } }).catch(() => {});
+          await prisma.lobby.delete({ where: { id: lobbyId } }).catch((err) => { 
+            console.error("[LOBBY ELECTRON CLEANUP] Error deleting lobby:", err); 
+          });
+          lobbyNs.to(`lobby:${lobbyId}`).emit("lobby.closed", { lobbyId });
+          console.log(`[LOBBY ELECTRON CLEANUP] Closed lobby ${lobbyId} hosted by ${userId}`);
+        }
+        
+        // Remove memberships from any active lobbies
+        const memberships = await prisma.lobbyMember.findMany({
+          where: { userId }
+        });
+        
+        for (const m of memberships) {
+          const lobbyId = m.lobbyId;
+          const remainingMembers = await prisma.lobbyMember.findMany({
+            where: { lobbyId, NOT: { userId } }
+          });
+          
+          await prisma.lobbyMember.delete({
+            where: { lobbyId_userId: { lobbyId, userId } }
+          }).catch(() => {});
+          
+          lobbyNs.to(`lobby:${lobbyId}`).emit("lobby.member_left", { 
+            userId, 
+            membersCount: remainingMembers.length
+          });
+        }
+        
+        emitLobbyUpdate();
+      }
     });
   });
 

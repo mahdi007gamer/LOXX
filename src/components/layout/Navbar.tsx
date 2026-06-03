@@ -186,7 +186,7 @@ export const Navbar = () => {
  {/* Elegant Fixed Language Toggle Switcher */}
  <button
  onClick={toggleLanguage}
- className="px-2.5 py-1 text-[10px] font-black rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white flex items-center gap-1.5 transition-all active:scale-95 duration-200 cursor-pointer shadow-[0_0_15px_rgba(0,229,255,0.05)] h-9"
+ className="hidden md:flex px-2.5 py-1 text-[10px] font-black rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white items-center gap-1.5 transition-all active:scale-95 duration-200 cursor-pointer shadow-[0_0_15px_rgba(0,229,255,0.05)] h-9"
  title="تغییر زبان / Switch Language"
  >
  <Globe size={12} className="text-neon-blue animate-pulse shrink-0" />

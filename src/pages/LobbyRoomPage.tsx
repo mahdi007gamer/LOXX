@@ -169,6 +169,12 @@ export const LobbyRoomPage = () => {
  setLauncherRichPresenceEnabled,
  isDeafened,
  setIsDeafened,
+ micSensitivity,
+ setMicSensitivity,
+ micOpenDelay,
+ setMicOpenDelay,
+ micCloseDelay,
+ setMicCloseDelay,
  remoteStreams,
  setScreenStreamForWebRTC
  } = useLobby();
@@ -1186,6 +1192,73 @@ export const LobbyRoomPage = () => {
  ))}
  </select>
  </div>
+ </div>
+
+ {/* Sensitivity & Delays (حساسیت و تاخیر صدا) */}
+ <div className="space-y-3 p-3.5 rounded-2xl bg-white/5 border border-white/5 mt-4">
+  <p className="text-xs font-black text-white border-b border-white/5 pb-1.5 flex items-center gap-2">
+   <span className="h-1.5 w-1.5 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,1)]" />
+   {isRtl ? "تنظیمات حساسیت و تاخیر میکروفون" : "Microphone Sensitivity & Gate Delays"}
+  </p>
+
+  {/* Mic Sensitivity Slider */}
+  <div className="space-y-1">
+   <div className="flex justify-between items-center text-[10px] text-gray-400 font-bold">
+    <span>{isRtl ? "حساسیت صدا (Gate Threshold)" : "Activation Sensitivity"}</span>
+    <span className="text-[#00e5ff] font-sans">{micSensitivity}</span>
+   </div>
+   <input 
+    type="range" 
+    min="1" 
+    max="40" 
+    value={micSensitivity} 
+    onChange={(e) => setMicSensitivity(parseInt(e.target.value, 10))}
+    className="w-full accent-[#00e5ff] bg-black/40 h-1.5 rounded-lg appearance-none cursor-pointer"
+   />
+   <p className="text-[8px] text-gray-500 leading-normal font-sans">
+    {isRtl ? "مقدار کمتر = حساس‌تر (مناسب محیط آرام)، مقدار بیشتر = نویزگیر قوی‌تر (نیازمند صدای بلندتر)" : "Lower = more sensitive, Higher = filters more background noise"}
+   </p>
+  </div>
+
+  {/* Active Open Delay */}
+  <div className="space-y-1">
+   <div className="flex justify-between items-center text-[10px] text-gray-400 font-bold">
+    <span>{isRtl ? "تاخیر در باز شدن مایک (Open Delay)" : "Voice Activation Delay"}</span>
+    <span className="text-neon-pink font-sans">{micOpenDelay} ms</span>
+   </div>
+   <input 
+    type="range" 
+    min="0" 
+    max="2000" 
+    step="50"
+    value={micOpenDelay} 
+    onChange={(e) => setMicOpenDelay(parseInt(e.target.value, 10))}
+    className="w-full accent-neon-pink bg-black/40 h-1.5 rounded-lg appearance-none cursor-pointer"
+   />
+   <p className="text-[8px] text-gray-500 leading-normal font-sans">
+    {isRtl ? "تاخیر قبل از ارسال صدا؛ به شما اجازه می‌دهد فاقد نویزهای کوتاه و لحظه‌ای باشید" : "Delay before your mic starts transmitting audio"}
+   </p>
+  </div>
+
+  {/* Active Close Delay */}
+  <div className="space-y-1">
+   <div className="flex justify-between items-center text-[10px] text-gray-400 font-bold">
+    <span>{isRtl ? "تاخیر در بسته شدن مایک (Close Delay)" : "Voice Gate Close Delay"}</span>
+    <span className="text-indigo-400 font-sans">{micCloseDelay} ms</span>
+   </div>
+   <input 
+    type="range" 
+    min="0" 
+    max="3000" 
+    step="100"
+    value={micCloseDelay} 
+    onChange={(e) => setMicCloseDelay(parseInt(e.target.value, 10))}
+    className="w-full accent-indigo-400 bg-black/40 h-1.5 rounded-lg appearance-none cursor-pointer"
+   />
+   <p className="text-[8px] text-gray-500 leading-normal font-sans">
+    {isRtl ? "تاخیر در قطع شدن صدا پس از اتمام صحبت؛ از بریده بریده شدن جملات جلوگیری می‌کند" : "Keeps microphone open briefly of silence to prevent speech cutting off"}
+   </p>
+  </div>
  </div>
 
  {/* Desktop & Live Discord Overlay Panel */}

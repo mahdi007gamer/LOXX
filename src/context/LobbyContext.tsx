@@ -88,6 +88,12 @@ interface LobbyContextType {
  localVolume: number;
  isDeafened: boolean;
  setIsDeafened: (val: boolean) => void;
+ micSensitivity: number;
+ setMicSensitivity: (val: number) => void;
+ micOpenDelay: number;
+ setMicOpenDelay: (val: number) => void;
+ micCloseDelay: number;
+ setMicCloseDelay: (val: number) => void;
 
  // Overlay Settings
  overlayEnabled: boolean;
@@ -343,6 +349,45 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
  const [overlayClickThrough, setOverlayClickThrough] = useState<boolean>(true);
 
  const [gameDetected, setGameDetected] = useState<string | null>(null);
+
+ const [micSensitivity, setMicSensitivityState] = useState<number>(() => {
+  if (typeof window !== "undefined") {
+   const saved = localStorage.getItem("loxx_mic_sensitivity");
+   return saved ? parseInt(saved, 10) : 8;
+  }
+  return 8;
+ });
+
+ const [micOpenDelay, setMicOpenDelayState] = useState<number>(() => {
+  if (typeof window !== "undefined") {
+   const saved = localStorage.getItem("loxx_mic_open_delay");
+   return saved ? parseInt(saved, 10) : 0;
+  }
+  return 0;
+ });
+
+ const [micCloseDelay, setMicCloseDelayState] = useState<number>(() => {
+  if (typeof window !== "undefined") {
+   const saved = localStorage.getItem("loxx_mic_close_delay");
+   return saved ? parseInt(saved, 10) : 300;
+  }
+  return 300;
+ });
+
+ const setMicSensitivity = (val: number) => {
+  setMicSensitivityState(val);
+  localStorage.setItem("loxx_mic_sensitivity", val.toString());
+ };
+
+ const setMicOpenDelay = (val: number) => {
+  setMicOpenDelayState(val);
+  localStorage.setItem("loxx_mic_open_delay", val.toString());
+ };
+
+ const setMicCloseDelay = (val: number) => {
+  setMicCloseDelayState(val);
+  localStorage.setItem("loxx_mic_close_delay", val.toString());
+ };
  const [launcherRichPresenceEnabled, setLauncherRichPresenceEnabled] = useState<boolean>(() => {
  if (typeof window !== "undefined") {
  return localStorage.getItem("loxx_rich_presence_enabled") !== "false";
@@ -710,6 +755,8 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
  let rafId: number;
  let isTalking = false;
  let lastVol = 0;
+ let speakStartTime = 0;
+ let silenceStartTime = 0;
 
  if (lobby && user && localStream && isAudioContextResumed) {
  try {
@@ -741,9 +788,33 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
  setLocalVolume(newVol);
  }
 
- const talkingNow = avg > 8; 
- if (talkingNow !== isTalking) {
- isTalking = talkingNow;
+  const talkingNowRaw = avg > micSensitivity;
+  let talkingNowResolved = isTalking;
+
+  if (talkingNowRaw) {
+   silenceStartTime = 0;
+   if (!isTalking) {
+    if (speakStartTime === 0) {
+     speakStartTime = now;
+    }
+    if (now - speakStartTime >= micOpenDelay) {
+     talkingNowResolved = true;
+    }
+   }
+  } else {
+   speakStartTime = 0;
+   if (isTalking) {
+    if (silenceStartTime === 0) {
+     silenceStartTime = now;
+    }
+    if (now - silenceStartTime >= micCloseDelay) {
+     talkingNowResolved = false;
+    }
+   }
+  }
+
+ if (talkingNowResolved !== isTalking) {
+ isTalking = talkingNowResolved;
  voiceSocket.emit("voice.talking", { roomId: lobby.id, isTalking });
  setLobby(prev => {
  if (!prev) return null;
@@ -791,7 +862,7 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
  if (analyzer) analyzer.disconnect();
  } catch (e) {}
  };
- }, [lobby?.id, user?.id, localStream, isAudioContextResumed]);
+ }, [lobby?.id, user?.id, localStream, isAudioContextResumed, micSensitivity, micOpenDelay, micCloseDelay]);
 
  
 
@@ -1380,6 +1451,12 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
  localVolume,
  isDeafened,
  setIsDeafened,
+ micSensitivity,
+ setMicSensitivity,
+ micOpenDelay,
+ setMicOpenDelay,
+ micCloseDelay,
+ setMicCloseDelay,
 
  // Overlay bindings
  overlayEnabled,

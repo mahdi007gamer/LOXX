@@ -279,6 +279,7 @@ export const useWebRTC = (
 
         try {
           const consumer = await recvTransport.consume(resp.params);
+          (consumer as any).peerUserId = peerUserId;
           consumersRef.current.set(consumer.id, consumer);
 
           // Resume consumer playing state on server
@@ -369,21 +370,16 @@ export const useWebRTC = (
       // Clean up local consumers subscribing to this producer
       consumersRef.current.forEach((consumer, consumerId) => {
         if (consumer.producerId === producerId) {
-          // Identify associated peer
-          let targetPeerUserId = "";
-          remoteStreams.forEach((stream, peerId) => {
-            // Find which peer possesses this stream
-            targetPeerUserId = peerId;
-          });
+          const targetPeerUserId = (consumer as any).peerUserId || "";
           closeSpecificConsumer(consumerId, targetPeerUserId, consumer.kind);
         }
       });
     };
 
     const handleConsumerClosed = ({ consumerId }: { consumerId: string }) => {
-      let targetPeerUserId = "";
-      remoteStreams.forEach((stream, peerId) => { targetPeerUserId = peerId; });
-      closeSpecificConsumer(consumerId, targetPeerUserId, "audio");
+      const consumer = consumersRef.current.get(consumerId);
+      const targetPeerUserId = consumer ? ((consumer as any).peerUserId || "") : "";
+      closeSpecificConsumer(consumerId, targetPeerUserId, consumer ? consumer.kind : "audio");
     };
 
     voiceSocket.on("newProducer", handleNewProducer);

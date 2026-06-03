@@ -272,7 +272,7 @@ model LobbyMember {
   user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   role            String    @default("PLAYER") // HOST, PLAYER, SPECTATOR
   isReady         Boolean   @default(false)
-  micStatus       Boolean   @default(false) // Muted/Unmuted
+  micStatus       Boolean   @default(true) // Muted/Unmuted
   
   @@id([lobbyId, userId])
 }
