@@ -369,9 +369,15 @@ export const useWebRTC = (
       console.log(`[WebRTC Screenshare] Creating RTCPeerConnection for peer ${peerId}`);
       const pc = new RTCPeerConnection({
         iceServers: [
+          { urls: "stun:stun.iranserver.com:3478" },
           { urls: "stun:stun.l.google.com:19302" },
           { urls: "stun:stun1.l.google.com:19302" },
-          { urls: "stun:stun2.l.google.com:19302" }
+          { urls: "stun:stun2.l.google.com:19302" },
+          { urls: "stun:stun3.l.google.com:19302" },
+          { urls: "stun:stun4.l.google.com:19302" },
+          { urls: "stun:stun.sipgate.net:3478" },
+          { urls: "stun:stun.voipbuster.com:3478" },
+          { urls: "stun:stun.turnserver.cl:3478" }
         ]
       });
 
@@ -446,10 +452,7 @@ export const useWebRTC = (
         }
 
         console.log(`[WebRTC Screenshare] Added video track for ${peerId}, initiating offer`);
-        const offer = await pc.createOffer({
-          offerToReceiveVideo: false,
-          offerToReceiveAudio: false
-        });
+        const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
 
         voiceSocket.emit("voice.signal", {
@@ -498,22 +501,20 @@ export const useWebRTC = (
         } 
         else if (signal.type === "candidate") {
           const pc = pcsRef.current.get(fromUserId);
-          if (pc) {
-            if (pc.remoteDescription && pc.remoteDescription.type) {
-              try {
-                await pc.addIceCandidate(new RTCIceCandidate(signal.candidate));
-              } catch (e) {
-                console.warn(`[WebRTC Screenshare] Error adding ICE candidate directly:`, e);
-              }
-            } else {
-              // Queue candidate until setRemoteDescription completes
-              let q = candidateQueuesRef.current.get(fromUserId);
-              if (!q) {
-                q = [];
-                candidateQueuesRef.current.set(fromUserId, q);
-              }
-              q.push(signal.candidate);
+          if (pc && pc.remoteDescription && pc.remoteDescription.type) {
+            try {
+              await pc.addIceCandidate(new RTCIceCandidate(signal.candidate));
+            } catch (e) {
+              console.warn(`[WebRTC Screenshare] Error adding ICE candidate directly:`, e);
             }
+          } else {
+            // Queue candidate until PC is ready and setRemoteDescription completes
+            let q = candidateQueuesRef.current.get(fromUserId);
+            if (!q) {
+              q = [];
+              candidateQueuesRef.current.set(fromUserId, q);
+            }
+            q.push(signal.candidate);
           }
         }
         else if (signal.type === "stop-share") {
