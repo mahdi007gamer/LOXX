@@ -23,6 +23,11 @@ export const ScreenSharePresenter = ({
  const [isWatching, setIsWatching] = useState(isLocal); // Default local shares to auto-watched, remote demands action
  const containerRef = useRef<HTMLDivElement>(null);
 
+ // Reset watching state when stream or isLocal changes to ensure fresh button prompt for new presenters
+ useEffect(() => {
+   setIsWatching(isLocal);
+ }, [stream, isLocal]);
+
  // Bind media stream only if the user has opted in to watch (demand-driven active loading)
 useEffect(() => {
   const video = videoRef.current;

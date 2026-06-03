@@ -152,7 +152,7 @@ export const useSmartScreenShare = (
  try {
  stream = await navigator.mediaDevices.getDisplayMedia({
  video: true,
- audio: false
+ audio: true
  });
  } catch (err) {
  console.error("Window capture via getDisplayMedia failed, clearing source ID and throwing:", err);
@@ -179,7 +179,7 @@ export const useSmartScreenShare = (
  // Screen sources are fully supported natively via getDisplayMedia
  stream = await navigator.mediaDevices.getDisplayMedia({
  video: true,
- audio: false
+ audio: true
  });
  }
  } else {
@@ -189,7 +189,20 @@ export const useSmartScreenShare = (
  // Standard Web API or native Electron interceptor
  stream = await navigator.mediaDevices.getDisplayMedia({
  video: true,
- audio: false
+ audio: true
+ });
+ }
+
+ // Disable, stop, and completely remove audio tracks immediately to ensure absolutely no sound is sent or played
+ if (stream) {
+ stream.getAudioTracks().forEach((track) => {
+ try {
+ track.enabled = false;
+ track.stop();
+ stream.removeTrack(track);
+ } catch (trackErr) {
+ console.warn("Error stopping or removing captured screen audio track:", trackErr);
+ }
  });
  }
 
