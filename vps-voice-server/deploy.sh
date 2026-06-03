@@ -67,6 +67,9 @@ fi
 echo -e "\n${YELLOW}[6/6] Installing local dependencies and compiling SFU package (This may take 2-4 minutes)...${NC}"
 npm install
 
+echo -e "\n${YELLOW}Building/Rebuilding native mediasoup binaries for the target VPS architecture...${NC}"
+npm rebuild mediasoup
+
 echo -e "\n${YELLOW}Compiling TypeScript down to native CommonJS...${NC}"
 npm run build
 
