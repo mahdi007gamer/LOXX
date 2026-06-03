@@ -52,13 +52,32 @@ export const RemoteAudioPlayer: React.FC<RemoteAudioPlayerProps> = ({ stream, on
  .catch((e: any) => console.error("Failed to set audio output device target (SinkID):", e));
  }
  }
+ // Set output destination sinkId on the underlying AudioContext itself if supported natively
+ const audioCtx = getSharedAudioContext() as any;
+ if (audioCtx && typeof audioCtx.setSinkId === "function" && outputDeviceId) {
+ audioCtx.setSinkId(outputDeviceId === "default" ? "" : outputDeviceId)
+ .catch((e: any) => console.error("Failed to set AudioContext output device (SinkID):", e));
+ }
  }, [outputDeviceId]);
 
  useEffect(() => {
+ const volumeRatio = Math.min(Math.max(volumeLevel / 100, 0), 1);
+ 
+ // Safety backup to set internal audio volume
  if (audioRef.current) {
- audioRef.current.volume = Math.min(Math.max(volumeLevel / 100, 0), 1);
+ audioRef.current.volume = volumeRatio;
  }
- }, [volumeLevel]);
+
+ // Direct low-latency volume gain alteration via browser Web Audio API GainNode routing
+ if (stream && (stream as any).gainNode) {
+ try {
+ const audioCtx = getSharedAudioContext();
+ (stream as any).gainNode.gain.setValueAtTime(volumeRatio, audioCtx.currentTime);
+ } catch (e) {
+ console.warn("Could not set direct gain node value:", e);
+ }
+ }
+ }, [stream, volumeLevel]);
 
  useEffect(() => {
  let analyzer: AnalyserNode;
@@ -121,5 +140,5 @@ export const RemoteAudioPlayer: React.FC<RemoteAudioPlayerProps> = ({ stream, on
  };
  }, [stream, onVolumeChange]);
 
- return <audio ref={audioRef} autoPlay playsInline style={{ position: 'fixed', top: -1000, left: -1000, opacity: 0, width: 1, height: 1 }} />;
+ return <audio ref={audioRef} muted={true} autoPlay playsInline style={{ position: 'fixed', top: -1000, left: -1000, opacity: 0, width: 1, height: 1 }} />;
 };

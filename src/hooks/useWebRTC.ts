@@ -46,8 +46,8 @@ class SmoothAudioPlayer {
       const idx1 = Math.floor(srcIdx);
       const idx2 = Math.min(this.queue.length - 1, idx1 + 1);
       const t = srcIdx - idx1;
-      const s1 = this.queue[idx1];
-      const s2 = this.queue[idx2];
+      const s1 = (idx1 >= 0 && idx1 < this.queue.length) ? this.queue[idx1] : 0;
+      const s2 = (idx2 >= 0 && idx2 < this.queue.length) ? this.queue[idx2] : 0;
       const rawSample = s1 + t * (s2 - s1);
 
       // Smooth gain ramp-up to 1.0 to avoid abrupt audio pops when stream resumes
@@ -86,6 +86,7 @@ export const useWebRTC = (
     player: SmoothAudioPlayer; 
     node: ScriptProcessorNode;
     silentGainNode: GainNode;
+    localGainNode?: GainNode;
   }>>(new Map());
 
   // Handle local microphone capture & compression
@@ -160,19 +161,55 @@ export const useWebRTC = (
         return result.buffer;
       };
 
+      // Accumulator for packet bundling
+      const chunkBuffer: Int16Array[] = [];
+      const CHUNK_ACCUMULATE_COUNT = 4; // Bundles ~42ms of audio into a single websocket message
+
       processorNodeRef.current.onaudioprocess = (event) => {
         const tracks = localStreamRef.current ? localStreamRef.current.getAudioTracks() : [];
         if (tracks.length > 0 && tracks[0].enabled) {
           const inputData = event.inputBuffer.getChannelData(0);
           
-          // Downsample and Compress in a single contiguous step (Native crisp 16kHz)
-          const compressedPCM = downsampleAndToInt16(inputData, event.inputBuffer.sampleRate, 16000);
+          // Noise Gate: Calculate RMS of the input sample block
+          let sumSquares = 0;
+          for (let i = 0; i < inputData.length; i++) {
+            sumSquares += inputData[i] * inputData[i];
+          }
+          const rms = Math.sqrt(sumSquares / inputData.length);
           
-          // Broadcast to Lobby server securely
-          voiceSocket.emit("voice.audio_chunk", {
-            roomId: roomId,
-            chunk: compressedPCM
-          });
+          // Noise Gate threshold set dynamically to ~0.008 to catch ambient hiss
+          if (rms < 0.008) {
+            for (let i = 0; i < inputData.length; i++) {
+              inputData[i] = 0; // Absolute noise cancellation on silent frame
+            }
+          }
+
+          // Downsample and Compress in a single contiguous step (Native crisp 16kHz)
+          const compressedPCMBuffer = downsampleAndToInt16(inputData, event.inputBuffer.sampleRate, 16000);
+          const compressedPCM = new Int16Array(compressedPCMBuffer);
+          
+          chunkBuffer.push(compressedPCM);
+
+          if (chunkBuffer.length >= CHUNK_ACCUMULATE_COUNT) {
+            let totalLength = 0;
+            for (const c of chunkBuffer) totalLength += c.length;
+            
+            const merged = new Int16Array(totalLength);
+            let offset = 0;
+            for (const c of chunkBuffer) {
+              merged.set(c, offset);
+              offset += c.length;
+            }
+            chunkBuffer.length = 0; // Clear accumulator
+
+            // Broadcast to Lobby server securely with bundled packet
+            voiceSocket.emit("voice.audio_chunk", {
+              roomId: roomId,
+              chunk: merged.buffer
+            });
+          }
+        } else {
+          chunkBuffer.length = 0;
         }
       };
 
@@ -231,6 +268,7 @@ export const useWebRTC = (
         player.consume(channel, e.outputBuffer.sampleRate, 16000);
       };
       
+      // Keep dest connection for visual analyzer
       node.connect(dest);
       
       // Connect to silent output purely to keep Audio graph pump running in the background tab/windows
@@ -239,7 +277,16 @@ export const useWebRTC = (
       node.connect(silentGainNode);
       silentGainNode.connect(audioContext.destination);
 
-      const entry = { dest, player, node, silentGainNode };
+      // Create a direct low-latency audio gain node connected straight to the speaker destination
+      const localGainNode = audioContext.createGain();
+      localGainNode.gain.value = 1.0; // Controlled by RemoteAudioPlayer
+      node.connect(localGainNode);
+      localGainNode.connect(audioContext.destination);
+
+      // Bind the gainNode directly to the stream object as an accessor property
+      (dest.stream as any).gainNode = localGainNode;
+
+      const entry = { dest, player, node, silentGainNode, localGainNode };
       remotePlayersRef.current.set(targetId, entry);
 
       setRemoteStreams((prev) => {
@@ -256,6 +303,7 @@ export const useWebRTC = (
       if (entry) {
         try { entry.node.disconnect(); } catch (e) {}
         try { entry.silentGainNode.disconnect(); } catch (e) {}
+        try { entry.localGainNode?.disconnect(); } catch (e) {}
         remotePlayersRef.current.delete(targetId);
       }
       setRemoteStreams((prev) => {
