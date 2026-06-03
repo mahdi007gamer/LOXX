@@ -3,6 +3,16 @@
 # Ensure /usr/local/bin and standard node path is loaded even inside secure_path sudo
 export PATH=$PATH:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
 
+# --- Argument Parsing ---
+VERBOSE=false
+for arg in "$@"; do
+  case $arg in
+    -v|--verbose)
+      VERBOSE=true
+      ;;
+  esac
+done
+
 # --- Colorized Logger ---
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -11,6 +21,9 @@ NC='\033[0m' # No Color
 
 echo -e "${GREEN}================================================================${NC}"
 echo -e "${GREEN}        LOXX ULTRA-LOW LATENCY VOICE SFU INITIALIZATION        ${NC}"
+if [ "$VERBOSE" = true ]; then
+  echo -e "${YELLOW}        [ VERBOSE LOGGING ENABLED ]                            ${NC}"
+fi
 echo -e "${GREEN}================================================================${NC}"
 
 # Check if user is root
@@ -21,18 +34,31 @@ fi
 
 # 1. Update APT Repository
 echo -e "\n${YELLOW}[1/6] Updating system repositories...${NC}"
-apt-get update -y
+if [ "$VERBOSE" = true ]; then
+  apt-get update -y
+else
+  apt-get update -y > /dev/null
+fi
 
 # 2. Install Mediasoup build dependencies (C++ compilers, Python, etc.)
 # Mediasoup compiles C++ binaries during installation, requiring build-essential, python3, and make.
 echo -e "\n${YELLOW}[2/6] Installing C++ build dependencies, Make & Python3...${NC}"
-apt-get install -y build-essential python3 python3-pip make cmake gcc g++ git
+if [ "$VERBOSE" = true ]; then
+  apt-get install -y build-essential python3 python3-pip make cmake gcc g++ git
+else
+  apt-get install -y build-essential python3 python3-pip make cmake gcc g++ git > /dev/null
+fi
 
 # 3. Install Node.js & NPM if not already present
 if ! command -v node &> /dev/null; then
     echo -e "\n${YELLOW}[3/6] Node.js not found. Installing Node.js LTS (v20)...${NC}"
-    curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
-    apt-get install -y nodejs
+    if [ "$VERBOSE" = true ]; then
+      curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+      apt-get install -y nodejs
+    else
+      curl -fsSL https://deb.nodesource.com/setup_20.x | bash - > /dev/null 2>&1
+      apt-get install -y nodejs > /dev/null
+    fi
 else
     echo -e "\n${GREEN}[3/6] Node.js already installed: $(node -v)${NC}"
 fi
@@ -40,7 +66,11 @@ fi
 # 4. Install PM2 globally for production execution
 if ! command -v pm2 &> /dev/null; then
     echo -e "\n${YELLOW}[4/6] Installing PM2 process manager在全球...${NC}"
-    npm install -g pm2
+    if [ "$VERBOSE" = true ]; then
+      npm install -g pm2
+    else
+      npm install -g pm2 > /dev/null
+    fi
 else
     echo -e "\n${GREEN}[4/6] PM2 already installed: $(pm2 -v)${NC}"
 fi
@@ -50,28 +80,53 @@ fi
 echo -e "\n${YELLOW}[5/6] Configuring VPS Firewall (UFW) rules...${NC}"
 if command -v ufw &> /dev/null; then
     echo -e "Enabling UFW rules for LOXX Voice Engine..."
-    ufw allow 4000/tcp comment 'LOXX Voice signaling WebSockets'
-    ufw allow 40000:49999/udp comment 'LOXX WebRTC Mediasoup UDP media channels'
-    ufw allow 40000:49999/tcp comment 'LOXX WebRTC Mediasoup TCP media fallback'
-    ufw reload
+    if [ "$VERBOSE" = true ]; then
+      ufw allow 4000/tcp comment 'LOXX Voice signaling WebSockets'
+      ufw allow 40000:49999/udp comment 'LOXX WebRTC Mediasoup UDP media channels'
+      ufw allow 40000:49999/tcp comment 'LOXX WebRTC Mediasoup TCP media fallback'
+      ufw reload
+    else
+      ufw allow 4000/tcp comment 'LOXX Voice signaling WebSockets' > /dev/null
+      ufw allow 40000:49999/udp comment 'LOXX WebRTC Mediasoup UDP media channels' > /dev/null
+      ufw allow 40000:49999/tcp comment 'LOXX WebRTC Mediasoup TCP media fallback' > /dev/null
+      ufw reload > /dev/null
+    fi
     echo -e "${GREEN}Firewall updated successfully via UFW.${NC}"
 else
     echo -e "${YELLOW}UFW was not found. Setting up standard iptables rules instead...${NC}"
-    iptables -A INPUT -p tcp --dport 4000 -j ACCEPT -m comment --comment "LOXX Voice Signaling"
-    iptables -A INPUT -p udp --match multiport --dports 40000:49999 -j ACCEPT -m comment --comment "LOXX WebRTC UDP RTP"
-    iptables -A INPUT -p tcp --match multiport --dports 40000:49999 -j ACCEPT -m comment --comment "LOXX WebRTC TCP fallback"
+    if [ "$VERBOSE" = true ]; then
+      iptables -A INPUT -p tcp --dport 4000 -j ACCEPT -m comment --comment "LOXX Voice Signaling"
+      iptables -A INPUT -p udp --match multiport --dports 40000:49999 -j ACCEPT -m comment --comment "LOXX WebRTC UDP RTP"
+      iptables -A INPUT -p tcp --match multiport --dports 40000:49999 -j ACCEPT -m comment --comment "LOXX WebRTC TCP fallback"
+    else
+      iptables -A INPUT -p tcp --dport 4000 -j ACCEPT -m comment --comment "LOXX Voice Signaling" > /dev/null 2>&1
+      iptables -A INPUT -p udp --match multiport --dports 40000:49999 -j ACCEPT -m comment --comment "LOXX WebRTC UDP RTP" > /dev/null 2>&1
+      iptables -A INPUT -p tcp --match multiport --dports 40000:49999 -j ACCEPT -m comment --comment "LOXX WebRTC TCP fallback" > /dev/null 2>&1
+    fi
     echo -e "${GREEN}Firewall updated successfully via iptables.${NC}"
 fi
 
 # 6. Install NPM packages, Compile TypeScript, and Launch
 echo -e "\n${YELLOW}[6/6] Installing local dependencies and compiling SFU package (This may take 2-4 minutes)...${NC}"
-npm install
+if [ "$VERBOSE" = true ]; then
+  npm install --loglevel verbose
+else
+  npm install
+fi
 
 echo -e "\n${YELLOW}Building/Rebuilding native mediasoup binaries for the target VPS architecture...${NC}"
-npm rebuild mediasoup
+if [ "$VERBOSE" = true ]; then
+  npm rebuild mediasoup --foreground-scripts --loglevel verbose
+else
+  npm rebuild mediasoup
+fi
 
 echo -e "\n${YELLOW}Compiling TypeScript down to native CommonJS...${NC}"
-npm run build
+if [ "$VERBOSE" = true ]; then
+  npx tsc --verbose
+else
+  npm run build
+fi
 
 # PM2 runner function to locate pm2 robustly
 run_pm2() {
