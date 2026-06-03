@@ -3,7 +3,8 @@ import { createServer } from "http";
 import { Server, Socket } from "socket.io";
 import cors from "cors";
 import * as mediasoup from "mediasoup";
-import { Worker, Router, WebRtcTransport, Producer, Consumer, RtpCodecCapability } from "mediasoup/node/lib/types.js";
+import type { types } from "mediasoup";
+import os from "os";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -19,21 +20,21 @@ const PUBLIC_IP = process.env.PUBLIC_IP || "146.19.212.212";
 const LISTEN_IP = process.env.LISTEN_IP || "0.0.0.0"; // Bind to all interfaces
 
 // Mediasoup Worker configurations
-let workers: Worker[] = [];
+let workers: types.Worker[] = [];
 let nextWorkerIdx = 0;
 
 // Room management structure
 interface Peer {
   id: string; // Socket ID
   userId: string;
-  transports: Map<string, WebRtcTransport>;
-  producers: Map<string, Producer>;
-  consumers: Map<string, Consumer>;
+  transports: Map<string, types.WebRtcTransport>;
+  producers: Map<string, types.Producer>;
+  consumers: Map<string, types.Consumer>;
 }
 
 interface Room {
   id: string;
-  router: Router;
+  router: types.Router;
   peers: Map<string, Peer>;
 }
 
@@ -51,7 +52,7 @@ const io = new Server(httpServer, {
 });
 
 // Advanced Opus and Screensharing Codec Setup
-const mediaCodecs: RtpCodecCapability[] = [
+const mediaCodecs: types.RtpCodecCapability[] = [
   {
     kind: "audio",
     mimeType: "audio/opus",
@@ -76,7 +77,7 @@ const mediaCodecs: RtpCodecCapability[] = [
 
 // Initialize Mediasoup Workers
 async function startMediasoup() {
-  const numWorkers = require('os').cpus().length;
+  const numWorkers = os.cpus().length;
   console.log(`[SFU Voice Engine] Launching ${numWorkers} Mediasoup workers...`);
   
   for (let i = 0; i < numWorkers; i++) {
@@ -97,14 +98,14 @@ async function startMediasoup() {
   console.log(`[SFU Voice Engine] Mediasoup workers initialized successfully.`);
 }
 
-function getNextWorker(): Worker {
+function getNextWorker(): types.Worker {
   const worker = workers[nextWorkerIdx];
   nextWorkerIdx = (nextWorkerIdx + 1) % workers.length;
   return worker;
 }
 
 // Create WebRTC Transport
-async function createWebRtcTransport(router: Router) {
+async function createWebRtcTransport(router: types.Router) {
   const transport = await router.createWebRtcTransport({
     listenInfos: [
       {

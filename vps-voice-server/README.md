@@ -60,15 +60,15 @@ sudo ./deploy.sh
 
 * **مشاهده مانیتور لحظه‌ای کانال‌ها و ترافیک صوتی:**
   ```bash
-  pm2 logs loxx-voice-sfu
+  npx pm2 logs loxx-voice-sfu
   ```
 * **بررسی وضعیت منابع پردازنده و رم مصرفی سرور:**
   ```bash
-  pm2 status
+  npx pm2 status
   ```
 * **ری‌استارت کردن دستی سرور صوتی:**
   ```bash
-  pm2 restart loxx-voice-sfu
+  npx pm2 restart loxx-voice-sfu
   ```
 
 ---
@@ -82,7 +82,7 @@ LISTEN_IP=0.0.0.0
 ```
 بعد از هرگونه تغییر فایل `.env` بر روی سرور، دستور زیر را جهت اعمال تغییرات اجرا کنید:
 ```bash
-pm2 restart loxx-voice-sfu --update-env
+npx pm2 restart loxx-voice-sfu --update-env
 ```
 
 صداها اکنون کاملاً آماده‌ی سرویس‌دهی روی پروتکل بسیار سریع UDP بر روی پورت‌های ۴۰۰۰۰ الی ۴۹۹۹۹ هستند! 🎧🔥

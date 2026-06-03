@@ -69,15 +69,15 @@ npm run build
 
 # Start or restart PM2 process
 echo -e "\n${YELLOW}Launching processes via PM2...${NC}"
-pm2 delete loxx-voice-sfu &> /dev/null || true
-pm2 start dist/server.js --name "loxx-voice-sfu" --update-env
+npx pm2 delete loxx-voice-sfu &> /dev/null || true
+npx pm2 start dist/server.js --name "loxx-voice-sfu" --update-env
 
 # Save PM2 state and configure startup scripts
-pm2 save
-pm2 startup | tail -n 1 | bash
+npx pm2 save
+npx pm2 startup | tail -n 1 | bash
 
 echo -e "\n${GREEN}================================================================${NC}"
 echo -e "${GREEN}🎉 CONGRATULATIONS! LOXX VOICE SFU INSTALLED & ACTIVE ON PM2!${NC}"
 echo -e "${GREEN}================================================================${NC}"
 echo -e "To view live mediasoup signaling log flows, run:"
-echo -e "${YELLOW}pm2 logs loxx-voice-sfu${NC}\n"
+echo -e "${YELLOW}npx pm2 logs loxx-voice-sfu${NC}\n"
