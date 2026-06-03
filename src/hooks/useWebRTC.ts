@@ -8,10 +8,10 @@ class SmoothAudioPlayer {
   private currentGain: number = 0; // Soft gain tracking to prevent zero-crossing pops and click noises
 
   public push(data: Float32Array) {
-    const MAX_QUEUE_SAMPLES = 1200; // ~37.5ms buffer ceiling at 32kHz
+    const MAX_QUEUE_SAMPLES = 1600; // ~100ms buffer ceiling at 16kHz
     if (this.queue.length > MAX_QUEUE_SAMPLES) {
-      // Trim to ~5ms to securely catch up instantly and maintain near-zero delay
-      this.queue = this.queue.slice(this.queue.length - 160);
+      // Trim to ~25ms to securely catch up instantly and maintain near-zero delay
+      this.queue = this.queue.slice(this.queue.length - 400);
       this.isBuffering = false; 
     }
 
@@ -20,7 +20,7 @@ class SmoothAudioPlayer {
     nextQueue.set(data, this.queue.length);
     this.queue = nextQueue;
 
-    // Accumulate at least 160 samples (~5ms at 32kHz) before active play to survive small network jitter
+    // Accumulate at least 160 samples (~10ms at 16kHz) before active play to survive small network jitter
     if (this.isBuffering && this.queue.length >= 160) {
       this.isBuffering = false;
     }
@@ -126,8 +126,8 @@ export const useWebRTC = (
 
       sourceNodeRef.current = audioContext.createMediaStreamSource(localStream);
       
-      // Use standard 256 buffer size for ultra low-latency capture (~5.3ms delay)
-      processorNodeRef.current = audioContext.createScriptProcessor(256, 1, 1);
+      // Use standard 512 buffer size for ultra low-latency capture (~11ms delay)
+      processorNodeRef.current = audioContext.createScriptProcessor(512, 1, 1);
 
       sourceNodeRef.current.connect(processorNodeRef.current);
       
@@ -165,8 +165,8 @@ export const useWebRTC = (
         if (tracks.length > 0 && tracks[0].enabled) {
           const inputData = event.inputBuffer.getChannelData(0);
           
-          // Downsample and Compress in a single contiguous step (Native crisp 32kHz)
-          const compressedPCM = downsampleAndToInt16(inputData, event.inputBuffer.sampleRate, 32000);
+          // Downsample and Compress in a single contiguous step (Native crisp 16kHz)
+          const compressedPCM = downsampleAndToInt16(inputData, event.inputBuffer.sampleRate, 16000);
           
           // Broadcast to Lobby server securely
           voiceSocket.emit("voice.audio_chunk", {
@@ -224,11 +224,11 @@ export const useWebRTC = (
       const dest = audioContext.createMediaStreamDestination();
       const player = new SmoothAudioPlayer();
       
-      // Use 256 buffer size for stable playback processing while maintaining ultra-low latency
-      const node = audioContext.createScriptProcessor(256, 0, 1);
+      // Use 512 buffer size for stable playback processing while maintaining ultra-low latency
+      const node = audioContext.createScriptProcessor(512, 0, 1);
       node.onaudioprocess = (e) => {
         const channel = e.outputBuffer.getChannelData(0);
-        player.consume(channel, e.outputBuffer.sampleRate, 32000);
+        player.consume(channel, e.outputBuffer.sampleRate, 16000);
       };
       
       node.connect(dest);
