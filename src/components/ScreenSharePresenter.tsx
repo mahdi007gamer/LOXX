@@ -20,7 +20,7 @@ export const ScreenSharePresenter = ({
  const isRtl = language === "fa";
  const videoRef = useRef<HTMLVideoElement>(null);
  const [isFullscreen, setIsFullscreen] = useState(false);
- const [isWatching, setIsWatching] = useState(true); // Default to auto-watched so focus is on it immediately
+ const [isWatching, setIsWatching] = useState(isLocal); // Default local shares to auto-watched, remote demands action
  const containerRef = useRef<HTMLDivElement>(null);
 
  // Bind media stream only if the user has opted in to watch (demand-driven active loading)
