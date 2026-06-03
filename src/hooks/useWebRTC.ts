@@ -7,10 +7,10 @@ class SmoothAudioPlayer {
   private isBuffering: boolean = true;
 
   public push(data: Float32Array) {
-    const MAX_QUEUE_SAMPLES = 800; // ~50ms buffer limit to instantly catch up
+    const MAX_QUEUE_SAMPLES = 1600; // ~100ms buffer ceiling
     if (this.queue.length > MAX_QUEUE_SAMPLES) {
-      // Trim to the latest 160 samples (~10ms) to catch up instantly
-      this.queue = this.queue.slice(this.queue.length - 160);
+      // Trim to 800 samples (~50ms) to securely catch up without micro-stutters
+      this.queue = this.queue.slice(this.queue.length - 800);
       this.isBuffering = false; 
     }
 
@@ -19,8 +19,8 @@ class SmoothAudioPlayer {
     nextQueue.set(data, this.queue.length);
     this.queue = nextQueue;
 
-    // If we were buffering and accumulated at least 240 samples (~15ms), resume play
-    if (this.isBuffering && this.queue.length >= 240) {
+    // Accumulate at least 400 samples (~25ms) before playing to cushion network jitter
+    if (this.isBuffering && this.queue.length >= 400) {
       this.isBuffering = false;
     }
   }
@@ -203,8 +203,8 @@ export const useWebRTC = (roomId: string | null, localStream: MediaStream | null
       const dest = audioContext.createMediaStreamDestination();
       const player = new SmoothAudioPlayer();
       
-      // Use 256 buffer size for fast playback processing (~16ms latency at 16kHz)
-      const node = audioContext.createScriptProcessor(256, 0, 1);
+      // Use 512 buffer size for stable playback processing while maintaining ultra-low latency
+      const node = audioContext.createScriptProcessor(512, 0, 1);
       node.onaudioprocess = (e) => {
         const channel = e.outputBuffer.getChannelData(0);
         player.consume(channel, e.outputBuffer.sampleRate, 16000);
