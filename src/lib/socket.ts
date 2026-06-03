@@ -17,7 +17,7 @@ export const createNamespaceSocket = (namespace: string, withAuth = true) => {
  return io(`${SOCKET_URL}/${namespace}`, {
  path: '/api/v1/socket.io',
  autoConnect: false,
- transports: ['polling', 'websocket'], // Use polling fallback for reverse proxies
+ transports: ['websocket', 'polling'], // Start with websocket directly for lowest latency, fallback to polling if blocked
  reconnectionDelay: 1000,
  reconnectionDelayMax: 5000,
  ...authConfig
@@ -42,7 +42,7 @@ export const getSharedAudioContext = () => {
  if (!sharedAudioContext) {
  const AudioCtx = (window as any).AudioContext || (window as any).webkitAudioContext;
  if (AudioCtx) {
- sharedAudioContext = new AudioCtx();
+ sharedAudioContext = new AudioCtx({ latencyHint: "interactive" });
  }
  }
  return sharedAudioContext;

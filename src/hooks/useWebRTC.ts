@@ -7,10 +7,10 @@ class SmoothAudioPlayer {
   private isBuffering: boolean = true;
 
   public push(data: Float32Array) {
-    const MAX_QUEUE_SAMPLES = 1600; // ~100ms buffer ceiling
+    const MAX_QUEUE_SAMPLES = 800; // ~50ms buffer ceiling for ultra-low latency response
     if (this.queue.length > MAX_QUEUE_SAMPLES) {
-      // Trim to 800 samples (~50ms) to securely catch up without micro-stutters
-      this.queue = this.queue.slice(this.queue.length - 800);
+      // Trim to 160 samples (~10ms) to securely catch up instantly and maintain 0 delay
+      this.queue = this.queue.slice(this.queue.length - 160);
       this.isBuffering = false; 
     }
 
@@ -19,8 +19,8 @@ class SmoothAudioPlayer {
     nextQueue.set(data, this.queue.length);
     this.queue = nextQueue;
 
-    // Accumulate at least 400 samples (~25ms) before playing to cushion network jitter
-    if (this.isBuffering && this.queue.length >= 400) {
+    // Accumulate at least 120 samples (~7.5ms) before playing to cushion network jitter
+    if (this.isBuffering && this.queue.length >= 120) {
       this.isBuffering = false;
     }
   }
