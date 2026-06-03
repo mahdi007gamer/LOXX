@@ -519,9 +519,10 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
  // Synchronize current lobby speaking players state directly to the Electron translucent overlay
  useEffect(() => {
- if (isElectron && lobby) {
+ if (isElectron) {
  const api = (window as any).electronAPI;
- if (api.sendOverlayPlayers) {
+ if (api && api.sendOverlayPlayers) {
+ if (lobby) {
  const playersList = (lobby.players || []).map((player: any) => {
  const isMe = player.userId === user?.id;
  const vol = isMe ? localVolume : (peerVolumes[player.userId] || 0);
@@ -535,6 +536,9 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
  };
  });
  api.sendOverlayPlayers(playersList);
+ } else {
+ api.sendOverlayPlayers([]);
+ }
  }
  }
  }, [isElectron, lobby, user?.id, localVolume, peerVolumes]);

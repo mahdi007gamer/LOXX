@@ -1,315 +1,317 @@
 import { useEffect, useRef, useState } from 'react';
-import { voiceSocket } from '../lib/socket';
+import { voiceSocket, getSharedAudioContext } from '../lib/socket';
+
+// Ultra-stable real-time audio jitter buffer & linear resampler
+class SmoothAudioPlayer {
+  private queue: Float32Array = new Float32Array(0);
+  private isBuffering: boolean = true;
+
+  public push(data: Float32Array) {
+    const MAX_QUEUE_SAMPLES = 2400; // 150ms buffer limit
+    if (this.queue.length > MAX_QUEUE_SAMPLES) {
+      // Trim to the latest 400 samples (~25ms) to catch up instantly
+      this.queue = this.queue.slice(this.queue.length - 400);
+      this.isBuffering = false; 
+    }
+
+    const nextQueue = new Float32Array(this.queue.length + data.length);
+    nextQueue.set(this.queue, 0);
+    nextQueue.set(data, this.queue.length);
+    this.queue = nextQueue;
+
+    // If we were buffering and accumulated at least 480 samples (~30ms), resume play
+    if (this.isBuffering && this.queue.length >= 480) {
+      this.isBuffering = false;
+    }
+  }
+
+  public consume(out: Float32Array, outSampleRate: number, inSampleRate: number) {
+    if (this.isBuffering) {
+      out.fill(0);
+      return;
+    }
+
+    const ratio = inSampleRate / outSampleRate;
+    const neededInSamples = out.length * ratio;
+
+    // Underflow: If the queue was drained, trigger buffering and play silence
+    if (this.queue.length < neededInSamples) {
+      this.isBuffering = true;
+      out.fill(0);
+      return;
+    }
+
+    // High performance linear-interpolation resampler
+    for (let i = 0; i < out.length; i++) {
+      const srcIdx = i * ratio;
+      const idx1 = Math.floor(srcIdx);
+      const idx2 = Math.min(this.queue.length - 1, idx1 + 1);
+      const t = srcIdx - idx1;
+      const s1 = this.queue[idx1];
+      const s2 = this.queue[idx2];
+      out[i] = s1 + t * (s2 - s1);
+    }
+
+    // Cleanly advance slice queue
+    const consumedCount = Math.floor(neededInSamples);
+    this.queue = this.queue.slice(consumedCount);
+  }
+
+  public clear() {
+    this.queue = new Float32Array(0);
+    this.isBuffering = true;
+  }
+}
 
 export const useWebRTC = (roomId: string | null, localStream: MediaStream | null, userId: string | undefined) => {
   const [remoteStreams, setRemoteStreams] = useState<Map<string, MediaStream>>(new Map());
-  const peersRef = useRef<Map<string, RTCPeerConnection>>(new Map());
   const localStreamRef = useRef<MediaStream | null>(null);
 
-  // Track standard perfect negotiation states (polite peer pattern to prevent glare)
-  const makingOfferRef = useRef<Map<string, boolean>>(new Map());
-  const ignoreOfferRef = useRef<Map<string, boolean>>(new Map());
-  const isSettingRemoteRef = useRef<Map<string, boolean>>(new Map());
-  const candidatesQueueRef = useRef<Map<string, any[]>>(new Map());
+  // Audio nodes and references for capture
+  const processorNodeRef = useRef<ScriptProcessorNode | null>(null);
+  const sourceNodeRef = useRef<MediaStreamAudioSourceNode | null>(null);
+  const remotePlayersRef = useRef<Map<string, { 
+    dest: MediaStreamAudioDestinationNode; 
+    player: SmoothAudioPlayer; 
+    node: ScriptProcessorNode;
+    silentGainNode: GainNode;
+  }>>(new Map());
 
-  // Automatically sync local tracks when localStream changes (e.g. microphone mute/unmute or device swaps)
+  // Handle local microphone capture & compression
   useEffect(() => {
-    if (localStream !== localStreamRef.current) {
-      console.log("WebRTC Mesh: Syncing local stream tracks to peers", localStream?.id);
-      localStreamRef.current = localStream;
-
-      peersRef.current.forEach((pc) => {
-        const senders = pc.getSenders();
-        const currentTracks = localStream ? localStream.getTracks() : [];
-
-        // 1. Remove track senders that are no longer active
-        senders.forEach((sender) => {
-          if (sender.track && !currentTracks.some((t) => t.id === sender.track!.id)) {
-            try {
-              pc.removeTrack(sender);
-            } catch (err) {
-              console.error("WebRTC Mesh: Error removing slot track:", err);
-            }
-          }
-        });
-
-        // 2. Add or replace tracks inside the active peers
-        currentTracks.forEach((track) => {
-          const sender = senders.find((s) => s.track?.id === track.id);
-          if (!sender) {
-            try {
-              pc.addTrack(track, localStream!);
-            } catch (err) {
-              console.error("WebRTC Mesh: Error adding track source:", err);
-            }
-          } else if (sender.track !== track) {
-            try {
-              sender.replaceTrack(track);
-            } catch (err) {
-              console.error("WebRTC Mesh: Error swap replacing track live:", err);
-            }
-          }
-        });
-      });
+    if (!roomId || !userId || !localStream) {
+      if (processorNodeRef.current) {
+        try { processorNodeRef.current.disconnect(); } catch (e) {}
+        processorNodeRef.current = null;
+      }
+      if (sourceNodeRef.current) {
+        try { sourceNodeRef.current.disconnect(); } catch (e) {}
+        sourceNodeRef.current = null;
+      }
+      return;
     }
-  }, [localStream]);
 
+    localStreamRef.current = localStream;
+
+    let audioContext: AudioContext;
+    try {
+      audioContext = getSharedAudioContext();
+      if (!audioContext) return;
+    } catch (e) {
+      console.error("WebSocket SFU: Could not retrieve shared AudioContext", e);
+      return;
+    }
+
+    try {
+      if (sourceNodeRef.current) {
+        try { sourceNodeRef.current.disconnect(); } catch (e) {}
+      }
+      if (processorNodeRef.current) {
+        try { processorNodeRef.current.disconnect(); } catch (e) {}
+      }
+
+      const audioTracks = localStream.getAudioTracks();
+      if (audioTracks.length === 0) return;
+
+      sourceNodeRef.current = audioContext.createMediaStreamSource(localStream);
+      
+      // Use standard 1024 buffer size for real-time responsiveness (~21ms capture delay)
+      processorNodeRef.current = audioContext.createScriptProcessor(1024, 1, 1);
+
+      sourceNodeRef.current.connect(processorNodeRef.current);
+      
+      // Silent destination route to maintain execution in modern desktop frames
+      const silentGainNode = audioContext.createGain();
+      silentGainNode.gain.value = 0;
+      processorNodeRef.current.connect(silentGainNode);
+      silentGainNode.connect(audioContext.destination);
+
+      // Ultra-efficient single-pass downsampler + Int16 compressor (takes < 0.1ms to prevent frame lag)
+      const downsampleAndToInt16 = (buffer: Float32Array, inputSampleRate: number, outputSampleRate: number) => {
+        const ratio = inputSampleRate / outputSampleRate;
+        const newLength = Math.floor(buffer.length / ratio);
+        const result = new Int16Array(newLength);
+        for (let i = 0; i < newLength; i++) {
+          const sample = buffer[Math.floor(i * ratio)];
+          const s = Math.max(-1, Math.min(1, sample));
+          result[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+        }
+        return result.buffer;
+      };
+
+      processorNodeRef.current.onaudioprocess = (event) => {
+        const tracks = localStreamRef.current ? localStreamRef.current.getAudioTracks() : [];
+        if (tracks.length > 0 && tracks[0].enabled) {
+          const inputData = event.inputBuffer.getChannelData(0);
+          
+          // Downsample and Compress in a single contiguous step (Native 16kHz)
+          const compressedPCM = downsampleAndToInt16(inputData, event.inputBuffer.sampleRate, 16000);
+          
+          // Broadcast to Lobby server securely
+          voiceSocket.emit("voice.audio_chunk", {
+            roomId: roomId,
+            chunk: compressedPCM
+          });
+        }
+      };
+
+      console.log("WebSocket SFU: Local low-latency mic capture active.");
+    } catch (err) {
+      console.error("WebSocket SFU: Local flow capture error", err);
+    }
+
+    return () => {
+      if (processorNodeRef.current) {
+        try { processorNodeRef.current.disconnect(); } catch (e) {}
+        processorNodeRef.current = null;
+      }
+      if (sourceNodeRef.current) {
+        try { sourceNodeRef.current.disconnect(); } catch (e) {}
+        sourceNodeRef.current = null;
+      }
+    };
+  }, [roomId, userId, localStream]);
+
+  // Handle incoming voice subscriber chunks with low-latency resampler queue
   useEffect(() => {
     if (!roomId || !userId) return;
 
-    const createPeer = (targetUserId: string) => {
-      console.log(`WebRTC Mesh: Initiating RTC connection to client peer: ${targetUserId}`);
+    let audioContext: AudioContext;
+    try {
+      audioContext = getSharedAudioContext();
+    } catch (e) {
+      console.error("WebSocket SFU: Receiver context error:", e);
+      return;
+    }
 
-      const pc = new RTCPeerConnection({
-        iceServers: [
-          { urls: "stun:stun.l.google.com:19302" },
-          { urls: "stun:stun1.l.google.com:19302" },
-          { urls: "stun:stun2.l.google.com:19302" },
-          { urls: "stun:stun3.l.google.com:19302" },
-          { urls: "stun:stun4.l.google.com:19302" },
-          { urls: "stun:stun.services.mozilla.com" }
-        ],
-        sdpSemantics: "unified-plan"
-      } as any);
-
-      makingOfferRef.current.set(targetUserId, false);
-      ignoreOfferRef.current.set(targetUserId, false);
-      isSettingRemoteRef.current.set(targetUserId, false);
-      candidatesQueueRef.current.set(targetUserId, []);
-
-      // Wire up current localStream tracks safely
-      if (localStreamRef.current) {
-        localStreamRef.current.getTracks().forEach((track) => {
-          pc.addTrack(track, localStreamRef.current!);
-          console.log(`WebRTC Mesh: Bound local track ${track.kind} (${track.id}) to peer ${targetUserId}`);
-        });
+    // Convert high-efficiency 16-bit PCM back to Float32 sample blocks
+    const int16ToFloat32 = (buffer: ArrayBuffer) => {
+      const src = new Int16Array(buffer);
+      const dest = new Float32Array(src.length);
+      for (let i = 0; i < src.length; i++) {
+        dest[i] = src[i] < 0 ? src[i] / 0x8000 : src[i] / 0x7FFF;
       }
-
-      // Stream candidates instantly over Socket connection
-      pc.onicecandidate = ({ candidate }) => {
-        if (candidate) {
-          voiceSocket.emit("voice.signal", {
-            targetUserId: targetUserId,
-            signal: { candidate },
-          });
-        }
-      };
-
-      // Direct native browser track injection
-      pc.ontrack = (event) => {
-        console.log(`WebRTC Mesh: Successfully received live digital audio track from user ${targetUserId}`);
-        const stream = event.streams[0] || new MediaStream([event.track]);
-        
-        setRemoteStreams((prev) => {
-          const map = new Map(prev);
-          map.set(targetUserId, stream);
-          return map;
-        });
-
-        event.track.onended = () => {
-          console.log(`WebRTC Mesh: Audio ended for user ${targetUserId}`);
-          setRemoteStreams((prev) => {
-            const map = new Map(prev);
-            map.delete(targetUserId);
-            return map;
-          });
-        };
-      };
-
-      // Perform SDP Perfect Negotiation
-      pc.onnegotiationneeded = async () => {
-        try {
-          makingOfferRef.current.set(targetUserId, true);
-          await pc.setLocalDescription();
-          voiceSocket.emit("voice.signal", {
-            targetUserId: targetUserId,
-            signal: { description: pc.localDescription },
-          });
-        } catch (err) {
-          console.error(`WebRTC Mesh: SDP handshaking setup error with ${targetUserId}:`, err);
-        } finally {
-          makingOfferRef.current.set(targetUserId, false);
-        }
-      };
-
-      // Track link connection dropouts and trigger reactive reconnects
-      pc.onconnectionstatechange = () => {
-        const state = pc.connectionState;
-        console.log(`WebRTC Mesh: Connection with user ${targetUserId} entered state: ${state}`);
-        if (state === "failed" || state === "disconnected") {
-          console.warn(`WebRTC Mesh: Peer link failed. Re-building connection tunnel to user ${targetUserId}`);
-          reconnectPeer(targetUserId);
-        }
-      };
-
-      pc.oniceconnectionstatechange = () => {
-        const state = pc.iceConnectionState;
-        console.log(`WebRTC Mesh: ICE setup with user ${targetUserId} entered state: ${state}`);
-        if (state === "failed" || state === "disconnected") {
-          console.warn(`WebRTC Mesh: ICE peer failed. Re-building candidate tunnels to user ${targetUserId}`);
-          reconnectPeer(targetUserId);
-        }
-      };
-
-      return pc;
+      return dest;
     };
 
-    const reconnectPeer = (targetUserId: string) => {
-      const oldPc = peersRef.current.get(targetUserId);
-      if (oldPc) {
-        try { oldPc.close(); } catch (e) {}
-        peersRef.current.delete(targetUserId);
+    const getOrCreateRemotePlayer = (targetId: string) => {
+      if (remotePlayersRef.current.has(targetId)) {
+        return remotePlayersRef.current.get(targetId)!;
       }
+
+      console.log(`WebSocket SFU: Generating dynamic low-latency output for peer ${targetId}`);
+      const dest = audioContext.createMediaStreamDestination();
+      const player = new SmoothAudioPlayer();
+      
+      const node = audioContext.createScriptProcessor(1024, 0, 1);
+      node.onaudioprocess = (e) => {
+        const channel = e.outputBuffer.getChannelData(0);
+        player.consume(channel, e.outputBuffer.sampleRate, 16000);
+      };
+      
+      node.connect(dest);
+      
+      // Connect to silent output purely to keep Audio graph pump running in the background tab/windows
+      const silentGainNode = audioContext.createGain();
+      silentGainNode.gain.value = 0;
+      node.connect(silentGainNode);
+      silentGainNode.connect(audioContext.destination);
+
+      const entry = { dest, player, node, silentGainNode };
+      remotePlayersRef.current.set(targetId, entry);
+
       setRemoteStreams((prev) => {
-        const next = new Map(prev);
-        next.delete(targetUserId);
-        return next;
+        const nextMap = new Map(prev);
+        nextMap.set(targetId, dest.stream);
+        return nextMap;
       });
 
-      // Quick backup delayed setup to give network time to stabilize
-      setTimeout(() => {
-        if (!peersRef.current.has(targetUserId) && roomId) {
-          const pc = createPeer(targetUserId);
-          peersRef.current.set(targetUserId, pc);
-        }
-      }, 1500);
+      return entry;
     };
 
-    // Process incoming signaling packets
-    const handleSignal = async ({ fromUserId, signal }: { fromUserId: string, signal: any }) => {
-      try {
-        let pc = peersRef.current.get(fromUserId);
-        const isPolite = userId ? (userId < fromUserId) : false; // Deterministic collision resolver
+    const destroyRemotePlayer = (targetId: string) => {
+      const entry = remotePlayersRef.current.get(targetId);
+      if (entry) {
+        try { entry.node.disconnect(); } catch (e) {}
+        try { entry.silentGainNode.disconnect(); } catch (e) {}
+        remotePlayersRef.current.delete(targetId);
+      }
+      setRemoteStreams((prev) => {
+        const nextMap = new Map(prev);
+        nextMap.delete(targetId);
+        return nextMap;
+      });
+    };
 
-        if (signal.description) {
-          const description = new RTCSessionDescription(signal.description);
-          const offerCollision = description.type === "offer" &&
-            (makingOfferRef.current.get(fromUserId) || (pc && pc.signalingState !== "stable"));
-
-          const shouldIgnore = !isPolite && offerCollision;
-          ignoreOfferRef.current.set(fromUserId, shouldIgnore);
-
-          if (shouldIgnore) {
-            console.warn(`WebRTC Perfect Negotiation: Glare. Impolite peer ignored offer from ${fromUserId}`);
-            return;
+    const handleJoinResponse = (response?: { users: string[] }) => {
+      if (response && response.users) {
+        response.users.forEach((otherId) => {
+          if (otherId !== userId) {
+            getOrCreateRemotePlayer(otherId);
           }
-
-          if (!pc || pc.connectionState === "closed") {
-            pc = createPeer(fromUserId);
-            peersRef.current.set(fromUserId, pc);
-          }
-
-          if (offerCollision && isPolite) {
-            console.log(`WebRTC Perfect Negotiation: Glare. Polite peer is rolling back for ${fromUserId}`);
-            await pc.setLocalDescription({ type: "rollback" });
-          }
-
-          isSettingRemoteRef.current.set(fromUserId, true);
-          await pc.setRemoteDescription(description);
-          isSettingRemoteRef.current.set(fromUserId, false);
-
-          if (description.type === "offer") {
-            await pc.setLocalDescription();
-            voiceSocket.emit("voice.signal", {
-              targetUserId: fromUserId,
-              signal: { description: pc.localDescription },
-            });
-          }
-
-          // Drain cached candidates safely
-          const queue = candidatesQueueRef.current.get(fromUserId) || [];
-          for (const candidate of queue) {
-            try {
-              await pc.addIceCandidate(new RTCIceCandidate(candidate));
-            } catch (err) {
-              console.error("WebRTC Mesh: Error adding queued early candidate:", err);
-            }
-          }
-          candidatesQueueRef.current.set(fromUserId, []);
-
-        } else if (signal.candidate) {
-          if (!pc || isSettingRemoteRef.current.get(fromUserId) || !pc.remoteDescription) {
-            const queue = candidatesQueueRef.current.get(fromUserId) || [];
-            queue.push(signal.candidate);
-            candidatesQueueRef.current.set(fromUserId, queue);
-          } else {
-            try {
-              await pc.addIceCandidate(new RTCIceCandidate(signal.candidate));
-            } catch (err) {
-              if (!ignoreOfferRef.current.get(fromUserId)) {
-                console.error("WebRTC Mesh: Error adding candidate direct:", err);
-              }
-            }
-          }
-        }
-      } catch (err) {
-        console.error("WebRTC Mesh: General signaling parsing exception:", err);
+        });
       }
     };
 
-    const handleUserJoined = ({ userId: joinedUserId }: { userId: string }) => {
-      if (joinedUserId === userId) return;
-      if (!peersRef.current.has(joinedUserId)) {
-        const pc = createPeer(joinedUserId);
-        peersRef.current.set(joinedUserId, pc);
-      }
-    };
+    voiceSocket.emit('voice.join', { roomId }, (resp?: any) => {
+      handleJoinResponse(resp);
+    });
 
     const handleExistingUsers = ({ users }: { users: string[] }) => {
-      users.forEach((existingUserId) => {
-        if (existingUserId !== userId && !peersRef.current.has(existingUserId)) {
-          const pc = createPeer(existingUserId);
-          peersRef.current.set(existingUserId, pc);
+      users.forEach((otherId) => {
+        if (otherId !== userId) {
+          getOrCreateRemotePlayer(otherId);
         }
       });
     };
 
-    const handleUserLeft = ({ userId: leftUserId }: { userId: string }) => {
-      console.log(`WebRTC Mesh: Removing disconnected stream and clean memory for user ${leftUserId}`);
-      const pc = peersRef.current.get(leftUserId);
-      if (pc) {
-        try { pc.close(); } catch (e) {}
-        peersRef.current.delete(leftUserId);
+    const handleUserJoined = ({ userId: otherId }: { userId: string }) => {
+      if (otherId !== userId) {
+        getOrCreateRemotePlayer(otherId);
       }
-      makingOfferRef.current.delete(leftUserId);
-      ignoreOfferRef.current.delete(leftUserId);
-      isSettingRemoteRef.current.delete(leftUserId);
-      candidatesQueueRef.current.delete(leftUserId);
+    };
 
-      setRemoteStreams((prev) => {
-        const next = new Map(prev);
-        next.delete(leftUserId);
-        return next;
-      });
+    const handleUserLeft = ({ userId: otherId }: { userId: string }) => {
+      console.log(`WebSocket SFU: Cleaning up memory of removed user ${otherId}`);
+      destroyRemotePlayer(otherId);
+    };
+
+    const handleAudioChunk = ({ userId: senderId, chunk }: { userId: string, chunk: ArrayBuffer }) => {
+      if (senderId === userId) return;
+
+      try {
+        if (audioContext.state === "suspended") {
+          audioContext.resume().catch(() => {});
+        }
+
+        const playerEntry = getOrCreateRemotePlayer(senderId);
+        const floatData = int16ToFloat32(chunk);
+        
+        // Push incoming samples straight into the smooth resampler queue
+        playerEntry.player.push(floatData);
+      } catch (err) {
+        console.error("WebSocket SFU: Playback ingestion error", err);
+      }
     };
 
     voiceSocket.on('voice.user_joined', handleUserJoined);
     voiceSocket.on('voice.existing_users', handleExistingUsers);
     voiceSocket.on('voice.user_left', handleUserLeft);
-    voiceSocket.on('voice.signal', handleSignal);
-
-    // Dynamic join and active sync to retrieve existing users in room
-    voiceSocket.emit('voice.join', { roomId }, (resp?: { users: string[] }) => {
-      if (resp && resp.users) {
-        handleExistingUsers(resp);
-      }
-    });
+    voiceSocket.on('voice.audio_chunk', handleAudioChunk);
 
     return () => {
       voiceSocket.emit('voice.leave', { roomId });
       voiceSocket.off('voice.user_joined', handleUserJoined);
       voiceSocket.off('voice.existing_users', handleExistingUsers);
       voiceSocket.off('voice.user_left', handleUserLeft);
-      voiceSocket.off('voice.signal', handleSignal);
+      voiceSocket.off('voice.audio_chunk', handleAudioChunk);
 
-      peersRef.current.forEach((pc) => {
-        try { pc.close(); } catch (e) {}
+      // Total cleanup to release resources
+      remotePlayersRef.current.forEach((entry, targetId) => {
+        try { entry.node.disconnect(); } catch (e) {}
+        try { entry.silentGainNode.disconnect(); } catch (e) {}
       });
-      peersRef.current.clear();
-      makingOfferRef.current.clear();
-      ignoreOfferRef.current.clear();
-      isSettingRemoteRef.current.clear();
-      candidatesQueueRef.current.clear();
+      remotePlayersRef.current.clear();
       setRemoteStreams(new Map());
     };
   }, [roomId, userId]);
