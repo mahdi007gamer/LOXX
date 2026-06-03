@@ -1,4 +1,6 @@
 import prisma from "../utils/prisma.ts";
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
 
 export class PaymentService {
   static async verifyPromoCode(code: string) {

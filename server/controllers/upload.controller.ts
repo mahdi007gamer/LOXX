@@ -2,6 +2,8 @@ import { Request, Response } from "express";
 import path from "path";
 import fs from "fs";
 import prisma from "../utils/prisma.ts";
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
 
 let sharp: any;
 try {

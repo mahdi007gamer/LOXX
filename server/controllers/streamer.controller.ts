@@ -1,6 +1,8 @@
 import { Request, Response } from "express";
 import prisma from "../utils/prisma.ts";
 import { AuthenticatedRequest } from "../middleware/auth.middleware.ts";
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
 
 export class StreamerController {
   static async getInviteByAlias(req: Request, res: Response) {

@@ -4,6 +4,8 @@ import argon2 from "argon2";
 import fs from "fs";
 import path from "path";
 import { GoogleGenAI } from "@google/genai";
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
 
 export const getAllUsers = async (req: Request, res: Response) => {
   try {
