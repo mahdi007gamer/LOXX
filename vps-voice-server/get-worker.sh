@@ -30,17 +30,30 @@ fi
 
 echo -e "📦 Installed Mediasoup Version: ${GREEN}${VERSION}${NC}"
 
-# 2. Detect Kernel version & Determine Suffix Priority
+# 2. Determine Suffix Priority based on Mediasoup Version
+# Up to 3.15.5, only kernel5 is available. Newer versions only have kernel6 assets.
+IS_NEWER_THAN_3_15_5=$(node -e "
+try {
+  const version = require('./node_modules/mediasoup/package.json').version;
+  const parts = version.split('.').map(Number);
+  const newer = (parts[0] > 3) || (parts[0] === 3 && parts[1] > 15) || (parts[0] === 3 && parts[1] === 15 && parts[2] > 5);
+  console.log(newer ? 'true' : 'false');
+} catch (e) {
+  console.log('true');
+}
+")
+
 KERNEL=$(uname -r)
 echo -e "🐧 System Kernel Version: ${GREEN}${KERNEL}${NC}"
 
-# We will try both suffixes sequentially, starting with the auto-detected one, but falling back resiliently.
-if [[ "$KERNEL" =~ ^6\. ]]; then
+if [ "$IS_NEWER_THAN_3_15_5" = "true" ]; then
   SUFFIXES=("kernel6" "kernel5")
-  echo -e "🖥️ Auto-detected target architecture: ${CYAN}Linux x64 (Kernel 6)${NC}"
+  echo -e "💡 Mediasoup version (${VERSION}) is newer than 3.15.5. Prioritizing '${CYAN}kernel6${NC}'."
+  echo -e "💡 نسخه مدیاسوپ (${VERSION}) جدیدتر از 3.15.5 است. دانلود نسخه '${CYAN}kernel6${NC}' در اولویت است."
 else
   SUFFIXES=("kernel5" "kernel6")
-  echo -e "🖥️ Auto-detected target architecture: ${CYAN}Linux x64 (Kernel 5)${NC}"
+  echo -e "💡 Mediasoup version (${VERSION}) is 3.15.5 or older. Prioritizing '${CYAN}kernel5${NC}'."
+  echo -e "💡 نسخه مدیاسوپ (${VERSION}) قدیمی‌تر یا مساوی 3.15.5 است. دانلود نسخه '${CYAN}kernel5${NC}' در اولویت است."
 fi
 
 # 3. Construct Download Function
