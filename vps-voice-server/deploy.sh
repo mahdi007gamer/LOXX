@@ -111,10 +111,11 @@ fi
 echo -e "\n${YELLOW}[6/6] Installing local dependencies and compiling SFU package (This may take 2-4 minutes)...${NC}"
 
 # Auto-recovery: If mediasoup directory exists but the worker binary does not, the installation is corrupted (e.g. from a past Ctrl+C). Clean it!
-if [ -d "node_modules/mediasoup" ] && [ ! -f "node_modules/mediasoup/worker/out/Release/mediasoup-worker" ]; then
-  echo -e "${RED}⚠️ Mediasoup installation is corrupted or incomplete (missing worker binary). Recovering and resetting folders...${NC}"
-  rm -rf node_modules/mediasoup
-fi
+# (Commented out as requested to allow manual download/setup of the worker binary)
+# if [ -d "node_modules/mediasoup" ] && [ ! -f "node_modules/mediasoup/worker/out/Release/mediasoup-worker" ]; then
+#   echo -e "${RED}⚠️ Mediasoup installation is corrupted or incomplete (missing worker binary). Recovering and resetting folders...${NC}"
+#   rm -rf node_modules/mediasoup
+# fi
 
 if [ "$VERBOSE" = true ]; then
   npm install --loglevel verbose
@@ -123,23 +124,17 @@ else
 fi
 
 echo -e "\n${YELLOW}========================================================================${NC}"
-echo -e "${YELLOW}🚨 IMPORTANT: Building/Rebuilding native WebRTC mediasoup binaries...   ${NC}"
+echo -e "${YELLOW}💡 INFO: Mediasoup automatic rebuild step has been commented out.       ${NC}"
 echo -e "${YELLOW}========================================================================${NC}"
-echo -e "💡 This step downloads a ~22MB worker executable from GitHub or builds it locally."
-echo -e "💡 This process is mostly SILENT and can take ${GREEN}2 to 5 minutes${NC} depending on your connection."
-echo -e "💡 ${RED}DO NOT cancel with Ctrl+C (^C).${NC} Let it finish completely."
-echo -e "------------------------------------------------------------------------"
-echo -e "💡 ${CYAN}توجه مهم: در حال دانلود یا بیلد باینری‌های نیتیو mediasoup در سرور صوتی...${NC}"
-echo -e "💡 این پروسه حدود ۲۲ مگابایت دانلود انجام می‌دهد یا به صورت محلی کامپایل می‌کند."
-echo -e "💡 این مرحله ممکن است بین ${GREEN}۲ تا ۵ دقیقه${NC} طول بکشد و هیچ خروجی لاگی ندهد (مکث کامل)."
-echo -e "💡 ${RED}به هیچ وجه آن را با کلیدهای Ctrl+C قطع نکنید!${NC} بگذارید تا انتها به طور کامل برود."
+echo -e "💡 can copy/place the 'mediasoup-worker' manual binary to:"
+echo -e "💡 ${GREEN}node_modules/mediasoup/worker/out/Release/mediasoup-worker${NC}"
 echo -e "${YELLOW}========================================================================${NC}\n"
 
-if [ "$VERBOSE" = true ]; then
-  npm rebuild mediasoup --foreground-scripts --loglevel verbose
-else
-  npm rebuild mediasoup
-fi
+# if [ "$VERBOSE" = true ]; then
+#   npm rebuild mediasoup --foreground-scripts --loglevel verbose
+# else
+#   npm rebuild mediasoup
+# fi
 
 echo -e "\n${YELLOW}Compiling TypeScript down to native CommonJS...${NC}"
 if [ "$VERBOSE" = true ]; then
