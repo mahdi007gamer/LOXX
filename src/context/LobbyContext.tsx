@@ -778,20 +778,10 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
  };
  }, [lobby?.id, user?.id, localStream, isAudioContextResumed]);
 
- const combinedStreamMemo = useMemo(() => {
- if (!localStream && !screenStream) return null;
- const stream = new MediaStream();
- if (localStream) {
- localStream.getTracks().forEach(t => stream.addTrack(t));
- }
- if (screenStream) {
- screenStream.getTracks().forEach(t => stream.addTrack(t));
- }
- return stream;
- }, [localStream, screenStream]);
+ 
 
  // Connect globally using our WebRTC signaling hook
- const { remoteStreams } = useWebRTC(lobby?.id || null, combinedStreamMemo, user?.id);
+ const { remoteStreams } = useWebRTC(lobby?.id || null, localStream, user?.id, screenStream);
 
  // Monitor speaking volumes for glowing effects
  const handlePeerVolumeChange = useCallback((peerUserId: string, vol: number) => {

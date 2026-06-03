@@ -63,7 +63,12 @@ class SmoothAudioPlayer {
   }
 }
 
-export const useWebRTC = (roomId: string | null, localStream: MediaStream | null, userId: string | undefined) => {
+export const useWebRTC = (
+  roomId: string | null,
+  localStream: MediaStream | null,
+  userId: string | undefined,
+  screenStream: MediaStream | null = null
+) => {
   const [remoteStreams, setRemoteStreams] = useState<Map<string, MediaStream>>(new Map());
   const localStreamRef = useRef<MediaStream | null>(null);
 
@@ -319,12 +324,13 @@ export const useWebRTC = (roomId: string | null, localStream: MediaStream | null
 
   // --- WebRTC Screensharing Mesh Pipeline ---
   const pcsRef = useRef<Map<string, RTCPeerConnection>>(new Map());
+  const candidateQueuesRef = useRef<Map<string, RTCIceCandidateInit[]>>(new Map());
 
   useEffect(() => {
     if (!roomId || !userId) return;
 
-    // Get the video track if any is present in localStream
-    const videoTrack = localStream ? localStream.getVideoTracks()[0] : null;
+    // Get the video track if any is present in screenStream
+    const videoTrack = screenStream ? screenStream.getVideoTracks()[0] : null;
 
     const closePC = (peerId: string) => {
       const pc = pcsRef.current.get(peerId);
@@ -336,6 +342,22 @@ export const useWebRTC = (roomId: string | null, localStream: MediaStream | null
           pc.close();
         } catch (e) {}
         pcsRef.current.delete(peerId);
+      }
+      candidateQueuesRef.current.delete(peerId);
+    };
+
+    const flushCandidates = async (peerId: string, pc: RTCPeerConnection) => {
+      const queue = candidateQueuesRef.current.get(peerId);
+      if (queue && queue.length > 0) {
+        console.log(`[WebRTC Screenshare] Flushing ${queue.length} queued ICE candidates for peer ${peerId}`);
+        for (const candidate of queue) {
+          try {
+            await pc.addIceCandidate(new RTCIceCandidate(candidate));
+          } catch (e) {
+            console.warn(`[WebRTC Screenshare] Failed to add queued ICE candidate for peer ${peerId}:`, e);
+          }
+        }
+        candidateQueuesRef.current.delete(peerId);
       }
     };
 
@@ -420,7 +442,7 @@ export const useWebRTC = (roomId: string | null, localStream: MediaStream | null
         if (videoSender) {
           await videoSender.replaceTrack(videoTrack);
         } else {
-          pc.addTrack(videoTrack, localStream!);
+          pc.addTrack(videoTrack, screenStream!);
         }
 
         console.log(`[WebRTC Screenshare] Added video track for ${peerId}, initiating offer`);
@@ -457,6 +479,7 @@ export const useWebRTC = (roomId: string | null, localStream: MediaStream | null
           console.log(`[WebRTC Screenshare] Received offer from ${fromUserId}`);
           const pc = getOrCreatePC(fromUserId);
           await pc.setRemoteDescription(new RTCSessionDescription(signal.offer));
+          await flushCandidates(fromUserId, pc);
           const answer = await pc.createAnswer();
           await pc.setLocalDescription(answer);
 
@@ -470,16 +493,31 @@ export const useWebRTC = (roomId: string | null, localStream: MediaStream | null
           const pc = pcsRef.current.get(fromUserId);
           if (pc) {
             await pc.setRemoteDescription(new RTCSessionDescription(signal.answer));
+            await flushCandidates(fromUserId, pc);
           }
         } 
         else if (signal.type === "candidate") {
           const pc = pcsRef.current.get(fromUserId);
-          if (pc && signal.candidate) {
-            await pc.addIceCandidate(new RTCIceCandidate(signal.candidate));
+          if (pc) {
+            if (pc.remoteDescription && pc.remoteDescription.type) {
+              try {
+                await pc.addIceCandidate(new RTCIceCandidate(signal.candidate));
+              } catch (e) {
+                console.warn(`[WebRTC Screenshare] Error adding ICE candidate directly:`, e);
+              }
+            } else {
+              // Queue candidate until setRemoteDescription completes
+              let q = candidateQueuesRef.current.get(fromUserId);
+              if (!q) {
+                q = [];
+                candidateQueuesRef.current.set(fromUserId, q);
+              }
+              q.push(signal.candidate);
+            }
           }
         }
         else if (signal.type === "stop-share") {
-          console.error(`[WebRTC Screenshare] Received stop-share signal from ${fromUserId}`);
+          console.log(`[WebRTC Screenshare] Received stop-share signal from ${fromUserId}`);
           setRemoteStreams((prev) => {
             const nextMap = new Map<string, MediaStream>(prev);
             const stream = nextMap.get(fromUserId) as MediaStream | undefined;
@@ -533,7 +571,7 @@ export const useWebRTC = (roomId: string | null, localStream: MediaStream | null
         closePC(otherId);
       });
     };
-  }, [roomId, userId, localStream]);
+  }, [roomId, userId, screenStream]);
 
   return { remoteStreams };
 };
