@@ -19,6 +19,15 @@ app.get("/health", (req, res) => {
   res.json({ status: "ok", service: "LOXX Voice SFU Engine" });
 });
 
+// Friendly root endpoint
+app.get("/", (req, res) => {
+  res.json({
+    status: "online",
+    message: "LOXX Ultra-Low Latency Voice SFU signaling server is active. Use Socket.io to connect.",
+    healthCheck: "/health"
+  });
+});
+
 const httpServer = createServer(app);
 const PORT = process.env.PORT || 4000;
 
