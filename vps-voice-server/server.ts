@@ -2,6 +2,7 @@ import express from "express";
 import { createServer } from "http";
 import { Server, Socket } from "socket.io";
 import cors from "cors";
+import helmet from "helmet";
 import * as mediasoup from "mediasoup";
 import type { types } from "mediasoup";
 import os from "os";
@@ -11,6 +12,12 @@ dotenv.config();
 
 const app = express();
 app.use(cors({ origin: "*" }));
+app.use(helmet());
+
+// Basic health check endpoint
+app.get("/health", (req, res) => {
+  res.json({ status: "ok", service: "LOXX Voice SFU Engine" });
+});
 
 const httpServer = createServer(app);
 const PORT = process.env.PORT || 4000;
@@ -125,9 +132,6 @@ async function createWebRtcTransport(router: types.Router) {
     initialAvailableOutgoingBitrate: 800000
   });
 
-  // Limit incoming audio bitrate to prevent bufferbloat and cellular spikes (max 80kbps for pristine voice)
-  // Higher limits apply automatically to video track if kind of producer is video
-  
   return transport;
 }
 
@@ -411,16 +415,18 @@ io.on("connection", (socket: Socket) => {
     console.log(`[SFU Voice Signaling] Cleaning up WebRTC trace for Peer ${peer.userId}`);
 
     // Stop and close all producers (tells clients to remove remote streams)
-    peer.producers.forEach((producer) => {
+    peer.producers.forEach((producer: types.Producer) => {
       producer.close();
-      socket.to(currentRoomId!).emit("producerClosed", { producerId: producer.id });
+      if (currentRoomId) {
+        socket.to(currentRoomId).emit("producerClosed", { producerId: producer.id });
+      }
     });
 
     // Close all consumers
-    peer.consumers.forEach((consumer) => consumer.close());
+    peer.consumers.forEach((consumer: types.Consumer) => consumer.close());
 
     // Close all peer WebRTC Transports (frees UDP ports in pool)
-    peer.transports.forEach((transport) => transport.close());
+    peer.transports.forEach((transport: types.WebRtcTransport) => transport.close());
 
     room.peers.delete(socket.id);
 
@@ -445,7 +451,7 @@ io.on("connection", (socket: Socket) => {
 
 // Run server and launch Mediasoup Workers sequentially
 startMediasoup().then(() => {
-  httpServer.listen(PORT, LISTEN_IP as any, () => {
+  httpServer.listen(PORT as any, LISTEN_IP, () => {
     console.log(`\n======================================================`);
     console.log(` LOXX VOIP MEDIA SERVER RUNNING`);
     console.log(` URL: http://${LISTEN_IP}:${PORT}`);
