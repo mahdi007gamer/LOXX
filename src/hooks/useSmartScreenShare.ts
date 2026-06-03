@@ -180,7 +180,7 @@ export const useSmartScreenShare = (
  try {
  stream = await navigator.mediaDevices.getDisplayMedia({
  video: true,
- audio: true
+ audio: false
  });
  } catch (desktopError) {
  console.warn("Retrying screen share without audio due to error:", desktopError);
@@ -197,7 +197,7 @@ export const useSmartScreenShare = (
  // Standard Web API or native Electron interceptor
  stream = await navigator.mediaDevices.getDisplayMedia({
  video: true,
- audio: true 
+ audio: false 
  });
  }
 
