@@ -651,6 +651,14 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
  useEffect(() => {
  if (lobby?.id) {
  requestMicrophone();
+ const ctx = getSharedAudioContext();
+ if (ctx.state === "suspended") {
+ ctx.resume()
+ .then(() => setIsAudioContextResumed(true))
+ .catch(e => console.warn("Auto-play AudioContext blocked:", e));
+ } else {
+ setIsAudioContextResumed(true);
+ }
  } else {
  stopMicrophone();
  }

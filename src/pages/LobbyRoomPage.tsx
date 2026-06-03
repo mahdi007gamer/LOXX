@@ -303,6 +303,32 @@ export const LobbyRoomPage = () => {
  }
  }, [id, setIsSidebarCollapsed]);
 
+ // Automatically activate voice system and unmute voice with zero clicks when entering any lobby
+ useEffect(() => {
+ if (lobby?.id && !isAudioContextResumed) {
+ resumeAudio().catch(err => {
+ console.warn("Auto-play / AudioContext resumption blocked, waiting for click/touch gesture:", err);
+ });
+ }
+ }, [lobby?.id, isAudioContextResumed, resumeAudio]);
+
+ // Global user interaction listener to silently unlock audio context if still suspended by the browser
+ useEffect(() => {
+ const handleSilenceUnlock = () => {
+ if (!isAudioContextResumed && lobby?.id) {
+ resumeAudio().catch(() => {});
+ }
+ };
+ window.addEventListener("click", handleSilenceUnlock, { once: true });
+ window.addEventListener("keydown", handleSilenceUnlock, { once: true });
+ window.addEventListener("touchstart", handleSilenceUnlock, { once: true });
+ return () => {
+ window.removeEventListener("click", handleSilenceUnlock);
+ window.removeEventListener("keydown", handleSilenceUnlock);
+ window.removeEventListener("touchstart", handleSilenceUnlock);
+ };
+ }, [lobby?.id, isAudioContextResumed, resumeAudio]);
+
  // Redirect if lobby becomes null (e.g., closed by host) or if joining fails
  const [countdown, setCountdown] = useState(5);
  const [isListeningForKey, setIsListeningForKey] = useState(false);
