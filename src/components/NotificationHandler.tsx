@@ -201,6 +201,18 @@ export const NotificationHandler = () => {
  };
 
  const handleLobbyInvite = (inviteData: any) => {
+ const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
+ const isOverlayWidget = isElectron && (
+ window.location.pathname === '/overlay' || 
+ window.location.pathname === '/lobby/overlay-widget' ||
+ window.location.hash.includes('/overlay')
+ );
+
+ if (isElectron && !isOverlayWidget) {
+ // Suppress in-app toast for Windows client (it goes to the overlay instead!)
+ return;
+ }
+
  playNotifySFX();
  
  const lobbyId = inviteData.lobbyId || inviteData.data?.lobbyId;
@@ -216,6 +228,17 @@ export const NotificationHandler = () => {
  };
 
  const handleWarning = (data: any) => {
+ const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
+ const isOverlayWidget = isElectron && (
+ window.location.pathname === '/overlay' || 
+ window.location.pathname === '/lobby/overlay-widget' ||
+ window.location.hash.includes('/overlay')
+ );
+
+ if (isElectron && !isOverlayWidget) {
+ return;
+ }
+
  playNotifySFX();
  toast.error(data.message, { 
  duration: 10000, 
@@ -232,6 +255,17 @@ export const NotificationHandler = () => {
  };
 
  const handleMembershipUpdated = (data: any) => {
+ const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
+ const isOverlayWidget = isElectron && (
+ window.location.pathname === '/overlay' || 
+ window.location.pathname === '/lobby/overlay-widget' ||
+ window.location.hash.includes('/overlay')
+ );
+
+ if (isElectron && !isOverlayWidget) {
+ return;
+ }
+
  if (typeof refreshUser === "function") {
  refreshUser();
  }
@@ -277,6 +311,18 @@ export const NotificationHandler = () => {
  notifySocket.on("moderation.warning", handleWarning);
  notifySocket.on("membership.updated", handleMembershipUpdated);
  notifySocket.on("notification", (data: any) => {
+ const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
+ const isOverlayWidget = isElectron && (
+ window.location.pathname === '/overlay' || 
+ window.location.pathname === '/lobby/overlay-widget' ||
+ window.location.hash.includes('/overlay')
+ );
+
+ if (isElectron && !isOverlayWidget) {
+ // Suppress standard in-app notification toasts inside Windows client
+ return;
+ }
+
  if (data.type === "LOBBY_INVITE") {
  handleLobbyInvite(data);
  } else if (data.type === "MESSAGE_RECEIVED") {

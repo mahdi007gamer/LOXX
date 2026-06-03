@@ -118,7 +118,7 @@ interface LobbyContextType {
  launcherHardwareAcceleration: boolean;
  launcherGlobalPttKey: string;
  launcherGlobalMuteKey: string;
- updateLauncherSettings: (settings: {
+ updateLauncherSettings: (settings: { voiceMode?: "activation" | "ptt";
  closeToTray?: boolean;
  startAtLogin?: boolean;
  hardwareAcceleration?: boolean;
@@ -453,7 +453,7 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
  }
  }, []);
 
- const updateLauncherSettings = useCallback((updated: {
+ const updateLauncherSettings = useCallback((updated: { voiceMode?: "activation" | "ptt";
  closeToTray?: boolean;
  startAtLogin?: boolean;
  hardwareAcceleration?: boolean;
@@ -468,10 +468,15 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
  }) => {
  const checkElectron = typeof window !== "undefined" && !!(window as any).electronAPI;
  if (checkElectron) {
+ if (updated.voiceMode !== undefined) setVoiceMode(updated.voiceMode);
  if (updated.closeToTray !== undefined) setLauncherCloseToTray(updated.closeToTray);
  if (updated.startAtLogin !== undefined) setLauncherStartAtLogin(updated.startAtLogin);
  if (updated.hardwareAcceleration !== undefined) setLauncherHardwareAcceleration(updated.hardwareAcceleration);
- if (updated.globalPttKey !== undefined) setLauncherGlobalPttKey(updated.globalPttKey);
+ if (updated.globalPttKey !== undefined) {
+ setLauncherGlobalPttKey(updated.globalPttKey);
+ const parts = updated.globalPttKey.split("+");
+ setPttKey(parts[parts.length - 1]);
+ }
  if (updated.globalMuteKey !== undefined) setLauncherGlobalMuteKey(updated.globalMuteKey);
  if (updated.overlayX !== undefined) setOverlayX(updated.overlayX);
  if (updated.overlayY !== undefined) setOverlayY(updated.overlayY);

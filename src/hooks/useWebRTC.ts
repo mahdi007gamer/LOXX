@@ -4,15 +4,16 @@ import { voiceSocket, getSharedAudioContext } from '../lib/socket';
 // Ultra-stable real-time audio jitter buffer & linear resampler
 class SmoothAudioPlayer {
   private queue: Float32Array = new Float32Array(0);
-  private isBuffering: boolean = true;
   private currentGain: number = 0; // Soft gain tracking to prevent zero-crossing pops and click noises
+  private isBuffering: boolean = true;
+  private consecutiveUnderflows: number = 0;
 
   public push(data: Float32Array) {
-    const MAX_QUEUE_SAMPLES = 1600; // ~100ms buffer ceiling at 16kHz
+    // Keep a thin latency-friendly queue ceiling (e.g. 1920 samples = 120ms of audio at 16kHz)
+    const MAX_QUEUE_SAMPLES = 1920; 
     if (this.queue.length > MAX_QUEUE_SAMPLES) {
-      // Trim to ~25ms to securely catch up instantly and maintain near-zero delay
-      this.queue = this.queue.slice(this.queue.length - 400);
-      this.isBuffering = false; 
+      // Catch up immediately by trimming old backlog to remain ultra-fresh matching real-time voice call specs
+      this.queue = this.queue.slice(this.queue.length - 320); // Maintain ~20ms queue
     }
 
     const nextQueue = new Float32Array(this.queue.length + data.length);
@@ -20,8 +21,11 @@ class SmoothAudioPlayer {
     nextQueue.set(data, this.queue.length);
     this.queue = nextQueue;
 
-    // Accumulate at least 160 samples (~10ms at 16kHz) before active play to survive small network jitter
-    if (this.isBuffering && this.queue.length >= 160) {
+    this.consecutiveUnderflows = 0;
+    
+    // We only buffer at initial play or after real dead silent channels. 
+    // Wait until we have at least 170 samples (~10.6ms) to start playing smoothly
+    if (this.isBuffering && this.queue.length >= 170) {
       this.isBuffering = false;
     }
   }
@@ -30,17 +34,24 @@ class SmoothAudioPlayer {
     const ratio = inSampleRate / outSampleRate;
     const neededInSamples = out.length * ratio;
 
-    // Underflow: If the queue was drained, trigger buffering and play silent output after smooth ramp-down
-    if (this.isBuffering || this.queue.length < neededInSamples) {
-      this.isBuffering = true;
+    // Check if we have underflow
+    if (this.queue.length < neededInSamples) {
+      this.consecutiveUnderflows++;
+      
+      // Only lock buffering mode if we have missed multiple consecutive cycles, signaling silent pauses.
+      if (this.consecutiveUnderflows > 3) {
+        this.isBuffering = true;
+      }
+
+      // Smoothly fade the output down to zero instead of harsh popping clicks
       for (let i = 0; i < out.length; i++) {
-        this.currentGain = Math.max(0, this.currentGain - 0.05); // Rapid slick fade-out to prevent clicks
+        this.currentGain = Math.max(0, this.currentGain - 0.1); // Fast clean fade-out
         out[i] = 0;
       }
       return;
     }
 
-    // High performance linear-interpolation resampler with gain-ramping
+    // Playback active
     for (let i = 0; i < out.length; i++) {
       const srcIdx = i * ratio;
       const idx1 = Math.floor(srcIdx);
@@ -50,9 +61,8 @@ class SmoothAudioPlayer {
       const s2 = (idx2 >= 0 && idx2 < this.queue.length) ? this.queue[idx2] : 0;
       const rawSample = s1 + t * (s2 - s1);
 
-      // Smooth gain ramp-up to 1.0 to avoid abrupt audio pops when stream resumes
       if (this.currentGain < 1) {
-        this.currentGain = Math.min(1.0, this.currentGain + 0.05); // Swift fade-in
+        this.currentGain = Math.min(1.0, this.currentGain + 0.1); // Very fast clean fade-in
       }
       out[i] = rawSample * this.currentGain;
     }
@@ -65,6 +75,7 @@ class SmoothAudioPlayer {
   public clear() {
     this.queue = new Float32Array(0);
     this.isBuffering = true;
+    this.consecutiveUnderflows = 0;
     this.currentGain = 0;
   }
 }
@@ -163,26 +174,15 @@ export const useWebRTC = (
 
       // Accumulator for packet bundling
       const chunkBuffer: Int16Array[] = [];
-      const CHUNK_ACCUMULATE_COUNT = 4; // Bundles ~42ms of audio into a single websocket message
+      const CHUNK_ACCUMULATE_COUNT = 2; // Bundles ~20ms of audio (standard RTP frame) to reduce delay by 50% while operating with extreme stability.
 
       processorNodeRef.current.onaudioprocess = (event) => {
         const tracks = localStreamRef.current ? localStreamRef.current.getAudioTracks() : [];
         if (tracks.length > 0 && tracks[0].enabled) {
           const inputData = event.inputBuffer.getChannelData(0);
           
-          // Noise Gate: Calculate RMS of the input sample block
-          let sumSquares = 0;
-          for (let i = 0; i < inputData.length; i++) {
-            sumSquares += inputData[i] * inputData[i];
-          }
-          const rms = Math.sqrt(sumSquares / inputData.length);
-          
-          // Noise Gate threshold set dynamically to ~0.008 to catch ambient hiss
-          if (rms < 0.008) {
-            for (let i = 0; i < inputData.length; i++) {
-              inputData[i] = 0; // Absolute noise cancellation on silent frame
-            }
-          }
+          // No manual noise gate to avoid clipping words/syllables.
+          // Browser native echoCancellation and noiseSuppression handle background hiss perfectly.
 
           // Downsample and Compress in a single contiguous step (Native crisp 16kHz)
           const compressedPCMBuffer = downsampleAndToInt16(inputData, event.inputBuffer.sampleRate, 16000);

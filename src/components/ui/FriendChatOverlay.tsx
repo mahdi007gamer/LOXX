@@ -10,7 +10,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useLobby } from "../../context/LobbyContext";
 import { useProfilePopover } from "../../context/ProfilePopoverContext";
 import { toast } from "react-hot-toast";
-import { chatSocket } from "../../lib/socket";
+import { chatSocket, notifySocket } from "../../lib/socket";
 
 export const FriendChatOverlay = () => {
  const { chats, friends, sendMessage, markAsRead, closeChat, activeChatId, setActiveChatId, chatTrigger, openChat } = useFriends();
@@ -35,6 +35,8 @@ export const FriendChatOverlay = () => {
  const [chatDirection, setChatDirection] = useState<"up" | "down">("up");
  const [isOverlayInteractive, setIsOverlayInteractive] = useState(false);
  const [showDmPrompt, setShowDmPrompt] = useState(false);
+ const [showLobbyInvitePrompt, setShowLobbyInvitePrompt] = useState(false);
+ const [lobbyInviteSender, setLobbyInviteSender] = useState("");
  const [friendSearch, setFriendSearch] = useState("");
  const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
  const isOverlayWidget = isElectron && (
@@ -158,6 +160,35 @@ export const FriendChatOverlay = () => {
  };
  }, [isOverlayWidget, user?.id]);
 
+ // Handle Lobby Invite incoming prompt top banner with 5s auto-hide on Windows client
+ useEffect(() => {
+ if (!isOverlayWidget) return;
+
+ let timer: NodeJS.Timeout;
+ const handleLobbyInvite = (inviteData: any) => {
+ const username = inviteData.fromUsername || inviteData.data?.sender?.username || "یک کاربر";
+ setLobbyInviteSender(username);
+ setShowLobbyInvitePrompt(true);
+
+ if (timer) clearTimeout(timer);
+ timer = setTimeout(() => {
+ setShowLobbyInvitePrompt(false);
+ }, 5000);
+ };
+
+ notifySocket.on("lobby.invite", handleLobbyInvite);
+ notifySocket.on("notification", (data: any) => {
+ if (data.type === "LOBBY_INVITE") {
+ handleLobbyInvite(data);
+ }
+ });
+
+ return () => {
+ notifySocket.off("lobby.invite", handleLobbyInvite);
+ if (timer) clearTimeout(timer);
+ };
+ }, [isOverlayWidget]);
+
  const handleSend = (e: React.FormEvent) => {
  e.preventDefault();
  if (!inputMessage.trim() || !activeChatId) return;
@@ -211,6 +242,31 @@ export const FriendChatOverlay = () => {
  </motion.div>
  )}
  </AnimatePresence>
+
+ {/* Lobby Invite Incoming Prompt Banner when not in interactive mode on Windows version */}
+  <AnimatePresence>
+  {isOverlayWidget && !isOverlayInteractive && showLobbyInvitePrompt && (
+  <motion.div
+  key="lobby-invite-incoming-overlay-prompt-banner"
+  initial={{ opacity: 0, y: -50 }}
+  animate={{ opacity: 1, y: 0 }}
+  exit={{ opacity: 0, y: -50 }}
+  transition={{ type: "spring", damping: 15 }}
+  style={{ zIndex: 99999999 }}
+  className="fixed top-20 left-0 right-0 flex justify-center pointer-events-none select-none"
+  dir="rtl"
+  >
+  <div className="bg-[#0c0c14]/95 border border-neon-blue/40 px-6 py-2.5 rounded-full backdrop-blur-md shadow-[0_0_30px_rgba(0,229,255,0.25)] flex items-center gap-3 pointer-events-auto">
+  <span className="p-1 px-1.5 rounded bg-neon-blue/20 text-neon-blue text-[10px] font-black leading-none animate-pulse">LOXX LOBBY</span>
+  <p className="text-white text-xs font-bold flex items-center gap-2">
+  دعوت جدید از طرف <span className="text-neon-blue font-extrabold">{lobbyInviteSender}</span>؛ برای ورود دکمه
+  <kbd className="bg-white/10 border border-white/20 rounded px-2 text-neon-blue font-mono text-xs mx-1 leading-none shadow-inner h-6 flex items-center justify-center">Alt+F1</kbd> 
+  را فشار دهید.
+  </p>
+  </div>
+  </motion.div>
+  )}
+  </AnimatePresence>
 
  {/* DM Incoming Prompt Banner when not in interactive mode on Windows version */}
  <AnimatePresence>
