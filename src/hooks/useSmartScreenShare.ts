@@ -177,18 +177,10 @@ export const useSmartScreenShare = (
  }
  } else {
  // Screen sources are fully supported natively via getDisplayMedia
- try {
- stream = await navigator.mediaDevices.getDisplayMedia({
- video: true,
- audio: true
- });
- } catch (desktopError) {
- console.warn("Retrying screen share without audio due to error:", desktopError);
  stream = await navigator.mediaDevices.getDisplayMedia({
  video: true,
  audio: false
  });
- }
  }
  } else {
  if (!navigator.mediaDevices.getDisplayMedia) {
@@ -197,16 +189,7 @@ export const useSmartScreenShare = (
  // Standard Web API or native Electron interceptor
  stream = await navigator.mediaDevices.getDisplayMedia({
  video: true,
- audio: true 
- });
- }
-
- // Remove and stop any captured audio track to ensure absolutely NO sound is transmitted or played
- if (stream) {
- stream.getAudioTracks().forEach((track) => {
- track.enabled = false;
- track.stop();
- stream.removeTrack(track);
+ audio: false
  });
  }
 
