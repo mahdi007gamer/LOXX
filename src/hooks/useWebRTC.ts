@@ -5,11 +5,12 @@ import { voiceSocket, getSharedAudioContext } from '../lib/socket';
 class SmoothAudioPlayer {
   private queue: Float32Array = new Float32Array(0);
   private isBuffering: boolean = true;
+  private currentGain: number = 0; // Soft gain tracking to prevent zero-crossing pops and click noises
 
   public push(data: Float32Array) {
-    const MAX_QUEUE_SAMPLES = 800; // ~50ms buffer ceiling for ultra-low latency response
+    const MAX_QUEUE_SAMPLES = 1200; // ~37.5ms buffer ceiling at 32kHz
     if (this.queue.length > MAX_QUEUE_SAMPLES) {
-      // Trim to 160 samples (~10ms) to securely catch up instantly and maintain 0 delay
+      // Trim to ~5ms to securely catch up instantly and maintain near-zero delay
       this.queue = this.queue.slice(this.queue.length - 160);
       this.isBuffering = false; 
     }
@@ -19,29 +20,27 @@ class SmoothAudioPlayer {
     nextQueue.set(data, this.queue.length);
     this.queue = nextQueue;
 
-    // Accumulate at least 120 samples (~7.5ms) before playing to cushion network jitter
-    if (this.isBuffering && this.queue.length >= 120) {
+    // Accumulate at least 160 samples (~5ms at 32kHz) before active play to survive small network jitter
+    if (this.isBuffering && this.queue.length >= 160) {
       this.isBuffering = false;
     }
   }
 
   public consume(out: Float32Array, outSampleRate: number, inSampleRate: number) {
-    if (this.isBuffering) {
-      out.fill(0);
-      return;
-    }
-
     const ratio = inSampleRate / outSampleRate;
     const neededInSamples = out.length * ratio;
 
-    // Underflow: If the queue was drained, trigger buffering and play silence
-    if (this.queue.length < neededInSamples) {
+    // Underflow: If the queue was drained, trigger buffering and play silent output after smooth ramp-down
+    if (this.isBuffering || this.queue.length < neededInSamples) {
       this.isBuffering = true;
-      out.fill(0);
+      for (let i = 0; i < out.length; i++) {
+        this.currentGain = Math.max(0, this.currentGain - 0.05); // Rapid slick fade-out to prevent clicks
+        out[i] = 0;
+      }
       return;
     }
 
-    // High performance linear-interpolation resampler
+    // High performance linear-interpolation resampler with gain-ramping
     for (let i = 0; i < out.length; i++) {
       const srcIdx = i * ratio;
       const idx1 = Math.floor(srcIdx);
@@ -49,7 +48,13 @@ class SmoothAudioPlayer {
       const t = srcIdx - idx1;
       const s1 = this.queue[idx1];
       const s2 = this.queue[idx2];
-      out[i] = s1 + t * (s2 - s1);
+      const rawSample = s1 + t * (s2 - s1);
+
+      // Smooth gain ramp-up to 1.0 to avoid abrupt audio pops when stream resumes
+      if (this.currentGain < 1) {
+        this.currentGain = Math.min(1.0, this.currentGain + 0.05); // Swift fade-in
+      }
+      out[i] = rawSample * this.currentGain;
     }
 
     // Cleanly advance slice queue
@@ -60,6 +65,7 @@ class SmoothAudioPlayer {
   public clear() {
     this.queue = new Float32Array(0);
     this.isBuffering = true;
+    this.currentGain = 0;
   }
 }
 
@@ -120,8 +126,8 @@ export const useWebRTC = (
 
       sourceNodeRef.current = audioContext.createMediaStreamSource(localStream);
       
-      // Use standard 512 buffer size for ultra low-latency capture (~11ms delay)
-      processorNodeRef.current = audioContext.createScriptProcessor(512, 1, 1);
+      // Use standard 256 buffer size for ultra low-latency capture (~5.3ms delay)
+      processorNodeRef.current = audioContext.createScriptProcessor(256, 1, 1);
 
       sourceNodeRef.current.connect(processorNodeRef.current);
       
@@ -131,13 +137,23 @@ export const useWebRTC = (
       processorNodeRef.current.connect(silentGainNode);
       silentGainNode.connect(audioContext.destination);
 
-      // Ultra-efficient single-pass downsampler + Int16 compressor (takes < 0.1ms to prevent frame lag)
+      // Ultra-efficient anti-aliased downsampler + Int16 compressor
       const downsampleAndToInt16 = (buffer: Float32Array, inputSampleRate: number, outputSampleRate: number) => {
         const ratio = inputSampleRate / outputSampleRate;
         const newLength = Math.floor(buffer.length / ratio);
         const result = new Int16Array(newLength);
         for (let i = 0; i < newLength; i++) {
-          const sample = buffer[Math.floor(i * ratio)];
+          const start = Math.floor(i * ratio);
+          const end = Math.max(start + 1, Math.floor((i + 1) * ratio));
+          let sum = 0;
+          let count = 0;
+          for (let j = start; j < end; j++) {
+            if (j < buffer.length) {
+              sum += buffer[j];
+              count++;
+            }
+          }
+          const sample = count > 0 ? sum / count : 0;
           const s = Math.max(-1, Math.min(1, sample));
           result[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
         }
@@ -149,8 +165,8 @@ export const useWebRTC = (
         if (tracks.length > 0 && tracks[0].enabled) {
           const inputData = event.inputBuffer.getChannelData(0);
           
-          // Downsample and Compress in a single contiguous step (Native 16kHz)
-          const compressedPCM = downsampleAndToInt16(inputData, event.inputBuffer.sampleRate, 16000);
+          // Downsample and Compress in a single contiguous step (Native crisp 32kHz)
+          const compressedPCM = downsampleAndToInt16(inputData, event.inputBuffer.sampleRate, 32000);
           
           // Broadcast to Lobby server securely
           voiceSocket.emit("voice.audio_chunk", {
@@ -208,11 +224,11 @@ export const useWebRTC = (
       const dest = audioContext.createMediaStreamDestination();
       const player = new SmoothAudioPlayer();
       
-      // Use 512 buffer size for stable playback processing while maintaining ultra-low latency
-      const node = audioContext.createScriptProcessor(512, 0, 1);
+      // Use 256 buffer size for stable playback processing while maintaining ultra-low latency
+      const node = audioContext.createScriptProcessor(256, 0, 1);
       node.onaudioprocess = (e) => {
         const channel = e.outputBuffer.getChannelData(0);
-        player.consume(channel, e.outputBuffer.sampleRate, 16000);
+        player.consume(channel, e.outputBuffer.sampleRate, 32000);
       };
       
       node.connect(dest);
