@@ -541,31 +541,12 @@ export const LobbyRoomPage = () => {
   const botId = `music-bot-${lobby?.id}`;
   const botVolumeLevel = peerVolumes[botId] !== undefined ? peerVolumes[botId] : 100;
   
-  // --- High-Fidelity Local Synchronized Music Bot Player (HOST ONLY) & Progress Tracker (PEERS) ---
+  // --- High-Fidelity Local Synchronized Music Bot Player (HOST & PEERS) ---
+  const [audioElMounted, setAudioElMounted] = useState(false);
   useEffect(() => {
-    if (!localMusicAudioRef.current) {
-      const audio = new Audio();
-      audio.crossOrigin = "anonymous";
-      localMusicAudioRef.current = audio;
-    }
     const audioEl = localMusicAudioRef.current;
-
-    if (!isHost) {
-      if (!audioEl.paused) audioEl.pause();
-      
-      // For peers, fake the progress bar based on the synced state
-      let peerProgressInterval: any = null;
-      if (musicBotState?.active && musicBotState?.isPlaying) {
-         peerProgressInterval = setInterval(() => {
-            const timeSinceUpdate = (Date.now() - (musicBotState.updatedAt || Date.now())) / 1000;
-            const targetTime = (musicBotState.currentTime || 0) + timeSinceUpdate;
-            setLocalMusicCurrentTime(targetTime);
-         }, 500);
-      }
-      return () => {
-         if (peerProgressInterval) clearInterval(peerProgressInterval);
-      };
-    }
+    if (!audioEl) return;
+    if (!audioElMounted) setAudioElMounted(true);
 
     // Monitor time changes to update our seek slider progress states
     const handleTimeUpdate = () => {
@@ -582,7 +563,10 @@ export const LobbyRoomPage = () => {
       if (!audioEl.paused) {
         audioEl.pause();
       }
-      return;
+      return () => {
+        audioEl.removeEventListener("timeupdate", handleTimeUpdate);
+        audioEl.removeEventListener("durationchange", handleDurationChange);
+      };
     }
 
     // Prepend origin to relative paths
@@ -597,9 +581,9 @@ export const LobbyRoomPage = () => {
     // Handle seeking requested via state updates
     if (musicBotState.currentTime !== undefined && musicBotState.updatedAt) {
       const timeSinceUpdate = (Date.now() - musicBotState.updatedAt) / 1000;
-      const targetTime = musicBotState.currentTime + timeSinceUpdate;
+      const targetTime = musicBotState.currentTime + (musicBotState.isPlaying ? timeSinceUpdate : 0);
       const drift = Math.abs(audioEl.currentTime - targetTime);
-      if (drift > 1.5) {
+      if (drift > 2.0) { // A slightly higher tolerance prevents jitter
         audioEl.currentTime = targetTime;
       }
     }
@@ -607,9 +591,12 @@ export const LobbyRoomPage = () => {
     // Sync playhead state
     if (musicBotState.isPlaying) {
       if (audioEl.paused) {
-        audioEl.play().catch(e => {
-          console.warn("[LocalMusicBot] Playback prevented by browser Autoplay Rules:", e);
-        });
+        const playPromise = audioEl.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(e => {
+            console.warn("[LocalMusicBot] Playback prevented by browser Autoplay Rules:", e);
+          });
+        }
       }
     } else {
       if (!audioEl.paused) {
@@ -667,7 +654,7 @@ export const LobbyRoomPage = () => {
 
     const isSomeoneElseSpeaking = lobby?.talkingUsers?.some(
       (uid: string) => uid !== botId
-    ) || Object.entries(peerActivity).some(([uid, vol]) => uid !== botId && vol > 25) || (localVolume > 25) || false;
+    ) || false;
     const duckingFactor = isSomeoneElseSpeaking ? (musicVolumeTalking !== undefined ? musicVolumeTalking : 30) : (musicVolumeSilence !== undefined ? musicVolumeSilence : 100);
     const calculatedVolume = (botVolumeLevel / 100) * (duckingFactor / 100);
 
@@ -678,10 +665,7 @@ export const LobbyRoomPage = () => {
     lobby?.talkingUsers,
     musicVolumeSilence,
     musicVolumeTalking,
-    botId,
-    user?.id,
-    peerActivity,
-    localVolume
+    botId
   ]);
 
   // Separate non-blocking effect for absolute position syncing to eliminate lag cascade
@@ -788,6 +772,7 @@ export const LobbyRoomPage = () => {
 
  return (
  <div className={cn("flex bg-[#050508] overflow-hidden", isElectron ? "h-[calc(100vh-100px)] min-h-[calc(100vh-100px)] max-h-[calc(100vh-100px)]" : "h-[calc(100vh-64px)] min-h-[calc(100vh-64px)] max-h-[calc(100vh-64px)]")} dir={isRtl ? "rtl" : "ltr"}>
+ <audio className="hidden" ref={localMusicAudioRef} crossOrigin="anonymous" />
  <Sidebar />
  <main className={cn(
  "flex-1 min-w-0 relative h-full max-h-full overflow-hidden transition-all duration-300", 
@@ -1475,7 +1460,7 @@ export const LobbyRoomPage = () => {
        right: isRtl ? (windowDims.width - 24 - 360) : 24
       }}
       className={cn(
-       "fixed bottom-24 z-[70] w-[360px] bg-gradient-to-br from-[#101b2a]/30 to-[#02050b]/40 backdrop-blur-[40px] border-[1.5px] border-[#00e5ff]/20 rounded-[32px] shadow-[0_30px_60px_rgba(0,0,0,0.8),0_0_50px_rgba(0,229,255,0.1),inset_0_1px_25px_rgba(255,255,255,0.05),inset_0_0_15px_rgba(0,229,255,0.1)] p-5 text-white select-none hover:border-[#00e5ff]/40 transition-[border-color] duration-500",
+       "fixed bottom-24 z-[70] w-[360px] bg-white/5 backdrop-blur-[16px] border border-white/10 rounded-[32px] shadow-[0_30px_60px_rgba(0,0,0,0.5),0_0_30px_rgba(0,229,255,0.1),inset_0_1px_15px_rgba(255,255,255,0.1)] p-5 text-white select-none hover:border-white/20 transition-[border-color] duration-500",
        isRtl ? "left-6" : "right-6"
       )}
      >
@@ -1637,7 +1622,8 @@ export const LobbyRoomPage = () => {
            trackUrl: prevTrack.url,
            trackName: prevTrack.name,
            category: musicBotState.currentCategory,
-           isPlaying: true
+           isPlaying: true,
+           currentTime: 0
           });
          }
         }}
@@ -1686,7 +1672,8 @@ export const LobbyRoomPage = () => {
            trackUrl: nextTrack.url,
            trackName: nextTrack.name,
            category: musicBotState.currentCategory,
-           isPlaying: true
+           isPlaying: true,
+           currentTime: 0
           });
          }
         }}
