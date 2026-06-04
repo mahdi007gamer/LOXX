@@ -430,6 +430,7 @@ export function setupWebSockets(io: Server) {
           lobbyMusicBots.set(lobbyId, bot);
         }
 
+        bot.updatedAt = Date.now();
         if (currentTime !== undefined) {
           bot.currentTime = currentTime;
         }

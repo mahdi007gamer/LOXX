@@ -1537,7 +1537,10 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   if (lobby) {
    lobbySocket.emit("lobby.musicbot.toggle", { lobbyId: lobby.id, active }, (res: any) => {
     if (res?.status === "success") {
-     setMusicBotState(res.data);
+     setMusicBotState({
+       ...res.data,
+       updatedAt: Date.now()
+     });
      toast.success(active ? "بات موزیک فعال شد" : "بات موزیک غیرفعال شد");
     } else if (res?.message) {
      toast.error(res.message);
@@ -1550,7 +1553,10 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   if (lobby) {
    lobbySocket.emit("lobby.musicbot.control", { lobbyId: lobby.id, action, ...params }, (res: any) => {
     if (res?.status === "success") {
-     setMusicBotState(res.data);
+     setMusicBotState({
+       ...res.data,
+       updatedAt: Date.now()
+     });
     } else if (res?.message) {
      toast.error(res.message);
     }

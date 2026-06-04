@@ -642,6 +642,8 @@ export const LobbyRoomPage = () => {
     musicBotState?.currentTrackUrl,
     musicBotState?.isPlaying,
     musicBotState?.queueIndex,
+    musicBotState?.currentTime,
+    musicBotState?.updatedAt,
     isHost
   ]);
 
@@ -1595,8 +1597,15 @@ export const LobbyRoomPage = () => {
           if (localMusicAudioRef.current) {
            localMusicAudioRef.current.currentTime = val;
           }
-          if (isHost) {
-           controlMusicBot("seek", { currentTime: val });
+         }}
+         onMouseUp={() => {
+          if (isHost && localMusicAudioRef.current) {
+           controlMusicBot("seek", { currentTime: localMusicAudioRef.current.currentTime });
+          }
+         }}
+         onTouchEnd={() => {
+          if (isHost && localMusicAudioRef.current) {
+           controlMusicBot("seek", { currentTime: localMusicAudioRef.current.currentTime });
           }
          }}
          className={cn(
@@ -1640,10 +1649,10 @@ export const LobbyRoomPage = () => {
         onClick={() => {
          if (!isHost) return;
          if (musicBotState?.isPlaying) {
-          controlMusicBot("pause");
+          controlMusicBot("pause", { currentTime: localMusicAudioRef.current?.currentTime || 0 });
          } else {
           if (musicBotState?.queue && musicBotState.queue.length > 0) {
-           controlMusicBot("play");
+           controlMusicBot("play", { currentTime: localMusicAudioRef.current?.currentTime || 0 });
           } else {
            setShowBotSetupModal(true);
           }
@@ -2613,14 +2622,14 @@ export const LobbyRoomPage = () => {
                 {isHost && (
                   <div className="flex gap-1 shrink-0">
                     <button 
-                      onClick={() => controlMusicBot("play")} 
+                      onClick={() => controlMusicBot("play", { currentTime: localMusicAudioRef.current?.currentTime || 0 })} 
                       className="p-1.5 hover:bg-white/10 rounded-lg text-white transition-all text-xs"
                       title={isRtl ? "پخش مجدد" : "Force Play/Resume"}
                     >
                       ▶
                     </button>
                     <button 
-                      onClick={() => controlMusicBot("pause")} 
+                      onClick={() => controlMusicBot("pause", { currentTime: localMusicAudioRef.current?.currentTime || 0 })} 
                       className="p-1.5 hover:bg-white/10 rounded-lg text-white transition-all text-xs"
                       title={isRtl ? "توقف موقت" : "Pause Track"}
                     >
