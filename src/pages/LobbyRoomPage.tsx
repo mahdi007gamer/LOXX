@@ -62,7 +62,6 @@ import { MembershipType } from "../types";
 import { SmartImage } from "../components/ui/SmartImage";
 import { cn } from "../lib/utils";
 import loxxApi from "../lib/api";
-import { useMusicBotTransmitter } from "../hooks/useMusicBotTransmitter";
 
 interface Player {
  id: string;
@@ -621,21 +620,10 @@ export const LobbyRoomPage = () => {
       }
     };
 
-    // If you are the Host, broadcast your absolute playhead currentTime every 2 seconds to keep peers synchronized securely
-    let hostSyncInterval: any = null;
-    if (isHost && musicBotState.isPlaying) {
-      hostSyncInterval = setInterval(() => {
-        controlMusicBot("seek", { currentTime: audioEl.currentTime });
-      }, 2000);
-    }
-
     return () => {
       audioEl.removeEventListener("timeupdate", handleTimeUpdate);
       audioEl.removeEventListener("durationchange", handleDurationChange);
       audioEl.onended = null;
-      if (hostSyncInterval) {
-        clearInterval(hostSyncInterval);
-      }
     };
   }, [
     musicBotState?.active,
@@ -654,9 +642,13 @@ export const LobbyRoomPage = () => {
     const audioEl = localMusicAudioRef.current;
     if (!audioEl) return;
 
-    const isSomeoneElseSpeaking = lobby?.talkingUsers?.some(
+    const hasHighPeerActivity = Object.entries(peerActivity).some(([uid, vol]) => uid !== botId && vol > 15);
+    const hasLocalActivity = (localVolume || 0) > 15;
+    
+    const isSomeoneElseSpeaking = (lobby?.talkingUsers?.some(
       (uid: string) => uid !== botId
-    ) || false;
+    ) || hasHighPeerActivity || hasLocalActivity || false);
+    
     const duckingFactor = isSomeoneElseSpeaking ? (musicVolumeTalking !== undefined ? musicVolumeTalking : 30) : (musicVolumeSilence !== undefined ? musicVolumeSilence : 100);
     const calculatedVolume = (botVolumeLevel / 100) * (duckingFactor / 100);
 
@@ -667,7 +659,10 @@ export const LobbyRoomPage = () => {
     lobby?.talkingUsers,
     musicVolumeSilence,
     musicVolumeTalking,
-    botId
+    botId,
+    peerActivity,
+    localVolume,
+    audioElMounted
   ]);
 
   // Separate non-blocking effect for absolute position syncing to eliminate lag cascade

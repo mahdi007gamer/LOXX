@@ -3,7 +3,6 @@ import { lobbySocket, chatSocket, voiceSocket, presenceSocket, getSharedAudioCon
 import { toast } from "react-hot-toast";
 import { useAuth } from "./AuthContext";
 import { useWebRTC } from "../hooks/useWebRTC";
-import { useMusicBotTransmitter } from "../hooks/useMusicBotTransmitter";
 import { RemoteAudioPlayer } from "../components/voice/RemoteAudioPlayer";
 
 export type LobbyStatus = "WAITING" | "READY" | "STARTING" | "IN_PROGRESS" | "FINISHED";
@@ -977,16 +976,8 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
  
 
- const botStream = useMusicBotTransmitter({
-  roomId: lobby?.id || "",
-  isHost: lobby?.hostId === user?.id,
-  botState: musicBotState,
-  voiceSocket,
-  lobbySocket,
- });
-
  // Connect globally using our WebRTC signaling hook
- const { remoteStreams } = useWebRTC(lobby?.id || null, localStream, user?.id, screenStream, isMicTestOn, botStream);
+ const { remoteStreams } = useWebRTC(lobby?.id || null, localStream, user?.id, screenStream, isMicTestOn, null);
 
  // Monitor speaking volumes for glowing effects
  const handlePeerVolumeChange = useCallback((peerUserId: string, vol: number) => {
