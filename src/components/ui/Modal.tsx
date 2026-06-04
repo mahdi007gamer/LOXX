@@ -21,7 +21,7 @@ export const Modal = ({
  initial={{ opacity: 0 }}
  animate={{ opacity: 1 }}
  exit={{ opacity: 0 }}
- className="fixed inset-0 z-[1000] flex items-center justify-center p-4 pt-24 md:pt-[100px] bg-black/80 backdrop-blur-md"
+ className="fixed inset-0 z-[1000] flex items-start justify-center p-4 pt-24 md:pt-[110px] bg-black/80 backdrop-blur-md overflow-y-auto"
  onClick={onClose}
  dir="rtl"
  >
@@ -30,7 +30,7 @@ export const Modal = ({
  animate={{ opacity: 1, scale: 1, y: 0 }}
  exit={{ opacity: 0, scale: 0.95, y: 20 }}
  onClick={(e) => e.stopPropagation()}
- className={`w-full ${maxWidth} overflow-hidden rounded-3xl bg-dark-card border border-white/10 shadow-2xl flex flex-col max-h-[90vh]`}
+ className={`w-full ${maxWidth} rounded-3xl bg-dark-card border border-white/10 shadow-2xl flex flex-col mb-10`}
  >
  <div className="flex items-center justify-between p-4 border-b border-white/10 bg-white/5">
  <h3 className="font-black text-white">{title}</h3>

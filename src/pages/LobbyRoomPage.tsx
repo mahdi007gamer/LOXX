@@ -1313,9 +1313,13 @@ export const LobbyRoomPage = () => {
    </p>
   </div>
  </div>
+ </div> {/* End of Left Column */}
+
+ {/* Right Column (Desktop & Overlay) */}
+ <div className="space-y-6">
 
  {/* Desktop & Live Discord Overlay Panel */}
- <div className="space-y-4 pt-4 border-t border-white/10">
+ <div className="space-y-4">
  <h4 className="text-sm font-black text-neon-blue uppercase border-b border-white/10 pb-2 flex items-center gap-1.5">
  <span className="h-1.5 w-1.5 rounded-full bg-neon-blue shadow-[0_0_8px_rgba(0,229,255,1)]" />
  {isRtl ? "تنظیمات اختصاصی دسکتاپ و سیستم صوتی" : "Desktop client & Audio Engine Settings"}
