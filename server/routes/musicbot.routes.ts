@@ -516,6 +516,48 @@ router.post("/artist", authenticate, authorizeAdmin, async (req: Request, res: R
   }
 });
 
+// 2.5 UPDATE AN EXISTING ARTIST
+router.put("/artist/:id", authenticate, authorizeAdmin, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { name, avatarUrl, bio } = req.body;
+
+    const artist = await prisma.artist.findUnique({ where: { id } });
+    if (!artist) {
+      return res.status(404).json({ status: "error", message: "خواننده مورد نظر یافت نشد" });
+    }
+
+    const updated = await prisma.artist.update({
+      where: { id },
+      data: {
+        name: name !== undefined ? name.trim() : undefined,
+        avatarUrl: avatarUrl !== undefined ? avatarUrl : undefined,
+        bio: bio !== undefined ? bio : undefined
+      }
+    });
+
+    res.json({ status: "success", message: "اطلاعات خواننده با موفقیت بروزرسانی شد", data: updated });
+  } catch (error: any) {
+    res.status(500).json({ status: "error", message: error.message });
+  }
+});
+
+// 2.6 DELETE AN ARTIST
+router.delete("/artist/:id", authenticate, authorizeAdmin, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const artist = await prisma.artist.findUnique({ where: { id } });
+    if (!artist) {
+      return res.status(404).json({ status: "error", message: "خواننده مورد نظر یافت نشد" });
+    }
+
+    await prisma.artist.delete({ where: { id } });
+    res.json({ status: "success", message: "خواننده با موفقیت از سیستم حذف شد" });
+  } catch (error: any) {
+    res.status(500).json({ status: "error", message: error.message });
+  }
+});
+
 // 3. GET ALL PLAYLISTS
 router.get("/db-playlists", authenticate, async (req: Request, res: Response) => {
   try {
@@ -571,6 +613,57 @@ router.delete("/db-playlist/:id", authenticate, authorizeAdmin, async (req: Requ
   }
 });
 
+// 5.5 UPDATE A PLAYLIST
+router.put("/db-playlist/:id", authenticate, authorizeAdmin, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { name, bannerUrl } = req.body;
+
+    const playlist = await prisma.playlist.findUnique({ where: { id } });
+    if (!playlist) {
+      return res.status(404).json({ status: "error", message: "سبک/پلی‌لیست مورد نظر یافت نشد" });
+    }
+
+    const updated = await prisma.playlist.update({
+      where: { id },
+      data: {
+        name: name !== undefined ? name.trim() : undefined,
+        bannerUrl: bannerUrl !== undefined ? bannerUrl : undefined
+      }
+    });
+
+    res.json({ status: "success", message: "سبک/پلی‌لیست با موفقیت بروزرسانی شد", data: updated });
+  } catch (error: any) {
+    res.status(500).json({ status: "error", message: error.message });
+  }
+});
+
+// Safe audio compression and metadata analyzer tool details
+import { exec } from "child_process";
+
+function tryCompressAudio(inputPath: string, outputPath: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    exec(`ffmpeg -i "${inputPath}" -b:a 128k "${outputPath}" -y`, (error) => {
+      if (error) {
+        resolve(false);
+      } else {
+        resolve(true);
+      }
+    });
+  });
+}
+
+function getLocalPathFromUrl(url: string): string | null {
+  if (url.startsWith("/api/v1/upload/file/")) {
+    const filename = url.replace("/api/v1/upload/file/", "");
+    return path.join(process.cwd(), "uploads", filename);
+  }
+  if (url.startsWith("/public/")) {
+    return path.join(process.cwd(), url.substring(1));
+  }
+  return null;
+}
+
 // 6. GET ALL DB TRACKS WITH THEIR RELATIONSHIPS
 router.get("/db-tracks", authenticate, async (req: Request, res: Response) => {
   try {
@@ -587,22 +680,26 @@ router.get("/db-tracks", authenticate, async (req: Request, res: Response) => {
   }
 });
 
-// 7. MULTIPART FILE UPLOAD FOR DYNAMIC TRACK WITH AUTO-EXTRACTION & CREATION
+// 7. MULTIPART FILE UPLOAD OR URL REGISTRATION FOR DYNAMIC TRACK WITH AUTO-EXTRACTION & CREATION
 router.post("/db-track/upload", authenticate, authorizeAdmin, upload.single("file"), async (req: Request, res: Response) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ status: "error", message: "هیچ فایلی آپلود نشد" });
+    const { manualTitle, url: bodyUrl, coverUrl: customCoverUrl } = req.body;
+    const category = req.body.category || "dynamic";
+    
+    let url = bodyUrl || "";
+    let originalName = "";
+
+    if (req.file) {
+      url = `/public/musicbot/${category}/${req.file.filename}`;
+      originalName = req.file.originalname;
+    } else if (bodyUrl) {
+      originalName = bodyUrl.split("/").pop() || "track.mp3";
+    } else {
+      return res.status(400).json({ status: "error", message: "لطفا فایل صوتی را آپلود کنید یا آدرس آن را ارسال بفرمایید" });
     }
 
-    const { manualTitle } = req.body;
-    const category = req.body.category || "dynamic";
-    const filename = req.file.filename;
-    
-    // Save locally or use public link
-    const url = `/public/musicbot/${category}/${filename}`;
-
-    // Extract title & artists from name
-    const orgName = req.file.originalname.replace(/\.[^/.]+$/, ""); // Strip file extension
+    // Extract title & artists from original name
+    const orgName = originalName.replace(/\.[^/.]+$/, ""); // Strip file extension
     let detectedTitle = manualTitle || orgName;
     let detectedArtists: string[] = [];
 
@@ -612,22 +709,86 @@ router.post("/db-track/upload", authenticate, authorizeAdmin, upload.single("fil
       const part1 = orgName.substring(0, dashIdx).trim();
       const part2 = orgName.substring(dashIdx + 1).trim();
 
-      // Check if either part 1 or part 2 corresponds to a known artist
       const match1 = await prisma.artist.findFirst({ where: { name: part1 } });
       const match2 = await prisma.artist.findFirst({ where: { name: part2 } });
 
       if (match2) {
-        // e.g. "Bad Bash - Sami Beigi" -> Part 2 is the artist
         detectedTitle = part1;
         detectedArtists.push(part2);
       } else if (match1) {
-        // e.g. "Sami Beigi - Bad Bash" -> Part 1 is the artist
         detectedTitle = part2;
         detectedArtists.push(part1);
       } else {
-        // Default separator assumption: Part 1 is Artist, Part 2 is Title
         detectedTitle = part2;
         detectedArtists.push(part1);
+      }
+    }
+
+    // Read local file coordinates for cover and duration retrieval + audio 128k optimization
+    const localFilePath = getLocalPathFromUrl(url);
+    let duration = 0;
+    let coverUrl = customCoverUrl || "";
+
+    if (localFilePath && fs.existsSync(localFilePath)) {
+      try {
+        // Try audio compression first to guarantee file is lightweight without losing quality
+        const compPath = localFilePath + "_128k";
+        const didCompress = await tryCompressAudio(localFilePath, compPath);
+        if (didCompress && fs.existsSync(compPath)) {
+          fs.unlinkSync(localFilePath);
+          fs.renameSync(compPath, localFilePath);
+          console.log("[MUSICBOT] Combined audio stream optimized to 128kbps!");
+        }
+
+        // Parse meta markers via music-metadata
+        const { parseFile } = await import("music-metadata");
+        const metadata = await parseFile(localFilePath);
+
+        if (metadata.format && metadata.format.duration) {
+          duration = Math.round(metadata.format.duration);
+        }
+
+        if (!manualTitle && metadata.common && metadata.common.title) {
+          detectedTitle = metadata.common.title;
+        }
+
+        // Auto extract embedded artwork if no custom cover of track is passed
+        if (!coverUrl && metadata.common && metadata.common.picture && metadata.common.picture.length > 0) {
+          const pic = metadata.common.picture[0];
+          const ext = pic.format === "image/png" ? ".png" : ".jpg";
+          const coverFilename = `cover_${Date.now()}_${Math.round(Math.random() * 1e6)}${ext}`;
+          const coversDir = path.join(process.cwd(), "public", "musicbot", "covers");
+          if (!fs.existsSync(coversDir)) {
+            fs.mkdirSync(coversDir, { recursive: true });
+          }
+          const coverPath = path.join(coversDir, coverFilename);
+          fs.writeFileSync(coverPath, pic.data);
+
+          // Apply Sharp image compression to keeping covers exceptionally small
+          let sharpModule: any;
+          try {
+            sharpModule = require("sharp");
+          } catch(e) {}
+
+          if (sharpModule) {
+            const tempCover = coverPath + "_tmp";
+            try {
+              await sharpModule(coverPath)
+                .resize(256, 256, { fit: "cover", withoutEnlargement: true })
+                .jpeg({ quality: 80 })
+                .toFile(tempCover);
+
+              fs.unlinkSync(coverPath);
+              fs.renameSync(tempCover, coverPath);
+            } catch (se) {
+              console.error("[MUSICBOT] Sharp thumbnail resizing error:", se);
+            }
+          }
+
+          coverUrl = `/public/musicbot/covers/${coverFilename}`;
+        }
+      } catch (metaError) {
+        console.error("[MUSICBOT] Failed to parse tags from audio file:", metaError);
       }
     }
 
@@ -645,7 +806,6 @@ router.post("/db-track/upload", authenticate, authorizeAdmin, upload.single("fil
 
     // Process auto-extracted artists
     for (const artistName of detectedArtists) {
-      // Split by common separators if multiple featuring artists exist
       const segments = artistName.split(/\s*[\,\&\+]\s*|\s+and\s+|\s+یا\s+/i);
       for (const seg of segments) {
         const cleanedName = seg.trim();
@@ -673,11 +833,13 @@ router.post("/db-track/upload", authenticate, authorizeAdmin, upload.single("fil
       }
     }
 
-    // Create track database record
+    // Create track database record with duration & coverUrl
     const track = await prisma.track.create({
       data: {
         title: detectedTitle,
         url,
+        duration,
+        coverUrl: coverUrl || null,
         artists: {
           connect: artistIdsList.map(id => ({ id }))
         },
@@ -701,11 +863,11 @@ router.post("/db-track/upload", authenticate, authorizeAdmin, upload.single("fil
   }
 });
 
-// 7.5 UPDATE A DB TRACK METADATA (Edit title, artists, playlists)
+// 7.5 UPDATE A DB TRACK METADATA (Edit title, artists, playlists, coverUrl)
 router.put("/db-track/:id", authenticate, authorizeAdmin, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { title, artistIds, playlistIds } = req.body;
+    const { title, artistIds, playlistIds, coverUrl } = req.body;
 
     const track = await prisma.track.findUnique({ where: { id } });
     if (!track) {
@@ -716,6 +878,7 @@ router.put("/db-track/:id", authenticate, authorizeAdmin, async (req: Request, r
       where: { id },
       data: {
         title: title !== undefined ? title.trim() : undefined,
+        coverUrl: coverUrl !== undefined ? coverUrl : undefined,
         artists: artistIds ? {
           set: artistIds.map((aid: string) => ({ id: aid }))
         } : undefined,

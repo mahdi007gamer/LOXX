@@ -532,6 +532,7 @@ model Track {
   id        String     @id @default(uuid())
   title     String
   url       String
+  coverUrl  String?
   duration  Float?     @default(0)
   createdAt DateTime   @default(now())
   artists   Artist[]   @relation("TrackArtists")
