@@ -256,6 +256,51 @@ export const LobbyRoomPage = () => {
  const [activeProfileUserId, setActiveProfileUserId] = useState<string | null>(null);
  const [layoutMode, setLayoutMode] = useState<'default' | 'compact' | 'discord'>(() => (localStorage.getItem('loxx-lobby-layout') as any) || 'default');
 
+ // Loxx music bot advanced states
+ const [showBotSetupModal, setShowBotSetupModal] = useState(false);
+ const [setupStep, setSetupStep] = useState<"source" | "loxx_genre" | "loxx_category">("source");
+ const [selectedGenre, setSelectedGenre] = useState<"irani" | "kharegi" | null>(null);
+ const [selectedCategoryData, setSelectedCategoryData] = useState<any>(null);
+ const [selectedLocalFiles, setSelectedLocalFiles] = useState<File[]>([]);
+ const [localPlayMode, setLocalPlayMode] = useState<"in-order" | "random">("random");
+ const [loxxLibrary, setLoxxLibrary] = useState<{ irani: any; kharegi: any } | null>(null);
+ const [isMusicPlayerExpanded, setIsMusicPlayerExpanded] = useState(true);
+ const [isQueueOpen, setIsQueueOpen] = useState(false);
+
+ const fetchLoxxLibrary = useCallback(() => {
+  fetch("/api/v1/musicbot/loxx-library")
+   .then(res => res.json())
+   .then(data => {
+    if (data?.status === "success" && data.data) {
+     setLoxxLibrary(data.data);
+    }
+   })
+   .catch(console.error);
+ }, []);
+
+ const playLoxxCategory = useCallback((categoryData: any) => {
+  if (!categoryData || !categoryData.tracks || categoryData.tracks.length === 0) return;
+  const queue = categoryData.tracks.map((t: any) => ({
+   name: t.title,
+   url: t.url
+  }));
+  toggleMusicBot(true);
+  setTimeout(() => {
+   controlMusicBot("update-queue", {
+    queue,
+    queueIndex: 0,
+    trackUrl: queue[0].url,
+    trackName: queue[0].name,
+    category: categoryData.name,
+    isPlaying: true
+   });
+   toast.success(isRtl ? `شروع پخش پوشه ${categoryData.name}` : `Streaming playlist folder: ${categoryData.name}`);
+   setShowBotSetupModal(false);
+  }, 500);
+ }, [toggleMusicBot, controlMusicBot, isRtl]);
+
+
+
  const userPlanResolved = ((user as any)?.role === "ADMIN" || (user as any)?.membership === "VIP" || (user as any)?.profile?.membershipType === "VIP") 
  ? "VIP" 
  : (((user as any)?.membership === "PLUS" || (user as any)?.profile?.membershipType === "PLUS") ? "PLUS" : "NORMAL");
@@ -455,10 +500,22 @@ export const LobbyRoomPage = () => {
  const isReady = lobby?.players?.find(p => p.userId === user?.id)?.isReady || false;
  const isMicMuted = !!(lobby?.players?.find(p => p.userId === user?.id) as any)?.micMuted;
  const isHost = lobby?.hostId === user?.id;
+
+  // Auto-open Loxx configuration modal on lobby join for host
+  const hasAutoOpenedBotSetup = useRef(false);
+  useEffect(() => {
+    if (lobby && isHost && !hasAutoOpenedBotSetup.current) {
+      setShowBotSetupModal(true);
+      hasAutoOpenedBotSetup.current = true;
+    }
+  }, [lobby?.id, isHost]);
  
  const hostPlayer = lobby?.players?.find((p: any) => p.userId === lobby?.hostId);
  const isStreamerLobby = (hostPlayer as any)?.role === "STREAMER";
  const isVipLobby = hostPlayer?.membership === "VIP" && !isStreamerLobby;
+  
+  // Auto-open Loxx configuration modal on lobby join for host
+
  
  const isStarting = lobby?.status === "STARTING";
  const isMatchStarted = lobby?.status === "IN_PROGRESS";
@@ -1074,7 +1131,55 @@ export const LobbyRoomPage = () => {
  {isInviteModalOpen && (
  <Modal title={isRtl ? "دعوت دوستان" : "Invite Friends"} onClose={() => setIsInviteModalOpen(false)}>
  <div className="space-y-4">
- {friends.length > 0 ? friends.map((friend, i) => (
+  {/* Music Bot Invite Card (At the absolute top of the friends list) */}
+  <div className="flex items-center justify-between p-4 bg-gradient-to-r from-cyan-950/40 to-black/40 rounded-2xl border border-[#00e5ff]/20 hover:border-[#00e5ff]/40 transition-all shadow-[0_0_15px_rgba(0,229,255,0.05)] group relative overflow-hidden">
+   {/* Animated background element */}
+   {musicBotState?.active && (
+    <div className="absolute inset-y-0 right-0 w-1.5 bg-[#00e5ff] animate-pulse" />
+   )}
+   <div className="flex items-center gap-3 w-full max-w-[70%] text-right">
+    <div className="h-10 w-10 rounded-xl bg-[#00e5ff]/10 border border-[#00e5ff]/30 flex items-center justify-center shadow-[0_0_10px_rgba(0,229,255,0.2)] shrink-0 overflow-hidden relative font-sans">
+     <span className={cn("text-xl select-none", musicBotState?.isPlaying && "animate-spin")} style={{ animationDuration: "3s" }}>💿</span>
+     {musicBotState?.active && (
+      <span className="absolute bottom-0.5 right-0.5 w-2 h-2 bg-emerald-450 rounded-full border border-black" />
+     )}
+    </div>
+    <div className="min-w-0 flex-1">
+     <div className="flex items-center gap-1.5">
+      <p className="text-xs font-black text-white truncate">{isRtl ? "🎵 ربات موسیقی لوکس (بات بالایی)" : "🎵 Loxx Music Bot (Top bot)"}</p>
+      <span className="text-[8px] font-bold bg-[#00e5ff]/10 text-[#00e5ff] px-1 rounded border border-[#00e5ff]/20 shrink-0">BOT</span>
+     </div>
+     <p className="text-[9px] text-gray-400 mt-0.5 truncate">
+      {musicBotState?.active 
+       ? (isRtl ? `در حال پخش: ${musicBotState.currentTrackName || "در انتظار آهنگ..."}` : `Playing: ${musicBotState.currentTrackName || "Waiting for track..."}`)
+       : (isRtl ? "کیفیت پخش Hi-Fi مستقیم در لابی" : "Hi-Fi audio stream directly in the lobby")
+      }
+     </p>
+    </div>
+   </div>
+   <button 
+    onClick={() => {
+     if (!isHost) {
+      toast.error(isRtl ? "فقط سازنده لابی می‌تواند ربات را مدیریت کند" : "Only the lobby host can manage the music bot");
+      return;
+     }
+     toggleMusicBot(!musicBotState?.active);
+    }}
+    className={cn(
+     "px-3.5 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all duration-300 transform active:scale-95 shrink-0 font-sans",
+     musicBotState?.active 
+      ? "bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-gradient-to-r hover:from-red-500 hover:to-pink-500 hover:text-black hover:shadow-[0_0_15px_rgba(239,68,68,0.4)]" 
+      : "bg-gradient-to-r from-cyan-400 to-blue-500 text-black shadow-[0_0_12px_rgba(0,229,255,0.25)] hover:brightness-110"
+    )}
+   >
+    {musicBotState?.active 
+     ? (isRtl ? "اخراج ربات" : "Remove Bot") 
+     : (isRtl ? "دعوت ربات" : "Invite Bot")
+    }
+   </button>
+  </div>
+
+  {friends.length > 0 ? friends.map((friend, i) => (
  <div key={i} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl hover:bg-white/10 transition-colors group">
  <div className="flex items-center gap-3">
  <div className="h-10 w-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden shrink-0">
@@ -1122,6 +1227,588 @@ export const LobbyRoomPage = () => {
  onClose={() => { setIsSourcePickerOpen(false); setPendingSourceId(null); }}
  onSelect={handleSourceSelected}
  />
+
+ {/* LOXX FLOATING MUSIC PLAYER */}
+ {musicBotState?.active && (
+  <>
+   {/* 1. Tiny Bubble (if player is minimized) */}
+   {!isMusicPlayerExpanded ? (
+    <div 
+     onClick={() => setIsMusicPlayerExpanded(true)}
+     className={cn(
+      "fixed bottom-24 z-[70] cursor-pointer h-14 w-14 rounded-full bg-black/80 border border-[#00e5ff]/35 shadow-[0_0_20px_rgba(0,229,255,0.3)] hover:shadow-[0_0_25px_rgba(0,229,255,0.5)] flex items-center justify-center transition-all duration-300 hover:scale-110",
+      isRtl ? "left-6" : "right-6"
+     )}
+     title={isRtl ? "پخش‌کننده موسیقی لوکس" : "Loxx Dynamic Music Player"}
+    >
+     {/* Pulsing sound waves */}
+     <div className="absolute inset-0 rounded-full bg-[#00e5ff]/5 animate-ping" />
+     <span className={cn("text-2xl select-none", musicBotState?.isPlaying && "animate-spin")} style={{ animationDuration: "3s" }}>
+      💿
+     </span>
+     {/* Animated tiny bars if playing */}
+     {musicBotState?.isPlaying && (
+      <div className="absolute -bottom-1 flex gap-0.5 justify-center">
+       <div className="w-1 h-3 bg-[#00e5ff] rounded animate-bounce" style={{ animationDelay: "0ms" }} />
+       <div className="w-1 h-4 bg-[#00e5ff] rounded animate-bounce" style={{ animationDelay: "150ms" }} />
+       <div className="w-1 h-2 bg-[#00e5ff] rounded animate-bounce" style={{ animationDelay: "300ms" }} />
+      </div>
+     )}
+    </div>
+   ) : (
+    /* 2. Full Expanded Window Player */
+    <div 
+     className={cn(
+      "fixed bottom-24 z-[70] w-[320px] bg-black/85 backdrop-blur-md border border-[#00e5ff]/25 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.7)] p-4 text-white hover:border-[#00e5ff]/40 transition-all duration-300 animate-enter",
+      isRtl ? "left-6" : "right-6"
+     )}
+    >
+     {/* Header */}
+     <div className="flex items-center justify-between border-b border-white/5 pb-2.5">
+      <div className="flex items-center gap-1.5">
+       <span className="text-sm">🎵</span>
+       <div className="flex flex-col">
+        <span className="text-xs font-black tracking-wider text-white select-none">{isRtl ? "پخش‌کننده لابی عمومی" : "Loxx Lobby Music"}</span>
+        <span className="text-[8px] text-gray-500 font-mono font-bold leading-none select-none uppercase">DYNAMIC HI-FI ACTIVE</span>
+       </div>
+      </div>
+      
+      <div className="flex items-center gap-1.5">
+       {/* Setup Menu Button */}
+       {isHost && (
+        <button 
+         onClick={() => {
+          setSetupStep("source");
+          setShowBotSetupModal(true);
+         }}
+         className="p-1 hover:bg-white/10 rounded text-gray-400 hover:text-[#00e5ff] transition-all text-xs"
+         title={isRtl ? "تغییر پوشه / منبع" : "Setup Source"}
+        >
+         ⚙️
+        </button>
+       )}
+       {/* Minimize/Close button */}
+       <button 
+        onClick={() => setIsMusicPlayerExpanded(false)}
+         className="p-1 hover:bg-white/10 rounded text-gray-400 hover:text-white transition-all text-xs"
+        title={isRtl ? "بستن پنجره" : "Collapse"}
+       >
+        ✕
+       </button>
+      </div>
+     </div>
+
+     {/* Now Playing Area */}
+     <div className="flex items-center gap-3 py-3 select-none">
+      {/* Spinning Disk Vinyl with live visualizer inside */}
+      <div className="relative h-12 w-12 rounded-full border border-white/10 flex items-center justify-center shrink-0 shadow-lg select-none bg-black">
+       <span 
+        className={cn("text-3xl select-none", musicBotState?.isPlaying && "animate-spin")}
+        style={{ animationDuration: "5s" }}
+       >
+        💿
+       </span>
+       {musicBotState?.isPlaying && (
+        <div className="absolute inset-0 rounded-full border border-dashed border-[#00e5ff]/30 animate-pulse" />
+       )}
+      </div>
+
+      {/* Track metadata */}
+      <div className="min-w-0 flex-1">
+       <div className="flex items-center gap-1">
+        <p className="text-xs font-black text-white truncate max-w-[180px]">
+         {musicBotState?.currentTrackName || (isRtl ? "آهنگی وجود ندارد" : "Playlist ended")}
+        </p>
+        {musicBotState?.isPlaying && (
+         <span className="w-1.5 h-1.5 bg-[#00e5ff] rounded-full animate-ping shrink-0" />
+        )}
+       </div>
+       <p className="text-[9px] text-[#00e5ff] font-bold tracking-wider mt-0.5 truncate uppercase font-sans">
+        {musicBotState?.currentCategory || (isRtl ? "دسته‌بندی نشده" : "Inactive")}
+       </p>
+      </div>
+     </div>
+
+     {/* Equalizer animation bars if playing */}
+     {musicBotState?.isPlaying && (
+      <div className="flex items-end justify-center gap-1.5 h-6 bg-black/40 rounded-lg p-1.5 select-none my-1">
+       <div className="w-1 bg-[#00e5ff] rounded animate-bounce" style={{ height: "40%", animationDuration: "0.8s" }} />
+       <div className="w-1 bg-[#00e5ff] rounded animate-bounce" style={{ height: "70%", animationDuration: "0.5s", animationDelay: "100ms" }} />
+       <div className="w-1 bg-[#00e5ff] rounded animate-bounce" style={{ height: "100%", animationDuration: "0.7s", animationDelay: "200ms" }} />
+       <div className="w-1 bg-[#00e5ff] rounded animate-bounce" style={{ height: "50%", animationDuration: "0.6s", animationDelay: "150ms" }} />
+       <div className="w-1 bg-[#00e5ff] rounded animate-bounce" style={{ height: "80%", animationDuration: "0.9s", animationDelay: "50ms" }} />
+      </div>
+     )}
+
+     {/* Player controls */}
+     <div className="flex items-center justify-between bg-black/30 p-2 rounded-xl mt-1.5 select-none font-sans">
+      {/* Host controllers */}
+      <div className="flex items-center gap-2.5 w-full justify-center">
+       {isHost ? (
+        <>
+         <button 
+          onClick={() => {
+           if (musicBotState?.queue && musicBotState.queue.length > 0) {
+            const prevIdx = (musicBotState.queueIndex - 1 + musicBotState.queue.length) % musicBotState.queue.length;
+            const prevTrack = musicBotState.queue[prevIdx];
+            controlMusicBot("update-queue", {
+             queue: musicBotState.queue,
+             queueIndex: prevIdx,
+             trackUrl: prevTrack.url,
+             trackName: prevTrack.name,
+             category: musicBotState.currentCategory,
+             isPlaying: true
+            });
+           }
+          }}
+          className={cn(
+           "p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 active:scale-90 transition-all text-xs",
+           (!musicBotState?.queue || musicBotState.queue.length <= 1) && "opacity-35 cursor-not-allowed"
+          )}
+          disabled={!musicBotState?.queue || musicBotState.queue.length <= 1}
+          title={isRtl ? "آهنگ قبلی" : "Previous Track"}
+         >
+          ⏮
+         </button>
+
+         <button 
+          onClick={() => {
+           if (musicBotState?.isPlaying) {
+            controlMusicBot("pause");
+           } else {
+            if (musicBotState?.queue && musicBotState.queue.length > 0) {
+             controlMusicBot("play");
+            } else {
+             setShowBotSetupModal(true);
+            }
+           }
+          }}
+          className="p-3.5 bg-gradient-to-r from-cyan-400 to-blue-500 rounded-full text-black font-black active:scale-90 shadow-[0_0_15px_rgba(0,229,255,0.4)] transition-all hover:brightness-115 text-sm"
+         >
+          {musicBotState?.isPlaying ? "⏸" : "▶"}
+         </button>
+
+         <button 
+          onClick={() => {
+           if (musicBotState?.queue && musicBotState.queue.length > 0) {
+            const nextIdx = (musicBotState.queueIndex + 1) % musicBotState.queue.length;
+            const nextTrack = musicBotState.queue[nextIdx];
+            controlMusicBot("update-queue", {
+             queue: musicBotState.queue,
+             queueIndex: nextIdx,
+             trackUrl: nextTrack.url,
+             trackName: nextTrack.name,
+             category: musicBotState.currentCategory,
+             isPlaying: true
+            });
+           }
+          }}
+          className={cn(
+           "p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 active:scale-90 transition-all text-xs",
+           (!musicBotState?.queue || musicBotState.queue.length <= 1) && "opacity-35 cursor-not-allowed"
+          )}
+          disabled={!musicBotState?.queue || musicBotState.queue.length <= 1}
+          title={isRtl ? "آهنگ بعدی" : "Skip/Next"}
+         >
+          ⏭
+         </button>
+        </>
+       ) : (
+        <div className="text-[9px] font-bold text-gray-500 uppercase flex items-center gap-1 py-1 font-sans">
+         🔒 {isRtl ? "کنترل پخش فقط توسط هاست" : "Host Controlled Playback"}
+        </div>
+       )}
+      </div>
+     </div>
+
+     {/* Queue Panel Trigger */}
+     <div className="pt-2 mt-2 border-t border-white/5 select-none text-[10px] text-gray-400 font-semibold font-sans">
+      <div 
+       onClick={() => setIsQueueOpen(!isQueueOpen)}
+       className="flex justify-between items-center cursor-pointer py-1 hover:text-white transition-colors"
+      >
+       <span className="flex items-center gap-1">📋 {isRtl ? "لیست صف آهنگ‌ها" : "Track Queue List"}</span>
+       <span className="text-[9px] font-mono font-bold bg-[#00e5ff]/10 text-[#00e5ff] px-1.5 py-0.2 rounded border border-[#00e5ff]/20">
+        {musicBotState?.queue?.length || 0}
+       </span>
+      </div>
+
+      {isQueueOpen && (
+       <div className="max-h-36 overflow-y-auto mt-2 space-y-1 custom-scrollbar pr-1 animate-enter font-sans">
+        {musicBotState?.queue && musicBotState.queue.length > 0 ? (
+         musicBotState.queue.map((track: any, idx: number) => {
+          const isPlayingTrack = musicBotState.queueIndex === idx;
+          return (
+           <div 
+            key={idx} 
+            onClick={() => {
+             if (isHost) {
+              controlMusicBot("update-queue", {
+               queue: musicBotState.queue,
+               queueIndex: idx,
+               trackUrl: track.url,
+               trackName: track.name,
+               category: musicBotState.currentCategory,
+               isPlaying: true
+              });
+             }
+            }}
+            className={cn(
+             "flex justify-between items-center bg-white/5 p-1.5 px-2 rounded-lg text-[9px] transition-all",
+             isHost && "cursor-pointer hover:bg-white/10",
+             isPlayingTrack && "border border-[#00e5ff]/25 bg-[#00e5ff]/5 text-[#00e5ff] font-bold"
+            )}
+           >
+            <span className="truncate max-w-[190px]">{track.name}</span>
+            {isPlayingTrack && <span className="text-[8px] animate-pulse">PLAYING</span>}
+           </div>
+          );
+         })
+        ) : (
+         <p className="text-center py-4 text-[9px] text-gray-600">{isRtl ? "لیست پخش ربات خالی است" : "Waitlist empty"}</p>
+        )}
+       </div>
+      )}
+     </div>
+    </div>
+   )}
+  </>
+ )}
+
+ {/* LOXX MUSIC BOT SEED SELECTION SETUP MODAL */}
+ {showBotSetupModal && (
+  <Modal title={isRtl ? "تنظیم ربات موسیقی لوکس (Music Bot)" : "Configure Loxx Music Bot"} onClose={() => setShowBotSetupModal(false)}>
+   <div className="space-y-6 select-none max-h-[75vh] overflow-y-auto px-1 custom-scrollbar">
+    {/* Step 1: Select Playback Source */}
+    {setupStep === "source" && (
+     <div className="space-y-4 font-sans">
+      <p className="text-xs font-bold text-gray-400">
+       {isRtl ? "مرحله اول: منبع پخش موسیقی ربات را مشخص کنید" : "Step 1: Select playback source for the music bot"}
+      </p>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+       {/* Option A: Play from My Local Folder */}
+       <div 
+        onClick={() => {
+         setSetupStep("source");
+         document.getElementById("local-folder-picker-setup")?.click();
+        }}
+        className="group relative cursor-pointer border border-[#00e5ff]/20 bg-[#00e5ff]/5 hover:bg-[#00e5ff]/10 hover:border-[#00e5ff]/40 rounded-2xl p-6 transition-all duration-300 flex flex-col items-center text-center space-y-3 shadow-lg hover:shadow-[0_0_15px_rgba(0,191,255,0.15)]"
+       >
+        <div className="h-14 w-14 rounded-2xl bg-[#00e5ff]/10 border border-[#00e5ff]/20 flex items-center justify-center text-2xl text-[#00e5ff] group-hover:scale-110 transition-transform">
+         📂
+        </div>
+         <div>
+         <h4 className="text-sm font-black text-white">{isRtl ? "پخش از پوشه شخصی خودم" : "Play from my personal folder"}</h4>
+         <p className="text-[10px] text-gray-400 mt-1 lines-clamp-2 leading-relaxed font-bold">
+          {isRtl ? "یک پوشه از سیستم کلاینت را انتخاب کنید تا موزیک‌ها به ترتیب یا رندوم استریم شوند." : "Select an audio folder from your device to stream its tracks live."}
+         </p>
+        </div>
+        <input
+         type="file"
+         id="local-folder-picker-setup"
+         // @ts-ignore
+         webkitdirectory=""
+         directory=""
+         multiple
+         accept="audio/*"
+         className="hidden"
+         onChange={(e) => {
+          if (e.target.files && e.target.files.length > 0) {
+           const filesArray = (Array.from(e.target.files) as File[]).filter(
+            f => f.type.startsWith("audio/") || f.name.endsWith(".mp3") || f.name.endsWith(".wav") || f.name.endsWith(".ogg") || f.name.endsWith(".m4a")
+           );
+           if (filesArray.length === 0) {
+            toast.error(isRtl ? "هیچ فایل صوتی معتبری در پوشه انتخاب‌شده یافت نشد" : "No audios found in selected folder");
+            return;
+           }
+           setSelectedLocalFiles(filesArray);
+           toast.success(isRtl ? `تعداد ${filesArray.length} آهنگ آماده است.` : `${filesArray.length} tracks selected.`);
+          }
+         }}
+        />
+       </div>
+
+       {/* Option B: Play from curated Loxx Library */}
+       <div 
+        onClick={() => {
+         fetchLoxxLibrary();
+         setSetupStep("loxx_genre");
+        }}
+        className="group relative cursor-pointer border border-pink-500/20 bg-pink-500/5 hover:bg-pink-500/10 hover:border-pink-500/40 rounded-2xl p-6 transition-all duration-300 flex flex-col items-center text-center space-y-3 shadow-lg hover:shadow-[0_0_15px_rgba(244,63,94,0.15)]"
+       >
+        <div className="h-14 w-14 rounded-2xl bg-pink-500/10 border border-pink-500/20 flex items-center justify-center text-2xl text-pink-500 group-hover:scale-110 transition-transform">
+         🎙️
+        </div>
+        <div>
+         <h4 className="text-sm font-black text-white">{isRtl ? "پخش از کتابخانه لوکس" : "Play from Loxx library"}</h4>
+         <p className="text-[10px] text-gray-400 mt-1 lines-clamp-2 leading-relaxed font-bold">
+          {isRtl ? "از آرشیو تفکیک شده موسیقی ایرانی و خارجی لوکس روی لابی لذت ببرید." : "Enjoy the curated preloaded folders of Persian and Foreign hits."}
+         </p>
+        </div>
+       </div>
+      </div>
+
+      {/* Folder configuration */}
+      {selectedLocalFiles.length > 0 && (
+       <div className="bg-white/5 p-4 rounded-xl border border-white/5 space-y-3 animate-enter mt-4">
+        <div className="flex items-center justify-between text-xs">
+         <span className="font-bold text-gray-400">{isRtl ? "موزیک‌های این پوشه:" : "Detected Tracks:"}</span>
+         <span className="text-[#00e5ff] font-mono font-black">{selectedLocalFiles.length} {isRtl ? "آهنگ" : "tracks"}</span>
+        </div>
+        <div className="py-1 max-h-24 overflow-y-auto custom-scrollbar text-[10px] font-mono text-gray-500 space-y-1">
+         {selectedLocalFiles.slice(0, 5).map((f, idx) => (
+          <div key={idx} className="truncate">🎵 {f.name}</div>
+         ))}
+         {selectedLocalFiles.length > 5 && (
+          <div className="text-center font-bold text-gray-400 mt-1">... و {selectedLocalFiles.length - 5} آهنگ دیگر</div>
+         )}
+        </div>
+
+        {/* Local Play order mode */}
+        <div className="space-y-1.5 pt-2 border-t border-white/5">
+         <span className="text-[10px] font-bold text-gray-400 block">{isRtl ? "ترتیب پخش ربات:" : "Bot Play Order:"}</span>
+         <div className="grid grid-cols-2 gap-2">
+          <button 
+           type="button"
+           onClick={() => setLocalPlayMode("random")}
+           className={cn("py-1.5 rounded-lg text-xs font-bold transition-all", localPlayMode === "random" ? "bg-[#00e5ff]/20 text-[#00e5ff] border border-[#00e5ff]/35" : "bg-black/30 text-gray-400 border border-transparent")}
+          >
+           🎲 {isRtl ? "به صورت رندوم" : "Random Mix"}
+          </button>
+          <button 
+           type="button"
+           onClick={() => setLocalPlayMode("in-order")}
+           className={cn("py-1.5 rounded-lg text-xs font-bold transition-all", localPlayMode === "in-order" ? "bg-[#00e5ff]/20 text-[#00e5ff] border border-[#00e5ff]/35" : "bg-black/30 text-gray-400 border border-transparent")}
+          >
+           🔁 {isRtl ? "به ترتیب منطقی" : "In Order"}
+          </button>
+         </div>
+        </div>
+
+        <button 
+         type="button"
+         onClick={() => {
+          let queue = selectedLocalFiles.map((file) => ({
+           name: file.name.replace(/\.[^/.]+$/, ""),
+           url: URL.createObjectURL(file)
+          }));
+          if (localPlayMode === "random") {
+           queue = queue.sort(() => Math.random() - 0.5);
+          }
+          toggleMusicBot(true);
+          setTimeout(() => {
+           controlMusicBot("update-queue", {
+            queue,
+            queueIndex: 0,
+            trackUrl: queue[0].url,
+            trackName: queue[0].name,
+            category: isRtl ? "پوشه شخصی" : "Personal Folder",
+            isPlaying: true
+           });
+           toast.success(isRtl ? "ربات همراه با پوشه شما آنلاین شد!" : "Loxx bot online with your local player!");
+           setShowBotSetupModal(false);
+          }, 500);
+         }}
+         className="w-full mt-4 py-2.5 rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500 text-black font-black uppercase text-xs hover:brightness-110 active:scale-95 transition-all shadow-[0_0_15px_rgba(0,191,255,0.3)] text-center block font-sans"
+        >
+         {isRtl ? "تایید و فعالسازی ربات" : "Deploy Live Music Bot"}
+        </button>
+       </div>
+      )}
+     </div>
+    )}
+
+    {/* Step 2: Select Genre (Irani vs Kharegi) */}
+    {setupStep === "loxx_genre" && (
+     <div className="space-y-4 font-sans">
+      <p className="text-xs font-bold text-gray-400">
+       {isRtl ? "مرحله دوم: سبک موسیقی مورد نظر خود را انتخاب کنید" : "Step 2: Choose your curated style category from Loxx"}
+      </p>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+       <div 
+        onClick={() => {
+         setSelectedGenre("irani");
+         setSetupStep("loxx_category");
+        }}
+        className="group relative cursor-pointer border border-[#00e5ff]/20 bg-[#00e5ff]/5 hover:bg-[#00e5ff]/15 hover:border-[#00e5ff]/40 rounded-2xl p-6 transition-all duration-300 flex flex-col items-center justify-center text-center space-y-2 min-h-36 shadow-lg hover:shadow-cyan-500/10"
+       >
+        <div className="text-4xl group-hover:scale-110 transition-transform mb-1">🇮🇷</div>
+        <h4 className="text-sm font-black text-white">{isRtl ? "گلچین موسیقی ایرانی" : "Iranian Music Archive"}</h4>
+        <p className="text-[10px] text-gray-400 leading-relaxed font-bold">
+         {isRtl ? "پاپ وطنی و سنتی‌های اصیل کشورمان" : "Persianpop, traditional and nostalgia Iranian albums."}
+        </p>
+       </div>
+
+       <div 
+        onClick={() => {
+         setSelectedGenre("kharegi");
+         setSetupStep("loxx_category");
+        }}
+        className="group relative cursor-pointer border border-pink-500/20 bg-pink-500/5 hover:bg-pink-500/15 hover:border-pink-500/40 rounded-2xl p-6 transition-all duration-300 flex flex-col items-center justify-center text-center space-y-2 min-h-36 shadow-lg hover:shadow-pink-500/10"
+       >
+        <div className="text-4xl group-hover:scale-110 transition-transform mb-1">🌍</div>
+        <h4 className="text-sm font-black text-white">{isRtl ? "آرشیو موزیک‌های خارجی" : "Foreign Pop & Club"}</h4>
+        <p className="text-[10px] text-gray-400 leading-relaxed font-bold">
+         {isRtl ? "سینث‌ویو، کلاب، رپ خارجی و بیت‌های الکترونیک لوفای" : "Synthwave, techno, hip-hop, and dynamic rock."}
+        </p>
+       </div>
+      </div>
+
+      <div className="flex justify-start">
+       <button 
+        type="button"
+        onClick={() => setSetupStep("source")}
+        className="text-xs font-bold text-gray-500 hover:text-white flex items-center gap-1 py-1 px-3 hover:bg-white/5 rounded-lg transition-all"
+       >
+        {isRtl ? "← بازگشت به منبع اصلی" : "← Back"}
+       </button>
+      </div>
+     </div>
+    )}
+
+    {/* Step 3: Browse categories inside Irani/Kharegi */}
+    {setupStep === "loxx_category" && selectedGenre && (
+     <div className="space-y-4 font-sans text-right" dir={isRtl ? "rtl" : "ltr"}>
+      <div className="flex items-center justify-between">
+       <p className="text-xs font-bold text-gray-400">
+        {isRtl ? `پوشه‌های موجود در آرشیو ${selectedGenre === "irani" ? "ایرانی" : "خارجی"}` : `Subcategories under ${selectedGenre}`}
+       </p>
+       <button 
+        type="button"
+        onClick={() => setSetupStep("loxx_genre")}
+        className="text-xs font-bold text-[#00e5ff] hover:underline"
+       >
+        {isRtl ? "تغییر سبک کلی" : "Change genre selection"}
+       </button>
+      </div>
+
+      {loxxLibrary?.[selectedGenre] ? (
+       <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+         {loxxLibrary[selectedGenre].subfolders?.map((cat: any, i: number) => {
+          const tracksCount = cat.tracks?.length || 0;
+          const isSelected = selectedCategoryData?.name === cat.name;
+          return (
+           <div 
+            key={i} 
+            className={cn(
+             "group cursor-pointer bg-black/45 border rounded-2xl overflow-hidden transition-all duration-300 relative select-none flex flex-col shadow-md h-32 justify-end",
+             isSelected 
+              ? "border-[#00e5ff] shadow-[0_0_15px_rgba(0,229,255,0.15)] ring-1 ring-[#00e5ff]/20 bg-[#00e5ff]/5" 
+              : "border-white/5 hover:border-white/20 hover:bg-black/60"
+            )}
+            onClick={() => setSelectedCategoryData(cat)}
+           >
+            <div className="absolute inset-0 bg-black/50 overflow-hidden">
+             {cat.bannerUrl ? (
+              <SmartImage 
+               src={cat.bannerUrl} 
+               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 opacity-25 group-hover:opacity-45" 
+               alt={cat.name} 
+              />
+             ) : (
+              <div className="absolute inset-0 bg-gradient-to-tr from-cyan-950/20 to-black/80" />
+             )}
+            </div>
+            <div className="relative z-10 p-3 flex flex-col items-start text-left w-full justify-end font-sans">
+             <span className="text-xs font-black text-white uppercase tracking-wider drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)] font-sans">
+              📁 {cat.name}
+             </span>
+             <span className="text-[8px] font-bold bg-[#00e5ff]/10 text-[#00e5ff] px-1.5 py-0.5 rounded border border-[#00e5ff]/20 mt-1 font-mono leading-none">
+              {tracksCount} Tracks
+             </span>
+            </div>
+           </div>
+          );
+         })}
+        </div>
+
+        {/* Tracks lists display */}
+        {selectedCategoryData && (
+         <div className="bg-black/60 p-4 rounded-2xl border border-[#00e5ff]/25 space-y-4 animate-enter mt-4">
+          <div className="flex justify-between items-center border-b border-white/5 pb-2">
+           <div className="flex flex-col text-left font-sans">
+            <span className="text-[10px] font-bold text-gray-500 uppercase">Selected directory</span>
+            <span className="text-sm font-black text-white uppercase">{selectedCategoryData.name}</span>
+           </div>
+           <button 
+            type="button"
+            onClick={() => playLoxxCategory(selectedCategoryData)}
+            className="py-1.5 px-3.5 rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500 text-black font-black uppercase text-[10px] hover:scale-105 active:scale-95 transition-all shadow-[0_0_12px_#00e5ff]"
+           >
+            ⚡ {isRtl ? "پخش پوشه کامل" : "Play Whole Folder"}
+           </button>
+          </div>
+
+          <div className="max-h-40 overflow-y-auto space-y-1.5 custom-scrollbar pr-1">
+           {selectedCategoryData.tracks && selectedCategoryData.tracks.length > 0 ? (
+            selectedCategoryData.tracks.map((track: any, idx: number) => (
+             <div 
+              key={idx} 
+              className="flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/5 group hover:border-[#00e5ff]/30 hover:bg-[#00e5ff]/5 transition-colors"
+             >
+              <div className="flex items-center gap-2.5">
+               <span className="text-gray-500 font-mono text-[9px] w-4 shrink-0 group-hover:text-[#00e5ff] transition-colors">{idx + 1}</span>
+               <span className="text-xs font-bold text-white truncate max-w-[190px] font-sans">{track.title}</span>
+              </div>
+              <button 
+               type="button"
+               onClick={() => {
+                const queue = selectedCategoryData.tracks.map((t: any) => ({
+                 name: t.title,
+                 url: t.url
+                }));
+                toggleMusicBot(true);
+                setTimeout(() => {
+                 controlMusicBot("update-queue", {
+                  queue,
+                  queueIndex: idx,
+                  trackUrl: track.url,
+                  trackName: track.title,
+                  category: selectedCategoryData.name,
+                  isPlaying: true
+                 });
+                 toast.success(isRtl ? `در حال پخش آهنگ: ${track.title}` : `Now playing: ${track.title}`);
+                 setShowBotSetupModal(false);
+                }, 500);
+               }}
+               className="p-1 px-2.5 rounded-lg bg-white/5 text-[9px] font-black uppercase text-gray-300 group-hover:bg-[#00e5ff] group-hover:text-black transition-all font-sans"
+              >
+               {isRtl ? "پخش" : "Play"}
+              </button>
+             </div>
+            ))
+           ) : (
+            <p className="text-center py-4 text-[9px] text-gray-500 font-sans">{isRtl ? "آهنگی یافت نشد" : "No audios found"}</p>
+           )}
+          </div>
+         </div>
+        )}
+       </div>
+      ) : (
+       <div className="text-center py-10 opacity-60 flex flex-col items-center justify-center space-y-2">
+        <div className="animate-spin text-2xl font-sans">⏳</div>
+        <p className="text-xs font-bold font-sans">{isRtl ? "در حال بازیابی کتابخانه موسیقی لوکس..." : "Loading Loxx audio database..."}</p>
+       </div>
+      )}
+
+      <div className="flex justify-start font-sans">
+       <button 
+        type="button"
+        onClick={() => {
+         setSelectedCategoryData(null);
+         setSetupStep("loxx_genre");
+        }}
+        className="text-xs font-bold text-gray-500 hover:text-white flex items-center gap-1 py-1 px-3 hover:bg-white/5 rounded-lg transition-all"
+       >
+        {isRtl ? "← بازگشت به عقب" : "← Back"}
+       </button>
+      </div>
+     </div>
+    )}
+   </div>
+  </Modal>
+ )}
 
  {activeProfileUserId && (
  <Modal title={isRtl ? "پروفایل بازیکن" : "Player Profile"} onClose={() => setActiveProfileUserId(null)}>
@@ -1635,8 +2322,8 @@ export const LobbyRoomPage = () => {
                   💿
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[11px] font-black text-white truncate">{musicBotState.currentTrack ? musicBotState.currentTrack.title : (isRtl ? "آهنگی انتخاب نشده است" : "Playlist empty")}</p>
-                  <p className="text-[9px] text-gray-500 leading-none mt-1 font-bold truncate">{musicBotState.currentTrack ? musicBotState.currentTrack.category : (isRtl ? "بدون دسته‌بندی" : "No active category")}</p>
+                  <p className="text-[11px] font-black text-white truncate">{musicBotState?.currentTrackName ? musicBotState.currentTrackName : (isRtl ? "آهنگی انتخاب نشده است" : "Playlist empty")}</p>
+                  <p className="text-[9px] text-gray-500 leading-none mt-1 font-bold truncate">{musicBotState?.currentCategory ? musicBotState.currentCategory : (isRtl ? "بدون دسته‌بندی" : "No active category")}</p>
                 </div>
                 {/* Skip / Next Controls for Host */}
                 {isHost && (

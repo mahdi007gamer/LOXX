@@ -13,7 +13,11 @@ if (!fs.existsSync(musicBotDir)) {
 
 // Seed helper
 function seedFolders() {
-  const dirs = ["chill", "gaming", "lofi", "electronic"];
+  const dirs = [
+    "chill", "gaming", "lofi", "electronic",
+    "irani/pop", "irani/traditional",
+    "kharegi/synthwave", "kharegi/lofibeats"
+  ];
   dirs.forEach(d => {
     const p = path.join(musicBotDir, d);
     if (!fs.existsSync(p)) {
@@ -22,18 +26,29 @@ function seedFolders() {
   });
 
   const srcDummy = path.join(process.cwd(), "public", "Rest_in_Peace.mp3");
-  if (fs.existsSync(srcDummy)) {
-    dirs.forEach(d => {
-      const destFile = path.join(musicBotDir, d, "Ambient Track.mp3");
-      if (!fs.existsSync(destFile)) {
-        try {
-          fs.copyFileSync(srcDummy, destFile);
-        } catch (e) {
-          console.error(`[MusicBot Seed] Failed to copy dummy track to ${d}:`, e);
-        }
+  const srcBanner = path.join(process.cwd(), "public", "logo.png");
+
+  dirs.forEach(d => {
+    const p = path.join(musicBotDir, d);
+    const destFile = path.join(p, d.includes("/") ? "Loxx Beat.mp3" : "Ambient Track.mp3");
+    if (fs.existsSync(srcDummy) && !fs.existsSync(destFile)) {
+      try {
+        fs.copyFileSync(srcDummy, destFile);
+      } catch (e) {
+        console.error(`[MusicBot Seed] Failed to copy dummy track to ${d}:`, e);
       }
-    });
-  }
+    }
+
+    // Copy a banner.png for category visualization
+    const destBanner = path.join(p, "banner.png");
+    if (fs.existsSync(srcBanner) && !fs.existsSync(destBanner)) {
+      try {
+        fs.copyFileSync(srcBanner, destBanner);
+      } catch (e) {
+        console.error(`[MusicBot Seed] Failed to copy banner to ${d}:`, e);
+      }
+    }
+  });
 }
 seedFolders();
 
@@ -83,6 +98,127 @@ const uploadTemp = multer({
 });
 
 const router = Router();
+
+// Helper to recursively scan folders for music bot structure with banner images
+function getFolderTree(dirPath: string): any {
+  if (!fs.existsSync(dirPath)) return null;
+  const entries = fs.readdirSync(dirPath, { withFileTypes: true });
+  const subfolders: any[] = [];
+  const tracks: any[] = [];
+  let bannerUrl = "";
+
+  const bannerPath = path.join(dirPath, "banner.png");
+  if (fs.existsSync(bannerPath)) {
+    const rel = path.relative(path.join(process.cwd(), "public"), bannerPath);
+    bannerUrl = `/public/${rel.replace(/\\/g, "/")}`;
+  } else {
+    bannerUrl = "/public/logo.png";
+  }
+
+  for (const entry of entries) {
+    const fullPath = path.join(dirPath, entry.name);
+    if (entry.isDirectory()) {
+      const sub = getFolderTree(fullPath);
+      if (sub) {
+        subfolders.push({
+          name: entry.name,
+          ...sub
+        });
+      }
+    } else if (entry.isFile()) {
+      if (/\.(mp3|wav|ogg|m4a)$/i.test(entry.name)) {
+        if (entry.name === "banner.png") continue;
+        const fileRelPath = path.relative(path.join(process.cwd(), "public"), fullPath);
+        tracks.push({
+          id: entry.name,
+          title: entry.name.replace(/\.[^/.]+$/, ""),
+          url: `/public/${fileRelPath.replace(/\\/g, "/")}`,
+          category: path.basename(dirPath)
+        });
+      }
+    }
+  }
+
+  return {
+    bannerUrl,
+    tracks,
+    subfolders: subfolders.length > 0 ? subfolders : undefined
+  };
+}
+
+// Get all tracks flat recursively underneath a path
+function getAllTracksFlat(dirPath: string, parentCategoryName: string = ""): any[] {
+  let list: any[] = [];
+  if (!fs.existsSync(dirPath)) return list;
+  const entries = fs.readdirSync(dirPath, { withFileTypes: true });
+  for (const entry of entries) {
+    const fullPath = path.join(dirPath, entry.name);
+    if (entry.isDirectory()) {
+      list = list.concat(getAllTracksFlat(fullPath, entry.name));
+    } else if (entry.isFile()) {
+      if (/\.(mp3|wav|ogg|m4a)$/i.test(entry.name)) {
+        if (entry.name === "banner.png") continue;
+        const fileRelPath = path.relative(path.join(process.cwd(), "public"), fullPath);
+        list.push({
+          id: entry.name,
+          title: entry.name.replace(/\.[^/.]+$/, ""),
+          url: `/public/${fileRelPath.replace(/\\/g, "/")}`,
+          category: parentCategoryName || path.basename(dirPath)
+        });
+      }
+    }
+  }
+  return list;
+}
+
+// GET TRACKS GROUPED BY CATEGORIES
+router.get("/tracks", authenticate, async (req: Request, res: Response) => {
+  try {
+    const entries = fs.readdirSync(musicBotDir, { withFileTypes: true });
+    const result: { [key: string]: any[] } = {};
+
+    for (const entry of entries) {
+      if (entry.isDirectory() && !entry.name.startsWith("temp-")) {
+        if (entry.name === "irani" || entry.name === "kharegi") {
+          const subEntries = fs.readdirSync(path.join(musicBotDir, entry.name), { withFileTypes: true });
+          for (const sub of subEntries) {
+            if (sub.isDirectory()) {
+              const subTracks = getAllTracksFlat(path.join(musicBotDir, entry.name, sub.name), sub.name);
+              if (subTracks.length > 0) {
+                result[sub.name] = subTracks;
+              }
+            }
+          }
+        } else {
+          const subTracks = getAllTracksFlat(path.join(musicBotDir, entry.name), entry.name);
+          if (subTracks.length > 0) {
+            result[entry.name] = subTracks;
+          }
+        }
+      }
+    }
+    res.json({ status: "success", data: result });
+  } catch (error: any) {
+    res.status(500).json({ status: "error", message: error.message });
+  }
+});
+
+// GET SEEDED LIBRARIAN CATEGORIES (IRANI & KHAREGI DETAILED TREE)
+router.get("/loxx-library", authenticate, async (req: Request, res: Response) => {
+  try {
+    const iraniTree = getFolderTree(path.join(musicBotDir, "irani"));
+    const kharegiTree = getFolderTree(path.join(musicBotDir, "kharegi"));
+    res.json({
+      status: "success",
+      data: {
+        irani: iraniTree || { bannerUrl: "/public/logo.png", tracks: [], subfolders: [] },
+        kharegi: kharegiTree || { bannerUrl: "/public/logo.png", tracks: [], subfolders: [] }
+      }
+    });
+  } catch (error: any) {
+    res.status(500).json({ status: "error", message: error.message });
+  }
+});
 
 // LIST ALL CATEGORIES & TRACKS
 router.get("/categories", authenticate, async (req: Request, res: Response) => {
