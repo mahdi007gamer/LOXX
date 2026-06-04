@@ -1094,7 +1094,8 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
  if (!prev) return null;
  return {
  ...prev,
- players: prev.players.filter(p => p.userId !== data.userId)
+ players: prev.players.filter(p => p.userId !== data.userId),
+ talkingUsers: prev.talkingUsers ? prev.talkingUsers.filter(id => id !== data.userId) : []
  };
  });
  playSFX('leave');

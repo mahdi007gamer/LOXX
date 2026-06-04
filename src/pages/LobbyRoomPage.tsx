@@ -44,6 +44,9 @@ import {
  Monitor,
  AlertTriangle,
  Minus,
+ Music,
+ SkipBack,
+ SkipForward
 } from "lucide-react";
 import { GlowButton } from "../components/ui/GlowButton";
 import { useFriends } from "../context/FriendsContext";
@@ -1472,7 +1475,7 @@ export const LobbyRoomPage = () => {
        right: isRtl ? (windowDims.width - 24 - 360) : 24
       }}
       className={cn(
-       "fixed bottom-24 z-[70] w-[360px] bg-gradient-to-br from-[#101b2a]/80 to-[#02050b]/80 backdrop-blur-[24px] border border-[#00e5ff]/30 rounded-[32px] shadow-[0_30px_60px_rgba(0,0,0,0.8),0_0_50px_rgba(0,229,255,0.15),inset_0_1px_15px_rgba(255,255,255,0.08)] p-5 text-white select-none hover:border-[#00e5ff]/50 transition-colors duration-500",
+       "fixed bottom-24 z-[70] w-[360px] bg-gradient-to-br from-[#101b2a]/30 to-[#02050b]/40 backdrop-blur-[40px] border-[1.5px] border-[#00e5ff]/20 rounded-[32px] shadow-[0_30px_60px_rgba(0,0,0,0.8),0_0_50px_rgba(0,229,255,0.1),inset_0_1px_25px_rgba(255,255,255,0.05),inset_0_0_15px_rgba(0,229,255,0.1)] p-5 text-white select-none hover:border-[#00e5ff]/40 transition-[border-color] duration-500",
        isRtl ? "left-6" : "right-6"
       )}
      >
@@ -1521,14 +1524,14 @@ export const LobbyRoomPage = () => {
 
        <div className="flex flex-col text-right mr-1">
         <span className="text-[17px] font-black tracking-wider text-white select-none whitespace-nowrap drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]">
-         {isRtl ? "ربات موزیک لودس" : "Loxx Music Bot"}
+         {isRtl ? "ربات موزیک لوکس" : "Loxx Music Bot"}
         </span>
         <span className="text-[10px] text-[#00e5ff] font-mono leading-none select-none uppercase tracking-widest mt-1.5 font-bold drop-shadow-[0_0_5px_rgba(0,229,255,0.6)]">
          LIVE AUDIO CHUNK STREAM
         </span>
        </div>
        <div className="text-[#00e5ff] ml-2 shrink-0 drop-shadow-[0_0_12px_rgba(0,229,255,0.8)] filter">
-        <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="currentColor" stroke="none" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+        <Music size={30} strokeWidth={2} />
        </div>
       </div>
 
@@ -1622,7 +1625,7 @@ export const LobbyRoomPage = () => {
       </div>
 
       {/* Player controls */}
-      <div className="flex items-center justify-center gap-6 mb-8 select-none font-sans px-2">
+      <div className="flex items-center justify-center gap-6 mb-8 select-none font-sans px-2" dir="ltr">
        <button 
         onClick={() => {
          if (isHost && musicBotState?.queue && musicBotState.queue.length > 0) {
@@ -1644,7 +1647,7 @@ export const LobbyRoomPage = () => {
         )}
         disabled={!isHost || !musicBotState?.queue || musicBotState.queue.length <= 1}
        >
-        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="currentColor" className="drop-shadow-[0_0_5px_rgba(0,229,255,0.5)]"><path d="M11 17l-5-5 5-5v10z"></path><path d="M18 17l-5-5 5-5v10z"></path></svg>
+        <SkipBack size={26} fill="currentColor" strokeWidth={1.5} className="drop-shadow-[0_0_5px_rgba(0,229,255,0.5)]" />
        </button>
 
        <button 
@@ -1693,7 +1696,7 @@ export const LobbyRoomPage = () => {
         )}
         disabled={!isHost || !musicBotState?.queue || musicBotState.queue.length <= 1}
        >
-        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="currentColor" className="drop-shadow-[0_0_5px_rgba(0,229,255,0.5)]"><path d="M13 7l5 5-5 5V7z"></path><path d="M6 7l5 5-5 5V7z"></path></svg>
+        <SkipForward size={26} fill="currentColor" strokeWidth={1.5} className="drop-shadow-[0_0_5px_rgba(0,229,255,0.5)]" />
        </button>
       </div>
 

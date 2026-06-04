@@ -36,6 +36,8 @@ export function useMusicBotTransmitter({
   const audioElRef = useRef<HTMLAudioElement | null>(null);
   const sourceNodeRef = useRef<any>(null);
   const destNodeRef = useRef<any>(null);
+  const processorNodeRef = useRef<any>(null);
+  const silentGainRef = useRef<any>(null);
   const [botStream, setBotStream] = useState<MediaStream | null>(null);
 
   useEffect(() => {
@@ -46,6 +48,29 @@ export function useMusicBotTransmitter({
     }
 
     const trackUrl = botState.currentTrackUrl;
+
+    // Low-level downsampling and resampling to 16kHz
+    const downsampleAndToInt16 = (buffer: Float32Array, inputSR: number, outputSR: number) => {
+      const ratio = inputSR / outputSR;
+      const newLength = Math.floor(buffer.length / ratio);
+      const result = new Int16Array(newLength);
+      
+      const currentDucking = isSomeoneElseSpeaking ? 0.3 : 1.0;
+      const gainModifier = botVolume * currentDucking;
+
+      for (let i = 0; i < newLength; i++) {
+        const start = Math.floor(i * ratio);
+        const end = Math.max(start + 1, Math.floor((i + 1) * ratio));
+        let s = 0, count = 0;
+        for (let j = start; j < end; j++) {
+          if (j < buffer.length) { s += buffer[j]; count++; }
+        }
+        const sample = count > 0 ? (s / count) * gainModifier : 0;
+        const capped = Math.max(-1, Math.min(1, sample));
+        result[i] = capped < 0 ? capped * 0x8000 : capped * 0x7FFF;
+      }
+      return result.buffer;
+    };
 
     try {
       const audioCtx = getSharedAudioContext();
@@ -95,6 +120,29 @@ export function useMusicBotTransmitter({
       
       setBotStream(dest.stream);
 
+      // Create a script processor representing our sampling block for Fallback PCM
+      const processor = audioCtx.createScriptProcessor(1024, 1, 1);
+      processorNodeRef.current = processor;
+      source.connect(processor);
+
+      const silentGain = audioCtx.createGain();
+      silentGain.gain.value = 0;
+      silentGainRef.current = silentGain;
+      
+      processor.connect(silentGain);
+      silentGain.connect(audioCtx.destination);
+
+      processor.onaudioprocess = (event) => {
+        const inputData = event.inputBuffer.getChannelData(0);
+        const compressed = downsampleAndToInt16(inputData, event.inputBuffer.sampleRate, 16000);
+        
+        voiceSocket?.emit("voice.audio_chunk", {
+          roomId,
+          userId: `music-bot-${roomId}`,
+          chunk: compressed
+        });
+      };
+
       audioEl.play().catch(e => {
         console.warn("[MusicBot Transmitter] AutoPlay prevented track playback start:", e);
       });
@@ -116,6 +164,14 @@ export function useMusicBotTransmitter({
       if (sourceNodeRef.current) {
         try { sourceNodeRef.current.disconnect(); } catch (e) {}
         sourceNodeRef.current = null;
+      }
+      if (processorNodeRef.current) {
+        try { processorNodeRef.current.disconnect(); } catch (e) {}
+        processorNodeRef.current = null;
+      }
+      if (silentGainRef.current) {
+        try { silentGainRef.current.disconnect(); } catch (e) {}
+        silentGainRef.current = null;
       }
       if (destNodeRef.current) {
         try { destNodeRef.current.disconnect(); } catch (e) {}

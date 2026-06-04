@@ -461,6 +461,8 @@ export function setupWebSockets(io: Server) {
             bot.currentTrackUrl = bot.queue[activeIdx].url;
             bot.currentTrackName = bot.queue[activeIdx].name;
             bot.currentTrackCover = bot.queue[activeIdx].coverUrl || "";
+            bot.currentTime = 0;
+            bot.updatedAt = Date.now();
           }
 
           if (trackUrl) bot.currentTrackUrl = trackUrl;
