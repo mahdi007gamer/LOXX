@@ -928,4 +928,55 @@ router.delete("/db-track/:id", authenticate, authorizeAdmin, async (req: Request
   }
 });
 
+// GET /profile - Get Loxx Music Bot dynamic visual characteristics
+router.get("/profile", async (req: Request, res: Response) => {
+  try {
+    const defaultBotProfile = {
+      avatarUrl: "/public/logo.png",
+      bannerUrl: "/public/bg-hero.jpg",
+      miniProfileBg: "linear-gradient(to bottom, #001220, #001f3f, #0a0a0f)",
+      bio: "ربات هوشمند پخش موسیقی باکیفیت و زنده لابی‌های لوکس LOXX. دارای بالاترین عمق فرکانس پخش صوتی استریو."
+    };
+    const botProfilePath = path.join(musicBotDir, "profile.json");
+    if (!fs.existsSync(botProfilePath)) {
+      fs.writeFileSync(botProfilePath, JSON.stringify(defaultBotProfile, null, 2));
+      return res.json({ status: "success", data: defaultBotProfile });
+    }
+    const data = JSON.parse(fs.readFileSync(botProfilePath, "utf-8"));
+    res.json({ status: "success", data });
+  } catch (error: any) {
+    res.status(500).json({ status: "error", message: error.message });
+  }
+});
+
+// POST /profile - Update Loxx Music Bot characteristics (Admin Only)
+router.post("/profile", authenticate, authorizeAdmin, async (req: Request, res: Response) => {
+  try {
+    const { avatarUrl, bannerUrl, miniProfileBg, bio } = req.body;
+    const botProfilePath = path.join(musicBotDir, "profile.json");
+    const defaultBotProfile = {
+      avatarUrl: "/public/logo.png",
+      bannerUrl: "/public/bg-hero.jpg",
+      miniProfileBg: "linear-gradient(to bottom, #001220, #001f3f, #0a0a0f)",
+      bio: "ربات هوشمند پخش موسیقی باکیفیت و زنده لابی‌های لوکس LOXX. دارای بالاترین عمق فرکانس پخش صوتی استریو."
+    };
+    let current = { ...defaultBotProfile };
+    if (fs.existsSync(botProfilePath)) {
+      try {
+        current = JSON.parse(fs.readFileSync(botProfilePath, "utf-8"));
+      } catch (e) {}
+    }
+    const updated = {
+      avatarUrl: avatarUrl !== undefined ? avatarUrl : current.avatarUrl,
+      bannerUrl: bannerUrl !== undefined ? bannerUrl : current.bannerUrl,
+      miniProfileBg: miniProfileBg !== undefined ? miniProfileBg : current.miniProfileBg,
+      bio: bio !== undefined ? bio : current.bio
+    };
+    fs.writeFileSync(botProfilePath, JSON.stringify(updated, null, 2));
+    res.json({ status: "success", message: "پروفایل ربات موسیقی با موفقیت بروزرسانی شد", data: updated });
+  } catch (error: any) {
+    res.status(500).json({ status: "error", message: error.message });
+  }
+});
+
 export default router;

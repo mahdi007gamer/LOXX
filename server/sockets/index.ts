@@ -328,6 +328,7 @@ export function setupWebSockets(io: Server) {
         isPlaying: false,
         currentTrackName: "",
         currentTrackUrl: "",
+        currentTrackCover: "",
         currentCategory: "",
         queue: [],
         queueIndex: 0
@@ -354,6 +355,7 @@ export function setupWebSockets(io: Server) {
             isPlaying: false,
             currentTrackName: "",
             currentTrackUrl: "",
+            currentTrackCover: "",
             currentCategory: "",
             queue: [],
             queueIndex: 0
@@ -391,12 +393,14 @@ export function setupWebSockets(io: Server) {
       category?: string;
       trackUrl?: string;
       trackName?: string;
-      queue?: { name: string, url: string }[];
+      coverUrl?: string;
+      tracks?: any[];
+      queue?: { name: string, url: string, coverUrl?: string }[];
       queueIndex?: number;
       isPlaying?: boolean;
       currentTime?: number;
     }, ack?: any) => {
-      const { lobbyId, action, category, trackUrl, trackName, queue, queueIndex, isPlaying, currentTime } = data;
+      const { lobbyId, action, category, trackUrl, trackName, coverUrl, tracks, queue, queueIndex, isPlaying, currentTime } = data;
       try {
         const lobby = await prisma.lobby.findUnique({ where: { id: lobbyId } });
         if (!lobby || lobby.hostId !== userId) {
@@ -410,6 +414,7 @@ export function setupWebSockets(io: Server) {
             isPlaying: false,
             currentTrackName: "",
             currentTrackUrl: "",
+            currentTrackCover: "",
             currentCategory: "",
             queue: [],
             queueIndex: 0,
@@ -427,16 +432,34 @@ export function setupWebSockets(io: Server) {
           if (trackUrl) bot.currentTrackUrl = trackUrl;
           if (trackName) bot.currentTrackName = trackName;
           if (category) bot.currentCategory = category;
+          if (coverUrl !== undefined) bot.currentTrackCover = coverUrl;
         } else if (action === "pause") {
           bot.isPlaying = false;
         } else if (action === "seek") {
           // currentTime has been updated above
         } else if (action === "update-queue") {
-          if (queue !== undefined) bot.queue = queue;
+          let resolvedQueue = queue;
+          if (tracks && Array.isArray(tracks)) {
+            resolvedQueue = tracks.map((t: any) => ({
+              name: t.title || t.name,
+              url: t.url,
+              coverUrl: t.coverUrl || t.cover || ""
+            }));
+          }
+          if (resolvedQueue !== undefined) bot.queue = resolvedQueue;
           if (queueIndex !== undefined) bot.queueIndex = queueIndex;
+
+          const activeIdx = queueIndex !== undefined ? queueIndex : bot.queueIndex;
+          if (bot.queue && bot.queue[activeIdx]) {
+            bot.currentTrackUrl = bot.queue[activeIdx].url;
+            bot.currentTrackName = bot.queue[activeIdx].name;
+            bot.currentTrackCover = bot.queue[activeIdx].coverUrl || "";
+          }
+
           if (trackUrl) bot.currentTrackUrl = trackUrl;
           if (trackName) bot.currentTrackName = trackName;
           if (category) bot.currentCategory = category;
+          if (coverUrl !== undefined) bot.currentTrackCover = coverUrl;
           if (isPlaying !== undefined) bot.isPlaying = isPlaying;
         }
 

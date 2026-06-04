@@ -54,9 +54,10 @@ const getVoiceServerUrl = () => {
 export const voiceSocket = io(getVoiceServerUrl(), {
   path: "/socket.io",
   autoConnect: false,
-  transports: ["websocket", "polling"],
+  transports: ["polling", "websocket"],
   reconnectionDelay: 1000,
-  reconnectionDelayMax: 5000,
+  reconnectionDelayMax: 10000,
+  reconnectionAttempts: 10,
 });
 
 // Fallback voice socket connected directly to the main platform's downsampler room channel.

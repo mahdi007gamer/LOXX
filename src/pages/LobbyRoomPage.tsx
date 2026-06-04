@@ -424,6 +424,19 @@ export const LobbyRoomPage = () => {
  }
  }, [lobby, wasInLobby, id, navigate, joinError]);
 
+ const [botProfile, setBotProfile] = useState<any>(null);
+
+ useEffect(() => {
+  if (!musicBotState?.active) return;
+  fetch('/api/musicbot/profile', {
+    headers: {
+      "Authorization": `Bearer ${localStorage.getItem("loxx_token")}`
+    }
+  }).then(r => r.json()).then(data => {
+    if (data.status === "success") setBotProfile(data.data);
+  }).catch(() => {});
+ }, [musicBotState?.active]);
+
  const players = useMemo(() => {
  const list = lobby?.players?.map(p => ({
  id: p.userId,
@@ -462,15 +475,17 @@ export const LobbyRoomPage = () => {
    id: botId,
    name: "🎵 Loxx Music Bot",
    avatar: "🤖",
-   avatarUrl: "", // Displays neon badge
+   avatarUrl: botProfile?.avatarUrl || "", // Displays neon badge
    level: 99,
    membership: "VIP" as any,
    vipMetadata: { borderNeonColor: "#00e5ff" },
-   bannerUrl: "",
+   bannerUrl: botProfile?.bannerUrl || "",
+   bio: botProfile?.bio,
+   miniProfileBg: botProfile?.miniProfileBg,
    badges: [{ name: "Music Bot", image: "/badges/music_icon.png" }],
    rank: isRtl ? "رادیو دیسکی لابی" : "Lobby DJ System",
    isHost: false,
-   role: "ASSISTANT",
+   role: "BOT",
    isReady: true,
    hasMic: true,
    isMuted: peerVolumes[botId] === 0,
@@ -507,14 +522,6 @@ export const LobbyRoomPage = () => {
  const isHost = lobby?.hostId === user?.id;
 
   // Auto-open Loxx configuration modal on lobby join for host
-  const hasAutoOpenedBotSetup = useRef(false);
-  useEffect(() => {
-    if (lobby && isHost && !hasAutoOpenedBotSetup.current) {
-      setShowBotSetupModal(true);
-      hasAutoOpenedBotSetup.current = true;
-    }
-  }, [lobby?.id, isHost]);
-
   // Activate audio transmitter for Music Bot when active and you are the host
   const botId = `music-bot-${lobby?.id}`;
   const botVolumeLevel = peerVolumes[botId] !== undefined ? peerVolumes[botId] : 100;
@@ -1052,7 +1059,9 @@ export const LobbyRoomPage = () => {
  id: p.id,
  membership: p.membership || MembershipType.NONE,
  vipMetadata: p.vipMetadata,
- bannerUrl: p.bannerUrl || p.avatarUrl
+ bannerUrl: p.bannerUrl || p.avatarUrl,
+ bio: p.bio,
+ miniProfileBg: p.miniProfileBg
  }, p.id === user?.id);
  }
  }}
@@ -1281,7 +1290,11 @@ export const LobbyRoomPage = () => {
    )}
    <div className="flex items-center gap-3 w-full max-w-[70%] text-right">
     <div className="h-10 w-10 rounded-xl bg-[#00e5ff]/10 border border-[#00e5ff]/30 flex items-center justify-center shadow-[0_0_10px_rgba(0,229,255,0.2)] shrink-0 overflow-hidden relative font-sans">
-     <span className={cn("text-xl select-none", musicBotState?.isPlaying && "animate-spin")} style={{ animationDuration: "3s" }}>💿</span>
+     {musicBotState?.currentTrackCover ? (
+      <img src={musicBotState.currentTrackCover} className={cn("w-full h-full object-cover", musicBotState?.isPlaying && "animate-[spin_4s_linear_infinite] rounded-full")} />
+     ) : (
+      <span className={cn("text-xl select-none", musicBotState?.isPlaying && "animate-spin")} style={{ animationDuration: "3s" }}>💿</span>
+     )}
      {musicBotState?.active && (
       <span className="absolute bottom-0.5 right-0.5 w-2 h-2 bg-emerald-450 rounded-full border border-black" />
      )}
@@ -1392,9 +1405,13 @@ export const LobbyRoomPage = () => {
       onClick={() => setIsMusicPlayerExpanded(true)}
      >
       <div className="absolute inset-0 rounded-full bg-[#00e5ff]/5 animate-pulse" />
-      <span className={cn("text-3xl select-none", musicBotState?.isPlaying && "animate-spin")} style={{ animationDuration: "5s" }}>
-       💿
-      </span>
+      {musicBotState?.currentTrackCover ? (
+       <img src={musicBotState.currentTrackCover} className={cn("w-full h-full object-cover rounded-full", musicBotState?.isPlaying && "animate-[spin_6s_linear_infinite]")} />
+      ) : (
+       <span className={cn("text-3xl select-none", musicBotState?.isPlaying && "animate-[spin_5s_linear_infinite]")}>
+        💿
+       </span>
+      )}
       {/* Tiny playback active indicator */}
       {musicBotState?.isPlaying && (
        <div className="absolute -bottom-1 flex gap-0.5 justify-center">
@@ -1487,12 +1504,15 @@ export const LobbyRoomPage = () => {
       <div className="flex items-center gap-3 py-3 select-none">
        {/* Spinning Disk Vinyl with live visualizer inside */}
        <div className="relative h-12 w-12 rounded-full border-2 border-white/15 flex items-center justify-center shrink-0 shadow-lg select-none bg-black overflow-hidden group">
-        <span 
-         className={cn("text-3xl select-none", musicBotState?.isPlaying && "animate-spin")}
-         style={{ animationDuration: "6s" }}
-        >
-         💿
-        </span>
+        {musicBotState?.currentTrackCover ? (
+         <img src={musicBotState.currentTrackCover} className={cn("w-full h-full object-cover", musicBotState?.isPlaying && "animate-[spin_4s_linear_infinite]")} />
+        ) : (
+         <span 
+          className={cn("text-3xl select-none", musicBotState?.isPlaying && "animate-[spin_6s_linear_infinite]")}
+         >
+          💿
+         </span>
+        )}
         {musicBotState?.isPlaying && (
          <div className="absolute inset-0 rounded-full border border-dashed border-[#00e5ff]/40 animate-pulse" />
         )}
@@ -2535,8 +2555,12 @@ export const LobbyRoomPage = () => {
               </div>
 
               <div className="flex items-center gap-2.5 bg-black/40 p-2 rounded-lg">
-                <div className="w-8 h-8 rounded bg-gradient-to-tr from-cyan-500 to-emerald-500 flex items-center justify-center text-white font-bold text-xs shrink-0 shadow-lg animate-spin">
-                  💿
+                <div className="w-8 h-8 rounded bg-[#111] border border-white/5 flex items-center justify-center text-white font-bold text-xs shrink-0 shadow-lg overflow-hidden relative">
+                  {musicBotState?.currentTrackCover ? (
+                   <img src={musicBotState.currentTrackCover} className={cn("w-full h-full object-cover", musicBotState?.isPlaying && "animate-[spin_4s_linear_infinite] rounded-full")} />
+                  ) : (
+                   <span className={cn(musicBotState?.isPlaying && "animate-[spin_4s_linear_infinite]")}>💿</span>
+                  )}
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-[11px] font-black text-white truncate">{musicBotState?.currentTrackName ? musicBotState.currentTrackName : (isRtl ? "آهنگی انتخاب نشده است" : "Playlist empty")}</p>
@@ -2973,19 +2997,25 @@ function CompactLayoutPlayerCard({
  </div>
 
  {isSelected && (
- <div className="absolute inset-0 bg-[#0a0a0f]/95 backdrop-blur-md z-20 flex items-center px-4 border border-neon-blue/40 rounded-[16px] justify-between shadow-2xl" onClick={e => e.stopPropagation()}>
- <div className="flex items-center gap-3 w-[100px]">
- <span className="text-[10px] font-bold text-gray-400">VOL</span>
- <input 
- type="range" min="0" max="200" value={player.volume} 
- onChange={(e) => onVolumeChange(parseInt(e.target.value))}
- className="w-full h-1.5 bg-white/10 rounded-lg appearance-none accent-neon-blue"
- />
- </div>
- <div className="flex items-center gap-2 shrink-0">
- <QuickAction icon={<Users size={14} />} tooltip={isRtl ? "پروفایل" : "Profile"} onClick={() => onProfile(player.id)} />
- <QuickAction icon={<MessageSquare size={14} />} tooltip={isRtl ? "پیام" : "Message"} onClick={() => onDirectMessage(player.id)} />
- <QuickAction icon={player.isMuted ? <Mic size={14} /> : <MicOff size={14} />} tooltip={isRtl ? "صدا" : "Voice"} onClick={() => onMute(player.id)} />
+ <div className="absolute inset-0 bg-[#0a0a0f]/95 backdrop-blur-md z-20 flex flex-col justify-center px-4 border border-neon-blue/40 rounded-[16px] overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
+ {/* Banner Background */}
+ {player.bannerUrl && (
+   <div className="absolute inset-0 opacity-20 pointer-events-none" style={{ backgroundImage: `url(${player.bannerUrl})`, backgroundSize: "cover", backgroundPosition: "center" }} />
+ )}
+ <div className="relative z-10 flex items-center justify-between w-full">
+  <div className="flex items-center gap-2 w-[100px]">
+  <SmartImage src={player.avatarUrl || player.avatar} className="w-8 h-8 rounded-full border border-white/20 shrink-0" />
+  <input 
+  type="range" min="0" max="200" value={player.volume} 
+  onChange={(e) => onVolumeChange(parseInt(e.target.value))}
+  className="w-full h-1.5 bg-white/10 rounded-lg appearance-none accent-neon-blue"
+  />
+  </div>
+  <div className="flex items-center gap-2 shrink-0">
+  <QuickAction icon={<Users size={14} />} tooltip={isRtl ? "پروفایل" : "Profile"} onClick={() => onProfile(player.id)} />
+  <QuickAction icon={<MessageSquare size={14} />} tooltip={isRtl ? "پیام" : "Message"} onClick={() => onDirectMessage(player.id)} />
+  <QuickAction icon={player.isMuted ? <Mic size={14} /> : <MicOff size={14} />} tooltip={isRtl ? "صدا" : "Voice"} onClick={() => onMute(player.id)} />
+  </div>
  </div>
  </div>
  )}

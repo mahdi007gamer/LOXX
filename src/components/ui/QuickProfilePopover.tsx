@@ -43,6 +43,8 @@ export interface QuickProfileUser {
  role?: string;
  id?: string;
  bannerUrl?: string;
+ bio?: string;
+ miniProfileBg?: string;
  vipMetadata?: any;
  games?: any[];
  stats?: {
@@ -152,6 +154,8 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({
  mouseY.set(0);
  };
 
+ const isBot = user.role === "BOT" || initialUser.role === "BOT";
+
  const isAdminUnified =
  user.role === "ADMIN" ||
  user.senderName?.toLowerCase() === "admin" ||
@@ -188,6 +192,10 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({
 
  const getBackgroundStyle = () => {
  let style: any = {};
+ if (userData.miniProfileBg) {
+  style.background = userData.miniProfileBg;
+  return style;
+ }
  if (isAdminUnified) {
  style.background = "linear-gradient(to bottom, #110303, #1c0808, #0a0a0f)";
  style.border = "1px solid rgba(239, 68, 68, 0.45)";
@@ -700,8 +708,17 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({
  </div>
  </div>
 
+ {/* Bio / Description */}
+ {user.bio && (
+ <div className="py-4 px-2">
+  <p className="text-sm text-gray-300 font-sans leading-relaxed whitespace-pre-wrap text-center">
+   {user.bio}
+  </p>
+ </div>
+ )}
+
  {/* Accurate Statistics Grid */}
- {isAdminUnified ? (
+ {isBot ? null : isAdminUnified ? (
  <div className={cn("py-6 border-y border-white/5 space-y-4", isRtl ? "text-right" : "text-left")}>
  <div className="flex items-start gap-4 bg-red-950/20 border border-red-500/15 p-4 rounded-2xl relative overflow-hidden">
  <div className="absolute right-0 top-0 h-16 w-16 bg-red-500/5 rounded-full blur-xl pointer-events-none" />
@@ -1143,7 +1160,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({
 
  {/* Actions */}
  <div className="pt-4">
- {!isSelf ? (
+ {!isSelf && !isBot ? (
  isAdminUnified ? (
  <GlowButton
  variant="purple"

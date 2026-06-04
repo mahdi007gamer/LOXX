@@ -37,6 +37,7 @@
     "helmet": "^8.1.0",
     "ioredis": "^5.10.1",
     "isomorphic-dompurify": "^3.12.0",
+    "jsmediatags": "^3.9.7",
     "jsonwebtoken": "^9.0.3",
     "kavenegar": "^1.1.4",
     "lucide-react": "^0.546.0",

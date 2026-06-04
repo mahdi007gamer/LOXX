@@ -22,7 +22,8 @@ export function useMusicBotTransmitter({
   botState,
   voiceSocket,
   lobbySocket,
-  botVolume = 1.0
+  botVolume = 1.0,
+  isSomeoneElseSpeaking = false
 }: {
   roomId: string;
   isHost: boolean;
@@ -30,6 +31,7 @@ export function useMusicBotTransmitter({
   voiceSocket: any;
   lobbySocket: any;
   botVolume?: number;
+  isSomeoneElseSpeaking?: boolean;
 }) {
   const audioElRef = useRef<HTMLAudioElement | null>(null);
   const sourceNodeRef = useRef<any>(null);
@@ -57,6 +59,11 @@ export function useMusicBotTransmitter({
       const ratio = inputSR / outputSR;
       const newLength = Math.floor(buffer.length / ratio);
       const result = new Int16Array(newLength);
+      
+      // Calculate dynamic smart voice ducking modifier multiplier (defaults to 0.3 when someone else is talking to let voice conversations shine!)
+      const currentDucking = isSomeoneElseSpeaking ? 0.3 : 1.0;
+      const gainModifier = botVolume * currentDucking;
+
       for (let i = 0; i < newLength; i++) {
         const start = Math.floor(i * ratio);
         const end = Math.max(start + 1, Math.floor((i + 1) * ratio));
@@ -64,7 +71,7 @@ export function useMusicBotTransmitter({
         for (let j = start; j < end; j++) {
           if (j < buffer.length) { s += buffer[j]; count++; }
         }
-        const sample = count > 0 ? s / count : 0;
+        const sample = count > 0 ? (s / count) * gainModifier : 0;
         const capped = Math.max(-1, Math.min(1, sample));
         result[i] = capped < 0 ? capped * 0x8000 : capped * 0x7FFF;
       }
@@ -181,5 +188,5 @@ export function useMusicBotTransmitter({
         localGainRef.current = null;
       }
     }
-  }, [roomId, isHost, botState?.isPlaying, botState?.currentTrackUrl, botState?.queueIndex, botState?.active, voiceSocket, lobbySocket, botVolume]);
+  }, [roomId, isHost, botState?.isPlaying, botState?.currentTrackUrl, botState?.queueIndex, botState?.active, voiceSocket, lobbySocket, botVolume, isSomeoneElseSpeaking]);
 }

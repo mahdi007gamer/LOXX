@@ -11,6 +11,8 @@ import {
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { motion, AnimatePresence } from "motion/react";
+// @ts-ignore
+import jsmediatags from "jsmediatags/dist/jsmediatags.min.js";
 
 export const AdminMusicPage: React.FC = () => {
   const { isSidebarCollapsed, user } = useAuth();
@@ -117,7 +119,48 @@ export const AdminMusicPage: React.FC = () => {
       return;
     }
     setAudioFile(selectedFile);
-    
+
+    // Auto extract ID3 cover image using jsmediatags
+    try {
+      jsmediatags.read(selectedFile, {
+      onSuccess: function(tag: any) {
+        if (tag.tags && tag.tags.picture) {
+          const data = tag.tags.picture.data;
+          const format = tag.tags.picture.format;
+          let base64String = "";
+          for (let i = 0; i < data.length; i++) {
+            base64String += String.fromCharCode(data[i]);
+          }
+          const base64 = btoa(base64String);
+          const blob = fetch(`data:${format};base64,${base64}`).then(res => res.blob()).then(blob => {
+             const coverFile = new File([blob], "cover.jpg", { type: format });
+             setCustomCoverFile(coverFile);
+             
+             // Auto upload it to have a URL ready
+             setBannerLoading(true);
+             const formData = new FormData();
+             formData.append("file", coverFile);
+             api.post("/upload?target=cover", formData, {
+               headers: { "Content-Type": "multipart/form-data" }
+             }).then(res => {
+               setCustomCoverUrl(res.data.url);
+               toast.success("کاور از فایل صوتی استخراج شد!");
+             }).catch(() => {
+               toast.error("آپلود کاور استخراجی ناموفق بود");
+             }).finally(() => {
+               setBannerLoading(false);
+             });
+          });
+        }
+      },
+      onError: function(error: any) {
+        console.log("No ID3 tags found or error reading: ", error.type, error.info);
+      }
+    });
+    } catch (e) {
+      console.log("Error running jsmediatags", e);
+    }
+
     // Auto parsing artist and title from filename
     const cleanName = selectedFile.name.replace(/\.[^/.]+$/, "");
     const dashIdx = cleanName.indexOf("-");
