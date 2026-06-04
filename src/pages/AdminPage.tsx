@@ -19,10 +19,11 @@ import { cn } from "../lib/utils";
 import { useAuth } from "../context/AuthContext";
 import { getFileUrl } from "../lib/constants";
 import { AuthorizedImage } from "../components/ui/AuthorizedImage";
+import { AdminMusicTab } from "../components/admin/AdminMusicTab";
 
 export const AdminPage = () => {
  const { isSidebarCollapsed } = useAuth();
- const [activeTab, setActiveTab] = useState<"dashboard" | "users" | "games" | "payments" | "paymentsHistory" | "genres" | "badges" | "reports" | "gifs" | "streamers">("dashboard");
+ const [activeTab, setActiveTab] = useState<"dashboard" | "users" | "games" | "payments" | "paymentsHistory" | "genres" | "badges" | "reports" | "gifs" | "streamers" | "music">("dashboard");
  const [users, setUsers] = useState<any[]>([]);
  const [games, setGames] = useState<any[]>([]);
  const [payments, setPayments] = useState<any[]>([]);
@@ -324,6 +325,15 @@ export const AdminPage = () => {
  >
  گیف‌ها (گالری)
  {activeTab === "gifs" && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-neon-blue shadow-[0_0_15px_#00E5FF]" />}
+ </button>
+ <button
+ onClick={() => setActiveTab("music")}
+ className={`pb-4 px-6 text-sm font-black uppercase transition-all relative ${
+ activeTab === "music" ? "text-neon-pink" : "text-gray-500 hover:text-gray-300"
+ }`}
+ >
+ کتابخانه موسیقی 🎧
+ {activeTab === "music" && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-neon-pink shadow-[0_0_15px_#FF0080]" />}
  </button>
  </div>
 
@@ -1695,6 +1705,8 @@ export const AdminPage = () => {
  </div>
  </div>
  </div>
+ ) : activeTab === "music" ? (
+ <AdminMusicTab />
  ) : null}
 
  </div>

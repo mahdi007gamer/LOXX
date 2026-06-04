@@ -3,6 +3,7 @@ import fs from "fs";
 import path from "path";
 import multer from "multer";
 import { authenticate, authorizeAdmin, AuthenticatedRequest } from "../middleware/auth.middleware.ts";
+import prisma from "../utils/prisma.ts";
 
 const musicBotDir = path.join(process.cwd(), "public", "musicbot");
 
@@ -13,7 +14,7 @@ if (!fs.existsSync(musicBotDir)) {
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const { category } = req.params;
+    const category = req.params.category || "dynamic";
     const dest = path.join(musicBotDir, category);
     if (!fs.existsSync(dest)) {
       fs.mkdirSync(dest, { recursive: true });
@@ -130,48 +131,150 @@ function getAllTracksFlat(dirPath: string, parentCategoryName: string = ""): any
   return list;
 }
 
-// GET TRACKS GROUPED BY CATEGORIES
+// GET TRACKS GROUPED BY CATEGORIES (Fully DB-driven)
 router.get("/tracks", authenticate, async (req: Request, res: Response) => {
   try {
-    const entries = fs.readdirSync(musicBotDir, { withFileTypes: true });
-    const result: { [key: string]: any[] } = {};
-
-    for (const entry of entries) {
-      if (entry.isDirectory() && !entry.name.startsWith("temp-")) {
-        if (entry.name === "irani" || entry.name === "kharegi") {
-          const subEntries = fs.readdirSync(path.join(musicBotDir, entry.name), { withFileTypes: true });
-          for (const sub of subEntries) {
-            if (sub.isDirectory()) {
-              const subTracks = getAllTracksFlat(path.join(musicBotDir, entry.name, sub.name), sub.name);
-              if (subTracks.length > 0) {
-                result[sub.name] = subTracks;
-              }
-            }
-          }
-        } else {
-          const subTracks = getAllTracksFlat(path.join(musicBotDir, entry.name), entry.name);
-          if (subTracks.length > 0) {
-            result[entry.name] = subTracks;
+    const dbPlaylists = await prisma.playlist.findMany({
+      include: {
+        tracks: {
+          include: {
+            artists: true
           }
         }
+      },
+      orderBy: { name: "asc" }
+    });
+
+    const result: { [key: string]: any[] } = {};
+
+    dbPlaylists.forEach(playlist => {
+      const formattedTracks = playlist.tracks.map(t => {
+        const artistNames = t.artists.map(a => a.name).join(" & ");
+        return {
+          id: t.id,
+          title: artistNames ? `${t.title} - ${artistNames}` : t.title,
+          url: t.url,
+          category: playlist.name
+        };
+      });
+
+      if (formattedTracks.length > 0) {
+        result[playlist.name] = formattedTracks;
       }
+    });
+
+    // Also include tracks that are NOT on any playlist as a general "تک آهنگ‌ها" category
+    const unlistedTracks = await prisma.track.findMany({
+      where: {
+        playlists: {
+          none: {}
+        }
+      },
+      include: {
+        artists: true
+      }
+    });
+
+    if (unlistedTracks.length > 0) {
+      const formattedUnlisted = unlistedTracks.map(t => {
+        const artistNames = t.artists.map(a => a.name).join(" & ");
+        return {
+          id: t.id,
+          title: artistNames ? `${t.title} - ${artistNames}` : t.title,
+          url: t.url,
+          category: "تک آهنگ‌ها"
+        };
+      });
+      result["تک آهنگ‌ها"] = formattedUnlisted;
     }
+
     res.json({ status: "success", data: result });
   } catch (error: any) {
     res.status(500).json({ status: "error", message: error.message });
   }
 });
 
-// GET SEEDED LIBRARIAN CATEGORIES (IRANI & KHAREGI DETAILED TREE)
+// GET SEEDED LIBRARIAN CATEGORIES (Fully DB-playlists driven)
 router.get("/loxx-library", authenticate, async (req: Request, res: Response) => {
   try {
-    const iraniTree = getFolderTree(path.join(musicBotDir, "irani"));
-    const kharegiTree = getFolderTree(path.join(musicBotDir, "kharegi"));
+    // Fetch dynamic database playlists with tracks & artists
+    const dbPlaylists = await prisma.playlist.findMany({
+      include: {
+        tracks: {
+          include: {
+            artists: true
+          }
+        }
+      },
+      orderBy: { name: "asc" }
+    });
+
+    // Prepare unified subfolders structure from database playlists
+    const subfolders = dbPlaylists.map(playlist => {
+      const formattedTracks = playlist.tracks.map(t => {
+        const artistNames = t.artists.map(a => a.name).join(" & ");
+        return {
+          id: t.id,
+          title: artistNames ? `${t.title} - ${artistNames}` : t.title,
+          url: t.url,
+          category: playlist.name
+        };
+      });
+
+      return {
+        name: playlist.name,
+        bannerUrl: playlist.bannerUrl || "/public/logo.png",
+        tracks: formattedTracks
+      };
+    });
+
+    // Also include unlisted tracks as a pseudo category so they don't get lost
+    const unlistedTracks = await prisma.track.findMany({
+      where: {
+        playlists: {
+          none: {}
+        }
+      },
+      include: {
+        artists: true
+      }
+    });
+
+    if (unlistedTracks.length > 0) {
+      const formattedUnlisted = unlistedTracks.map(t => {
+        const artistNames = t.artists.map(a => a.name).join(" & ");
+        return {
+          id: t.id,
+          title: artistNames ? `${t.title} - ${artistNames}` : t.title,
+          url: t.url,
+          category: "تک آهنگ‌ها"
+        };
+      });
+
+      subfolders.push({
+        name: "تک آهنگ‌ها",
+        bannerUrl: "/public/logo.png",
+        tracks: formattedUnlisted
+      });
+    }
+
+    // For backward compatibility, in case frontend still expects { irani, kharegi } container:
+    // We will return a root structure with both keys populated with the full DB-driven playlists library!
+    // This maintains immediate fallback while fully switching to DB source!
     res.json({
       status: "success",
       data: {
-        irani: iraniTree || { bannerUrl: "/public/logo.png", tracks: [], subfolders: [] },
-        kharegi: kharegiTree || { bannerUrl: "/public/logo.png", tracks: [], subfolders: [] }
+        irani: {
+          bannerUrl: "/public/logo.png",
+          tracks: [],
+          subfolders: subfolders
+        },
+        kharegi: {
+          bannerUrl: "/public/logo.png",
+          tracks: [],
+          subfolders: subfolders
+        },
+        subfolders
       }
     });
   } catch (error: any) {
@@ -362,6 +465,301 @@ router.get("/lobby-temp-list/:lobbyId", authenticate, async (req: Request, res: 
       }));
 
     res.json({ status: "success", data: tracks });
+  } catch (error: any) {
+    res.status(500).json({ status: "error", message: error.message });
+  }
+});
+
+// --- ADMIN DYNAMIC MUSIC DATABASE API ENDPOINTS ---
+
+// 1. GET ALL ARTISTS
+router.get("/artists", authenticate, async (req: Request, res: Response) => {
+  try {
+    const artists = await prisma.artist.findMany({
+      include: {
+        _count: {
+          select: { tracks: true }
+        }
+      },
+      orderBy: { name: "asc" }
+    });
+    res.json({ status: "success", data: artists });
+  } catch (error: any) {
+    res.status(500).json({ status: "error", message: error.message });
+  }
+});
+
+// 2. CREATE A NEW ARTIST
+router.post("/artist", authenticate, authorizeAdmin, async (req: Request, res: Response) => {
+  try {
+    const { name, avatarUrl, bio } = req.body;
+    if (!name || name.trim() === "") {
+      return res.status(400).json({ status: "error", message: "نام خواننده الزامی است" });
+    }
+
+    const trimmed = name.trim();
+    let artist = await prisma.artist.findFirst({
+      where: { name: trimmed }
+    });
+
+    if (artist) {
+      return res.json({ status: "success", message: "این خواننده از قبل وجود دارد", data: artist });
+    }
+
+    artist = await prisma.artist.create({
+      data: { name: trimmed, avatarUrl, bio }
+    });
+
+    res.json({ status: "success", message: "خواننده جدید با موفقیت اضافه شد", data: artist });
+  } catch (error: any) {
+    res.status(500).json({ status: "error", message: error.message });
+  }
+});
+
+// 3. GET ALL PLAYLISTS
+router.get("/db-playlists", authenticate, async (req: Request, res: Response) => {
+  try {
+    const playlists = await prisma.playlist.findMany({
+      include: {
+        _count: {
+          select: { tracks: true }
+        }
+      },
+      orderBy: { name: "asc" }
+    });
+    res.json({ status: "success", data: playlists });
+  } catch (error: any) {
+    res.status(500).json({ status: "error", message: error.message });
+  }
+});
+
+// 4. CREATE A NEW PLAYLIST
+router.post("/db-playlist", authenticate, authorizeAdmin, async (req: Request, res: Response) => {
+  try {
+    const { name, bannerUrl } = req.body;
+    if (!name || name.trim() === "") {
+      return res.status(400).json({ status: "error", message: "نام پلی‌لیست الزامی است" });
+    }
+
+    const trimmed = name.trim();
+    let playlist = await prisma.playlist.findFirst({
+      where: { name: trimmed }
+    });
+
+    if (playlist) {
+      return res.status(400).json({ status: "error", message: "این پلی‌لیست از قبل وجود دارد" });
+    }
+
+    playlist = await prisma.playlist.create({
+      data: { name: trimmed, bannerUrl }
+    });
+
+    res.json({ status: "success", message: "پلی‌لیست جدید با موفقیت ساخته شد", data: playlist });
+  } catch (error: any) {
+    res.status(500).json({ status: "error", message: error.message });
+  }
+});
+
+// 5. DELETE A PLAYLIST
+router.delete("/db-playlist/:id", authenticate, authorizeAdmin, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    await prisma.playlist.delete({ where: { id } });
+    res.json({ status: "success", message: "پلی‌لیست با موفقیت حذف شد" });
+  } catch (error: any) {
+    res.status(500).json({ status: "error", message: error.message });
+  }
+});
+
+// 6. GET ALL DB TRACKS WITH THEIR RELATIONSHIPS
+router.get("/db-tracks", authenticate, async (req: Request, res: Response) => {
+  try {
+    const tracks = await prisma.track.findMany({
+      include: {
+        artists: true,
+        playlists: true
+      },
+      orderBy: { createdAt: "desc" }
+    });
+    res.json({ status: "success", data: tracks });
+  } catch (error: any) {
+    res.status(500).json({ status: "error", message: error.message });
+  }
+});
+
+// 7. MULTIPART FILE UPLOAD FOR DYNAMIC TRACK WITH AUTO-EXTRACTION & CREATION
+router.post("/db-track/upload", authenticate, authorizeAdmin, upload.single("file"), async (req: Request, res: Response) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ status: "error", message: "هیچ فایلی آپلود نشد" });
+    }
+
+    const { manualTitle } = req.body;
+    const category = req.body.category || "dynamic";
+    const filename = req.file.filename;
+    
+    // Save locally or use public link
+    const url = `/public/musicbot/${category}/${filename}`;
+
+    // Extract title & artists from name
+    const orgName = req.file.originalname.replace(/\.[^/.]+$/, ""); // Strip file extension
+    let detectedTitle = manualTitle || orgName;
+    let detectedArtists: string[] = [];
+
+    // Parse: split by dash
+    const dashIdx = orgName.indexOf("-");
+    if (!manualTitle && dashIdx !== -1) {
+      const part1 = orgName.substring(0, dashIdx).trim();
+      const part2 = orgName.substring(dashIdx + 1).trim();
+
+      // Check if either part 1 or part 2 corresponds to a known artist
+      const match1 = await prisma.artist.findFirst({ where: { name: part1 } });
+      const match2 = await prisma.artist.findFirst({ where: { name: part2 } });
+
+      if (match2) {
+        // e.g. "Bad Bash - Sami Beigi" -> Part 2 is the artist
+        detectedTitle = part1;
+        detectedArtists.push(part2);
+      } else if (match1) {
+        // e.g. "Sami Beigi - Bad Bash" -> Part 1 is the artist
+        detectedTitle = part2;
+        detectedArtists.push(part1);
+      } else {
+        // Default separator assumption: Part 1 is Artist, Part 2 is Title
+        detectedTitle = part2;
+        detectedArtists.push(part1);
+      }
+    }
+
+    // Resolve artist selection (manual or parsed input)
+    let artistIdsList: string[] = [];
+    if (req.body.artistIds) {
+      try {
+        artistIdsList = Array.isArray(req.body.artistIds) ? req.body.artistIds : JSON.parse(req.body.artistIds);
+      } catch (e) {
+        if (typeof req.body.artistIds === "string") {
+          artistIdsList = req.body.artistIds.split(",").map((s: string) => s.trim());
+        }
+      }
+    }
+
+    // Process auto-extracted artists
+    for (const artistName of detectedArtists) {
+      // Split by common separators if multiple featuring artists exist
+      const segments = artistName.split(/\s*[\,\&\+]\s*|\s+and\s+|\s+یا\s+/i);
+      for (const seg of segments) {
+        const cleanedName = seg.trim();
+        if (!cleanedName) continue;
+
+        let artist = await prisma.artist.findFirst({ where: { name: cleanedName } });
+        if (!artist) {
+          artist = await prisma.artist.create({ data: { name: cleanedName } });
+        }
+        if (!artistIdsList.includes(artist.id)) {
+          artistIdsList.push(artist.id);
+        }
+      }
+    }
+
+    // Resolve playlist IDs
+    let playlistIdsList: string[] = [];
+    if (req.body.playlistIds) {
+      try {
+        playlistIdsList = Array.isArray(req.body.playlistIds) ? req.body.playlistIds : JSON.parse(req.body.playlistIds);
+      } catch (e) {
+        if (typeof req.body.playlistIds === "string") {
+          playlistIdsList = req.body.playlistIds.split(",").map((s: string) => s.trim());
+        }
+      }
+    }
+
+    // Create track database record
+    const track = await prisma.track.create({
+      data: {
+        title: detectedTitle,
+        url,
+        artists: {
+          connect: artistIdsList.map(id => ({ id }))
+        },
+        playlists: {
+          connect: playlistIdsList.map(id => ({ id }))
+        }
+      },
+      include: {
+        artists: true,
+        playlists: true
+      }
+    });
+
+    res.json({
+      status: "success",
+      message: "موزیک فایل با موفقیت در بانک اطلاعاتی ادمین آپلود و ثبت گردید",
+      data: track
+    });
+  } catch (error: any) {
+    res.status(500).json({ status: "error", message: error.message });
+  }
+});
+
+// 7.5 UPDATE A DB TRACK METADATA (Edit title, artists, playlists)
+router.put("/db-track/:id", authenticate, authorizeAdmin, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { title, artistIds, playlistIds } = req.body;
+
+    const track = await prisma.track.findUnique({ where: { id } });
+    if (!track) {
+      return res.status(404).json({ status: "error", message: "آهنگ مورد نظر یافت نشد" });
+    }
+
+    const updated = await prisma.track.update({
+      where: { id },
+      data: {
+        title: title !== undefined ? title.trim() : undefined,
+        artists: artistIds ? {
+          set: artistIds.map((aid: string) => ({ id: aid }))
+        } : undefined,
+        playlists: playlistIds ? {
+          set: playlistIds.map((pid: string) => ({ id: pid }))
+        } : undefined,
+      },
+      include: {
+        artists: true,
+        playlists: true
+      }
+    });
+
+    res.json({ status: "success", data: updated });
+  } catch (error: any) {
+    res.status(500).json({ status: "error", message: error.message });
+  }
+});
+
+// 8. DELETE A DB TRACK (And physically unlink actual file)
+router.delete("/db-track/:id", authenticate, authorizeAdmin, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    
+    // Find prior relation
+    const track = await prisma.track.findUnique({ where: { id } });
+    if (!track) {
+      return res.status(404).json({ status: "error", message: "آهنگ مورد نظر یافت نشد" });
+    }
+
+    // Try unlinking local file if it is served from public folder
+    if (track.url.startsWith("/public/")) {
+      const physicalPath = path.join(process.cwd(), track.url);
+      if (fs.existsSync(physicalPath)) {
+        try {
+          fs.unlinkSync(physicalPath);
+        } catch (e) {
+          console.error("[Track Deletion] Failed to physically unlink file:", e);
+        }
+      }
+    }
+
+    await prisma.track.delete({ where: { id } });
+    res.json({ status: "success", message: "آهنگ با موفقیت از سیستم حذف گردید" });
   } catch (error: any) {
     res.status(500).json({ status: "error", message: error.message });
   }

@@ -510,3 +510,30 @@ model ChatWarning {
   warnedBy    User     @relation("WarnedBy", fields: [warnedById], references: [id], onDelete: Cascade)
   createdAt   DateTime @default(now())
 }
+
+model Artist {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  avatarUrl String?
+  bio       String?
+  createdAt DateTime @default(now())
+  tracks    Track[]  @relation("TrackArtists")
+}
+
+model Playlist {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  bannerUrl String?
+  createdAt DateTime @default(now())
+  tracks    Track[]  @relation("TrackPlaylists")
+}
+
+model Track {
+  id        String     @id @default(uuid())
+  title     String
+  url       String
+  duration  Float?     @default(0)
+  createdAt DateTime   @default(now())
+  artists   Artist[]   @relation("TrackArtists")
+  playlists Playlist[] @relation("TrackPlaylists")
+}

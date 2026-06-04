@@ -39,7 +39,7 @@ export function useMusicBotTransmitter({
 
   useEffect(() => {
     if (localGainRef.current) {
-      localGainRef.current.gain.value = botVolume;
+      localGainRef.current.gain.value = 0;
     }
   }, [botVolume]);
 
@@ -112,12 +112,12 @@ export function useMusicBotTransmitter({
       const source = audioCtx.createMediaElementSource(audioEl);
       sourceNodeRef.current = source;
 
-      // Create a local gain node for the host to hear the stream in absolute sync
+      // Create a local gain node for the host to hear - muted to 0 as they play via the high-fidelity local element instead.
       const localGain = audioCtx.createGain();
-      localGain.gain.value = botVolume;
+      localGain.gain.value = 0;
       localGainRef.current = localGain;
       source.connect(localGain);
-      localGain.connect(audioCtx.destination);
+      // localGain.connect(audioCtx.destination);
 
       // Create a script processor representing our sampling block
       const processor = audioCtx.createScriptProcessor(1024, 1, 1);

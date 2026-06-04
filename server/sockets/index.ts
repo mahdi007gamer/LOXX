@@ -387,15 +387,16 @@ export function setupWebSockets(io: Server) {
 
     socket.on("lobby.musicbot.control", async (data: {
       lobbyId: string;
-      action: "play" | "pause" | "update-queue";
+      action: "play" | "pause" | "update-queue" | "seek";
       category?: string;
       trackUrl?: string;
       trackName?: string;
       queue?: { name: string, url: string }[];
       queueIndex?: number;
       isPlaying?: boolean;
+      currentTime?: number;
     }, ack?: any) => {
-      const { lobbyId, action, category, trackUrl, trackName, queue, queueIndex, isPlaying } = data;
+      const { lobbyId, action, category, trackUrl, trackName, queue, queueIndex, isPlaying, currentTime } = data;
       try {
         const lobby = await prisma.lobby.findUnique({ where: { id: lobbyId } });
         if (!lobby || lobby.hostId !== userId) {
@@ -411,9 +412,14 @@ export function setupWebSockets(io: Server) {
             currentTrackUrl: "",
             currentCategory: "",
             queue: [],
-            queueIndex: 0
+            queueIndex: 0,
+            currentTime: 0
           };
           lobbyMusicBots.set(lobbyId, bot);
+        }
+
+        if (currentTime !== undefined) {
+          bot.currentTime = currentTime;
         }
 
         if (action === "play") {
@@ -423,6 +429,8 @@ export function setupWebSockets(io: Server) {
           if (category) bot.currentCategory = category;
         } else if (action === "pause") {
           bot.isPlaying = false;
+        } else if (action === "seek") {
+          // currentTime has been updated above
         } else if (action === "update-queue") {
           if (queue !== undefined) bot.queue = queue;
           if (queueIndex !== undefined) bot.queueIndex = queueIndex;

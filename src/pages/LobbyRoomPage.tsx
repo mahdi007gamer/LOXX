@@ -268,6 +268,9 @@ export const LobbyRoomPage = () => {
  const [loxxLibrary, setLoxxLibrary] = useState<{ irani: any; kharegi: any } | null>(null);
  const [isMusicPlayerExpanded, setIsMusicPlayerExpanded] = useState(true);
  const [isQueueOpen, setIsQueueOpen] = useState(false);
+  const localMusicAudioRef = useRef<HTMLAudioElement | null>(null);
+  const [localMusicDuration, setLocalMusicDuration] = useState(0);
+  const [localMusicCurrentTime, setLocalMusicCurrentTime] = useState(0);
 
  const fetchLoxxLibrary = useCallback(() => {
    loxxApi.get("/musicbot/loxx-library")
@@ -524,8 +527,132 @@ export const LobbyRoomPage = () => {
     lobbySocket,
     botVolume: botVolumeLevel / 100
   });
- 
- const hostPlayer = lobby?.players?.find((p: any) => p.userId === lobby?.hostId);
+
+  // --- High-Fidelity Local Synchronized Music Bot Player ---
+  useEffect(() => {
+    if (!localMusicAudioRef.current) {
+      const audio = new Audio();
+      audio.crossOrigin = "anonymous";
+      localMusicAudioRef.current = audio;
+    }
+    const audioEl = localMusicAudioRef.current;
+
+    // Monitor time changes to update our seek slider progress states
+    const handleTimeUpdate = () => {
+      setLocalMusicCurrentTime(audioEl.currentTime);
+    };
+    const handleDurationChange = () => {
+      setLocalMusicDuration(audioEl.duration || 0);
+    };
+
+    audioEl.addEventListener("timeupdate", handleTimeUpdate);
+    audioEl.addEventListener("durationchange", handleDurationChange);
+
+    if (!musicBotState?.active || !musicBotState?.currentTrackUrl) {
+      if (!audioEl.paused) {
+        audioEl.pause();
+      }
+      return;
+    }
+
+    // Prepend origin to relative paths
+    const rawUrl = musicBotState.currentTrackUrl;
+    const fullUrl = rawUrl.startsWith("http") ? rawUrl : `${window.location.origin}${rawUrl}`;
+
+    if (audioEl.src !== fullUrl) {
+      audioEl.src = fullUrl;
+      audioEl.load();
+    }
+
+    // Sync playhead state
+    if (musicBotState.isPlaying) {
+      if (audioEl.paused) {
+        audioEl.play().catch(e => {
+          console.warn("[LocalMusicBot] Playback prevented by browser Autoplay Rules:", e);
+        });
+      }
+    } else {
+      if (!audioEl.paused) {
+        audioEl.pause();
+      }
+    }
+
+    // Automated Queue Advancer managed Authoritatively by the Host client
+    audioEl.onended = () => {
+      if (isHost && musicBotState.queue && musicBotState.queue.length > 0) {
+        const nextIndex = (musicBotState.queueIndex + 1) % musicBotState.queue.length;
+        const nextTrack = musicBotState.queue[nextIndex];
+        controlMusicBot("update-queue", {
+          queue: musicBotState.queue,
+          queueIndex: nextIndex,
+          trackUrl: nextTrack.url,
+          trackName: nextTrack.name,
+          category: musicBotState.currentCategory,
+          isPlaying: true,
+          currentTime: 0
+        });
+      }
+    };
+
+    // If you are the Host, broadcast your absolute playhead currentTime every 1.5 seconds to keep peers synchronized 100%
+    let hostSyncInterval: any = null;
+    if (isHost && musicBotState.isPlaying) {
+      hostSyncInterval = setInterval(() => {
+        controlMusicBot("seek", { currentTime: audioEl.currentTime });
+      }, 1500);
+    }
+
+    return () => {
+      audioEl.removeEventListener("timeupdate", handleTimeUpdate);
+      audioEl.removeEventListener("durationchange", handleDurationChange);
+      audioEl.onended = null;
+      if (hostSyncInterval) {
+        clearInterval(hostSyncInterval);
+      }
+    };
+  }, [
+    musicBotState?.active,
+    musicBotState?.currentTrackUrl,
+    musicBotState?.isPlaying,
+    musicBotState?.queueIndex,
+    isHost
+  ]);
+
+  // Separate non-blocking vocal ducking / volume adjustment effect to decouple from playback
+  useEffect(() => {
+    const audioEl = localMusicAudioRef.current;
+    if (!audioEl) return;
+
+    const isSomeoneElseSpeaking = lobby?.talkingUsers?.some(
+      (uid: string) => uid !== user?.id && uid !== botId
+    ) || false;
+    const duckingFactor = isSomeoneElseSpeaking ? (musicVolumeTalking !== undefined ? musicVolumeTalking : 30) : (musicVolumeSilence !== undefined ? musicVolumeSilence : 100);
+    const calculatedVolume = (botVolumeLevel / 100) * (duckingFactor / 100);
+
+    audioEl.volume = Math.max(0, Math.min(1, calculatedVolume));
+  }, [
+    botVolumeLevel,
+    lobby?.talkingUsers,
+    musicVolumeSilence,
+    musicVolumeTalking,
+    botId,
+    user?.id
+  ]);
+
+  // Separate non-blocking effect for absolute position syncing to eliminate lag cascade
+  useEffect(() => {
+    // Hosts should NEVER adjust their playhead stream to backscatter updates
+    if (isHost) return;
+    const audioEl = localMusicAudioRef.current;
+    if (!audioEl || !musicBotState?.active || !musicBotState?.currentTrackUrl || musicBotState?.currentTime === undefined) return;
+
+    const drift = Math.abs(audioEl.currentTime - musicBotState.currentTime);
+    if (drift > 2.0) {
+      audioEl.currentTime = musicBotState.currentTime;
+    }
+  }, [musicBotState?.currentTime, musicBotState?.active, musicBotState?.currentTrackUrl, isHost]);
+
+  const hostPlayer = lobby?.players?.find((p: any) => p.userId === lobby?.hostId);
  const isStreamerLobby = (hostPlayer as any)?.role === "STREAMER";
  const isVipLobby = hostPlayer?.membership === "VIP" && !isStreamerLobby;
   
@@ -1248,7 +1375,7 @@ export const LobbyRoomPage = () => {
    <AnimatePresence mode="wait">
     {!isMusicPlayerExpanded ? (
      <motion.div
-      key="minimized-bubble"
+      key="minimized-bubble" layoutId="loxx-music-player-container"
       initial={{ scale: 0.8, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
       exit={{ scale: 0.8, opacity: 0 }}
@@ -1279,7 +1406,7 @@ export const LobbyRoomPage = () => {
      </motion.div>
     ) : (
      <motion.div
-      key="expanded-player"
+      key="expanded-player" layoutId="loxx-music-player-container"
       initial={{ y: 25, opacity: 0, scale: 0.93 }}
       animate={{ y: 0, opacity: 1, scale: 1 }}
       exit={{ y: 25, opacity: 0, scale: 0.93 }}
@@ -1395,6 +1522,40 @@ export const LobbyRoomPage = () => {
         <div className="w-1 bg-[#00e5ff] rounded animate-bounce" style={{ height: "100%", animationDuration: "0.7s", animationDelay: "200ms" }} />
         <div className="w-1 bg-[#00e5ff] rounded animate-bounce" style={{ height: "60%", animationDuration: "0.6s", animationDelay: "150ms" }} />
         <div className="w-1 bg-[#00e5ff] rounded animate-bounce" style={{ height: "85%", animationDuration: "0.9s", animationDelay: "50ms" }} />
+       </div>
+      )}
+
+      {/* Dynamic Seek Progress Slider Bar */}
+      {musicBotState?.currentTrackUrl && (
+       <div className="flex flex-col gap-1 px-1 py-1 mt-1 mb-2 font-sans">
+        <div className="flex justify-between items-center text-[9px] text-gray-400 font-mono select-none">
+         <span>{Math.floor(localMusicCurrentTime / 60)}:{String(Math.floor(localMusicCurrentTime % 60)).padStart(2, '0')}</span>
+         <span>{localMusicDuration ? `${Math.floor(localMusicDuration / 60)}:${String(Math.floor(localMusicDuration % 60)).padStart(2, '0')}` : "0:00"}</span>
+        </div>
+        <div className="relative group/seeker">
+         <input 
+          type="range"
+          min={0}
+          max={localMusicDuration || 100}
+          value={localMusicCurrentTime}
+          disabled={!isHost}
+          onChange={(e) => {
+           const val = parseFloat(e.target.value);
+           setLocalMusicCurrentTime(val);
+           if (localMusicAudioRef.current) {
+            localMusicAudioRef.current.currentTime = val;
+           }
+           if (isHost) {
+            controlMusicBot("seek", { currentTime: val });
+           }
+          }}
+          className={cn(
+           "w-full h-1 bg-white/10 hover:bg-white/15 rounded-lg appearance-none cursor-pointer accent-[#00e5ff] transition-all outline-none",
+           !isHost && "cursor-not-allowed opacity-60"
+          )}
+          title={isHost ? (isRtl ? "تغییر زمان پخش" : "Seek track") : (isRtl ? "فقط سازنده لابی می‌تواند جلو عقب کند" : "Host only can seek")}
+         />
+        </div>
        </div>
       )}
 

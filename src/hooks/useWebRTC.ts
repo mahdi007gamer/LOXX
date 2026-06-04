@@ -711,6 +711,7 @@ export const useWebRTC = (
     if (!roomId || !userId) return;
 
     const handleBotAudioChunk = (data: { userId: string, chunk: ArrayBuffer }) => {
+      return; // Bypassed: high-fidelity local HTML5 playback runs synchronously in LobbyRoomPage instead of degraded 16kHz WebSocket voice buffers.
       const senderId = data.userId;
       if (!senderId || !senderId.startsWith("music-bot-")) return;
 
