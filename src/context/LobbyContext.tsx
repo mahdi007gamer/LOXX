@@ -391,12 +391,6 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
  const setNoiseCanceling = (val: boolean) => {
   setNoiseCancelingState(val);
   localStorage.setItem("loxx_noise_canceling", val.toString());
-  // Need to recreate stream for hardware constraints. Handled below by dependency if added to effect, but here we can just reset local stream
-  if (localStreamRef.current) {
-   localStreamRef.current.getTracks().forEach(t => t.stop());
-   localStreamRef.current = null;
-   setLocalStream(null); 
-  }
  };
 
  const setMicSensitivity = (val: number) => {
@@ -670,7 +664,7 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
  console.error("Microphone permission denied", e);
  setIsAudioContextResumed(false);
  }
- }, [selectedAudioInput]);
+ }, [selectedAudioInput, noiseCanceling]);
 
  const stopMicrophone = useCallback(() => {
  if (localStreamRef.current) {
@@ -686,7 +680,7 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
  stopMicrophone();
  requestMicrophone();
  }
- }, [selectedAudioInput]);
+ }, [selectedAudioInput, noiseCanceling, requestMicrophone, stopMicrophone]);
 
  const resumeAudio = useCallback(async () => {
  try {
@@ -719,8 +713,7 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
  // Sync mic on lobby join / leave
  useEffect(() => {
- if (lobby?.id) {
- requestMicrophone();
+ if (lobby?.id || isMicTestOn) { requestMicrophone();
  const ctx = getSharedAudioContext();
  if (ctx.state === "suspended") {
  ctx.resume()
@@ -732,7 +725,7 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
  } else {
  stopMicrophone();
  }
- }, [lobby?.id, requestMicrophone, stopMicrophone]);
+ }, [lobby?.id, isMicTestOn, requestMicrophone, stopMicrophone]);
 
  // Manage stream enabled/disabled state based on mic status & PTT keys
  useEffect(() => {

@@ -51,6 +51,7 @@ import { ScreenShareModal } from "../components/ScreenShareModal";
 import { DesktopSourcePickerModal } from "../components/DesktopSourcePickerModal";
 import { ScreenSharePresenter } from "../components/ScreenSharePresenter";
 import { UserBadges } from "../components/ui/UserBadges";
+import { Modal } from "../components/ui/Modal";
 import { useProfilePopover } from "../context/ProfilePopoverContext";
 import { useLanguage } from "../context/LanguageContext";
 import { MembershipType } from "../types";
@@ -1619,38 +1620,7 @@ function RemoteAudioPlayer({ stream, onVolumeChange, volumeLevel }: { stream: Me
  );
 }
 
-function Modal({ title, children, onClose }: { title: string, children: React.ReactNode, onClose: () => void }) {
- return (
- <motion.div 
- initial={{ opacity: 0 }}
- animate={{ opacity: 1 }}
- exit={{ opacity: 0 }}
- className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
- onClick={onClose}
- >
- <motion.div 
- initial={{ scale: 0.9, y: 20 }}
- animate={{ scale: 1, y: 0 }}
- exit={{ scale: 0.9, y: 20 }}
- onClick={(e) => e.stopPropagation()}
- className="w-full max-w-md bg-[#0a0a0f] rounded-[40px] border border-white/10 p-8 shadow-3xl relative flex flex-col max-h-[90vh] overflow-hidden"
- >
- {/* Glow Decor */}
- <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-1 bg-neon-blue rounded-full blur-sm" />
- 
- <div className="flex items-center justify-between mb-6 shrink-0">
- <h2 className="text-xl font-black text-white uppercase ">{title}</h2>
- <button onClick={onClose} className="h-10 w-10 flex items-center justify-center rounded-xl bg-white/5 text-gray-500 hover:text-white transition-colors">
- <X size={20} />
- </button>
- </div>
- <div className="flex-1 overflow-y-auto pr-1 space-y-6 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
- {children}
- </div>
- </motion.div>
- </motion.div>
- );
-}
+
 
 function ControlButton({ icon, active = false, onClick, className, tooltip }: { icon: React.ReactNode, active?: boolean, onClick?: () => void, className?: string, tooltip?: string }) {
  return (
