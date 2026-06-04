@@ -268,6 +268,17 @@ export const LobbyRoomPage = () => {
  const [localPlayMode, setLocalPlayMode] = useState<"in-order" | "random">("random");
  const [loxxLibrary, setLoxxLibrary] = useState<{ irani: any; kharegi: any } | null>(null);
  const [isMusicPlayerExpanded, setIsMusicPlayerExpanded] = useState(true);
+ const [windowDims, setWindowDims] = useState({ width: 0, height: 0 });
+
+ useEffect(() => {
+  if (typeof window !== "undefined") {
+   setWindowDims({ width: window.innerWidth, height: window.innerHeight });
+   const handleResize = () => setWindowDims({ width: window.innerWidth, height: window.innerHeight });
+   window.addEventListener("resize", handleResize);
+   return () => window.removeEventListener("resize", handleResize);
+  }
+ }, []);
+
  const [isQueueOpen, setIsQueueOpen] = useState(false);
   const localMusicAudioRef = useRef<HTMLAudioElement | null>(null);
   const [localMusicDuration, setLocalMusicDuration] = useState(0);
@@ -527,16 +538,7 @@ export const LobbyRoomPage = () => {
   const botId = `music-bot-${lobby?.id}`;
   const botVolumeLevel = peerVolumes[botId] !== undefined ? peerVolumes[botId] : 100;
   
-  useMusicBotTransmitter({
-    roomId: lobby?.id || "",
-    isHost,
-    botState: musicBotState,
-    voiceSocket: mainPlatformVoiceSocket,
-    lobbySocket,
-    botVolume: botVolumeLevel / 100
-  });
-
-  // --- High-Fidelity Local Synchronized Music Bot Player ---
+  // --- High-Fidelity Local Synchronized Music Bot Player (HOST ONLY) & Progress Tracker (PEERS) ---
   useEffect(() => {
     if (!localMusicAudioRef.current) {
       const audio = new Audio();
@@ -544,6 +546,23 @@ export const LobbyRoomPage = () => {
       localMusicAudioRef.current = audio;
     }
     const audioEl = localMusicAudioRef.current;
+
+    if (!isHost) {
+      if (!audioEl.paused) audioEl.pause();
+      
+      // For peers, fake the progress bar based on the synced state
+      let peerProgressInterval: any = null;
+      if (musicBotState?.active && musicBotState?.isPlaying) {
+         peerProgressInterval = setInterval(() => {
+            const timeSinceUpdate = (Date.now() - (musicBotState.updatedAt || Date.now())) / 1000;
+            const targetTime = (musicBotState.currentTime || 0) + timeSinceUpdate;
+            setLocalMusicCurrentTime(targetTime);
+         }, 500);
+      }
+      return () => {
+         if (peerProgressInterval) clearInterval(peerProgressInterval);
+      };
+    }
 
     // Monitor time changes to update our seek slider progress states
     const handleTimeUpdate = () => {
@@ -565,11 +584,21 @@ export const LobbyRoomPage = () => {
 
     // Prepend origin to relative paths
     const rawUrl = musicBotState.currentTrackUrl;
-    const fullUrl = rawUrl.startsWith("http") ? rawUrl : `${window.location.origin}${rawUrl}`;
+    const fullUrl = rawUrl.startsWith("http") ? rawUrl : (rawUrl.startsWith("blob:") ? rawUrl : `${window.location.origin}${rawUrl}`);
 
     if (audioEl.src !== fullUrl) {
       audioEl.src = fullUrl;
       audioEl.load();
+    }
+
+    // Handle seeking requested via state updates
+    if (musicBotState.currentTime !== undefined && musicBotState.updatedAt) {
+      const timeSinceUpdate = (Date.now() - musicBotState.updatedAt) / 1000;
+      const targetTime = musicBotState.currentTime + timeSinceUpdate;
+      const drift = Math.abs(audioEl.currentTime - targetTime);
+      if (drift > 1.5) {
+        audioEl.currentTime = targetTime;
+      }
     }
 
     // Sync playhead state
@@ -653,25 +682,6 @@ export const LobbyRoomPage = () => {
   ]);
 
   // Separate non-blocking effect for absolute position syncing to eliminate lag cascade
-  useEffect(() => {
-    // Hosts should NEVER adjust their playhead stream to backscatter updates
-    if (isHost) return;
-    const audioEl = localMusicAudioRef.current;
-    if (!audioEl || !musicBotState?.active || !musicBotState?.currentTrackUrl || musicBotState?.currentTime === undefined || !musicBotState?.updatedAt) return;
-
-    // Extrapolate actual target time if it's currently playing
-    const timeSinceUpdate = musicBotState.isPlaying ? (Date.now() - musicBotState.updatedAt) / 1000 : 0;
-    const targetTime = musicBotState.currentTime + timeSinceUpdate;
-    
-    // Check drift against current playhead
-    const drift = Math.abs(audioEl.currentTime - targetTime);
-
-    // If drifted by more than 0.5s, align playhead exactly.
-    if (drift > 0.5) {
-      audioEl.currentTime = targetTime;
-    }
-  }, [musicBotState?.currentTime, musicBotState?.updatedAt, musicBotState?.isPlaying, musicBotState?.active, musicBotState?.currentTrackUrl, isHost]);
-
   const hostPlayer = lobby?.players?.find((p: any) => p.userId === lobby?.hostId);
  const isStreamerLobby = (hostPlayer as any)?.role === "STREAMER";
  const isVipLobby = hostPlayer?.membership === "VIP" && !isStreamerLobby;
@@ -1414,6 +1424,12 @@ export const LobbyRoomPage = () => {
       drag
       dragMomentum={false}
       dragElastic={0.1}
+      dragConstraints={{ 
+       top: -(windowDims.height - 96 - 64), 
+       bottom: 96,
+       left: isRtl ? -24 : -(windowDims.width - 24 - 64),
+       right: isRtl ? (windowDims.width - 24 - 64) : 24
+      }}
       whileDrag={{ scale: 1.1, cursor: "grabbing" }}
       className={cn(
        "fixed bottom-24 z-[70] cursor-grab active:cursor-grabbing h-16 w-16 rounded-full bg-black/90 border-2 border-[#00e5ff] shadow-[0_0_25px_rgba(0,229,255,0.45)] hover:shadow-[0_0_35px_rgba(0,229,255,0.7)] flex flex-col items-center justify-center select-none",
@@ -1449,8 +1465,14 @@ export const LobbyRoomPage = () => {
       drag
       dragMomentum={false}
       dragElastic={0.05}
+      dragConstraints={{ 
+       top: -(windowDims.height - 96 - 450), 
+       bottom: 96,
+       left: isRtl ? -24 : -(windowDims.width - 24 - 360),
+       right: isRtl ? (windowDims.width - 24 - 360) : 24
+      }}
       className={cn(
-       "fixed bottom-24 z-[70] w-[360px] bg-[#0f0f0f]/60 backdrop-blur-[15px] border border-white/10 rounded-[32px] shadow-[0_30px_60px_rgba(0,0,0,0.6),0_0_40px_rgba(0,229,255,0.08)] p-5 text-white hover:border-white/20 select-none",
+       "fixed bottom-24 z-[70] w-[360px] bg-gradient-to-br from-[#101b2a]/80 to-[#02050b]/80 backdrop-blur-[24px] border border-[#00e5ff]/30 rounded-[32px] shadow-[0_30px_60px_rgba(0,0,0,0.8),0_0_50px_rgba(0,229,255,0.15),inset_0_1px_15px_rgba(255,255,255,0.08)] p-5 text-white select-none hover:border-[#00e5ff]/50 transition-colors duration-500",
        isRtl ? "left-6" : "right-6"
       )}
      >
@@ -1464,23 +1486,23 @@ export const LobbyRoomPage = () => {
       </div>
 
       {/* Header */}
-      <div className="flex items-center justify-between mb-6 border-b border-white/5 pb-4">
-       <div className="flex items-center gap-1.5">
+      <div className="flex items-center justify-between mb-6 pb-2">
+       <div className="flex items-center gap-1">
         {/* Disconnect button */}
         <button 
          onClick={() => toggleMusicBot(false)}
-         className="p-1.5 hover:bg-white/10 rounded-lg text-gray-400 hover:text-red-400 active:scale-95 transition-all text-sm font-bold"
+         className="hover:bg-[#00e5ff]/20 rounded-full text-[#00e5ff] p-1.5 transition-all outline-none"
          title={isRtl ? "خروج ربات از لابی" : "Disconnect Bot"}
         >
-         <X size={18} />
+         <X size={22} strokeWidth={2.5} />
         </button>
         {/* Minimize button */}
         <button 
          onClick={() => setIsMusicPlayerExpanded(false)}
-         className="p-1.5 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white active:scale-95 transition-all font-bold"
+         className="hover:bg-[#00e5ff]/20 rounded-full text-[#00e5ff] p-1.5 transition-all outline-none"
          title={isRtl ? "کوچک کردن" : "Minimize"}
         >
-         <Minus size={18} />
+         <Minus size={24} strokeWidth={2.5} />
         </button>
         {/* Setup button */}
         {isHost && (
@@ -1489,24 +1511,24 @@ export const LobbyRoomPage = () => {
            setSetupStep("source");
            setShowBotSetupModal(true);
           }}
-          className="p-1.5 hover:bg-white/10 rounded-lg text-gray-400 hover:text-[#00e5ff] active:scale-90 transition-all font-bold"
+          className="hover:bg-[#00e5ff]/20 rounded-full text-[#00e5ff] p-1.5 transition-all outline-none ml-1"
           title={isRtl ? "تغییر پوشه / منبع" : "Setup Source"}
          >
-          <Settings size={16} />
+          <Settings size={20} strokeWidth={2.5} />
          </button>
         )}
        </div>
 
        <div className="flex flex-col text-right mr-1">
-        <span className="text-[15px] font-black tracking-wider text-white select-none whitespace-nowrap">
+        <span className="text-[17px] font-black tracking-wider text-white select-none whitespace-nowrap drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]">
          {isRtl ? "ربات موزیک لودس" : "Loxx Music Bot"}
         </span>
-        <span className="text-[9px] text-[#00e5ff] font-mono leading-none select-none uppercase tracking-widest mt-1 font-bold">
+        <span className="text-[10px] text-[#00e5ff] font-mono leading-none select-none uppercase tracking-widest mt-1.5 font-bold drop-shadow-[0_0_5px_rgba(0,229,255,0.6)]">
          LIVE AUDIO CHUNK STREAM
         </span>
        </div>
-       <div className="p-1.5 rounded-lg text-[#00e5ff] ml-1 shrink-0">
-        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+       <div className="text-[#00e5ff] ml-2 shrink-0 drop-shadow-[0_0_12px_rgba(0,229,255,0.8)] filter">
+        <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="currentColor" stroke="none" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
        </div>
       </div>
 
@@ -1524,32 +1546,37 @@ export const LobbyRoomPage = () => {
        </div>
 
        {/* Spinning Disk Vinyl with glow */}
-       <div className="relative h-[85px] w-[85px] rounded-full flex items-center justify-center shrink-0 z-10 group">
-        <div className="absolute inset-0 rounded-full border border-white/20 shadow-[0_0_25px_rgba(0,229,255,0.2)] group-hover:shadow-[0_0_35px_rgba(0,229,255,0.5)] transition-all"></div>
-        <div className={cn("relative h-full w-full rounded-full border-[4px] border-[#1a1a1a] shadow-inner bg-black overflow-hidden flex items-center justify-center", musicBotState?.isPlaying && "animate-[spin_4s_linear_infinite]")}>
+       <div className="relative h-[100px] w-[100px] rounded-full flex items-center justify-center shrink-0 z-10">
+        <div className="absolute inset-[-15px] rounded-full shadow-[0_0_40px_rgba(0,229,255,0.2)] blur-sm"></div>
+        <div className="absolute inset-0 rounded-full border-[1.5px] border-[#00e5ff]/30 shadow-[inset_0_0_20px_rgba(0,229,255,0.2)]"></div>
+        <div className={cn("relative h-[90%] w-[90%] rounded-full border-[6px] border-[#0a0a0a] shadow-[inset_0_0_15px_#000] bg-[#111] overflow-hidden flex items-center justify-center", musicBotState?.isPlaying && "animate-[spin_4s_linear_infinite]")}>
          {musicBotState?.currentTrackCover ? (
-          <img src={musicBotState.currentTrackCover} className="w-full h-full object-cover" />
+          <img src={musicBotState.currentTrackCover} className="w-full h-full object-cover opacity-80" />
          ) : (
-          <div className="w-full h-full bg-[#111] flex items-center justify-center rounded-full border-[2px] border-zinc-800">
-           <div className="w-6 h-6 rounded-full bg-zinc-900 border border-zinc-700 flex items-center justify-center">
-            <div className="w-2 h-2 rounded-full bg-black"></div>
+          <div className="w-full h-full bg-gradient-to-tr from-[#111] to-[#333] flex items-center justify-center rounded-full">
+           <div className="w-7 h-7 rounded-full bg-gradient-to-br from-gray-700 to-black border border-gray-600 flex items-center justify-center shadow-[0_0_10px_rgba(0,229,255,0.3)]">
+            <div className="w-2.5 h-2.5 rounded-full bg-[#00e5ff] shadow-[0_0_5px_#00e5ff]"></div>
            </div>
           </div>
          )}
+         {/* Vinyl groove overlays */}
+         <div className="absolute inset-0 rounded-full border border-white/5 mx-1" />
+         <div className="absolute inset-0 rounded-full border border-white/5 mx-3" />
+         <div className="absolute inset-0 rounded-full border border-white/5 mx-5" />
         </div>
        </div>
       </div>
 
       {/* Equalizer Waveform Visualizer */}
-      <div className="relative h-16 w-full flex items-center justify-center gap-[3px] my-5 px-3">
-       {Array.from({ length: 50 }).map((_, i) => (
+      <div className="relative h-14 w-full flex items-end justify-center gap-[2.5px] mt-2 mb-4 px-3">
+       {Array.from({ length: 55 }).map((_, i) => (
         <div 
          key={i} 
-         className={cn("w-1 rounded-full", musicBotState?.isPlaying ? "bg-[#00e5ff] shadow-[0_0_8px_rgba(0,229,255,0.6)] animate-pulse" : "bg-[#00e5ff]/20")} 
+         className={cn("w-1 rounded-sm", musicBotState?.isPlaying ? "bg-gradient-to-t from-[#00bfff] to-[#00e5ff] shadow-[0_0_8px_rgba(0,229,255,0.8)] animate-pulse" : "bg-[#00e5ff]/20")} 
          style={{ 
-          height: musicBotState?.isPlaying ? `${Math.max(15, Math.random() * 100)}%` : "15%",
-          animationDuration: `${0.3 + Math.random() * 0.5}s`,
-          animationDelay: `${Math.random() * 0.5}s`
+          height: musicBotState?.isPlaying ? `${Math.max(10, Math.random() * 100)}%` : "10%",
+          animationDuration: `${0.2 + Math.random() * 0.4}s`,
+          animationDelay: `${Math.random() * 0.3}s`
          }} 
         />
        ))}
@@ -1595,7 +1622,7 @@ export const LobbyRoomPage = () => {
       </div>
 
       {/* Player controls */}
-      <div className="flex items-center justify-center gap-7 mb-8 select-none font-sans px-2">
+      <div className="flex items-center justify-center gap-6 mb-8 select-none font-sans px-2">
        <button 
         onClick={() => {
          if (isHost && musicBotState?.queue && musicBotState.queue.length > 0) {
@@ -1612,12 +1639,12 @@ export const LobbyRoomPage = () => {
          }
         }}
         className={cn(
-         "w-12 h-12 flex items-center justify-center rounded-full text-[#00e5ff] hover:bg-[#00e5ff]/10 active:scale-90 transition-all shadow-[0_0_15px_rgba(0,229,255,0.05)]",
-         (!isHost || !musicBotState?.queue || musicBotState.queue.length <= 1) && "opacity-30 cursor-not-allowed hover:bg-transparent"
+         "p-2 flex items-center justify-center rounded-full text-[#81cad6] hover:text-[#00e5ff] hover:bg-[#00e5ff]/10 active:scale-90 transition-all",
+         (!isHost || !musicBotState?.queue || musicBotState.queue.length <= 1) && "opacity-40 cursor-not-allowed hover:bg-transparent hover:text-[#81cad6]"
         )}
         disabled={!isHost || !musicBotState?.queue || musicBotState.queue.length <= 1}
        >
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M11 17l-5-5 5-5v10z"></path><path d="M18 17l-5-5 5-5v10z"></path><path d="M5 17h2V7H5v10z"></path></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="currentColor" className="drop-shadow-[0_0_5px_rgba(0,229,255,0.5)]"><path d="M11 17l-5-5 5-5v10z"></path><path d="M18 17l-5-5 5-5v10z"></path></svg>
        </button>
 
        <button 
@@ -1634,14 +1661,14 @@ export const LobbyRoomPage = () => {
          }
         }}
         className={cn(
-         "w-[76px] h-[76px] flex items-center justify-center rounded-full active:scale-95 transition-all text-white",
-         isHost ? "bg-gradient-to-tr from-[#00b4d8] to-[#00e5ff] text-black shadow-[0_0_25px_rgba(0,229,255,0.6)] hover:shadow-[0_0_35px_rgba(0,229,255,0.8)] hover:brightness-110" : "bg-white/10 text-white/50 cursor-not-allowed"
+         "w-[66px] h-[66px] flex items-center justify-center rounded-full active:scale-95 transition-all outline-none",
+         isHost ? "bg-gradient-to-br from-[#0c4a60] to-[#042431]/80 border-[1.5px] border-[#00e5ff]/50 text-[#00e5ff] shadow-[0_0_35px_rgba(0,229,255,0.45),inset_0_0_20px_rgba(0,229,255,0.2)] hover:shadow-[0_0_45px_rgba(0,229,255,0.6)] hover:brightness-110" : "bg-white/5 border border-white/10 text-white/40 cursor-not-allowed"
         )}
        >
         {musicBotState?.isPlaying ? (
-         <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path></svg>
+         <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="currentColor" className="drop-shadow-[0_0_5px_rgba(0,229,255,0.8)]"><path d="M7 19h4V5H7v14zm6-14v14h4V5h-4z"></path></svg>
         ) : (
-         <svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg>
+         <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="currentColor" className="ml-1 drop-shadow-[0_0_5px_rgba(0,229,255,0.8)]"><path d="M8 5v14l11-7z"></path></svg>
         )}
        </button>
 
@@ -1661,27 +1688,28 @@ export const LobbyRoomPage = () => {
          }
         }}
         className={cn(
-         "w-12 h-12 flex items-center justify-center rounded-full text-[#00e5ff] hover:bg-[#00e5ff]/10 active:scale-90 transition-all shadow-[0_0_15px_rgba(0,229,255,0.05)]",
-         (!isHost || !musicBotState?.queue || musicBotState.queue.length <= 1) && "opacity-30 cursor-not-allowed hover:bg-transparent"
+         "p-2 flex items-center justify-center rounded-full text-[#81cad6] hover:text-[#00e5ff] hover:bg-[#00e5ff]/10 active:scale-90 transition-all",
+         (!isHost || !musicBotState?.queue || musicBotState.queue.length <= 1) && "opacity-40 cursor-not-allowed hover:bg-transparent hover:text-[#81cad6]"
         )}
         disabled={!isHost || !musicBotState?.queue || musicBotState.queue.length <= 1}
        >
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M13 7l5 5-5 5V7z"></path><path d="M6 7l5 5-5 5V7z"></path><path d="M17 7h2v10h-2V7z"></path></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="currentColor" className="drop-shadow-[0_0_5px_rgba(0,229,255,0.5)]"><path d="M13 7l5 5-5 5V7z"></path><path d="M6 7l5 5-5 5V7z"></path></svg>
        </button>
       </div>
 
       {/* Queue Panel Trigger (Footer Button) */}
-      <div className="pt-4 border-t border-white/5 select-none font-sans mt-auto relative">
+      <div className="pt-5 border-t-[1.5px] border-white/10 select-none font-sans mt-auto relative -mx-1 px-1">
        <button 
         onClick={() => setIsQueueOpen(!isQueueOpen)}
-        className="w-full flex justify-between items-center bg-transparent hover:bg-white/5 border border-transparent transition-all font-bold text-gray-300 hover:text-white rounded-xl focus:outline-none"
+        className="w-full flex justify-between items-center bg-transparent transition-all font-black text-gray-300 hover:text-white outline-none"
+        dir="ltr"
        >
-        <div className="flex items-center gap-2">
-         <span className="w-10 h-10 rounded-xl bg-transparent text-[#00e5ff] font-black flex items-center justify-center text-sm/none">
+        <div className="flex items-center">
+         <span className="text-[#00e5ff] font-bold text-[16px] drop-shadow-[0_0_5px_rgba(0,229,255,0.5)]">
           {musicBotState?.queue?.length || 0}
          </span>
         </div>
-        <span className="flex items-center gap-2 text-sm tracking-wide font-black">
+        <span className="flex items-center gap-1.5 text-sm tracking-wide font-black text-gray-200" dir={isRtl ? "rtl" : "ltr"}>
          {isRtl ? "لیست صف آهنگ‌ها" : "Track Queue List"} 📋
         </span>
        </button>

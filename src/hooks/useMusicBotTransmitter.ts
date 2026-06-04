@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getSharedAudioContext } from "../lib/socket";
 
 interface Track {
@@ -35,15 +35,8 @@ export function useMusicBotTransmitter({
 }) {
   const audioElRef = useRef<HTMLAudioElement | null>(null);
   const sourceNodeRef = useRef<any>(null);
-  const processorNodeRef = useRef<any>(null);
-  const silentGainRef = useRef<any>(null);
-  const localGainRef = useRef<any>(null);
-
-  useEffect(() => {
-    if (localGainRef.current) {
-      localGainRef.current.gain.value = 0;
-    }
-  }, [botVolume]);
+  const destNodeRef = useRef<any>(null);
+  const [botStream, setBotStream] = useState<MediaStream | null>(null);
 
   useEffect(() => {
     // If not host or bot is inactive or paused/empty, release all resources
@@ -53,30 +46,6 @@ export function useMusicBotTransmitter({
     }
 
     const trackUrl = botState.currentTrackUrl;
-    
-    // Low-level downsampling and resampling to 16kHz
-    const downsampleAndToInt16 = (buffer: Float32Array, inputSR: number, outputSR: number) => {
-      const ratio = inputSR / outputSR;
-      const newLength = Math.floor(buffer.length / ratio);
-      const result = new Int16Array(newLength);
-      
-      // Calculate dynamic smart voice ducking modifier multiplier (defaults to 0.3 when someone else is talking to let voice conversations shine!)
-      const currentDucking = isSomeoneElseSpeaking ? 0.3 : 1.0;
-      const gainModifier = botVolume * currentDucking;
-
-      for (let i = 0; i < newLength; i++) {
-        const start = Math.floor(i * ratio);
-        const end = Math.max(start + 1, Math.floor((i + 1) * ratio));
-        let s = 0, count = 0;
-        for (let j = start; j < end; j++) {
-          if (j < buffer.length) { s += buffer[j]; count++; }
-        }
-        const sample = count > 0 ? (s / count) * gainModifier : 0;
-        const capped = Math.max(-1, Math.min(1, sample));
-        result[i] = capped < 0 ? capped * 0x8000 : capped * 0x7FFF;
-      }
-      return result.buffer;
-    };
 
     try {
       const audioCtx = getSharedAudioContext();
@@ -88,7 +57,7 @@ export function useMusicBotTransmitter({
 
       cleanup(); // Clean up current play instance
 
-      console.log(`[MusicBot Transmitter] Starting streaming for track: ${botState.currentTrackName}`);
+      console.log(`[MusicBot Transmitter] Starting WebRTC streaming for track: ${botState.currentTrackName}`);
       
       const audioEl = new Audio(trackUrl);
       audioEl.crossOrigin = "anonymous";
@@ -119,39 +88,12 @@ export function useMusicBotTransmitter({
       const source = audioCtx.createMediaElementSource(audioEl);
       sourceNodeRef.current = source;
 
-      // Create a local gain node for the host to hear - muted to 0 as they play via the high-fidelity local element instead.
-      const localGain = audioCtx.createGain();
-      localGain.gain.value = 0;
-      localGainRef.current = localGain;
-      source.connect(localGain);
-      // localGain.connect(audioCtx.destination);
-
-      // Create a script processor representing our sampling block
-      const processor = audioCtx.createScriptProcessor(1024, 1, 1);
-      processorNodeRef.current = processor;
-
-      source.connect(processor);
-
-      // Create silent terminal destination to fulfill web assembly / web audio pipeline specs
-      const silentGain = audioCtx.createGain();
-      silentGain.gain.value = 0;
-      silentGainRef.current = silentGain;
+      // Extract to a WebRTC compatible MediaStream
+      const dest = audioCtx.createMediaStreamDestination();
+      destNodeRef.current = dest;
+      source.connect(dest);
       
-      processor.connect(silentGain);
-      silentGain.connect(audioCtx.destination);
-
-      // Stream frames during the onaudioprocess interval
-      processor.onaudioprocess = (event) => {
-        const inputData = event.inputBuffer.getChannelData(0);
-        const compressed = downsampleAndToInt16(inputData, event.inputBuffer.sampleRate, 16000);
-        
-        // Broadcast under the virtual music bot profile ID
-        voiceSocket?.emit("voice.audio_chunk", {
-          roomId,
-          userId: `music-bot-${roomId}`,
-          chunk: compressed
-        });
-      };
+      setBotStream(dest.stream);
 
       audioEl.play().catch(e => {
         console.warn("[MusicBot Transmitter] AutoPlay prevented track playback start:", e);
@@ -171,22 +113,17 @@ export function useMusicBotTransmitter({
         audioElRef.current.onended = null;
         audioElRef.current = null;
       }
-      if (processorNodeRef.current) {
-        try { processorNodeRef.current.disconnect(); } catch (e) {}
-        processorNodeRef.current = null;
-      }
       if (sourceNodeRef.current) {
         try { sourceNodeRef.current.disconnect(); } catch (e) {}
         sourceNodeRef.current = null;
       }
-      if (silentGainRef.current) {
-        try { silentGainRef.current.disconnect(); } catch (e) {}
-        silentGainRef.current = null;
+      if (destNodeRef.current) {
+        try { destNodeRef.current.disconnect(); } catch (e) {}
+        destNodeRef.current = null;
       }
-      if (localGainRef.current) {
-        try { localGainRef.current.disconnect(); } catch (e) {}
-        localGainRef.current = null;
-      }
+      setBotStream(null);
     }
-  }, [roomId, isHost, botState?.isPlaying, botState?.currentTrackUrl, botState?.queueIndex, botState?.active, voiceSocket, lobbySocket, botVolume, isSomeoneElseSpeaking]);
+  }, [roomId, isHost, botState?.isPlaying, botState?.currentTrackUrl, botState?.queueIndex, botState?.active, voiceSocket, lobbySocket]);
+
+  return botStream;
 }

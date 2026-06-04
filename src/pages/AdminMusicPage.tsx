@@ -225,7 +225,7 @@ export const AdminMusicPage: React.FC = () => {
   // Chunked audio file uploader logic
   const uploadAudioInChunks = async (fileToUpload: File, onProgress?: (percent: number) => void): Promise<string> => {
     const fileId = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-    const chunkSize = 2048 * 1024; // 2MB for faster uploads
+    const chunkSize = 512 * 1024; // 512KB for maximum reliability across Nginx proxies
     const totalChunks = Math.ceil(fileToUpload.size / chunkSize);
     let assembledUrl = "";
 
@@ -374,25 +374,44 @@ export const AdminMusicPage: React.FC = () => {
   };
 
   // Inline Quick creators for Artist & Playlists inside selectors
-  const handleQuickAddArtist = async (name: string, isFromEdit = false) => {
-    const trimmed = name.trim();
-    if (!trimmed) return;
-    try {
-      const res = await api.post("/musicbot/artist", { name: trimmed });
-      if (res.data.status === "success") {
-        toast.success(`خواننده جدید "${trimmed}" ثبت شد`);
-        const item = res.data.data;
-        setArtists(prev => [...prev, item]);
-        if (isFromEdit) {
-          setEditSelectedArtistIds(prev => [...prev, item.id]);
-          setEditArtistSelectorQuery("");
-        } else {
-          setSelectedArtistIds(prev => [...prev, item.id]);
-          setArtistSelectorQuery("");
+  const handleQuickAddArtist = async (inputName: string, isFromEdit = false) => {
+    const names = inputName.split(",").map(n => n.trim()).filter(n => n !== "");
+    if (names.length === 0) return;
+    
+    const newItems: any[] = [];
+    const addedIds: string[] = [];
+
+    for (const name of names) {
+      const existing = artists.find(a => a.name.toLowerCase() === name.toLowerCase());
+      if (existing) {
+        addedIds.push(existing.id);
+      } else {
+        try {
+          const res = await api.post("/musicbot/artist", { name: name });
+          if (res.data.status === "success") {
+            const item = res.data.data;
+            newItems.push(item);
+            addedIds.push(item.id);
+          }
+        } catch (err: any) {
+          toast.error(`خطا در ساخت خواننده ${name}`);
         }
       }
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || "خطا در ساخت سریع خواننده");
+    }
+
+    if (newItems.length > 0) {
+      toast.success(`تعداد ${newItems.length} خواننده جدید ثبت شد`);
+      setArtists(prev => [...prev, ...newItems]);
+    }
+
+    if (addedIds.length > 0) {
+      if (isFromEdit) {
+        setEditSelectedArtistIds(prev => Array.from(new Set([...prev, ...addedIds])));
+        setEditArtistSelectorQuery("");
+      } else {
+        setSelectedArtistIds(prev => Array.from(new Set([...prev, ...addedIds])));
+        setArtistSelectorQuery("");
+      }
     }
   };
 
@@ -848,13 +867,13 @@ export const AdminMusicPage: React.FC = () => {
                           placeholder="جستجو یا افزودن سریع خواننده ملحق شده..."
                           className="w-full h-11 pr-10 pl-24 rounded-xl bg-white/5 border border-white/10 text-xs text-white focus:outline-none focus:border-neon-purple/40"
                         />
-                        {artistSelectorQuery.trim() && !artists.some(a => a.name.toLowerCase() === artistSelectorQuery.trim().toLowerCase()) && (
+                        {artistSelectorQuery.trim() && (
                           <button
                             type="button"
                             onClick={() => handleQuickAddArtist(artistSelectorQuery, false)}
                             className="absolute left-2 top-2 h-7 px-3 bg-neon-purple text-[10px] font-black rounded-lg text-white hover:bg-neon-purple/80 transition-all"
                           >
-                            ساخت خواننده جدید +
+                            بررسی و انتخاب +
                           </button>
                         )}
                       </div>
@@ -1139,14 +1158,23 @@ export const AdminMusicPage: React.FC = () => {
                               {/* Action selection checklists artists edit */}
                               <div className="space-y-2">
                                 <label className="text-xs font-bold text-gray-400 block">ویرایش آرتیست‌های تخصیص یافته</label>
-                                <div className="space-y-2">
+                                <div className="space-y-2 relative">
                                   <input 
                                     type="text"
                                     value={editArtistSelectorQuery}
                                     onChange={(e) => setEditArtistSelectorQuery(e.target.value)}
                                     placeholder="جستجوی خواننده جهت افزودن به لیست..."
-                                    className="w-full h-9 px-3 rounded-xl bg-white/5 border border-white/10 text-xs"
+                                    className="w-full h-9 pl-20 pr-3 rounded-xl bg-white/5 border border-white/10 text-xs"
                                   />
+                                  {editArtistSelectorQuery.trim() && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleQuickAddArtist(editArtistSelectorQuery, true)}
+                                      className="absolute left-1 top-1 h-7 px-3 bg-neon-blue text-[10px] font-black rounded-lg text-white hover:bg-neon-blue/80 transition-all z-10"
+                                    >
+                                      بررسی و انتخاب +
+                                    </button>
+                                  )}
                                 </div>
                                 <div className="max-h-24 overflow-y-auto custom-scrollbar border border-white/5 p-2 rounded-xl space-y-1 bg-black/20">
                                   {artists

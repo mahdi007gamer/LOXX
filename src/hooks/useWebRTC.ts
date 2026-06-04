@@ -68,7 +68,8 @@ export const useWebRTC = (
   localStream: MediaStream | null,
   userId: string | undefined,
   screenStream: MediaStream | null = null,
-  isMicTestOn: boolean = false
+  isMicTestOn: boolean = false,
+  botStream: MediaStream | null = null
 ) => {
   const [remoteStreams, setRemoteStreams] = useState<Map<string, MediaStream>>(new Map());
   const [voiceMethod, setVoiceMethod] = useState<'mediasoup' | 'fallback_pcm'>('mediasoup');
@@ -486,6 +487,58 @@ export const useWebRTC = (
     updateScreenShare();
 
   }, [screenStream, voiceMethod]);
+
+  const botProducerRef = useRef<any>(null);
+
+  // Handle dynamic Music Bot audio track publication via Mediasoup Send Transport
+  useEffect(() => {
+    if (!roomId || !userId || voiceMethod !== 'mediasoup' || !sendTransportRef.current) return;
+
+    const botAudioTrack = botStream ? botStream.getAudioTracks()[0] : null;
+
+    const updateBotShare = async () => {
+      try {
+        if (botAudioTrack) {
+          console.log("[LOXX SFU Mediasoup] Producing Local Music Bot track to Media Server...");
+          
+          if (botProducerRef.current) {
+            try {
+              voiceSocket.emit("closeProducer", { producerId: botProducerRef.current.id });
+              botProducerRef.current.close();
+            } catch (e) {}
+          }
+
+          const audioProducer = await sendTransportRef.current.produce({
+            track: botAudioTrack,
+            appData: { type: "bot", userId: `music-bot-${roomId}` },
+            encodings: [{ networkPriority: "high" }],
+            codecOptions: { opusDtx: false, opusFec: true, opusStereo: true }
+          });
+          botProducerRef.current = audioProducer;
+
+          botAudioTrack.onended = () => {
+            if (botProducerRef.current) {
+              voiceSocket.emit("closeProducer", { producerId: botProducerRef.current.id });
+              try { botProducerRef.current.close(); } catch (e) {}
+              botProducerRef.current = null;
+            }
+          };
+        } else {
+          if (botProducerRef.current) {
+            console.log("[LOXX SFU Mediasoup] Music Bot stopped. Releasing producer.");
+            voiceSocket.emit("closeProducer", { producerId: botProducerRef.current.id });
+            try { botProducerRef.current.close(); } catch(e) {}
+            botProducerRef.current = null;
+          }
+        }
+      } catch (e) {
+        console.error("[LOXX SFU Mediasoup] Failed producing Bot audio track:", e);
+      }
+    };
+
+    updateBotShare();
+
+  }, [botStream, voiceMethod]);
 
   // Handle Local audio stream updates (e.g. from hot-swapping mics or resuming)
   useEffect(() => {

@@ -3,6 +3,7 @@ import { lobbySocket, chatSocket, voiceSocket, presenceSocket, getSharedAudioCon
 import { toast } from "react-hot-toast";
 import { useAuth } from "./AuthContext";
 import { useWebRTC } from "../hooks/useWebRTC";
+import { useMusicBotTransmitter } from "../hooks/useMusicBotTransmitter";
 import { RemoteAudioPlayer } from "../components/voice/RemoteAudioPlayer";
 
 export type LobbyStatus = "WAITING" | "READY" | "STARTING" | "IN_PROGRESS" | "FINISHED";
@@ -400,17 +401,17 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
  const [musicVolumeSilence, setMusicVolumeSilenceState] = useState<number>(() => {
   if (typeof window !== "undefined") {
    const saved = localStorage.getItem("loxx_music_vol_silence");
-   return saved ? parseInt(saved, 10) : 100;
+   return saved ? parseInt(saved, 10) : 80;
   }
-  return 100;
+  return 80;
  });
 
  const [musicVolumeTalking, setMusicVolumeTalkingState] = useState<number>(() => {
   if (typeof window !== "undefined") {
    const saved = localStorage.getItem("loxx_music_vol_talking");
-   return saved ? parseInt(saved, 10) : 30;
+   return saved ? parseInt(saved, 10) : 5;
   }
-  return 30;
+  return 5;
  });
 
  const setMusicVolumeSilence = (val: number) => {
@@ -976,8 +977,16 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
  
 
+ const botStream = useMusicBotTransmitter({
+  roomId: lobby?.id || "",
+  isHost: lobby?.hostId === user?.id,
+  botState: musicBotState,
+  voiceSocket,
+  lobbySocket,
+ });
+
  // Connect globally using our WebRTC signaling hook
- const { remoteStreams } = useWebRTC(lobby?.id || null, localStream, user?.id, screenStream, isMicTestOn);
+ const { remoteStreams } = useWebRTC(lobby?.id || null, localStream, user?.id, screenStream, isMicTestOn, botStream);
 
  // Monitor speaking volumes for glowing effects
  const handlePeerVolumeChange = useCallback((peerUserId: string, vol: number) => {
