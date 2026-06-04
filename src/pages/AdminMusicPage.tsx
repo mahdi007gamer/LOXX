@@ -11,8 +11,6 @@ import {
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { motion, AnimatePresence } from "motion/react";
-// @ts-ignore
-import jsmediatags from "jsmediatags/dist/jsmediatags.min.js";
 
 export const AdminMusicPage: React.FC = () => {
   const { isSidebarCollapsed, user } = useAuth();
@@ -122,7 +120,7 @@ export const AdminMusicPage: React.FC = () => {
 
     // Auto extract ID3 cover image using jsmediatags
     try {
-      jsmediatags.read(selectedFile, {
+      (window as any).jsmediatags.read(selectedFile, {
       onSuccess: function(tag: any) {
         if (tag.tags && tag.tags.picture) {
           const data = tag.tags.picture.data;
