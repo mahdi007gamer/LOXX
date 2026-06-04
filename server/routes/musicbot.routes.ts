@@ -11,47 +11,6 @@ if (!fs.existsSync(musicBotDir)) {
   fs.mkdirSync(musicBotDir, { recursive: true });
 }
 
-// Seed helper
-function seedFolders() {
-  const dirs = [
-    "chill", "gaming", "lofi", "electronic",
-    "irani/pop", "irani/traditional",
-    "kharegi/synthwave", "kharegi/lofibeats"
-  ];
-  dirs.forEach(d => {
-    const p = path.join(musicBotDir, d);
-    if (!fs.existsSync(p)) {
-      fs.mkdirSync(p, { recursive: true });
-    }
-  });
-
-  const srcDummy = path.join(process.cwd(), "public", "Rest_in_Peace.mp3");
-  const srcBanner = path.join(process.cwd(), "public", "logo.png");
-
-  dirs.forEach(d => {
-    const p = path.join(musicBotDir, d);
-    const destFile = path.join(p, d.includes("/") ? "Loxx Beat.mp3" : "Ambient Track.mp3");
-    if (fs.existsSync(srcDummy) && !fs.existsSync(destFile)) {
-      try {
-        fs.copyFileSync(srcDummy, destFile);
-      } catch (e) {
-        console.error(`[MusicBot Seed] Failed to copy dummy track to ${d}:`, e);
-      }
-    }
-
-    // Copy a banner.png for category visualization
-    const destBanner = path.join(p, "banner.png");
-    if (fs.existsSync(srcBanner) && !fs.existsSync(destBanner)) {
-      try {
-        fs.copyFileSync(srcBanner, destBanner);
-      } catch (e) {
-        console.error(`[MusicBot Seed] Failed to copy banner to ${d}:`, e);
-      }
-    }
-  });
-}
-seedFolders();
-
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const { category } = req.params;

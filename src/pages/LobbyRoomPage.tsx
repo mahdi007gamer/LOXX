@@ -5,7 +5,7 @@ import { useLobby } from "../context/LobbyContext";
 import { useAuth } from "../context/AuthContext";
 import { Sidebar } from "../components/layout/Sidebar";
 import { useWebRTC } from "../hooks/useWebRTC";
-import { chatSocket, lobbySocket, voiceSocket, getSharedAudioContext, resumeSharedAudioContext } from "../lib/socket";
+import { chatSocket, lobbySocket, voiceSocket, mainPlatformVoiceSocket, getSharedAudioContext, resumeSharedAudioContext } from "../lib/socket";
 import { toast } from "react-hot-toast";
 import { getFileUrl } from "../lib/constants";
 import { 
@@ -520,7 +520,7 @@ export const LobbyRoomPage = () => {
     roomId: lobby?.id || "",
     isHost,
     botState: musicBotState,
-    voiceSocket,
+    voiceSocket: mainPlatformVoiceSocket,
     lobbySocket,
     botVolume: botVolumeLevel / 100
   });

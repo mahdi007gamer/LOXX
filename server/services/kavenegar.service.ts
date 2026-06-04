@@ -1,9 +1,14 @@
 import axios from "axios";
 import https from "https";
 import http from "http";
-import { createRequire } from "module";
-const require = createRequire(import.meta.url);
-const Kavenegar = require("kavenegar");
+import _module from "module";
+import path from "path";
+
+const requireFunc = typeof require !== "undefined"
+  ? require
+  : _module.createRequire(path.join(process.cwd(), "package.json"));
+
+const Kavenegar = requireFunc("kavenegar");
 
 export class KavenegarService {
   /**
