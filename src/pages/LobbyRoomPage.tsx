@@ -178,6 +178,7 @@ export const LobbyRoomPage = () => {
  remoteStreams,
  setScreenStreamForWebRTC
  } = useLobby();
+ const { noiseCanceling, setNoiseCanceling, isMicTestOn, setIsMicTestOn } = useLobby();
 
  const { user, isSidebarCollapsed, setIsSidebarCollapsed } = useAuth();
  const { direction, t, language } = useLanguage();
@@ -187,6 +188,22 @@ export const LobbyRoomPage = () => {
  
  const [copied, setCopied] = useState(false);
  const [isChatOpen, setIsChatOpen] = useState(false); // Mobile chat
+
+ // Local Mic Test Loopback
+ useEffect(() => {
+  let audioObj: HTMLAudioElement | null = null;
+  if (isMicTestOn && localStream && localStream.getAudioTracks().length > 0) {
+   audioObj = new window.Audio();
+   audioObj.srcObject = localStream;
+   audioObj.play().catch(console.warn);
+  }
+  return () => {
+   if (audioObj) {
+    audioObj.pause();
+    audioObj.srcObject = null;
+   }
+  };
+ }, [isMicTestOn, localStream]);
  const messages = useMemo(() => {
  return [
  { id: "system-1", user: "LOXX BOT", text: t("lobbyCreated"), time: "System", isSystem: true, fromUserId: "system" },
@@ -1105,7 +1122,9 @@ export const LobbyRoomPage = () => {
  )}
 
  {isSettingsModalOpen && (
- <Modal title={isRtl ? "تنظیمات لابی" : "Lobby Settings"} onClose={() => setIsSettingsModalOpen(false)}>
+ <Modal title={isRtl ? "تنظیمات لابی" : "Lobby Settings"} onClose={() => setIsSettingsModalOpen(false)} maxWidth="max-w-4xl">
+ <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+ {/* Left Column (Host & Audio Inputs) */}
  <div className="space-y-6">
  {/* Host specific settings */}
  {isHost ? (
@@ -1200,6 +1219,40 @@ export const LobbyRoomPage = () => {
    <span className="h-1.5 w-1.5 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,1)]" />
    {isRtl ? "تنظیمات حساسیت و تاخیر میکروفون" : "Microphone Sensitivity & Gate Delays"}
   </p>
+
+  <div className="flex items-center justify-between border-b border-white/5 pb-2 mb-3">
+   <button
+     onClick={() => setIsMicTestOn(!isMicTestOn)}
+     className={cn(
+       "px-3 py-1.5 rounded-lg text-[10px] uppercase font-black transition-all flex items-center gap-1.5 border",
+       isMicTestOn 
+         ? "bg-red-500/20 text-red-500 border-red-500/30 shadow-[0_0_10px_rgba(239,68,68,0.3)] animate-pulse" 
+         : "bg-black/40 text-gray-400 border-white/10 hover:bg-white/10 hover:text-white"
+     )}
+   >
+     {isMicTestOn ? (isRtl ? "در حال تست (غیرفعال در لابی)" : "TESTING MIC (Muted)") : (isRtl ? "تست میکروفون" : "Test Mic")}
+   </button>
+  </div>
+
+  {/* Noise Cancelling Switch */}
+  <div className="flex items-center justify-between p-3 rounded-xl bg-black/40 border border-white/5 mb-3">
+    <div>
+      <p className="text-[11px] font-black text-white">{isRtl ? "نویزگیر هوشمند لوکس" : "Studio Noise Cancellation"}</p>
+      <p className="text-[9px] text-gray-500 leading-normal">{isRtl ? "حذف خودکار اکو و نویز صدای شما در حین تماس" : "Hardware echo & noise suppression"}</p>
+    </div>
+    <div 
+      onClick={() => setNoiseCanceling(!noiseCanceling)}
+      className={cn(
+        "w-10 h-5 rounded-full relative cursor-pointer border transition-colors shrink-0",
+        noiseCanceling ? "bg-neon-pink/20 border-neon-pink/30" : "bg-white/5 border-white/10"
+      )}
+    >
+      <div className={cn(
+        "absolute top-1 h-3 w-3 rounded-full transition-all",
+        noiseCanceling ? "right-1 bg-neon-pink shadow-[0_0_10px_rgba(255,0,127,1)]" : "right-6 bg-gray-500"
+      )} />
+    </div>
+  </div>
 
   {/* Mic Sensitivity Slider */}
   <div className="space-y-1">
@@ -1454,6 +1507,7 @@ export const LobbyRoomPage = () => {
  </div>
  </div>
  )}
+ </div>
  </div>
  </div>
  </div>

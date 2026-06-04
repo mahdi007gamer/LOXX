@@ -67,7 +67,8 @@ export const useWebRTC = (
   roomId: string | null,
   localStream: MediaStream | null,
   userId: string | undefined,
-  screenStream: MediaStream | null = null
+  screenStream: MediaStream | null = null,
+  isMicTestOn: boolean = false
 ) => {
   const [remoteStreams, setRemoteStreams] = useState<Map<string, MediaStream>>(new Map());
   const [voiceMethod, setVoiceMethod] = useState<'mediasoup' | 'fallback_pcm'>('mediasoup');
@@ -479,6 +480,23 @@ export const useWebRTC = (
 
   }, [screenStream, voiceMethod]);
 
+  // Handle Mic Test logic -> pause the Mediasoup producer so others don't hear
+  useEffect(() => {
+    if (voiceMethod !== 'mediasoup' || !audioProducerRef.current) return;
+    
+    if (isMicTestOn) {
+      if (!audioProducerRef.current.paused) {
+        audioProducerRef.current.pause();
+        voiceSocket.emit("pauseProducer", { producerId: audioProducerRef.current.id });
+      }
+    } else {
+      if (audioProducerRef.current.paused) {
+        audioProducerRef.current.resume();
+        voiceSocket.emit("resumeProducer", { producerId: audioProducerRef.current.id });
+      }
+    }
+  }, [isMicTestOn, voiceMethod]);
+
   // --------------------------------------------------
   // PART B: SECURE PCM OVER WEBSOCKET FALLBACK SYSTEM
   // --------------------------------------------------
@@ -537,7 +555,7 @@ export const useWebRTC = (
 
         processorNodeRef.current.onaudioprocess = (event) => {
           const micEnabled = localStream.getAudioTracks()[0]?.enabled;
-          if (micEnabled) {
+          if (micEnabled && !isMicTestOn) {
             const inputData = event.inputBuffer.getChannelData(0);
             const compressed = downsampleAndToInt16(inputData, event.inputBuffer.sampleRate, 16000);
             chunkBuffer.push(new Int16Array(compressed));

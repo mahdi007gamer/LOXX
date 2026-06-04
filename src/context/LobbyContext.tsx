@@ -94,6 +94,10 @@ interface LobbyContextType {
  setMicOpenDelay: (val: number) => void;
  micCloseDelay: number;
  setMicCloseDelay: (val: number) => void;
+ noiseCanceling: boolean;
+ setNoiseCanceling: (val: boolean) => void;
+ isMicTestOn: boolean;
+ setIsMicTestOn: (val: boolean) => void;
 
  // Overlay Settings
  overlayEnabled: boolean;
@@ -374,6 +378,27 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   return 300;
  });
 
+ const [noiseCanceling, setNoiseCancelingState] = useState<boolean>(() => {
+  if (typeof window !== "undefined") {
+   const saved = localStorage.getItem("loxx_noise_canceling");
+   return saved !== "false";
+  }
+  return true;
+ });
+
+ const [isMicTestOn, setIsMicTestOn] = useState<boolean>(false);
+
+ const setNoiseCanceling = (val: boolean) => {
+  setNoiseCancelingState(val);
+  localStorage.setItem("loxx_noise_canceling", val.toString());
+  // Need to recreate stream for hardware constraints. Handled below by dependency if added to effect, but here we can just reset local stream
+  if (localStreamRef.current) {
+   localStreamRef.current.getTracks().forEach(t => t.stop());
+   localStreamRef.current = null;
+   setLocalStream(null); 
+  }
+ };
+
  const setMicSensitivity = (val: number) => {
   setMicSensitivityState(val);
   localStorage.setItem("loxx_mic_sensitivity", val.toString());
@@ -630,7 +655,7 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
  if (typeof navigator !== "undefined" && navigator.mediaDevices?.getUserMedia && !localStreamRef.current) {
  const constraints: any = {
  echoCancellation: true,
- noiseSuppression: true,
+ noiseSuppression: noiseCanceling,
  autoGainControl: true,
  latency: 0
  };
@@ -867,7 +892,7 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
  
 
  // Connect globally using our WebRTC signaling hook
- const { remoteStreams } = useWebRTC(lobby?.id || null, localStream, user?.id, screenStream);
+ const { remoteStreams } = useWebRTC(lobby?.id || null, localStream, user?.id, screenStream, isMicTestOn);
 
  // Monitor speaking volumes for glowing effects
  const handlePeerVolumeChange = useCallback((peerUserId: string, vol: number) => {
@@ -1457,6 +1482,10 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
  setMicOpenDelay,
  micCloseDelay,
  setMicCloseDelay,
+ noiseCanceling,
+ setNoiseCanceling,
+ isMicTestOn,
+ setIsMicTestOn,
 
  // Overlay bindings
  overlayEnabled,

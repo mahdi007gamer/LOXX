@@ -33,7 +33,13 @@ export const ElectronSettingsPage = () => {
  overlaySpeakingOpacity,
  setOverlaySpeakingOpacity,
  updateLauncherSettings,
- gameDetected
+ gameDetected,
+ micSensitivity, setMicSensitivity, 
+ micCloseDelay, setMicCloseDelay, 
+ micOpenDelay, setMicOpenDelay,
+ noiseCanceling, setNoiseCanceling, 
+ isMicTestOn, setIsMicTestOn,
+ localStream
  } = useLobby();
  const [config, setConfig] = useState<any>({
  showFPSCounter: typeof window !== "undefined" ? localStorage.getItem("loxx_show_fps") === "true" : false
@@ -43,6 +49,22 @@ export const ElectronSettingsPage = () => {
  const [testingCompatibility, setTestingCompatibility] = useState(false);
  const [testResult, setTestResult] = useState<null | 'ok' | 'fail'>(null);
  const [testSteps, setTestSteps] = useState<string[]>([]);
+
+ // Local Mic Test Loopback
+ useEffect(() => {
+   let audioObj: HTMLAudioElement | null = null;
+   if (isMicTestOn && localStream && localStream.getAudioTracks().length > 0) {
+     audioObj = new window.Audio();
+     audioObj.srcObject = localStream;
+     audioObj.play().catch(console.warn);
+   }
+   return () => {
+     if (audioObj) {
+       audioObj.pause();
+       audioObj.srcObject = null;
+     }
+   };
+ }, [isMicTestOn, localStream]);
 
  const runCompatibilityTest = () => {
  setTestingCompatibility(true);
@@ -192,6 +214,96 @@ export const ElectronSettingsPage = () => {
  {recordingKey === "globalMuteKey" ? "Press keys..." : (config.globalMuteKey || "Not Set")}
  </button>
  </div>
+
+ {/* Advanced Audio Properties (Mirrored from Lobby) */}
+ <div className="mt-4 pt-4 border-t border-white/5 space-y-4">
+   <div className="flex items-center justify-between">
+    <span className="text-[11px] font-black text-indigo-300">تنظیمات پیشرفته میکروفون</span>
+    <button
+      onClick={() => setIsMicTestOn(!isMicTestOn)}
+      className={cn(
+        "px-3 py-1.5 rounded-lg text-[10px] uppercase font-black transition-all flex items-center gap-1.5 border",
+        isMicTestOn 
+          ? "bg-red-500/20 text-red-500 border-red-500/30 shadow-[0_0_10px_rgba(239,68,68,0.3)] animate-pulse" 
+          : "bg-black/40 text-gray-400 border-white/10 hover:bg-white/10 hover:text-white"
+      )}
+    >
+      {isMicTestOn ? "در حال تست (غیرفعال در لابی)" : "تست میکروفون"}
+    </button>
+   </div>
+
+   {/* Noise Cancelling Switch */}
+   <div className="flex items-center justify-between p-3 rounded-xl bg-black/40 border border-white/5">
+     <div>
+       <p className="text-[11px] font-black text-white">نویزگیر هوشمند لوکس</p>
+       <p className="text-[9px] text-gray-500 leading-normal">حذف خودکار اکو و نویز صدای شما در حین تماس (سخت‌افزاری)</p>
+     </div>
+     <div 
+       onClick={() => setNoiseCanceling(!noiseCanceling)}
+       className={cn(
+         "w-10 h-5 rounded-full relative cursor-pointer border transition-colors shrink-0",
+         noiseCanceling ? "bg-indigo-500/20 border-indigo-500/30" : "bg-white/5 border-white/10"
+       )}
+     >
+       <div className={cn(
+         "absolute top-1 h-3 w-3 rounded-full transition-all",
+         noiseCanceling ? "right-1 bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,1)]" : "right-6 bg-gray-500"
+       )} />
+     </div>
+   </div>
+
+   {/* Mic Sensitivity Slider */}
+   <div className="space-y-1">
+    <div className="flex justify-between items-center text-[10px] text-gray-400 font-bold">
+     <span>حساسیت صدا (Gate Threshold)</span>
+     <span className="text-indigo-400 font-sans px-2 py-0.5 rounded bg-black/40 border border-white/5">{micSensitivity}</span>
+    </div>
+    <input 
+     type="range" 
+     min="1" 
+     max="40" 
+     value={micSensitivity} 
+     onChange={(e) => setMicSensitivity(parseInt(e.target.value, 10))}
+     className="w-full accent-indigo-400 bg-black/40 h-1.5 rounded-lg appearance-none cursor-pointer"
+    />
+   </div>
+
+   {/* Active Open Delay */}
+   <div className="space-y-1">
+    <div className="flex justify-between items-center text-[10px] text-gray-400 font-bold">
+     <span>تاخیر باز شدن (Open Delay)</span>
+     <span className="text-indigo-400 font-sans px-2 py-0.5 rounded bg-black/40 border border-white/5">{micOpenDelay} ms</span>
+    </div>
+    <input 
+     type="range" 
+     min="0" 
+     max="2000" 
+     step="50"
+     value={micOpenDelay} 
+     onChange={(e) => setMicOpenDelay(parseInt(e.target.value, 10))}
+     className="w-full accent-indigo-400 bg-black/40 h-1.5 rounded-lg appearance-none cursor-pointer"
+    />
+   </div>
+
+   {/* Active Close Delay */}
+   <div className="space-y-1">
+    <div className="flex justify-between items-center text-[10px] text-gray-400 font-bold">
+     <span>تاخیر بسته شدن (Close Delay)</span>
+     <span className="text-indigo-400 font-sans px-2 py-0.5 rounded bg-black/40 border border-white/5">{micCloseDelay} ms</span>
+    </div>
+    <input 
+     type="range" 
+     min="0" 
+     max="3000" 
+     step="100"
+     value={micCloseDelay} 
+     onChange={(e) => setMicCloseDelay(parseInt(e.target.value, 10))}
+     className="w-full accent-indigo-400 bg-black/40 h-1.5 rounded-lg appearance-none cursor-pointer"
+    />
+   </div>
+
+ </div>
+
  </div>
  </div>
  </div>
