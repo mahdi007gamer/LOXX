@@ -217,7 +217,14 @@ export const useWebRTC = (
             if (audioTrack) {
               const audioProducer = await sendTransport.produce({ 
                 track: audioTrack,
-                appData: { userId }
+                appData: { userId },
+                encodings: [
+                  { networkPriority: "high" }
+                ],
+                codecOptions: {
+                  opusDtx: false,
+                  opusFec: true
+                }
               });
               audioProducerRef.current = audioProducer;
               console.log(`[LOXX SFU Mediasoup] Microphones produced stream over RTP [ID: ${audioProducer.id}]`);
@@ -479,6 +486,23 @@ export const useWebRTC = (
     updateScreenShare();
 
   }, [screenStream, voiceMethod]);
+
+  // Handle Local audio stream updates (e.g. from hot-swapping mics or resuming)
+  useEffect(() => {
+    if (!roomId || !userId || voiceMethod !== 'mediasoup' || !audioProducerRef.current || !localStream) return;
+    const updateAudioTrack = async () => {
+      try {
+        const audioTrack = localStream.getAudioTracks()[0];
+        if (audioTrack && audioProducerRef.current.track !== audioTrack) {
+          console.log(`[LOXX SFU Mediasoup] Replacing audio track dynamically...`);
+          await audioProducerRef.current.replaceTrack({ track: audioTrack });
+        }
+      } catch (e) {
+        console.error("[LOXX SFU Mediasoup] Failed replacing audio track:", e);
+      }
+    };
+    updateAudioTrack();
+  }, [localStream, voiceMethod]);
 
   // Handle Mic Test logic -> pause the Mediasoup producer so others don't hear
   useEffect(() => {

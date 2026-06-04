@@ -12,6 +12,17 @@ import {
 import { cn } from "../lib/utils";
 import { motion, AnimatePresence } from "motion/react";
 
+export interface UploadQueueItem {
+  id: string;
+  file: File;
+  title: string;
+  artistIds: string[];
+  playlistIds: string[];
+  coverUrl: string;
+  progress: number;
+  status: 'pending' | 'uploading' | 'success' | 'error';
+}
+
 export const AdminMusicPage: React.FC = () => {
   const { isSidebarCollapsed, user } = useAuth();
   
@@ -40,6 +51,9 @@ export const AdminMusicPage: React.FC = () => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const [parsedFeedback, setParsedFeedback] = useState<{ title: string; artists: string[] } | null>(null);
+
+  const [uploadQueue, setUploadQueue] = useState<UploadQueueItem[]>([]);
+  const isQueueProcessing = useRef(false);
 
   // Edit Track mode states
   const [editingTrack, setEditingTrack] = useState<any | null>(null);
@@ -206,9 +220,9 @@ export const AdminMusicPage: React.FC = () => {
   };
 
   // Chunked audio file uploader logic
-  const uploadAudioInChunks = async (fileToUpload: File): Promise<string> => {
+  const uploadAudioInChunks = async (fileToUpload: File, onProgress?: (percent: number) => void): Promise<string> => {
     const fileId = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-    const chunkSize = 512 * 1024; // 512KB for maximum reliability across nginx proxies
+    const chunkSize = 2048 * 1024; // 2MB for faster uploads
     const totalChunks = Math.ceil(fileToUpload.size / chunkSize);
     let assembledUrl = "";
 
@@ -230,7 +244,11 @@ export const AdminMusicPage: React.FC = () => {
       });
 
       const percent = Math.floor(((index + 1) / totalChunks) * 100);
-      setUploadProgress(percent);
+      if (onProgress) {
+        onProgress(percent);
+      } else {
+        setUploadProgress(percent);
+      }
 
       if (res.data && res.data.url) {
         assembledUrl = res.data.url;
@@ -263,6 +281,56 @@ export const AdminMusicPage: React.FC = () => {
     }
   };
 
+  // Queue Processing Logic
+  useEffect(() => {
+    if (isQueueProcessing.current) return;
+    
+    const processQueue = async () => {
+      const pendingItemList = uploadQueue.filter(q => q.status === 'pending');
+      if (pendingItemList.length === 0) return;
+      
+      const item = pendingItemList[0];
+      isQueueProcessing.current = true;
+      
+      setUploadQueue(prev => prev.map(q => q.id === item.id ? { ...q, status: 'uploading' as const } : q));
+      
+      try {
+        const finalAudioUrl = await uploadAudioInChunks(item.file, (progress) => {
+          setUploadQueue(prev => prev.map(q => q.id === item.id ? { ...q, progress } : q));
+        });
+        
+        if (!finalAudioUrl) {
+          throw new Error("خطا در تکمیل انتقال فایل صوتی");
+        }
+
+        const data = {
+          manualTitle: item.title,
+          url: finalAudioUrl,
+          coverUrl: item.coverUrl,
+          artistIds: JSON.stringify(item.artistIds),
+          playlistIds: JSON.stringify(item.playlistIds)
+        };
+
+        const res = await api.post("/musicbot/db-track/upload", data);
+        if (res.data.status === "success") {
+          toast.success(`آهنگ ${item.title} با موفقیت در دیتابیس ثبت شد!`);
+          setUploadQueue(prev => prev.map(q => q.id === item.id ? { ...q, status: 'success' as const, progress: 100 } : q));
+          fetchMetadata();
+        } else {
+          throw new Error("خطا در پاسخ سرور");
+        }
+      } catch (err: any) {
+        const errorMsg = err.response?.data?.message || err.message || "خطا در آپلود";
+        toast.error(`آپلود ${item.title} ناموفق بود: ${errorMsg}`);
+        setUploadQueue(prev => prev.map(q => q.id === item.id ? { ...q, status: 'error' as const, errorMsg } : q));
+      } finally {
+        isQueueProcessing.current = false;
+      }
+    };
+    
+    processQueue();
+  }, [uploadQueue, fetchMetadata]);
+
   // Submitting the Upload Track Form
   const handleSubmitTrack = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -275,49 +343,28 @@ export const AdminMusicPage: React.FC = () => {
       return;
     }
 
-    setIsUploading(true);
-    setUploadProgress(0);
+    const newItem: UploadQueueItem = {
+      id: Math.random().toString(36).substring(7),
+      file: audioFile,
+      title: manualTitle.trim(),
+      artistIds: [...selectedArtistIds],
+      playlistIds: [...selectedPlaylistIds],
+      coverUrl: customCoverUrl,
+      progress: 0,
+      status: 'pending'
+    };
 
-    try {
-      // 1. Upload audio file in safe chunk pieces
-      const finalAudioUrl = await uploadAudioInChunks(audioFile);
-      if (!finalAudioUrl) {
-        throw new Error("خطا در تکمیل انتقال تکه های فایل صوتی");
-      }
-
-      // 2. Register metadata, linkages, customCover images to DB
-      const data = {
-        manualTitle: manualTitle.trim(),
-        url: finalAudioUrl,
-        coverUrl: customCoverUrl,
-        artistIds: JSON.stringify(selectedArtistIds),
-        playlistIds: JSON.stringify(selectedPlaylistIds)
-      };
-
-      const res = await api.post("/musicbot/db-track/upload", data);
-      
-      if (res.data.status === "success") {
-        toast.success("آهنگ جدید با مشخصات بهینه، کاور آرت و متادیتای صوتی روی دیتابیس ثبت گردید!");
-        
-        // Reset Form
-        setAudioFile(null);
-        setManualTitle("");
-        setCustomCoverUrl("");
-        setCustomCoverFile(null);
-        setSelectedArtistIds([]);
-        setSelectedPlaylistIds([]);
-        setParsedFeedback(null);
-        
-        // Refresh Lists
-        fetchMetadata();
-      }
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || "خطا در فرآیند آپلود و ثبت آهنگ");
-      console.error(err);
-    } finally {
-      setIsUploading(false);
-      setUploadProgress(0);
-    }
+    setUploadQueue(prev => [...prev, newItem]);
+    toast.success("آهنگ به صف آپلود اضافه شد");
+    
+    // Reset Form
+    setAudioFile(null);
+    setManualTitle("");
+    setCustomCoverUrl("");
+    setCustomCoverFile(null);
+    setSelectedArtistIds([]);
+    setSelectedPlaylistIds([]);
+    setParsedFeedback(null);
   };
 
   // Inline Quick creators for Artist & Playlists inside selectors
@@ -876,30 +923,12 @@ export const AdminMusicPage: React.FC = () => {
 
                     {/* Submit layout and chunk upload bar */}
                     <div className="pt-4 border-t border-white/5 space-y-4">
-                      {isUploading && (
-                        <div className="space-y-2">
-                          <div className="flex justify-between items-center text-xs font-black">
-                            <span className="text-neon-pink">در حال ارسال بخش‌های فایل موزیک به سرور...</span>
-                            <span className="text-white font-mono">{uploadProgress}%</span>
-                          </div>
-                          <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden">
-                            <div 
-                              className="h-full bg-gradient-to-r from-neon-blue via-neon-pink to-neon-purple transition-all duration-300"
-                              style={{ width: `${uploadProgress}%` }}
-                            />
-                          </div>
-                          <span className="text-[10px] text-gray-500 block leading-relaxed font-semibold">
-                            سیستم به طور دینامیک فایل موسیقی خام شما را تکه کرده و به صورت تدریجی ثبت می کند تا خطا‌های حجم سرور (۴۱۳ Payload Limits) برطرف گردد.
-                          </span>
-                        </div>
-                      )}
-
                       <button
                         type="submit"
-                        disabled={isUploading || bannerLoading}
+                        disabled={bannerLoading || isQueueProcessing.current && !audioFile}
                         className="w-full h-12 bg-gradient-to-r from-neon-pink to-neon-purple text-sm font-black rounded-xl text-white hover:opacity-90 disabled:opacity-50 transition-all flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(255,0,128,0.3)] border border-neon-pink/30 hover:shadow-[0_0_30px_rgba(255,0,128,0.5)]"
                       >
-                        {isUploading ? "در حال آپلود و ثبت..." : "ثبت نهایی و انتشار آهنگ در لابی 🚀"}
+                        اضافه به لیست آپلود (همزمان) 🚀
                       </button>
                     </div>
                   </form>
@@ -956,6 +985,54 @@ export const AdminMusicPage: React.FC = () => {
                       </div>
                     </div>
                   </div>
+
+                  {/* BOTTOM UPLOAD QUEUE */}
+                  {uploadQueue.length > 0 && (
+                    <div className="lg:col-span-3 bg-white/5 border border-white/5 p-6 rounded-3xl space-y-4">
+                      <h4 className="text-sm font-black text-white flex items-center gap-2">
+                        <ListMusic size={16} className="text-neon-blue" />
+                        <span>صف آپلودها</span>
+                        <span className="text-xs bg-white/10 text-gray-300 px-2 py-0.5 rounded-full">{uploadQueue.length} فایل</span>
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {uploadQueue.map(item => (
+                          <div key={item.id} className="bg-black/40 border border-white/5 rounded-2xl p-4 flex flex-col gap-3 relative overflow-hidden">
+                            {item.status === 'uploading' && (
+                              <div className="absolute inset-0 bg-gradient-to-r from-neon-blue/10 via-neon-purple/5 to-transparent animate-pulse pointer-events-none" />
+                            )}
+                            <div className="flex items-center gap-3 relative z-10">
+                              <div className="h-10 w-10 rounded-xl overflow-hidden shrink-0 bg-white/5 border border-white/10 flex items-center justify-center">
+                                {item.coverUrl ? (
+                                  <img src={item.coverUrl} className="w-full h-full object-cover" />
+                                ) : (
+                                  <Disc size={20} className="text-gray-400" />
+                                )}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-xs font-bold text-white truncate max-w-full">{item.title}</p>
+                                <p className="text-[10px] text-gray-500 font-semibold truncate">
+                                  {item.status === 'pending' && <span className="text-gray-400">در صف انتظار...</span>}
+                                  {item.status === 'uploading' && <span className="text-neon-blue">در حال آپلود ({item.progress}%)</span>}
+                                  {item.status === 'success' && <span className="text-green-400">آپلود و ثبت کامل شد</span>}
+                                  {item.status === 'error' && <span className="text-red-400" title={item.errorMsg}>خطا: {item.errorMsg}</span>}
+                                </p>
+                              </div>
+                            </div>
+                            
+                            {item.status === 'uploading' && (
+                              <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden shrink-0 relative z-10">
+                                <div 
+                                  className="h-full bg-neon-blue transition-all duration-300 ease-out" 
+                                  style={{ width: `${item.progress}%` }} 
+                                />
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                 </div>
               )}
 

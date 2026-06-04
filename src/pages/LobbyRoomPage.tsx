@@ -601,12 +601,12 @@ export const LobbyRoomPage = () => {
       }
     };
 
-    // If you are the Host, broadcast your absolute playhead currentTime every 1.5 seconds to keep peers synchronized 100%
+    // If you are the Host, broadcast your absolute playhead currentTime every 2 seconds to keep peers synchronized securely
     let hostSyncInterval: any = null;
     if (isHost && musicBotState.isPlaying) {
       hostSyncInterval = setInterval(() => {
         controlMusicBot("seek", { currentTime: audioEl.currentTime });
-      }, 500);
+      }, 2000);
     }
 
     return () => {
@@ -632,7 +632,7 @@ export const LobbyRoomPage = () => {
 
     const isSomeoneElseSpeaking = lobby?.talkingUsers?.some(
       (uid: string) => uid !== botId
-    ) || Object.entries(peerActivity).some(([uid, vol]) => uid !== botId && vol > 10) || (localVolume > 10) || false;
+    ) || Object.entries(peerActivity).some(([uid, vol]) => uid !== botId && vol > 25) || (localVolume > 25) || false;
     const duckingFactor = isSomeoneElseSpeaking ? (musicVolumeTalking !== undefined ? musicVolumeTalking : 30) : (musicVolumeSilence !== undefined ? musicVolumeSilence : 100);
     const calculatedVolume = (botVolumeLevel / 100) * (duckingFactor / 100);
 
@@ -653,13 +653,20 @@ export const LobbyRoomPage = () => {
     // Hosts should NEVER adjust their playhead stream to backscatter updates
     if (isHost) return;
     const audioEl = localMusicAudioRef.current;
-    if (!audioEl || !musicBotState?.active || !musicBotState?.currentTrackUrl || musicBotState?.currentTime === undefined) return;
+    if (!audioEl || !musicBotState?.active || !musicBotState?.currentTrackUrl || musicBotState?.currentTime === undefined || !musicBotState?.updatedAt) return;
 
-    const drift = Math.abs(audioEl.currentTime - musicBotState.currentTime);
+    // Extrapolate actual target time if it's currently playing
+    const timeSinceUpdate = musicBotState.isPlaying ? (Date.now() - musicBotState.updatedAt) / 1000 : 0;
+    const targetTime = musicBotState.currentTime + timeSinceUpdate;
+    
+    // Check drift against current playhead
+    const drift = Math.abs(audioEl.currentTime - targetTime);
+
+    // If drifted by more than 0.5s, align playhead exactly.
     if (drift > 0.5) {
-      audioEl.currentTime = musicBotState.currentTime;
+      audioEl.currentTime = targetTime;
     }
-  }, [musicBotState?.currentTime, musicBotState?.active, musicBotState?.currentTrackUrl, isHost]);
+  }, [musicBotState?.currentTime, musicBotState?.updatedAt, musicBotState?.isPlaying, musicBotState?.active, musicBotState?.currentTrackUrl, isHost]);
 
   const hostPlayer = lobby?.players?.find((p: any) => p.userId === lobby?.hostId);
  const isStreamerLobby = (hostPlayer as any)?.role === "STREAMER";

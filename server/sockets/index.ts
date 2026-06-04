@@ -331,7 +331,9 @@ export function setupWebSockets(io: Server) {
         currentTrackCover: "",
         currentCategory: "",
         queue: [],
-        queueIndex: 0
+        queueIndex: 0,
+        currentTime: 0,
+        updatedAt: Date.now()
       };
       if (ack) {
         ack({ status: "success", data: bot });
@@ -358,7 +360,9 @@ export function setupWebSockets(io: Server) {
             currentTrackCover: "",
             currentCategory: "",
             queue: [],
-            queueIndex: 0
+            queueIndex: 0,
+            currentTime: 0,
+            updatedAt: Date.now()
           };
           lobbyMusicBots.set(lobbyId, bot);
         }
@@ -367,6 +371,8 @@ export function setupWebSockets(io: Server) {
         if (!active) {
           bot.isPlaying = false;
         }
+        
+        bot.updatedAt = Date.now();
 
         // Broadcast current state to lobby
         lobbyNs.to(`lobby:${lobbyId}`).emit("lobby.musicbot.state", bot);
@@ -418,7 +424,8 @@ export function setupWebSockets(io: Server) {
             currentCategory: "",
             queue: [],
             queueIndex: 0,
-            currentTime: 0
+            currentTime: 0,
+            updatedAt: Date.now()
           };
           lobbyMusicBots.set(lobbyId, bot);
         }
@@ -462,6 +469,8 @@ export function setupWebSockets(io: Server) {
           if (coverUrl !== undefined) bot.currentTrackCover = coverUrl;
           if (isPlaying !== undefined) bot.isPlaying = isPlaying;
         }
+        
+        bot.updatedAt = Date.now();
 
         // Broadcast updated state to lobby
         lobbyNs.to(`lobby:${lobbyId}`).emit("lobby.musicbot.state", bot);
