@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { lobbySocket, chatSocket, voiceSocket, presenceSocket, getSharedAudioContext, resumeSharedAudioContext } from "../lib/socket";
 import { toast } from "react-hot-toast";
+import { MicVAD } from "@ricky0123/vad-web";
 import { useAuth } from "./AuthContext";
 import { useWebRTC } from "../hooks/useWebRTC";
 import { RemoteAudioPlayer } from "../components/voice/RemoteAudioPlayer";
@@ -65,6 +66,7 @@ interface LobbyContextType {
  leaveLobby: () => void;
  toggleReady: () => void;
  setLobbyMuted: (muted: boolean) => void;
+ setBotStream: (stream: MediaStream | null) => void;
  sendMessage: (content: string) => void;
  updateLobbySettings: (settings: { isPrivate?: boolean, micRequired?: boolean }) => void;
  kickPlayer: (userId: string) => void;
@@ -181,6 +183,7 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
  
  // Voice integration states
  const [localStream, setLocalStream] = useState<MediaStream | null>(null);
+ const [botStream, setBotStream] = useState<MediaStream | null>(null);
  const [screenStream, setScreenStreamForWebRTCState] = useState<MediaStream | null>(null);
  const localStreamRef = useRef<MediaStream | null>(null);
  const [voiceMode, setVoiceMode] = useState<"activation" | "ptt">("activation");
@@ -858,6 +861,59 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 					}
 				}
 
+				let myvad: any = null;
+				MicVAD.new({
+					getStream: () => Promise.resolve(localStream),
+					positiveSpeechThreshold: Math.max(0.1, Math.min(0.99, (40 - micSensitivityRef.current) / 40)), // Map 1-40 to threshold where 1 is highest sensitivity (smallest threshold)
+					onSpeechStart: () => {
+						if (!isTalking) {
+							isTalking = true;
+							if (lobby && voiceSocket) {
+								voiceSocket.emit("voice.talking", { roomId: lobby.id, isTalking: true });
+							}
+							if (lobby && user) {
+								setLobby(prev => {
+									if (!prev) return null;
+									const talkingUsers = prev.talkingUsers || [];
+									if (!talkingUsers.includes(user.id)) {
+										return { ...prev, talkingUsers: [...talkingUsers, user.id] };
+									}
+									return prev;
+								});
+							}
+							if (micTestGainNode && audioContext) {
+								micTestGainNode.gain.setTargetAtTime(1.0, audioContext.currentTime, 0.03);
+							}
+						}
+					},
+					onSpeechEnd: () => {
+						if (isTalking) {
+							isTalking = false;
+							if (lobby && voiceSocket) {
+								voiceSocket.emit("voice.talking", { roomId: lobby.id, isTalking: false });
+							}
+							if (lobby && user) {
+								setLobby(prev => {
+									if (!prev) return null;
+									const talkingUsers = prev.talkingUsers || [];
+									if (talkingUsers.includes(user.id)) {
+										return { ...prev, talkingUsers: talkingUsers.filter(id => id !== user.id) };
+									}
+									return prev;
+								});
+							}
+							if (micTestGainNode && audioContext) {
+								micTestGainNode.gain.setTargetAtTime(0.0, audioContext.currentTime, 0.03);
+							}
+						}
+					}
+				}).then((vad) => {
+					myvad = vad;
+					vad.start();
+				}).catch(e => {
+					console.error("VAD-WEB Failed to Load, falling back to volume gate:", e);
+				});
+
 				let lastAnalysisTime = 0;
 				const analyzeVoice = (timestamp: number) => {
 					const now = timestamp || performance.now();
@@ -876,60 +932,6 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 								lastVol = newVol;
 								setLocalVolume(newVol);
 							}
-
-							const talkingNowRaw = avg > micSensitivityRef.current;
-							let talkingNowResolved = isTalking;
-
-							if (talkingNowRaw) {
-								silenceStartTime = 0;
-								if (!isTalking) {
-									if (speakStartTime === 0) {
-										speakStartTime = now;
-									}
-									if (now - speakStartTime >= micOpenDelayRef.current) {
-										talkingNowResolved = true;
-									}
-								}
-							} else {
-								speakStartTime = 0;
-								if (isTalking) {
-									if (silenceStartTime === 0) {
-										silenceStartTime = now;
-									}
-									if (now - silenceStartTime >= micCloseDelayRef.current) {
-										talkingNowResolved = false;
-									}
-								}
-							}
-
-							if (talkingNowResolved !== isTalking) {
-								isTalking = talkingNowResolved;
-								if (lobby && voiceSocket) {
-									voiceSocket.emit("voice.talking", { roomId: lobby.id, isTalking });
-								}
-								if (lobby && user) {
-									setLobby(prev => {
-										if (!prev) return null;
-										const talkingUsers = prev.talkingUsers || [];
-										const hasMe = talkingUsers.includes(user.id);
-										if (isTalking && !hasMe) {
-											return { ...prev, talkingUsers: [...talkingUsers, user.id] };
-										} else if (!isTalking && hasMe) {
-											return { ...prev, talkingUsers: talkingUsers.filter(id => id !== user.id) };
-										}
-										return prev;
-									});
-								}
-							}
-
-							// Apply gate to test stream gain
-							if (micTestGainNode) {
-								if (talkingNowResolved) {
-									micTestGainNode.gain.setTargetAtTime(1.0, audioContext.currentTime, 0.03);
-								} else {
-									micTestGainNode.gain.setTargetAtTime(0.0, audioContext.currentTime, 0.03);
-								}
-							}
 						} else {
 							if (lastVol !== 0) {
 								lastVol = 0;
@@ -937,22 +939,13 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 							}
 							if (isTalking) {
 								isTalking = false;
-								if (lobby && voiceSocket) {
-									voiceSocket.emit("voice.talking", { roomId: lobby.id, isTalking: false });
-								}
+								if (lobby && voiceSocket) voiceSocket.emit("voice.talking", { roomId: lobby.id, isTalking: false });
 								if (lobby && user) {
 									setLobby(prev => {
 										if (!prev) return null;
-										const talkingUsers = prev.talkingUsers || [];
-										if (talkingUsers.includes(user.id)) {
-											return { ...prev, talkingUsers: talkingUsers.filter(id => id !== user.id) };
-										}
-										return prev;
+										return { ...prev, talkingUsers: prev.talkingUsers?.filter(id => id !== user.id) || [] };
 									});
 								}
-							}
-							if (micTestGainNode) {
-								micTestGainNode.gain.setTargetAtTime(0.0, audioContext.currentTime, 0.03);
 							}
 						}
 					}
@@ -977,7 +970,7 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
  
 
  // Connect globally using our WebRTC signaling hook
- const { remoteStreams } = useWebRTC(lobby?.id || null, localStream, user?.id, screenStream, isMicTestOn, null);
+ const { remoteStreams } = useWebRTC(lobby?.id || null, localStream, user?.id, screenStream, isMicTestOn, botStream);
 
  // Monitor speaking volumes for glowing effects
  const handlePeerVolumeChange = useCallback((peerUserId: string, vol: number) => {
@@ -1598,6 +1591,7 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
  leaveLobby,
  toggleReady,
  setLobbyMuted,
+ setBotStream,
  sendMessage,
  updateLobbySettings,
  kickPlayer,

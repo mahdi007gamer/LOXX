@@ -188,7 +188,8 @@ export const LobbyRoomPage = () => {
   noiseCanceling, setNoiseCanceling, isMicTestOn, setIsMicTestOn,
   musicBotState, toggleMusicBot, controlMusicBot,
   musicVolumeSilence, setMusicVolumeSilence,
-  musicVolumeTalking, setMusicVolumeTalking
+  musicVolumeTalking, setMusicVolumeTalking,
+  setBotStream
  } = useLobby();
 
  const { user, isSidebarCollapsed, setIsSidebarCollapsed } = useAuth();
@@ -540,14 +541,47 @@ export const LobbyRoomPage = () => {
   const botId = `music-bot-${lobby?.id}`;
   const botVolumeLevel = peerVolumes[botId] !== undefined ? peerVolumes[botId] : 100;
   
-  // --- High-Fidelity Local Synchronized Music Bot Player (HOST & PEERS) ---
+  // --- High-Fidelity Sync & Media Server Broadcasting (Music Bot) ---
   const [audioElMounted, setAudioElMounted] = useState(false);
+  const audioContextRef = useRef<AudioContext | null>(null);
+
+  // 1. Host controls the audio element and sends over Mediasoup with Compressor
   useEffect(() => {
     const audioEl = localMusicAudioRef.current;
     if (!audioEl) return;
     if (!audioElMounted) setAudioElMounted(true);
 
-    // Monitor time changes to update our seek slider progress states
+    if (!isHost) {
+      if (!audioEl.paused) audioEl.pause();
+      return; // Peers never play this audio element, they hear it via WebRTC
+    }
+
+    // Audio Engine: Limiter / Compressor Setup
+    if (!audioContextRef.current && (window.AudioContext || (window as any).webkitAudioContext)) {
+      try {
+        const ac = new (window.AudioContext || (window as any).webkitAudioContext)();
+        audioContextRef.current = ac;
+        const source = ac.createMediaElementSource(audioEl);
+        
+        const compressor = ac.createDynamicsCompressor();
+        compressor.threshold.value = -12;
+        compressor.knee.value = 10;
+        compressor.ratio.value = 12;
+        compressor.attack.value = 0.003;
+        compressor.release.value = 0.25;
+
+        const dest = ac.createMediaStreamDestination();
+        
+        source.connect(compressor);
+        compressor.connect(dest);
+        compressor.connect(ac.destination); // For local playback on host
+        
+        setBotStream(dest.stream);
+      } catch (err) {
+        console.error("AudioContext initialization failed", err);
+      }
+    }
+
     const handleTimeUpdate = () => {
       setLocalMusicCurrentTime(audioEl.currentTime);
     };
@@ -559,16 +593,13 @@ export const LobbyRoomPage = () => {
     audioEl.addEventListener("durationchange", handleDurationChange);
 
     if (!musicBotState?.active || !musicBotState?.currentTrackUrl) {
-      if (!audioEl.paused) {
-        audioEl.pause();
-      }
+      if (!audioEl.paused) audioEl.pause();
       return () => {
         audioEl.removeEventListener("timeupdate", handleTimeUpdate);
         audioEl.removeEventListener("durationchange", handleDurationChange);
       };
     }
 
-    // Prepend origin to relative paths
     const rawUrl = musicBotState.currentTrackUrl;
     const fullUrl = rawUrl.startsWith("http") ? rawUrl : (rawUrl.startsWith("blob:") ? rawUrl : `${window.location.origin}${rawUrl}`);
 
@@ -577,33 +608,26 @@ export const LobbyRoomPage = () => {
       audioEl.load();
     }
 
-    // Handle seeking requested via state updates
     if (musicBotState.currentTime !== undefined && musicBotState.updatedAt) {
       const timeSinceUpdate = (Date.now() - musicBotState.updatedAt) / 1000;
       const targetTime = musicBotState.currentTime + (musicBotState.isPlaying ? timeSinceUpdate : 0);
       const drift = Math.abs(audioEl.currentTime - targetTime);
-      if (drift > 2.0) { // A slightly higher tolerance prevents jitter
+      if (drift > 2.0) {
         audioEl.currentTime = targetTime;
       }
     }
 
-    // Sync playhead state
     if (musicBotState.isPlaying) {
       if (audioEl.paused) {
         const playPromise = audioEl.play();
         if (playPromise !== undefined) {
-          playPromise.catch(e => {
-            console.warn("[LocalMusicBot] Playback prevented by browser Autoplay Rules:", e);
-          });
+          playPromise.catch(e => console.warn("[LocalMusicBot] Playback prevented by Autoplay:", e));
         }
       }
     } else {
-      if (!audioEl.paused) {
-        audioEl.pause();
-      }
+      if (!audioEl.paused) audioEl.pause();
     }
 
-    // Automated Queue Advancer managed Authoritatively by the Host client
     audioEl.onended = () => {
       if (isHost && musicBotState.queue && musicBotState.queue.length > 0) {
         const nextIndex = (musicBotState.queueIndex + 1) % musicBotState.queue.length;
@@ -635,6 +659,23 @@ export const LobbyRoomPage = () => {
     isHost
   ]);
 
+  // 2. Peers: Simulate progress bar logic purely from WebRTC state packets
+  useEffect(() => {
+    if (isHost || !musicBotState?.active || musicBotState?.currentTime === undefined) return;
+    
+    // We update UI progress tracker 1x per second based on the server tracked timestamps
+    const interval = setInterval(() => {
+      setLocalMusicDuration(100); // UI fallback (duration info via WebRTC might require extra events)
+      if (musicBotState.isPlaying) {
+        const timeSinceUpdate = (Date.now() - (musicBotState.updatedAt || Date.now())) / 1000;
+        setLocalMusicCurrentTime(musicBotState.currentTime! + timeSinceUpdate);
+      } else {
+        setLocalMusicCurrentTime(musicBotState.currentTime!);
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [isHost, musicBotState?.active, musicBotState?.isPlaying, musicBotState?.currentTime, musicBotState?.updatedAt]);
+
   const [isDucking, setIsDucking] = useState(false);
   
   // Separate non-blocking vocal ducking / volume adjustment effect to decouple from playback
@@ -642,7 +683,7 @@ export const LobbyRoomPage = () => {
     const audioEl = localMusicAudioRef.current;
     if (!audioEl) return;
 
-    const hasHighPeerActivity = Object.entries(peerActivity).some(([uid, vol]) => uid !== botId && vol > 15);
+    const hasHighPeerActivity = Object.entries(peerActivity).some(([uid, vol]) => uid !== botId && (vol as number) > 15);
     const hasLocalActivity = (localVolume || 0) > 15;
     
     const isSomeoneElseSpeaking = (lobby?.talkingUsers?.some(

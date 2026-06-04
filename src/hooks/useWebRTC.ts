@@ -220,10 +220,10 @@ export const useWebRTC = (
                 track: audioTrack,
                 appData: { userId },
                 encodings: [
-                  { networkPriority: "high" }
+                  { networkPriority: "high", maxBitrate: 64000 }
                 ],
                 codecOptions: {
-                  opusDtx: false,
+                  opusDtx: true,
                   opusFec: true
                 }
               });
@@ -457,7 +457,8 @@ export const useWebRTC = (
 
           const videoProducer = await sendTransportRef.current.produce({
             track: screenVideoTrack,
-            appData: { type: "screen", userId }
+            appData: { type: "screen", userId },
+            encodings: [ { networkPriority: "medium" } ]
           });
           videoProducerRef.current = videoProducer;
 
@@ -511,7 +512,7 @@ export const useWebRTC = (
           const audioProducer = await sendTransportRef.current.produce({
             track: botAudioTrack,
             appData: { type: "bot", userId: `music-bot-${roomId}` },
-            encodings: [{ networkPriority: "high" }],
+            encodings: [{ networkPriority: "low", maxBitrate: 64000 }],
             codecOptions: { opusDtx: false, opusFec: true, opusStereo: true }
           });
           botProducerRef.current = audioProducer;
