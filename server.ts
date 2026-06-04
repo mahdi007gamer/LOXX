@@ -25,6 +25,7 @@ import reportRoutes from "./server/routes/report.routes.ts";
 import webhookRoutes from "./server/routes/webhook.routes.ts";
 import streamerRoutes from "./server/routes/streamer.routes.ts";
 import emailRoutes from "./server/routes/email.routes.ts";
+import musicbotRoutes from "./server/routes/musicbot.routes.ts";
 import { BaleService } from "./server/services/bale.service.ts";
 import { setupWebSockets } from "./server/sockets/index.ts";
 import { setIO } from "./server/utils/socket.ts";
@@ -126,6 +127,7 @@ async function startServer() {
   app.use("/api/v1/webhooks", webhookRoutes);
   app.use("/api/v1/streamers", streamerRoutes);
   app.use("/api/v1/email", emailRoutes);
+  app.use("/api/v1/musicbot", musicbotRoutes);
   
   app.get("/api/health", (req, res) => {
     res.json({ status: "ok", message: "LOXX Backend is running in Persian mode (UTF-8)" });

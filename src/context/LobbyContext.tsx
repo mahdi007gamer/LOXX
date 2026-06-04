@@ -164,6 +164,13 @@ interface LobbyContextType {
  setLauncherRichPresenceEnabled: (val: boolean) => void;
  remoteStreams: Map<string, MediaStream>;
  setScreenStreamForWebRTC: (stream: MediaStream | null) => void;
+ musicBotState: any;
+ toggleMusicBot: (active: boolean) => void;
+ controlMusicBot: (action: "play" | "pause" | "update-queue", params?: any) => void;
+ musicVolumeSilence: number;
+ setMusicVolumeSilence: (val: number) => void;
+ musicVolumeTalking: number;
+ setMusicVolumeTalking: (val: number) => void;
 }
 
 const LobbyContext = createContext<LobbyContextType | undefined>(undefined);
@@ -387,6 +394,42 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
  });
 
  const [isMicTestOn, setIsMicTestOn] = useState<boolean>(false);
+
+ const [musicBotState, setMusicBotState] = useState<any>(null);
+
+ const [musicVolumeSilence, setMusicVolumeSilenceState] = useState<number>(() => {
+  if (typeof window !== "undefined") {
+   const saved = localStorage.getItem("loxx_music_vol_silence");
+   return saved ? parseInt(saved, 10) : 100;
+  }
+  return 100;
+ });
+
+ const [musicVolumeTalking, setMusicVolumeTalkingState] = useState<number>(() => {
+  if (typeof window !== "undefined") {
+   const saved = localStorage.getItem("loxx_music_vol_talking");
+   return saved ? parseInt(saved, 10) : 30;
+  }
+  return 30;
+ });
+
+ const setMusicVolumeSilence = (val: number) => {
+  setMusicVolumeSilenceState(val);
+  localStorage.setItem("loxx_music_vol_silence", val.toString());
+ };
+
+ const setMusicVolumeTalking = (val: number) => {
+  setMusicVolumeTalkingState(val);
+  localStorage.setItem("loxx_music_vol_talking", val.toString());
+ };
+
+ const micSensitivityRef = React.useRef(micSensitivity);
+ const micOpenDelayRef = React.useRef(micOpenDelay);
+ const micCloseDelayRef = React.useRef(micCloseDelay);
+
+ React.useEffect(() => { micSensitivityRef.current = micSensitivity; }, [micSensitivity]);
+ React.useEffect(() => { micOpenDelayRef.current = micOpenDelay; }, [micOpenDelay]);
+ React.useEffect(() => { micCloseDelayRef.current = micCloseDelay; }, [micCloseDelay]);
 
  const setNoiseCanceling = (val: boolean) => {
   setNoiseCancelingState(val);
@@ -664,7 +707,7 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
  console.error("Microphone permission denied", e);
  setIsAudioContextResumed(false);
  }
- }, [selectedAudioInput, noiseCanceling]);
+ }, [selectedAudioInput]);
 
  const stopMicrophone = useCallback(() => {
  if (localStreamRef.current) {
@@ -680,7 +723,21 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
  stopMicrophone();
  requestMicrophone();
  }
- }, [selectedAudioInput, noiseCanceling, requestMicrophone, stopMicrophone]);
+ }, [selectedAudioInput, requestMicrophone, stopMicrophone]);
+
+ // Dynamically apply noise suppression constraints without stopping mic track!
+ useEffect(() => {
+  if (localStreamRef.current) {
+   const audioTrack = localStreamRef.current.getAudioTracks()[0];
+   if (audioTrack && typeof audioTrack.applyConstraints === "function") {
+    audioTrack.applyConstraints({
+     noiseSuppression: noiseCanceling
+    }).catch((err) => {
+     console.warn("[LobbyContext] Failed to apply dynamic constraints:", err);
+    });
+   }
+  }
+ }, [noiseCanceling]);
 
  const resumeAudio = useCallback(async () => {
  try {
@@ -820,7 +877,7 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 								setLocalVolume(newVol);
 							}
 
-							const talkingNowRaw = avg > micSensitivity;
+							const talkingNowRaw = avg > micSensitivityRef.current;
 							let talkingNowResolved = isTalking;
 
 							if (talkingNowRaw) {
@@ -829,7 +886,7 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 									if (speakStartTime === 0) {
 										speakStartTime = now;
 									}
-									if (now - speakStartTime >= micOpenDelay) {
+									if (now - speakStartTime >= micOpenDelayRef.current) {
 										talkingNowResolved = true;
 									}
 								}
@@ -839,7 +896,7 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 									if (silenceStartTime === 0) {
 										silenceStartTime = now;
 									}
-									if (now - silenceStartTime >= micCloseDelay) {
+									if (now - silenceStartTime >= micCloseDelayRef.current) {
 										talkingNowResolved = false;
 									}
 								}
@@ -915,7 +972,7 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 				if (micTestGainNode) micTestGainNode.disconnect();
 			} catch (e) {}
 		};
-	}, [lobby?.id, user?.id, localStream, isAudioContextResumed, micSensitivity, micOpenDelay, micCloseDelay, isMicTestOn, selectedAudioOutput]);
+	}, [lobby?.id, user?.id, localStream, isAudioContextResumed, isMicTestOn, selectedAudioOutput]);
 
  
 
@@ -1438,6 +1495,53 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
  }
  };
 
+ useEffect(() => {
+  if (lobby?.id) {
+   const handleStateChange = (state: any) => {
+    console.log("[LobbyContext] Synced Music Bot state", state);
+    setMusicBotState(state);
+   };
+   lobbySocket.on("lobby.musicbot.state", handleStateChange);
+
+   lobbySocket.emit("lobby.musicbot.get_state", { lobbyId: lobby.id }, (res: any) => {
+    if (res?.status === "success") {
+     setMusicBotState(res.data);
+    }
+   });
+
+   return () => {
+    lobbySocket.off("lobby.musicbot.state", handleStateChange);
+   };
+  } else {
+   setMusicBotState(null);
+  }
+ }, [lobby?.id]);
+
+ const toggleMusicBot = (active: boolean) => {
+  if (lobby) {
+   lobbySocket.emit("lobby.musicbot.toggle", { lobbyId: lobby.id, active }, (res: any) => {
+    if (res?.status === "success") {
+     setMusicBotState(res.data);
+     toast.success(active ? "بات موزیک فعال شد" : "بات موزیک غیرفعال شد");
+    } else if (res?.message) {
+     toast.error(res.message);
+    }
+   });
+  }
+ };
+
+ const controlMusicBot = (action: "play" | "pause" | "update-queue", params: any = {}) => {
+  if (lobby) {
+   lobbySocket.emit("lobby.musicbot.control", { lobbyId: lobby.id, action, ...params }, (res: any) => {
+    if (res?.status === "success") {
+     setMusicBotState(res.data);
+    } else if (res?.message) {
+     toast.error(res.message);
+    }
+   });
+  }
+ };
+
  const updateLobbySettings = (settings: { isPrivate?: boolean, micRequired?: boolean }) => {
  if (lobby) {
  lobbySocket.emit("lobby.update_settings", { lobbyId: lobby.id, ...settings }, (ack: any) => {
@@ -1566,18 +1670,35 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
  launcherRichPresenceEnabled,
  setLauncherRichPresenceEnabled,
  remoteStreams,
- setScreenStreamForWebRTC: setScreenStreamForWebRTCState
+ setScreenStreamForWebRTC: setScreenStreamForWebRTCState,
+ musicBotState,
+ toggleMusicBot,
+ controlMusicBot,
+ musicVolumeSilence,
+ setMusicVolumeSilence,
+ musicVolumeTalking,
+ setMusicVolumeTalking
  }}>
  {children}
- {lobby?.id && Array.from(remoteStreams.entries()).map(([peerUserId, stream]) => (
- <RemoteAudioPlayer 
- key={peerUserId}
- stream={stream}
- volumeLevel={isDeafened ? 0 : (peerVolumes[peerUserId] !== undefined ? peerVolumes[peerUserId] : 100)}
- onVolumeChange={(vol) => handlePeerVolumeChange(peerUserId, vol)}
- outputDeviceId={selectedAudioOutput}
- />
- ))}
+ {lobby?.id && Array.from(remoteStreams.entries()).map(([peerUserId, stream]) => {
+  const isBot = peerUserId.startsWith("music-bot-");
+  const baseVolume = isDeafened ? 0 : (peerVolumes[peerUserId] !== undefined ? peerVolumes[peerUserId] : 100);
+  let finalVolume = baseVolume;
+  if (isBot) {
+   const anyUserSpeaking = lobby?.talkingUsers?.some(uid => uid !== peerUserId && uid !== user?.id) || false;
+   const targetVolume = anyUserSpeaking ? musicVolumeTalking : musicVolumeSilence;
+   finalVolume = (baseVolume / 100) * targetVolume;
+  }
+  return (
+   <RemoteAudioPlayer 
+    key={peerUserId}
+    stream={stream}
+    volumeLevel={finalVolume}
+    onVolumeChange={(vol) => handlePeerVolumeChange(peerUserId, vol)}
+    outputDeviceId={selectedAudioOutput}
+   />
+  );
+ })}
  </LobbyContext.Provider>
  );
 };

@@ -71,10 +71,18 @@ export const RemoteAudioPlayer: React.FC<RemoteAudioPlayerProps> = ({ stream, on
  // Direct low-latency volume gain alteration via browser Web Audio API GainNode routing
  if (stream && (stream as any).gainNode) {
  try {
- const audioCtx = getSharedAudioContext();
- (stream as any).gainNode.gain.setValueAtTime(volumeRatio, audioCtx.currentTime);
+  const audioCtx = getSharedAudioContext();
+  const isMusicBot = stream.id.startsWith("music-bot-") || (stream as any).isMusicBot;
+  if (isMusicBot) {
+   const currentGain = (stream as any).gainNode.gain.value;
+   const isDucking = volumeRatio < currentGain;
+   const timeConstant = isDucking ? 0.12 : 0.30;
+   (stream as any).gainNode.gain.setTargetAtTime(volumeRatio, audioCtx.currentTime, timeConstant);
+  } else {
+   (stream as any).gainNode.gain.setValueAtTime(volumeRatio, audioCtx.currentTime);
+  }
  } catch (e) {
- console.warn("Could not set direct gain node value:", e);
+  console.warn("Could not set direct gain node value:", e);
  }
  }
  }, [stream, volumeLevel]);

@@ -706,5 +706,75 @@ export const useWebRTC = (
 
   }, [roomId, userId, voiceMethod]);
 
+  // Dedicated Music Bot receiver effect so it works independently of Mediasoup/Fallback settings
+  useEffect(() => {
+    if (!roomId || !userId) return;
+
+    const handleBotAudioChunk = (data: { userId: string, chunk: ArrayBuffer }) => {
+      const senderId = data.userId;
+      if (!senderId || !senderId.startsWith("music-bot-")) return;
+
+      try {
+        const audioCtx = getSharedAudioContext();
+        if (audioCtx.state === "suspended") {
+          audioCtx.resume().catch(() => {});
+        }
+
+        let entry = fallbackPlayersRef.current.get(senderId);
+        if (!entry) {
+          console.log(`[MusicBot Receiver EFFECT] Starting dynamic play pipeline for: ${senderId}`);
+          const player = new SmoothAudioPlayer();
+          const dest = audioCtx.createMediaStreamDestination();
+          const node = audioCtx.createScriptProcessor(1024, 0, 1);
+
+          node.onaudioprocess = (event) => {
+            const out = event.outputBuffer.getChannelData(0);
+            player.consume(out, event.outputBuffer.sampleRate, 16000);
+          };
+
+          const silentGain = audioCtx.createGain();
+          silentGain.gain.value = 1.0;
+
+          node.connect(silentGain);
+          silentGain.connect(dest);
+          silentGain.connect(audioCtx.destination);
+
+          const stream = dest.stream;
+          (stream as any).gainNode = silentGain;
+
+          fallbackPlayersRef.current.set(senderId, { dest, player, node, silentGainNode: silentGain });
+
+          setRemoteStreams((prev) => {
+            const next = new Map(prev);
+            next.set(senderId, stream);
+            return next;
+          });
+
+          entry = { dest, player, node, silentGainNode: silentGain };
+        }
+
+        const floatData = int16ToFloat32(data.chunk);
+        entry.player.push(floatData);
+      } catch (err) {
+        console.error("MusicBot chunk playing error:", err);
+      }
+    };
+
+    mainPlatformVoiceSocket.on('voice.audio_chunk', handleBotAudioChunk);
+
+    return () => {
+      mainPlatformVoiceSocket.off('voice.audio_chunk', handleBotAudioChunk);
+      
+      // Clean up bot entries specifically when leaving room
+      const botKey = `music-bot-${roomId}`;
+      const entry = fallbackPlayersRef.current.get(botKey);
+      if (entry) {
+        try { entry.node.disconnect(); } catch (e) {}
+        try { entry.silentGainNode.disconnect(); } catch (e) {}
+        fallbackPlayersRef.current.delete(botKey);
+      }
+    };
+  }, [roomId, userId]);
+
   return { remoteStreams, isMediasoupSFU: voiceMethod === 'mediasoup' };
 };

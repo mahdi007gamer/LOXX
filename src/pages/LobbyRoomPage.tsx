@@ -179,7 +179,12 @@ export const LobbyRoomPage = () => {
  remoteStreams,
  setScreenStreamForWebRTC
  } = useLobby();
- const { noiseCanceling, setNoiseCanceling, isMicTestOn, setIsMicTestOn } = useLobby();
+ const { 
+  noiseCanceling, setNoiseCanceling, isMicTestOn, setIsMicTestOn,
+  musicBotState, toggleMusicBot, controlMusicBot,
+  musicVolumeSilence, setMusicVolumeSilence,
+  musicVolumeTalking, setMusicVolumeTalking
+ } = useLobby();
 
  const { user, isSidebarCollapsed, setIsSidebarCollapsed } = useAuth();
  const { direction, t, language } = useLanguage();
@@ -208,6 +213,22 @@ export const LobbyRoomPage = () => {
  })) || [])
  ];
  }, [lobby?.messages]);
+
+ const [libraryCategories, setLibraryCategories] = useState<{ [category: string]: any[] }>({});
+ const [selectedLibCategory, setSelectedLibCategory] = useState<string>("");
+
+ useEffect(() => {
+  fetch("/api/v1/musicbot/tracks")
+   .then(res => res.json())
+   .then(data => {
+    if (data?.status === "success") {
+     setLibraryCategories(data.data || {});
+     const cats = Object.keys(data.data || {});
+     if (cats.length > 0) setSelectedLibCategory(cats[0]);
+    }
+   })
+   .catch(console.error);
+ }, []);
 
  const [isDesktopChatOpen, setIsDesktopChatOpen] = useState(false); // Desktop chat
  const [unreadDesktopChat, setUnreadDesktopChat] = useState(0);
@@ -383,6 +404,33 @@ export const LobbyRoomPage = () => {
  activity: p.userId === user?.id ? localVolume : (peerActivity[p.userId] || 0)
  })) || [];
 
+ // INJECT LOXX MUSIC BOT IF ACTIVE
+ if (musicBotState?.active && lobby?.id) {
+  const botId = `music-bot-${lobby.id}`;
+  const isBotSpeaking = lobby.talkingUsers?.includes(botId) || (peerActivity[botId] || 0) > 10;
+  list.push({
+   id: botId,
+   name: "🎵 Loxx Music Bot",
+   avatar: "🤖",
+   avatarUrl: "", // Displays neon badge
+   level: 99,
+   membership: "VIP" as any,
+   vipMetadata: { borderNeonColor: "#00e5ff" },
+   bannerUrl: "",
+   badges: [{ name: "Music Bot", image: "/badges/music_icon.png" }],
+   rank: isRtl ? "رادیو دیسکی لابی" : "Lobby DJ System",
+   isHost: false,
+   role: "ASSISTANT",
+   isReady: true,
+   hasMic: true,
+   isMuted: peerVolumes[botId] === 0,
+   ping: 5,
+   isSpeaking: isBotSpeaking,
+   volume: peerVolumes[botId] !== undefined ? peerVolumes[botId] : 100,
+   activity: peerActivity[botId] || 0
+  } as any);
+ }
+
  // Add empty slots
  const maxPlayers = lobby?.maxPlayers || 5;
  const result = [...list];
@@ -402,7 +450,7 @@ export const LobbyRoomPage = () => {
  });
  }
  return result;
- }, [lobby?.players, lobby?.maxPlayers, localVolume, peerActivity, lobby?.talkingUsers, peerVolumes, user?.id, user?.username]);
+ }, [lobby?.players, lobby?.maxPlayers, lobby?.id, localVolume, peerActivity, lobby?.talkingUsers, peerVolumes, user?.id, user?.username, musicBotState, isRtl]);
 
  const isReady = lobby?.players?.find(p => p.userId === user?.id)?.isReady || false;
  const isMicMuted = !!(lobby?.players?.find(p => p.userId === user?.id) as any)?.micMuted;
@@ -1419,6 +1467,228 @@ export const LobbyRoomPage = () => {
           </div>
         </div>
       )}
+
+      {/* LOXX MUSIC BOT MANAGEMENT SECTION */}
+      <div className="border border-white/5 p-3.5 rounded-2xl bg-white/5 space-y-4 mt-4">
+        <p className="text-xs font-black text-white flex items-center gap-2 border-b border-white/5 pb-2">
+          <span className="h-1.5 w-1.5 rounded-full bg-[#00e5ff] shadow-[0_0_8px_rgba(0,229,255,1)] animate-pulse" />
+          {isRtl ? "مدیریت بات هوشمند موزیک (Music Bot)" : "Intelligent Music Bot Settings"}
+        </p>
+
+        {/* Host controls to Add/Remove Bot */}
+        <div className="flex items-center justify-between p-3 rounded-xl bg-black/40">
+          <div>
+            <p className="text-xs font-black text-white">{isRtl ? "حضور بات موزیک در لابی" : "Music Bot Presence"}</p>
+            <p className="text-[9px] text-gray-500 font-bold">{isRtl ? "ورود بات صوتی مجازی به کانال لابی شما" : "Virtual voice bot playing high-fidelity streams"}</p>
+          </div>
+          {isHost ? (
+            <div 
+              onClick={() => toggleMusicBot(!musicBotState?.active)}
+              className={cn(
+                "w-12 h-6 rounded-full relative cursor-pointer border transition-colors shrink-0",
+                musicBotState?.active ? "bg-[#00e5ff]/20 border-[#00e5ff]/30" : "bg-white/5 border-white/10"
+              )}
+            >
+              <div className={cn(
+                "absolute top-1 h-4 w-4 rounded-full transition-all",
+                musicBotState?.active ? (isRtl ? "left-1 bg-[#00e5ff] shadow-[0_0_10px_rgba(0,229,255,1)]" : "right-1 bg-[#00e5ff] shadow-[0_0_10px_rgba(0,229,255,1)]") : (isRtl ? "left-7 bg-gray-500" : "right-7 bg-gray-500")
+              )} />
+            </div>
+          ) : (
+            <span className={cn(
+              "px-2 py-1 rounded text-xs font-bold leading-none shrink-0",
+              musicBotState?.active ? "bg-[#00e5ff]/10 text-[#00e5ff]" : "bg-white/5 text-gray-500"
+            )}>
+              {musicBotState?.active ? (isRtl ? "فعال" : "Active") : (isRtl ? "غیرفعال" : "Inactive")}
+            </span>
+          )}
+        </div>
+
+        {/* Personalized Ducking Volume Sliders for everyone */}
+        <div className="space-y-3 bg-black/20 p-3 rounded-xl border border-white/5">
+          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{isRtl ? "تنظیمات شخصی‌سازی هوشمند صدا (Ducking)" : "Personalized Ducking & Volume Controls"}</p>
+          
+          <div className="space-y-1">
+            <div className="flex justify-between items-center text-[10px] text-gray-400 font-bold font-sans">
+              <span>{isRtl ? "حجم صدای موسیقی در سکوت لابی" : "Silence volume ratio"}</span>
+              <span className="text-[#00e5ff] font-sans">{musicVolumeSilence}%</span>
+            </div>
+            <input 
+              type="range" 
+              min="0" 
+              max="100" 
+              value={musicVolumeSilence} 
+              onChange={(e) => setMusicVolumeSilence(parseInt(e.target.value, 10))}
+              className="w-full accent-[#00e5ff] bg-black/40 h-1 rounded appearance-none cursor-pointer"
+            />
+          </div>
+
+          <div className="space-y-1">
+            <div className="flex justify-between items-center text-[10px] text-gray-400 font-bold font-sans">
+              <span>{isRtl ? "حجم صدای موسیقی هنگام صحبت هم‌تیمی‌ها" : "Talking (ducked) volume ratio"}</span>
+              <span className="text-neon-pink font-sans">{musicVolumeTalking}%</span>
+            </div>
+            <input 
+              type="range" 
+              min="0" 
+              max="100" 
+              value={musicVolumeTalking} 
+              onChange={(e) => setMusicVolumeTalking(parseInt(e.target.value, 10))}
+              className="w-full accent-neon-pink bg-black/40 h-1 rounded appearance-none cursor-pointer"
+            />
+          </div>
+          <p className="text-[8px] text-gray-500 leading-normal border-t border-white/5 pt-1.5 mt-1.5">
+            {isRtl ? "هنگام شروع صحبت سایر اعضا، ولوم صدای بات به طور اتوماتیک کاهش یافته و دوباره ملایم فیداین می‌شود." : "The music bot volume scales automatically when someone speaks, fading back dynamically."}
+          </p>
+        </div>
+
+        {/* Dynamic Category/Track Selector inside Settings modal */}
+        {musicBotState?.active && (
+          <>
+            {/* Loxx Music Library Category Explorer */}
+            <div className="bg-black/35 p-3 rounded-xl border border-white/5 space-y-3">
+              <span className="text-[10px] font-bold text-gray-400 uppercase">{isRtl ? "آلبوم موسیقی‌های لوکس" : "Loxx Dynamic Music Library"}</span>
+              
+              {/* Category selector tabs */}
+              <div className="flex gap-1 overflow-x-auto pb-1 scrollbar-none">
+                {Object.keys(libraryCategories).length > 0 ? (
+                  Object.keys(libraryCategories).map((catName) => (
+                    <button
+                      key={catName}
+                      onClick={() => setSelectedLibCategory(catName)}
+                      className={cn(
+                        "px-2.5 py-1 text-[9px] font-bold rounded-lg whitespace-nowrap transition-all border shrink-0",
+                        selectedLibCategory === catName 
+                          ? "bg-[#00e5ff]/20 text-[#00e5ff] border-[#00e5ff]/30 shadow-[0_0_8px_rgba(0,229,255,0.15)]" 
+                          : "bg-white/5 text-gray-400 border-white/5 hover:bg-white/10"
+                      )}
+                    >
+                      {catName}
+                    </button>
+                  ))
+                ) : (
+                  <span className="text-[8px] text-gray-600 py-1">{isRtl ? "درحال بارگذاری دسته‌بندی‌ها..." : "Loading categories..."}</span>
+                )}
+              </div>
+
+              {/* Tracks inside selected category */}
+              <div className="max-h-36 overflow-y-auto space-y-1.5 custom-scrollbar pr-1">
+                {selectedLibCategory && libraryCategories[selectedLibCategory] && libraryCategories[selectedLibCategory].length > 0 ? (
+                  libraryCategories[selectedLibCategory].map((track: any) => {
+                    const isInQueue = musicBotState?.queue?.some((t: any) => t.id === track.id || t.title === track.title);
+                    return (
+                      <div 
+                        key={track.id || track.title} 
+                        className="flex justify-between items-center bg-white/5 p-1.5 px-2.5 rounded-lg border border-white/5 hover:border-white/10 transition-all"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[10px] font-bold text-white truncate">{track.title}</p>
+                          <p className="text-[8px] text-gray-500 leading-none mt-0.5">{track.category}</p>
+                        </div>
+                        
+                        <div className="flex gap-1 shrink-0">
+                          {isHost ? (
+                            <>
+                              <button
+                                onClick={() => controlMusicBot("update-queue", { tracks: [track] })}
+                                className="p-1 px-2 text-[8px] font-black bg-[#00e5ff]/10 hover:bg-[#00e5ff]/20 border border-[#00e5ff]/20 text-[#00e5ff] rounded-md transition-all whitespace-nowrap"
+                                title={isRtl ? "پخش آنی موزیک" : "Instant Play Stream"}
+                              >
+                                {isRtl ? "پخش" : "Play"}
+                              </button>
+                              <button
+                                onClick={() => controlMusicBot("update-queue", { 
+                                  tracks: [...(musicBotState?.queue || []), track] 
+                                })}
+                                className={cn(
+                                  "p-1 px-2 text-[8px] font-black rounded-md transition-all whitespace-nowrap border",
+                                  isInQueue 
+                                    ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400 cursor-default animate-pulse" 
+                                    : "bg-white/5 border-white/10 hover:bg-white/10 text-gray-300"
+                                )}
+                              >
+                                {isInQueue ? (isRtl ? "در صف" : "Queued") : (isRtl ? "+ صف" : "+ Queue")}
+                              </button>
+                            </>
+                          ) : (
+                            <span className="text-[8px] text-gray-600 font-semibold">{isRtl ? "مخصوص سازنده" : "Host only"}</span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <p className="text-center py-4 text-[9px] text-gray-600">{isRtl ? "آهنگی در این دسته‌بندی یافت نشد." : "No songs found in this category."}</p>
+                )}
+              </div>
+            </div>
+
+            {/* Playing Track Details and Quick Music Bot Queue Controller panel */}
+            <div className="bg-black/35 p-3 rounded-xl border border-white/5 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold text-gray-400 uppercase">{isRtl ? "موسیقی در حال پخش" : "Current Track & Playlist"}</span>
+                <span className="text-[8px] font-mono bg-[#00e5ff]/10 text-[#00e5ff] px-1.5 py-0.5 rounded leading-none shrink-0 border border-[#00e5ff]/10 animate-pulse">LIVE DJ STREAM</span>
+              </div>
+
+              <div className="flex items-center gap-2.5 bg-black/40 p-2 rounded-lg">
+                <div className="w-8 h-8 rounded bg-gradient-to-tr from-cyan-500 to-emerald-500 flex items-center justify-center text-white font-bold text-xs shrink-0 shadow-lg animate-spin">
+                  💿
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[11px] font-black text-white truncate">{musicBotState.currentTrack ? musicBotState.currentTrack.title : (isRtl ? "آهنگی انتخاب نشده است" : "Playlist empty")}</p>
+                  <p className="text-[9px] text-gray-500 leading-none mt-1 font-bold truncate">{musicBotState.currentTrack ? musicBotState.currentTrack.category : (isRtl ? "بدون دسته‌بندی" : "No active category")}</p>
+                </div>
+                {/* Skip / Next Controls for Host */}
+                {isHost && (
+                  <div className="flex gap-1 shrink-0">
+                    <button 
+                      onClick={() => controlMusicBot("play")} 
+                      className="p-1.5 hover:bg-white/10 rounded-lg text-white transition-all text-xs"
+                      title={isRtl ? "پخش مجدد" : "Force Play/Resume"}
+                    >
+                      ▶
+                    </button>
+                    <button 
+                      onClick={() => controlMusicBot("pause")} 
+                      className="p-1.5 hover:bg-white/10 rounded-lg text-white transition-all text-xs"
+                      title={isRtl ? "توقف موقت" : "Pause Track"}
+                    >
+                      ⏸
+                    </button>
+                    <button 
+                      onClick={() => controlMusicBot("update-queue", { tracks: musicBotState?.queue?.slice(1) || [] })} 
+                      className="p-1.5 hover:bg-white/10 rounded-lg text-white transition-all text-xs font-bold"
+                      title={isRtl ? "آهنگ بعدی" : "Skip Song"}
+                    >
+                      ⏭
+                    </button>
+                  </div>
+                )}
+              </div>
+              
+              {/* Queue info */}
+              <div className="text-[9px] text-gray-400 font-semibold space-y-1 pt-1 border-t border-white/5">
+                <div className="flex justify-between font-bold text-gray-500">
+                  <span>{isRtl ? "ردیف‌های لیست شیفت" : "Bot Track List Queue"}</span>
+                  <span>{musicBotState.queue?.length || 0} track(s)</span>
+                </div>
+                {musicBotState.queue && musicBotState.queue.length > 0 ? (
+                  <div className="max-h-24 overflow-y-auto space-y-1 custom-scrollbar pr-1 mt-1 font-sans">
+                    {musicBotState.queue.map((track: any, idx: number) => (
+                      <div key={track.id || idx} className={cn("flex justify-between items-center bg-white/5 p-1 px-2 rounded-lg text-[9px]", musicBotState.queueIndex === idx && "border border-[#00e5ff]/20 bg-[#00e5ff]/5 text-white font-bold")}>
+                        <span className="truncate max-w-[185px]">{track.title}</span>
+                        <span className="text-[8px] text-gray-500 shrink-0">{track.category}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-center py-2 text-[8px] text-gray-405 mt-1">{isRtl ? "لیست پخش بات خالی است" : "Waitlist empty, add tracks from lobby list"}</p>
+                )}
+              </div>
+            </div>
+          </>
+        )}
+      </div>
     </div>
   </div>
 </Modal>

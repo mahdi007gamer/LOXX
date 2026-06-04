@@ -14,6 +14,7 @@ interface AuthenticatedSocket extends Socket {
 // Global reference for emitting
 let globalIo: Server;
 export let globalNotifyNs: any = null;
+export const lobbyMusicBots = new Map<string, any>();
 
 export function sendRealtimeWarning(userId: string, message: string) {
   if (globalNotifyNs) {
@@ -158,6 +159,7 @@ export function setupWebSockets(io: Server) {
 
           // If host leaves or no members left, delete lobby
           if (!remainingMembers.length || lobby.hostId === userId) {
+            lobbyMusicBots.delete(lobbyId);
             await prisma.message.deleteMany({ where: { lobbyId } }).catch(() => {});
             await prisma.lobby.delete({ where: { id: lobbyId } }).catch((err) => { console.error("Error deleting lobby on host exit:", err); });
             lobbyNs.to(`lobby:${lobbyId}`).emit("lobby.closed", { lobbyId });
@@ -212,7 +214,7 @@ export function setupWebSockets(io: Server) {
     socket.join(`user:${userId}`);
     trackUser(userId, socket.id);
 
-    socket.on("voice.join", async (data: { roomId: string }, ack?: any) => {
+      socket.on("voice.join", async (data: { roomId: string }, ack?: any) => {
       socket.join(`voice:${data.roomId}`);
       // Notify others in the room
       socket.to(`voice:${data.roomId}`).emit("voice.user_joined", { userId });
@@ -223,6 +225,12 @@ export function setupWebSockets(io: Server) {
          const existingUserIds = sockets
            .map((s: any) => s.userId)
            .filter((id: string) => id && id !== userId);
+         
+         // Inject Music Bot as an active voice user if it's active in this lobby
+         const botSession = lobbyMusicBots.get(data.roomId);
+         if (botSession && botSession.active) {
+           existingUserIds.push(`music-bot-${data.roomId}`);
+         }
          
          // Remove duplicates
          const uniqueUsers = Array.from(new Set(existingUserIds));
@@ -251,9 +259,10 @@ export function setupWebSockets(io: Server) {
       voiceNs.to(`voice:${data.roomId}`).emit("voice.talking", { userId, isTalking: data.isTalking });
     });
 
-    socket.on("voice.audio_chunk", (data: { roomId: string, chunk: any }) => {
-      // SFU Media Server Relay: Broadcast the media chunk to all other players in the room
-      socket.to(`voice:${data.roomId}`).emit("voice.audio_chunk", { userId, chunk: data.chunk });
+    socket.on("voice.audio_chunk", (data: { roomId: string, chunk: any, userId?: string }) => {
+      // SFU Media Server Relay: Broadcast the media chunk to all other players in the room (supports Bot spoofing by host)
+      const senderUserId = data.userId || userId;
+      socket.to(`voice:${data.roomId}`).emit("voice.audio_chunk", { userId: senderUserId, chunk: data.chunk });
     });
 
     socket.on("disconnect", () => {
@@ -310,6 +319,133 @@ export function setupWebSockets(io: Server) {
     if (!userId) return;
     
     trackUser(userId, socket.id);
+
+    // Dynamic Music Bot Sockets handlers
+    socket.on("lobby.musicbot.get_state", (data: { lobbyId: string }, ack?: any) => {
+      const { lobbyId } = data;
+      const bot = lobbyMusicBots.get(lobbyId) || {
+        active: false,
+        isPlaying: false,
+        currentTrackName: "",
+        currentTrackUrl: "",
+        currentCategory: "",
+        queue: [],
+        queueIndex: 0
+      };
+      if (ack) {
+        ack({ status: "success", data: bot });
+      } else {
+        socket.emit("lobby.musicbot.state", bot);
+      }
+    });
+
+    socket.on("lobby.musicbot.toggle", async (data: { lobbyId: string, active: boolean }, ack?: any) => {
+      const { lobbyId, active } = data;
+      try {
+        const lobby = await prisma.lobby.findUnique({ where: { id: lobbyId } });
+        if (!lobby || lobby.hostId !== userId) {
+          return ack?.({ status: "error", message: "تادسترسی ندارید، فقط سازنده لابی می‌تواند بات موسیقی را تغییر دهد." });
+        }
+
+        let bot = lobbyMusicBots.get(lobbyId);
+        if (!bot) {
+          bot = {
+            active: false,
+            isPlaying: false,
+            currentTrackName: "",
+            currentTrackUrl: "",
+            currentCategory: "",
+            queue: [],
+            queueIndex: 0
+          };
+          lobbyMusicBots.set(lobbyId, bot);
+        }
+
+        bot.active = active;
+        if (!active) {
+          bot.isPlaying = false;
+        }
+
+        // Broadcast current state to lobby
+        lobbyNs.to(`lobby:${lobbyId}`).emit("lobby.musicbot.state", bot);
+
+        if (active) {
+          voiceNs.to(`voice:${lobbyId}`).emit("voice.user_joined", { userId: `music-bot-${lobbyId}` });
+          // If active and playing, notify speaking
+          if (bot.isPlaying) {
+            voiceNs.to(`voice:${lobbyId}`).emit("voice.talking", { userId: `music-bot-${lobbyId}`, isTalking: true });
+          }
+        } else {
+          voiceNs.to(`voice:${lobbyId}`).emit("voice.user_left", { userId: `music-bot-${lobbyId}` });
+        }
+
+        if (ack) ack({ status: "success", data: bot });
+      } catch (err: any) {
+        if (ack) ack({ status: "error", message: err.message });
+      }
+    });
+
+    socket.on("lobby.musicbot.control", async (data: {
+      lobbyId: string;
+      action: "play" | "pause" | "update-queue";
+      category?: string;
+      trackUrl?: string;
+      trackName?: string;
+      queue?: { name: string, url: string }[];
+      queueIndex?: number;
+      isPlaying?: boolean;
+    }, ack?: any) => {
+      const { lobbyId, action, category, trackUrl, trackName, queue, queueIndex, isPlaying } = data;
+      try {
+        const lobby = await prisma.lobby.findUnique({ where: { id: lobbyId } });
+        if (!lobby || lobby.hostId !== userId) {
+          return ack?.({ status: "error", message: "تادسترسی ندارید، شما سازنده لابی نیستید." });
+        }
+
+        let bot = lobbyMusicBots.get(lobbyId);
+        if (!bot) {
+          bot = {
+            active: true,
+            isPlaying: false,
+            currentTrackName: "",
+            currentTrackUrl: "",
+            currentCategory: "",
+            queue: [],
+            queueIndex: 0
+          };
+          lobbyMusicBots.set(lobbyId, bot);
+        }
+
+        if (action === "play") {
+          bot.isPlaying = true;
+          if (trackUrl) bot.currentTrackUrl = trackUrl;
+          if (trackName) bot.currentTrackName = trackName;
+          if (category) bot.currentCategory = category;
+        } else if (action === "pause") {
+          bot.isPlaying = false;
+        } else if (action === "update-queue") {
+          if (queue !== undefined) bot.queue = queue;
+          if (queueIndex !== undefined) bot.queueIndex = queueIndex;
+          if (trackUrl) bot.currentTrackUrl = trackUrl;
+          if (trackName) bot.currentTrackName = trackName;
+          if (category) bot.currentCategory = category;
+          if (isPlaying !== undefined) bot.isPlaying = isPlaying;
+        }
+
+        // Broadcast updated state to lobby
+        lobbyNs.to(`lobby:${lobbyId}`).emit("lobby.musicbot.state", bot);
+
+        // Map music play state to active voice speaking status
+        voiceNs.to(`voice:${lobbyId}`).emit("voice.talking", { 
+          userId: `music-bot-${lobbyId}`, 
+          isTalking: bot.isPlaying 
+        });
+
+        if (ack) ack({ status: "success", data: bot });
+      } catch (err: any) {
+        if (ack) ack({ status: "error", message: err.message });
+      }
+    });
 
     const getLobbyFullData = async (lobbyId: string) => {
       const lobby = await prisma.lobby.findUnique({
@@ -501,6 +637,7 @@ export function setupWebSockets(io: Server) {
 
         // If host leaves or no members left, delete lobby
         if (!remainingLobby || remainingLobby.hostId === userId || remainingLobby.members.length === 0) {
+          lobbyMusicBots.delete(lobbyId);
           await prisma.message.deleteMany({ where: { lobbyId } }).catch(() => {});
           await prisma.lobby.delete({ where: { id: lobbyId } }).catch((err) => { console.error("Error deleting lobby leave:", err); });
           lobbyNs.to(`lobby:${lobbyId}`).emit("lobby.closed", { lobbyId });

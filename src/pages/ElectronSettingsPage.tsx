@@ -225,7 +225,7 @@ export const ElectronSettingsPage = () => {
     </div>
 
     {/* Noise Cancelling Switch (Styled exactly like Overlay Switch) */}
-    <div className="flex items-center justify-between bg-black/45 p-4 rounded-xl border border-[#00e5ff]/10 bg-[#00e5ff]/5">
+    <div className="flex items-center justify-between bg-black/40 p-4 rounded-xl border border-[#00e5ff]/15 bg-[#00e5ff]/5 hover:bg-black/50 transition-all shadow-md">
       <div className="flex flex-col text-right">
         <p className="text-sm font-bold text-white">نویزگیر هوشمند لوکس</p>
         <p className="text-[10px] text-gray-400 mt-1">حذف خودکار اکو، فیدبک و نویز محیط سیستم به صورت سخت‌افزاری</p>
@@ -241,7 +241,8 @@ export const ElectronSettingsPage = () => {
       </label>
     </div>
 
-    {/* Mic Sensitivity Slider (Styled exactly like Overlay Sliders) */}
+    {/* Sliders Container (Styled exactly like Overlay Sliders Container) */}
+    <div className="space-y-4 bg-black/30 p-4 rounded-xl border border-white/5 mt-2">
     <div className="space-y-1">
       <div className="flex justify-between items-center text-xs mb-1">
         <span className="font-mono text-[#00e5ff] px-2 py-0.5 rounded bg-[#00e5ff]/10 border border-[#00e5ff]/20">{micSensitivity}</span>
@@ -253,7 +254,7 @@ export const ElectronSettingsPage = () => {
         max="40" 
         value={micSensitivity} 
         onChange={(e) => setMicSensitivity(parseInt(e.target.value, 10))}
-        className="w-full accent-[#00e5ff] bg-black/40 h-1.5 rounded-lg cursor-pointer"
+        className="w-full accent-[#00e5ff] bg-black/40 h-1.5 rounded-lg cursor-pointer hover:accent-[#00e5ff]/80"
       />
     </div>
 
@@ -270,7 +271,7 @@ export const ElectronSettingsPage = () => {
         step="50"
         value={micOpenDelay} 
         onChange={(e) => setMicOpenDelay(parseInt(e.target.value, 10))}
-        className="w-full accent-[#00e5ff] bg-black/40 h-1.5 rounded-lg cursor-pointer"
+        className="w-full accent-[#00e5ff] bg-black/40 h-1.5 rounded-lg cursor-pointer hover:accent-[#00e5ff]/80"
       />
     </div>
 
@@ -287,8 +288,9 @@ export const ElectronSettingsPage = () => {
         step="100"
         value={micCloseDelay} 
         onChange={(e) => setMicCloseDelay(parseInt(e.target.value, 10))}
-        className="w-full accent-[#00e5ff] bg-black/40 h-1.5 rounded-lg cursor-pointer"
+        className="w-full accent-[#00e5ff] bg-black/40 h-1.5 rounded-lg cursor-pointer hover:accent-[#00e5ff]/80"
       />
+    </div>
     </div>
   </div>
   </div>
