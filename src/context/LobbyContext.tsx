@@ -766,121 +766,156 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
  }, [voiceMode, pttKey, isPttPressed]);
 
  // Handle local voice analysis globally
- useEffect(() => {
- let audioContext: AudioContext;
- let analyzer: AnalyserNode;
- let microphone: MediaStreamAudioSourceNode;
- let rafId: number;
- let isTalking = false;
- let lastVol = 0;
- let speakStartTime = 0;
- let silenceStartTime = 0;
+	useEffect(() => {
+		let audioContext: AudioContext;
+		let analyzer: AnalyserNode;
+		let microphone: MediaStreamAudioSourceNode;
+		let micTestGainNode: GainNode | null = null;
+		let rafId: number;
+		let isTalking = false;
+		let lastVol = 0;
+		let speakStartTime = 0;
+		let silenceStartTime = 0;
 
- if (lobby && user && localStream && isAudioContextResumed) {
- try {
- audioContext = getSharedAudioContext();
- analyzer = audioContext.createAnalyser();
- microphone = audioContext.createMediaStreamSource(localStream);
- microphone.connect(analyzer);
- 
- analyzer.fftSize = 256;
- const bufferLength = analyzer.frequencyBinCount;
- const dataArray = new Uint8Array(bufferLength);
+		if (localStream && isAudioContextResumed) {
+			try {
+				audioContext = getSharedAudioContext();
+				analyzer = audioContext.createAnalyser();
+				microphone = audioContext.createMediaStreamSource(localStream);
+				microphone.connect(analyzer);
+				
+				analyzer.fftSize = 256;
+				const bufferLength = analyzer.frequencyBinCount;
+				const dataArray = new Uint8Array(bufferLength);
 
- let lastAnalysisTime = 0;
- const analyzeVoice = (timestamp: number) => {
- const now = timestamp || performance.now();
- if (now - lastAnalysisTime >= 60) {
- lastAnalysisTime = now;
- if (localStream.getAudioTracks().length > 0 && localStream.getAudioTracks()[0].enabled) {
- analyzer.getByteFrequencyData(dataArray);
- let sum = 0;
- for(let i = 0; i < bufferLength; i++) {
- sum += dataArray[i];
- }
- const avg = sum / bufferLength;
- const newVol = Math.min(100, Math.round(avg * 2));
- 
- if (Math.abs(newVol - lastVol) > 20 || (newVol === 0 && lastVol !== 0) || (newVol > 15 && lastVol === 0)) {
- lastVol = newVol;
- setLocalVolume(newVol);
- }
+				// Connect mic-test audio routing if enabled
+				if (isMicTestOn) {
+					micTestGainNode = audioContext.createGain();
+					micTestGainNode.gain.setValueAtTime(0, audioContext.currentTime); // start silent (gated)
+					microphone.connect(micTestGainNode);
+					micTestGainNode.connect(audioContext.destination);
 
-  const talkingNowRaw = avg > micSensitivity;
-  let talkingNowResolved = isTalking;
+					// Apply custom output destination if selected and supported
+					if (selectedAudioOutput && selectedAudioOutput !== "default" && (audioContext as any).setSinkId) {
+						(audioContext as any).setSinkId(selectedAudioOutput).catch(console.warn);
+					}
+				}
 
-  if (talkingNowRaw) {
-   silenceStartTime = 0;
-   if (!isTalking) {
-    if (speakStartTime === 0) {
-     speakStartTime = now;
-    }
-    if (now - speakStartTime >= micOpenDelay) {
-     talkingNowResolved = true;
-    }
-   }
-  } else {
-   speakStartTime = 0;
-   if (isTalking) {
-    if (silenceStartTime === 0) {
-     silenceStartTime = now;
-    }
-    if (now - silenceStartTime >= micCloseDelay) {
-     talkingNowResolved = false;
-    }
-   }
-  }
+				let lastAnalysisTime = 0;
+				const analyzeVoice = (timestamp: number) => {
+					const now = timestamp || performance.now();
+					if (now - lastAnalysisTime >= 60) {
+						lastAnalysisTime = now;
+						if (localStream.getAudioTracks().length > 0 && localStream.getAudioTracks()[0].enabled) {
+							analyzer.getByteFrequencyData(dataArray);
+							let sum = 0;
+							for(let i = 0; i < bufferLength; i++) {
+								sum += dataArray[i];
+							}
+							const avg = sum / bufferLength;
+							const newVol = Math.min(100, Math.round(avg * 2));
+							
+							if (Math.abs(newVol - lastVol) > 20 || (newVol === 0 && lastVol !== 0) || (newVol > 15 && lastVol === 0)) {
+								lastVol = newVol;
+								setLocalVolume(newVol);
+							}
 
- if (talkingNowResolved !== isTalking) {
- isTalking = talkingNowResolved;
- voiceSocket.emit("voice.talking", { roomId: lobby.id, isTalking });
- setLobby(prev => {
- if (!prev) return null;
- const talkingUsers = prev.talkingUsers || [];
- const hasMe = talkingUsers.includes(user.id);
- if (isTalking && !hasMe) {
- return { ...prev, talkingUsers: [...talkingUsers, user.id] };
- } else if (!isTalking && hasMe) {
- return { ...prev, talkingUsers: talkingUsers.filter(id => id !== user.id) };
- }
- return prev;
- });
- }
- } else {
- if (lastVol !== 0) {
- lastVol = 0;
- setLocalVolume(0);
- }
- if (isTalking) {
- isTalking = false;
- voiceSocket.emit("voice.talking", { roomId: lobby.id, isTalking: false });
- setLobby(prev => {
- if (!prev) return null;
- const talkingUsers = prev.talkingUsers || [];
- if (talkingUsers.includes(user.id)) {
- return { ...prev, talkingUsers: talkingUsers.filter(id => id !== user.id) };
- }
- return prev;
- });
- }
- }
- }
- rafId = requestAnimationFrame(analyzeVoice);
- };
- rafId = requestAnimationFrame(analyzeVoice);
- } catch (err) {
- console.error("Local stream analyzer error:", err);
- }
- }
+							const talkingNowRaw = avg > micSensitivity;
+							let talkingNowResolved = isTalking;
 
- return () => {
- if (rafId) cancelAnimationFrame(rafId);
- try {
- if (microphone) microphone.disconnect();
- if (analyzer) analyzer.disconnect();
- } catch (e) {}
- };
- }, [lobby?.id, user?.id, localStream, isAudioContextResumed, micSensitivity, micOpenDelay, micCloseDelay]);
+							if (talkingNowRaw) {
+								silenceStartTime = 0;
+								if (!isTalking) {
+									if (speakStartTime === 0) {
+										speakStartTime = now;
+									}
+									if (now - speakStartTime >= micOpenDelay) {
+										talkingNowResolved = true;
+									}
+								}
+							} else {
+								speakStartTime = 0;
+								if (isTalking) {
+									if (silenceStartTime === 0) {
+										silenceStartTime = now;
+									}
+									if (now - silenceStartTime >= micCloseDelay) {
+										talkingNowResolved = false;
+									}
+								}
+							}
+
+							if (talkingNowResolved !== isTalking) {
+								isTalking = talkingNowResolved;
+								if (lobby && voiceSocket) {
+									voiceSocket.emit("voice.talking", { roomId: lobby.id, isTalking });
+								}
+								if (lobby && user) {
+									setLobby(prev => {
+										if (!prev) return null;
+										const talkingUsers = prev.talkingUsers || [];
+										const hasMe = talkingUsers.includes(user.id);
+										if (isTalking && !hasMe) {
+											return { ...prev, talkingUsers: [...talkingUsers, user.id] };
+										} else if (!isTalking && hasMe) {
+											return { ...prev, talkingUsers: talkingUsers.filter(id => id !== user.id) };
+										}
+										return prev;
+									});
+								}
+							}
+
+							// Apply gate to test stream gain
+							if (micTestGainNode) {
+								if (talkingNowResolved) {
+									micTestGainNode.gain.setTargetAtTime(1.0, audioContext.currentTime, 0.03);
+								} else {
+									micTestGainNode.gain.setTargetAtTime(0.0, audioContext.currentTime, 0.03);
+								}
+							}
+						} else {
+							if (lastVol !== 0) {
+								lastVol = 0;
+								setLocalVolume(0);
+							}
+							if (isTalking) {
+								isTalking = false;
+								if (lobby && voiceSocket) {
+									voiceSocket.emit("voice.talking", { roomId: lobby.id, isTalking: false });
+								}
+								if (lobby && user) {
+									setLobby(prev => {
+										if (!prev) return null;
+										const talkingUsers = prev.talkingUsers || [];
+										if (talkingUsers.includes(user.id)) {
+											return { ...prev, talkingUsers: talkingUsers.filter(id => id !== user.id) };
+										}
+										return prev;
+									});
+								}
+							}
+							if (micTestGainNode) {
+								micTestGainNode.gain.setTargetAtTime(0.0, audioContext.currentTime, 0.03);
+							}
+						}
+					}
+					rafId = requestAnimationFrame(analyzeVoice);
+				};
+				rafId = requestAnimationFrame(analyzeVoice);
+			} catch (err) {
+				console.error("Local stream analyzer error:", err);
+			}
+		}
+
+		return () => {
+			if (rafId) cancelAnimationFrame(rafId);
+			try {
+				if (microphone) microphone.disconnect();
+				if (analyzer) analyzer.disconnect();
+				if (micTestGainNode) micTestGainNode.disconnect();
+			} catch (e) {}
+		};
+	}, [lobby?.id, user?.id, localStream, isAudioContextResumed, micSensitivity, micOpenDelay, micCloseDelay, isMicTestOn, selectedAudioOutput]);
 
  
 

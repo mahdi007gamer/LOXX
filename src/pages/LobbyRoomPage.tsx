@@ -190,21 +190,10 @@ export const LobbyRoomPage = () => {
  const [copied, setCopied] = useState(false);
  const [isChatOpen, setIsChatOpen] = useState(false); // Mobile chat
 
- // Local Mic Test Loopback
- useEffect(() => {
-  let audioObj: HTMLAudioElement | null = null;
-  if (isMicTestOn && localStream && localStream.getAudioTracks().length > 0) {
-   audioObj = new window.Audio();
-   audioObj.srcObject = localStream;
-   audioObj.play().catch(console.warn);
-  }
-  return () => {
-   if (audioObj) {
-    audioObj.pause();
-    audioObj.srcObject = null;
-   }
-  };
- }, [isMicTestOn, localStream]);
+ // Local Mic Test Loopback - Now handled with absolute real-time gate delays and sensitivity inside LobbyContext
+  useEffect(() => {
+    // No-op here since voice analysis Web Audio API manages gated mic testing cleanly
+  }, [isMicTestOn, localStream]);
  const messages = useMemo(() => {
  return [
  { id: "system-1", user: "LOXX BOT", text: t("lobbyCreated"), time: "System", isSystem: true, fromUserId: "system" },
@@ -1124,399 +1113,315 @@ export const LobbyRoomPage = () => {
 
  {isSettingsModalOpen && (
  <Modal title={isRtl ? "تنظیمات لابی" : "Lobby Settings"} onClose={() => setIsSettingsModalOpen(false)} maxWidth="max-w-4xl">
- <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
- {/* Left Column (Host & Audio Inputs) */}
- <div className="space-y-6">
- {/* Host specific settings */}
- {isHost ? (
- <div className="space-y-4">
- <h4 className="text-sm font-black text-neon-blue uppercase border-b border-white/10 pb-2">{isRtl ? "تنظیمات اصلی لابی" : "Core Lobby Settings"}</h4>
- 
- <div className="flex items-center justify-between p-3 rounded-2xl bg-white/5">
- <div>
- <p className="text-sm font-black text-white">{isRtl ? "لابی خصوصی" : "Private Lobby"}</p>
- <p className="text-[10px] text-gray-500 font-bold">{isRtl ? "فقط با کد دعوت یا لینک" : "Only via invite link or code"}</p>
- </div>
- <div 
- onClick={() => updateLobbySettings({ isPrivate: !lobby?.isPrivate })}
- className={cn(
- "w-12 h-6 rounded-full relative cursor-pointer border transition-colors",
- lobby?.isPrivate ? "bg-neon-blue/20 border-neon-blue/30" : "bg-white/5 border-white/10"
- )}
- >
- <div className={cn(
- "absolute top-1 h-4 w-4 rounded-full transition-all",
- lobby?.isPrivate ? "right-1 bg-neon-blue shadow-[0_0_10px_rgba(0,229,255,1)]" : "right-7 bg-gray-500"
- )} />
- </div>
- </div>
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+    {/* Column 1: Core Host settings, Routing, and Desktop Info */}
+    <div className="space-y-6">
+      {/* Host specific settings */}
+      {isHost ? (
+        <div className="space-y-4">
+          <h4 className="text-sm font-black text-neon-blue uppercase border-b border-white/10 pb-2">{isRtl ? "تنظیمات اصلی لابی" : "Core Lobby Settings"}</h4>
+          
+          <div className="flex items-center justify-between p-3 rounded-2xl bg-white/5">
+            <div>
+              <p className="text-sm font-black text-white">{isRtl ? "لابی خصوصی" : "Private Lobby"}</p>
+              <p className="text-[10px] text-gray-500 font-bold">{isRtl ? "فقط با کد دعوت یا لینک" : "Only via invite link or code"}</p>
+            </div>
+            <div 
+              onClick={() => updateLobbySettings({ isPrivate: !lobby?.isPrivate })}
+              className={cn(
+                "w-12 h-6 rounded-full relative cursor-pointer border transition-colors",
+                lobby?.isPrivate ? "bg-neon-blue/20 border-neon-blue/30" : "bg-white/5 border-white/10"
+              )}
+            >
+              <div className={cn(
+                "absolute top-1 h-4 w-4 rounded-full transition-all",
+                lobby?.isPrivate ? "right-1 bg-neon-blue shadow-[0_0_10px_rgba(0,229,255,1)]" : "right-7 bg-gray-500"
+              )} />
+            </div>
+          </div>
 
- <div className="flex items-center justify-between p-3 rounded-2xl bg-white/5">
- <div>
- <p className="text-sm font-black text-white">{isRtl ? "دسترسی میکروفون" : "Microphone Required"}</p>
- <p className="text-[10px] text-gray-500 font-bold">{isRtl ? "بازیکنان برای چت صوتی نیاز به میکروفون دارند" : "Players require microhpone for voice chat"}</p>
- </div>
- <div 
- onClick={() => updateLobbySettings({ micRequired: !lobby?.micRequired })}
- className={cn(
- "w-12 h-6 rounded-full relative cursor-pointer border transition-colors",
- lobby?.micRequired ? "bg-neon-blue/20 border-neon-blue/30" : "bg-white/5 border-white/10"
- )}
- >
- <div className={cn(
- "absolute top-1 h-4 w-4 rounded-full transition-all",
- lobby?.micRequired ? "right-1 bg-neon-blue shadow-[0_0_10px_rgba(0,229,255,1)]" : "right-7 bg-gray-500"
- )} />
- </div>
- </div>
- </div>
- ) : null}
+          <div className="flex items-center justify-between p-3 rounded-2xl bg-white/5">
+            <div>
+              <p className="text-sm font-black text-white">{isRtl ? "دسترسی میکروفون" : "Microphone Required"}</p>
+              <p className="text-[10px] text-gray-500 font-bold">{isRtl ? "بازیکنان برای چت صوتی نیاز به میکروفون دارند" : "Players require microhpone for voice chat"}</p>
+            </div>
+            <div 
+              onClick={() => updateLobbySettings({ micRequired: !lobby?.micRequired })}
+              className={cn(
+                "w-12 h-6 rounded-full relative cursor-pointer border transition-colors",
+                lobby?.micRequired ? "bg-neon-blue/20 border-neon-blue/30" : "bg-white/5 border-white/10"
+              )}
+            >
+              <div className={cn(
+                "absolute top-1 h-4 w-4 rounded-full transition-all",
+                lobby?.micRequired ? "right-1 bg-neon-blue shadow-[0_0_10px_rgba(0,229,255,1)]" : "right-7 bg-gray-500"
+              )} />
+            </div>
+          </div>
+        </div>
+      ) : null}
 
- {/* General User settings */}
- <div className="space-y-4">
- {/* Input/Output Audio Selector (Hardware integrations) */}
- <div className="space-y-3 p-3.5 rounded-2xl bg-white/5 border border-white/5">
- <p className="text-xs font-black text-white border-b border-white/5 pb-1.5 flex items-center gap-2">
- <span className="h-1.5 w-1.5 rounded-full bg-neon-pink shadow-[0_0_8px_rgba(255,0,127,1)]" />
- {isRtl ? "تنظیمات ورودی و خروجی صدا (Hardware Audio Routing)" : "Audio Input & Output Hardware Routing"}
- </p>
+      {/* General User settings: Input/Output Audio Selector */}
+      <div className="space-y-3 p-3.5 rounded-2xl bg-white/5 border border-white/5">
+        <p className="text-xs font-black text-white border-b border-white/5 pb-1.5 flex items-center gap-2">
+          <span className="h-1.5 w-1.5 rounded-full bg-neon-pink shadow-[0_0_8px_rgba(255,0,127,1)]" />
+          {isRtl ? "تنظیمات ورودی و خروجی صدا (Hardware Audio Routing)" : "Audio Input & Output Hardware Routing"}
+        </p>
 
- <div className="space-y-1">
- <label className="text-[9px] text-gray-400 font-bold block">{isRtl ? "دستگاه ورودی میکروفون (Input Microphone)" : "Input Microphone Device"}</label>
- <select
- value={selectedAudioInput}
- onChange={(e) => setSelectedAudioInput(e.target.value)}
- className="w-full py-2 px-3 rounded-xl bg-black/40 border border-white/10 text-xs text-white focus:outline-none focus:border-neon-blue font-bold font-sans transition appearance-none cursor-pointer"
- >
- <option value="default" className="bg-zinc-950 text-gray-300">{isRtl ? "Default Device (میکروفون پیش‌فرض سیستم)" : "Default Device (System Default Mic)"}</option>
- {audioInputDevices.map((d) => (
- <option key={d.deviceId} value={d.deviceId} className="bg-zinc-950 text-white">
- {d.label || `Microphone (${d.deviceId.slice(0, 5)}...)`}
- </option>
- ))}
- </select>
- </div>
+        <div className="space-y-1">
+          <label className="text-[9px] text-gray-400 font-bold block">{isRtl ? "دستگاه ورودی میکروفون (Input Microphone)" : "Input Microphone Device"}</label>
+          <select
+            value={selectedAudioInput}
+            onChange={(e) => setSelectedAudioInput(e.target.value)}
+            className="w-full py-2 px-3 rounded-xl bg-black/40 border border-white/10 text-xs text-white focus:outline-none focus:border-neon-blue font-bold font-sans transition appearance-none cursor-pointer"
+          >
+            <option value="default" className="bg-zinc-950 text-gray-300">{isRtl ? "Default Device (میکروفون پیش‌فرض سیستم)" : "Default Device (System Default Mic)"}</option>
+            {audioInputDevices.map((d) => (
+              <option key={d.deviceId} value={d.deviceId} className="bg-zinc-950 text-white">
+                {d.label || `Microphone (${d.deviceId.slice(0, 5)}...)`}
+              </option>
+            ))}
+          </select>
+        </div>
 
- <div className="space-y-1">
- <label className="text-[9px] text-gray-400 font-bold block">{isRtl ? "دستگاه خروجی هدفون / بلندگو (Output Destination)" : "Output Destination Device"}</label>
- <select
- value={selectedAudioOutput}
- onChange={(e) => setSelectedAudioOutput(e.target.value)}
- className="w-full py-2 px-3 rounded-xl bg-black/40 border border-white/10 text-xs text-white focus:outline-none focus:border-neon-pink font-bold font-sans transition appearance-none cursor-pointer"
- >
- <option value="default" className="bg-zinc-950 text-gray-300">{isRtl ? "Default Device (بلندگوی پیش‌فرض سیستم)" : "Default Device (System Default Speaker)"}</option>
- {audioOutputDevices.map((d) => (
- <option key={d.deviceId} value={d.deviceId} className="bg-zinc-950 text-white">
- {d.label || `Output Speaker (${d.deviceId.slice(0, 5)}...)`}
- </option>
- ))}
- </select>
- </div>
- </div>
+        <div className="space-y-1">
+          <label className="text-[9px] text-gray-400 font-bold block">{isRtl ? "دستگاه خروجی هدفون / بلندگو (Output Destination)" : "Output Destination Device"}</label>
+          <select
+            value={selectedAudioOutput}
+            onChange={(e) => setSelectedAudioOutput(e.target.value)}
+            className="w-full py-2 px-3 rounded-xl bg-black/40 border border-white/10 text-xs text-white focus:outline-none focus:border-neon-pink font-bold font-sans transition appearance-none cursor-pointer"
+          >
+            <option value="default" className="bg-zinc-950 text-gray-300">{isRtl ? "Default Device (بلندگوی پیش‌فرض سیستم)" : "Default Device (System Default Speaker)"}</option>
+            {audioOutputDevices.map((d) => (
+              <option key={d.deviceId} value={d.deviceId} className="bg-zinc-950 text-white">
+                {d.label || `Output Speaker (${d.deviceId.slice(0, 5)}...)`}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
 
- {/* Sensitivity & Delays (حساسیت و تاخیر صدا) */}
- <div className="space-y-3 p-3.5 rounded-2xl bg-white/5 border border-white/5 mt-4">
-  <p className="text-xs font-black text-white border-b border-white/5 pb-1.5 flex items-center gap-2">
-   <span className="h-1.5 w-1.5 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,1)]" />
-   {isRtl ? "تنظیمات حساسیت و تاخیر میکروفون" : "Microphone Sensitivity & Gate Delays"}
-  </p>
+      {/* Desktop & Live Discord Overlay Panel */}
+      <div className="space-y-4">
+        <h4 className="text-sm font-black text-neon-blue uppercase border-b border-white/10 pb-2 flex items-center gap-1.5">
+          <span className="h-1.5 w-1.5 rounded-full bg-neon-blue shadow-[0_0_8px_rgba(0,229,255,1)]" />
+          {isRtl ? "تنظیمات اختصاصی دسکتاپ و سیستم صوتی" : "Desktop client & Audio Engine Settings"}
+        </h4>
 
-  <div className="flex items-center justify-between border-b border-white/5 pb-2 mb-3">
-   <button
-     onClick={() => setIsMicTestOn(!isMicTestOn)}
-     className={cn(
-       "px-3 py-1.5 rounded-lg text-[10px] uppercase font-black transition-all flex items-center gap-1.5 border",
-       isMicTestOn 
-         ? "bg-red-500/20 text-red-500 border-red-500/30 shadow-[0_0_10px_rgba(239,68,68,0.3)] animate-pulse" 
-         : "bg-black/40 text-gray-400 border-white/10 hover:bg-white/10 hover:text-white"
-     )}
-   >
-     {isMicTestOn ? (isRtl ? "در حال تست (غیرفعال در لابی)" : "TESTING MIC (Muted)") : (isRtl ? "تست میکروفون" : "Test Mic")}
-   </button>
-  </div>
-
-  {/* Noise Cancelling Switch */}
-  <div className="flex items-center justify-between p-3 rounded-xl bg-black/40 border border-white/5 mb-3">
-    <div>
-      <p className="text-[11px] font-black text-white">{isRtl ? "نویزگیر هوشمند لوکس" : "Studio Noise Cancellation"}</p>
-      <p className="text-[9px] text-gray-500 leading-normal">{isRtl ? "حذف خودکار اکو و نویز صدای شما در حین تماس" : "Hardware echo & noise suppression"}</p>
+        {isElectron ? (
+          <div className="p-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/25 text-xs text-white flex flex-col items-center gap-3 text-center">
+            <Settings size={32} className="text-indigo-400" />
+            <p>{isRtl ? "تنظیمات لابی مخصوص ویندوز (Push to Talk، Overlay، Performance) به بخش جدیدی منتقل شده است." : "Windows-specific settings (Push to Talk, Overlay, Performance) have moved to the Launcher section."}</p>
+            <button 
+              onClick={() => {
+                setIsSettingsModalOpen(false);
+                navigate("/electron-settings");
+              }}
+              className="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 rounded-xl text-white font-bold transition"
+            >
+              {isRtl ? "باز کردن تنظیمات ویندوز" : "Open Windows Settings"}
+            </button>
+          </div>
+        ) : (
+          /* Web Browser Showcase for Desktop Client */
+          <div className="p-4 rounded-2xl bg-gradient-to-br from-neon-blue/10 via-transparent to-neon-pink/10 border border-white/5 space-y-3">
+            <p className="text-xs font-black text-white">{isRtl ? "🔥 پتانسیل واقعی سیستم صوتی Loxx را آزاد کنید!" : "🔥 Unlock the full potential of LOXX Audio Engine!"}</p>
+            <p className="text-[10px] text-gray-400 leading-relaxed font-bold">
+              {isRtl ? "آیا می‌دانستید با استفاده از کلاینت دسکتاپ (Windows / macOS / Linux)، قابلیت‌هایی در اختیارتان قرار می‌گیرد که در مرورگر وب ممکن نیستند؟" : "Did you know that by running the official Desktop Client, you gain advanced abilities not supported by regular web browsers?"}
+            </p>
+            <ul className="text-[9px] text-[#00e5ff] space-y-1 font-bold list-disc list-inside">
+              <li>{isRtl ? "کلید Push to Talk سیستمی (حتی زمانی که داخل بازی‌های سنگین مانند CS:GO و Valorant آلت‌تب هستید)" : "System-wide Push to Talk hotkey (even while alt-tabbed in heavy fullscreen games like CS:GO or Valorant)"}</li>
+              <li>{isRtl ? "منوی هوشمند تسک‌بار (System Tray) به همراه کلید قطع صدای گلوبال" : "Intelligent System Tray menu with a global active microphone mute switch"}</li>
+              <li>{isRtl ? "اجرای اتوماتیک و اتصال بدون دردسر همزمان با روشن کردن رایانه شخصی شما" : "Auto-launch and instant connection upon starting your personal computer"}</li>
+              <li>{isRtl ? "قابلیت Hardware Acceleration برای کاهش فشار روی CPU" : "Engine-level Hardware Acceleration to bypass browser engine overhead and lower CPU usage"}</li>
+            </ul>
+            <div className="pt-1 select-all">
+              <button 
+                onClick={() => {
+                  toast.success(isRtl ? "درخواست دانلود کلاینت دسکتاپ ثبت شد. به زودی نسخه لانچر برای شما ارسال می‌شود!" : "Launcher download request registered! The setup file will be delivered shortly.");
+                }}
+                className="w-full py-2.5 rounded-xl bg-neon-blue hover:bg-neon-blue/80 text-black text-xs font-black transition-all shadow-[0_0_12px_rgba(0,229,255,0.4)]"
+              >
+                {isRtl ? "دریافت لانچر دسکتاپ (Loxx Desktop Launcher)" : "Download Desktop Launcher"}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
-    <div 
-      onClick={() => setNoiseCanceling(!noiseCanceling)}
-      className={cn(
-        "w-10 h-5 rounded-full relative cursor-pointer border transition-colors shrink-0",
-        noiseCanceling ? "bg-neon-pink/20 border-neon-pink/30" : "bg-white/5 border-white/10"
+
+    {/* Column 2: Microphone Sensitivity & Delays + HUD Overlay Layout Config */}
+    <div className="space-y-6">
+      {/* Sensitivity & Delays (حساسیت و تاخیر صدا) */}
+      <div className="space-y-3 p-3.5 rounded-2xl bg-white/5 border border-white/5">
+        <p className="text-xs font-black text-white border-b border-white/5 pb-1.5 flex items-center gap-2">
+          <span className="h-1.5 w-1.5 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,1)]" />
+          {isRtl ? "تنظیمات حساسیت و تاخیر میکروفون" : "Microphone Sensitivity & Gate Delays"}
+        </p>
+
+        <div className="flex items-center justify-between border-b border-white/5 pb-2 mb-3">
+          <button
+            onClick={() => setIsMicTestOn(!isMicTestOn)}
+            className={cn(
+              "px-3 py-1.5 rounded-lg text-[10px] uppercase font-black transition-all flex items-center gap-1.5 border",
+              isMicTestOn 
+                ? "bg-red-500/20 text-red-500 border-red-500/30 shadow-[0_0_10px_rgba(239,68,68,0.3)] animate-pulse" 
+                : "bg-black/40 text-gray-400 border-white/10 hover:bg-white/10 hover:text-white"
+            )}
+          >
+            {isMicTestOn ? (isRtl ? "در حال تست (غیرفعال در لابی)" : "TESTING MIC (Muted)") : (isRtl ? "تست میکروفون" : "Test Mic")}
+          </button>
+        </div>
+
+        {/* Noise Cancelling Switch */}
+        <div className="flex items-center justify-between p-3 rounded-xl bg-black/40 border border-white/5 mb-3">
+          <div>
+            <p className="text-[11px] font-black text-white">{isRtl ? "نویزگیر هوشمند لوکس" : "Studio Noise Cancellation"}</p>
+            <p className="text-[9px] text-gray-500 leading-normal">{isRtl ? "حذف خودکار اکو و نویز صدای شما در حین تماس" : "Hardware echo & noise suppression"}</p>
+          </div>
+          <div 
+            onClick={() => setNoiseCanceling(!noiseCanceling)}
+            className={cn(
+              "w-10 h-5 rounded-full relative cursor-pointer border transition-colors shrink-0",
+              noiseCanceling ? "bg-neon-pink/20 border-neon-pink/30" : "bg-white/5 border-white/10"
+            )}
+          >
+            <div className={cn(
+              "absolute top-1 h-3 w-3 rounded-full transition-all",
+              noiseCanceling ? "right-1 bg-neon-pink shadow-[0_0_10px_rgba(255,0,127,1)]" : "right-6 bg-gray-500"
+            )} />
+          </div>
+        </div>
+
+        {/* Mic Sensitivity Slider */}
+        <div className="space-y-1">
+          <div className="flex justify-between items-center text-[10px] text-gray-400 font-bold">
+            <span>{isRtl ? "حساسیت صدا (Gate Threshold)" : "Activation Sensitivity"}</span>
+            <span className="text-[#00e5ff] font-sans">{micSensitivity}</span>
+          </div>
+          <input 
+            type="range" 
+            min="1" 
+            max="40" 
+            value={micSensitivity} 
+            onChange={(e) => setMicSensitivity(parseInt(e.target.value, 10))}
+            className="w-full accent-[#00e5ff] bg-black/40 h-1.5 rounded-lg appearance-none cursor-pointer"
+          />
+          <p className="text-[8px] text-gray-500 leading-normal font-sans">
+            {isRtl ? "مقدار کمتر = حساس‌تر (مناسب محیط آرام)، مقدار بیشتر = نویزگیر قوی‌تر (نیازمند صدای بلندتر)" : "Lower = more sensitive, Higher = filters more background noise"}
+          </p>
+        </div>
+
+        {/* Active Open Delay */}
+        <div className="space-y-1">
+          <div className="flex justify-between items-center text-[10px] text-gray-400 font-bold">
+            <span>{isRtl ? "تاخیر در باز شدن مایک (Open Delay)" : "Voice Activation Delay"}</span>
+            <span className="text-neon-pink font-sans">{micOpenDelay} ms</span>
+          </div>
+          <input 
+            type="range" 
+            min="0" 
+            max="2000" 
+            step="50"
+            value={micOpenDelay} 
+            onChange={(e) => setMicOpenDelay(parseInt(e.target.value, 10))}
+            className="w-full accent-neon-pink bg-black/40 h-1.5 rounded-lg appearance-none cursor-pointer"
+          />
+          <p className="text-[8px] text-gray-500 leading-normal font-sans">
+            {isRtl ? "تاخیر قبل از ارسال صدا؛ به شما اجازه می‌دهد فاقد نویزهای کوتاه و لحظه‌ای باشید" : "Delay before your mic starts transmitting audio"}
+          </p>
+        </div>
+
+        {/* Active Close Delay */}
+        <div className="space-y-1">
+          <div className="flex justify-between items-center text-[10px] text-gray-400 font-bold">
+            <span>{isRtl ? "تاخیر در بسته شدن مایک (Close Delay)" : "Voice Gate Close Delay"}</span>
+            <span className="text-indigo-400 font-sans">{micCloseDelay} ms</span>
+          </div>
+          <input 
+            type="range" 
+            min="0" 
+            max="3000" 
+            step="100"
+            value={micCloseDelay} 
+            onChange={(e) => setMicCloseDelay(parseInt(e.target.value, 10))}
+            className="w-full accent-indigo-400 bg-black/40 h-1.5 rounded-lg appearance-none cursor-pointer"
+          />
+          <p className="text-[8px] text-gray-500 leading-normal font-sans">
+            {isRtl ? "تاخیر در قطع شدن صدا پس از اتمام صحبت؛ از بریده بریده شدن جملات جلوگیری می‌کند" : "Keeps microphone open briefly of silence to prevent speech cutting off"}
+          </p>
+        </div>
+      </div>
+
+      {/* Shared Web-Only Overlay appearance settings */}
+      {!isElectron && (
+        <div className="border border-white/5 p-3.5 rounded-2xl bg-white/5 space-y-3">
+          <p className="text-xs font-black text-white select-none">{isRtl ? "تنظیمات ظاهر ویترین زنده (HUD Overlay)" : "HUD Desktop Overlay Appearance Config"}</p>
+
+          {/* Overlay Toggle Switch */}
+          <div className="flex items-center justify-between p-3 rounded-2xl bg-black/40">
+            <div>
+              <p className="text-xs font-black text-white">{isRtl ? "طرح زنده روی بازی‌ها (Live Overlay)" : "Live In-game HUD Overlay"}</p>
+              <p className="text-[9px] text-gray-500 font-bold font-sans">{isRtl ? "نمایش لیست فعال کانال صوتی روی گوشه تصویر بقیه برنامه‌ها" : "Render active speaker list on top of fullscreen programs & games"}</p>
+            </div>
+            <div 
+              onClick={() => setOverlayEnabled(!overlayEnabled)}
+              className={cn(
+                "w-12 h-6 rounded-full relative cursor-pointer border transition-colors",
+                overlayEnabled ? "bg-neon-blue/20 border-neon-blue/30" : "bg-white/5 border-white/10"
+              )}
+            >
+              <div className={cn(
+                "absolute top-1 h-4 w-4 rounded-full transition-all",
+                overlayEnabled ? "right-1 bg-neon-blue shadow-[0_0_10px_rgba(0,229,255,1)]" : "right-7 bg-gray-500"
+              )} />
+            </div>
+          </div>
+
+          {/* Hide non-talking toggle */}
+          <div className={cn("flex items-center justify-between p-3 rounded-2xl bg-black/40 transition-opacity", !overlayEnabled && "opacity-50 pointer-events-none")}>
+            <div>
+              <p className="text-xs font-black text-white">{isRtl ? "فقط نمایش کاربران در حال صحبت" : "Show speaking users only"}</p>
+              <p className="text-[9px] text-gray-500 font-bold font-sans">{isRtl ? "مخفی کردن اعضای ساکت از کادر روی صفحه زمان سکوت" : "Hide quiet players from the HUD panel to minimize layout clutter"}</p>
+            </div>
+            <div 
+              onClick={() => setOverlayOnlyTalking(!overlayOnlyTalking)}
+              className={cn(
+                "w-12 h-6 rounded-full relative cursor-pointer border transition-colors",
+                overlayOnlyTalking ? "bg-neon-blue/20 border-neon-blue/30" : "bg-white/5 border-white/10"
+              )}
+            >
+              <div className={cn(
+                "absolute top-1 h-4 w-4 rounded-full transition-all",
+                overlayOnlyTalking ? "right-1 bg-neon-blue shadow-[0_0_10px_rgba(0,229,255,1)]" : "right-7 bg-gray-500"
+              )} />
+            </div>
+          </div>
+
+          {/* Display members list display toggle */}
+          <div className={cn("flex items-center justify-between p-3 rounded-2xl bg-black/40 transition-opacity", !overlayEnabled && "opacity-50 pointer-events-none")}>
+            <div>
+              <p className="text-xs font-black text-white">{isRtl ? "نمایش لیست اعضا روی اورلی" : "Render members roster list"}</p>
+              <p className="text-[9px] text-gray-400 font-bold font-sans">{isRtl ? "نمایش یا پنهان‌سازی اسامی و آواتار اعضا در لابی روی تصویر" : "Control the visibility of individual names & avatars in the overlay box"}</p>
+            </div>
+            <div 
+              onClick={() => setOverlayMembersVisible(!overlayMembersVisible)}
+              className={cn(
+                "w-12 h-6 rounded-full relative cursor-pointer border transition-colors",
+                overlayMembersVisible ? "bg-neon-blue/20 border-neon-blue/30" : "bg-white/5 border-white/10"
+              )}
+            >
+              <div className={cn(
+                "absolute top-1 h-4 w-4 rounded-full transition-all",
+                overlayMembersVisible ? "right-1 bg-neon-blue shadow-[0_0_10px_rgba(0,229,255,1)]" : "right-7 bg-gray-500"
+              )} />
+            </div>
+          </div>
+        </div>
       )}
-    >
-      <div className={cn(
-        "absolute top-1 h-3 w-3 rounded-full transition-all",
-        noiseCanceling ? "right-1 bg-neon-pink shadow-[0_0_10px_rgba(255,0,127,1)]" : "right-6 bg-gray-500"
-      )} />
     </div>
   </div>
-
-  {/* Mic Sensitivity Slider */}
-  <div className="space-y-1">
-   <div className="flex justify-between items-center text-[10px] text-gray-400 font-bold">
-    <span>{isRtl ? "حساسیت صدا (Gate Threshold)" : "Activation Sensitivity"}</span>
-    <span className="text-[#00e5ff] font-sans">{micSensitivity}</span>
-   </div>
-   <input 
-    type="range" 
-    min="1" 
-    max="40" 
-    value={micSensitivity} 
-    onChange={(e) => setMicSensitivity(parseInt(e.target.value, 10))}
-    className="w-full accent-[#00e5ff] bg-black/40 h-1.5 rounded-lg appearance-none cursor-pointer"
-   />
-   <p className="text-[8px] text-gray-500 leading-normal font-sans">
-    {isRtl ? "مقدار کمتر = حساس‌تر (مناسب محیط آرام)، مقدار بیشتر = نویزگیر قوی‌تر (نیازمند صدای بلندتر)" : "Lower = more sensitive, Higher = filters more background noise"}
-   </p>
-  </div>
-
-  {/* Active Open Delay */}
-  <div className="space-y-1">
-   <div className="flex justify-between items-center text-[10px] text-gray-400 font-bold">
-    <span>{isRtl ? "تاخیر در باز شدن مایک (Open Delay)" : "Voice Activation Delay"}</span>
-    <span className="text-neon-pink font-sans">{micOpenDelay} ms</span>
-   </div>
-   <input 
-    type="range" 
-    min="0" 
-    max="2000" 
-    step="50"
-    value={micOpenDelay} 
-    onChange={(e) => setMicOpenDelay(parseInt(e.target.value, 10))}
-    className="w-full accent-neon-pink bg-black/40 h-1.5 rounded-lg appearance-none cursor-pointer"
-   />
-   <p className="text-[8px] text-gray-500 leading-normal font-sans">
-    {isRtl ? "تاخیر قبل از ارسال صدا؛ به شما اجازه می‌دهد فاقد نویزهای کوتاه و لحظه‌ای باشید" : "Delay before your mic starts transmitting audio"}
-   </p>
-  </div>
-
-  {/* Active Close Delay */}
-  <div className="space-y-1">
-   <div className="flex justify-between items-center text-[10px] text-gray-400 font-bold">
-    <span>{isRtl ? "تاخیر در بسته شدن مایک (Close Delay)" : "Voice Gate Close Delay"}</span>
-    <span className="text-indigo-400 font-sans">{micCloseDelay} ms</span>
-   </div>
-   <input 
-    type="range" 
-    min="0" 
-    max="3000" 
-    step="100"
-    value={micCloseDelay} 
-    onChange={(e) => setMicCloseDelay(parseInt(e.target.value, 10))}
-    className="w-full accent-indigo-400 bg-black/40 h-1.5 rounded-lg appearance-none cursor-pointer"
-   />
-   <p className="text-[8px] text-gray-500 leading-normal font-sans">
-    {isRtl ? "تاخیر در قطع شدن صدا پس از اتمام صحبت؛ از بریده بریده شدن جملات جلوگیری می‌کند" : "Keeps microphone open briefly of silence to prevent speech cutting off"}
-   </p>
-  </div>
- </div>
- </div> {/* End of Left Column */}
-
- {/* Right Column (Desktop & Overlay) */}
- <div className="space-y-6">
-
- {/* Desktop & Live Discord Overlay Panel */}
- <div className="space-y-4">
- <h4 className="text-sm font-black text-neon-blue uppercase border-b border-white/10 pb-2 flex items-center gap-1.5">
- <span className="h-1.5 w-1.5 rounded-full bg-neon-blue shadow-[0_0_8px_rgba(0,229,255,1)]" />
- {isRtl ? "تنظیمات اختصاصی دسکتاپ و سیستم صوتی" : "Desktop client & Audio Engine Settings"}
- </h4>
-
- {isElectron ? (
- <div className="p-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/25 text-xs text-white flex flex-col items-center gap-3 text-center">
- <Settings size={32} className="text-indigo-400" />
- <p>{isRtl ? "تنظیمات لابی مخصوص ویندوز (Push to Talk، Overlay، Performance) به بخش جدیدی منتقل شده است." : "Windows-specific settings (Push to Talk, Overlay, Performance) have moved to the Launcher section."}</p>
- <button 
- onClick={() => {
- setIsSettingsModalOpen(false);
- navigate("/electron-settings");
- }}
- className="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 rounded-xl text-white font-bold transition"
- >
- {isRtl ? "باز کردن تنظیمات ویندوز" : "Open Windows Settings"}
- </button>
- </div>
- ) : (
- /* Web Browser Showcase for Desktop Client */
- <div className="p-4 rounded-2xl bg-gradient-to-br from-neon-blue/10 via-transparent to-neon-pink/10 border border-white/5 space-y-3">
- <p className="text-xs font-black text-white">{isRtl ? "🔥 پتانسیل واقعی سیستم صوتی Loxx را آزاد کنید!" : "🔥 Unlock the full potential of LOXX Audio Engine!"}</p>
- <p className="text-[10px] text-gray-400 leading-relaxed font-bold">
- {isRtl ? "آیا می‌دانستید با استفاده از کلاینت دسکتاپ (Windows / macOS / Linux)، قابلیت‌هایی در اختیارتان قرار می‌گیرد که در مرورگر وب ممکن نیستند؟" : "Did you know that by running the official Desktop Client, you gain advanced abilities not supported by regular web browsers?"}
- </p>
- <ul className="text-[9px] text-[#00e5ff] space-y-1 font-bold list-disc list-inside">
- <li>{isRtl ? "کلید Push to Talk سیستمی (حتی زمانی که داخل بازی‌های سنگین مانند CS:GO و Valorant آلت‌تب هستید)" : "System-wide Push to Talk hotkey (even while alt-tabbed in heavy fullscreen games like CS:GO or Valorant)"}</li>
- <li>{isRtl ? "منوی هوشمند تسک‌بار (System Tray) به همراه کلید قطع صدای گلوبال" : "Intelligent System Tray menu with a global active microphone mute switch"}</li>
- <li>{isRtl ? "اجرای اتوماتیک و اتصال بدون دردسر همزمان با روشن کردن رایانه شخصی شما" : "Auto-launch and instant connection upon starting your personal computer"}</li>
- <li>{isRtl ? "قابلیت Hardware Acceleration برای کاهش فشار روی CPU" : "Engine-level Hardware Acceleration to bypass browser engine overhead and lower CPU usage"}</li>
- </ul>
- <div className="pt-1 select-all">
- <button 
- onClick={() => {
- toast.success(isRtl ? "درخواست دانلود کلاینت دسکتاپ ثبت شد. به زودی نسخه لانچر برای شما ارسال می‌شود!" : "Launcher download request registered! The setup file will be delivered shortly.");
- }}
- className="w-full py-2.5 rounded-xl bg-neon-blue hover:bg-neon-blue/80 text-black text-xs font-black transition-all shadow-[0_0_12px_rgba(0,229,255,0.4)]"
- >
- {isRtl ? "دریافت لانچر دسکتاپ (Loxx Desktop Launcher)" : "Download Desktop Launcher"}
- </button>
- </div>
- </div>
- )}
-
- {/* Shared Web-Only Overlay appearance settings (redundant in Desktop) */}
- {!isElectron && (
- <div className="border-t border-white/5 pt-4 space-y-3">
- <p className="text-xs font-black text-white select-none">{isRtl ? "تنظیمات ظاهر ویترین زنده (HUD Overlay Appearance)" : "HUD Desktop Overlay Appearance Config"}</p>
-
- {/* Overlay Toggle Switch */}
- <div className="flex items-center justify-between p-3 rounded-2xl bg-white/5">
- <div>
- <p className="text-xs font-black text-white">{isRtl ? "طرح زنده روی بازی‌ها (Live Overlay)" : "Live In-game HUD Overlay"}</p>
- <p className="text-[9px] text-gray-500 font-bold font-sans">{isRtl ? "نمایش لیست فعال کانال صوتی روی گوشه تصویر بقیه برنامه‌ها" : "Render active speaker list on top of fullscreen programs & games"}</p>
- </div>
- <div 
- onClick={() => setOverlayEnabled(!overlayEnabled)}
- className={cn(
- "w-12 h-6 rounded-full relative cursor-pointer border transition-colors",
- overlayEnabled ? "bg-neon-blue/20 border-neon-blue/30" : "bg-white/5 border-white/10"
- )}
- >
- <div className={cn(
- "absolute top-1 h-4 w-4 rounded-full transition-all",
- overlayEnabled ? "right-1 bg-neon-blue shadow-[0_0_10px_rgba(0,229,255,1)]" : "right-7 bg-gray-500"
- )} />
- </div>
- </div>
-
- {/* Hide non-talking toggle */}
- <div className={cn("flex items-center justify-between p-3 rounded-2xl bg-white/5 transition-opacity", !overlayEnabled && "opacity-50 pointer-events-none")}>
- <div>
- <p className="text-xs font-black text-white">{isRtl ? "فقط نمایش کاربران در حال صحبت" : "Show speaking users only"}</p>
- <p className="text-[9px] text-gray-500 font-bold font-sans">{isRtl ? "مخفی کردن اعضای ساکت از کادر روی صفحه زمان سکوت" : "Hide quiet players from the HUD panel to minimize layout clutter"}</p>
- </div>
- <div 
- onClick={() => setOverlayOnlyTalking(!overlayOnlyTalking)}
- className={cn(
- "w-12 h-6 rounded-full relative cursor-pointer border transition-colors",
- overlayOnlyTalking ? "bg-neon-blue/20 border-neon-blue/30" : "bg-white/5 border-white/10"
- )}
- >
- <div className={cn(
- "absolute top-1 h-4 w-4 rounded-full transition-all",
- overlayOnlyTalking ? "right-1 bg-neon-blue shadow-[0_0_10px_rgba(0,229,255,1)]" : "right-7 bg-gray-500"
- )} />
- </div>
- </div>
-
- {/* Display members list display toggle */}
- <div className={cn("flex items-center justify-between p-3 rounded-2xl bg-white/5 transition-opacity", !overlayEnabled && "opacity-50 pointer-events-none")}>
- <div>
- <p className="text-xs font-black text-white">{isRtl ? "نمایش لیست اعضا روی اورلی" : "Render members roster list"}</p>
- <p className="text-[9px] text-gray-400 font-bold font-sans">{isRtl ? "نمایش یا پنهان‌سازی اسامی و آواتار اعضا در لابی روی تصویر" : "Control the visibility of individual names & avatars in the overlay box"}</p>
- </div>
- <div 
- onClick={() => setOverlayMembersVisible(!overlayMembersVisible)}
- className={cn(
- "w-12 h-6 rounded-full relative cursor-pointer border transition-colors",
- overlayMembersVisible ? "bg-neon-blue/20 border-neon-blue/30" : "bg-white/5 border-white/10"
- )}
- >
- <div className={cn(
- "absolute top-1 h-4 w-4 rounded-full transition-all",
- overlayMembersVisible ? "right-1 bg-neon-blue shadow-[0_0_10px_rgba(0,229,255,1)]" : "right-7 bg-gray-500"
- )} />
- </div>
- </div>
-
- {/* Speaking & Quiet Opacities sliders */}
- <div className={cn("space-y-3 p-3 rounded-2xl bg-white/5 transition-opacity", (!overlayEnabled || !overlayMembersVisible) && "opacity-50 pointer-events-none")}>
- <div className="space-y-1">
- <div className="flex justify-between text-gray-400 text-[10px] font-bold">
- <span className="font-mono text-neon-blue">{Math.round(overlayNormalOpacity * 100)}%</span>
- <span>{isRtl ? "شفافیت عضو در حالت سکوت (Quiet)" : "Roster Opacity in Quiet State"}</span>
- </div>
- <input 
- type="range" min="0.1" max="1.0" step="0.05"
- value={overlayNormalOpacity} 
- onChange={e => setOverlayNormalOpacity(parseFloat(e.target.value))} 
- className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-neon-blue" 
- />
- </div>
-
- <div className="space-y-1">
- <div className="flex justify-between text-gray-400 text-[10px] font-bold">
- <span className="font-mono text-neon-blue">{Math.round(overlaySpeakingOpacity * 100)}%</span>
- <span>{isRtl ? "شفافیت عضو در حال صحبت (Speaking)" : "Roster Opacity in Speaking State"}</span>
- </div>
- <input 
- type="range" min="0.1" max="1.0" step="0.05"
- value={overlaySpeakingOpacity} 
- onChange={e => setOverlaySpeakingOpacity(parseFloat(e.target.value))} 
- className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-neon-blue" 
- />
- </div>
- </div>
-
- {/* Overlay Position selector */}
- <div className={cn("space-y-2 transition-opacity", !overlayEnabled && "opacity-50 pointer-events-none")}>
- <label className="text-xs font-black text-gray-400">{isRtl ? "موقعیت قرارگیری اورلی روی صفحه" : "HUD Screen Orientation Position"}</label>
- <div className="grid grid-cols-2 gap-2">
- {[
- { id: "top-left", name: isRtl ? "بالا چپ" : "Top Left" },
- { id: "top-right", name: isRtl ? "بالا راست" : "Top Right" },
- { id: "bottom-left", name: isRtl ? "پایین چپ" : "Bottom Left" },
- { id: "bottom-right", name: isRtl ? "پایین راست" : "Bottom Right" }
- ].map(pos => (
- <button 
- key={pos.id}
- onClick={() => setOverlayPosition(pos.id as any)}
- className={cn(
- "py-2 rounded-xl text-xs font-black transition border",
- overlayPosition === pos.id 
- ? "bg-neon-blue/15 border-neon-blue/30 text-neon-blue" 
- : "bg-white/5 border-white/5 text-gray-400 hover:bg-white/10"
- )}
- >
- {pos.name}
- </button>
- ))}
- </div>
- </div>
-
- {/* Overlay Size selector */}
- <div className={cn("space-y-2 transition-opacity", !overlayEnabled && "opacity-50 pointer-events-none")}>
- <label className="text-xs font-black text-gray-400">{isRtl ? "اندازه نمایشگر اورلی دسکتاپ" : "Desktop HUD Scaled Size"}</label>
- <div className="flex gap-2">
- {[
- { id: "small", name: isRtl ? "کوچک" : "Small" },
- { id: "medium", name: isRtl ? "متوسط" : "Medium" },
- { id: "large", name: isRtl ? "بزرگ" : "Large" }
- ].map(sz => (
- <button 
- key={sz.id}
- onClick={() => setOverlaySize(sz.id as any)}
- className={cn(
- "flex-1 py-1.5 rounded-xl text-xs font-black transition border",
- overlaySize === sz.id 
- ? "bg-neon-blue/15 border-neon-blue/35 text-neon-blue" 
- : "bg-white/5 border-white/5 text-gray-400 hover:bg-white/10"
- )}
- >
- {sz.name}
- </button>
- ))}
- </div>
- </div>
- </div>
- )}
- </div>
- </div>
- </div>
- </div>
- </Modal>
+</Modal>
  )}
  </AnimatePresence>
  </div>
