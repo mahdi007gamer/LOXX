@@ -21,18 +21,27 @@ export function useMusicBotTransmitter({
   isHost,
   botState,
   voiceSocket,
-  lobbySocket
+  lobbySocket,
+  botVolume = 1.0
 }: {
   roomId: string;
   isHost: boolean;
   botState: MusicBotState | null;
   voiceSocket: any;
   lobbySocket: any;
+  botVolume?: number;
 }) {
   const audioElRef = useRef<HTMLAudioElement | null>(null);
   const sourceNodeRef = useRef<any>(null);
   const processorNodeRef = useRef<any>(null);
   const silentGainRef = useRef<any>(null);
+  const localGainRef = useRef<any>(null);
+
+  useEffect(() => {
+    if (localGainRef.current) {
+      localGainRef.current.gain.value = botVolume;
+    }
+  }, [botVolume]);
 
   useEffect(() => {
     // If not host or bot is inactive or paused/empty, release all resources
@@ -103,6 +112,13 @@ export function useMusicBotTransmitter({
       const source = audioCtx.createMediaElementSource(audioEl);
       sourceNodeRef.current = source;
 
+      // Create a local gain node for the host to hear the stream in absolute sync
+      const localGain = audioCtx.createGain();
+      localGain.gain.value = botVolume;
+      localGainRef.current = localGain;
+      source.connect(localGain);
+      localGain.connect(audioCtx.destination);
+
       // Create a script processor representing our sampling block
       const processor = audioCtx.createScriptProcessor(1024, 1, 1);
       processorNodeRef.current = processor;
@@ -160,6 +176,10 @@ export function useMusicBotTransmitter({
         try { silentGainRef.current.disconnect(); } catch (e) {}
         silentGainRef.current = null;
       }
+      if (localGainRef.current) {
+        try { localGainRef.current.disconnect(); } catch (e) {}
+        localGainRef.current = null;
+      }
     }
-  }, [roomId, isHost, botState?.isPlaying, botState?.currentTrackUrl, botState?.queueIndex, botState?.active, voiceSocket, lobbySocket]);
+  }, [roomId, isHost, botState?.isPlaying, botState?.currentTrackUrl, botState?.queueIndex, botState?.active, voiceSocket, lobbySocket, botVolume]);
 }
