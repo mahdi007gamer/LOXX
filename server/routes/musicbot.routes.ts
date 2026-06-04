@@ -210,23 +210,44 @@ router.get("/loxx-library", authenticate, async (req: Request, res: Response) =>
     });
 
     // Prepare unified subfolders structure from database playlists
-    const subfolders = dbPlaylists.map(playlist => {
-      const formattedTracks = playlist.tracks.map(t => {
+    const buildSubfoldersForGenre = (genreStr: string) => {
+      const filteredPlaylists = dbPlaylists.map(playlist => {
+        const filteredTracks = playlist.tracks.filter(t => (t.genre || "irani") === genreStr).map(t => {
+          const artistNames = t.artists.map(a => a.name).join(" & ");
+          return {
+            id: t.id,
+            title: artistNames ? `${t.title} - ${artistNames}` : t.title,
+            url: t.url,
+            category: playlist.name
+          };
+        });
+
+        return {
+          name: playlist.name,
+          bannerUrl: playlist.bannerUrl || "/public/logo.png",
+          tracks: filteredTracks
+        };
+      }).filter(p => p.tracks.length > 0);
+
+      return filteredPlaylists;
+    };
+
+    const buildSubfoldersForUnlisted = (genreStr: string, tracks: any[]) => {
+      const filteredTracks = tracks.filter(t => (t.genre || "irani") === genreStr).map(t => {
         const artistNames = t.artists.map(a => a.name).join(" & ");
         return {
           id: t.id,
           title: artistNames ? `${t.title} - ${artistNames}` : t.title,
           url: t.url,
-          category: playlist.name
+          category: "تک آهنگ‌ها"
         };
       });
 
-      return {
-        name: playlist.name,
-        bannerUrl: playlist.bannerUrl || "/public/logo.png",
-        tracks: formattedTracks
-      };
-    });
+      return filteredTracks;
+    };
+
+    const iraniSubfolders = buildSubfoldersForGenre("irani");
+    const kharegiSubfolders = buildSubfoldersForGenre("kharegi");
 
     // Also include unlisted tracks as a pseudo category so they don't get lost
     const unlistedTracks = await prisma.track.findMany({
@@ -240,41 +261,38 @@ router.get("/loxx-library", authenticate, async (req: Request, res: Response) =>
       }
     });
 
-    if (unlistedTracks.length > 0) {
-      const formattedUnlisted = unlistedTracks.map(t => {
-        const artistNames = t.artists.map(a => a.name).join(" & ");
-        return {
-          id: t.id,
-          title: artistNames ? `${t.title} - ${artistNames}` : t.title,
-          url: t.url,
-          category: "تک آهنگ‌ها"
-        };
-      });
-
-      subfolders.push({
+    const iraniUnlisted = buildSubfoldersForUnlisted("irani", unlistedTracks);
+    if (iraniUnlisted.length > 0) {
+      iraniSubfolders.push({
         name: "تک آهنگ‌ها",
         bannerUrl: "/public/logo.png",
-        tracks: formattedUnlisted
+        tracks: iraniUnlisted
       });
     }
 
-    // For backward compatibility, in case frontend still expects { irani, kharegi } container:
-    // We will return a root structure with both keys populated with the full DB-driven playlists library!
-    // This maintains immediate fallback while fully switching to DB source!
+    const kharegiUnlisted = buildSubfoldersForUnlisted("kharegi", unlistedTracks);
+    if (kharegiUnlisted.length > 0) {
+      kharegiSubfolders.push({
+        name: "تک آهنگ‌ها",
+        bannerUrl: "/public/logo.png",
+        tracks: kharegiUnlisted
+      });
+    }
+
+    // Return root structure with both keys populated with DB-driven playlists library properly categorized
     res.json({
       status: "success",
       data: {
         irani: {
           bannerUrl: "/public/logo.png",
           tracks: [],
-          subfolders: subfolders
+          subfolders: iraniSubfolders
         },
         kharegi: {
           bannerUrl: "/public/logo.png",
           tracks: [],
-          subfolders: subfolders
-        },
-        subfolders
+          subfolders: kharegiSubfolders
+        }
       }
     });
   } catch (error: any) {
@@ -833,12 +851,15 @@ router.post("/db-track/upload", authenticate, authorizeAdmin, upload.single("fil
       }
     }
 
+    const genre = req.body.genre || "irani";
+
     // Create track database record with duration & coverUrl
     const track = await prisma.track.create({
       data: {
         title: detectedTitle,
         url,
         duration,
+        genre,
         coverUrl: coverUrl || null,
         artists: {
           connect: artistIdsList.map(id => ({ id }))
@@ -867,7 +888,7 @@ router.post("/db-track/upload", authenticate, authorizeAdmin, upload.single("fil
 router.put("/db-track/:id", authenticate, authorizeAdmin, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { title, artistIds, playlistIds, coverUrl } = req.body;
+    const { title, artistIds, playlistIds, coverUrl, genre } = req.body;
 
     const track = await prisma.track.findUnique({ where: { id } });
     if (!track) {
@@ -879,6 +900,7 @@ router.put("/db-track/:id", authenticate, authorizeAdmin, async (req: Request, r
       data: {
         title: title !== undefined ? title.trim() : undefined,
         coverUrl: coverUrl !== undefined ? coverUrl : undefined,
+        genre: genre !== undefined ? genre : undefined,
         artists: artistIds ? {
           set: artistIds.map((aid: string) => ({ id: aid }))
         } : undefined,

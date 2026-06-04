@@ -534,6 +534,7 @@ model Track {
   url       String
   coverUrl  String?
   duration  Float?     @default(0)
+  genre     String     @default("irani") // "irani" or "kharegi"
   createdAt DateTime   @default(now())
   artists   Artist[]   @relation("TrackArtists")
   playlists Playlist[] @relation("TrackPlaylists")

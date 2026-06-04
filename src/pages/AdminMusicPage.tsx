@@ -16,6 +16,7 @@ export interface UploadQueueItem {
   id: string;
   file: File;
   title: string;
+  genre: "irani" | "kharegi";
   artistIds: string[];
   playlistIds: string[];
   coverUrl: string;
@@ -43,6 +44,7 @@ export const AdminMusicPage: React.FC = () => {
   // Upload Track form params
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [manualTitle, setManualTitle] = useState("");
+  const [genre, setGenre] = useState<"irani" | "kharegi">("irani");
   const [selectedPlaylistIds, setSelectedPlaylistIds] = useState<string[]>([]);
   const [selectedArtistIds, setSelectedArtistIds] = useState<string[]>([]);
   const [customCoverFile, setCustomCoverFile] = useState<File | null>(null);
@@ -58,6 +60,7 @@ export const AdminMusicPage: React.FC = () => {
   // Edit Track mode states
   const [editingTrack, setEditingTrack] = useState<any | null>(null);
   const [editTitle, setEditTitle] = useState("");
+  const [editGenre, setEditGenre] = useState<"irani" | "kharegi">("irani");
   const [editSelectedArtistIds, setEditSelectedArtistIds] = useState<string[]>([]);
   const [editSelectedPlaylistIds, setEditSelectedPlaylistIds] = useState<string[]>([]);
   const [editCoverUrl, setEditCoverUrl] = useState("");
@@ -307,6 +310,7 @@ export const AdminMusicPage: React.FC = () => {
           manualTitle: item.title,
           url: finalAudioUrl,
           coverUrl: item.coverUrl,
+          genre: item.genre,
           artistIds: JSON.stringify(item.artistIds),
           playlistIds: JSON.stringify(item.playlistIds)
         };
@@ -347,6 +351,7 @@ export const AdminMusicPage: React.FC = () => {
       id: Math.random().toString(36).substring(7),
       file: audioFile,
       title: manualTitle.trim(),
+      genre: genre,
       artistIds: [...selectedArtistIds],
       playlistIds: [...selectedPlaylistIds],
       coverUrl: customCoverUrl,
@@ -360,6 +365,7 @@ export const AdminMusicPage: React.FC = () => {
     // Reset Form
     setAudioFile(null);
     setManualTitle("");
+    setGenre("irani");
     setCustomCoverUrl("");
     setCustomCoverFile(null);
     setSelectedArtistIds([]);
@@ -416,6 +422,7 @@ export const AdminMusicPage: React.FC = () => {
   const handleStartEditTrack = (track: any) => {
     setEditingTrack(track);
     setEditTitle(track.title);
+    setEditGenre(track.genre || "irani");
     setEditSelectedArtistIds(track.artists.map((a: any) => a.id));
     setEditSelectedPlaylistIds(track.playlists.map((p: any) => p.id));
     setEditCoverUrl(track.coverUrl || "");
@@ -452,6 +459,7 @@ export const AdminMusicPage: React.FC = () => {
     try {
       const res = await api.put(`/musicbot/db-track/${editingTrack.id}`, {
         title: editTitle.trim(),
+        genre: editGenre,
         artistIds: editSelectedArtistIds,
         playlistIds: editSelectedPlaylistIds,
         coverUrl: editCoverUrl
@@ -798,15 +806,29 @@ export const AdminMusicPage: React.FC = () => {
                     </div>
 
                     {/* Custom title parameters */}
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold text-gray-400 block">عنوان آهنگ (فارسی یا انگلیسی)</label>
-                      <input 
-                        type="text"
-                        value={manualTitle}
-                        onChange={(e) => setManualTitle(e.target.value)}
-                        placeholder="مثال: گل گلدون من"
-                        className="w-full h-12 px-4 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-600 focus:outline-none focus:border-neon-pink/40 font-semibold"
-                      />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-gray-400 block">عنوان آهنگ (فارسی یا انگلیسی)</label>
+                        <input 
+                          type="text"
+                          value={manualTitle}
+                          onChange={(e) => setManualTitle(e.target.value)}
+                          placeholder="مثال: گل گلدون من"
+                          className="w-full h-12 px-4 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-600 focus:outline-none focus:border-neon-pink/40 font-semibold"
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-gray-400 block">دسته‌بندی (ملیت موزیک)</label>
+                        <select 
+                          value={genre}
+                          onChange={(e) => setGenre(e.target.value as "irani" | "kharegi")}
+                          className="w-full h-12 px-4 rounded-xl bg-gray-900 border border-white/10 text-white text-sm focus:outline-none focus:border-neon-pink/40 font-semibold"
+                        >
+                          <option value="irani">موزیک ایرانی (Irani)</option>
+                          <option value="kharegi">موزیک خارجی (Kharegi)</option>
+                        </select>
+                      </div>
                     </div>
 
                     {/* Multi selection selector for target artists */}
@@ -1091,14 +1113,27 @@ export const AdminMusicPage: React.FC = () => {
                             
                             {/* Inputs form */}
                             <div className="space-y-4">
-                              <div className="space-y-1">
-                                <label className="text-xs font-bold text-gray-400">عنوان آهنگ</label>
-                                <input 
-                                  type="text"
-                                  value={editTitle}
-                                  onChange={(e) => setEditTitle(e.target.value)}
-                                  className="w-full h-11 px-3 rounded-xl bg-white/5 border border-white/10 text-xs font-bold"
-                                />
+                              <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-1 block">
+                                  <label className="text-xs font-bold text-gray-400">عنوان آهنگ</label>
+                                  <input 
+                                    type="text"
+                                    value={editTitle}
+                                    onChange={(e) => setEditTitle(e.target.value)}
+                                    className="w-full h-11 px-3 rounded-xl bg-white/5 border border-white/10 text-xs font-bold"
+                                  />
+                                </div>
+                                <div className="space-y-1 block">
+                                  <label className="text-xs font-bold text-gray-400">دسته‌بندی (ملیت موزیک)</label>
+                                  <select 
+                                    value={editGenre}
+                                    onChange={(e) => setEditGenre(e.target.value as "irani" | "kharegi")}
+                                    className="w-full h-11 px-3 rounded-xl bg-gray-900 border border-white/10 text-xs font-bold text-white focus:outline-none"
+                                  >
+                                    <option value="irani">ایـرانـی (Irani)</option>
+                                    <option value="kharegi">خارجی (Kharegi)</option>
+                                  </select>
+                                </div>
                               </div>
 
                               {/* Action selection checklists artists edit */}
