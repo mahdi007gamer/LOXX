@@ -166,7 +166,7 @@ interface LobbyContextType {
  setScreenStreamForWebRTC: (stream: MediaStream | null) => void;
  musicBotState: any;
  toggleMusicBot: (active: boolean) => void;
- controlMusicBot: (action: "play" | "pause" | "update-queue", params?: any) => void;
+ controlMusicBot: (action: "play" | "pause" | "update-queue" | "seek", params?: any) => void;
  musicVolumeSilence: number;
  setMusicVolumeSilence: (val: number) => void;
  musicVolumeTalking: number;
@@ -1530,7 +1530,7 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }
  };
 
- const controlMusicBot = (action: "play" | "pause" | "update-queue", params: any = {}) => {
+ const controlMusicBot = (action: "play" | "pause" | "update-queue" | "seek", params: any = {}) => {
   if (lobby) {
    lobbySocket.emit("lobby.musicbot.control", { lobbyId: lobby.id, action, ...params }, (res: any) => {
     if (res?.status === "success") {

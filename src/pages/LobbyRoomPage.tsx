@@ -606,7 +606,7 @@ export const LobbyRoomPage = () => {
     if (isHost && musicBotState.isPlaying) {
       hostSyncInterval = setInterval(() => {
         controlMusicBot("seek", { currentTime: audioEl.currentTime });
-      }, 1500);
+      }, 500);
     }
 
     return () => {
@@ -631,8 +631,8 @@ export const LobbyRoomPage = () => {
     if (!audioEl) return;
 
     const isSomeoneElseSpeaking = lobby?.talkingUsers?.some(
-      (uid: string) => uid !== user?.id && uid !== botId
-    ) || false;
+      (uid: string) => uid !== botId
+    ) || Object.entries(peerActivity).some(([uid, vol]) => uid !== botId && vol > 10) || (localVolume > 10) || false;
     const duckingFactor = isSomeoneElseSpeaking ? (musicVolumeTalking !== undefined ? musicVolumeTalking : 30) : (musicVolumeSilence !== undefined ? musicVolumeSilence : 100);
     const calculatedVolume = (botVolumeLevel / 100) * (duckingFactor / 100);
 
@@ -643,7 +643,9 @@ export const LobbyRoomPage = () => {
     musicVolumeSilence,
     musicVolumeTalking,
     botId,
-    user?.id
+    user?.id,
+    peerActivity,
+    localVolume
   ]);
 
   // Separate non-blocking effect for absolute position syncing to eliminate lag cascade
@@ -654,7 +656,7 @@ export const LobbyRoomPage = () => {
     if (!audioEl || !musicBotState?.active || !musicBotState?.currentTrackUrl || musicBotState?.currentTime === undefined) return;
 
     const drift = Math.abs(audioEl.currentTime - musicBotState.currentTime);
-    if (drift > 2.0) {
+    if (drift > 0.5) {
       audioEl.currentTime = musicBotState.currentTime;
     }
   }, [musicBotState?.currentTime, musicBotState?.active, musicBotState?.currentTrackUrl, isHost]);
@@ -1318,7 +1320,12 @@ export const LobbyRoomPage = () => {
       toast.error(isRtl ? "فقط سازنده لابی می‌تواند ربات را مدیریت کند" : "Only the lobby host can manage the music bot");
       return;
      }
-     toggleMusicBot(!musicBotState?.active);
+     const willBeActive = !musicBotState?.active;
+     toggleMusicBot(willBeActive);
+     if (willBeActive) {
+       setIsInviteModalOpen(false);
+       setShowBotSetupModal(true);
+     }
     }}
     className={cn(
      "px-3.5 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all duration-300 transform active:scale-95 shrink-0 font-sans",
@@ -2407,7 +2414,14 @@ export const LobbyRoomPage = () => {
           </div>
           {isHost ? (
             <div 
-              onClick={() => toggleMusicBot(!musicBotState?.active)}
+              onClick={() => {
+               const willBeActive = !musicBotState?.active;
+               toggleMusicBot(willBeActive);
+               if (willBeActive) {
+                 setIsSettingsModalOpen(false);
+                 setShowBotSetupModal(true);
+               }
+              }}
               className={cn(
                 "w-12 h-6 rounded-full relative cursor-pointer border transition-colors shrink-0",
                 musicBotState?.active ? "bg-[#00e5ff]/20 border-[#00e5ff]/30" : "bg-white/5 border-white/10"
