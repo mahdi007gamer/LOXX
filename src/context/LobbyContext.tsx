@@ -1499,13 +1499,19 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   if (lobby?.id) {
    const handleStateChange = (state: any) => {
     console.log("[LobbyContext] Synced Music Bot state", state);
-    setMusicBotState(state);
+    setMusicBotState({
+      ...state,
+      updatedAt: Date.now() // Override with local time to prevent drift issues due to clock desync
+    });
    };
    lobbySocket.on("lobby.musicbot.state", handleStateChange);
 
    lobbySocket.emit("lobby.musicbot.get_state", { lobbyId: lobby.id }, (res: any) => {
     if (res?.status === "success") {
-     setMusicBotState(res.data);
+     setMusicBotState({
+       ...res.data,
+       updatedAt: Date.now()
+     });
     }
    });
 

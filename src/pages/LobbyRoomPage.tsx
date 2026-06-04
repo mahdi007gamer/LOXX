@@ -42,7 +42,8 @@ import {
  Reply,
  MonitorUp,
  Monitor,
- AlertTriangle
+ AlertTriangle,
+ Minus,
 } from "lucide-react";
 import { GlowButton } from "../components/ui/GlowButton";
 import { useFriends } from "../context/FriendsContext";
@@ -625,6 +626,8 @@ export const LobbyRoomPage = () => {
     isHost
   ]);
 
+  const [isDucking, setIsDucking] = useState(false);
+  
   // Separate non-blocking vocal ducking / volume adjustment effect to decouple from playback
   useEffect(() => {
     const audioEl = localMusicAudioRef.current;
@@ -637,6 +640,7 @@ export const LobbyRoomPage = () => {
     const calculatedVolume = (botVolumeLevel / 100) * (duckingFactor / 100);
 
     audioEl.volume = Math.max(0, Math.min(1, calculatedVolume));
+    setIsDucking(isSomeoneElseSpeaking);
   }, [
     botVolumeLevel,
     lobby?.talkingUsers,
@@ -1446,280 +1450,280 @@ export const LobbyRoomPage = () => {
       dragMomentum={false}
       dragElastic={0.05}
       className={cn(
-       "fixed bottom-24 z-[70] w-[340px] bg-zinc-950/90 backdrop-blur-xl border border-cyan-500/35 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.85),0_0_30px_rgba(0,229,255,0.15)] p-4 text-white hover:border-cyan-500/50 select-none",
+       "fixed bottom-24 z-[70] w-[360px] bg-[#0f0f0f]/60 backdrop-blur-[15px] border border-white/10 rounded-[32px] shadow-[0_30px_60px_rgba(0,0,0,0.6),0_0_40px_rgba(0,229,255,0.08)] p-5 text-white hover:border-white/20 select-none",
        isRtl ? "left-6" : "right-6"
       )}
      >
       {/* Textured Drag Handle Bar */}
-      <div className="flex justify-center -mt-1 pb-2.5 cursor-grab active:cursor-grabbing text-gray-500/40 hover:text-cyan-400/70 select-none transition-colors duration-300">
+      <div className="flex justify-center -mt-1 pb-4 cursor-grab active:cursor-grabbing text-gray-500/40 hover:text-cyan-400/70 select-none transition-colors duration-300">
        <div className="flex gap-1.5 items-center">
         <span className="w-1 h-1 rounded-full bg-current" />
-        <span className="w-1 h-1 rounded-full bg-current" />
         <span className="w-2 h-1.5 rounded-sm bg-cyan-400/40 animate-pulse" />
-        <span className="w-1 h-1 rounded-full bg-current" />
         <span className="w-1 h-1 rounded-full bg-current" />
        </div>
       </div>
 
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-white/5 pb-2.5">
-       <div className="flex items-center gap-2">
-        <div className="p-1 px-2 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
-         <span className="text-xs">🎵</span>
-        </div>
-        <div className="flex flex-col text-left">
-         <span className="text-xs font-black tracking-wider text-white select-none">
-          {isRtl ? "ربات موزیک لوکس" : "Loxx Music Bot"}
-         </span>
-         <span className="text-[8px] text-[#00e5ff] font-mono font-bold leading-none select-none uppercase tracking-wider">
-          LIVE AUDIO CHUNK STREAM
-         </span>
-        </div>
-       </div>
-       
+      <div className="flex items-center justify-between mb-6 border-b border-white/5 pb-4">
        <div className="flex items-center gap-1.5">
-        {/* Setup Menu Button */}
+        {/* Disconnect button */}
+        <button 
+         onClick={() => toggleMusicBot(false)}
+         className="p-1.5 hover:bg-white/10 rounded-lg text-gray-400 hover:text-red-400 active:scale-95 transition-all text-sm font-bold"
+         title={isRtl ? "خروج ربات از لابی" : "Disconnect Bot"}
+        >
+         <X size={18} />
+        </button>
+        {/* Minimize button */}
+        <button 
+         onClick={() => setIsMusicPlayerExpanded(false)}
+         className="p-1.5 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white active:scale-95 transition-all font-bold"
+         title={isRtl ? "کوچک کردن" : "Minimize"}
+        >
+         <Minus size={18} />
+        </button>
+        {/* Setup button */}
         {isHost && (
          <button 
           onClick={() => {
            setSetupStep("source");
            setShowBotSetupModal(true);
           }}
-          className="p-1.5 hover:bg-white/5 rounded-lg text-gray-400 hover:text-[#00e5ff] active:scale-90 transition-all text-sm"
+          className="p-1.5 hover:bg-white/10 rounded-lg text-gray-400 hover:text-[#00e5ff] active:scale-90 transition-all font-bold"
           title={isRtl ? "تغییر پوشه / منبع" : "Setup Source"}
          >
-          ⚙️
-         </button>
-        )}
-        
-        {/* Minimize button */}
-        <button 
-         onClick={() => setIsMusicPlayerExpanded(false)}
-         className="p-1.5 hover:bg-white/5 rounded-lg text-gray-400 hover:text-white active:scale-95 transition-all text-xs"
-         title={isRtl ? "کوچک کردن" : "Minimize"}
-        >
-         ➖
-        </button>
-
-        {/* Clear Shutdown Bot Button */}
-        {isHost && (
-         <button 
-          onClick={() => toggleMusicBot(false)}
-          className="p-1.5 hover:bg-red-500/10 hover:text-red-400 rounded-lg text-gray-400 active:scale-95 transition-all text-xs"
-          title={isRtl ? "خروج ربات از لابی" : "Disconnect Bot"}
-         >
-          ✕
+          <Settings size={16} />
          </button>
         )}
        </div>
-      </div>
 
-      {/* Now Playing Area */}
-      <div className="flex items-center gap-3 py-3 select-none">
-       {/* Spinning Disk Vinyl with live visualizer inside */}
-       <div className="relative h-12 w-12 rounded-full border-2 border-white/15 flex items-center justify-center shrink-0 shadow-lg select-none bg-black overflow-hidden group">
-        {musicBotState?.currentTrackCover ? (
-         <img src={musicBotState.currentTrackCover} className={cn("w-full h-full object-cover", musicBotState?.isPlaying && "animate-[spin_4s_linear_infinite]")} />
-        ) : (
-         <span 
-          className={cn("text-3xl select-none", musicBotState?.isPlaying && "animate-[spin_6s_linear_infinite]")}
-         >
-          💿
-         </span>
-        )}
-        {musicBotState?.isPlaying && (
-         <div className="absolute inset-0 rounded-full border border-dashed border-[#00e5ff]/40 animate-pulse" />
-        )}
-       </div>
-
-       {/* Track metadata */}
-       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-1">
-         <p className="text-xs font-black text-white truncate max-w-[180px] font-sans">
-          {musicBotState?.currentTrackName || (isRtl ? "آهنگی وجود ندارد" : "Playlist ended")}
-         </p>
-         {musicBotState?.isPlaying && (
-          <span className="w-1.5 h-1.5 bg-[#00e5ff] rounded-full animate-ping shrink-0" />
-         )}
-        </div>
-        <p className="text-[9px] text-[#00e5ff] font-bold tracking-wider mt-0.5 truncate uppercase font-mono">
-         📁 {musicBotState?.currentCategory || (isRtl ? "دسته‌بندی نشده" : "Inactive")}
-        </p>
-       </div>
-      </div>
-
-      {/* Equalizer animation bars if playing */}
-      {musicBotState?.isPlaying && (
-       <div className="flex items-end justify-center gap-1.5 h-7 bg-black/40 rounded-xl p-1.5 select-none my-1 border border-white/5">
-        <div className="w-1 bg-[#00e5ff] rounded animate-bounce" style={{ height: "45%", animationDuration: "0.8s" }} />
-        <div className="w-1 bg-[#00e5ff] rounded animate-bounce" style={{ height: "75%", animationDuration: "0.5s", animationDelay: "100ms" }} />
-        <div className="w-1 bg-[#00e5ff] rounded animate-bounce" style={{ height: "100%", animationDuration: "0.7s", animationDelay: "200ms" }} />
-        <div className="w-1 bg-[#00e5ff] rounded animate-bounce" style={{ height: "60%", animationDuration: "0.6s", animationDelay: "150ms" }} />
-        <div className="w-1 bg-[#00e5ff] rounded animate-bounce" style={{ height: "85%", animationDuration: "0.9s", animationDelay: "50ms" }} />
-       </div>
-      )}
-
-      {/* Dynamic Seek Progress Slider Bar */}
-      {musicBotState?.currentTrackUrl && (
-       <div className="flex flex-col gap-1 px-1 py-1 mt-1 mb-2 font-sans">
-        <div className="flex justify-between items-center text-[9px] text-gray-400 font-mono select-none">
-         <span>{Math.floor(localMusicCurrentTime / 60)}:{String(Math.floor(localMusicCurrentTime % 60)).padStart(2, '0')}</span>
-         <span>{localMusicDuration ? `${Math.floor(localMusicDuration / 60)}:${String(Math.floor(localMusicDuration % 60)).padStart(2, '0')}` : "0:00"}</span>
-        </div>
-        <div className="relative group/seeker">
-         <input 
-          type="range"
-          min={0}
-          max={localMusicDuration || 100}
-          value={localMusicCurrentTime}
-          disabled={!isHost}
-          onChange={(e) => {
-           const val = parseFloat(e.target.value);
-           setLocalMusicCurrentTime(val);
-           if (localMusicAudioRef.current) {
-            localMusicAudioRef.current.currentTime = val;
-           }
-           if (isHost) {
-            controlMusicBot("seek", { currentTime: val });
-           }
-          }}
-          className={cn(
-           "w-full h-1 bg-white/10 hover:bg-white/15 rounded-lg appearance-none cursor-pointer accent-[#00e5ff] transition-all outline-none",
-           !isHost && "cursor-not-allowed opacity-60"
-          )}
-          title={isHost ? (isRtl ? "تغییر زمان پخش" : "Seek track") : (isRtl ? "فقط سازنده لابی می‌تواند جلو عقب کند" : "Host only can seek")}
-         />
-        </div>
-       </div>
-      )}
-
-      {/* Player controls */}
-      <div className="flex items-center justify-between bg-black/35 p-2.5 rounded-2xl mt-1.5 select-none font-sans border border-white/5">
-       {/* Host controllers */}
-       <div className="flex items-center gap-3.5 w-full justify-center">
-        {isHost ? (
-         <>
-          <button 
-           onClick={() => {
-            if (musicBotState?.queue && musicBotState.queue.length > 0) {
-             const prevIdx = (musicBotState.queueIndex - 1 + musicBotState.queue.length) % musicBotState.queue.length;
-             const prevTrack = musicBotState.queue[prevIdx];
-             controlMusicBot("update-queue", {
-              queue: musicBotState.queue,
-              queueIndex: prevIdx,
-              trackUrl: prevTrack.url,
-              trackName: prevTrack.name,
-              category: musicBotState.currentCategory,
-              isPlaying: true
-             });
-            }
-           }}
-           className={cn(
-            "p-2 rounded-xl text-gray-400 hover:text-[#00e5ff] hover:bg-white/5 active:scale-90 transition-all text-xs",
-            (!musicBotState?.queue || musicBotState.queue.length <= 1) && "opacity-30 cursor-not-allowed"
-           )}
-           disabled={!musicBotState?.queue || musicBotState.queue.length <= 1}
-           title={isRtl ? "آهنگ قبلی" : "Previous Track"}
-          >
-           ⏮
-          </button>
-
-          <button 
-           onClick={() => {
-            if (musicBotState?.isPlaying) {
-             controlMusicBot("pause");
-            } else {
-             if (musicBotState?.queue && musicBotState.queue.length > 0) {
-              controlMusicBot("play");
-             } else {
-              setShowBotSetupModal(true);
-             }
-            }
-           }}
-           className="p-3 bg-gradient-to-r from-cyan-400 to-blue-500 rounded-full text-black font-black active:scale-90 shadow-[0_0_15px_rgba(0,191,255,0.45)] transition-all hover:brightness-110 text-sm"
-          >
-           {musicBotState?.isPlaying ? "⏸" : "▶"}
-          </button>
-
-          <button 
-           onClick={() => {
-            if (musicBotState?.queue && musicBotState.queue.length > 0) {
-             const nextIdx = (musicBotState.queueIndex + 1) % musicBotState.queue.length;
-             const nextTrack = musicBotState.queue[nextIdx];
-             controlMusicBot("update-queue", {
-              queue: musicBotState.queue,
-              queueIndex: nextIdx,
-              trackUrl: nextTrack.url,
-              trackName: nextTrack.name,
-              category: musicBotState.currentCategory,
-              isPlaying: true
-             });
-            }
-           }}
-           className={cn(
-            "p-2 rounded-xl text-gray-400 hover:text-[#00e5ff] hover:bg-white/5 active:scale-90 transition-all text-xs",
-            (!musicBotState?.queue || musicBotState.queue.length <= 1) && "opacity-30 cursor-not-allowed"
-           )}
-           disabled={!musicBotState?.queue || musicBotState.queue.length <= 1}
-           title={isRtl ? "آهنگ بعدی" : "Skip/Next"}
-          >
-           ⏭
-          </button>
-         </>
-        ) : (
-         <div className="text-[9px] font-black text-gray-500 tracking-wider uppercase flex items-center gap-1.5 py-1 font-sans">
-          🔒 {isRtl ? "کنترل پخش فقط توسط هاست" : "Host Controlled Playback"}
-         </div>
-        )}
-       </div>
-      </div>
-
-      {/* Queue Panel Trigger */}
-      <div className="pt-2.5 mt-2.5 border-t border-white/5 select-none text-[10px] text-gray-400 font-semibold font-sans">
-       <div 
-        onClick={() => setIsQueueOpen(!isQueueOpen)}
-        className="flex justify-between items-center cursor-pointer py-1.5 hover:text-white transition-colors"
-       >
-        <span className="flex items-center gap-1.5">📋 {isRtl ? "لیست صف آهنگ‌ها" : "Track Queue List"}</span>
-        <span className="text-[9px] font-mono font-bold bg-[#00e5ff]/10 text-[#00e5ff] px-2 py-0.5 rounded-lg border border-[#00e5ff]/20">
-         {musicBotState?.queue?.length || 0}
+       <div className="flex flex-col text-right mr-1">
+        <span className="text-[15px] font-black tracking-wider text-white select-none whitespace-nowrap">
+         {isRtl ? "ربات موزیک لودس" : "Loxx Music Bot"}
+        </span>
+        <span className="text-[9px] text-[#00e5ff] font-mono leading-none select-none uppercase tracking-widest mt-1 font-bold">
+         LIVE AUDIO CHUNK STREAM
         </span>
        </div>
+       <div className="p-1.5 rounded-lg text-[#00e5ff] ml-1 shrink-0">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+       </div>
+      </div>
+
+      {/* Now Playing Info & Cover */}
+      <div className="flex items-center justify-between pb-6 relative px-1">
+       {/* Track metadata */}
+       <div className="flex-1 min-w-0 pr-4 z-10 text-right">
+        <div className="flex items-center justify-end gap-1.5 mb-2 text-yellow-400 font-black text-xs uppercase tracking-wider font-sans">
+         <span className="truncate">{musicBotState?.currentCategory || (isRtl ? "گالری لوکس" : "Loxx Gallery")}</span>
+         <span className="text-sm">📁</span>
+        </div>
+        <p className="text-sm font-black text-gray-100 truncate font-sans tracking-wide leading-relaxed" dir="ltr" style={{ textAlign: isRtl ? 'right' : 'left' }}>
+         {musicBotState?.currentTrackName || (isRtl ? "آهنگی وجود ندارد" : "Playlist ended")}
+        </p>
+       </div>
+
+       {/* Spinning Disk Vinyl with glow */}
+       <div className="relative h-[85px] w-[85px] rounded-full flex items-center justify-center shrink-0 z-10 group">
+        <div className="absolute inset-0 rounded-full border border-white/20 shadow-[0_0_25px_rgba(0,229,255,0.2)] group-hover:shadow-[0_0_35px_rgba(0,229,255,0.5)] transition-all"></div>
+        <div className={cn("relative h-full w-full rounded-full border-[4px] border-[#1a1a1a] shadow-inner bg-black overflow-hidden flex items-center justify-center", musicBotState?.isPlaying && "animate-[spin_4s_linear_infinite]")}>
+         {musicBotState?.currentTrackCover ? (
+          <img src={musicBotState.currentTrackCover} className="w-full h-full object-cover" />
+         ) : (
+          <div className="w-full h-full bg-[#111] flex items-center justify-center rounded-full border-[2px] border-zinc-800">
+           <div className="w-6 h-6 rounded-full bg-zinc-900 border border-zinc-700 flex items-center justify-center">
+            <div className="w-2 h-2 rounded-full bg-black"></div>
+           </div>
+          </div>
+         )}
+        </div>
+       </div>
+      </div>
+
+      {/* Equalizer Waveform Visualizer */}
+      <div className="relative h-16 w-full flex items-center justify-center gap-[3px] my-5 px-3">
+       {Array.from({ length: 50 }).map((_, i) => (
+        <div 
+         key={i} 
+         className={cn("w-1 rounded-full", musicBotState?.isPlaying ? "bg-[#00e5ff] shadow-[0_0_8px_rgba(0,229,255,0.6)] animate-pulse" : "bg-[#00e5ff]/20")} 
+         style={{ 
+          height: musicBotState?.isPlaying ? `${Math.max(15, Math.random() * 100)}%` : "15%",
+          animationDuration: `${0.3 + Math.random() * 0.5}s`,
+          animationDelay: `${Math.random() * 0.5}s`
+         }} 
+        />
+       ))}
+      </div>
+
+      {/* Dynamic Seek Progress Slider Bar */}
+      <div className="flex flex-col gap-2 mb-6 font-sans relative px-2">
+       {isDucking && (
+        <div className="absolute -top-7 left-1/2 -translate-x-1/2 bg-yellow-500/10 border border-yellow-500/30 text-yellow-500 text-[10px] px-2 py-0.5 rounded-full font-bold animate-pulse flex items-center gap-1">
+         <span>کاهش ولوم هوشمند</span>
+         <Volume2 size={12} />
+        </div>
+       )}
+       <div className="flex justify-between items-center text-[11px] text-gray-400 font-mono font-bold select-none px-1">
+        <span>{Math.floor(localMusicCurrentTime / 60)}:{String(Math.floor(localMusicCurrentTime % 60)).padStart(2, '0')}</span>
+        <span>{localMusicDuration ? `${Math.floor(localMusicDuration / 60)}:${String(Math.floor(localMusicDuration % 60)).padStart(2, '0')}` : "0:00"}</span>
+       </div>
+       <div className="relative group/seeker">
+        <input 
+         type="range"
+         min={0}
+         max={localMusicDuration || 100}
+         value={localMusicCurrentTime}
+         disabled={!isHost}
+         onChange={(e) => {
+          const val = parseFloat(e.target.value);
+          setLocalMusicCurrentTime(val);
+          if (localMusicAudioRef.current) {
+           localMusicAudioRef.current.currentTime = val;
+          }
+          if (isHost) {
+           controlMusicBot("seek", { currentTime: val });
+          }
+         }}
+         className={cn(
+          "w-full h-1.5 bg-white/10 hover:bg-white/20 rounded-full appearance-none cursor-pointer accent-[#00e5ff] transition-all outline-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-[#00e5ff] [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:shadow-[0_0_12px_rgba(0,229,255,0.9)] hover:[&::-webkit-slider-thumb]:scale-125 transition-transform",
+          !isHost && "cursor-not-allowed opacity-60",
+          isDucking && "opacity-60"
+         )}
+         title={isHost ? (isRtl ? "تغییر زمان پخش" : "Seek track") : (isRtl ? "فقط سازنده لابی می‌تواند جلو عقب کند" : "Host only can seek")}
+        />
+       </div>
+      </div>
+
+      {/* Player controls */}
+      <div className="flex items-center justify-center gap-7 mb-8 select-none font-sans px-2">
+       <button 
+        onClick={() => {
+         if (isHost && musicBotState?.queue && musicBotState.queue.length > 0) {
+          const prevIdx = (musicBotState.queueIndex - 1 + musicBotState.queue.length) % musicBotState.queue.length;
+          const prevTrack = musicBotState.queue[prevIdx];
+          controlMusicBot("update-queue", {
+           queue: musicBotState.queue,
+           queueIndex: prevIdx,
+           trackUrl: prevTrack.url,
+           trackName: prevTrack.name,
+           category: musicBotState.currentCategory,
+           isPlaying: true
+          });
+         }
+        }}
+        className={cn(
+         "w-12 h-12 flex items-center justify-center rounded-full text-[#00e5ff] hover:bg-[#00e5ff]/10 active:scale-90 transition-all shadow-[0_0_15px_rgba(0,229,255,0.05)]",
+         (!isHost || !musicBotState?.queue || musicBotState.queue.length <= 1) && "opacity-30 cursor-not-allowed hover:bg-transparent"
+        )}
+        disabled={!isHost || !musicBotState?.queue || musicBotState.queue.length <= 1}
+       >
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M11 17l-5-5 5-5v10z"></path><path d="M18 17l-5-5 5-5v10z"></path><path d="M5 17h2V7H5v10z"></path></svg>
+       </button>
+
+       <button 
+        onClick={() => {
+         if (!isHost) return;
+         if (musicBotState?.isPlaying) {
+          controlMusicBot("pause");
+         } else {
+          if (musicBotState?.queue && musicBotState.queue.length > 0) {
+           controlMusicBot("play");
+          } else {
+           setShowBotSetupModal(true);
+          }
+         }
+        }}
+        className={cn(
+         "w-[76px] h-[76px] flex items-center justify-center rounded-full active:scale-95 transition-all text-white",
+         isHost ? "bg-gradient-to-tr from-[#00b4d8] to-[#00e5ff] text-black shadow-[0_0_25px_rgba(0,229,255,0.6)] hover:shadow-[0_0_35px_rgba(0,229,255,0.8)] hover:brightness-110" : "bg-white/10 text-white/50 cursor-not-allowed"
+        )}
+       >
+        {musicBotState?.isPlaying ? (
+         <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path></svg>
+        ) : (
+         <svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg>
+        )}
+       </button>
+
+       <button 
+        onClick={() => {
+         if (isHost && musicBotState?.queue && musicBotState.queue.length > 0) {
+          const nextIdx = (musicBotState.queueIndex + 1) % musicBotState.queue.length;
+          const nextTrack = musicBotState.queue[nextIdx];
+          controlMusicBot("update-queue", {
+           queue: musicBotState.queue,
+           queueIndex: nextIdx,
+           trackUrl: nextTrack.url,
+           trackName: nextTrack.name,
+           category: musicBotState.currentCategory,
+           isPlaying: true
+          });
+         }
+        }}
+        className={cn(
+         "w-12 h-12 flex items-center justify-center rounded-full text-[#00e5ff] hover:bg-[#00e5ff]/10 active:scale-90 transition-all shadow-[0_0_15px_rgba(0,229,255,0.05)]",
+         (!isHost || !musicBotState?.queue || musicBotState.queue.length <= 1) && "opacity-30 cursor-not-allowed hover:bg-transparent"
+        )}
+        disabled={!isHost || !musicBotState?.queue || musicBotState.queue.length <= 1}
+       >
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M13 7l5 5-5 5V7z"></path><path d="M6 7l5 5-5 5V7z"></path><path d="M17 7h2v10h-2V7z"></path></svg>
+       </button>
+      </div>
+
+      {/* Queue Panel Trigger (Footer Button) */}
+      <div className="pt-4 border-t border-white/5 select-none font-sans mt-auto relative">
+       <button 
+        onClick={() => setIsQueueOpen(!isQueueOpen)}
+        className="w-full flex justify-between items-center bg-transparent hover:bg-white/5 border border-transparent transition-all font-bold text-gray-300 hover:text-white rounded-xl focus:outline-none"
+       >
+        <div className="flex items-center gap-2">
+         <span className="w-10 h-10 rounded-xl bg-transparent text-[#00e5ff] font-black flex items-center justify-center text-sm/none">
+          {musicBotState?.queue?.length || 0}
+         </span>
+        </div>
+        <span className="flex items-center gap-2 text-sm tracking-wide font-black">
+         {isRtl ? "لیست صف آهنگ‌ها" : "Track Queue List"} 📋
+        </span>
+       </button>
 
        {isQueueOpen && (
-        <div className="max-h-36 overflow-y-auto mt-2 space-y-1 custom-scrollbar pr-1 animate-enter font-sans">
-         {musicBotState?.queue && musicBotState.queue.length > 0 ? (
-          musicBotState.queue.map((track, idx) => {
-           const isPlayingTrack = musicBotState.queueIndex === idx;
-           return (
-            <div 
-             key={idx} 
-             onClick={() => {
-              if (isHost) {
-               controlMusicBot("update-queue", {
-                queue: musicBotState.queue,
-                queueIndex: idx,
-                trackUrl: track.url,
-                trackName: track.name,
-                category: musicBotState.currentCategory,
-                isPlaying: true
-               });
-              }
-             }}
-             className={cn(
-              "flex justify-between items-center bg-white/5 p-2 px-2.5 rounded-xl text-[9px] transition-all",
-              isHost && "cursor-pointer hover:bg-white/10",
-              isPlayingTrack && "border border-[#00e5ff]/30 bg-[#00e5ff]/10 text-[#00e5ff] font-bold"
-             )}
-            >
-             <span className="truncate max-w-[190px]">{track.name}</span>
-             {isPlayingTrack && <span className="text-[8px] tracking-wider animate-pulse">PLAYING</span>}
-            </div>
-           );
-          })
-         ) : (
-          <p className="text-center py-4 text-[9px] text-gray-600">{isRtl ? "لیست پخش ربات خالی است" : "Playlist empty"}</p>
-         )}
+        <div className="absolute bottom-[110%] mb-2 left-0 w-full bg-[#0f0f0f]/90 backdrop-blur-3xl rounded-2xl border border-white/10 shadow-2xl p-2 z-50 overflow-hidden">
+         <div className="max-h-56 overflow-y-auto space-y-1 custom-scrollbar pr-1 animate-enter font-sans">
+          {musicBotState?.queue && musicBotState.queue.length > 0 ? (
+           musicBotState.queue.map((track, idx) => {
+            const isPlayingTrack = musicBotState.queueIndex === idx;
+            return (
+             <div 
+              key={idx} 
+              onClick={() => {
+               if (isHost) {
+                controlMusicBot("update-queue", {
+                 queue: musicBotState.queue,
+                 queueIndex: idx,
+                 trackUrl: track.url,
+                 trackName: track.name,
+                 category: musicBotState.currentCategory,
+                 isPlaying: true
+                });
+               }
+              }}
+              className={cn(
+               "flex justify-between items-center bg-white/5 p-3 rounded-xl text-xs transition-all",
+               isHost && "cursor-pointer hover:bg-white/10",
+               isPlayingTrack && "border border-[#00e5ff]/30 bg-[#00e5ff]/10 text-[#00e5ff] font-bold flex-row-reverse text-right shadow-[0_0_10px_rgba(0,229,255,0.1)]"
+              )}
+             >
+              <div className="flex flex-col items-end w-full truncate space-y-1">
+               <span className={cn("truncate w-full text-right", isPlayingTrack ? "text-[#00e5ff]" : "text-white/80")}>{track.name}</span>
+               {isPlayingTrack && <span className="text-[9px] tracking-widest uppercase font-mono animate-pulse opacity-80 z-20">PLAYING NOW</span>}
+              </div>
+             </div>
+            );
+           })
+          ) : (
+           <p className="text-center py-5 text-sm text-gray-500 font-bold">{isRtl ? "لیست پخش ربات خالی است" : "Playlist empty"}</p>
+          )}
+         </div>
         </div>
        )}
       </div>
