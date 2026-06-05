@@ -185,6 +185,11 @@ io.on("connection", (socket: Socket) => {
   let currentRoomId: string | null = null;
   let currentUserId: string | null = null;
 
+  // Real-time ping handler for voice lag analysis
+  socket.on("voice.ping", (data: { timestamp: number }) => {
+    socket.emit("voice.pong", { timestamp: data.timestamp });
+  });
+
   // 1. Join Room: Create or find Mediasoup router and return its RTP capabilities
   socket.on("join", async (data: { roomId: string; userId: string }, callback: Function) => {
     try {

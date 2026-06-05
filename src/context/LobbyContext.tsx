@@ -1270,15 +1270,31 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
 
     const interval = setInterval(() => {
-      if (lobbySocket.connected) {
+      // Prioritize pinging the dedicated voice SFU server (VPS) for real voice latency.
+      // Fallback to the main web app lobby socket if voice server is not connected.
+      if (voiceSocket && voiceSocket.connected) {
+        voiceSocket.emit("voice.ping", { timestamp: Date.now() });
+      } else if (lobbySocket && lobbySocket.connected) {
         lobbySocket.emit("lobby.ping", { timestamp: Date.now() });
       }
-    }, 4000);
+    }, 4500);
 
-    const handlePong = (data: { timestamp: number }) => {
+    const handleVoicePong = (data: { timestamp: number }) => {
       const calculatedPing = Date.now() - data.timestamp;
       const currentLobby = lobbyRef.current;
-      if (currentLobby?.id && lobbySocket.connected) {
+      if (currentLobby?.id && lobbySocket && lobbySocket.connected) {
+        lobbySocket.emit("lobby.publish_ping", {
+          lobbyId: currentLobby.id,
+          ping: calculatedPing
+        });
+      }
+    };
+
+    const handleLobbyPong = (data: { timestamp: number }) => {
+      // Fallback web latency
+      const calculatedPing = Date.now() - data.timestamp;
+      const currentLobby = lobbyRef.current;
+      if (currentLobby?.id && lobbySocket && lobbySocket.connected && (!voiceSocket || !voiceSocket.connected)) {
         lobbySocket.emit("lobby.publish_ping", {
           lobbyId: currentLobby.id,
           ping: calculatedPing
@@ -1293,13 +1309,23 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }));
     };
 
-    lobbySocket.on("lobby.pong", handlePong);
-    lobbySocket.on("lobby.ping_updated", handlePingUpdated);
+    if (voiceSocket) {
+      voiceSocket.on("voice.pong", handleVoicePong);
+    }
+    if (lobbySocket) {
+      lobbySocket.on("lobby.pong", handleLobbyPong);
+      lobbySocket.on("lobby.ping_updated", handlePingUpdated);
+    }
 
     return () => {
       clearInterval(interval);
-      lobbySocket.off("lobby.pong", handlePong);
-      lobbySocket.off("lobby.ping_updated", handlePingUpdated);
+      if (voiceSocket) {
+        voiceSocket.off("voice.pong", handleVoicePong);
+      }
+      if (lobbySocket) {
+        lobbySocket.off("lobby.pong", handleLobbyPong);
+        lobbySocket.off("lobby.ping_updated", handlePingUpdated);
+      }
     };
   }, [lobby?.id]);
 
