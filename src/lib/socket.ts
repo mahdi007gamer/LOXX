@@ -1,30 +1,50 @@
 import { io } from "socket.io-client";
 
-const SOCKET_URL = window.location.origin;
+// Detect if we are on the production backend (real server instance)
+const isProductionLoxx = typeof window !== 'undefined' && 
+  (window.location.hostname === 'loxx.ir' || window.location.hostname === 'connect.loxx.ir');
+
+// State to track if fallback is currently active
+let activeSocketURL = isProductionLoxx ? "https://connect.loxx.ir" : window.location.origin;
+let isUsingFallback = false;
+
+// Array to keep track of sockets that need automatic fallback mapping
+const registeredSockets: any[] = [];
 
 export const createNamespaceSocket = (namespace: string, withAuth = true) => {
- // Determine if we should force WSS (useful if Runflare configures HTTP but forwards to HTTPS)
- // By using location.origin, we respect the current protocol (HTTP vs HTTPS)
- // Force websocket transport to fix session unknown errors in VPS/Runflare load balancers
- 
- const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
+  const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
 
- const authConfig = withAuth ? {
- auth: (cb: any) => {
- const token = localStorage.getItem("loxx_token");
- cb({ token: `Bearer ${token}` });
- }
- } : {};
+  const authConfig = withAuth ? {
+    auth: (cb: any) => {
+      const token = localStorage.getItem("loxx_token");
+      cb({ token: `Bearer ${token}` });
+    }
+  } : {};
 
- return io(`${SOCKET_URL}/${namespace}`, {
- path: '/api/v1/socket.io',
- autoConnect: false,
- transports: ['websocket', 'polling'], // Start with websocket directly for lowest latency, fallback to polling if blocked
- reconnectionDelay: 1000,
- reconnectionDelayMax: 5000,
- query: { isElectron: isElectron ? "true" : "false" },
- ...authConfig
- });
+  const socketURL = isProductionLoxx && isUsingFallback ? "https://loxx.ir" : activeSocketURL;
+
+  const socket = io(`${socketURL}/${namespace}`, {
+    path: '/api/v1/socket.io',
+    autoConnect: false,
+    transports: ['websocket', 'polling'], // Start with websocket directly for lowest latency, fallback to polling if blocked
+    reconnectionDelay: 1000,
+    reconnectionDelayMax: 5000,
+    query: { isElectron: isElectron ? "true" : "false" },
+    ...authConfig
+  });
+
+  // Put socket in tracking registry for real-time fallback propagation
+  registeredSockets.push({ socket, namespace });
+
+  // Attach fallback error handling on connection failure
+  socket.on("connect_error", (error) => {
+    if (isProductionLoxx && !isUsingFallback && activeSocketURL === "https://connect.loxx.ir") {
+      console.warn(`[Socket ${namespace}] Direct connection to connect.loxx.ir failed. Triggering fallback to loxx.ir (CDN)...`, error);
+      triggerFallback();
+    }
+  });
+
+  return socket;
 };
 
 // Global sockets that can be reused
@@ -35,8 +55,35 @@ export const chatSocket = createNamespaceSocket("chat");
 export const notifySocket = createNamespaceSocket("notify");
 export const rankingSocket = createNamespaceSocket("ranking");
 
+// Propagate fallback to all namespaces immediately
+const triggerFallback = () => {
+  if (isUsingFallback) return;
+  isUsingFallback = true;
+  activeSocketURL = "https://loxx.ir";
+
+  console.log(`[Socket fallback] Re-routing all sockets to CDN proxied loxx.ir address...`);
+
+  registeredSockets.forEach(({ socket, namespace }) => {
+    if (socket) {
+      if (socket.io) {
+        socket.io.uri = `https://loxx.ir`;
+      }
+      if (socket.connected || socket.active) {
+        socket.disconnect();
+        socket.connect();
+      }
+    }
+  });
+};
+
 // Helper to determine the dedicated high-performance voice server URL dynamically.
 const getVoiceServerUrl = () => {
+  // If we are in production on loxx.ir, we should absolutely use voice.loxx.ir for zero-proxy direct routing
+  if (isProductionLoxx) {
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    return `${protocol}//voice.loxx.ir`;
+  }
+
   if (import.meta.env.VITE_VOICE_SERVER_URL) {
     return import.meta.env.VITE_VOICE_SERVER_URL;
   }
