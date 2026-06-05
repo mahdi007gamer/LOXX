@@ -15,7 +15,7 @@ class SmoothAudioPlayer {
     // Prevent buffer bloating and maintain sub-100ms real-time delay
     const MAX_QUEUE_SAMPLES = 8000; 
     if (this.queue.length > MAX_QUEUE_SAMPLES) {
-      this.queue = this.queue.slice(this.queue.length - 2000);
+      this.queue = this.queue.slice(this.queue.length - 4000);
     }
     const nextQueue = new Float32Array(this.queue.length + data.length);
     nextQueue.set(this.queue, 0);
@@ -23,7 +23,7 @@ class SmoothAudioPlayer {
     this.queue = nextQueue;
     
     // Begin playing with a safe 100ms cushion (1200 samples at 16kHz)
-    if (this.isBuffering && this.queue.length >= 1200) {
+    if (this.isBuffering && this.queue.length >= 2400) {
       this.isBuffering = false;
       this.consecutiveUnderflows = 0;
     }
@@ -41,7 +41,7 @@ class SmoothAudioPlayer {
     const ratio = inSampleRate / outSampleRate;
     
     // If the buffer runs too dry, enter buffering cycle to preserve sync
-    if (this.queue.length < 200) {
+    if (this.queue.length < 600) {
       this.consecutiveUnderflows++;
       if (this.consecutiveUnderflows > 8) {
         this.isBuffering = true;
@@ -56,7 +56,19 @@ class SmoothAudioPlayer {
     this.consecutiveUnderflows = 0;
 
     // Dynamically adjust playout rate to smoothly handle network queue drifts without clicks
-    const playableRatio = Math.min(ratio, this.queue.length / out.length);
+    //const playableRatio = Math.min(ratio, this.queue.length / out.length);
+    const targetBuffer = 2400;
+    const drift = this.queue.length - targetBuffer;
+
+    let adaptiveRatio = ratio;
+
+    // smooth drift correction
+    if (Math.abs(drift) > 400) {
+    adaptiveRatio = ratio * (1 + drift * 0.000002);
+    }
+
+    const playableRatio = Math.min(adaptiveRatio, this.queue.length / out.length);
+
     let srcIdx = 0;
 
     for (let i = 0; i < out.length; i++) {
