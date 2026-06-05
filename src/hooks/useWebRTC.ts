@@ -11,18 +11,18 @@ export class SmoothAudioPlayer {
   private phase: number = 0;
 
   public push(data: Float32Array) {
-    // Prevent buffer bloating and maintain sub-100ms real-time delay under high network spikes.
+    // Prevent buffer bloating and maintain dual-mode real-time delay under high network spikes.
     const MAX_QUEUE_SAMPLES = 8000; // Supports up to 500ms of accumulated network jitter spikes before safety prune
     if (this.queue.length > MAX_QUEUE_SAMPLES) {
-      this.queue = this.queue.slice(this.queue.length - 1600); // Reset smoothly to 100ms
+      this.queue = this.queue.slice(this.queue.length - 2400); // Reset smoothly to safety target cushion (150ms)
     }
     const nextQueue = new Float32Array(this.queue.length + data.length);
     nextQueue.set(this.queue, 0);
     nextQueue.set(data, this.queue.length);
     this.queue = nextQueue;
     
-    // Begin playing with a safe 60ms cushion (1000 samples at 16kHz)
-    if (this.isBuffering && this.queue.length >= 1000) {
+    // Begin playing with a very stable 150ms buffering cushion (2400 samples at 16kHz) matching Discord-style standards
+    if (this.isBuffering && this.queue.length >= 2400) {
       this.isBuffering = false;
       this.consecutiveUnderflows = 0;
     }
@@ -39,8 +39,8 @@ export class SmoothAudioPlayer {
 
     const ratio = inSampleRate / outSampleRate;
     
-    // If the buffer runs too dry, enter buffering cycle to preserve sync
-    if (this.queue.length < 160) {
+    // Safety Threshold (Underflow prevention): If queue size is critically low (< 600 samples), buffer up to avoid digital clicks
+    if (this.queue.length < 600) {
       this.consecutiveUnderflows++;
       if (this.consecutiveUnderflows > 8) {
         this.isBuffering = true;
@@ -54,16 +54,16 @@ export class SmoothAudioPlayer {
 
     this.consecutiveUnderflows = 0;
 
-    // Adaptive playout rate adjustment (Ultra-smooth synchronization)
-    // Target buffer size: 800 - 1200 samples (50ms - 75ms).
+    // Adaptive playout rate adjustment (Ultra-smooth synchronization target: 100ms - 200ms Jitter Buffer)
+    // Target buffer size: 1600 - 3200 samples (100ms - 200ms).
     // If queue is larger, play faster to catch up; if smaller, play slower to permit buffering.
     let adaptiveRatio = ratio;
-    if (this.queue.length > 2400) {
-      const excessive = Math.min(2000, this.queue.length - 2400);
+    if (this.queue.length > 3200) {
+      const excessive = Math.min(2000, this.queue.length - 3200);
       adaptiveRatio = ratio * (1 + 0.15 * (excessive / 2000));
-    } else if (this.queue.length < 800) {
-      const shortage = 800 - this.queue.length;
-      adaptiveRatio = ratio * (1 - 0.15 * (shortage / 800));
+    } else if (this.queue.length < 1600) {
+      const shortage = 1600 - this.queue.length;
+      adaptiveRatio = ratio * (1 - 0.12 * (shortage / 1600));
     }
 
     const playableRatio = adaptiveRatio;
@@ -135,14 +135,14 @@ export const loadAudioWorklet = async (audioContext: AudioContext): Promise<void
               const data = e.data.data;
               const MAX_QUEUE_SAMPLES = 8000;
               if (this.queue.length > MAX_QUEUE_SAMPLES) {
-                this.queue = this.queue.slice(this.queue.length - 1600);
+                this.queue = this.queue.slice(this.queue.length - 2400);
               }
               const nextQueue = new Float32Array(this.queue.length + data.length);
               nextQueue.set(this.queue, 0);
               nextQueue.set(data, this.queue.length);
               this.queue = nextQueue;
 
-              if (this.isBuffering && this.queue.length >= 1000) {
+              if (this.isBuffering && this.queue.length >= 2400) {
                 this.isBuffering = false;
                 this.consecutiveUnderflows = 0;
               }
@@ -171,7 +171,7 @@ export const loadAudioWorklet = async (audioContext: AudioContext): Promise<void
 
           const ratio = 16000 / sampleRate;
 
-          if (this.queue.length < 160) {
+          if (this.queue.length < 600) {
             this.consecutiveUnderflows++;
             if (this.consecutiveUnderflows > 8) {
               this.isBuffering = true;
@@ -186,12 +186,12 @@ export const loadAudioWorklet = async (audioContext: AudioContext): Promise<void
           this.consecutiveUnderflows = 0;
           
           let adaptiveRatio = ratio;
-          if (this.queue.length > 2400) {
-            const excessive = Math.min(2000, this.queue.length - 2400);
+          if (this.queue.length > 3200) {
+            const excessive = Math.min(2000, this.queue.length - 3200);
             adaptiveRatio = ratio * (1 + 0.15 * (excessive / 2000));
-          } else if (this.queue.length < 800) {
-            const shortage = 800 - this.queue.length;
-            adaptiveRatio = ratio * (1 - 0.15 * (shortage / 800));
+          } else if (this.queue.length < 1600) {
+            const shortage = 1600 - this.queue.length;
+            adaptiveRatio = ratio * (1 - 0.12 * (shortage / 1600));
           }
 
           const playableRatio = adaptiveRatio;
@@ -674,11 +674,11 @@ export const useWebRTC = (
             } catch (e) {}
           }
 
-          // Requested Points 2 & 3: Reduced maxBitrate to 96000 and opusStereo to false
+          // Requested Points 2 & 3: Reduced maxBitrate to 96000 and keep opusStereo to true for rich music
           const audioProducer = await sendTransportRef.current.produce({
             track: botAudioTrack,
             appData: { type: "bot", userId: `music-bot-${roomId}` },
-            encodings: [{ networkPriority: "high", maxBitrate: 256000 }],
+            encodings: [{ networkPriority: "high", maxBitrate: 96000 }],
             codecOptions: { opusDtx: false, opusFec: true, opusStereo: true }
           });
           botProducerRef.current = audioProducer;
