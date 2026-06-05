@@ -141,6 +141,78 @@ export const useWebRTC = (
   };
 
   // --------------------------------------------------
+  // SHARED FALLBACK PLAYER HELPERS
+  // --------------------------------------------------
+  const destroyRemotePlayer = (targetId: string) => {
+    const entry = fallbackPlayersRef.current.get(targetId);
+    if (entry) {
+      try { entry.node.disconnect(); } catch (e) {}
+      try { entry.silentGainNode.disconnect(); } catch (e) {}
+      fallbackPlayersRef.current.delete(targetId);
+    }
+    setRemoteStreams((prev) => {
+      const next = new Map(prev);
+      const currentStream = next.get(targetId);
+      if (currentStream && entry && currentStream === entry.dest.stream) {
+        next.delete(targetId);
+      }
+      return next;
+    });
+  };
+
+  const getOrCreateRemotePlayer = (targetId: string) => {
+    const existing = fallbackPlayersRef.current.get(targetId);
+    if (existing) return existing;
+
+    console.log(`VoIP Fallback: Registering smooth audio pipeline for remote peer: ${targetId}`);
+    let audioContext: AudioContext;
+    try {
+      audioContext = getSharedAudioContext();
+      if (!audioContext) return null;
+    } catch (e) {
+      console.error("VoiP Fallback: AudioContext lookup error", e);
+      return null;
+    }
+
+    const player = new SmoothAudioPlayer();
+    const dest = audioContext.createMediaStreamDestination();
+    const node = audioContext.createScriptProcessor(2048, 0, 1);
+
+    node.onaudioprocess = (event) => {
+      const out = event.outputBuffer.getChannelData(0);
+      player.consume(out, event.outputBuffer.sampleRate, 16000);
+    };
+
+    const silentGain = audioContext.createGain();
+    silentGain.gain.value = 1.0;
+
+    node.connect(silentGain);
+    silentGain.connect(dest);
+
+    const stream = dest.stream;
+    (stream as any).gainNode = silentGain;
+
+    fallbackPlayersRef.current.set(targetId, { dest, player, node, silentGainNode: silentGain });
+
+    setRemoteStreams((prev) => {
+      const next = new Map(prev);
+      next.set(targetId, stream);
+      return next;
+    });
+
+    return { dest, player, node, silentGainNode: silentGain };
+  };
+
+  // Helper to mark voice fallback flag
+  const triggerVoiceFallbackUI = () => {
+    setVoiceMethod('fallback_pcm');
+    if (typeof window !== "undefined") {
+      (window as any).loxxVoiceFallbackActive = true;
+      localStorage.setItem("loxx_voice_fallback_active", "true");
+    }
+  };
+
+  // --------------------------------------------------
   // PART A: MAIN MEDIASOUP SFU PIPELINE
   // --------------------------------------------------
   useEffect(() => {
@@ -177,7 +249,7 @@ export const useWebRTC = (
           if (!active) return;
           if (!ack || !ack.success) {
             console.warn(`[LOXX SFU Mediasoup] Failed to join mediasoup router room: ${ack?.error || "Unknown"}`);
-            setVoiceMethod('fallback_pcm'); // Fallback immediately
+            triggerVoiceFallbackUI();
             return;
           }
 
@@ -210,13 +282,13 @@ export const useWebRTC = (
 
           } catch (deviceError: any) {
             console.error(`[LOXX SFU Mediasoup] Device setup/handshake error:`, deviceError);
-            setVoiceMethod('fallback_pcm');
+            triggerVoiceFallbackUI();
           }
         });
 
       } catch (err) {
         console.warn(`[LOXX SFU Mediasoup] VPS Voice Connection failed. Triaging fallback...`, err);
-        setVoiceMethod('fallback_pcm');
+        triggerVoiceFallbackUI();
       }
     };
 
@@ -345,6 +417,9 @@ export const useWebRTC = (
         }
 
         try {
+          if (kind === "audio") {
+            destroyRemotePlayer(peerUserId);
+          }
           const consumer = await recvTransport.consume(resp.params);
           (consumer as any).peerUserId = peerUserId;
           consumersRef.current.set(consumer.id, consumer);
@@ -650,9 +725,9 @@ export const useWebRTC = (
   // PART B: SECURE PCM OVER WEBSOCKET FALLBACK SYSTEM
   // --------------------------------------------------
   useEffect(() => {
-    if (!roomId || !userId || voiceMethod !== 'fallback_pcm') return;
+    if (!roomId || !userId) return;
 
-    console.warn(`[LOXX VOICE PIPELINE] ⚠️ Mediasoup SFU unavailable or failed. Switching to reliable high stability PCM fallback over primary server!`);
+    console.log(`[LOXX VOICE PIPELINE] Registering main socket PCM voice handlers (active in background/bridge mode)...`);
     
     let audioContext: AudioContext;
     try {
@@ -667,7 +742,7 @@ export const useWebRTC = (
       mainPlatformVoiceSocket.connect();
     }
 
-    // Capture Local Microphone Audio Chunks
+    // Capture Local Microphone Audio Chunks and broadcast to fallback socket
     if (localStream && localStream.getAudioTracks().length > 0) {
       try {
         sourceNodeRef.current = audioContext.createMediaStreamSource(localStream);
@@ -733,60 +808,17 @@ export const useWebRTC = (
       }
     }
 
-    // Remote Peer Playback Setup
-    const getOrCreateRemotePlayer = (targetId: string) => {
-      const existing = fallbackPlayersRef.current.get(targetId);
-      if (existing) return existing;
-
-      console.log(`VoIP Fallback: Registering smooth audio pipeline for remote peer: ${targetId}`);
-      const player = new SmoothAudioPlayer();
-      const dest = audioContext.createMediaStreamDestination();
-      const node = audioContext.createScriptProcessor(2048, 0, 1);
-
-      // Playback consumer logic
-      node.onaudioprocess = (event) => {
-        const out = event.outputBuffer.getChannelData(0);
-        player.consume(out, event.outputBuffer.sampleRate, 16000);
-      };
-
-      const silentGain = audioContext.createGain();
-      silentGain.gain.value = 1.0; // Volume managed inside RemoteAudioPlayer
-
-      node.connect(silentGain);
-      silentGain.connect(dest);
-
-      const stream = dest.stream;
-      (stream as any).gainNode = silentGain;
-
-      fallbackPlayersRef.current.set(targetId, { dest, player, node, silentGainNode: silentGain });
-
-      setRemoteStreams((prev) => {
-        const next = new Map(prev);
-        next.set(targetId, stream);
-        return next;
-      });
-
-      return { dest, player, node, silentGainNode: silentGain };
-    };
-
-    const destroyRemotePlayer = (targetId: string) => {
-      const entry = fallbackPlayersRef.current.get(targetId);
-      if (entry) {
-        try { entry.node.disconnect(); } catch (e) {}
-        try { entry.silentGainNode.disconnect(); } catch (e) {}
-        fallbackPlayersRef.current.delete(targetId);
-      }
-      setRemoteStreams((prev) => {
-        const next = new Map(prev);
-        next.delete(targetId);
-        return next;
-      });
-    };
-
     const handleJoinResponse = (response?: { users: string[] }) => {
       if (response && response.users) {
         response.users.forEach((otherId) => {
-          if (otherId !== userId) getOrCreateRemotePlayer(otherId);
+          if (otherId !== userId) {
+            const isMediasoupPeer = Array.from(consumersRef.current.values()).some(
+              (c: any) => c.peerUserId === otherId && c.kind === "audio"
+            );
+            if (!isMediasoupPeer || voiceMethod === "fallback_pcm") {
+              getOrCreateRemotePlayer(otherId);
+            }
+          }
         });
       }
     };
@@ -797,12 +829,26 @@ export const useWebRTC = (
 
     const handleExistingUsers = ({ users }: { users: string[] }) => {
       users.forEach((otherId) => {
-        if (otherId !== userId) getOrCreateRemotePlayer(otherId);
+        if (otherId !== userId) {
+          const isMediasoupPeer = Array.from(consumersRef.current.values()).some(
+            (c: any) => c.peerUserId === otherId && c.kind === "audio"
+          );
+          if (!isMediasoupPeer || voiceMethod === "fallback_pcm") {
+            getOrCreateRemotePlayer(otherId);
+          }
+        }
       });
     };
 
     const handleUserJoined = ({ userId: otherId }: { userId: string }) => {
-      if (otherId !== userId) getOrCreateRemotePlayer(otherId);
+      if (otherId !== userId) {
+        const isMediasoupPeer = Array.from(consumersRef.current.values()).some(
+          (c: any) => c.peerUserId === otherId && c.kind === "audio"
+        );
+        if (!isMediasoupPeer || voiceMethod === "fallback_pcm") {
+          getOrCreateRemotePlayer(otherId);
+        }
+      }
     };
 
     const handleUserLeft = ({ userId: otherId }: { userId: string }) => {
@@ -812,12 +858,25 @@ export const useWebRTC = (
     const handleAudioChunk = ({ userId: senderId, chunk }: { userId: string, chunk: ArrayBuffer }) => {
       if (senderId === userId) return;
       try {
-        if (audioContext.state === "suspended") {
+        if (audioContext && audioContext.state === "suspended") {
           audioContext.resume().catch(() => {});
         }
+        
+        // Echo double audio avoidance check:
+        // If we are already receiving high-fidelity Mediasoup audio from this peer, 
+        // skip playing their fallback low-bandwidth PCM chunks.
+        const isMediasoupPeer = Array.from(consumersRef.current.values()).some(
+          (c: any) => c.peerUserId === senderId && c.kind === "audio"
+        );
+        if (isMediasoupPeer && voiceMethod === "mediasoup") {
+          return;
+        }
+
         const entry = getOrCreateRemotePlayer(senderId);
-        const floatData = int16ToFloat32(chunk);
-        entry.player.push(floatData);
+        if (entry) {
+          const floatData = int16ToFloat32(chunk);
+          entry.player.push(floatData);
+        }
       } catch (err) {
         console.error("VoIP Fallback play ingest error:", err);
       }

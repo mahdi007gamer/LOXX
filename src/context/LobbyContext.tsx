@@ -166,6 +166,7 @@ interface LobbyContextType {
  launcherRichPresenceEnabled: boolean;
  setLauncherRichPresenceEnabled: (val: boolean) => void;
  remoteStreams: Map<string, MediaStream>;
+	isMediasoupSFU: boolean;
  setScreenStreamForWebRTC: (stream: MediaStream | null) => void;
  musicBotState: any;
  toggleMusicBot: (active: boolean) => void;
@@ -982,7 +983,7 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
  
 
  // Connect globally using our WebRTC signaling hook
- const { remoteStreams } = useWebRTC(lobby?.id || null, localStream, user?.id, screenStream, isMicTestOn, botStream);
+ const { remoteStreams, isMediasoupSFU } = useWebRTC(lobby?.id || null, localStream, user?.id, screenStream, isMicTestOn, botStream);
 
  // Monitor speaking volumes for glowing effects
  const handlePeerVolumeChange = useCallback((peerUserId: string, vol: number) => {
@@ -1778,6 +1779,7 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
  launcherRichPresenceEnabled,
  setLauncherRichPresenceEnabled,
  remoteStreams,
+ isMediasoupSFU,
  setScreenStreamForWebRTC: setScreenStreamForWebRTCState,
  musicBotState,
  toggleMusicBot,

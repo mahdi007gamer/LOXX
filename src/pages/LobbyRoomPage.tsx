@@ -183,7 +183,8 @@ export const LobbyRoomPage = () => {
  setMicCloseDelay,
  remoteStreams,
  setScreenStreamForWebRTC,
- peerPings
+ peerPings,
+ isMediasoupSFU
  } = useLobby();
  const { 
   noiseCanceling, setNoiseCanceling, isMicTestOn, setIsMicTestOn,
@@ -260,6 +261,23 @@ export const LobbyRoomPage = () => {
  const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+ const [showFallbackModal, setShowFallbackModal] = useState(false);
+ const [hasShownFallbackModal, setHasShownFallbackModal] = useState(false);
+
+ useEffect(() => {
+   if (typeof window !== "undefined") {
+     const isSocketFallback = localStorage.getItem("loxx_socket_fallback_active") === "true";
+     const isVoiceFallback = localStorage.getItem("loxx_voice_fallback_active") === "true";
+     
+     if ((isSocketFallback || isVoiceFallback || !isMediasoupSFU) && !hasShownFallbackModal) {
+       const timer = setTimeout(() => {
+         setShowFallbackModal(true);
+         setHasShownFallbackModal(true);
+       }, 1500);
+       return () => clearTimeout(timer);
+     }
+   }
+ }, [isMediasoupSFU, hasShownFallbackModal]);
  const [activeProfileUserId, setActiveProfileUserId] = useState<string | null>(null);
  const [layoutMode, setLayoutMode] = useState<'default' | 'compact' | 'discord'>(() => (localStorage.getItem('loxx-lobby-layout') as any) || 'default');
 
@@ -2240,6 +2258,54 @@ export const LobbyRoomPage = () => {
  {isRtl ? "مشاهده پروفایل لوکس" : "View LOXX Profile"}
  </GlowButton>
  </div>
+ </Modal>
+ )}
+
+ {showFallbackModal && (
+ <Modal title={isRtl ? "اطلاعیه اتصال شبکه لوکس" : "Loxx Connection Advisory"} onClose={() => setShowFallbackModal(false)} maxWidth="max-w-xl">
+  <div className="flex flex-col items-center justify-center text-center space-y-6 py-4" dir="rtl">
+    
+    {/* Icon and Animated Ring */}
+    <div className="relative">
+      <div className="absolute inset-0 bg-yellow-500/25 blur-xl rounded-full scale-125 animate-pulse" />
+      <div className="relative h-16 w-16 bg-yellow-500/10 border border-yellow-500/30 rounded-2xl flex items-center justify-center text-yellow-400">
+        <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+      </div>
+    </div>
+
+    <div className="space-y-4">
+      <h4 className="text-xl font-black text-white leading-normal tracking-tight">
+        اتصال مستقیم شما به سرور اصلی لوکس برقرار نشد.
+      </h4>
+      
+      <p className="text-sm text-gray-300 font-medium leading-relaxed max-w-md">
+        به‌دلیل شرایط زیرساختی و محدودیت‌های شبکه، در حال حاضر اینترنت شما امکان اتصال به مسیر پرسرعت و اختصاصی ما را ندارد.
+      </p>
+
+      <div className="py-2 px-4 rounded-2xl bg-white/5 border border-white/10 max-w-sm mx-auto flex items-center justify-center gap-2">
+        <span className="text-lg">💎</span>
+        <span className="text-sm font-bold text-neon-blue">اما جای نگرانی نیست</span>
+      </div>
+
+      <p className="text-sm text-gray-300 font-medium leading-relaxed max-w-md text-right md:text-center">
+        ما به‌صورت هوشمند شما را از طریق مسیر جایگزین پایدار متصل کرده‌ایم تا بتوانید بدون وقفه از لابی و امکانات استفاده کنید.
+      </p>
+
+      <div className="p-4 rounded-2xl bg-yellow-500/5 border border-yellow-500/10 text-right text-xs text-yellow-400/90 leading-relaxed font-semibold">
+        💡 برای تجربه کامل با حداکثر کیفیت صدا و کمترین تأخیر، پیشنهاد می‌کنیم از اینترنت دیگری استفاده کرده و مجدداً وارد برنامه شوید.
+      </div>
+    </div>
+
+    <div className="w-full pt-4 border-t border-white/5 flex flex-col items-center justify-center space-y-2">
+      <GlowButton onClick={() => setShowFallbackModal(false)} className="w-full py-3.5">
+        متوجه شدم • ورود به لابی
+      </GlowButton>
+      <span className="text-[10px] text-gray-500 font-bold">لوکس همیشه بهترین مسیر را برای شما فعال میکند ✨</span>
+    </div>
+
+  </div>
  </Modal>
  )}
 
