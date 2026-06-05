@@ -1246,6 +1246,7 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
  console.log("LobbyContext: Syncing rooms for lobby", currentLobby.id);
  chatSocket.emit("chat.join", { type: "lobby", id: currentLobby.id });
  mainPlatformVoiceSocket.emit("voice.join", { roomId: currentLobby.id });
+ lobbySocket.emit("lobby.join", { lobbyId: currentLobby.id });
  }
  };
 
@@ -1260,11 +1261,16 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
  syncRooms();
  });
  mainPlatformVoiceSocket.on("connect", syncRooms);
+ lobbySocket.on("connect", () => {
+ console.log("Lobby Socket reconnected, syncing rooms...");
+ syncRooms();
+ });
  
  return () => {
  clearInterval(syncInterval);
  chatSocket.off("connect");
  mainPlatformVoiceSocket.off("connect", syncRooms);
+ lobbySocket.off("connect");
  };
  }
  }, [lobby?.id]);
@@ -1280,10 +1286,11 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     const interval = setInterval(() => {
       // Prioritize pinging the dedicated voice SFU server (VPS) for real voice latency.
-      // Fallback to the main web app lobby socket if voice server is not connected.
       if (voiceSocket && voiceSocket.connected) {
         voiceSocket.emit("voice.ping", { timestamp: Date.now() });
-      } else if (lobbySocket && lobbySocket.connected) {
+      }
+      // Always ping lobbySocket as a highly stable heartbeat and web latency calculator
+      if (lobbySocket && lobbySocket.connected) {
         lobbySocket.emit("lobby.ping", { timestamp: Date.now() });
       }
     }, 4500);
@@ -1314,7 +1321,7 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       lastCalculatedPing = calculatedPing;
 
       const currentLobby = lobbyRef.current;
-      if (currentLobby?.id && lobbySocket && lobbySocket.connected && (!voiceSocket || !voiceSocket.connected)) {
+      if (currentLobby?.id && lobbySocket && lobbySocket.connected) {
         lobbySocket.emit("lobby.publish_ping", {
           lobbyId: currentLobby.id,
           ping: calculatedPing

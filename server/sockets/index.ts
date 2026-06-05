@@ -559,9 +559,11 @@ export function setupWebSockets(io: Server) {
 
         if (!lobby) throw new Error("لابی پیدا نشد یا منقضی شده است.");
         if (lobby.status === "STARTING" || lobby.status === "IN_PROGRESS") throw new Error("بازی این لابی قبلا شروع شده است.");
-        if (lobby.password && lobby.password !== password) throw new Error("INVALID_PASSWORD");
         const existingMember = lobby.members.find(m => m.userId === userId);
-        if (!existingMember && lobby.members.length >= lobby.maxPlayers) throw new Error("ظرفیت لابی پر است.");
+        if (!existingMember) {
+          if (lobby.password && lobby.password !== password) throw new Error("INVALID_PASSWORD");
+          if (lobby.members.length >= lobby.maxPlayers) throw new Error("ظرفیت لابی پر است.");
+        }
 
         // Check if already a member before upserting to know if we should increment
         const existingMemberRecord = await prisma.lobbyMember.findUnique({
