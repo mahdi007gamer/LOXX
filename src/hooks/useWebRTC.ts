@@ -311,18 +311,6 @@ export const useWebRTC = (
             if (kind === "audio") {
               userStream.getAudioTracks().forEach(t => userStream?.removeTrack(t));
               userStream.addTrack(newTrack);
-              
-              // Attach custom GainNode for client master-volume handling
-              try {
-                const audioCtx = getSharedAudioContext();
-                const source = audioCtx.createMediaStreamSource(userStream);
-                const gainNode = audioCtx.createGain();
-                source.connect(gainNode);
-                gainNode.connect(audioCtx.destination);
-                (userStream as any).gainNode = gainNode;
-              } catch (e) {
-                console.warn("[LOXX SFU Mediasoup] Direct AudioContext gain node routing not supported:", e);
-              }
             } else {
               userStream.getVideoTracks().forEach(t => userStream?.removeTrack(t));
               userStream.addTrack(newTrack);

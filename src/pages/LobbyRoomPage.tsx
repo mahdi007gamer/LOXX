@@ -475,7 +475,7 @@ export const LobbyRoomPage = () => {
  hasMic: true,
  isMuted: p.userId === user?.id ? !!p.micMuted : (peerVolumes[p.userId] === 0 || !!p.micMuted),
  ping: 25,
- isSpeaking: p.userId === user?.id 
+ isSpeaking: p.micMuted ? false : p.userId === user?.id 
  ? localVolume > 15 
  : (peerActivity[p.userId] || 0) > 15 || (lobby?.talkingUsers?.includes(p.userId) || false),
  volume: p.userId === user?.id 

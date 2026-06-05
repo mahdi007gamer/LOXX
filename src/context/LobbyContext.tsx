@@ -678,9 +678,9 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
  const myPlayer = lobbyRef.current.players?.find((p: any) => p.userId === userRef.current?.id);
  const currentMuted = myPlayer ? !!(myPlayer as any).micMuted : false;
  // Toggle Mic
- lobbySocket.emit("lobby.mic", { lobbyId: lobbyRef.current.id, muted: !currentMuted });
- setLobby((prev: any) => prev ? { ...prev, isMuted: !currentMuted } : null);
- toast.success(!currentMuted ? "میکروفون قطع شد (Muted)" : "میکروفون فعال شد (Unmuted)");
+ const targetMuted = !currentMuted; lobbySocket.emit("lobby.mic", { lobbyId: lobbyRef.current.id, muted: targetMuted }); if (targetMuted && voiceSocket) { voiceSocket.emit("voice.talking", { roomId: lobbyRef.current.id, isTalking: false }); }
+ setLobby((prev: any) => { if (!prev) return null; const talking = prev.talkingUsers || []; return { ...prev, isMuted: targetMuted, talkingUsers: targetMuted ? talking.filter(id => id !== userRef.current?.id) : talking }; });
+ toast.success(targetMuted ? "میکروفون قطع شد (Muted)" : "میکروفون فعال شد (Unmuted)");
  }
  });
 
@@ -1085,12 +1085,13 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
  playSFX('leave');
  });
 
- lobbySocket.on("lobby.member_updated", (data: { userId: string, isReady?: boolean, micMuted?: boolean }) => {
+ lobbySocket.on("lobby.member_updated", (data: { userId: string, isReady?: boolean, micMuted?: boolean }) => { const isMutedNow = data.micMuted === true;
  setLobby(prev => {
  if (!prev) return null;
  return {
  ...prev,
- players: prev.players.map(p => 
+ talkingUsers: isMutedNow && prev.talkingUsers ? prev.talkingUsers.filter((id) => id !== data.userId) : prev.talkingUsers,
+  players: prev.players.map(p => 
  p.userId === data.userId 
  ? { 
  ...p, 
@@ -1440,8 +1441,8 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
  const setLobbyMuted = (muted: boolean) => {
  if (user && lobby) {
- lobbySocket.emit("lobby.mic", { lobbyId: lobby.id, muted });
- setLobby(prev => prev ? { ...prev, isMuted: muted } : null);
+ lobbySocket.emit("lobby.mic", { lobbyId: lobby.id, muted }); if (muted && voiceSocket) { voiceSocket.emit("voice.talking", { roomId: lobby.id, isTalking: false }); }
+ setLobby(prev => { if (!prev) return null; const talking = prev.talkingUsers || []; return { ...prev, isMuted: muted, talkingUsers: muted ? talking.filter(id => id !== user.id) : talking }; });
  }
  };
 
