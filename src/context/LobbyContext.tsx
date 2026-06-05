@@ -1276,6 +1276,8 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return;
     }
 
+    let lastCalculatedPing: number | null = null;
+
     const interval = setInterval(() => {
       // Prioritize pinging the dedicated voice SFU server (VPS) for real voice latency.
       // Fallback to the main web app lobby socket if voice server is not connected.
@@ -1287,7 +1289,13 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }, 4500);
 
     const handleVoicePong = (data: { timestamp: number }) => {
-      const calculatedPing = Date.now() - data.timestamp;
+      const rawPing = Date.now() - data.timestamp;
+      // Exponentially Weighted Moving Average (EWMA) with alpha = 0.3 for smoothing jitter
+      const calculatedPing = lastCalculatedPing === null 
+        ? rawPing 
+        : Math.round(lastCalculatedPing * 0.7 + rawPing * 0.3);
+      lastCalculatedPing = calculatedPing;
+
       const currentLobby = lobbyRef.current;
       if (currentLobby?.id && lobbySocket && lobbySocket.connected) {
         lobbySocket.emit("lobby.publish_ping", {
@@ -1299,7 +1307,12 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     const handleLobbyPong = (data: { timestamp: number }) => {
       // Fallback web latency
-      const calculatedPing = Date.now() - data.timestamp;
+      const rawPing = Date.now() - data.timestamp;
+      const calculatedPing = lastCalculatedPing === null 
+        ? rawPing 
+        : Math.round(lastCalculatedPing * 0.7 + rawPing * 0.3);
+      lastCalculatedPing = calculatedPing;
+
       const currentLobby = lobbyRef.current;
       if (currentLobby?.id && lobbySocket && lobbySocket.connected && (!voiceSocket || !voiceSocket.connected)) {
         lobbySocket.emit("lobby.publish_ping", {

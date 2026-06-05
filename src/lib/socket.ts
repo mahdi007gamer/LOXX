@@ -54,9 +54,10 @@ const getVoiceServerUrl = () => {
 export const voiceSocket = io(getVoiceServerUrl(), {
   path: "/socket.io",
   autoConnect: false,
-  transports: ["polling", "websocket"],
+  transports: ["websocket"],
+  upgrade: false,
   reconnectionDelay: 1000,
-  reconnectionDelayMax: 10000,
+  reconnectionDelayMax: 5000,
   reconnectionAttempts: 10,
 });
 
