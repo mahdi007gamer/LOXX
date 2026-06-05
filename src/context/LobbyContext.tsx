@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { lobbySocket, chatSocket, voiceSocket, presenceSocket, getSharedAudioContext, resumeSharedAudioContext } from "../lib/socket";
+import { lobbySocket, chatSocket, voiceSocket, mainPlatformVoiceSocket, presenceSocket, getSharedAudioContext, resumeSharedAudioContext } from "../lib/socket";
 import { toast } from "react-hot-toast";
 import { MicVAD } from "@ricky0123/vad-web";
 import { useAuth } from "./AuthContext";
@@ -680,7 +680,7 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
  const myPlayer = lobbyRef.current.players?.find((p: any) => p.userId === userRef.current?.id);
  const currentMuted = myPlayer ? !!(myPlayer as any).micMuted : false;
  // Toggle Mic
- const targetMuted = !currentMuted; lobbySocket.emit("lobby.mic", { lobbyId: lobbyRef.current.id, muted: targetMuted }); if (targetMuted && voiceSocket) { voiceSocket.emit("voice.talking", { roomId: lobbyRef.current.id, isTalking: false }); }
+ const targetMuted = !currentMuted; lobbySocket.emit("lobby.mic", { lobbyId: lobbyRef.current.id, muted: targetMuted }); if (targetMuted && mainPlatformVoiceSocket) { mainPlatformVoiceSocket.emit("voice.talking", { roomId: lobbyRef.current.id, isTalking: false }); }
  setLobby((prev: any) => { if (!prev) return null; const talking = prev.talkingUsers || []; return { ...prev, isMuted: targetMuted, talkingUsers: targetMuted ? talking.filter(id => id !== userRef.current?.id) : talking }; });
  toast.success(targetMuted ? "میکروفون قطع شد (Muted)" : "میکروفون فعال شد (Unmuted)");
  }
@@ -880,8 +880,8 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 					onSpeechStart: () => {
 						if (!isTalking) {
 							isTalking = true;
-							if (lobby && voiceSocket) {
-								voiceSocket.emit("voice.talking", { roomId: lobby.id, isTalking: true });
+							if (lobby && mainPlatformVoiceSocket) {
+								mainPlatformVoiceSocket.emit("voice.talking", { roomId: lobby.id, isTalking: true });
 							}
 							if (lobby && user) {
 								setLobby(prev => {
@@ -901,8 +901,8 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 					onSpeechEnd: () => {
 						if (isTalking) {
 							isTalking = false;
-							if (lobby && voiceSocket) {
-								voiceSocket.emit("voice.talking", { roomId: lobby.id, isTalking: false });
+							if (lobby && mainPlatformVoiceSocket) {
+								mainPlatformVoiceSocket.emit("voice.talking", { roomId: lobby.id, isTalking: false });
 							}
 							if (lobby && user) {
 								setLobby(prev => {
@@ -951,7 +951,7 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 							}
 							if (isTalking) {
 								isTalking = false;
-								if (lobby && voiceSocket) voiceSocket.emit("voice.talking", { roomId: lobby.id, isTalking: false });
+								if (lobby && mainPlatformVoiceSocket) mainPlatformVoiceSocket.emit("voice.talking", { roomId: lobby.id, isTalking: false });
 								if (lobby && user) {
 									setLobby(prev => {
 										if (!prev) return null;
@@ -1199,7 +1199,7 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
  return prev;
  });
  };
- voiceSocket.on("voice.talking", handleVoiceTalking);
+ mainPlatformVoiceSocket.on("voice.talking", handleVoiceTalking);
 
  lobbySocket.on("lobby.status_changed", (data: { status: LobbyStatus }) => {
  setLobby(prev => {
@@ -1235,7 +1235,7 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
  lobbySocket.off("error");
  chatSocket.off("chat.message", handleChatMessage);
  lobbySocket.off("chat.message", handleChatMessage);
- voiceSocket.off("voice.talking", handleVoiceTalking);
+ mainPlatformVoiceSocket.off("voice.talking", handleVoiceTalking);
  };
  }, []);
 
@@ -1245,7 +1245,7 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
  if (currentLobby?.id) {
  console.log("LobbyContext: Syncing rooms for lobby", currentLobby.id);
  chatSocket.emit("chat.join", { type: "lobby", id: currentLobby.id });
- voiceSocket.emit("voice.join", { roomId: currentLobby.id });
+ mainPlatformVoiceSocket.emit("voice.join", { roomId: currentLobby.id });
  }
  };
 
@@ -1259,12 +1259,12 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
  console.log("Chat Socket reconnected, syncing rooms...");
  syncRooms();
  });
- voiceSocket.on("connect", syncRooms);
+ mainPlatformVoiceSocket.on("connect", syncRooms);
  
  return () => {
  clearInterval(syncInterval);
  chatSocket.off("connect");
- voiceSocket.off("connect");
+ mainPlatformVoiceSocket.off("connect", syncRooms);
  };
  }
  }, [lobby?.id]);
@@ -1502,11 +1502,11 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
  // Immediately join chat and voice rooms
  const joinChatAndVoice = () => {
  chatSocket.emit("chat.join", { type: "lobby", id: lobbyId });
- voiceSocket.emit("voice.join", { roomId: lobbyId });
+ mainPlatformVoiceSocket.emit("voice.join", { roomId: lobbyId });
  };
  joinChatAndVoice();
  chatSocket.once("connect", () => { chatSocket.emit("chat.join", { type: "lobby", id: lobbyId }); });
- voiceSocket.once("connect", () => { voiceSocket.emit("voice.join", { roomId: lobbyId }); });
+ mainPlatformVoiceSocket.once("connect", () => { mainPlatformVoiceSocket.emit("voice.join", { roomId: lobbyId }); });
  } else {
  const errorMsg = ack?.error?.message || "Join failed";
  setJoinError(errorMsg);
@@ -1533,7 +1533,7 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
  const setLobbyMuted = (muted: boolean) => {
  if (user && lobby) {
- lobbySocket.emit("lobby.mic", { lobbyId: lobby.id, muted }); if (muted && voiceSocket) { voiceSocket.emit("voice.talking", { roomId: lobby.id, isTalking: false }); }
+ lobbySocket.emit("lobby.mic", { lobbyId: lobby.id, muted }); if (muted && mainPlatformVoiceSocket) { mainPlatformVoiceSocket.emit("voice.talking", { roomId: lobby.id, isTalking: false }); }
  setLobby(prev => { if (!prev) return null; const talking = prev.talkingUsers || []; return { ...prev, isMuted: muted, talkingUsers: muted ? talking.filter(id => id !== user.id) : talking }; });
  }
  };
