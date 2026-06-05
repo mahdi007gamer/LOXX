@@ -410,7 +410,7 @@ io.on("connection", (socket: Socket) => {
   });
 
   // 7. Resume Consumer (After establishing transport connection)
-  socket.on("resumeConsumer", async (data: { consumerId: string }, callback: Function) => {
+  socket.on("resumeConsumer", async (data: { consumerId: string }, callback?: Function) => {
     try {
       if (!currentRoomId) throw new Error("No active room session.");
       const room = rooms.get(currentRoomId)!;
@@ -420,15 +420,21 @@ io.on("connection", (socket: Socket) => {
       if (!consumer) throw new Error(`Consumer not found.`);
 
       await consumer.resume();
-      callback({ success: true });
+      if (typeof callback === "function") {
+        callback({ success: true });
+      }
       console.log(`[SFU Voice Engine] Consumer ${data.consumerId} is now active and playing.`);
     } catch (err: any) {
-      callback({ success: false, error: err.message });
+      if (typeof callback === "function") {
+        callback({ success: false, error: err.message });
+      } else {
+        console.error(`[SFU Voice Engine] Failed to resume consumer ${data.consumerId}:`, err);
+      }
     }
   });
 
   // 8. Close / Stops sharing a physical producer
-  socket.on("closeProducer", async (data: { producerId: string }, callback: Function) => {
+  socket.on("closeProducer", async (data: { producerId: string }, callback?: Function) => {
     try {
       if (!currentRoomId) return;
       const room = rooms.get(currentRoomId)!;

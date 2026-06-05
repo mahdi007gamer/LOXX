@@ -46,6 +46,7 @@ export const RemoteAudioPlayer: React.FC<RemoteAudioPlayerProps> = ({ stream, on
    return () => {
     document.removeEventListener("click", handleInteraction);
     document.removeEventListener("touchstart", handleInteraction);
+    onVolumeChange(0);
    };
   }
  }, [stream]);
