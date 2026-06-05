@@ -80,7 +80,7 @@ const mediaCodecs: types.RtpCodecCapability[] = [
     preferredPayloadType: 111,
     parameters: {
       useinbandfec: 1, // Enable Forward Error Correction (crucial for packet loss)
-      usedtx: 1,        // Discontinuous Transmission - turns off stream when silent to save bandwidth
+      usedtx: 0,        // Continuous Transmission - disabled DTX to ensure zero choppy word cut-offs
       minptime: 10,
       ptime: 20         // 20ms packetization for lowest end-to-end delay (30-80ms target)
     }
