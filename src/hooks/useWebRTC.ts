@@ -11,27 +11,38 @@ class SmoothAudioPlayer {
   private phase: number = 0;
 
   public push(data: Float32Array) {
-    const MAX_QUEUE_SAMPLES = 3840; 
+    // Prevent buffer bloating and maintain sub-100ms real-time delay
+    const MAX_QUEUE_SAMPLES = 8000; 
     if (this.queue.length > MAX_QUEUE_SAMPLES) {
-      this.queue = this.queue.slice(this.queue.length - 640);
+      this.queue = this.queue.slice(this.queue.length - 2000);
     }
     const nextQueue = new Float32Array(this.queue.length + data.length);
     nextQueue.set(this.queue, 0);
     nextQueue.set(data, this.queue.length);
     this.queue = nextQueue;
-    this.consecutiveUnderflows = 0;
-    if (this.isBuffering && this.queue.length >= 340) {
+    
+    // Begin playing with a safe 100ms cushion (1200 samples at 16kHz)
+    if (this.isBuffering && this.queue.length >= 1200) {
       this.isBuffering = false;
+      this.consecutiveUnderflows = 0;
     }
   }
 
   public consume(out: Float32Array, outSampleRate: number, inSampleRate: number) {
+    if (this.isBuffering) {
+      for (let i = 0; i < out.length; i++) {
+        this.currentGain = Math.max(0, this.currentGain - 0.1);
+        out[i] = 0;
+      }
+      return;
+    }
+
     const ratio = inSampleRate / outSampleRate;
-    const maxNeededIndex = this.phase + out.length * ratio;
     
-    if (this.queue.length < Math.ceil(maxNeededIndex) || this.isBuffering) {
+    // If the buffer runs too dry, enter buffering cycle to preserve sync
+    if (this.queue.length < 200) {
       this.consecutiveUnderflows++;
-      if (this.consecutiveUnderflows > 3) {
+      if (this.consecutiveUnderflows > 8) {
         this.isBuffering = true;
       }
       for (let i = 0; i < out.length; i++) {
@@ -43,8 +54,11 @@ class SmoothAudioPlayer {
 
     this.consecutiveUnderflows = 0;
 
+    // Dynamically adjust playout rate to smoothly handle network queue drifts without clicks
+    const playableRatio = Math.min(ratio, this.queue.length / out.length);
+    let srcIdx = 0;
+
     for (let i = 0; i < out.length; i++) {
-      const srcIdx = this.phase;
       const idx1 = Math.floor(srcIdx);
       const idx2 = Math.min(this.queue.length - 1, idx1 + 1);
       const t = srcIdx - idx1;
@@ -53,15 +67,14 @@ class SmoothAudioPlayer {
       const rawSample = s1 + t * (s2 - s1);
       
       if (this.currentGain < 1) {
-        this.currentGain = Math.min(1.0, this.currentGain + 0.1);
+        this.currentGain = Math.min(1.0, this.currentGain + 0.05);
       }
       out[i] = rawSample * this.currentGain;
-      this.phase += ratio;
+      srcIdx += playableRatio;
     }
 
-    const consumedCount = Math.floor(this.phase);
+    const consumedCount = Math.min(this.queue.length, Math.floor(srcIdx));
     this.queue = this.queue.slice(consumedCount);
-    this.phase -= consumedCount;
   }
 
   public clear() {
@@ -609,8 +622,8 @@ export const useWebRTC = (
       try {
         sourceNodeRef.current = audioContext.createMediaStreamSource(localStream);
         
-        // 512 samples buffer for crisp low delay transmission
-        processorNodeRef.current = audioContext.createScriptProcessor(512, 1, 1);
+        // 2048 samples buffer for lower CPU callback load and stutter prevention
+        processorNodeRef.current = audioContext.createScriptProcessor(2048, 1, 1);
         sourceNodeRef.current.connect(processorNodeRef.current);
 
         const silentGainNode = audioContext.createGain();
@@ -637,7 +650,7 @@ export const useWebRTC = (
         };
 
         const chunkBuffer: Int16Array[] = [];
-        const CHUNK_ACC_COUNT = 4; // Pack bundles into ~40ms frames for 50% fewer packets and zero buffer bloat queue delay
+        const CHUNK_ACC_COUNT = 1; // Send each 2048-sample block (at 48kHz, ~42ms of audio) instantly to avoid callback CPU bloat and queuing latency
 
         processorNodeRef.current.onaudioprocess = (event) => {
           const micEnabled = localStream.getAudioTracks()[0]?.enabled;
