@@ -40,14 +40,16 @@ const getVoiceServerUrl = () => {
   if (import.meta.env.VITE_VOICE_SERVER_URL) {
     return import.meta.env.VITE_VOICE_SERVER_URL;
   }
-  // Dedicated Voice Server VPS IP
-  const defaultIP = "146.19.212.212";
-  const port = "4000";
   
   // Choose secure (wss) vs insecure (ws) matching the browser protocol.
   const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
   
-  return `${protocol}//${defaultIP}:${port}`;
+  // Using the domain address 'voice.loxx.ir' instead of raw IP for proper SSL handshake.
+  // When running on HTTPS, modern browsers require a secure connection (wss://),
+  // which is only possible with a trusted certificate on a valid domain.
+  const host = "voice.loxx.ir";
+  
+  return `${protocol}//${host}`;
 };
 
 // Create a direct WebSocket connection pointing to the standalone mediasoup signaling server.
