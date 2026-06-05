@@ -320,6 +320,19 @@ export function setupWebSockets(io: Server) {
     
     trackUser(userId, socket.id);
 
+    // Real-time precise ping measurement and reporting
+    socket.on("lobby.ping", (data: { timestamp: number }) => {
+      socket.emit("lobby.pong", { timestamp: data.timestamp });
+    });
+
+    socket.on("lobby.publish_ping", (data: { lobbyId: string, ping: number }) => {
+      // broadcast user's ping update to everyone in the lobby room
+      lobbyNs.to(`lobby:${data.lobbyId}`).emit("lobby.ping_updated", {
+        userId,
+        ping: data.ping
+      });
+    });
+
     // Dynamic Music Bot Sockets handlers
     socket.on("lobby.musicbot.get_state", (data: { lobbyId: string }, ack?: any) => {
       const { lobbyId } = data;

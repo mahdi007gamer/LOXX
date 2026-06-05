@@ -73,6 +73,7 @@ interface LobbyContextType {
  banPlayer: (userId: string) => void;
  isJoining: string | null;
  joinError: string | null;
+ peerPings: Record<string, number>;
 
  // Voice states & functions
  localStream: MediaStream | null;
@@ -192,6 +193,7 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
  const [isAudioContextResumed, setIsAudioContextResumed] = useState<boolean>(true);
  const [peerVolumes, setPeerVolumes] = useState<Record<string, number>>({});
  const [peerActivity, setPeerActivity] = useState<Record<string, number>>({});
+ const [peerPings, setPeerPings] = useState<Record<string, number>>({});
  const [localVolume, setLocalVolume] = useState<number>(0);
 
  // Overlay state definitions synced to localStorage
@@ -1260,7 +1262,48 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
  }
  }, [lobby?.id]);
 
- // LAN Tunneling Relay Controller
+  // Periodic ping logic for calculating precise latency
+  useEffect(() => {
+    if (!lobby?.id) {
+      setPeerPings({});
+      return;
+    }
+
+    const interval = setInterval(() => {
+      if (lobbySocket.connected) {
+        lobbySocket.emit("lobby.ping", { timestamp: Date.now() });
+      }
+    }, 4000);
+
+    const handlePong = (data: { timestamp: number }) => {
+      const calculatedPing = Date.now() - data.timestamp;
+      const currentLobby = lobbyRef.current;
+      if (currentLobby?.id && lobbySocket.connected) {
+        lobbySocket.emit("lobby.publish_ping", {
+          lobbyId: currentLobby.id,
+          ping: calculatedPing
+        });
+      }
+    };
+
+    const handlePingUpdated = (data: { userId: string, ping: number }) => {
+      setPeerPings(prev => ({
+        ...prev,
+        [data.userId]: data.ping
+      }));
+    };
+
+    lobbySocket.on("lobby.pong", handlePong);
+    lobbySocket.on("lobby.ping_updated", handlePingUpdated);
+
+    return () => {
+      clearInterval(interval);
+      lobbySocket.off("lobby.pong", handlePong);
+      lobbySocket.off("lobby.ping_updated", handlePingUpdated);
+    };
+  }, [lobby?.id]);
+
+  // LAN Tunneling Relay Controller
  useEffect(() => {
  const isElectronAvailable = typeof window !== "undefined" && !!(window as any).electronAPI;
  if (!isElectronAvailable || !lobby?.id || !lobby?.isLanMode) {
@@ -1615,6 +1658,7 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
  resumeAudio,
  peerVolumes,
  peerActivity,
+ peerPings,
  setPeerVolume,
  localVolume,
  isDeafened,

@@ -182,7 +182,8 @@ export const LobbyRoomPage = () => {
  micCloseDelay,
  setMicCloseDelay,
  remoteStreams,
- setScreenStreamForWebRTC
+ setScreenStreamForWebRTC,
+ peerPings
  } = useLobby();
  const { 
   noiseCanceling, setNoiseCanceling, isMicTestOn, setIsMicTestOn,
@@ -474,7 +475,7 @@ export const LobbyRoomPage = () => {
  isReady: !!p.isReady,
  hasMic: true,
  isMuted: p.userId === user?.id ? !!p.micMuted : (peerVolumes[p.userId] === 0 || !!p.micMuted),
- ping: 25,
+ ping: peerPings[p.userId] || 25,
  isSpeaking: p.micMuted ? false : p.userId === user?.id 
  ? localVolume > 15 
  : (peerActivity[p.userId] || 0) > 15 || (lobby?.talkingUsers?.includes(p.userId) || false),
