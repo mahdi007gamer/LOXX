@@ -1,9 +1,10 @@
+
 import { useEffect, useRef, useState } from 'react';
 import { voiceSocket, mainPlatformVoiceSocket, getSharedAudioContext } from '../lib/socket';
 import { Device } from 'mediasoup-client';
 
 // Keep the stable custom PCM linear resampler & jitter buffer for the robust fallback pipeline.
-export class SmoothAudioPlayer {
+class SmoothAudioPlayer {
   private queue: Float32Array = new Float32Array(0);
   private currentGain: number = 0;
   private isBuffering: boolean = true;
@@ -11,18 +12,18 @@ export class SmoothAudioPlayer {
   private phase: number = 0;
 
   public push(data: Float32Array) {
-    // Prevent buffer bloating and maintain dual-mode real-time delay under high network spikes.
-    const MAX_QUEUE_SAMPLES = 8000; // Supports up to 500ms of accumulated network jitter spikes before safety prune
+    // Prevent buffer bloating and maintain sub-100ms real-time delay
+    const MAX_QUEUE_SAMPLES = 8000; 
     if (this.queue.length > MAX_QUEUE_SAMPLES) {
-      this.queue = this.queue.slice(this.queue.length - 2400); // Reset smoothly to safety target cushion (150ms)
+      this.queue = this.queue.slice(this.queue.length - 2000);
     }
     const nextQueue = new Float32Array(this.queue.length + data.length);
     nextQueue.set(this.queue, 0);
     nextQueue.set(data, this.queue.length);
     this.queue = nextQueue;
     
-    // Begin playing with a very stable 150ms buffering cushion (2400 samples at 16kHz) matching Discord-style standards
-    if (this.isBuffering && this.queue.length >= 2400) {
+    // Begin playing with a safe 100ms cushion (1200 samples at 16kHz)
+    if (this.isBuffering && this.queue.length >= 1200) {
       this.isBuffering = false;
       this.consecutiveUnderflows = 0;
     }
@@ -39,8 +40,8 @@ export class SmoothAudioPlayer {
 
     const ratio = inSampleRate / outSampleRate;
     
-    // Safety Threshold (Underflow prevention): If queue size is critically low (< 600 samples), buffer up to avoid digital clicks
-    if (this.queue.length < 600) {
+    // If the buffer runs too dry, enter buffering cycle to preserve sync
+    if (this.queue.length < 200) {
       this.consecutiveUnderflows++;
       if (this.consecutiveUnderflows > 8) {
         this.isBuffering = true;
@@ -54,19 +55,8 @@ export class SmoothAudioPlayer {
 
     this.consecutiveUnderflows = 0;
 
-    // Adaptive playout rate adjustment (Ultra-smooth synchronization target: 100ms - 200ms Jitter Buffer)
-    // Target buffer size: 1600 - 3200 samples (100ms - 200ms).
-    // If queue is larger, play faster to catch up; if smaller, play slower to permit buffering.
-    let adaptiveRatio = ratio;
-    if (this.queue.length > 3200) {
-      const excessive = Math.min(2000, this.queue.length - 3200);
-      adaptiveRatio = ratio * (1 + 0.15 * (excessive / 2000));
-    } else if (this.queue.length < 1600) {
-      const shortage = 1600 - this.queue.length;
-      adaptiveRatio = ratio * (1 - 0.12 * (shortage / 1600));
-    }
-
-    const playableRatio = adaptiveRatio;
+    // Dynamically adjust playout rate to smoothly handle network queue drifts without clicks
+    const playableRatio = Math.min(ratio, this.queue.length / out.length);
     let srcIdx = 0;
 
     for (let i = 0; i < out.length; i++) {
@@ -97,139 +87,6 @@ export class SmoothAudioPlayer {
   }
 }
 
-// Global caching references for the registered AudioWorklet URL to prevent multiple registrations
-let workletLoadedPromise: Promise<void> | null = null;
-
-export const loadAudioWorklet = async (audioContext: AudioContext): Promise<void> => {
-  if (workletLoadedPromise) return workletLoadedPromise;
-
-  workletLoadedPromise = (async () => {
-    if (!audioContext.audioWorklet) {
-      throw new Error("AudioWorklet is not supported on this browser context.");
-    }
-
-    const code = `
-      class FallbackAudioInputProcessor extends AudioWorkletProcessor {
-        process(inputs, outputs, parameters) {
-          const input = inputs[0];
-          if (input && input[0]) {
-            const samples = input[0];
-            // Post direct Float32Array clone back to main thread
-            this.port.postMessage({ samples: new Float32Array(samples) });
-          }
-          return true;
-        }
-      }
-      registerProcessor('fallback-audio-input-processor', FallbackAudioInputProcessor);
-
-      class FallbackAudioOutputProcessor extends AudioWorkletProcessor {
-        constructor() {
-          super();
-          this.queue = new Float32Array(0);
-          this.isBuffering = true;
-          this.currentGain = 0;
-          this.consecutiveUnderflows = 0;
-
-          this.port.onmessage = (e) => {
-            if (e.data.type === 'push') {
-              const data = e.data.data;
-              const MAX_QUEUE_SAMPLES = 8000;
-              if (this.queue.length > MAX_QUEUE_SAMPLES) {
-                this.queue = this.queue.slice(this.queue.length - 2400);
-              }
-              const nextQueue = new Float32Array(this.queue.length + data.length);
-              nextQueue.set(this.queue, 0);
-              nextQueue.set(data, this.queue.length);
-              this.queue = nextQueue;
-
-              if (this.isBuffering && this.queue.length >= 2400) {
-                this.isBuffering = false;
-                this.consecutiveUnderflows = 0;
-              }
-            } else if (e.data.type === 'clear') {
-              this.queue = new Float32Array(0);
-              this.isBuffering = true;
-              this.consecutiveUnderflows = 0;
-              this.currentGain = 0;
-            }
-          };
-        }
-
-        process(inputs, outputs, parameters) {
-          const output = outputs[0];
-          if (!output || !output[0]) return true;
-          const out = output[0];
-          const len = out.length;
-
-          if (this.isBuffering) {
-            for (let i = 0; i < len; i++) {
-              this.currentGain = Math.max(0, this.currentGain - 0.1);
-              out[i] = 0;
-            }
-            return true;
-          }
-
-          const ratio = 16000 / sampleRate;
-
-          if (this.queue.length < 600) {
-            this.consecutiveUnderflows++;
-            if (this.consecutiveUnderflows > 8) {
-              this.isBuffering = true;
-            }
-            for (let i = 0; i < len; i++) {
-              this.currentGain = Math.max(0, this.currentGain - 0.1);
-              out[i] = 0;
-            }
-            return true;
-          }
-
-          this.consecutiveUnderflows = 0;
-          
-          let adaptiveRatio = ratio;
-          if (this.queue.length > 3200) {
-            const excessive = Math.min(2000, this.queue.length - 3200);
-            adaptiveRatio = ratio * (1 + 0.15 * (excessive / 2000));
-          } else if (this.queue.length < 1600) {
-            const shortage = 1600 - this.queue.length;
-            adaptiveRatio = ratio * (1 - 0.12 * (shortage / 1600));
-          }
-
-          const playableRatio = adaptiveRatio;
-          let srcIdx = 0;
-
-          for (let i = 0; i < len; i++) {
-            const idx1 = Math.floor(srcIdx);
-            const idx2 = Math.min(this.queue.length - 1, idx1 + 1);
-            const t = srcIdx - idx1;
-            const s1 = (idx1 >= 0 && idx1 < this.queue.length) ? this.queue[idx1] : 0;
-            const s2 = (idx2 >= 0 && idx2 < this.queue.length) ? this.queue[idx2] : 0;
-            const rawSample = s1 + t * (s2 - s1);
-
-            if (this.currentGain < 1) {
-              this.currentGain = Math.min(1.0, this.currentGain + 0.05);
-            }
-            out[i] = rawSample * this.currentGain;
-            srcIdx += playableRatio;
-          }
-
-          const consumedCount = Math.min(this.queue.length, Math.floor(srcIdx));
-          this.queue = this.queue.slice(consumedCount);
-
-          return true;
-        }
-      }
-      registerProcessor('fallback-audio-output-processor', FallbackAudioOutputProcessor);
-    `;
-
-    const blob = new Blob([code], { type: 'application/javascript' });
-    const url = URL.createObjectURL(blob);
-    await audioContext.audioWorklet.addModule(url);
-    console.log("[AudioWorklet] Fallback Audio Worklet processors injected and registered.");
-  })();
-
-  return workletLoadedPromise;
-};
-
 export const useWebRTC = (
   roomId: string | null,
   localStream: MediaStream | null,
@@ -251,13 +108,13 @@ export const useWebRTC = (
   const consumersRef = useRef<Map<string, any>>(new Map()); // consumerId -> consumer
   const peerStreamsRef = useRef<Map<string, MediaStream>>(new Map()); // userId -> MediaStream
 
-  // References for fallback PCM handler (Requested Point 6: use AudioWorkletNode | ScriptProcessorNode)
-  const processorNodeRef = useRef<AudioWorkletNode | ScriptProcessorNode | null>(null);
+  // References for fallback PCM handler
+  const processorNodeRef = useRef<ScriptProcessorNode | null>(null);
   const sourceNodeRef = useRef<MediaStreamAudioSourceNode | null>(null);
   const fallbackPlayersRef = useRef<Map<string, { 
     dest: MediaStreamAudioDestinationNode; 
-    player?: SmoothAudioPlayer; 
-    node: AudioWorkletNode | ScriptProcessorNode;
+    player: SmoothAudioPlayer; 
+    node: ScriptProcessorNode;
     silentGainNode: GainNode;
   }>>(new Map());
 
@@ -319,7 +176,7 @@ export const useWebRTC = (
             deviceRef.current = device;
             console.log(`[LOXX SFU Mediasoup] Mediasoup Device loaded successfully inside client frame.`);
 
-            // 3. Create Send Transport
+            // 3. Create Send Transport (always create send transport so mic unmuting or music bot triggers immediately)
             await setupSendTransport(device);
 
             // 4. Create Receive Transport
@@ -391,12 +248,12 @@ export const useWebRTC = (
                 track: audioTrack,
                 appData: { userId },
                 encodings: [
-                  { networkPriority: "high", maxBitrate: 96000 }
+                  { networkPriority: "high", maxBitrate: 96000 } // Increased bitrate for pristine voice quality
                 ],
                 codecOptions: {
-                  opusDtx: true,
-                  opusFec: true,
-                  opusStereo: true
+                  opusDtx: false, // Disabled DTX to stop choppy, gated cutting-off during music
+                  opusFec: true,  // Keep Forward Error Correction to recover lost packets
+                  opusStereo: false
                 }
               });
               audioProducerRef.current = audioProducer;
@@ -674,12 +531,11 @@ export const useWebRTC = (
             } catch (e) {}
           }
 
-          // Requested Points 2 & 3: Reduced maxBitrate to 96000 and keep opusStereo to true for rich music
           const audioProducer = await sendTransportRef.current.produce({
             track: botAudioTrack,
             appData: { type: "bot", userId: `music-bot-${roomId}` },
             encodings: [{ networkPriority: "high", maxBitrate: 96000 }],
-            codecOptions: { opusDtx: false, opusFec: true, opusStereo: true }
+            codecOptions: { opusDtx: false, opusFec: true, opusStereo: false }
           });
           botProducerRef.current = audioProducer;
 
@@ -762,21 +618,18 @@ export const useWebRTC = (
       mainPlatformVoiceSocket.connect();
     }
 
-    // Pre-register fallback audio processors
-    const preloadPromise = loadAudioWorklet(audioContext).catch(e => {
-      console.warn("[AudioWorklet] Registration error, using fallback ScriptProcessorNode:", e);
-    });
-
-    const setupScriptProcessorInput = () => {
+    // Capture Local Microphone Audio Chunks
+    if (localStream && localStream.getAudioTracks().length > 0) {
       try {
-        sourceNodeRef.current = audioContext.createMediaStreamSource(localStream!);
-        const scriptNode = audioContext.createScriptProcessor(2048, 1, 1);
-        processorNodeRef.current = scriptNode;
-        sourceNodeRef.current.connect(scriptNode);
+        sourceNodeRef.current = audioContext.createMediaStreamSource(localStream);
+        
+        // 2048 samples buffer for lower CPU callback load and stutter prevention
+        processorNodeRef.current = audioContext.createScriptProcessor(2048, 1, 1);
+        sourceNodeRef.current.connect(processorNodeRef.current);
 
         const silentGainNode = audioContext.createGain();
         silentGainNode.gain.value = 0;
-        scriptNode.connect(silentGainNode);
+        processorNodeRef.current.connect(silentGainNode);
         silentGainNode.connect(audioContext.destination);
 
         const downsampleAndToInt16 = (buffer: Float32Array, inputSR: number, outputSR: number) => {
@@ -798,10 +651,10 @@ export const useWebRTC = (
         };
 
         const chunkBuffer: Int16Array[] = [];
-        const CHUNK_ACC_COUNT = 1;
+        const CHUNK_ACC_COUNT = 1; // Send each 2048-sample block (at 48kHz, ~42ms of audio) instantly to avoid callback CPU bloat and queuing latency
 
-        scriptNode.onaudioprocess = (event) => {
-          const micEnabled = localStream?.getAudioTracks()[0]?.enabled;
+        processorNodeRef.current.onaudioprocess = (event) => {
+          const micEnabled = localStream.getAudioTracks()[0]?.enabled;
           if (micEnabled && !isMicTestOn) {
             const inputData = event.inputBuffer.getChannelData(0);
             const compressed = downsampleAndToInt16(inputData, event.inputBuffer.sampleRate, 16000);
@@ -825,131 +678,38 @@ export const useWebRTC = (
             }
           }
         };
+
       } catch (err) {
         console.error("VoIP Fallback local capture initialization error:", err);
       }
-    };
-
-    // Capture Local Microphone Audio Chunks using AudioWorkletNode
-    const initWorkletInput = async () => {
-      try {
-        await preloadPromise;
-        const workletNode = new AudioWorkletNode(audioContext, 'fallback-audio-input-processor');
-        processorNodeRef.current = workletNode;
-        
-        sourceNodeRef.current = audioContext.createMediaStreamSource(localStream!);
-        sourceNodeRef.current.connect(workletNode);
-        
-        const silentGainNode = audioContext.createGain();
-        silentGainNode.gain.value = 0;
-        workletNode.connect(silentGainNode);
-        silentGainNode.connect(audioContext.destination);
-
-        const downsampleAndToInt16 = (buffer: Float32Array, inputSR: number, outputSR: number) => {
-          const ratio = inputSR / outputSR;
-          const newLength = Math.floor(buffer.length / ratio);
-          const result = new Int16Array(newLength);
-          for (let i = 0; i < newLength; i++) {
-            const start = Math.floor(i * ratio);
-            const end = Math.max(start + 1, Math.floor((i + 1) * ratio));
-            let s = 0, count = 0;
-            for (let j = start; j < end; j++) {
-              if (j < buffer.length) { s += buffer[j]; count++; }
-            }
-            const sample = count > 0 ? s / count : 0;
-            const capped = Math.max(-1, Math.min(1, sample));
-            result[i] = capped < 0 ? capped * 0x8000 : capped * 0x7FFF;
-          }
-          return result.buffer;
-        };
-
-        const chunkBuffer: Int16Array[] = [];
-        const CHUNK_ACC_COUNT = 1;
-
-        workletNode.port.onmessage = (event) => {
-          const micEnabled = localStream?.getAudioTracks()[0]?.enabled;
-          if (micEnabled && !isMicTestOn && event.data.samples) {
-            const inputData = event.data.samples;
-            const compressed = downsampleAndToInt16(inputData, audioContext.sampleRate, 16000);
-            chunkBuffer.push(new Int16Array(compressed));
-
-            if (chunkBuffer.length >= CHUNK_ACC_COUNT) {
-              let totalLen = 0;
-              for (const c of chunkBuffer) totalLen += c.length;
-              const merged = new Int16Array(totalLen);
-              let offset = 0;
-              for (const c of chunkBuffer) {
-                merged.set(c, offset);
-                offset += c.length;
-              }
-              chunkBuffer.length = 0;
-
-              mainPlatformVoiceSocket.emit("voice.audio_chunk", {
-                roomId,
-                chunk: merged.buffer
-              });
-            }
-          }
-        };
-      } catch (err) {
-        console.warn("[AudioWorklet] Input initialization failed, falling back to ScriptProcessorNode:", err);
-        setupScriptProcessorInput();
-      }
-    };
-
-    if (localStream && localStream.getAudioTracks().length > 0) {
-      if (typeof AudioWorkletNode !== "undefined" && audioContext.audioWorklet) {
-        initWorkletInput();
-      } else {
-        setupScriptProcessorInput();
-      }
     }
 
-    // Remote Peer Playback Setup using AudioWorklet (Requested Point 6)
-    const getOrCreateRemotePlayer = async (targetId: string) => {
+    // Remote Peer Playback Setup
+    const getOrCreateRemotePlayer = (targetId: string) => {
       const existing = fallbackPlayersRef.current.get(targetId);
       if (existing) return existing;
 
       console.log(`VoIP Fallback: Registering smooth audio pipeline for remote peer: ${targetId}`);
+      const player = new SmoothAudioPlayer();
       const dest = audioContext.createMediaStreamDestination();
+      const node = audioContext.createScriptProcessor(2048, 0, 1);
+
+      // Playback consumer logic
+      node.onaudioprocess = (event) => {
+        const out = event.outputBuffer.getChannelData(0);
+        player.consume(out, event.outputBuffer.sampleRate, 16000);
+      };
+
       const silentGain = audioContext.createGain();
       silentGain.gain.value = 1.0; // Volume managed inside RemoteAudioPlayer
 
-      let node: AudioWorkletNode | ScriptProcessorNode;
-      let playerInstance: SmoothAudioPlayer | undefined;
-
-      let useWorklet = false;
-      if (typeof AudioWorkletNode !== "undefined" && audioContext.audioWorklet) {
-        try {
-          await preloadPromise;
-          useWorklet = true;
-        } catch (e) {
-          console.warn("[AudioWorklet] Fallback output preload failed:", e);
-        }
-      }
-
-      if (useWorklet) {
-        const workletNode = new AudioWorkletNode(audioContext, 'fallback-audio-output-processor');
-        node = workletNode;
-        node.connect(silentGain);
-        silentGain.connect(dest);
-      } else {
-        const scriptNode = audioContext.createScriptProcessor(2048, 0, 1);
-        node = scriptNode;
-        playerInstance = new SmoothAudioPlayer();
-        scriptNode.onaudioprocess = (event) => {
-          const out = event.outputBuffer.getChannelData(0);
-          playerInstance!.consume(out, event.outputBuffer.sampleRate, 16000);
-        };
-        node.connect(silentGain);
-        silentGain.connect(dest);
-      }
+      node.connect(silentGain);
+      silentGain.connect(dest);
 
       const stream = dest.stream;
       (stream as any).gainNode = silentGain;
 
-      const newEntry = { dest, player: playerInstance, node, silentGainNode: silentGain };
-      fallbackPlayersRef.current.set(targetId, newEntry);
+      fallbackPlayersRef.current.set(targetId, { dest, player, node, silentGainNode: silentGain });
 
       setRemoteStreams((prev) => {
         const next = new Map(prev);
@@ -957,7 +717,7 @@ export const useWebRTC = (
         return next;
       });
 
-      return newEntry;
+      return { dest, player, node, silentGainNode: silentGain };
     };
 
     const destroyRemotePlayer = (targetId: string) => {
@@ -974,13 +734,11 @@ export const useWebRTC = (
       });
     };
 
-    const handleJoinResponse = async (response?: { users: string[] }) => {
+    const handleJoinResponse = (response?: { users: string[] }) => {
       if (response && response.users) {
-        for (const otherId of response.users) {
-          if (otherId !== userId) {
-            await getOrCreateRemotePlayer(otherId);
-          }
-        }
+        response.users.forEach((otherId) => {
+          if (otherId !== userId) getOrCreateRemotePlayer(otherId);
+        });
       }
     };
 
@@ -988,38 +746,29 @@ export const useWebRTC = (
       handleJoinResponse(resp);
     });
 
-    const handleExistingUsers = async ({ users }: { users: string[] }) => {
-      for (const otherId of users) {
-        if (otherId !== userId) {
-          await getOrCreateRemotePlayer(otherId);
-        }
-      }
+    const handleExistingUsers = ({ users }: { users: string[] }) => {
+      users.forEach((otherId) => {
+        if (otherId !== userId) getOrCreateRemotePlayer(otherId);
+      });
     };
 
-    const handleUserJoined = async ({ userId: otherId }: { userId: string }) => {
-      if (otherId !== userId) {
-        await getOrCreateRemotePlayer(otherId);
-      }
+    const handleUserJoined = ({ userId: otherId }: { userId: string }) => {
+      if (otherId !== userId) getOrCreateRemotePlayer(otherId);
     };
 
     const handleUserLeft = ({ userId: otherId }: { userId: string }) => {
       destroyRemotePlayer(otherId);
     };
 
-    const handleAudioChunk = async ({ userId: senderId, chunk }: { userId: string, chunk: ArrayBuffer }) => {
+    const handleAudioChunk = ({ userId: senderId, chunk }: { userId: string, chunk: ArrayBuffer }) => {
       if (senderId === userId) return;
       try {
         if (audioContext.state === "suspended") {
           audioContext.resume().catch(() => {});
         }
-        const entry = await getOrCreateRemotePlayer(senderId);
+        const entry = getOrCreateRemotePlayer(senderId);
         const floatData = int16ToFloat32(chunk);
-        
-        if (entry.node instanceof AudioWorkletNode) {
-          entry.node.port.postMessage({ type: 'push', data: floatData });
-        } else if (entry.player) {
-          entry.player.push(floatData);
-        }
+        entry.player.push(floatData);
       } catch (err) {
         console.error("VoIP Fallback play ingest error:", err);
       }
@@ -1060,8 +809,54 @@ export const useWebRTC = (
   useEffect(() => {
     if (!roomId || !userId) return;
 
-    const handleBotAudioChunk = async (data: { userId: string, chunk: ArrayBuffer }) => {
+    const handleBotAudioChunk = (data: { userId: string, chunk: ArrayBuffer }) => {
       return; // Bypassed: high-fidelity local HTML5 playback runs synchronously in LobbyRoomPage instead of degraded 16kHz WebSocket voice buffers.
+      const senderId = data.userId;
+      if (!senderId || !senderId.startsWith("music-bot-")) return;
+
+      try {
+        const audioCtx = getSharedAudioContext();
+        if (audioCtx.state === "suspended") {
+          audioCtx.resume().catch(() => {});
+        }
+
+        let entry = fallbackPlayersRef.current.get(senderId);
+        if (!entry) {
+          console.log(`[MusicBot Receiver EFFECT] Starting dynamic play pipeline for: ${senderId}`);
+          const player = new SmoothAudioPlayer();
+          const dest = audioCtx.createMediaStreamDestination();
+          const node = audioCtx.createScriptProcessor(1024, 0, 1);
+
+          node.onaudioprocess = (event) => {
+            const out = event.outputBuffer.getChannelData(0);
+            player.consume(out, event.outputBuffer.sampleRate, 16000);
+          };
+
+          const silentGain = audioCtx.createGain();
+          silentGain.gain.value = 1.0;
+
+          node.connect(silentGain);
+          silentGain.connect(dest);
+
+          const stream = dest.stream;
+          (stream as any).gainNode = silentGain;
+
+          fallbackPlayersRef.current.set(senderId, { dest, player, node, silentGainNode: silentGain });
+
+          setRemoteStreams((prev) => {
+            const next = new Map(prev);
+            next.set(senderId, stream);
+            return next;
+          });
+
+          entry = { dest, player, node, silentGainNode: silentGain };
+        }
+
+        const floatData = int16ToFloat32(data.chunk);
+        entry.player.push(floatData);
+      } catch (err) {
+        console.error("MusicBot chunk playing error:", err);
+      }
     };
 
     mainPlatformVoiceSocket.on('voice.audio_chunk', handleBotAudioChunk);
@@ -1069,6 +864,7 @@ export const useWebRTC = (
     return () => {
       mainPlatformVoiceSocket.off('voice.audio_chunk', handleBotAudioChunk);
       
+      // Clean up bot entries specifically when leaving room
       const botKey = `music-bot-${roomId}`;
       const entry = fallbackPlayersRef.current.get(botKey);
       if (entry) {
