@@ -696,12 +696,17 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
  try {
  if (typeof navigator !== "undefined" && navigator.mediaDevices?.getUserMedia && !localStreamRef.current) {
  const constraints: any = {
- echoCancellation: { ideal: true },
- noiseSuppression: noiseCanceling ? { ideal: true } : { ideal: false },
- autoGainControl: { ideal: true },
- channelCount: { ideal: 1 },
- sampleRate: { ideal: 48000 },
- sampleSize: { ideal: 16 },
+ echoCancellation: true,
+ noiseSuppression: noiseCanceling,
+ autoGainControl: true,
+ channelCount: 1,
+ sampleRate: 48000,
+ sampleSize: 16,
+ googEchoCancellation: true,
+ googAutoGainControl: true,
+ googNoiseSuppression: true,
+ googNoiseSupression: true,
+ googHighpassFilter: true,
  latency: { ideal: 0.005 }
  };
  if (selectedAudioInput && selectedAudioInput !== "default") {
@@ -739,7 +744,9 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
    const audioTrack = localStreamRef.current.getAudioTracks()[0];
    if (audioTrack && typeof audioTrack.applyConstraints === "function") {
     audioTrack.applyConstraints({
-     noiseSuppression: noiseCanceling
+     noiseSuppression: noiseCanceling,
+     googNoiseSuppression: noiseCanceling,
+     googNoiseSupression: noiseCanceling
     }).catch((err) => {
      console.warn("[LobbyContext] Failed to apply dynamic constraints:", err);
     });

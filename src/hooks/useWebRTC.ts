@@ -8,26 +8,28 @@ class SmoothAudioPlayer {
   private currentGain: number = 0;
   private isBuffering: boolean = true;
   private consecutiveUnderflows: number = 0;
+  private phase: number = 0;
 
   public push(data: Float32Array) {
-    const MAX_QUEUE_SAMPLES = 1920; 
+    const MAX_QUEUE_SAMPLES = 3840; 
     if (this.queue.length > MAX_QUEUE_SAMPLES) {
-      this.queue = this.queue.slice(this.queue.length - 320);
+      this.queue = this.queue.slice(this.queue.length - 640);
     }
     const nextQueue = new Float32Array(this.queue.length + data.length);
     nextQueue.set(this.queue, 0);
     nextQueue.set(data, this.queue.length);
     this.queue = nextQueue;
     this.consecutiveUnderflows = 0;
-    if (this.isBuffering && this.queue.length >= 170) {
+    if (this.isBuffering && this.queue.length >= 340) {
       this.isBuffering = false;
     }
   }
 
   public consume(out: Float32Array, outSampleRate: number, inSampleRate: number) {
     const ratio = inSampleRate / outSampleRate;
-    const neededInSamples = out.length * ratio;
-    if (this.queue.length < neededInSamples) {
+    const maxNeededIndex = this.phase + out.length * ratio;
+    
+    if (this.queue.length < Math.ceil(maxNeededIndex) || this.isBuffering) {
       this.consecutiveUnderflows++;
       if (this.consecutiveUnderflows > 3) {
         this.isBuffering = true;
@@ -38,21 +40,28 @@ class SmoothAudioPlayer {
       }
       return;
     }
+
+    this.consecutiveUnderflows = 0;
+
     for (let i = 0; i < out.length; i++) {
-      const srcIdx = i * ratio;
+      const srcIdx = this.phase;
       const idx1 = Math.floor(srcIdx);
       const idx2 = Math.min(this.queue.length - 1, idx1 + 1);
       const t = srcIdx - idx1;
       const s1 = (idx1 >= 0 && idx1 < this.queue.length) ? this.queue[idx1] : 0;
       const s2 = (idx2 >= 0 && idx2 < this.queue.length) ? this.queue[idx2] : 0;
       const rawSample = s1 + t * (s2 - s1);
+      
       if (this.currentGain < 1) {
         this.currentGain = Math.min(1.0, this.currentGain + 0.1);
       }
       out[i] = rawSample * this.currentGain;
+      this.phase += ratio;
     }
-    const consumedCount = Math.floor(neededInSamples);
+
+    const consumedCount = Math.floor(this.phase);
     this.queue = this.queue.slice(consumedCount);
+    this.phase -= consumedCount;
   }
 
   public clear() {
@@ -60,6 +69,7 @@ class SmoothAudioPlayer {
     this.isBuffering = true;
     this.consecutiveUnderflows = 0;
     this.currentGain = 0;
+    this.phase = 0;
   }
 }
 
@@ -627,7 +637,7 @@ export const useWebRTC = (
         };
 
         const chunkBuffer: Int16Array[] = [];
-        const CHUNK_ACC_COUNT = 2; // Pack bundles into ~20ms frames
+        const CHUNK_ACC_COUNT = 4; // Pack bundles into ~40ms frames for 50% fewer packets and zero buffer bloat queue delay
 
         processorNodeRef.current.onaudioprocess = (event) => {
           const micEnabled = localStream.getAudioTracks()[0]?.enabled;
@@ -668,7 +678,7 @@ export const useWebRTC = (
       console.log(`VoIP Fallback: Registering smooth audio pipeline for remote peer: ${targetId}`);
       const player = new SmoothAudioPlayer();
       const dest = audioContext.createMediaStreamDestination();
-      const node = audioContext.createScriptProcessor(1024, 0, 1);
+      const node = audioContext.createScriptProcessor(2048, 0, 1);
 
       // Playback consumer logic
       node.onaudioprocess = (event) => {
