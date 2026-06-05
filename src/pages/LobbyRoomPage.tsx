@@ -562,6 +562,7 @@ export const LobbyRoomPage = () => {
     if (!audioContextRef.current && (window.AudioContext || (window as any).webkitAudioContext)) {
       try {
         const ac = new (window.AudioContext || (window as any).webkitAudioContext)();
+        ac.resume().catch(() => {});
         audioContextRef.current = ac;
         const source = ac.createMediaElementSource(audioEl);
         
@@ -624,6 +625,9 @@ export const LobbyRoomPage = () => {
     }
 
     if (musicBotState.isPlaying) {
+      if (audioContextRef.current && audioContextRef.current.state === "suspended") {
+        audioContextRef.current.resume().catch(() => {});
+      }
       if (audioEl.paused) {
         const playPromise = audioEl.play();
         if (playPromise !== undefined) {
@@ -671,7 +675,7 @@ export const LobbyRoomPage = () => {
     
     // We update UI progress tracker 1x per second based on the server tracked timestamps
     const interval = setInterval(() => {
-      const dur = musicBotState.duration || 100;
+      const dur = musicBotState.duration || 0;
       setLocalMusicDuration(dur);
       if (musicBotState.isPlaying) {
         const timeSinceUpdate = (Date.now() - (musicBotState.updatedAt || Date.now())) / 1000;
@@ -691,6 +695,27 @@ export const LobbyRoomPage = () => {
     }
   }, [isHost, musicBotState?.duration]);
 
+  // Resume host AudioContext on user gesture
+  useEffect(() => {
+    if (!isHost) return;
+    const handleGesture = () => {
+      const ac = audioContextRef.current;
+      if (ac && ac.state === "suspended") {
+        ac.resume().then(() => {
+          console.log("[LocalMusicBot] Host AudioContext resumed successfully via gesture.");
+        }).catch(err => {
+          console.warn("[LocalMusicBot] Failed to resume host AudioContext:", err);
+        });
+      }
+    };
+    document.addEventListener("click", handleGesture);
+    document.addEventListener("touchstart", handleGesture);
+    return () => {
+      document.removeEventListener("click", handleGesture);
+      document.removeEventListener("touchstart", handleGesture);
+    };
+  }, [isHost]);
+
   const [isDucking, setIsDucking] = useState(false);
   
   // Separate non-blocking vocal ducking / volume adjustment effect to decouple from playback
@@ -698,12 +723,21 @@ export const LobbyRoomPage = () => {
     const audioEl = localMusicAudioRef.current;
     if (!audioEl) return;
 
-    const hasHighPeerActivity = Object.entries(peerActivity).some(([uid, vol]) => uid !== botId && (vol as number) > 15);
-    const hasLocalActivity = (localVolume || 0) > 15;
+    const hasHighPeerActivity = Object.entries(peerActivity).some(([uid, vol]) => {
+      if (uid === botId) return false;
+      const player = lobby?.players?.find((p: any) => p.userId === uid);
+      if (!player) return false;
+      if (player.micMuted) return false;
+      return (vol as number) > 15;
+    });
+    const me = lobby?.players?.find((p: any) => p.userId === user?.id);
+    const hasLocalActivity = !me?.micMuted && (localVolume || 0) > 15;
     
-    const isSomeoneElseSpeaking = (lobby?.talkingUsers?.some(
-      (uid: string) => uid !== botId
-    ) || hasHighPeerActivity || hasLocalActivity || false);
+    const isSomeoneElseSpeaking = (lobby?.talkingUsers?.some((uid: string) => {
+      if (uid === botId) return false;
+      const player = lobby?.players?.find((p: any) => p.userId === uid);
+      return player && !player.micMuted;
+    }) || hasHighPeerActivity || hasLocalActivity || false);
     
     const duckingFactor = isSomeoneElseSpeaking ? (musicVolumeTalking !== undefined ? musicVolumeTalking : 30) : (musicVolumeSilence !== undefined ? musicVolumeSilence : 100);
     const calculatedVolume = Math.max(0, Math.min(1, (botVolumeLevel / 100) * (duckingFactor / 100)));
@@ -1662,7 +1696,7 @@ export const LobbyRoomPage = () => {
         <input 
          type="range"
          min={0}
-         max={localMusicDuration || 100}
+         max={localMusicDuration || 1}
          value={localMusicCurrentTime}
          disabled={!isHost}
          onChange={(e) => {

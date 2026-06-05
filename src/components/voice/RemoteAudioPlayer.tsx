@@ -29,6 +29,10 @@ export const RemoteAudioPlayer: React.FC<RemoteAudioPlayerProps> = ({ stream, on
    attemptPlay();
    
    const handleInteraction = () => {
+    const ctx = getSharedAudioContext();
+    if (ctx && ctx.state === "suspended") {
+     ctx.resume().catch(() => {});
+    }
     if (audioRef.current && audioRef.current.paused) {
      audioRef.current.play().catch(() => {});
     }
@@ -122,6 +126,11 @@ export const RemoteAudioPlayer: React.FC<RemoteAudioPlayerProps> = ({ stream, on
   let microphone: MediaStreamAudioSourceNode;
   let rafId: number;
   let sharedAudioContext: AudioContext;
+
+  const isBot = isMusicBot || stream.id.startsWith("music-bot-") || (stream as any).isMusicBot;
+  if (isBot) {
+   return;
+  }
 
   if (stream && stream.getAudioTracks().length > 0) {
    try {

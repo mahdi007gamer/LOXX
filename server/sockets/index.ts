@@ -456,7 +456,8 @@ export function setupWebSockets(io: Server) {
             resolvedQueue = tracks.map((t: any) => ({
               name: t.title || t.name,
               url: t.url,
-              coverUrl: t.coverUrl || t.cover || ""
+              coverUrl: t.coverUrl || t.cover || "",
+              duration: t.duration || t.durationSeconds || 0
             }));
           }
           if (resolvedQueue !== undefined) bot.queue = resolvedQueue;
@@ -468,6 +469,7 @@ export function setupWebSockets(io: Server) {
             bot.currentTrackName = bot.queue[activeIdx].name;
             bot.currentTrackCover = bot.queue[activeIdx].coverUrl || "";
             bot.currentTime = 0;
+            bot.duration = bot.queue[activeIdx].duration || 0;
             bot.updatedAt = Date.now();
           }
 
