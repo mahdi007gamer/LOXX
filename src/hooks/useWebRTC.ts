@@ -591,22 +591,43 @@ export const useWebRTC = (
 
   }, [botStream, voiceMethod, isSendTransportReady]);
 
-  // Handle Local audio stream updates (e.g. from hot-swapping mics or resuming)
+  // Handle Local audio stream updates (e.g. from hot-swapping mics, resuming, or late-granting permissions)
   useEffect(() => {
-    if (!roomId || !userId || voiceMethod !== 'mediasoup' || !audioProducerRef.current || !localStream) return;
-    const updateAudioTrack = async () => {
+    if (!roomId || !userId || voiceMethod !== 'mediasoup' || !localStream) return;
+
+    const updateOrCreateAudioProducer = async () => {
       try {
         const audioTrack = localStream.getAudioTracks()[0];
-        if (audioTrack && audioProducerRef.current.track !== audioTrack) {
-          console.log(`[LOXX SFU Mediasoup] Replacing audio track dynamically...`);
-          await audioProducerRef.current.replaceTrack({ track: audioTrack });
+        if (!audioTrack) return;
+
+        if (audioProducerRef.current) {
+          if (audioProducerRef.current.track !== audioTrack) {
+            console.log(`[LOXX SFU Mediasoup] Replacing audio track dynamically...`);
+            await audioProducerRef.current.replaceTrack({ track: audioTrack });
+          }
+        } else if (sendTransportRef.current && isSendTransportReady) {
+          console.log(`[LOXX SFU Mediasoup] Creating audio producer dynamically since it didn't exist...`);
+          const audioProducer = await sendTransportRef.current.produce({
+            track: audioTrack,
+            appData: { userId },
+            encodings: [
+              { networkPriority: "high", maxBitrate: 96000 }
+            ],
+            codecOptions: {
+              opusDtx: false,
+              opusFec: true,
+              opusStereo: false
+            }
+          });
+          audioProducerRef.current = audioProducer;
+          console.log(`[LOXX SFU Mediasoup] Microphone produced stream over RTP dynamically [ID: ${audioProducer.id}]`);
         }
       } catch (e) {
-        console.error("[LOXX SFU Mediasoup] Failed replacing audio track:", e);
+        console.error("[LOXX SFU Mediasoup] Failed preparing/replacing audio track:", e);
       }
     };
-    updateAudioTrack();
-  }, [localStream, voiceMethod]);
+    updateOrCreateAudioProducer();
+  }, [localStream, voiceMethod, isSendTransportReady, roomId, userId]);
 
   // Handle Mic Test logic -> pause the Mediasoup producer so others don't hear
   useEffect(() => {
@@ -831,7 +852,7 @@ export const useWebRTC = (
       setRemoteStreams(new Map());
     };
 
-  }, [roomId, userId, voiceMethod]);
+  }, [roomId, userId, voiceMethod, localStream, isMicTestOn]);
 
   // Dedicated Music Bot receiver effect so it works independently of Mediasoup/Fallback settings
   useEffect(() => {
