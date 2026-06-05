@@ -73,6 +73,7 @@ export const useWebRTC = (
 ) => {
   const [remoteStreams, setRemoteStreams] = useState<Map<string, MediaStream>>(new Map());
   const [voiceMethod, setVoiceMethod] = useState<'mediasoup' | 'fallback_pcm'>('mediasoup');
+  const [isSendTransportReady, setIsSendTransportReady] = useState<boolean>(false);
 
   // References for Mediasoup
   const deviceRef = useRef<Device | null>(null);
@@ -151,10 +152,8 @@ export const useWebRTC = (
             deviceRef.current = device;
             console.log(`[LOXX SFU Mediasoup] Mediasoup Device loaded successfully inside client frame.`);
 
-            // 3. Create Send Transport (if mic input present)
-            if (localStream && localStream.getAudioTracks().length > 0) {
-              await setupSendTransport(device);
-            }
+            // 3. Create Send Transport (always create send transport so mic unmuting or music bot triggers immediately)
+            await setupSendTransport(device);
 
             // 4. Create Receive Transport
             await setupRecvTransport(device);
@@ -217,7 +216,9 @@ export const useWebRTC = (
             });
 
             // Start producing microphone track immediately
-            const audioTrack = localStream!.getAudioTracks()[0];
+            const audioTrack = (localStream && typeof localStream.getAudioTracks === "function") 
+              ? localStream.getAudioTracks()[0] 
+              : null;
             if (audioTrack) {
               const audioProducer = await sendTransport.produce({ 
                 track: audioTrack,
@@ -233,6 +234,7 @@ export const useWebRTC = (
               audioProducerRef.current = audioProducer;
               console.log(`[LOXX SFU Mediasoup] Microphones produced stream over RTP [ID: ${audioProducer.id}]`);
             }
+            setIsSendTransportReady(true);
             resolve();
           } catch (err) {
             console.error("[LOXX SFU Mediasoup] Error building send transport producing track:", err);
@@ -405,6 +407,7 @@ export const useWebRTC = (
 
     return () => {
       active = false;
+      setIsSendTransportReady(false);
       
       voiceSocket.off("newProducer", handleNewProducer);
       voiceSocket.off("producerClosed", handleProducerClosed);
@@ -444,7 +447,7 @@ export const useWebRTC = (
 
   // Handle dynamic Screen sharing track publication via Mediasoup Send Transport
   useEffect(() => {
-    if (!roomId || !userId || voiceMethod !== 'mediasoup' || !sendTransportRef.current) return;
+    if (!roomId || !userId || voiceMethod !== 'mediasoup' || !sendTransportRef.current || !isSendTransportReady) return;
 
     const screenVideoTrack = screenStream ? screenStream.getVideoTracks()[0] : null;
 
@@ -493,13 +496,13 @@ export const useWebRTC = (
 
     updateScreenShare();
 
-  }, [screenStream, voiceMethod]);
+  }, [screenStream, voiceMethod, isSendTransportReady]);
 
   const botProducerRef = useRef<any>(null);
 
   // Handle dynamic Music Bot audio track publication via Mediasoup Send Transport
   useEffect(() => {
-    if (!roomId || !userId || voiceMethod !== 'mediasoup' || !sendTransportRef.current) return;
+    if (!roomId || !userId || voiceMethod !== 'mediasoup' || !sendTransportRef.current || !isSendTransportReady) return;
 
     const botAudioTrack = botStream ? botStream.getAudioTracks()[0] : null;
 
@@ -545,7 +548,7 @@ export const useWebRTC = (
 
     updateBotShare();
 
-  }, [botStream, voiceMethod]);
+  }, [botStream, voiceMethod, isSendTransportReady]);
 
   // Handle Local audio stream updates (e.g. from hot-swapping mics or resuming)
   useEffect(() => {
