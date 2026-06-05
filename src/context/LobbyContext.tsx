@@ -694,10 +694,13 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
  try {
  if (typeof navigator !== "undefined" && navigator.mediaDevices?.getUserMedia && !localStreamRef.current) {
  const constraints: any = {
- echoCancellation: true,
- noiseSuppression: noiseCanceling,
- autoGainControl: true,
- latency: 0
+ echoCancellation: { ideal: true },
+ noiseSuppression: noiseCanceling ? { ideal: true } : { ideal: false },
+ autoGainControl: { ideal: true },
+ channelCount: { ideal: 1 },
+ sampleRate: { ideal: 48000 },
+ sampleSize: { ideal: 16 },
+ latency: { ideal: 0.005 }
  };
  if (selectedAudioInput && selectedAudioInput !== "default") {
  constraints.deviceId = { exact: selectedAudioInput };

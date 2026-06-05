@@ -224,11 +224,12 @@ export const useWebRTC = (
                 track: audioTrack,
                 appData: { userId },
                 encodings: [
-                  { networkPriority: "high", maxBitrate: 64000 }
+                  { networkPriority: "high", maxBitrate: 96000 } // Increased bitrate for pristine voice quality
                 ],
                 codecOptions: {
-                  opusDtx: true,
-                  opusFec: true
+                  opusDtx: false, // Disabled DTX to stop choppy, gated cutting-off during music
+                  opusFec: true,  // Keep Forward Error Correction to recover lost packets
+                  opusStereo: false
                 }
               });
               audioProducerRef.current = audioProducer;
