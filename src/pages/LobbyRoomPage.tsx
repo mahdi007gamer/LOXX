@@ -282,8 +282,10 @@ export const LobbyRoomPage = () => {
   }
  }, []);
 
- const [isQueueOpen, setIsQueueOpen] = useState(false);
+  const [isQueueOpen, setIsQueueOpen] = useState(false);
   const localMusicAudioRef = useRef<HTMLAudioElement | null>(null);
+  const hostVolumeFaderRef = useRef<number | null>(null);
+  const hostCurrentVolumeRef = useRef<number>(1);
   const [localMusicDuration, setLocalMusicDuration] = useState(0);
   const [localMusicCurrentTime, setLocalMusicCurrentTime] = useState(0);
 
@@ -691,10 +693,33 @@ export const LobbyRoomPage = () => {
     ) || hasHighPeerActivity || hasLocalActivity || false);
     
     const duckingFactor = isSomeoneElseSpeaking ? (musicVolumeTalking !== undefined ? musicVolumeTalking : 30) : (musicVolumeSilence !== undefined ? musicVolumeSilence : 100);
-    const calculatedVolume = (botVolumeLevel / 100) * (duckingFactor / 100);
+    const calculatedVolume = Math.max(0, Math.min(1, (botVolumeLevel / 100) * (duckingFactor / 100)));
 
-    audioEl.volume = Math.max(0, Math.min(1, calculatedVolume));
     setIsDucking(isSomeoneElseSpeaking);
+
+    // Smooth transition over 300ms using linear-cubic interpolation
+    if (hostVolumeFaderRef.current) cancelAnimationFrame(hostVolumeFaderRef.current);
+    const start = hostCurrentVolumeRef.current;
+    const duration = isSomeoneElseSpeaking ? 150 : 350; // Quicker ducking attack, gentler release (fade-in)
+    const startTime = performance.now();
+
+    const anim = (now: number) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(1, elapsed / duration);
+      // Cubic easing for premium feeling
+      const ease = progress < 0.5 ? 2 * progress * progress : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+      const current = start + (calculatedVolume - start) * ease;
+      audioEl.volume = current;
+      hostCurrentVolumeRef.current = current;
+      if (progress < 1) {
+        hostVolumeFaderRef.current = requestAnimationFrame(anim);
+      }
+    };
+    hostVolumeFaderRef.current = requestAnimationFrame(anim);
+
+    return () => {
+      if (hostVolumeFaderRef.current) cancelAnimationFrame(hostVolumeFaderRef.current);
+    };
   }, [
     botVolumeLevel,
     lobby?.talkingUsers,

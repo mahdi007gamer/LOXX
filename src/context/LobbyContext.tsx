@@ -1692,7 +1692,7 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const baseVolume = isDeafened ? 0 : (peerVolumes[peerUserId] !== undefined ? peerVolumes[peerUserId] : 100);
   let finalVolume = baseVolume;
   if (isBot) {
-   const anyUserSpeaking = lobby?.talkingUsers?.some(uid => uid !== peerUserId && uid !== user?.id) || false;
+   const anyUserSpeaking = (lobby?.talkingUsers || []).some(uid => !uid.startsWith("music-bot-"));
    const targetVolume = anyUserSpeaking ? musicVolumeTalking : musicVolumeSilence;
    finalVolume = (baseVolume / 100) * targetVolume;
   }
@@ -1703,6 +1703,7 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     volumeLevel={finalVolume}
     onVolumeChange={(vol) => handlePeerVolumeChange(peerUserId, vol)}
     outputDeviceId={selectedAudioOutput}
+    isMusicBot={isBot}
    />
   );
  })}

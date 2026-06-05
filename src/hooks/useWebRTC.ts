@@ -512,7 +512,7 @@ export const useWebRTC = (
           const audioProducer = await sendTransportRef.current.produce({
             track: botAudioTrack,
             appData: { type: "bot", userId: `music-bot-${roomId}` },
-            encodings: [{ networkPriority: "low", maxBitrate: 64000 }],
+            encodings: [{ networkPriority: "high", maxBitrate: 256000 }],
             codecOptions: { opusDtx: false, opusFec: true, opusStereo: true }
           });
           botProducerRef.current = audioProducer;
