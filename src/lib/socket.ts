@@ -2,7 +2,9 @@ import { io } from "socket.io-client";
 
 // Detect if we are on the production backend (real server instance)
 const isProductionLoxx = typeof window !== 'undefined' && 
-  (window.location.hostname === 'loxx.ir' || window.location.hostname === 'connect.loxx.ir');
+  (window.location.hostname === 'loxx.ir' || 
+   window.location.hostname === 'www.loxx.ir' || 
+   window.location.hostname === 'connect.loxx.ir');
 
 // State to track if fallback is currently active
 let activeSocketURL = isProductionLoxx ? "https://connect.loxx.ir" : window.location.origin;
@@ -61,16 +63,26 @@ const triggerFallback = () => {
   isUsingFallback = true;
   activeSocketURL = "https://loxx.ir";
 
-  console.log(`[Socket fallback] Re-routing all sockets to CDN proxied loxx.ir address...`);
+  console.warn(`[Socket fallback] Direct connection to connect.loxx.ir failed. Re-routing all sockets to CDN proxied loxx.ir address...`);
 
   registeredSockets.forEach(({ socket, namespace }) => {
     if (socket) {
       if (socket.io) {
-        socket.io.uri = `https://loxx.ir`;
+        socket.io.uri = "https://loxx.ir";
+        if (socket.io.opts) {
+          socket.io.opts.hostname = "loxx.ir";
+          socket.io.opts.port = "443";
+          socket.io.opts.secure = true;
+        }
       }
-      if (socket.connected || socket.active) {
+      // Force absolute disconnect and reconnect unconditionally.
+      // This is crucial to boot failed (offline) sockets onto the valid fallback CDN URL immediately.
+      try {
         socket.disconnect();
         socket.connect();
+        console.log(`[Socket fallback] Successfully forced absolute reconnect for namespace: ${namespace}`);
+      } catch (err) {
+        console.error(`[Socket fallback] Failed to reconnect namespace: ${namespace}`, err);
       }
     }
   });
