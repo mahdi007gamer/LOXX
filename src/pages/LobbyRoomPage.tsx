@@ -588,7 +588,11 @@ export const LobbyRoomPage = () => {
       setLocalMusicCurrentTime(audioEl.currentTime);
     };
     const handleDurationChange = () => {
-      setLocalMusicDuration(audioEl.duration || 0);
+      const dur = audioEl.duration || 0;
+      setLocalMusicDuration(dur);
+      if (isHost && dur > 0) {
+        controlMusicBot("seek", { duration: dur });
+      }
     };
 
     audioEl.addEventListener("timeupdate", handleTimeUpdate);
@@ -667,16 +671,25 @@ export const LobbyRoomPage = () => {
     
     // We update UI progress tracker 1x per second based on the server tracked timestamps
     const interval = setInterval(() => {
-      setLocalMusicDuration(100); // UI fallback (duration info via WebRTC might require extra events)
+      const dur = musicBotState.duration || 100;
+      setLocalMusicDuration(dur);
       if (musicBotState.isPlaying) {
         const timeSinceUpdate = (Date.now() - (musicBotState.updatedAt || Date.now())) / 1000;
-        setLocalMusicCurrentTime(musicBotState.currentTime! + timeSinceUpdate);
+        const calculatedTime = musicBotState.currentTime! + timeSinceUpdate;
+        setLocalMusicCurrentTime(Math.min(calculatedTime, dur));
       } else {
-        setLocalMusicCurrentTime(musicBotState.currentTime!);
+        setLocalMusicCurrentTime(Math.min(musicBotState.currentTime!, dur));
       }
     }, 1000);
     return () => clearInterval(interval);
-  }, [isHost, musicBotState?.active, musicBotState?.isPlaying, musicBotState?.currentTime, musicBotState?.updatedAt]);
+  }, [isHost, musicBotState?.active, musicBotState?.isPlaying, musicBotState?.currentTime, musicBotState?.updatedAt, musicBotState?.duration]);
+
+  // Synchronize duration on peer when it changes in state
+  useEffect(() => {
+    if (!isHost && musicBotState?.duration) {
+      setLocalMusicDuration(musicBotState.duration);
+    }
+  }, [isHost, musicBotState?.duration]);
 
   const [isDucking, setIsDucking] = useState(false);
   

@@ -164,7 +164,10 @@ export const useWebRTC = (
               if (prodAck && prodAck.success && prodAck.producers) {
                 for (const prod of prodAck.producers) {
                   if (prod.userId !== userId) {
-                    await consumeTrack(prod.producerId, prod.userId, prod.kind);
+                    const targetUserId = (prod.appData && prod.appData.type === "bot")
+                      ? `music-bot-${roomId}`
+                      : prod.userId;
+                    await consumeTrack(prod.producerId, targetUserId, prod.kind);
                   }
                 }
               }
@@ -372,7 +375,10 @@ export const useWebRTC = (
     const handleNewProducer = async (data: { producerId: string; userId: string; kind: "audio" | "video"; appData?: any }) => {
       if (data.userId === userId) return;
       console.log(`[LOXX SFU Mediasoup] Remote peer started publishing: ${data.userId} kind: ${data.kind}`);
-      await consumeTrack(data.producerId, data.userId, data.kind);
+      const targetUserId = (data.appData && data.appData.type === "bot")
+        ? `music-bot-${roomId}`
+        : data.userId;
+      await consumeTrack(data.producerId, targetUserId, data.kind);
     };
 
     const handleProducerClosed = ({ producerId }: { producerId: string }) => {

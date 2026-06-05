@@ -405,8 +405,9 @@ export function setupWebSockets(io: Server) {
       queueIndex?: number;
       isPlaying?: boolean;
       currentTime?: number;
+      duration?: number;
     }, ack?: any) => {
-      const { lobbyId, action, category, trackUrl, trackName, coverUrl, tracks, queue, queueIndex, isPlaying, currentTime } = data;
+      const { lobbyId, action, category, trackUrl, trackName, coverUrl, tracks, queue, queueIndex, isPlaying, currentTime, duration } = data;
       try {
         const lobby = await prisma.lobby.findUnique({ where: { id: lobbyId } });
         if (!lobby || lobby.hostId !== userId) {
@@ -425,6 +426,7 @@ export function setupWebSockets(io: Server) {
             queue: [],
             queueIndex: 0,
             currentTime: 0,
+            duration: 0,
             updatedAt: Date.now()
           };
           lobbyMusicBots.set(lobbyId, bot);
@@ -433,6 +435,9 @@ export function setupWebSockets(io: Server) {
         bot.updatedAt = Date.now();
         if (currentTime !== undefined) {
           bot.currentTime = currentTime;
+        }
+        if (duration !== undefined) {
+          bot.duration = duration;
         }
 
         if (action === "play") {
