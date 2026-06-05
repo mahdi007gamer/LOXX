@@ -1690,6 +1690,7 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
  {children}
  {lobby?.id && Array.from(remoteStreams.entries()).map(([peerUserId, stream]) => {
   const isBot = peerUserId.startsWith("music-bot-");
+  if (isBot) return null; // Bypassed: high-fidelity local HTML5 playback runs synchronously in LobbyRoomPage instead of degraded voice buffers.
   const baseVolume = isDeafened ? 0 : (peerVolumes[peerUserId] !== undefined ? peerVolumes[peerUserId] : 100);
   let finalVolume = baseVolume;
   if (isBot) {

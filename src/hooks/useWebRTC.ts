@@ -680,7 +680,6 @@ export const useWebRTC = (
 
       node.connect(silentGain);
       silentGain.connect(dest);
-      silentGain.connect(audioContext.destination);
 
       const stream = dest.stream;
       (stream as any).gainNode = silentGain;
@@ -813,7 +812,6 @@ export const useWebRTC = (
 
           node.connect(silentGain);
           silentGain.connect(dest);
-          silentGain.connect(audioCtx.destination);
 
           const stream = dest.stream;
           (stream as any).gainNode = silentGain;

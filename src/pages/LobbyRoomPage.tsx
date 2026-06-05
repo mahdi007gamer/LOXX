@@ -547,19 +547,15 @@ export const LobbyRoomPage = () => {
   const [audioElMounted, setAudioElMounted] = useState(false);
   const audioContextRef = useRef<AudioContext | null>(null);
 
-  // 1. Host controls the audio element and sends over Mediasoup with Compressor
+  // 1. Everyone plays the audio element locally for high-fidelity synchronized playback,
+  // but only the host sets up the audio graph compressor to send via WebRTC.
   useEffect(() => {
     const audioEl = localMusicAudioRef.current;
     if (!audioEl) return;
     if (!audioElMounted) setAudioElMounted(true);
 
-    if (!isHost) {
-      if (!audioEl.paused) audioEl.pause();
-      return; // Peers never play this audio element, they hear it via WebRTC
-    }
-
-    // Audio Engine: Limiter / Compressor Setup
-    if (!audioContextRef.current && (window.AudioContext || (window as any).webkitAudioContext)) {
+    // Audio Engine: Limiter / Compressor Setup (Host Only)
+    if (isHost && !audioContextRef.current && (window.AudioContext || (window as any).webkitAudioContext)) {
       try {
         const ac = new (window.AudioContext || (window as any).webkitAudioContext)();
         ac.resume().catch(() => {});
@@ -638,6 +634,14 @@ export const LobbyRoomPage = () => {
       if (!audioEl.paused) audioEl.pause();
     }
 
+    const unlockPlay = () => {
+      if (musicBotState?.isPlaying && audioEl.paused) {
+        audioEl.play().catch(e => console.log("[LocalMusicBot] Autoplay restriction unlock failed:", e));
+      }
+    };
+    document.addEventListener("click", unlockPlay, { once: true });
+    document.addEventListener("touchstart", unlockPlay, { once: true });
+
     audioEl.onended = () => {
       if (isHost && musicBotState.queue && musicBotState.queue.length > 0) {
         const nextIndex = (musicBotState.queueIndex + 1) % musicBotState.queue.length;
@@ -657,6 +661,8 @@ export const LobbyRoomPage = () => {
     return () => {
       audioEl.removeEventListener("timeupdate", handleTimeUpdate);
       audioEl.removeEventListener("durationchange", handleDurationChange);
+      document.removeEventListener("click", unlockPlay);
+      document.removeEventListener("touchstart", unlockPlay);
       audioEl.onended = null;
     };
   }, [
