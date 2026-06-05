@@ -46,6 +46,18 @@ export const createNamespaceSocket = (namespace: string, withAuth = true) => {
     }
   });
 
+  // Proactively monitor and prevent being stuck in slow, high-overhead HTTP Polling
+  socket.on("connect", () => {
+    setTimeout(() => {
+      if (socket.connected && socket.io && socket.io.engine && socket.io.engine.transport) {
+        if (socket.io.engine.transport.name === "polling" && isProductionLoxx && !isUsingFallback && activeSocketURL === "https://connect.loxx.ir") {
+          console.warn(`[Socket ${namespace}] Socket connected but failed to upgrade to WebSockets (stuck on polling). Triggering fallback to loxx.ir (CDN)...`);
+          triggerFallback();
+        }
+      }
+    }, 3500);
+  });
+
   return socket;
 };
 

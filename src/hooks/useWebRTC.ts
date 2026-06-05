@@ -234,6 +234,14 @@ export const useWebRTC = (
             const sendTransport = device.createSendTransport(resp.params);
             sendTransportRef.current = sendTransport;
 
+            sendTransport.on("connectionstatechange", (state) => {
+              console.log(`[LOXX SFU Mediasoup] Send WebRTC Transport state change: ${state}`);
+              if (state === "failed") {
+                console.warn(`[LOXX SFU Mediasoup] Send WebRTC Transport connection failed (possibly blocked UDP). Falling back to PCM...`);
+                setVoiceMethod('fallback_pcm');
+              }
+            });
+
             sendTransport.on("connect", ({ dtlsParameters }, callback, errback) => {
               voiceSocket.emit("connectWebRtcTransport", { transportId: sendTransport.id, dtlsParameters }, (connectAck: any) => {
                 if (connectAck && connectAck.success) callback();
@@ -294,6 +302,14 @@ export const useWebRTC = (
           try {
             const recvTransport = device.createRecvTransport(resp.params);
             recvTransportRef.current = recvTransport;
+
+            recvTransport.on("connectionstatechange", (state) => {
+              console.log(`[LOXX SFU Mediasoup] Recv WebRTC Transport state change: ${state}`);
+              if (state === "failed") {
+                console.warn(`[LOXX SFU Mediasoup] Recv WebRTC Transport connection failed (possibly blocked UDP). Falling back to PCM...`);
+                setVoiceMethod('fallback_pcm');
+              }
+            });
 
             recvTransport.on("connect", ({ dtlsParameters }, callback, errback) => {
               voiceSocket.emit("connectWebRtcTransport", { transportId: recvTransport.id, dtlsParameters }, (connectAck: any) => {
