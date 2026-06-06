@@ -54,7 +54,6 @@ import { ShareQuality, SHARE_QUALITIES, useSmartScreenShare } from "../hooks/use
 import { ScreenShareModal } from "../components/ScreenShareModal";
 import { DesktopSourcePickerModal } from "../components/DesktopSourcePickerModal";
 import { ScreenSharePresenter } from "../components/ScreenSharePresenter";
-import { MusicBotCard } from "../components/MusicBotCard";
 import { UserBadges } from "../components/ui/UserBadges";
 import { Modal } from "../components/ui/Modal";
 import { useProfilePopover } from "../context/ProfilePopoverContext";
@@ -504,6 +503,34 @@ export const LobbyRoomPage = () => {
  activity: p.userId === user?.id ? localVolume : (peerActivity[p.userId] || 0)
  })) || [];
 
+ // INJECT LOXX MUSIC BOT IF ACTIVE
+ if (musicBotState?.active && lobby?.id) {
+  const botId = `music-bot-${lobby.id}`;
+  const isBotSpeaking = lobby.talkingUsers?.includes(botId) || (peerActivity[botId] || 0) > 10;
+  list.push({
+   id: botId,
+   name: "🎵 Loxx Music Bot",
+   avatar: "🤖",
+   avatarUrl: botProfile?.avatarUrl || "", // Displays neon badge
+   level: 99,
+   membership: "VIP" as any,
+   vipMetadata: { borderNeonColor: "#00e5ff" },
+   bannerUrl: botProfile?.bannerUrl || "",
+   bio: botProfile?.bio,
+   miniProfileBg: botProfile?.miniProfileBg,
+   badges: [{ name: "Music Bot", image: "/badges/music_icon.png" }],
+   rank: isRtl ? "رادیو دیسکی لابی" : "Lobby DJ System",
+   isHost: false,
+   role: "BOT",
+   isReady: true,
+   hasMic: true,
+   isMuted: peerVolumes[botId] === 0,
+   ping: 5,
+   isSpeaking: isBotSpeaking,
+   volume: peerVolumes[botId] !== undefined ? peerVolumes[botId] : 100,
+   activity: peerActivity[botId] || 0
+  } as any);
+ }
 
  // Add empty slots
  const maxPlayers = lobby?.maxPlayers || 5;
@@ -524,123 +551,7 @@ export const LobbyRoomPage = () => {
  });
  }
  return result;
- }, [lobby?.players, lobby?.maxPlayers, lobby?.id, localVolume, peerActivity, lobby?.talkingUsers, peerVolumes, user?.id, user?.username, isRtl]);
-
-  const musicBotPlayer = useMemo(() => {
-    if (!musicBotState?.active || !lobby?.id) return null;
-    const botId = `music-bot-${lobby.id}`;
-    const isBotSpeaking = lobby.talkingUsers?.includes(botId) || (peerActivity[botId] || 0) > 10;
-    return {
-      id: botId,
-      name: isRtl ? "ربات موزیک لوکس" : "Loxx Music Bot",
-      avatar: "🤖",
-      avatarUrl: botProfile?.avatarUrl || "", 
-      level: 99,
-      membership: "VIP" as any,
-      vipMetadata: { borderNeonColor: "#00bfff" },
-      bannerUrl: botProfile?.bannerUrl || "",
-      bio: botProfile?.bio || (isRtl ? "ربات رادیو دیسکی پیشرفته برای پخش همزمان مستقیم در لابی شما" : "Advanced Lobby DJ System for synchronized live streaming in your lobby"),
-      miniProfileBg: botProfile?.miniProfileBg,
-      badges: [{ name: "Music Bot", image: "/badges/music_icon.png" }],
-      rank: isRtl ? "رادیو دیسکی لابی" : "Lobby DJ System",
-      isHost: false,
-      role: "BOT",
-      isReady: true,
-      hasMic: true,
-      isMuted: peerVolumes[botId] === 0,
-      ping: 5,
-      isSpeaking: isBotSpeaking,
-      volume: peerVolumes[botId] !== undefined ? peerVolumes[botId] : 100,
-      activity: peerActivity[botId] || 0
-    };
-  }, [musicBotState?.active, lobby?.id, botProfile, lobby?.talkingUsers, peerActivity, peerVolumes, isRtl]);
-
-  const [screenshareFallbackFrame, setScreenshareFallbackFrame] = useState<{ frame: string; presenterId: string } | null>(null);
-
-  // ---------------- FEATURE: WEBRTC SCREENSHARE SOCKET SLIDESHOW RELAY (FOR MOBILE/CROSS-DOMAIN CLIENTS) ----------------
-  // Transmitter (Sender): Captures and broadcasts frames over socket if local screenshare is active
-  useEffect(() => {
-    if (!screenStream || !lobby?.id || !user?.id) return;
-
-    console.log("[Loxx Screenshare Fallback Bridge] Local stream detected. Activating low-bandwidth WebSocket slideshow broadcast...");
-
-    const offscreenVideo = document.createElement("video");
-    offscreenVideo.srcObject = screenStream;
-    offscreenVideo.muted = true;
-    offscreenVideo.playsInline = true;
-    offscreenVideo.play().catch((e) => console.warn("Offscreen autoplay failed:", e));
-
-    const canvas = document.createElement("canvas");
-
-    const intervalId = setInterval(() => {
-      if (offscreenVideo.videoWidth > 0 && offscreenVideo.videoHeight > 0) {
-        // Keep dimensions compressed for rapid socket frame relays
-        const maxW = 512;
-        const scale = Math.min(1, maxW / offscreenVideo.videoWidth);
-        canvas.width = offscreenVideo.videoWidth * scale;
-        canvas.height = offscreenVideo.videoHeight * scale;
-
-        const ctx = canvas.getContext("2d");
-        if (ctx) {
-          ctx.drawImage(offscreenVideo, 0, 0, canvas.width, canvas.height);
-          try {
-            const frameStr = canvas.toDataURL("image/jpeg", 0.35); // 0.35 compression is tiny (~10KB-15KB)
-            lobbySocket.emit("lobby.lan.relay", {
-              lobbyId: lobby.id,
-              event: "screenshare_frame",
-              payload: { frame: frameStr }
-            });
-          } catch (err) {
-            console.warn("Loxx Canvas capturing error:", err);
-          }
-        }
-      }
-    }, 1200);
-
-    return () => {
-      console.log("[Loxx Screenshare Fallback Bridge] Cleaning up broadcast interval and offscreen audio/video channels.");
-      clearInterval(intervalId);
-      try {
-        offscreenVideo.pause();
-        offscreenVideo.srcObject = null;
-      } catch (err) {}
-      
-      // Notify other lobby players that standard or fallback screenshare has ended
-      lobbySocket.emit("lobby.lan.relay", {
-        lobbyId: lobby.id,
-        event: "screenshare_stopped",
-        payload: {}
-      });
-    };
-  }, [screenStream, lobby?.id, user?.id]);
-
-  // Receiver (Listener): Receives frames sent by other clients over generic room relay socket
-  useEffect(() => {
-    if (!lobbySocket) return;
-
-    const handleRemoteLanEvent = (msg: { senderUserId: string, event: string, payload: any }) => {
-      // Ignore messages from ourselves
-      if (msg.senderUserId === user?.id) return;
-
-      const { event, payload } = msg;
-      if (event === "screenshare_frame") {
-        setScreenshareFallbackFrame({
-          frame: payload.frame,
-          presenterId: msg.senderUserId
-        });
-      } else if (event === "screenshare_stopped") {
-        setScreenshareFallbackFrame((prev) => 
-          prev && prev.presenterId === msg.senderUserId ? null : prev
-        );
-      }
-    };
-
-    lobbySocket.on("lobby.lan.event", handleRemoteLanEvent);
-
-    return () => {
-      lobbySocket.off("lobby.lan.event", handleRemoteLanEvent);
-    };
-  }, [lobbySocket, user?.id]);
+ }, [lobby?.players, lobby?.maxPlayers, lobby?.id, localVolume, peerActivity, lobby?.talkingUsers, peerVolumes, user?.id, user?.username, musicBotState, isRtl]);
 
  const isReady = lobby?.players?.find(p => p.userId === user?.id)?.isReady || false;
  const isMicMuted = !!(lobby?.players?.find(p => p.userId === user?.id) as any)?.micMuted;
@@ -1097,323 +1008,7 @@ export const LobbyRoomPage = () => {
  )} />
  </div>
 
-   {/* LOBBY INTERFACE CONTAINER */}
-  <div className="relative z-10 flex flex-col flex-1 gap-4 md:gap-6 overflow-hidden h-full">
-    {/* Sleek Gaming Header */}
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/5 pb-4 md:pb-6 shrink-0 font-sans">
-      <div className="flex items-center gap-3">
-        <button 
-          onClick={() => {
-            leaveLobby();
-            navigate("/lobbies");
-          }}
-          className="h-10 w-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-all hover:scale-105 active:scale-95"
-        >
-          <ChevronLeft size={20} />
-        </button>
-        <div>
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-lg md:text-2xl font-black text-white tracking-tight uppercase">
-              {lobby?.title || "LOXX LOBBY"}
-            </h1>
-            <span className={cn(
-              "text-[9px] font-black uppercase px-2 py-0.5 rounded border leading-none tracking-wider shrink-0",
-              isStreamerLobby ? "bg-purple-500/10 text-purple-400 border-purple-500/20 shadow-[0_0_10px_rgba(168,85,247,0.15)]" :
-              isVipLobby ? "bg-yellow-400/10 text-yellow-400 border-yellow-400/20 shadow-[0_0_10px_rgba(250,204,21,0.15)]" : "bg-neon-blue/10 text-neon-blue border-neon-blue/20"
-            )}>
-              {isStreamerLobby ? (isRtl ? "اتاق استریمر" : "Streamer Room") : isVipLobby ? (isRtl ? "VIP" : "VIP Room") : (isRtl ? "استاندارد" : "Standard Room")}
-            </span>
-            {lobby?.isPrivate && (
-              <span className="text-[9px] font-black uppercase bg-red-500/10 text-red-500 border border-red-500/20 px-2 py-0.5 rounded leading-none shrink-0 tracking-wider">
-                {isRtl ? "خصوصی" : "PRIVATE"}
-              </span>
-            )}
-          </div>
-          <p className="text-xs text-gray-500 mt-1 font-semibold flex items-center gap-1.5">
-            <Gamepad2 size={12} className="text-neon-pink shrink-0" />
-            {isRtl ? " پلتفرم رادیو دیسکی و چت صوتی اختصاصی لوکس" : "LOXX Pro Gaming Voice & DJ Server"} • {lobby?.maxPlayers} {isRtl ? "ظرفیت بازیکن" : "max players"}
-          </p>
-        </div>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-3">
-        {/* Connection status dot */}
-        <div className="hidden sm:flex items-center gap-2 bg-white/5 border border-white/10 px-3 py-1.5 rounded-xl text-[10px] font-bold text-gray-400">
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-          </span>
-          {isRtl ? "متصل به سرور ایران" : "Connected (VPS Main Relay)"}
-        </div>
-
-        {/* Invite link and sharing code */}
-        <button
-          onClick={handleCopyCode}
-          className="flex items-center gap-2 bg-white/5 hover:bg-white/10 active:scale-95 border border-white/10 hover:border-white/20 px-4 py-2 rounded-xl text-xs text-gray-200 transition-all font-sans font-black uppercase shadow-lg select-all"
-        >
-          {copied ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} className="text-neon-blue" />}
-          {lobby?.id || "LX-LOBBY"}
-        </button>
-
-        {/* Change layout templates */}
-        <button
-          onClick={toggleLayout}
-          className="h-10 px-3.5 bg-white/5 hover:bg-white/10 active:scale-95 border border-white/10 rounded-xl text-xs font-black uppercase text-gray-300 hover:text-white transition-all flex items-center gap-2"
-          title="Switch Layout template"
-        >
-          <LayoutTemplate size={16} className="text-neon-pink" />
-          {layoutMode === "default" ? "STD" : layoutMode === "compact" ? "CMP" : "DISC"}
-        </button>
-      </div>
-    </div>
-
-    {/* Dynamic Grid Layout / Active Game Board & Chat sidebar */}
-    <div className="flex-1 flex flex-col lg:flex-row gap-6 overflow-hidden min-h-0 h-full relative">
-      <div className="flex-1 flex flex-col justify-between overflow-hidden gap-4 h-full">
-        {/* Players Slot cards Grid */}
-        <div className={cn(
-          "flex-1 overflow-y-auto custom-scrollbar pr-1",
-          layoutMode === "discord" ? "space-y-2.5 flex flex-col" : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-start"
-        )}>
-          {players.map((p) => (
-            <PlayerCard 
-              key={p.id} 
-              player={p} 
-              volume={p.volume} 
-              isSelected={selectedPlayer === p.id} 
-              onSelect={() => setSelectedPlayer(p.id)} 
-              onVolumeChange={(vol) => handlePlayerVolume(p.id, vol)} 
-              onMute={() => handlePlayerVolume(p.id, p.isMuted ? 100 : 0)} 
-              onInvite={() => setIsInviteModalOpen(true)} 
-              onProfile={(uid) => setActiveProfileUserId(uid)} 
-              onDirectMessage={(uid) => openChat(uid)} 
-              onAddFriend={(uid) => addFriend(uid)} 
-              onKick={(uid) => kickPlayer(uid)} 
-              onBan={(uid) => banPlayer(uid)} 
-              isHostView={isHost} 
-              isVipLobby={isVipLobby} 
-              isStreamerLobby={isStreamerLobby} 
-              layoutMode={layoutMode}
-            />
-          ))}
-        </div>
-
-        {/* Active game configuration / Matchinfo progress popup panel */}
-        <MatchInfoPanel 
-          isStarting={isStarting} 
-          isMatchStarted={isMatchStarted} 
-          countdown={countdown} 
-          players={players} 
-          lobby={lobby} 
-          onCancel={handleCancelMatch} 
-          onReopen={handleReopenLobby} 
-          isVipLobby={isVipLobby} 
-          isStreamerLobby={isStreamerLobby} 
-        />
-
-        {/* Center Dock Console Controls bar */}
-        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white/[0.02] border border-white/5 p-4 rounded-3xl shrink-0 backdrop-blur-sm shadow-xl font-sans">
-          <div className="flex flex-wrap items-center gap-2">
-            <ControlButton 
-              icon={isMicMuted ? <MicOff className="text-red-500" /> : <Mic className="text-neon-blue" />} 
-              active={!isMicMuted} 
-              onClick={toggleMic} 
-              tooltip={isMicMuted ? "Unmute Microphone" : "Mute Microphone"}
-            />
-            <ControlButton 
-              icon={isDeafened ? <VolumeX className="text-red-500" /> : <Volume2 className="text-neon-pink" />} 
-              active={!isDeafened} 
-              onClick={() => setIsDeafened(!isDeafened)} 
-              tooltip={isDeafened ? "Turn on Sound Output" : "Deafen Lobby Audio"}
-            />
-            <ControlButton 
-              icon={<Monitor className={screenStream ? "text-emerald-400" : "text-gray-400"} />} 
-              active={!!screenStream} 
-              onClick={screenStream ? stopShare : initiateScreenShareFlow} 
-              tooltip={screenStream ? "Close Stream Broadcast" : "Share Monitor Screen"}
-            />
-            <ControlButton 
-              icon={<MessageSquare className={isDesktopChatOpen ? "text-[#00e5ff]" : "text-gray-400"} />} 
-              active={isDesktopChatOpen} 
-              onClick={() => setIsDesktopChatOpen(!isDesktopChatOpen)} 
-              tooltip="Toggle Comms Chat"
-            />
-            <ControlButton 
-              icon={<Settings className="text-gray-400" />} 
-              onClick={() => setIsSettingsModalOpen(true)} 
-              tooltip="Lobby Configuration Layout"
-            />
-            <ControlButton 
-              icon={<LogOut className="text-red-500 hover:text-red-400" />} 
-              onClick={() => {
-                leaveLobby();
-                navigate("/lobbies");
-              }} 
-              tooltip="Leave Gaming Lobby"
-            />
-          </div>
-
-          {/* Big Action / Start Match Trigger Button */}
-          {isHost ? (
-            <GlowButton 
-              variant={isStarting ? "red" : isMatchStarted ? "pink" : "blue"} 
-              onClick={isStarting ? handleCancelMatch : isMatchStarted ? handleReopenLobby : handleStartMatch}
-              className="h-12 px-8 text-xs font-black uppercase tracking-wider rounded-xl shadow-lg leading-none shrink-0"
-            >
-              {isStarting ? (
-                <span className="flex items-center gap-2">
-                  <RotateCcw size={16} />
-                  {isRtl ? "لغو شروع" : "Cancel Match Start"}
-                </span>
-              ) : isMatchStarted ? (
-                <span className="flex items-center gap-2">
-                  <Lock size={16} />
-                  {isRtl ? "باز کردن لابی" : "Unlock Room Team"}
-                </span>
-              ) : (
-                <span className="flex items-center gap-2">
-                  <Play size={16} className="fill-current animate-pulse text-dark-bg" />
-                  {isRtl ? "شروع بازی تیمی" : "Start Match Group"}
-                </span>
-              )}
-            </GlowButton>
-          ) : (
-            <GlowButton 
-              variant={isReady ? "pink" : "blue"} 
-              onClick={onToggleReady}
-              className={cn("h-12 px-8 text-xs font-black uppercase tracking-wider rounded-xl shadow-lg leading-none shrink-0", isReady && "shadow-[0_0_20px_rgba(255,0,127,0.35)]")}
-            >
-              {isReady ? (
-                <span className="flex items-center gap-2 font-sans">
-                  <X size={16} />
-                  {isRtl ? "لغو آمادگی" : "Not Ready"}
-                </span>
-              ) : (
-                <span className="flex items-center gap-2 font-sans">
-                  <Check size={16} />
-                  {isRtl ? "آماده بازی کردن" : "Ready to Play"}
-                </span>
-              )}
-            </GlowButton>
-          )}
-        </div>
-      </div>
-
-      {/* Comms Sidebar Chat box (Desktop) */}
-      <AnimatePresence>
-        {isDesktopChatOpen && (
-          <motion.div 
-            initial={{ width: 0, opacity: 0 }}
-            animate={{ width: 320, opacity: 1 }}
-            exit={{ width: 0, opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="hidden lg:flex w-80 shrink-0 border border-white/5 bg-[#0a0a0f]/40 backdrop-blur-md rounded-3xl overflow-hidden h-full"
-          >
-            <ChatPanel 
-              messages={messages} 
-              players={players} 
-              inputMessage={inputMessage} 
-              setInputMessage={setInputMessage} 
-              onSend={handleSendMessage} 
-              onClose={() => setIsDesktopChatOpen(false)} 
-              currentUserId={user?.id}
-              isVipLobby={isVipLobby}
-              isStreamerLobby={isStreamerLobby}
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  </div>
-
-  {/* Real-time remote WebRTC voice players wrapper */}
-  {Array.from(remoteStreams || []).map(([peerId, stream]) => (
-    <RemoteAudioPlayer 
-      key={peerId} 
-      stream={stream} 
-      volumeLevel={peerVolumes[peerId] !== undefined ? peerVolumes[peerId] : 100} 
-      onVolumeChange={(vol) => handlePlayerVolume(peerId, vol)} 
-    />
-  ))}
-
-  {/* Mobile Floating Overlay Comms Chat popup */}
-  <AnimatePresence>
-    {isChatOpen && (
-      <motion.div 
-        initial={{ opacity: 0, y: "100%" }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: "100%" }}
-        className="fixed inset-0 z-[150] bg-[#050508]/95 backdrop-blur-md pb-safe flex flex-col"
-      >
-        <ChatPanel 
-          messages={messages} 
-          players={players} 
-          inputMessage={inputMessage} 
-          setInputMessage={setInputMessage} 
-          onSend={handleSendMessage} 
-          onClose={() => setIsChatOpen(false)} 
-          currentUserId={user?.id}
-          isVipLobby={isVipLobby}
-          isStreamerLobby={isStreamerLobby}
-        />
-      </motion.div>
-    )}
-  </AnimatePresence>
-
-  {/* In-App Interactive Invite Friends Modal over sockets */}
-  <AnimatePresence>
-    {isInviteModalOpen && (
-      <Modal title={isRtl ? "دعوت از دوستان به لابی" : "Invite Friends to Lobby"} onClose={() => setIsInviteModalOpen(false)} maxWidth="max-w-md font-sans">
-        <div className="space-y-4 max-h-[60vh] overflow-y-auto custom-scrollbar pr-1 text-right" dir="rtl font-sans">
-          <p className="text-xs text-gray-400 font-bold leading-relaxed">
-            {isRtl ? "دوستان آنلاین خود را که آماده هستند مستقیماً از طریق سیگنالینگ پرسرعت لوکس به لابی صوتی خود دعوت کنید." : "All your friends listed below. Click invite to invite them instantly over socket channels."}
-          </p>
-
-          {friends && friends.length > 0 ? (
-            <div className="space-y-2">
-              {friends.map((friend: any) => {
-                const isOnline = friend.status === "ONLINE";
-                return (
-                  <div key={friend.id} className="flex items-center justify-between p-3 rounded-2xl bg-white/5 border border-white/5 group hover:border-[#00e5ff]/30 hover:bg-[#00e5ff]/5 transition-colors">
-                    <div className="flex items-center gap-3">
-                      <div className="relative h-10 w-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-lg overflow-hidden shrink-0">
-                        <SmartImage src={friend.profile?.avatarUrl || friend.avatarUrl || ""} className="w-full h-full object-cover" alt={friend.username} />
-                        <div className={cn(
-                          "absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border border-black",
-                          isOnline ? "bg-emerald-500" : "bg-gray-600"
-                        )} />
-                      </div>
-                      <div className="text-right">
-                        <p className="text-xs font-black text-white">{friend.username}</p>
-                        <p className="text-[10px] text-gray-500 font-bold">{isOnline ? (isRtl ? "آماده بازی (آنلاین)" : "Online & Active") : (isRtl ? "آفلاین" : "Offline")}</p>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => {
-                        if (lobby?.id) {
-                          lobbySocket.emit("lobby.invite", { lobbyId: lobby.id, targetUserId: friend.id });
-                          toast.success(isRtl ? `درخواست دعوت برای ${friend.username} ارسال شد` : `Invite sent to ${friend.username}`);
-                        }
-                      }}
-                      className="py-1 px-3.5 rounded-xl bg-[#00e5ff] text-black text-[10px] font-black uppercase hover:scale-105 active:scale-95 transition-all shadow-[0_0_10px_#00e5ff]"
-                    >
-                      {isRtl ? "دعوت" : "Invite"}
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="text-center py-8 text-xs text-gray-500 font-bold">
-              {isRtl ? "لیست دوستان شما خالی است! از بخش دوستان افراد جدیدی را اضافه کنید." : "No friends found. Add friends from the Friends section to invite them here."}
-            </div>
-          )}
-        </div>
-      </Modal>
-    )}
-  </AnimatePresence>
-
-  {/* Achievement Pulse Overlay */}
+ {/* Achievement Pulse Overlay */}
  <AnimatePresence>
  {allReadyPulse && !isStarting && !isMatchStarted && (
  <motion.div 
@@ -1435,7 +1030,867 @@ export const LobbyRoomPage = () => {
  </motion.div>
  )}
  </AnimatePresence>
-   {/* LOXX MUSIC BOT SEED SELECTION SETUP MODAL */}
+
+ {/* Header Bar */}
+ <motion.header 
+ initial={{ y: -20, opacity: 0 }}
+ animate={{ y: 0, opacity: 1 }}
+ className="relative z-10 glass rounded-[24px] md:rounded-[32px] p-3 md:p-6 flex flex-wrap items-center justify-between gap-3 md:gap-6 border-white/5 shadow-2xl shrink-0"
+ >
+ <div className="flex items-center gap-3 md:gap-5 flex-1 min-w-0">
+ <button 
+ onClick={() => {
+ leaveLobby();
+ navigate("/lobbies");
+ }}
+ className="p-2 md:p-3 rounded-xl md:rounded-2xl bg-white/5 hover:bg-neon-pink/10 transition-colors text-gray-400 hover:text-neon-pink shrink-0"
+ >
+ <ChevronLeft size={18} className="md:size-5 rotate-180" />
+ </button>
+ 
+ <div className={cn(
+ "h-10 w-10 md:h-14 md:w-14 rounded-2xl flex items-center justify-center shrink-0 overflow-hidden border",
+ isStreamerLobby ? "bg-[#0a0a0f] border-purple-500/30 shadow-[0_0_15px_rgba(168,85,247,0.2)]" :
+ isVipLobby ? "bg-[#0d0d12] border-yellow-400/30 shadow-[0_0_15px_rgba(250,204,21,0.2)]" : "bg-white/5 border-white/10"
+ )}>
+ {lobby?.game?.iconUrl ? (
+ <SmartImage src={lobby.game.iconUrl} className="w-full h-full object-contain" />
+ ) : <Gamepad2 className={isStreamerLobby ? "text-purple-400" : isVipLobby ? "text-yellow-400" : "text-neon-blue"} size={24} />}
+ </div>
+ 
+ <div className="min-w-0 flex-1">
+ <div className="flex items-center gap-2 md:gap-3 mb-0.5 md:mb-1">
+ {lobby?.isLanMode && (
+ <div className="mb-1 md:mb-2 self-start px-2 py-0.5 rounded-full border border-emerald-500/50 bg-emerald-500/20 text-emerald-300 text-[8px] md:text-[10px] font-black uppercase flex items-center gap-1 font-sans">
+ <span className="relative flex h-1.5 w-1.5 font-sans">
+ <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+ <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+ </span>
+ <span>LAN Zero-TUN v1.1.0</span>
+ </div>
+ )}
+ <h1 className="text-sm md:text-3xl font-black text-white truncate max-w-[150px] md:max-w-none">
+ {lobby ? (lobby.title || "Elite Lobby") : "در حال بارگذاری..."}
+ </h1>
+ <div className={cn(
+ "px-1.5 md:px-3 py-0.5 md:py-1 rounded-full border text-[7px] md:text-[10px] font-black uppercase shrink-0",
+ isStreamerLobby ? "bg-purple-500/10 border-purple-500/20 text-purple-400" :
+ isVipLobby ? "bg-yellow-400/10 border-yellow-400/20 text-yellow-400" : "bg-neon-blue/10 border-neon-blue/20 text-neon-blue"
+ )}>
+ ME
+ </div>
+ </div>
+ <div className="flex items-center gap-3 md:gap-5 text-[9px] md:text-[11px] text-gray-500 font-black uppercase ">
+ <span className="flex items-center gap-1 md:gap-1.5 font-bold"><Users size={12} className={cn("shrink-0 md:size-[14px]", isStreamerLobby ? "text-purple-400" : isVipLobby ? "text-yellow-400" : "text-neon-blue")} /> {players.filter(p => !p.id.startsWith("slot-")).length} / {lobby?.maxPlayers || 5}</span>
+ {isStreamerLobby ? (
+ <span className="flex items-center gap-1 md:gap-1.5"><Radio size={14} className="text-purple-400 shrink-0 w-3 h-3 md:w-3.5 md:h-3.5 animate-pulse" /> Streamer Room</span>
+ ) : isVipLobby ? (
+ <span className="flex items-center gap-1 md:gap-1.5"><Crown size={14} className="text-yellow-400 shrink-0 w-3 h-3 md:w-3.5 md:h-3.5" /> Elite Room</span>
+ ) : (
+ <span className="flex items-center gap-1 md:gap-1.5"><Trophy size={14} className="text-neon-pink shrink-0 w-3 h-3 md:w-3.5 md:h-3.5" /> حرفه‌ای</span>
+ )}
+ </div>
+ </div>
+ </div>
+
+ <div className="flex items-center gap-2 md:gap-4 shrink-0">
+ {isElectron && (
+ <button 
+ onClick={toggleLayout}
+ className="p-2 md:p-3 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors h-10 md:h-14 flex items-center justify-center border border-white/10"
+ title="تغییر چینش لابی"
+ >
+ <LayoutTemplate size={20} />
+ </button>
+ )}
+
+ {!isAudioContextResumed && (
+ <button 
+ onClick={resumeAudio}
+ className="p-2 md:p-3 rounded-xl bg-neon-pink/20 text-neon-pink border border-neon-pink/30 animate-pulse flex items-center gap-2 text-[10px] md:text-xs font-black uppercase"
+ >
+ <Mic size={14} className="md:size-18" />
+ <span>فعال‌سازی صدا</span>
+ </button>
+ )}
+
+ <div className="hidden sm:flex items-center gap-2 bg-black/60 rounded-2xl p-1 border border-white/10">
+ <div className="px-4 py-2 text-[10px] font-black text-gray-500 border-l border-white/10 uppercase ">کد لابی</div>
+ <div className="px-4 py-2 font-mono text-sm text-neon-blue flex items-center gap-3">
+ {lobby?.id ? lobby.id.substring(0, 8).toUpperCase() : "LX-LOBBY"}
+ <button onClick={handleCopyCode} className="hover:text-white transition-colors">
+ {copied ? <Check size={16} /> : <Copy size={16} />}
+ </button>
+ </div>
+ </div>
+
+ <GlowButton 
+ variant="blue" 
+ onClick={handleStartMatch}
+ disabled={isStarting || !allReadyPulse || isMatchStarted}
+ className={cn(
+ "px-4 md:px-10 h-10 md:h-14 text-[10px] md:text-sm shadow-xl shrink-0 uppercase font-black",
+ (!allReadyPulse || isMatchStarted) && "opacity-50 grayscale cursor-not-allowed"
+ )}
+ >
+ <Play size={14} className={isRtl ? "ml-1.5 md:ml-2" : "mr-1.5 md:mr-2"} />
+ {isRtl ? "شروع" : "START"}
+ </GlowButton>
+ </div>
+ </motion.header>
+
+ <div className="flex-1 flex flex-col lg:flex-row gap-4 md:gap-6 relative z-10 overflow-hidden">
+ {/* Main Content Area */}
+ <div className="flex-1 flex flex-col gap-4 md:gap-6 overflow-y-auto overflow-x-hidden custom-scrollbar pb-24 md:pb-8 px-1 md:px-4">
+ 
+ {/* Remote Audio Streams handled globally */}
+
+ {/* Top Status Panel */}
+ <MatchInfoPanel 
+ isStarting={isStarting} 
+ isMatchStarted={isMatchStarted} 
+ countdown={countdown} 
+ players={players} 
+ lobby={lobby}
+ onCancel={handleCancelMatch}
+ onReopen={handleReopenLobby}
+ isVipLobby={isVipLobby}
+ isStreamerLobby={isStreamerLobby}
+ />
+
+ {/* Screen Share View (Local or Remote) */}
+ {(screenStream || activeRemoteShare) && (
+ <ScreenSharePresenter 
+ stream={screenStream || activeRemoteShare!.stream}
+ presenterName={screenStream ? "شما" : activeRemoteShare!.presenterName}
+ isLocal={!!screenStream}
+ isWarningActive={screenStream ? isWarningActive : false}
+ />
+ )}
+
+ {/* Players Flex - Drastically improved for responsiveness & wrapping */}
+ <div className={cn(
+ "w-full justify-start items-stretch px-1",
+ layoutMode === 'discord' ? "grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-4" : 
+ layoutMode === 'compact' ? "flex flex-wrap gap-2 md:gap-3" 
+ : "flex flex-wrap gap-3 md:gap-6"
+ )}>
+ <AnimatePresence mode="popLayout">
+ {players.map((player) => (
+ <PlayerCard 
+ key={player.id} 
+ player={player}
+ volume={player.volume}
+ isVipLobby={isVipLobby}
+ isStreamerLobby={isStreamerLobby}
+ layoutMode={layoutMode}
+ isSelected={selectedPlayer === player.id}
+ onSelect={() => setSelectedPlayer(selectedPlayer === player.id ? null : player.id)}
+ onVolumeChange={(val) => handlePlayerVolume(player.id, val)}
+ onMute={(id) => {
+ const p = players.find(player => player.id === id);
+ if (p && !p.id.startsWith("slot-")) {
+ // We don't have a specific contextual mute function, but we can set their volume to 0 locally
+ handlePlayerVolume(id, p.volume === 0 ? 100 : 0);
+ }
+ }}
+ onInvite={() => setIsInviteModalOpen(true)}
+ onProfile={(id) => {
+ const p = players.find(player => player.id === id);
+ if (p && !p.id.startsWith("slot-")) {
+ openProfile({
+ senderName: p.name,
+ senderAvatar: p.avatarUrl || p.avatar,
+ senderLevel: p.level || 1,
+ id: p.id,
+ membership: p.membership || MembershipType.NONE,
+ vipMetadata: p.vipMetadata,
+ bannerUrl: p.bannerUrl || p.avatarUrl,
+ bio: p.bio,
+ miniProfileBg: p.miniProfileBg
+ }, p.id === user?.id);
+ }
+ }}
+ onDirectMessage={(id) => {
+ const p = players.find(player => player.id === id);
+ if (p && !p.id.startsWith("slot-")) {
+ openChat(id, p.name, p.avatarUrl || p.avatar);
+ }
+ }}
+ onAddFriend={(id) => {
+ const p = players.find(player => player.id === id);
+ if (p && !p.id.startsWith("slot-")) {
+ addFriend(p.name);
+ }
+ }}
+ onKick={kickPlayer}
+ onBan={banPlayer}
+ isHostView={isHost}
+ />
+ ))}
+ </AnimatePresence>
+ </div>
+ </div>
+
+ {/* Desktop Chat Sidebar (Right) */}
+ {!isElectron || isDesktopChatOpen ? (
+ <div className={cn("hidden lg:flex flex-col overflow-hidden shadow-2xl", isElectron ? "absolute bottom-6 right-6 z-40 bg-black/80 backdrop-blur-3xl w-[340px] h-[450px] rounded-[24px] border border-white/10" : "w-full lg:w-[280px] xl:w-[320px] h-full order-first")}>
+ <ChatPanel 
+ messages={messages} 
+ players={players}
+ inputMessage={inputMessage} 
+ setInputMessage={setInputMessage} 
+ onSend={handleSendMessage}
+ currentUserId={user?.id}
+ isVipLobby={isVipLobby}
+ onClose={isElectron ? () => setIsDesktopChatOpen(false) : undefined}
+ />
+ </div>
+ ) : (
+ isElectron && (
+ <motion.div 
+ initial={{ y: 50, opacity: 0 }}
+ animate={{ y: 0, opacity: 1 }}
+ className="hidden lg:flex absolute bottom-6 right-6 z-40 flex-col border border-white/10 bg-black/60 backdrop-blur-lg rounded-[24px] overflow-hidden shadow-2xl cursor-pointer hover:bg-black/80 w-[300px] hover:border-neon-blue/30 transition-colors duration-300"
+ onClick={() => setIsDesktopChatOpen(true)}
+ >
+ <div className="flex items-center justify-between p-4">
+ <div className="flex flex-col">
+ <div className="flex items-center gap-2">
+ <div className="h-2 w-2 rounded-full bg-neon-blue animate-pulse" />
+ <h2 className="text-xs font-black uppercase text-white">Lobby Comms</h2>
+ </div>
+ {unreadDesktopChat > 0 && <span className="text-[10px] text-neon-blue mt-1 font-bold">{unreadDesktopChat} پیام جدید</span>}
+ </div>
+ <MessageSquare size={18} className="text-gray-400" />
+ </div>
+ </motion.div>
+ )
+ )}
+ </div>
+
+ {/* Mobile Chat Trigger & Bottom Actions - Fixed and Styled */}
+ <div className="lg:hidden fixed bottom-20 left-4 right-4 z-50 p-3 glass rounded-[28px] border border-white/10 flex items-center justify-between gap-3 shadow-2xl overflow-hidden pb-[calc(1rem+env(safe-area-inset-bottom))]">
+ <div className="flex items-center gap-2 shrink-0">
+ <button 
+ onClick={() => {
+ leaveLobby();
+ navigate("/lobbies");
+ }}
+ className="h-12 w-12 rounded-[14px] bg-neon-pink/10 text-neon-pink flex items-center justify-center border border-neon-pink/20"
+ title="خروج"
+ >
+ <LogOut size={20} />
+ </button>
+ <button 
+ onClick={() => setIsChatOpen(true)}
+ className="h-12 w-12 rounded-[14px] bg-white/5 flex items-center justify-center text-neon-blue relative border border-white/10"
+ >
+ <MessageSquare size={20} />
+ <div className="absolute top-2.5 right-2.5 h-2 w-2 rounded-full bg-neon-pink" />
+ </button>
+ </div>
+
+ <div className="flex items-center gap-2 overflow-x-auto scrollbar-none px-1 py-1">
+ <ControlButton icon={isMicMuted ? <MicOff size={20} /> : <Mic size={20} />} active={!isMicMuted} onClick={toggleMic} className="h-12 w-12 rounded-[14px] shrink-0" />
+ {typeof window !== "undefined" && !!(window as any).electronAPI && (
+ <button 
+ onClick={() => {
+ if (screenStream) { stopShare(); }
+ else if (isBaseRequirementMet) { initiateScreenShareFlow(); }
+ }}
+ className={cn(
+ "h-12 w-12 rounded-[14px] flex items-center justify-center transition-all group shrink-0 relative",
+ screenStream ? "bg-neon-blue/20 text-neon-blue border-neon-blue shadow-[0_0_15px_rgba(0,240,255,0.4)] border shadow-inner" :
+ (isBaseRequirementMet ? "bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white" : "bg-white/5 text-gray-700 opacity-50 cursor-not-allowed")
+ )}
+ title={!isBaseRequirementMet ? "سرعت اینترنت شما برای این کار کافی نیست" : screenStream ? "پایان شیر اسکرین" : "اشتراک صفحه نمایش"}
+ >
+ {screenStream ? <MonitorUp size={20} /> : <Monitor size={20} />}
+ {!isBaseRequirementMet && <AlertTriangle size={10} className="absolute top-2 right-2 text-yellow-500" />}
+ </button>
+ )}
+ <ControlButton icon={<UserPlus size={20} />} onClick={() => setIsInviteModalOpen(true)} className="h-12 w-12 rounded-[14px] shrink-0" />
+ <ControlButton icon={<Settings size={20} />} onClick={() => setIsSettingsModalOpen(true)} className="h-12 w-12 rounded-[14px] shrink-0" />
+ </div>
+
+ <GlowButton 
+ variant={isReady ? "blue" : "pink"} 
+ onClick={onToggleReady}
+ disabled={isMatchStarted || isStarting}
+ className={cn(
+ "h-12 px-4 min-w-[85px] text-[12px] uppercase font-black rounded-[14px] shrink-0",
+ (isMatchStarted || isStarting) && "opacity-50 grayscale cursor-not-allowed"
+ )}
+ >
+ {isReady ? "آماده" : "GO"}
+ </GlowButton>
+ </div>
+
+ {/* Mobile Chat Drawer */}
+ <AnimatePresence>
+ {isChatOpen && (
+ <>
+ <motion.div 
+ initial={{ opacity: 0 }}
+ animate={{ opacity: 1 }}
+ exit={{ opacity: 0 }}
+ onClick={() => setIsChatOpen(false)}
+ className="fixed inset-0 bg-black/80 z-[6000] lg:hidden"
+ />
+ <motion.div 
+ initial={{ y: "100%" }}
+ animate={{ y: 0 }}
+ exit={{ y: "100%" }}
+ transition={{ type: "spring", damping: 25, stiffness: 200 }}
+ className="fixed bottom-0 left-0 right-0 h-[80dvh] bg-[#0a0a0f] rounded-t-[40px] z-[6005] lg:hidden border-t border-white/10 overflow-hidden flex flex-col"
+ >
+ <div className="h-1.5 w-12 bg-white/10 rounded-full mx-auto mt-4 mb-2 shrink-0" />
+ <div className="flex-1 overflow-hidden flex flex-col">
+ <ChatPanel 
+ currentUserId={user?.id}
+ messages={messages} 
+ players={players}
+ inputMessage={inputMessage} 
+ setInputMessage={setInputMessage} 
+ onSend={handleSendMessage} 
+ onClose={() => setIsChatOpen(false)}
+ isVipLobby={isVipLobby}
+ />
+ </div>
+ </motion.div>
+ </>
+ )}
+ </AnimatePresence>
+
+ {/* Footer Controls (Fixed Desktop) */}
+ <motion.footer 
+ initial={{ y: 20, opacity: 0 }}
+ animate={{ y: 0, opacity: 1 }}
+ className="hidden lg:flex relative z-10 items-center justify-between gap-6 p-4 glass rounded-[40px] border-white/5 shadow-2xl mt-auto"
+ >
+ <div className="flex items-center gap-6">
+ <div className="flex items-center gap-4 px-8 border-l border-white/5">
+ <GlowButton 
+ variant={isReady ? "blue" : "pink"}
+ onClick={onToggleReady}
+ disabled={isMatchStarted || isStarting}
+ className={cn(
+ "px-8 h-12 text-xs",
+ isReady && "shadow-neon-blue/20",
+ (isMatchStarted || isStarting) && "opacity-50 grayscale cursor-not-allowed"
+ )}
+ >
+ {isReady ? <Check size={18} className={isRtl ? "ml-2" : "mr-2"} /> : null}
+ {isReady ? (isRtl ? "آماده" : "READY") : (isRtl ? "اعلام آمادگی" : "READY UP")}
+ </GlowButton>
+ </div>
+ 
+ <div className="flex items-center gap-4">
+ <ControlButton icon={isMicMuted ? <MicOff size={20} /> : <Mic size={20} />} active={!isMicMuted} onClick={toggleMic} tooltip={isRtl ? "میکروفون" : "Microphone"} />
+ <ControlButton icon={isDeafened ? <VolumeX size={20} /> : <Volume2 size={20} />} active={!isDeafened} onClick={() => setIsDeafened(!isDeafened)} tooltip={isRtl ? "قطع صدای اسپیکر" : "Deafen Speakers"} />
+ {typeof window !== "undefined" && !!(window as any).electronAPI && (
+ <button 
+ onClick={() => {
+ if (screenStream) { stopShare(); }
+ else if (isBaseRequirementMet) { initiateScreenShareFlow(); }
+ }}
+ className={cn(
+ "h-12 w-12 rounded-2xl flex items-center justify-center transition-all group relative shrink-0",
+ screenStream ? "bg-neon-blue/20 text-neon-blue border-neon-blue shadow-[0_0_15px_rgba(0,240,255,0.4)] border shadow-inner" :
+ (isBaseRequirementMet ? "bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white" : "bg-white/5 text-gray-700 opacity-50 cursor-not-allowed")
+ )}
+ title={!isBaseRequirementMet ? (isRtl ? "سرعت اینترنت شما برای اشتراک گذاری با این تعداد بیننده کافی نیست" : "Your upload speed is not sufficient for screensharing with this many viewers") : screenStream ? (isRtl ? "پایان شیر اسکرین" : "End Screen Share") : (isRtl ? "اشتراک صفحه نمایش" : "Share Screen")}
+ >
+ {screenStream ? <MonitorUp size={20} /> : <Monitor size={20} />}
+ {!isBaseRequirementMet && <AlertTriangle size={10} className="absolute top-2 right-2 text-yellow-500" />}
+ </button>
+ )}
+ <ControlButton icon={<UserPlus size={20} />} onClick={() => setIsInviteModalOpen(true)} tooltip={isRtl ? "دعوت" : "Invite"} />
+ <ControlButton icon={<Settings size={20} />} onClick={() => setIsSettingsModalOpen(true)} tooltip={isRtl ? "تنظیمات" : "Settings"} />
+ </div>
+ </div>
+
+ <button 
+ onClick={() => {
+ leaveLobby();
+ navigate("/lobbies");
+ }}
+ className="flex items-center gap-2 px-8 py-3 rounded-2xl text-xs font-black uppercase text-neon-pink hover:bg-neon-pink/10 transition-all border border-transparent hover:border-neon-pink/20"
+ >
+ <LogOut size={18} className={isRtl ? "ml-2" : "mr-2"} />
+ {isRtl ? "خروج از لابی" : "LEAVE LOBBY"}
+ </button>
+ </motion.footer>
+
+ {/* MODALS */}
+ <AnimatePresence>
+ {isInviteModalOpen && (
+ <Modal title={isRtl ? "دعوت دوستان" : "Invite Friends"} onClose={() => setIsInviteModalOpen(false)}>
+ <div className="space-y-4">
+  {/* Music Bot Invite Card (At the absolute top of the friends list) */}
+  <div className="flex items-center justify-between p-4 bg-gradient-to-r from-cyan-950/40 to-black/40 rounded-2xl border border-[#00e5ff]/20 hover:border-[#00e5ff]/40 transition-all shadow-[0_0_15px_rgba(0,229,255,0.05)] group relative overflow-hidden">
+   {/* Animated background element */}
+   {musicBotState?.active && (
+    <div className="absolute inset-y-0 right-0 w-1.5 bg-[#00e5ff] animate-pulse" />
+   )}
+   <div className="flex items-center gap-3 w-full max-w-[70%] text-right">
+    <div className="h-10 w-10 rounded-xl bg-[#00e5ff]/10 border border-[#00e5ff]/30 flex items-center justify-center shadow-[0_0_10px_rgba(0,229,255,0.2)] shrink-0 overflow-hidden relative font-sans">
+     {musicBotState?.currentTrackCover ? (
+      <img src={musicBotState.currentTrackCover} className={cn("w-full h-full object-cover", musicBotState?.isPlaying && "animate-[spin_4s_linear_infinite] rounded-full")} />
+     ) : (
+      <span className={cn("text-xl select-none", musicBotState?.isPlaying && "animate-spin")} style={{ animationDuration: "3s" }}>💿</span>
+     )}
+     {musicBotState?.active && (
+      <span className="absolute bottom-0.5 right-0.5 w-2 h-2 bg-emerald-450 rounded-full border border-black" />
+     )}
+    </div>
+    <div className="min-w-0 flex-1">
+     <div className="flex items-center gap-1.5">
+      <p className="text-xs font-black text-white truncate">{isRtl ? "🎵 ربات موسیقی لوکس (بات بالایی)" : "🎵 Loxx Music Bot (Top bot)"}</p>
+      <span className="text-[8px] font-bold bg-[#00e5ff]/10 text-[#00e5ff] px-1 rounded border border-[#00e5ff]/20 shrink-0">BOT</span>
+     </div>
+     <p className="text-[9px] text-gray-400 mt-0.5 truncate">
+      {musicBotState?.active 
+       ? (isRtl ? `در حال پخش: ${musicBotState.currentTrackName || "در انتظار آهنگ..."}` : `Playing: ${musicBotState.currentTrackName || "Waiting for track..."}`)
+       : (isRtl ? "کیفیت پخش Hi-Fi مستقیم در لابی" : "Hi-Fi audio stream directly in the lobby")
+      }
+     </p>
+    </div>
+   </div>
+   <button 
+    onClick={() => {
+     if (!isHost) {
+      toast.error(isRtl ? "فقط سازنده لابی می‌تواند ربات را مدیریت کند" : "Only the lobby host can manage the music bot");
+      return;
+     }
+     const willBeActive = !musicBotState?.active;
+     toggleMusicBot(willBeActive);
+     if (willBeActive) {
+       setIsInviteModalOpen(false);
+       setShowBotSetupModal(true);
+     }
+    }}
+    className={cn(
+     "px-3.5 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all duration-300 transform active:scale-95 shrink-0 font-sans",
+     musicBotState?.active 
+      ? "bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-gradient-to-r hover:from-red-500 hover:to-pink-500 hover:text-black hover:shadow-[0_0_15px_rgba(239,68,68,0.4)]" 
+      : "bg-gradient-to-r from-cyan-400 to-blue-500 text-black shadow-[0_0_12px_rgba(0,229,255,0.25)] hover:brightness-110"
+    )}
+   >
+    {musicBotState?.active 
+     ? (isRtl ? "اخراج ربات" : "Remove Bot") 
+     : (isRtl ? "دعوت ربات" : "Invite Bot")
+    }
+   </button>
+  </div>
+
+  {friends.length > 0 ? friends.map((friend, i) => (
+ <div key={i} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl hover:bg-white/10 transition-colors group">
+ <div className="flex items-center gap-3">
+ <div className="h-10 w-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden shrink-0">
+ <SmartImage 
+ src={friend.avatarUrl || ""}
+ className="w-full h-full object-cover"
+ alt={friend.username}
+ />
+ </div>
+ <div>
+ <p className="text-sm font-black text-white">{friend.username}</p>
+ <p className="text-[10px] text-gray-500 uppercase">{friend.status} • {friend.activity}</p>
+ </div>
+ </div>
+ <button 
+ onClick={() => {
+ lobbySocket.emit("invite_player", { lobbyId: lobby?.id, targetUserId: friend.id });
+ toast.success(isRtl ? `دعوت برای ${friend.username} ارسال شد` : `Invitation sent to ${friend.username}`);
+ }}
+ className="px-4 py-2 rounded-xl bg-neon-blue text-dark-bg text-[10px] font-black uppercase hover:scale-105 transition-transform"
+ >
+ Invite
+ </button>
+ </div>
+ )) : (
+ <div className="text-center py-10 opacity-50">
+ <p className="text-sm">{isRtl ? "لیست دوستان خالی است" : "Your friends list is empty"}</p>
+ </div>
+ )}
+ </div>
+ </Modal>
+ )}
+
+ <ScreenShareModal
+ isOpen={isScreenShareModalOpen}
+ onClose={() => { setIsScreenShareModalOpen(false); setPendingSourceId(null); }}
+ userPlan={userPlanResolved}
+ onStartShare={handleQualitySelected}
+ estimatedUploadMbps={estimatedUploadMbps}
+ numViewers={players.length || 1}
+ />
+
+ <DesktopSourcePickerModal
+ isOpen={isSourcePickerOpen}
+ onClose={() => { setIsSourcePickerOpen(false); setPendingSourceId(null); }}
+ onSelect={handleSourceSelected}
+ />
+
+ {/* LOXX FLOATING MUSIC PLAYER */}
+  {musicBotState?.active && (
+   <AnimatePresence mode="wait">
+    {!isMusicPlayerExpanded ? (
+     <motion.div
+      key="minimized-bubble" layoutId="loxx-music-player-container"
+      initial={{ scale: 0.8, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      exit={{ scale: 0.8, opacity: 0 }}
+      transition={{ type: "spring", stiffness: 300, damping: 25 }}
+      drag
+      dragMomentum={false}
+      dragElastic={0.1}
+      dragConstraints={{ 
+       top: -(windowDims.height - 96 - 64), 
+       bottom: 96,
+       left: isRtl ? -24 : -(windowDims.width - 24 - 64),
+       right: isRtl ? (windowDims.width - 24 - 64) : 24
+      }}
+      whileDrag={{ scale: 1.1, cursor: "grabbing" }}
+      className={cn(
+       "fixed bottom-24 z-[70] cursor-grab active:cursor-grabbing h-16 w-16 rounded-full bg-black/90 border-2 border-[#00e5ff] shadow-[0_0_25px_rgba(0,229,255,0.45)] hover:shadow-[0_0_35px_rgba(0,229,255,0.7)] flex flex-col items-center justify-center select-none",
+       isRtl ? "left-6" : "right-6"
+      )}
+      title={isRtl ? "پخش‌کننده موسیقی (برای بزرگ کردن دوبار کلیک کنید یا کلیک کنید)" : "Music Player (Click to expand)"}
+      onClick={() => setIsMusicPlayerExpanded(true)}
+     >
+      <div className="absolute inset-0 rounded-full bg-[#00e5ff]/5 animate-pulse" />
+      {musicBotState?.currentTrackCover ? (
+       <img src={musicBotState.currentTrackCover} className={cn("w-full h-full object-cover rounded-full", musicBotState?.isPlaying && "animate-[spin_6s_linear_infinite]")} />
+      ) : (
+       <span className={cn("text-3xl select-none", musicBotState?.isPlaying && "animate-[spin_5s_linear_infinite]")}>
+        💿
+       </span>
+      )}
+      {/* Tiny playback active indicator */}
+      {musicBotState?.isPlaying && (
+       <div className="absolute -bottom-1 flex gap-0.5 justify-center">
+        <span className="w-1.5 h-3.5 bg-[#00e5ff] rounded animate-bounce" style={{ animationDelay: "0ms" }} />
+        <span className="w-1.5 h-4.5 bg-[#00e5ff] rounded animate-bounce" style={{ animationDelay: "150ms" }} />
+        <span className="w-1.5 h-2.5 bg-[#00e5ff] rounded animate-bounce" style={{ animationDelay: "300ms" }} />
+       </div>
+      )}
+     </motion.div>
+    ) : (
+     <motion.div
+      key="expanded-player" layoutId="loxx-music-player-container"
+      initial={{ y: 25, opacity: 0, scale: 0.93 }}
+      animate={{ y: 0, opacity: 1, scale: 1 }}
+      exit={{ y: 25, opacity: 0, scale: 0.93 }}
+      transition={{ type: "spring", stiffness: 300, damping: 23 }}
+      drag
+      dragMomentum={false}
+      dragElastic={0.05}
+      dragConstraints={{ 
+       top: -(windowDims.height - 96 - 450), 
+       bottom: 96,
+       left: isRtl ? -24 : -(windowDims.width - 24 - 360),
+       right: isRtl ? (windowDims.width - 24 - 360) : 24
+      }}
+      className={cn(
+       "fixed bottom-24 z-[70] w-[360px] bg-white/5 backdrop-blur-[16px] border border-white/10 rounded-[32px] shadow-[0_30px_60px_rgba(0,0,0,0.5),0_0_30px_rgba(0,229,255,0.1),inset_0_1px_15px_rgba(255,255,255,0.1)] p-5 text-white select-none hover:border-white/20 transition-[border-color] duration-500",
+       isRtl ? "left-6" : "right-6"
+      )}
+     >
+      {/* Textured Drag Handle Bar */}
+      <div className="flex justify-center -mt-1 pb-4 cursor-grab active:cursor-grabbing text-gray-500/40 hover:text-cyan-400/70 select-none transition-colors duration-300">
+       <div className="flex gap-1.5 items-center">
+        <span className="w-1 h-1 rounded-full bg-current" />
+        <span className="w-2 h-1.5 rounded-sm bg-cyan-400/40 animate-pulse" />
+        <span className="w-1 h-1 rounded-full bg-current" />
+       </div>
+      </div>
+
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6 pb-2">
+       <div className="flex items-center gap-1">
+        {/* Disconnect button */}
+        <button 
+         onClick={() => toggleMusicBot(false)}
+         className="hover:bg-[#00e5ff]/20 rounded-full text-[#00e5ff] p-1.5 transition-all outline-none"
+         title={isRtl ? "خروج ربات از لابی" : "Disconnect Bot"}
+        >
+         <X size={22} strokeWidth={2.5} />
+        </button>
+        {/* Minimize button */}
+        <button 
+         onClick={() => setIsMusicPlayerExpanded(false)}
+         className="hover:bg-[#00e5ff]/20 rounded-full text-[#00e5ff] p-1.5 transition-all outline-none"
+         title={isRtl ? "کوچک کردن" : "Minimize"}
+        >
+         <Minus size={24} strokeWidth={2.5} />
+        </button>
+        {/* Setup button */}
+        {isHost && (
+         <button 
+          onClick={() => {
+           setSetupStep("source");
+           setShowBotSetupModal(true);
+          }}
+          className="hover:bg-[#00e5ff]/20 rounded-full text-[#00e5ff] p-1.5 transition-all outline-none ml-1"
+          title={isRtl ? "تغییر پوشه / منبع" : "Setup Source"}
+         >
+          <Settings size={20} strokeWidth={2.5} />
+         </button>
+        )}
+       </div>
+
+       <div className="flex flex-col text-right mr-1">
+        <span className="text-[17px] font-black tracking-wider text-white select-none whitespace-nowrap drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]">
+         {isRtl ? "ربات موزیک لوکس" : "Loxx Music Bot"}
+        </span>
+        <span className="text-[10px] text-[#00e5ff] font-mono leading-none select-none uppercase tracking-widest mt-1.5 font-bold drop-shadow-[0_0_5px_rgba(0,229,255,0.6)]">
+         LIVE AUDIO CHUNK STREAM
+        </span>
+       </div>
+       <div className="text-[#00e5ff] ml-2 shrink-0 drop-shadow-[0_0_12px_rgba(0,229,255,0.8)] filter">
+        <Music size={30} strokeWidth={2} />
+       </div>
+      </div>
+
+      {/* Now Playing Info & Cover */}
+      <div className="flex items-center justify-between pb-6 relative px-1">
+       {/* Track metadata */}
+       <div className="flex-1 min-w-0 pr-4 z-10 text-right">
+        <div className="flex items-center justify-end gap-1.5 mb-2 text-yellow-400 font-black text-xs uppercase tracking-wider font-sans">
+         <span className="truncate">{musicBotState?.currentCategory || (isRtl ? "گالری لوکس" : "Loxx Gallery")}</span>
+         <span className="text-sm">📁</span>
+        </div>
+        <p className="text-sm font-black text-gray-100 truncate font-sans tracking-wide leading-relaxed" dir="ltr" style={{ textAlign: isRtl ? 'right' : 'left' }}>
+         {musicBotState?.currentTrackName || (isRtl ? "آهنگی وجود ندارد" : "Playlist ended")}
+        </p>
+       </div>
+
+       {/* Spinning Disk Vinyl with glow */}
+       <div className="relative h-[100px] w-[100px] rounded-full flex items-center justify-center shrink-0 z-10">
+        <div className="absolute inset-[-15px] rounded-full shadow-[0_0_40px_rgba(0,229,255,0.2)] blur-sm"></div>
+        <div className="absolute inset-0 rounded-full border-[1.5px] border-[#00e5ff]/30 shadow-[inset_0_0_20px_rgba(0,229,255,0.2)]"></div>
+        <div className={cn("relative h-[90%] w-[90%] rounded-full border-[6px] border-[#0a0a0a] shadow-[inset_0_0_15px_#000] bg-[#111] overflow-hidden flex items-center justify-center", musicBotState?.isPlaying && "animate-[spin_4s_linear_infinite]")}>
+         {musicBotState?.currentTrackCover ? (
+          <img src={musicBotState.currentTrackCover} className="w-full h-full object-cover opacity-80" />
+         ) : (
+          <div className="w-full h-full bg-gradient-to-tr from-[#111] to-[#333] flex items-center justify-center rounded-full">
+           <div className="w-7 h-7 rounded-full bg-gradient-to-br from-gray-700 to-black border border-gray-600 flex items-center justify-center shadow-[0_0_10px_rgba(0,229,255,0.3)]">
+            <div className="w-2.5 h-2.5 rounded-full bg-[#00e5ff] shadow-[0_0_5px_#00e5ff]"></div>
+           </div>
+          </div>
+         )}
+         {/* Vinyl groove overlays */}
+         <div className="absolute inset-0 rounded-full border border-white/5 mx-1" />
+         <div className="absolute inset-0 rounded-full border border-white/5 mx-3" />
+         <div className="absolute inset-0 rounded-full border border-white/5 mx-5" />
+        </div>
+       </div>
+      </div>
+
+      {/* Equalizer Waveform Visualizer */}
+      <div className="relative h-14 w-full flex items-end justify-center gap-[2.5px] mt-2 mb-4 px-3">
+       {Array.from({ length: 55 }).map((_, i) => (
+        <div 
+         key={i} 
+         className={cn("w-1 rounded-sm", musicBotState?.isPlaying ? "bg-gradient-to-t from-[#00bfff] to-[#00e5ff] shadow-[0_0_8px_rgba(0,229,255,0.8)] animate-pulse" : "bg-[#00e5ff]/20")} 
+         style={{ 
+          height: musicBotState?.isPlaying ? `${Math.max(10, Math.random() * 100)}%` : "10%",
+          animationDuration: `${0.2 + Math.random() * 0.4}s`,
+          animationDelay: `${Math.random() * 0.3}s`
+         }} 
+        />
+       ))}
+      </div>
+
+      {/* Dynamic Seek Progress Slider Bar */}
+      <div className="flex flex-col gap-2 mb-6 font-sans relative px-2">
+       {isDucking && (
+        <div className="absolute -top-7 left-1/2 -translate-x-1/2 bg-yellow-500/10 border border-yellow-500/30 text-yellow-500 text-[10px] px-2 py-0.5 rounded-full font-bold animate-pulse flex items-center gap-1">
+         <span>کاهش ولوم هوشمند</span>
+         <Volume2 size={12} />
+        </div>
+       )}
+       <div className="flex justify-between items-center text-[11px] text-gray-400 font-mono font-bold select-none px-1">
+        <span>{Math.floor(localMusicCurrentTime / 60)}:{String(Math.floor(localMusicCurrentTime % 60)).padStart(2, '0')}</span>
+        <span>{localMusicDuration ? `${Math.floor(localMusicDuration / 60)}:${String(Math.floor(localMusicDuration % 60)).padStart(2, '0')}` : "0:00"}</span>
+       </div>
+       <div className="relative group/seeker">
+        <input 
+         type="range"
+         min={0}
+         max={localMusicDuration || 1}
+         value={localMusicCurrentTime}
+         disabled={!isHost}
+         onChange={(e) => {
+          const val = parseFloat(e.target.value);
+          setLocalMusicCurrentTime(val);
+          if (localMusicAudioRef.current) {
+           localMusicAudioRef.current.currentTime = val;
+          }
+         }}
+         onMouseUp={() => {
+          if (isHost && localMusicAudioRef.current) {
+           controlMusicBot("seek", { currentTime: localMusicAudioRef.current.currentTime });
+          }
+         }}
+         onTouchEnd={() => {
+          if (isHost && localMusicAudioRef.current) {
+           controlMusicBot("seek", { currentTime: localMusicAudioRef.current.currentTime });
+          }
+         }}
+         className={cn(
+          "w-full h-1.5 bg-white/10 hover:bg-white/20 rounded-full appearance-none cursor-pointer accent-[#00e5ff] transition-all outline-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-[#00e5ff] [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:shadow-[0_0_12px_rgba(0,229,255,0.9)] hover:[&::-webkit-slider-thumb]:scale-125 transition-transform",
+          !isHost && "cursor-not-allowed opacity-60",
+          isDucking && "opacity-60"
+         )}
+         title={isHost ? (isRtl ? "تغییر زمان پخش" : "Seek track") : (isRtl ? "فقط سازنده لابی می‌تواند جلو عقب کند" : "Host only can seek")}
+        />
+       </div>
+      </div>
+
+      {/* Player controls */}
+      <div className="flex items-center justify-center gap-6 mb-8 select-none font-sans px-2" dir="ltr">
+       <button 
+        onClick={() => {
+         if (isHost && musicBotState?.queue && musicBotState.queue.length > 0) {
+          const prevIdx = (musicBotState.queueIndex - 1 + musicBotState.queue.length) % musicBotState.queue.length;
+          const prevTrack = musicBotState.queue[prevIdx];
+          controlMusicBot("update-queue", {
+           queue: musicBotState.queue,
+           queueIndex: prevIdx,
+           trackUrl: prevTrack.url,
+           trackName: prevTrack.name,
+           category: musicBotState.currentCategory,
+           isPlaying: true,
+           currentTime: 0
+          });
+         }
+        }}
+        className={cn(
+         "p-2 flex items-center justify-center rounded-full text-[#81cad6] hover:text-[#00e5ff] hover:bg-[#00e5ff]/10 active:scale-90 transition-all",
+         (!isHost || !musicBotState?.queue || musicBotState.queue.length <= 1) && "opacity-40 cursor-not-allowed hover:bg-transparent hover:text-[#81cad6]"
+        )}
+        disabled={!isHost || !musicBotState?.queue || musicBotState.queue.length <= 1}
+       >
+        <SkipBack size={26} fill="currentColor" strokeWidth={1.5} className="drop-shadow-[0_0_5px_rgba(0,229,255,0.5)]" />
+       </button>
+
+       <button 
+        onClick={() => {
+         if (!isHost) return;
+         if (musicBotState?.isPlaying) {
+          controlMusicBot("pause", { currentTime: localMusicAudioRef.current?.currentTime || 0 });
+         } else {
+          if (musicBotState?.queue && musicBotState.queue.length > 0) {
+           controlMusicBot("play", { currentTime: localMusicAudioRef.current?.currentTime || 0 });
+          } else {
+           setShowBotSetupModal(true);
+          }
+         }
+        }}
+        className={cn(
+         "w-[66px] h-[66px] flex items-center justify-center rounded-full active:scale-95 transition-all outline-none",
+         isHost ? "bg-gradient-to-br from-[#0c4a60] to-[#042431]/80 border-[1.5px] border-[#00e5ff]/50 text-[#00e5ff] shadow-[0_0_35px_rgba(0,229,255,0.45),inset_0_0_20px_rgba(0,229,255,0.2)] hover:shadow-[0_0_45px_rgba(0,229,255,0.6)] hover:brightness-110" : "bg-white/5 border border-white/10 text-white/40 cursor-not-allowed"
+        )}
+       >
+        {musicBotState?.isPlaying ? (
+         <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="currentColor" className="drop-shadow-[0_0_5px_rgba(0,229,255,0.8)]"><path d="M7 19h4V5H7v14zm6-14v14h4V5h-4z"></path></svg>
+        ) : (
+         <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="currentColor" className="ml-1 drop-shadow-[0_0_5px_rgba(0,229,255,0.8)]"><path d="M8 5v14l11-7z"></path></svg>
+        )}
+       </button>
+
+       <button 
+        onClick={() => {
+         if (isHost && musicBotState?.queue && musicBotState.queue.length > 0) {
+          const nextIdx = (musicBotState.queueIndex + 1) % musicBotState.queue.length;
+          const nextTrack = musicBotState.queue[nextIdx];
+          controlMusicBot("update-queue", {
+           queue: musicBotState.queue,
+           queueIndex: nextIdx,
+           trackUrl: nextTrack.url,
+           trackName: nextTrack.name,
+           category: musicBotState.currentCategory,
+           isPlaying: true,
+           currentTime: 0
+          });
+         }
+        }}
+        className={cn(
+         "p-2 flex items-center justify-center rounded-full text-[#81cad6] hover:text-[#00e5ff] hover:bg-[#00e5ff]/10 active:scale-90 transition-all",
+         (!isHost || !musicBotState?.queue || musicBotState.queue.length <= 1) && "opacity-40 cursor-not-allowed hover:bg-transparent hover:text-[#81cad6]"
+        )}
+        disabled={!isHost || !musicBotState?.queue || musicBotState.queue.length <= 1}
+       >
+        <SkipForward size={26} fill="currentColor" strokeWidth={1.5} className="drop-shadow-[0_0_5px_rgba(0,229,255,0.5)]" />
+       </button>
+      </div>
+
+      {/* Queue Panel Trigger (Footer Button) */}
+      <div className="pt-5 border-t-[1.5px] border-white/10 select-none font-sans mt-auto relative -mx-1 px-1">
+       <button 
+        onClick={() => setIsQueueOpen(!isQueueOpen)}
+        className="w-full flex justify-between items-center bg-transparent transition-all font-black text-gray-300 hover:text-white outline-none"
+        dir="ltr"
+       >
+        <div className="flex items-center">
+         <span className="text-[#00e5ff] font-bold text-[16px] drop-shadow-[0_0_5px_rgba(0,229,255,0.5)]">
+          {musicBotState?.queue?.length || 0}
+         </span>
+        </div>
+        <span className="flex items-center gap-1.5 text-sm tracking-wide font-black text-gray-200" dir={isRtl ? "rtl" : "ltr"}>
+         {isRtl ? "لیست صف آهنگ‌ها" : "Track Queue List"} 📋
+        </span>
+       </button>
+
+       {isQueueOpen && (
+        <div className="absolute bottom-[110%] mb-2 left-0 w-full bg-[#0f0f0f]/90 backdrop-blur-3xl rounded-2xl border border-white/10 shadow-2xl p-2 z-50 overflow-hidden">
+         <div className="max-h-56 overflow-y-auto space-y-1 custom-scrollbar pr-1 animate-enter font-sans">
+          {musicBotState?.queue && musicBotState.queue.length > 0 ? (
+           musicBotState.queue.map((track, idx) => {
+            const isPlayingTrack = musicBotState.queueIndex === idx;
+            return (
+             <div 
+              key={idx} 
+              onClick={() => {
+               if (isHost) {
+                controlMusicBot("update-queue", {
+                 queue: musicBotState.queue,
+                 queueIndex: idx,
+                 trackUrl: track.url,
+                 trackName: track.name,
+                 category: musicBotState.currentCategory,
+                 isPlaying: true
+                });
+               }
+              }}
+              className={cn(
+               "flex justify-between items-center bg-white/5 p-3 rounded-xl text-xs transition-all",
+               isHost && "cursor-pointer hover:bg-white/10",
+               isPlayingTrack && "border border-[#00e5ff]/30 bg-[#00e5ff]/10 text-[#00e5ff] font-bold flex-row-reverse text-right shadow-[0_0_10px_rgba(0,229,255,0.1)]"
+              )}
+             >
+              <div className="flex flex-col items-end w-full truncate space-y-1">
+               <span className={cn("truncate w-full text-right", isPlayingTrack ? "text-[#00e5ff]" : "text-white/80")}>{track.name}</span>
+               {isPlayingTrack && <span className="text-[9px] tracking-widest uppercase font-mono animate-pulse opacity-80 z-20">PLAYING NOW</span>}
+              </div>
+             </div>
+            );
+           })
+          ) : (
+           <p className="text-center py-5 text-sm text-gray-500 font-bold">{isRtl ? "لیست پخش ربات خالی است" : "Playlist empty"}</p>
+          )}
+         </div>
+        </div>
+       )}
+      </div>
+     </motion.div>
+    )}
+   </AnimatePresence>
+  )}{/* LOXX MUSIC BOT SEED SELECTION SETUP MODAL */}
  {showBotSetupModal && (
   <Modal title={isRtl ? "تنظیم ربات موسیقی لوکس (Music Bot)" : "Configure Loxx Music Bot"} onClose={() => setShowBotSetupModal(false)}>
    <div className="space-y-6 select-none max-h-[75vh] overflow-y-auto px-1 custom-scrollbar">
@@ -2398,7 +2853,8 @@ export const LobbyRoomPage = () => {
     </div>
   </div>
 </Modal>
-  )}
+ )}
+ </AnimatePresence>
  </div>
  </main>
  </div>

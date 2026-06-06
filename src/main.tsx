@@ -5,55 +5,6 @@ import './index.css';
 // @ts-ignore
 import { registerSW } from 'virtual:pwa-register';
 
-// Censor and suppress sensitive or noisy internal protocol/signaling logs from the dev/prod console
-if (typeof window !== "undefined") {
-  const suppressedPatterns = [
-    "LOXX SFU",
-    "LOXX VOICE",
-    "LobbyContext:",
-    "VAD | debug",
-    "ScriptProcessorNode",
-    "VAD-WEB",
-    "silero_vad_legacy",
-    "FriendChatOverlay",
-    "isOverlayWidget:",
-    "Mediasoup Device",
-    "ort-wasm",
-    "audio-worklet",
-    "no available backend found"
-  ];
-
-  const checkAndLog = (originalFn: Function, args: any[]) => {
-    try {
-      const msgStr = args.map(arg => {
-        if (typeof arg === "string") return arg;
-        try { return JSON.stringify(arg); } catch { return ""; }
-      }).join(" ");
-
-      const shouldSuppress = suppressedPatterns.some(pattern => 
-        msgStr.toLowerCase().includes(pattern.toLowerCase())
-      );
-
-      if (!shouldSuppress) {
-        originalFn(...args);
-      }
-    } catch {
-      originalFn(...args);
-    }
-  };
-
-  const originalLog = console.log;
-  const originalWarn = console.warn;
-  const originalError = console.error;
-  const originalInfo = console.info;
-
-  console.log = (...args) => checkAndLog(originalLog, args);
-  console.info = (...args) => checkAndLog(originalInfo, args);
-  // Keep error and warn transparent to help debug real exceptions in devtools
-  console.error = originalError;
-  console.warn = originalWarn;
-}
-
 // Register PWA service worker
 if ('serviceWorker' in navigator) {
  const updateSW = registerSW({
