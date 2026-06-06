@@ -125,7 +125,7 @@ export const LeaderboardPage = () => {
  </div>
 
  <div className="flex flex-col items-center md:items-end gap-3">
- <div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-2xl p-4 px-6 shadow-2xl backdrop-blur-md">
+ <div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-2xl p-4 px-6 shadow-2xl ">
  <Clock className="text-neon-pink animate-pulse" size={20} />
  <div className="flex items-center gap-4">
  <span className="text-xl font-black text-white ">{timeLeftStr}</span>
@@ -144,7 +144,7 @@ export const LeaderboardPage = () => {
  {/* Rank 2 */}
  {podium[1] && (
  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="order-2 sm:order-1 relative z-10 w-full max-w-[280px]">
- <NeonCard variant="blue" className="flex flex-col items-center p-6 text-center bg-[#0a0a0f]/80 backdrop-blur-xl border-white/5 hover:border-neon-blue/30 transition-all pt-12">
+ <NeonCard variant="blue" className="flex flex-col items-center p-6 text-center bg-[#0a0a0f]/80 border-white/5 hover:border-neon-blue/30 transition-all pt-12">
  <div className="h-28 w-28 rounded-full border-4 border-gray-400/20 bg-white/5 mb-4 flex items-center justify-center text-gray-400 relative group p-1 shrink-0 cursor-pointer hover:scale-105 transition-all"
  onClick={() => openProfile({
  senderName: podium[1].username,
@@ -156,7 +156,7 @@ export const LeaderboardPage = () => {
  bannerUrl: podium[1].bannerUrl || podium[1].avatarUrl
  }, false)}
  >
- <div className="absolute -top-2 -right-2 h-10 w-10 rounded-2xl bg-gray-400/30 flex items-center justify-center text-gray-200 border border-white/20 shadow-[0_0_15px_rgba(255,255,255,0.1)] z-30 backdrop-blur-xl">
+ <div className="absolute -top-2 -right-2 h-10 w-10 rounded-2xl bg-gray-400/30 flex items-center justify-center text-gray-200 border border-white/20 shadow-[0_0_15px_rgba(255,255,255,0.1)] z-30 ">
  <Medal size={20} />
  </div>
  <div className="w-full h-full rounded-full bg-dark-bg flex items-center justify-center overflow-hidden border border-white/5">
@@ -212,7 +212,7 @@ export const LeaderboardPage = () => {
  {/* Rank 3 */}
  {podium[2] && (
  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="order-3 relative z-10 w-full max-w-[280px]">
- <NeonCard variant="pink" className="flex flex-col items-center p-6 text-center bg-[#0a0a0f]/80 backdrop-blur-xl border-white/5 hover:border-neon-pink/30 transition-all pt-12">
+ <NeonCard variant="pink" className="flex flex-col items-center p-6 text-center bg-[#0a0a0f]/80 border-white/5 hover:border-neon-pink/30 transition-all pt-12">
  <div className="h-28 w-28 rounded-full border-4 border-orange-400/20 bg-white/5 mb-4 flex items-center justify-center text-orange-400 relative group p-1 shrink-0 cursor-pointer hover:scale-105 transition-all"
  onClick={() => openProfile({
  senderName: podium[2].username,
@@ -224,7 +224,7 @@ export const LeaderboardPage = () => {
  bannerUrl: podium[2].bannerUrl || podium[2].avatarUrl
  }, false)}
  >
- <div className="absolute -top-2 -right-2 h-10 w-10 rounded-2xl bg-orange-400/30 flex items-center justify-center text-orange-200 border border-white/20 shadow-[0_0_15px_rgba(251,146,60,0.1)] z-30 backdrop-blur-xl">
+ <div className="absolute -top-2 -right-2 h-10 w-10 rounded-2xl bg-orange-400/30 flex items-center justify-center text-orange-200 border border-white/20 shadow-[0_0_15px_rgba(251,146,60,0.1)] z-30 ">
  <Medal size={20} />
  </div>
  <div className="w-full h-full rounded-full bg-dark-bg flex items-center justify-center overflow-hidden border border-white/5">
@@ -306,7 +306,7 @@ export const LeaderboardPage = () => {
  </div>
 
  <div className="space-y-6">
- <div className="rounded-3xl bg-white/[0.03] border border-white/5 p-6 md:p-8 backdrop-blur-xl relative overflow-hidden">
+ <div className="rounded-3xl bg-white/[0.03] border border-white/5 p-6 md:p-8 relative overflow-hidden">
  <div className="absolute top-0 right-0 p-4 opacity-10">
  <Target size={120} className="rotate-12" />
  </div>

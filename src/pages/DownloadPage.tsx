@@ -284,7 +284,7 @@ export const DownloadPage = () => {
  </Link>
 
  {/* Core Card */}
- <div className="w-full max-w-2xl bg-[#090b17]/85 border border-white/5 rounded-3xl p-8 md:p-12 shadow-[0_30px_100px_rgba(0,0,0,0.8)] backdrop-blur-2xl relative mt-12 overflow-hidden">
+ <div className="w-full max-w-2xl bg-[#090b17]/85 border border-white/5 rounded-3xl p-8 md:p-12 shadow-[0_30px_100px_rgba(0,0,0,0.8)] relative mt-12 overflow-hidden">
  
  {/* Subtle frame flare */}
  <div className="absolute top-0 inset-x-0 h-[1.5px] bg-gradient-to-r from-transparent via-neon-blue/50 to-transparent" />
@@ -440,7 +440,7 @@ export const DownloadPage = () => {
  <div className="w-full max-w-2xl mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
  
  {/* Cryptographic Authenticity Panel */}
- <div className="bg-[#090b17]/60 border border-white/5 rounded-2xl p-6 backdrop-blur-md relative overflow-hidden">
+ <div className="bg-[#090b17]/60 border border-white/5 rounded-2xl p-6 relative overflow-hidden">
  <div className="absolute top-2 left-2 flex items-center gap-1 bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 px-2 py-0.5 rounded-md text-[9px] font-black">
  <ShieldCheck size={10} />
  <span>ایمن شده با SSL</span>
@@ -475,7 +475,7 @@ export const DownloadPage = () => {
  </div>
 
  {/* Cloud Synergy Information */}
- <div className="bg-[#090b17]/60 border border-white/5 rounded-2xl p-6 backdrop-blur-md">
+ <div className="bg-[#090b17]/60 border border-white/5 rounded-2xl p-6 ">
  <h3 className="text-base font-black text-white mb-4 flex items-center gap-2">
  <Cpu size={18} className="text-neon-pink" />
  <span>یکپارچه‌سازی لوکس کلود</span>
@@ -498,7 +498,7 @@ export const DownloadPage = () => {
  </div>
 
  {/* Antivirus & Weak Internet Help Box */}
-        <div className="w-full max-w-2xl mt-4 bg-orange-500/5 border border-orange-500/20 rounded-2xl p-6 backdrop-blur-md">
+        <div className="w-full max-w-2xl mt-4 bg-orange-500/5 border border-orange-500/20 rounded-2xl p-6 ">
            <h4 className="text-sm font-black text-orange-400 mb-2 flex items-center gap-2">
               <AlertTriangle size={18} />
               <span>راهنمای آنتی‌ویروس (SmartScreen) و اینترنت ضعیف</span>

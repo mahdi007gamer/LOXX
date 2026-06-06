@@ -39,7 +39,7 @@ export const ProfilePopoverProvider: React.FC<{ children: ReactNode }> = ({ chil
  animate={{ opacity: 1 }}
  exit={{ opacity: 0 }}
  onClick={closeProfile}
- className="fixed inset-0 z-[20000] bg-black/40 backdrop-blur-sm cursor-default"
+ className="fixed inset-0 z-[20000] bg-black/40 cursor-default"
  />
  <div className="fixed inset-0 z-[20001] flex items-center justify-center pointer-events-none p-4">
  <div className="pointer-events-auto">

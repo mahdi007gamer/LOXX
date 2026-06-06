@@ -250,7 +250,7 @@ const EnvelopeIntro = ({ onOpen, streamerName }: { onOpen: () => void, streamerN
  {/* High-Tech Container */}
  <div 
  onClick={!opening ? handleOpenClick : undefined}
- className="relative w-full aspect-[4/3] bg-black/60 backdrop-blur-md border border-white/10 rounded-xl shadow-[0_30px_100px_rgba(0,0,0,0.9)] overflow-hidden cursor-pointer group flex flex-col items-center justify-center group"
+ className="relative w-full aspect-[4/3] bg-black/60 border border-white/10 rounded-xl shadow-[0_30px_100px_rgba(0,0,0,0.9)] overflow-hidden cursor-pointer group flex flex-col items-center justify-center group"
  >
  {/* Corner acccents */}
  <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-neon-blue rounded-tl-xl"></div>
@@ -274,7 +274,7 @@ const EnvelopeIntro = ({ onOpen, streamerName }: { onOpen: () => void, streamerN
  <div className="mb-8 relative">
  <div className="absolute inset-0 border-[3px] border-neon-blue rounded-full border-t-transparent animate-spin" style={{ animationDuration: '3s' }}></div>
  <div className="absolute inset-2 border-[2px] border-neon-purple rounded-full border-b-transparent animate-spin-reverse" style={{ animationDuration: '2s', animationDirection: 'reverse' }}></div>
- <div className="w-20 h-20 bg-neon-blue/10 rounded-full flex items-center justify-center backdrop-blur-md shadow-[0_0_40px_rgba(0,229,255,0.4)] m-4">
+ <div className="w-20 h-20 bg-neon-blue/10 rounded-full flex items-center justify-center shadow-[0_0_40px_rgba(0,229,255,0.4)] m-4">
  <Award className="w-10 h-10 text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.8)]" />
  </div>
  </div>
@@ -298,7 +298,7 @@ const EnvelopeIntro = ({ onOpen, streamerName }: { onOpen: () => void, streamerN
  </AnimatePresence>
  </div>
 
- <div className="py-2 px-6 bg-[#12141a]/80 backdrop-blur-md border border-white/10 rounded-lg flex flex-col items-center shadow-[inset_0_2px_20px_rgba(255,255,255,0.05)] w-full max-w-[280px]">
+ <div className="py-2 px-6 bg-[#12141a]/80 border border-white/10 rounded-lg flex flex-col items-center shadow-[inset_0_2px_20px_rgba(255,255,255,0.05)] w-full max-w-[280px]">
  <span className="text-xs text-gray-400 font-bold mb-1 uppercase">Target Identity</span>
  <span className="text-white font-black text-lg " dir="ltr">@{streamerName}</span>
  </div>
@@ -466,7 +466,7 @@ const FloatingAudioPlayer = ({ src, streamerName, isOpened }: { src: string, str
  transition={{ type: "spring", stiffness: 200, damping: 25 }}
  className="fixed bottom-[130px] left-1/2 -translate-x-1/2 w-[90%] max-w-[400px] lg:bottom-8 lg:right-8 lg:left-auto lg:translate-x-0 z-[60] pointer-events-auto"
  >
- <div className="bg-[#0b0c10]/80 backdrop-blur-3xl border border-white/15 rounded-[2rem] p-5 shadow-[0_30px_60px_rgba(0,0,0,0.8),_inset_0_2px_20px_rgba(255,255,255,0.05)] overflow-hidden relative group">
+ <div className="bg-[#0b0c10]/80 border border-white/15 rounded-[2rem] p-5 shadow-[0_30px_60px_rgba(0,0,0,0.8),_inset_0_2px_20px_rgba(255,255,255,0.05)] overflow-hidden relative group">
  {/* Shimmer overlay */}
  <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/5 to-white/0 opacity-0 group-hover:opacity-100 transition-opacity duration-1000 transform -skew-x-12 translate-x-[-100%] group-hover:translate-x-[100%] pointer-events-none"></div>
 
@@ -730,7 +730,7 @@ const StreamerProposalPage = ({ overrideName }: StreamerProposalPageProps = {}) 
  <h1 className="text-3xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-neon-blue via-neon-purple to-neon-pink mb-4 leading-tight drop-shadow-sm">
  پیشنهاد همکاری استراتژیک <br className="hidden md:block"/> و اختصاصی
  </h1>
- <div className="inline-flex items-center justify-center px-5 py-2 rounded-full bg-white/5 border border-white/10 text-white shadow-lg backdrop-blur-sm">
+ <div className="inline-flex items-center justify-center px-5 py-2 rounded-full bg-white/5 border border-white/10 text-white shadow-lg ">
  <Award className="w-4 h-4 ml-2 text-[#ffaa00]" />
  <span className="font-bold text-sm mt-0.5">پکیج اختصاصی <span className="text-[#ffaa00] font-black uppercase mx-1">Elite Streamer</span></span>
  </div>
@@ -752,7 +752,7 @@ const StreamerProposalPage = ({ overrideName }: StreamerProposalPageProps = {}) 
  <h2 className="text-2xl md:text-3xl font-black text-white mb-6">
  سلام {inviteData.streamerName} عزیز <span className="opacity-50 text-xl font-mono mx-1">({inviteData.alias})</span>،
  </h2>
- <div className="text-lg text-gray-300 font-medium leading-loose max-w-4xl space-y-6 bg-white/5 border border-white/5 p-6 rounded-3xl backdrop-blur-sm">
+ <div className="text-lg text-gray-300 font-medium leading-loose max-w-4xl space-y-6 bg-white/5 border border-white/5 p-6 rounded-3xl ">
  <p>امیدوارم حالت عالی باشه.</p>
  <p>
  ما در تیم <span className="text-white font-black ">LOXX</span>، فراتر از یک پلتفرم کاهش پینگ، در حال ساخت <strong>یک شبکه عظیم و قدرتمند از گیمرهای ایرانی</strong> هستیم؛ محیطی با زیرساخت عالی که کاربران می‌تونن به راحتی <strong>چت کنن، دوستای جدید پیدا کنن، تیم‌های حرفه‌ای بسازن</strong> و کامیونیتی خودشون رو گسترش بدن.
@@ -775,7 +775,7 @@ const StreamerProposalPage = ({ overrideName }: StreamerProposalPageProps = {}) 
  <h3 className="text-2xl font-black text-white">پلتفرم LOXX دقیقاً چیه؟</h3>
  </div>
  
- <div className="bg-gradient-to-br from-[#0b0c10]/80 to-[#12121a]/80 backdrop-blur-xl border border-white/10 rounded-3xl p-8 relative overflow-hidden group shadow-2xl">
+ <div className="bg-gradient-to-br from-[#0b0c10]/80 to-[#12121a]/80 border border-white/10 rounded-3xl p-8 relative overflow-hidden group shadow-2xl">
  <div className="absolute top-0 right-0 w-[50%] h-[150%] bg-gradient-to-l from-neon-blue/5 to-transparent pointer-events-none transform rotate-12 translate-x-20 -translate-y-10"></div>
  
  <p className="text-gray-300 font-medium text-[17px] leading-loose relative z-10 mb-8">
@@ -820,7 +820,7 @@ const StreamerProposalPage = ({ overrideName }: StreamerProposalPageProps = {}) 
  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
  
  {/* Card 1: Revenue */}
- <div className="bg-gradient-to-b from-[#0b0c10]/90 to-[#151821]/90 backdrop-blur-xl border border-white/10 hover:border-white/20 hover:-translate-y-1 transition-all duration-300 rounded-3xl p-8 group relative overflow-hidden shadow-xl">
+ <div className="bg-gradient-to-b from-[#0b0c10]/90 to-[#151821]/90 border border-white/10 hover:border-white/20 hover:-translate-y-1 transition-all duration-300 rounded-3xl p-8 group relative overflow-hidden shadow-xl">
  <div className="absolute -right-10 -top-10 w-40 h-40 bg-neon-blue/10 rounded-full blur-[50px] group-hover:bg-neon-blue/20 transition-all"></div>
  <div className="flex items-start justify-between mb-4 relative z-10">
  <div className="w-12 h-12 rounded-2xl bg-neon-blue/10 border border-neon-blue/20 text-neon-blue flex items-center justify-center shadow-inner">
@@ -835,7 +835,7 @@ const StreamerProposalPage = ({ overrideName }: StreamerProposalPageProps = {}) 
  </div>
 
  {/* Card 2: VIP Support */}
- <div className="bg-gradient-to-b from-[#0b0c10]/90 to-[#151821]/90 backdrop-blur-xl border border-white/10 hover:border-white/20 hover:-translate-y-1 transition-all duration-300 rounded-3xl p-8 group relative overflow-hidden shadow-xl">
+ <div className="bg-gradient-to-b from-[#0b0c10]/90 to-[#151821]/90 border border-white/10 hover:border-white/20 hover:-translate-y-1 transition-all duration-300 rounded-3xl p-8 group relative overflow-hidden shadow-xl">
  <div className="absolute -right-10 -top-10 w-40 h-40 bg-neon-purple/10 rounded-full blur-[50px] group-hover:bg-neon-purple/20 transition-all"></div>
  <div className="flex items-start justify-between mb-4 relative z-10">
  <div className="w-12 h-12 rounded-2xl bg-neon-purple/10 border border-neon-purple/20 text-neon-purple flex items-center justify-center shadow-inner">
@@ -850,7 +850,7 @@ const StreamerProposalPage = ({ overrideName }: StreamerProposalPageProps = {}) 
  </div>
 
  {/* Card 3: Chat-Sync */}
- <div className="bg-gradient-to-b from-[#0b0c10]/90 to-[#151821]/90 backdrop-blur-xl border border-white/10 hover:border-white/20 hover:-translate-y-1 transition-all duration-300 rounded-3xl p-8 group relative overflow-hidden shadow-xl">
+ <div className="bg-gradient-to-b from-[#0b0c10]/90 to-[#151821]/90 border border-white/10 hover:border-white/20 hover:-translate-y-1 transition-all duration-300 rounded-3xl p-8 group relative overflow-hidden shadow-xl">
  <div className="absolute -left-10 -bottom-10 w-40 h-40 bg-neon-pink/10 rounded-full blur-[50px] group-hover:bg-neon-pink/20 transition-all"></div>
  <div className="flex items-start justify-between mb-4 relative z-10">
  <div className="w-12 h-12 rounded-2xl bg-neon-pink/10 border border-neon-pink/20 text-neon-pink flex items-center justify-center shadow-inner">
@@ -865,7 +865,7 @@ const StreamerProposalPage = ({ overrideName }: StreamerProposalPageProps = {}) 
  </div>
 
  {/* Card 4: Elite Panel */}
- <div className="bg-gradient-to-b from-[#0b0c10]/90 to-[#151821]/90 backdrop-blur-xl border border-white/10 hover:border-white/20 hover:-translate-y-1 transition-all duration-300 rounded-3xl p-8 group relative overflow-hidden shadow-xl">
+ <div className="bg-gradient-to-b from-[#0b0c10]/90 to-[#151821]/90 border border-white/10 hover:border-white/20 hover:-translate-y-1 transition-all duration-300 rounded-3xl p-8 group relative overflow-hidden shadow-xl">
  <div className="absolute -left-10 -bottom-10 w-40 h-40 bg-[#ffaa00]/10 rounded-full blur-[50px] group-hover:bg-[#ffaa00]/20 transition-all"></div>
  <div className="flex items-start justify-between mb-4 relative z-10">
  <div className="w-12 h-12 rounded-2xl bg-[#ffaa00]/10 border border-[#ffaa00]/20 text-[#ffaa00] flex items-center justify-center shadow-inner">
@@ -894,7 +894,7 @@ const StreamerProposalPage = ({ overrideName }: StreamerProposalPageProps = {}) 
  <h3 className="text-2xl font-black text-white">درخواست تسریع و ثبت پلن همکاری</h3>
  </div>
 
- <div className="bg-gradient-to-br from-[#0c0d12]/90 to-[#121420]/90 border border-white/10 rounded-3xl p-6 md:p-10 relative overflow-hidden shadow-2xl backdrop-blur-xl">
+ <div className="bg-gradient-to-br from-[#0c0d12]/90 to-[#121420]/90 border border-white/10 rounded-3xl p-6 md:p-10 relative overflow-hidden shadow-2xl ">
  <div className="absolute top-0 left-0 w-32 h-32 bg-neon-blue/5 rounded-full blur-[60px]" />
  <div className="absolute bottom-0 right-0 w-48 h-48 bg-neon-pink/5 rounded-full blur-[80px]" />
 
@@ -1082,7 +1082,7 @@ const StreamerProposalPage = ({ overrideName }: StreamerProposalPageProps = {}) 
  transition={{ duration: 0.6, delay: 1 }}
  className="mb-8"
  >
- <div className="bg-gradient-to-r from-neon-blue/10 via-neon-purple/10 to-neon-pink/10 border border-white/20 rounded-3xl p-8 md:p-12 text-center relative overflow-hidden shadow-2xl backdrop-blur-md">
+ <div className="bg-gradient-to-r from-neon-blue/10 via-neon-purple/10 to-neon-pink/10 border border-white/20 rounded-3xl p-8 md:p-12 text-center relative overflow-hidden shadow-2xl ">
  <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.05),transparent_80%)]"></div>
  
  <div className="max-w-3xl mx-auto relative z-10">

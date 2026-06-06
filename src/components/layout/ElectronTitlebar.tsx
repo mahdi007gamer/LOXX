@@ -28,6 +28,8 @@ export const ElectronTitlebar = () => {
   }, []);
 
  useEffect(() => {
+ if (!showFps) return;
+
  let lastTime = performance.now();
  let frameCount = 0;
  let animationFrameId: number;
@@ -48,7 +50,7 @@ export const ElectronTitlebar = () => {
  return () => {
  cancelAnimationFrame(animationFrameId);
  };
- }, []);
+ }, [showFps]);
 
  useEffect(() => {
  if (!isElectron) return;

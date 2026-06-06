@@ -934,7 +934,7 @@ export const EliteSettingsPage = () => {
  initial={{ y: 20, opacity: 0 }}
  animate={{ y: 0, opacity: 1 }}
  className={cn(
- "relative w-[340px] rounded-[48px] overflow-hidden border backdrop-blur-3xl transition-all duration-500",
+ "relative w-[340px] rounded-[48px] overflow-hidden border transition-all duration-500",
  metadata.fullGlow ? "border-yellow-400" : "shadow-[0_40px_100px_rgba(0,0,0,0.8)] border-white/10"
  )}
  style={{

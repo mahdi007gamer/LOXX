@@ -160,7 +160,7 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[500] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md shadow-2xl" dir={isRtl ? "rtl" : "ltr"}>
+    <div className="fixed inset-0 z-[500] flex items-center justify-center p-4 bg-black/80 shadow-2xl" dir={isRtl ? "rtl" : "ltr"}>
       <motion.div 
         initial={{ opacity: 0, y: 20, scale: 0.95 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -179,7 +179,7 @@ export const CreateLobbyModal = ({ isOpen, onClose, onSuccess }: CreateLobbyModa
               {/* Background Cover */}
               <div className="h-24 w-full relative">
                 {formData.isPrivate && (
-                  <div className="absolute inset-0 z-10 bg-black/50 backdrop-blur-[1px] flex items-center justify-center transition-all">
+                  <div className="absolute inset-0 z-10 bg-black/50 flex items-center justify-center transition-all">
                     <div className="flex flex-col items-center gap-2 text-white/50">
                       <Lock size={16} />
                       <span className="text-[8px] font-black uppercase ">PRIVATE LOBBY</span>

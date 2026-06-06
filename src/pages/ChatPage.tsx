@@ -324,7 +324,7 @@ function MessageItem({ message, isConsecutive = false, onReaction, onSaveGif, on
  
  {/* Action Buttons - Repositioned to prevent horizontal scroll */}
  <div className={cn(
- "absolute flex items-center gap-1 px-1.5 py-1 rounded-xl bg-[#0f0f15]/95 border border-white/10 shadow-2xl z-[60] backdrop-blur-2xl whitespace-nowrap transition-all duration-200 min-w-max",
+ "absolute flex items-center gap-1 px-1.5 py-1 rounded-xl bg-[#0f0f15]/95 border border-white/10 shadow-2xl z-[60] whitespace-nowrap transition-all duration-200 min-w-max",
  message.self ? "right-0 -top-10" : "left-0 -top-10",
  showActions ? "opacity-100 translate-y-0 visible" : "opacity-0 translate-y-2 invisible lg:group-hover/bubble-container:opacity-100 lg:group-hover/bubble-container:translate-y-0 lg:group-hover/bubble-container:visible"
  )}
@@ -1865,7 +1865,7 @@ export const ChatPage: React.FC = () => {
 
  <AnimatePresence>
  {warningData && (
- <div className="fixed inset-0 z-[100000] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl">
+ <div className="fixed inset-0 z-[100000] flex items-center justify-center p-4 bg-black/90 ">
  <motion.div 
  initial={{ opacity: 0, scale: 0.9, y: 20 }}
  animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -1904,7 +1904,7 @@ export const ChatPage: React.FC = () => {
  )}
 
  {muteModalData && muteUntil && muteUntil > Date.now() && (
- <div className="fixed inset-0 z-[100000] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl">
+ <div className="fixed inset-0 z-[100000] flex items-center justify-center p-4 bg-black/90 ">
  <motion.div 
  initial={{ opacity: 0, scale: 0.9, y: 20 }}
  animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -1942,7 +1942,7 @@ export const ChatPage: React.FC = () => {
 
  <AnimatePresence>
  {showEliteSettingsModal && activeChannel.type === 'elite' && (
- <div className="fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+ <div className="fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-black/80 ">
  <motion.div 
  initial={{ opacity: 0, scale: 0.95 }}
  animate={{ opacity: 1, scale: 1 }}
@@ -2051,7 +2051,7 @@ export const ChatPage: React.FC = () => {
  )}
  
  {showEliteInviteModal && activeChannel.type === 'elite' && (
- <div className="fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+ <div className="fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-black/80 ">
  <motion.div 
  initial={{ opacity: 0, scale: 0.95 }}
  animate={{ opacity: 1, scale: 1 }}
@@ -2138,7 +2138,7 @@ export const ChatPage: React.FC = () => {
 
  <AnimatePresence>
  {showImagePostModal && (
- <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+ <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/80 ">
  <motion.div 
  initial={{ opacity: 0, scale: 0.95 }}
  animate={{ opacity: 1, scale: 1 }}
@@ -2173,7 +2173,7 @@ export const ChatPage: React.FC = () => {
 
  <AnimatePresence>
  {showVipGroupModal && (
- <div className="fixed inset-0 z-[1100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+ <div className="fixed inset-0 z-[1100] flex items-center justify-center p-4 bg-black/80 ">
  <motion.div 
  initial={{ opacity: 0, scale: 0.95, y: 20 }}
  animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -2237,7 +2237,7 @@ export const ChatPage: React.FC = () => {
  </AnimatePresence>
  
  {/* Channels Sidebar */}
- <div className={cn("hidden w-80 border-r border-white/5 bg-black/20 backdrop-blur-3xl lg:flex flex-col relative z-20 transition-all duration-300", isRtl ? (!isSidebarCollapsed ? "md:mr-64" : "md:mr-20") : (!isSidebarCollapsed ? "md:ml-64" : "md:ml-20"))}>
+ <div className={cn("hidden w-80 border-r border-white/5 bg-black/20 lg:flex flex-col relative z-20 transition-all duration-300", isRtl ? (!isSidebarCollapsed ? "md:mr-64" : "md:mr-20") : (!isSidebarCollapsed ? "md:ml-64" : "md:ml-20"))}>
  <div className="p-6 border-b border-white/5">
  <div className="flex items-center justify-between mb-2">
  <h2 className="text-xl font-black text-white uppercase">{isRtl ? "کانال‌ها" : "Channels"}</h2>
@@ -2489,7 +2489,7 @@ export const ChatPage: React.FC = () => {
  {CHAT_THEMES[chatTheme].overlay}
 
  {/* Chat Header - Always sticky at the top of this container */}
- <header className="flex h-12 md:h-16 items-center justify-between border-b border-white/5 bg-black/60 backdrop-blur-xl px-3 md:px-8 sticky top-0 z-[40] shrink-0 w-full shadow-2xl">
+ <header className="flex h-12 md:h-16 items-center justify-between border-b border-white/5 bg-black/60 px-3 md:px-8 sticky top-0 z-[40] shrink-0 w-full shadow-2xl">
  <div className="flex items-center gap-2 md:gap-4 flex-1 min-w-0">
  {/* Mobile Channel Switcher Toggle */}
  <button 
@@ -2635,7 +2635,7 @@ export const ChatPage: React.FC = () => {
  initial={{ opacity: 0, y: 10, scale: 0.95 }}
  animate={{ opacity: 1, y: 0, scale: 1 }}
  exit={{ opacity: 0, y: 10, scale: 0.95 }}
- className={cn("absolute top-full mt-2 w-48 bg-[#0a0a0f]/95 border border-white/10 rounded-xl shadow-2xl z-50 p-1 backdrop-blur-xl", isRtl ? "left-0" : "right-0")}
+ className={cn("absolute top-full mt-2 w-48 bg-[#0a0a0f]/95 border border-white/10 rounded-xl shadow-2xl z-50 p-1 ", isRtl ? "left-0" : "right-0")}
  >
  <p className={cn("px-3 py-2 text-[10px] font-black text-gray-600 uppercase ", isRtl ? "text-right" : "text-left")}>{isRtl ? "انتخاب تم پس‌زمینه" : "Select Theme"}</p>
  {Object.entries(CHAT_THEMES).map(([key, theme]) => (
@@ -2683,14 +2683,14 @@ export const ChatPage: React.FC = () => {
  animate={{ opacity: 1 }}
  exit={{ opacity: 0 }}
  onClick={() => setShowChannelMenu(false)}
- className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm md:hidden"
+ className="fixed inset-0 z-[100] bg-black/60 md:hidden"
  />
  <motion.div
  initial={{ x: isRtl ? "100%" : "-100%" }}
  animate={{ x: 0 }}
  exit={{ x: isRtl ? "100%" : "-100%" }}
  transition={{ type: "spring", damping: 30, stiffness: 300 }}
- className={cn("fixed top-0 bottom-0 z-[101] w-72 bg-dark-bg/95 border-white/10 p-6 backdrop-blur-xl md:hidden", isRtl ? "right-0 border-l" : "left-0 border-r")}
+ className={cn("fixed top-0 bottom-0 z-[101] w-72 bg-dark-bg/95 border-white/10 p-6 md:hidden", isRtl ? "right-0 border-l" : "left-0 border-r")}
  >
  <div className="flex items-center justify-between mb-8">
  <div className="flex items-center gap-3">
@@ -2831,7 +2831,7 @@ export const ChatPage: React.FC = () => {
  const pinnedMessage = currentMessages.find(m => m.id === pinnedMessageId);
  if (!pinnedMessage) return null;
  return (
- <div className="sticky top-0 z-10 mx-2 mb-4 bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-3 flex flex-col shadow-lg backdrop-blur-md cursor-pointer shrink-0" onClick={() => {
+ <div className="sticky top-0 z-10 mx-2 mb-4 bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-3 flex flex-col shadow-lg cursor-pointer shrink-0" onClick={() => {
  document.getElementById(`message-${pinnedMessage.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
  }}>
  <div className="flex items-center gap-2 mb-1">
@@ -2926,7 +2926,7 @@ export const ChatPage: React.FC = () => {
  initial={{ opacity: 0, y: 20 }}
  animate={{ opacity: 1, y: 0 }}
  exit={{ opacity: 0, y: 20 }}
- className="absolute bottom-28 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 rounded-xl bg-green-500 text-white font-black text-[10px] shadow-2xl z-40 backdrop-blur-md"
+ className="absolute bottom-28 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 rounded-xl bg-green-500 text-white font-black text-[10px] shadow-2xl z-40 "
  >
  <Check size={14} />
  {isRtl ? "گیف با موفقیت ذخیره شد" : "GIF saved successfully"}
@@ -2961,7 +2961,7 @@ export const ChatPage: React.FC = () => {
  initial={{ opacity: 0, y: 10 }}
  animate={{ opacity: 1, y: 0 }}
  exit={{ opacity: 0, y: 10 }}
- className="flex items-center justify-between px-4 py-2 bg-black/40 border border-white/5 rounded-2xl mb-2 text-xs backdrop-blur-xl"
+ className="flex items-center justify-between px-4 py-2 bg-black/40 border border-white/5 rounded-2xl mb-2 text-xs "
  >
  <div className="flex items-center gap-3 overflow-hidden">
  <Reply size={14} className="text-neon-blue shrink-0" />
@@ -2984,7 +2984,7 @@ export const ChatPage: React.FC = () => {
  initial={{ opacity: 0, scale: 0.95, y: 15 }}
  animate={{ opacity: 1, scale: 1, y: 0 }}
  exit={{ opacity: 0, scale: 0.95, y: 15 }}
- className="absolute bottom-20 left-0 right-0 md:left-auto md:right-0 z-40 bg-[#0d0d14]/95 border border-white/10 rounded-[28px] shadow-[0_10px_50px_rgba(0,0,0,0.8)] backdrop-blur-2xl p-4 w-full md:w-[480px] h-[380px] flex flex-col font-sans"
+ className="absolute bottom-20 left-0 right-0 md:left-auto md:right-0 z-40 bg-[#0d0d14]/95 border border-white/10 rounded-[28px] shadow-[0_10px_50px_rgba(0,0,0,0.8)] p-4 w-full md:w-[480px] h-[380px] flex flex-col font-sans"
  dir={isRtl ? "rtl" : "ltr"}
  >
  {/* Tabs row */}
@@ -3200,7 +3200,7 @@ export const ChatPage: React.FC = () => {
  {muteUntil && Date.now() < muteUntil ? (
  <div className="relative group w-full">
  <div className="absolute inset-0 bg-red-500/10 rounded-[24px] blur-sm mt-1 mb-1"></div>
- <div className="relative flex flex-1 items-center justify-center p-5 rounded-[24px] border border-red-500/20 bg-red-950/40 backdrop-blur-2xl shadow-inner my-1">
+ <div className="relative flex flex-1 items-center justify-center p-5 rounded-[24px] border border-red-500/20 bg-red-950/40 shadow-inner my-1">
  <div className="flex items-center gap-3 text-red-400">
  <Shield size={20} className="animate-pulse" />
  <span className="text-sm font-black text-center px-4">
@@ -3217,7 +3217,7 @@ export const ChatPage: React.FC = () => {
  ) : (
  <div className="relative group flex flex-row-reverse">
  <div className="absolute inset-0 bg-neon-blue/5 rounded-[24px] blur-2xl group-focus-within:bg-neon-blue/10 transition-all"></div>
- <div className="relative flex flex-1 items-center p-2 rounded-[24px] border border-white/5 bg-black/40 backdrop-blur-2xl shadow-2xl focus-within:border-neon-blue/30 transition-all">
+ <div className="relative flex flex-1 items-center p-2 rounded-[24px] border border-white/5 bg-black/40 shadow-2xl focus-within:border-neon-blue/30 transition-all">
  <div className="flex items-center gap-1 px-2 border-l border-white/5">
  <button 
  onClick={() => setShowGifPicker(!showGifPicker)}
@@ -3289,14 +3289,14 @@ export const ChatPage: React.FC = () => {
  animate={{ opacity: 1 }}
  exit={{ opacity: 0 }}
  onClick={() => setShowFriendsSidebar(false)}
- className="fixed inset-0 z-[40] bg-black/60 backdrop-blur-sm lg:hidden md:hidden"
+ className="fixed inset-0 z-[40] bg-black/60 lg:hidden md:hidden"
  />
  <motion.div
  initial={{ x: "100%", opacity: 0 }}
  animate={{ x: 0, opacity: 1 }}
  exit={{ x: "100%", opacity: 0 }}
  transition={{ type: "spring", damping: 30, stiffness: 300 }}
- className="fixed inset-y-0 right-0 z-[50] flex flex-col w-[85%] md:w-80 md:relative md:inset-auto md:z-20 md:flex flex-col bg-[#0d0d12]/95 border-r border-white/10 shadow-[-20px_0_40px_rgba(0,0,0,0.3)] overflow-hidden backdrop-blur-xl shrink-0"
+ className="fixed inset-y-0 right-0 z-[50] flex flex-col w-[85%] md:w-80 md:relative md:inset-auto md:z-20 md:flex flex-col bg-[#0d0d12]/95 border-r border-white/10 shadow-[-20px_0_40px_rgba(0,0,0,0.3)] overflow-hidden shrink-0"
  >
  <div className="p-6 border-b border-white/5 flex items-center justify-between">
  <div>
@@ -3384,7 +3384,7 @@ export const ChatPage: React.FC = () => {
 
  {/* Actions Overlay - Sticky for active friend */}
  <div className={cn(
- "absolute inset-0 bg-dark-bg/95 backdrop-blur-md flex items-center justify-center gap-2 rounded-2xl z-20 transition-all duration-300 px-2",
+ "absolute inset-0 bg-dark-bg/95 flex items-center justify-center gap-2 rounded-2xl z-20 transition-all duration-300 px-2",
  (activeChatId === friend.id || "opacity-0 pointer-events-none md:group-hover:opacity-100 md:group-hover:pointer-events-auto")
  )}>
  <div className="flex items-center justify-center gap-3">
@@ -3453,7 +3453,7 @@ export const ChatPage: React.FC = () => {
  initial={{ opacity: 0 }}
  animate={{ opacity: 1 }}
  exit={{ opacity: 0 }}
- className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+ className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 "
  >
  <motion.div
  initial={{ scale: 0.95, opacity: 0 }}

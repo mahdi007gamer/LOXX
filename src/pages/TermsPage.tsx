@@ -47,7 +47,7 @@ export const TermsPage = () => {
  transition={{ delay: 0.1 }}
  className="mb-8"
  >
- <NeonCard variant="pink" className="p-6 md:p-8 bg-black/40 backdrop-blur-2xl border-none">
+ <NeonCard variant="pink" className="p-6 md:p-8 bg-black/40 border-none">
  <div className="flex gap-4 items-start">
  <div className="h-10 w-10 shrink-0 rounded-xl bg-neon-pink/10 flex items-center justify-center text-neon-pink">
  <ShieldAlert size={20} />
@@ -71,7 +71,7 @@ export const TermsPage = () => {
  initial={{ opacity: 0 }} 
  animate={{ opacity: 1 }} 
  transition={{ delay: 0.2 }}
- className="space-y-8 bg-white/[0.02] backdrop-blur-3xl p-8 md:p-12 rounded-[32px] border border-white/5 relative overflow-hidden"
+ className="space-y-8 bg-white/[0.02] p-8 md:p-12 rounded-[32px] border border-white/5 relative overflow-hidden"
  >
  {/* Glow accent */}
  <div className="absolute top-1/3 right-0 w-96 h-96 bg-neon-blue/5 rounded-full blur-[120px] pointer-events-none" />

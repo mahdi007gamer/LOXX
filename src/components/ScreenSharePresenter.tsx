@@ -108,7 +108,7 @@ useEffect(() => {
  
  {/* Presenter info overlay */}
  <div className={cn("absolute top-4 left-4 right-4 flex items-start justify-between pointer-events-none", isRtl ? "flex-row-reverse" : "flex-row")}>
- <div className="flex items-center gap-3 bg-black/75 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10 pointer-events-auto select-none">
+ <div className="flex items-center gap-3 bg-black/75 px-4 py-2 rounded-xl border border-white/10 pointer-events-auto select-none">
  <div className={isRtl ? "flex flex-col text-right" : "flex flex-col text-left"}>
  <span className="text-white font-bold text-xs">
  {isRtl ? `اسکرین شیر: ${isLocal ? t("host") : presenterName}` : `Screen Share: ${isLocal ? t("host") : presenterName}`}
@@ -132,7 +132,7 @@ useEffect(() => {
  )}
  <button 
  onClick={toggleFullscreen}
- className="p-2.5 bg-black/75 backdrop-blur-md rounded-xl border border-white/10 text-white hover:bg-white/15 transition-colors cursor-pointer opacity-0 group-hover:opacity-100"
+ className="p-2.5 bg-black/75 rounded-xl border border-white/10 text-white hover:bg-white/15 transition-colors cursor-pointer opacity-0 group-hover:opacity-100"
  >
  {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
  </button>
@@ -177,7 +177,7 @@ useEffect(() => {
 
  {/* Warning Banner */}
  {isWarningActive && isLocal && (
- <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-yellow-500/90 text-black px-4 py-1.5 rounded-xl font-bold flex items-center gap-2 text-xs shadow-xl backdrop-blur-md border border-yellow-400 z-15" dir={isRtl ? "rtl" : "ltr"}>
+ <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-yellow-500/90 text-black px-4 py-1.5 rounded-xl font-bold flex items-center gap-2 text-xs shadow-xl border border-yellow-400 z-15" dir={isRtl ? "rtl" : "ltr"}>
  <AlertCircle size={14} className="shrink-0" />
  {t("streamWarningActive")}
  </div>

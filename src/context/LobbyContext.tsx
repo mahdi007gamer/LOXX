@@ -333,7 +333,7 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
  const [launcherStartAtLogin, setLauncherStartAtLogin] = useState<boolean>(false);
  const [launcherHardwareAcceleration, setLauncherHardwareAcceleration] = useState<boolean>(true);
  const [launcherGlobalPttKey, setLauncherGlobalPttKey] = useState<string>("CommandOrControl+Alt+V");
- const [launcherGlobalMuteKey, setLauncherGlobalMuteKey] = useState<string>("CommandOrControl+Alt+M");
+ const [launcherGlobalMuteKey, setLauncherGlobalMuteKey] = useState<string>("=");
 
  // New Desktop Features States
  const [audioInputDevices, setAudioInputDevices] = useState<MediaDeviceInfo[]>([]);
@@ -927,51 +927,47 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 					console.error("VAD-WEB Failed to Load, falling back to volume gate:", e);
 				});
 
-				let lastAnalysisTime = 0;
-				const analyzeVoice = (timestamp: number) => {
-					const now = timestamp || performance.now();
-					if (now - lastAnalysisTime >= 60) {
-						lastAnalysisTime = now;
-						if (localStream.getAudioTracks().length > 0 && localStream.getAudioTracks()[0].enabled) {
-							analyzer.getByteFrequencyData(dataArray);
-							let sum = 0;
-							for(let i = 0; i < bufferLength; i++) {
-								sum += dataArray[i];
-							}
-							const avg = sum / bufferLength;
-							const newVol = Math.min(100, Math.round(avg * 2));
-							
-							if (Math.abs(newVol - lastVol) > 20 || (newVol === 0 && lastVol !== 0) || (newVol > 15 && lastVol === 0)) {
-								lastVol = newVol;
-								setLocalVolume(newVol);
-							}
-						} else {
-							if (lastVol !== 0) {
-								lastVol = 0;
-								setLocalVolume(0);
-							}
-							if (isTalking) {
-								isTalking = false;
-								if (lobby && mainPlatformVoiceSocket) mainPlatformVoiceSocket.emit("voice.talking", { roomId: lobby.id, isTalking: false });
-								if (lobby && user) {
-									setLobby(prev => {
-										if (!prev) return null;
-										return { ...prev, talkingUsers: prev.talkingUsers?.filter(id => id !== user.id) || [] };
-									});
-								}
+				const intervalId = setInterval(() => {
+					if (localStream.getAudioTracks().length > 0 && localStream.getAudioTracks()[0].enabled) {
+						analyzer.getByteFrequencyData(dataArray);
+						let sum = 0;
+						for(let i = 0; i < bufferLength; i++) {
+							sum += dataArray[i];
+						}
+						const avg = sum / bufferLength;
+						const newVol = Math.min(100, Math.round(avg * 2));
+						
+						if (Math.abs(newVol - lastVol) > 20 || (newVol === 0 && lastVol !== 0) || (newVol > 15 && lastVol === 0)) {
+							lastVol = newVol;
+							setLocalVolume(newVol);
+						}
+					} else {
+						if (lastVol !== 0) {
+							lastVol = 0;
+							setLocalVolume(0);
+						}
+						if (isTalking) {
+							isTalking = false;
+							if (lobby && mainPlatformVoiceSocket) mainPlatformVoiceSocket.emit("voice.talking", { roomId: lobby.id, isTalking: false });
+							if (lobby && user) {
+								setLobby(prev => {
+									if (!prev) return null;
+									return { ...prev, talkingUsers: prev.talkingUsers?.filter(id => id !== user.id) || [] };
+								});
 							}
 						}
 					}
-					rafId = requestAnimationFrame(analyzeVoice);
-				};
-				rafId = requestAnimationFrame(analyzeVoice);
+				}, 150); // 150ms interval
+
+				(localStream as any)._audioIntervalId = intervalId;
+
 			} catch (err) {
 				console.error("Local stream analyzer error:", err);
 			}
 		}
 
 		return () => {
-			if (rafId) cancelAnimationFrame(rafId);
+			if ((localStream as any)?._audioIntervalId) clearInterval((localStream as any)._audioIntervalId);
 			try {
 				if (microphone) microphone.disconnect();
 				if (analyzer) analyzer.disconnect();
@@ -989,7 +985,7 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
  const handlePeerVolumeChange = useCallback((peerUserId: string, vol: number) => {
  // Save to global state so elements can use it
  setPeerActivity(prev => {
- if (Math.abs((prev[peerUserId] || 0) - vol) < 25 && vol !== 0 && prev[peerUserId] !== 0) return prev;
+ if (Math.abs((prev[peerUserId] || 0) - vol) < 35 && vol !== 0 && prev[peerUserId] !== 0) return prev;
  if (prev[peerUserId] === vol) return prev;
  return { ...prev, [peerUserId]: vol };
  });

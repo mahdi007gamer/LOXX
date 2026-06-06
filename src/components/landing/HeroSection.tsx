@@ -24,7 +24,7 @@ export const HeroSection = () => {
  initial={{ opacity: 0, y: -20 }}
  animate={{ opacity: 1, y: 0 }}
  transition={{ delay: 0.3, duration: 0.5 }}
- className="mb-8 inline-flex items-center gap-3 rounded-full border border-neon-blue/30 bg-neon-blue/10 px-6 py-2 text-sm font-black text-neon-blue shadow-[0_0_30px_rgba(0,229,255,0.2)] backdrop-blur-md"
+ className="mb-8 inline-flex items-center gap-3 rounded-full border border-neon-blue/30 bg-neon-blue/10 px-6 py-2 text-sm font-black text-neon-blue shadow-[0_0_30px_rgba(0,229,255,0.2)] "
  >
  <Zap size={18} className="animate-pulse" />
  <span className="uppercase">{t("entryPortalOpen")}</span>
@@ -79,7 +79,7 @@ export const HeroSection = () => {
  </GlowButton>
  </Link>
  <Link to="/lobbies" className="w-full sm:w-1/2 shrink-0 whitespace-nowrap flex-nowrap">
- <GlowButton variant="blue" size="lg" className="group w-full !rounded-2xl text-lg backdrop-blur-md justify-center mt-4 sm:mt-0 whitespace-nowrap flex-nowrap shrink-0">
+ <GlowButton variant="blue" size="lg" className="group w-full !rounded-2xl text-lg justify-center mt-4 sm:mt-0 whitespace-nowrap flex-nowrap shrink-0">
  <Gamepad2 size={24} className="ml-2 group-hover:rotate-12 transition-transform shrink-0" />
  <span className="whitespace-nowrap shrink-0">{t("gameRoomsBtn")}</span>
  </GlowButton>

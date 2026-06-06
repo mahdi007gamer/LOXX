@@ -15,7 +15,7 @@ export const BankCard: React.FC<BankCardProps> = ({ cardNumber, cardHolder }) =>
  className="relative w-full aspect-[1.6/1] rounded-[40px] p-6 md:p-8 overflow-hidden group perspective-1000 shadow-2xl"
  >
  {/* Glass Background */}
- <div className="absolute inset-0 bg-white/10 backdrop-blur-2xl border border-white/20 rounded-[40px]" />
+ <div className="absolute inset-0 bg-white/10 border border-white/20 rounded-[40px]" />
  
  {/* Decorative Glows */}
  <div className="absolute -top-20 -right-20 w-40 h-40 bg-neon-blue/20 rounded-full blur-[60px] animate-pulse" />

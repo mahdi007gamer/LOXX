@@ -373,7 +373,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({
  animate={{ opacity: 1, scale: 1, y: 0 }}
  exit={{ opacity: 0, scale: 0.9, y: 10 }}
  className={cn(
- "w-[380px] rounded-[48px] border overflow-hidden cursor-default transition-all backdrop-blur-3xl px-0 relative z-[20002]",
+ "w-[380px] rounded-[48px] border overflow-hidden cursor-default transition-all px-0 relative z-[20002]",
  isRtl ? "rtl text-right" : "ltr text-left",
  metadata?.fullGlow
  ? isStreamer
@@ -488,7 +488,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({
  {!isSelf && !isAdminUnified && (
  <button
  onClick={() => setShowReportModal(true)}
- className="h-10 w-10 rounded-full bg-black/60 text-gray-300 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all backdrop-blur-xl border border-white/10 shadow-lg"
+ className="h-10 w-10 rounded-full bg-black/60 text-gray-300 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all border border-white/10 shadow-lg"
  title={isRtl ? "گزارش پروفایل" : "Report Profile"}
  >
  <Icons.Flag size={16} />
@@ -496,7 +496,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({
  )}
  <button
  onClick={onClose}
- className="h-10 w-10 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-neon-pink hover:text-white transition-all backdrop-blur-xl border border-white/10 shadow-lg group"
+ className="h-10 w-10 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-neon-pink hover:text-white transition-all border border-white/10 shadow-lg group"
  >
  <X
  size={20}
@@ -628,7 +628,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({
  <button
  onClick={handleMessage}
  className={cn(
- "mt-6 h-14 w-14 rounded-3xl bg-white/10 text-white flex items-center justify-center transition-all border border-white/10 group active:scale-95 shadow-xl backdrop-blur-xl",
+ "mt-6 h-14 w-14 rounded-3xl bg-white/10 text-white flex items-center justify-center transition-all border border-white/10 group active:scale-95 shadow-xl ",
  isAdminUnified ? "hover:bg-red-500 hover:text-white" : "hover:bg-neon-blue hover:text-dark-bg"
  )}
  title={isRtl ? "ارسال پیام" : "Send Message"}
@@ -1287,7 +1287,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({
  initial={{ opacity: 0 }}
  animate={{ opacity: 1 }}
  exit={{ opacity: 0 }}
- className="fixed inset-0 z-[30000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+ className="fixed inset-0 z-[30000] flex items-center justify-center p-4 bg-black/80 "
  >
  <motion.div
  initial={{ scale: 0.95, opacity: 0 }}

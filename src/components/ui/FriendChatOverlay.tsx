@@ -76,7 +76,7 @@ export const FriendChatOverlay = () => {
  const triggerPreviewToast = () => {
  toast.custom((t) => (
  <div className={cn(
- "bg-[#0a0a14]/95 border border-neon-pink/40 shadow-[0_0_30px_rgba(255,0,127,0.35)] rounded-2xl p-4 flex flex-col gap-1 items-start text-right max-w-xs backdrop-blur-xl transition-all duration-300",
+ "bg-[#0a0a14]/95 border border-neon-pink/40 shadow-[0_0_30px_rgba(255,0,127,0.35)] rounded-2xl p-4 flex flex-col gap-1 items-start text-right max-w-xs transition-all duration-300",
  t.visible ? "opacity-100 scale-100" : "opacity-0 scale-95"
  )} dir="rtl">
  <div className="flex items-center gap-2">
@@ -231,7 +231,7 @@ export const FriendChatOverlay = () => {
  className="fixed inset-0 flex flex-col items-center justify-start pt-8 pointer-events-auto select-none border-4 border-neon-blue/20"
  dir="rtl"
  >
- <div className="bg-black/90 border border-white/10 px-6 py-2.5 rounded-full backdrop-blur-md shadow-[0_0_30px_rgba(0,0,0,0.8)] flex items-center gap-3 relative z-[999999999]">
+ <div className="bg-black/90 border border-white/10 px-6 py-2.5 rounded-full shadow-[0_0_30px_rgba(0,0,0,0.8)] flex items-center gap-3 relative z-[999999999]">
  <div className="h-2 w-2 rounded-full bg-neon-pink animate-ping"></div>
  <p className="text-white text-sm font-bold flex items-center gap-2">
  حالت تعاملی لوکس فعال است. برای خروج از این حالت دکمه
@@ -256,7 +256,7 @@ export const FriendChatOverlay = () => {
   className="fixed top-20 left-0 right-0 flex justify-center pointer-events-none select-none"
   dir="rtl"
   >
-  <div className="bg-[#0c0c14]/95 border border-neon-blue/40 px-6 py-2.5 rounded-full backdrop-blur-md shadow-[0_0_30px_rgba(0,229,255,0.25)] flex items-center gap-3 pointer-events-auto">
+  <div className="bg-[#0c0c14]/95 border border-neon-blue/40 px-6 py-2.5 rounded-full shadow-[0_0_30px_rgba(0,229,255,0.25)] flex items-center gap-3 pointer-events-auto">
   <span className="p-1 px-1.5 rounded bg-neon-blue/20 text-neon-blue text-[10px] font-black leading-none animate-pulse">LOXX LOBBY</span>
   <p className="text-white text-xs font-bold flex items-center gap-2">
   دعوت جدید از طرف <span className="text-neon-blue font-extrabold">{lobbyInviteSender}</span>؛ برای ورود دکمه
@@ -281,7 +281,7 @@ export const FriendChatOverlay = () => {
  className="fixed top-8 left-0 right-0 flex justify-center pointer-events-none select-none"
  dir="rtl"
  >
- <div className="bg-[#0c0c14]/95 border border-neon-pink/30 px-6 py-2.5 rounded-full backdrop-blur-md shadow-[0_0_30px_rgba(255,0,127,0.25)] flex items-center gap-3 pointer-events-auto">
+ <div className="bg-[#0c0c14]/95 border border-neon-pink/30 px-6 py-2.5 rounded-full shadow-[0_0_30px_rgba(255,0,127,0.25)] flex items-center gap-3 pointer-events-auto">
  <MessageSquare size={16} className="text-neon-pink animate-bounce" />
  <p className="text-white text-xs font-bold flex items-center gap-2">
  پیام جدید؛ برای گفتگو دکمه
@@ -893,7 +893,7 @@ export const FriendChatOverlay = () => {
  }
  }}
  className={cn(
- "flex items-center gap-2.5 rounded-t-2xl pl-10 pr-4 py-2.5 border-x border-t transition-all duration-300 backdrop-blur-md min-w-[120px] max-w-[180px] justify-center relative select-none",
+ "flex items-center gap-2.5 rounded-t-2xl pl-10 pr-4 py-2.5 border-x border-t transition-all duration-300 min-w-[120px] max-w-[180px] justify-center relative select-none",
  needsAttention 
  ? "bg-yellow-500/20 text-yellow-400 border-yellow-500 animate-pulse shadow-[0_-4px_15px_rgba(234,179,8,0.3)]"
  : isActive && !isMinimized

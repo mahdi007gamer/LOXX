@@ -169,7 +169,7 @@ const FriendItem = ({
  initial={{ opacity: 0, y: 5, scale: 0.95 }}
  animate={{ opacity: 1, y: 0, scale: 1 }}
  exit={{ opacity: 0, y: 5, scale: 0.95 }}
- className="w-44 rounded-xl bg-[#0a0a0f]/98 border border-white/10 p-1 shadow-[0_10px_30px_rgba(0,0,0,0.5)] backdrop-blur-xl"
+ className="w-44 rounded-xl bg-[#0a0a0f]/98 border border-white/10 p-1 shadow-[0_10px_30px_rgba(0,0,0,0.5)] "
  >
  <button 
  onClick={(e) => {

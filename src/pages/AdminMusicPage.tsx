@@ -1002,7 +1002,7 @@ export const AdminMusicPage: React.FC = () => {
                             <div className="h-8 w-8 rounded-full border-t-2 border-neon-pink animate-spin" />
                           </div>
                         ) : (
-                          <label className="absolute bottom-4 right-4 h-9 px-4 bg-black/80 backdrop-blur border border-white/10 hover:border-white/20 transition-all rounded-xl text-[10px] font-black text-white cursor-pointer flex items-center gap-1.5 shadow-lg">
+                          <label className="absolute bottom-4 right-4 h-9 px-4 bg-black/80 border border-white/10 hover:border-white/20 transition-all rounded-xl text-[10px] font-black text-white cursor-pointer flex items-center gap-1.5 shadow-lg">
                             <input 
                               type="file"
                               accept="image/*"

@@ -48,7 +48,7 @@ export const BottomNav = () => {
  ];
 
  return (
- <div className="fixed bottom-0 left-0 right-0 z-[5000] bg-dark-bg/80 border-t border-white/10 backdrop-blur-xl md:hidden h-16 overflow-visible">
+ <div className="fixed bottom-0 left-0 right-0 z-[5000] bg-dark-bg/80 border-t border-white/10 md:hidden h-16 overflow-visible">
  <div className="flex items-center justify-around h-full px-1 overflow-visible">
  {menuItems.map((item) => (
  <NavLink

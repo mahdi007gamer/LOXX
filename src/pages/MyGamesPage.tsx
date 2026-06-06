@@ -49,7 +49,7 @@ const MyGameCard: React.FC<{ game: Game }> = ({ game }) => {
  e.stopPropagation();
  toggleMyGame(game.id);
  }}
- className="absolute top-2 right-2 p-2 rounded-xl bg-black/60 backdrop-blur-md text-neon-pink sm:hidden border border-white/10 z-10"
+ className="absolute top-2 right-2 p-2 rounded-xl bg-black/60 text-neon-pink sm:hidden border border-white/10 z-10"
  title="حذف از لیست"
  >
  <Trash2 size={16} />

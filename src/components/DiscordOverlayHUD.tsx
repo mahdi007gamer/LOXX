@@ -54,7 +54,7 @@ export const DiscordOverlayHUD = () => {
  return (
  <div className={cn("fixed z-[9999] flex flex-col pointer-events-none select-none", positionClasses)}>
  {/* Title tag - minimal, matches Discord Overlay appearance */}
- <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/75 border border-white/5 backdrop-blur-md mb-2 shadow-lg shadow-black/30 w-fit">
+ <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/75 border border-white/5 mb-2 shadow-lg shadow-black/30 w-fit">
  <span className="h-2 w-2 rounded-full bg-[#22c55e] animate-ping" />
  <span className="text-[10px] font-black text-white uppercase font-sans">LOXX LOBBY</span>
  <span className="text-[9px] text-gray-400 font-mono">({lobby.players?.length || 0})</span>
@@ -132,7 +132,7 @@ export const DiscordOverlayHUD = () => {
  {/* Player Name Tag with speak indicators */}
  <div 
  className={cn(
- "px-3 py-1 rounded-lg backdrop-blur-md transition-all duration-150 border",
+ "px-3 py-1 rounded-lg transition-all duration-150 border",
  isTalking 
  ? "bg-[#22c55e]/15 border-[#22c55e]/30 text-white font-black shadow-[0_0_10px_rgba(34,197,94,0.1)]" 
  : "bg-[#10141a]/85 border-white/5 text-gray-300 font-bold",

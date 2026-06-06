@@ -42,7 +42,7 @@ export const LobbyOverlay = () => {
  animate={{ opacity: 1, x: 0, scale: 1 }}
  exit={{ opacity: 0, x: 20, scale: 0.95 }}
  transition={{ type: "spring", damping: 25, stiffness: 300 }}
- className="relative bg-[#10141a]/95 backdrop-blur-xl border border-neon-blue/20 py-2 pl-2 pr-6 rounded-3xl flex items-center justify-between gap-4 w-[280px] z-0 overflow-hidden"
+ className="relative bg-[#10141a]/95 border border-neon-blue/20 py-2 pl-2 pr-6 rounded-3xl flex items-center justify-between gap-4 w-[280px] z-0 overflow-hidden"
  >
  <div className="absolute top-0 right-0 w-32 h-32 bg-neon-blue/10 rounded-full blur-3xl -z-10" />
  

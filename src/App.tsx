@@ -105,7 +105,7 @@ const AppContent = () => {
  useEffect(() => {
  const handleWarned = (data: { warningsToday: number, message: string }) => {
  toast.custom((t) => (
- <div className={`${t.visible ? 'animate-fade-in' : 'animate-fade-out'} bg-red-950/90 border border-red-500/30 p-5 rounded-2xl shadow-[0_0_40px_rgba(239,68,68,0.2)] flex flex-col gap-3 min-w-[320px] max-w-[400px] pointer-events-auto backdrop-blur-xl transition-all`}>
+ <div className={`${t.visible ? 'animate-fade-in' : 'animate-fade-out'} bg-red-950/90 border border-red-500/30 p-5 rounded-2xl shadow-[0_0_40px_rgba(239,68,68,0.2)] flex flex-col gap-3 min-w-[320px] max-w-[400px] pointer-events-auto transition-all`}>
  <div className="flex items-center gap-3">
  <div className="h-2 w-2 rounded-full bg-red-500 animate-ping"></div>
  <span className="font-bold text-[13px] text-red-500">اخطار انضباطی دریافت کردید</span>
@@ -117,7 +117,7 @@ const AppContent = () => {
 
  const handleMuted = (data: { until: number, message: string }) => {
  toast.custom((t) => (
- <div className={`${t.visible ? 'animate-fade-in' : 'animate-fade-out'} bg-orange-950/90 border border-orange-500/30 p-5 rounded-2xl shadow-[0_0_40px_rgba(249,115,22,0.2)] flex flex-col gap-3 min-w-[320px] max-w-[400px] pointer-events-auto backdrop-blur-xl transition-all`}>
+ <div className={`${t.visible ? 'animate-fade-in' : 'animate-fade-out'} bg-orange-950/90 border border-orange-500/30 p-5 rounded-2xl shadow-[0_0_40px_rgba(249,115,22,0.2)] flex flex-col gap-3 min-w-[320px] max-w-[400px] pointer-events-auto transition-all`}>
  <div className="flex items-center gap-3">
  <div className="h-2 w-2 rounded-full bg-orange-500 animate-ping"></div>
  <span className="font-bold text-[13px] text-orange-500">محدودیت ارسال پیام (Mited)</span>
@@ -289,7 +289,7 @@ const AppContent = () => {
  const updateFn = customEvent.detail?.update;
  if (updateFn) {
  toast.custom((t) => (
- <div className={`${t.visible ? 'animate-fade-in' : 'animate-fade-out'} bg-[#0a0a0f]/95 border border-[#00e5ff]/20 p-5 rounded-2xl shadow-[0_0_50px_rgba(0,229,255,0.15)] flex flex-col gap-3 min-w-[320px] max-w-[400px] pointer-events-auto backdrop-blur-xl transition-all`} dir="rtl">
+ <div className={`${t.visible ? 'animate-fade-in' : 'animate-fade-out'} bg-[#0a0a0f]/95 border border-[#00e5ff]/20 p-5 rounded-2xl shadow-[0_0_50px_rgba(0,229,255,0.15)] flex flex-col gap-3 min-w-[320px] max-w-[400px] pointer-events-auto transition-all`} dir="rtl">
  <div className="flex items-center gap-3">
  <div className="h-2 w-2 rounded-full bg-[#00e5ff] animate-ping"></div>
  <span className="font-bold text-[13px] text-[#00e5ff]">کلاینت لوکس در حال بروزرسانی است</span>

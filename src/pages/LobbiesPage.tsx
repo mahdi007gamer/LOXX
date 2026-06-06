@@ -210,7 +210,7 @@ export const LobbiesPage = () => {
  <div className="col-span-full py-16 md:py-32 flex flex-col items-center text-center animate-in fade-in zoom-in duration-500">
  <div className="relative mb-6 md:mb-8">
  <div className="absolute inset-0 bg-neon-blue/10 blur-3xl rounded-full" />
- <div className="relative z-10 flex h-20 w-20 md:h-28 md:w-28 items-center justify-center rounded-[24px] md:rounded-[32px] bg-white/5 border border-white/10 text-gray-600 backdrop-blur-xl">
+ <div className="relative z-10 flex h-20 w-20 md:h-28 md:w-28 items-center justify-center rounded-[24px] md:rounded-[32px] bg-white/5 border border-white/10 text-gray-600 ">
  <Gamepad2 size={36} className="md:size-14 text-white/10" />
  </div>
  </div>
@@ -254,7 +254,7 @@ export const LobbiesPage = () => {
 
  {/* Hover Overlay */}
  {!lobby.isPrivate && (
- <div className="absolute inset-0 z-50 bg-[#0a0a0f]/40 backdrop-blur-[2px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none">
+ <div className="absolute inset-0 z-50 bg-[#0a0a0f]/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none">
  <GlowButton 
  variant={isVipLobby ? "gold" : "blue"} 
  className={cn(
@@ -271,7 +271,7 @@ export const LobbiesPage = () => {
  <div className="relative h-40 md:h-48 w-full shrink-0">
  <div className="absolute inset-0 overflow-hidden">
  {lobby.isPrivate && (
- <div className="absolute inset-0 z-10 bg-black/60 backdrop-blur-[2px] flex items-center justify-center">
+ <div className="absolute inset-0 z-10 bg-black/60 flex items-center justify-center">
  <div className="flex flex-col items-center gap-2 text-white">
  <Lock size={28} className="text-neon-purple animate-pulse" />
  <span className="text-[9px] font-black uppercase text-neon-purple">PRIVATE</span>
@@ -287,7 +287,7 @@ export const LobbiesPage = () => {
  <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0f] via-[#0a0a0f]/20 to-transparent" />
  </div>
  
- <div className={cn("absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] font-black uppercase backdrop-blur-md border", isVipLobby ? "border-yellow-400/30 bg-yellow-400/10 text-yellow-400" : "border-white/10 bg-white/10 text-white")}>
+ <div className={cn("absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] font-black uppercase border", isVipLobby ? "border-yellow-400/30 bg-yellow-400/10 text-yellow-400" : "border-white/10 bg-white/10 text-white")}>
  <Clock size={10} className={isVipLobby ? "text-yellow-400" : "text-neon-blue"} />
  <span>{new Date(lobby.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
  </div>

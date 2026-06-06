@@ -25,7 +25,7 @@ export const Modal = ({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className={`fixed bottom-0 left-0 right-0 ${topClass} z-[1000] flex items-start justify-center p-4 bg-black/85 backdrop-blur-md overflow-y-auto pb-12`}
+          className={`fixed bottom-0 left-0 right-0 ${topClass} z-[1000] flex items-start justify-center p-4 bg-black/85 overflow-y-auto pb-12`}
           onClick={onClose}
           dir="rtl"
         >

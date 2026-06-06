@@ -164,7 +164,7 @@ export const MusicBotCard: React.FC<MusicBotCardProps> = ({
      <img src={trackCover} alt="DJ" className={cn("w-full h-full object-cover rounded-full", musicBotState?.isPlaying && "animate-[spin_4s_linear_infinite]")} referrerPolicy="no-referrer" />
     </div>
 
-    <div className="relative z-10 w-full bg-cyan-950/60 backdrop-blur-md rounded-xl p-1.5 border border-cyan-500/20 flex flex-col items-center">
+    <div className="relative z-10 w-full bg-cyan-950/60 rounded-xl p-1.5 border border-cyan-500/20 flex flex-col items-center">
      <span className="text-[10px] md:text-xs font-black text-cyan-300 truncate max-w-full">
       {isRtl ? "رادیو موزیک هوشمند" : "Smart Music DJ"}
      </span>
@@ -345,7 +345,7 @@ export const MusicBotCard: React.FC<MusicBotCardProps> = ({
      />
     </div>
 
-    <div className="bg-cyan-950/50 backdrop-blur-md rounded-2xl border border-cyan-500/20 p-1 flex items-center justify-between shadow-xl" onClick={(e) => e.stopPropagation()}>
+    <div className="bg-cyan-950/50 rounded-2xl border border-cyan-500/20 p-1 flex items-center justify-between shadow-xl" onClick={(e) => e.stopPropagation()}>
      <QuickAction icon={<Users size={14} />} tooltip={isRtl ? "پروفایل" : "Profile"} onClick={handleCardClick} />
      <div className="text-[10px] font-extrabold text-cyan-400 uppercase flex-1 text-center py-1 font-mono tracking-wider">
       {isRtl ? "رادیو لوکس لایو" : "LOXX LIVE RADIO"}
@@ -1177,7 +1177,7 @@ export const LobbyRoomPage = () => {
  )}>
  <div className="h-full w-full bg-[#050508] text-white p-2 md:p-6 lg:p-8 flex flex-col gap-4 md:gap-6 relative overflow-hidden font-sans">
  {!user?.isVerified && (
- <div className="fixed top-20 left-4 right-4 z-[100] bg-neon-pink/20 backdrop-blur-md border border-neon-pink/30 rounded-2xl p-4 flex items-center justify-between">
+ <div className="fixed top-20 left-4 right-4 z-[100] bg-neon-pink/20 border border-neon-pink/30 rounded-2xl p-4 flex items-center justify-between">
  <div className="flex items-center gap-3">
  <ShieldAlert size={20} className="text-neon-pink" />
  <p className="text-sm font-bold text-gray-200">
@@ -1520,7 +1520,7 @@ export const LobbyRoomPage = () => {
 
  {/* Desktop Chat Sidebar (Right) */}
  {!isElectron || isDesktopChatOpen ? (
- <div className={cn("hidden lg:flex flex-col overflow-hidden shadow-2xl", isElectron ? "absolute bottom-6 right-6 z-40 bg-black/80 backdrop-blur-3xl w-[340px] h-[450px] rounded-[24px] border border-white/10" : "w-full lg:w-[280px] xl:w-[320px] h-full order-first")}>
+ <div className={cn("hidden lg:flex flex-col overflow-hidden shadow-2xl", isElectron ? "absolute bottom-6 right-6 z-40 bg-black/80 w-[340px] h-[450px] rounded-[24px] border border-white/10" : "w-full lg:w-[280px] xl:w-[320px] h-full order-first")}>
  <ChatPanel 
  messages={messages} 
  players={players}
@@ -1537,7 +1537,7 @@ export const LobbyRoomPage = () => {
  <motion.div 
  initial={{ y: 50, opacity: 0 }}
  animate={{ y: 0, opacity: 1 }}
- className="hidden lg:flex absolute bottom-6 right-6 z-40 flex-col border border-white/10 bg-black/60 backdrop-blur-lg rounded-[24px] overflow-hidden shadow-2xl cursor-pointer hover:bg-black/80 w-[300px] hover:border-neon-blue/30 transition-colors duration-300"
+ className="hidden lg:flex absolute bottom-6 right-6 z-40 flex-col border border-white/10 bg-black/60 rounded-[24px] overflow-hidden shadow-2xl cursor-pointer hover:bg-black/80 w-[300px] hover:border-neon-blue/30 transition-colors duration-300"
  onClick={() => setIsDesktopChatOpen(true)}
  >
  <div className="flex items-center justify-between p-4">
@@ -1881,7 +1881,7 @@ export const LobbyRoomPage = () => {
        right: isRtl ? (windowDims.width - 24 - 360) : 24
       }}
       className={cn(
-       "fixed bottom-24 z-[70] w-[360px] bg-white/5 backdrop-blur-[16px] border border-white/10 rounded-[32px] shadow-[0_30px_60px_rgba(0,0,0,0.5),0_0_30px_rgba(0,229,255,0.1),inset_0_1px_15px_rgba(255,255,255,0.1)] p-5 text-white select-none hover:border-white/20 transition-[border-color] duration-500",
+       "fixed bottom-24 z-[70] w-[360px] bg-white/5 border border-white/10 rounded-[32px] shadow-[0_30px_60px_rgba(0,0,0,0.5),0_0_30px_rgba(0,229,255,0.1),inset_0_1px_15px_rgba(255,255,255,0.1)] p-5 text-white select-none hover:border-white/20 transition-[border-color] duration-500",
        isRtl ? "left-6" : "right-6"
       )}
      >
@@ -2165,7 +2165,7 @@ export const LobbyRoomPage = () => {
        </button>
 
        {isQueueOpen && (
-        <div className="absolute bottom-[110%] mb-2 left-0 w-full bg-[#0f0f0f]/90 backdrop-blur-3xl rounded-2xl border border-white/10 shadow-2xl p-2 z-50 overflow-hidden">
+        <div className="absolute bottom-[110%] mb-2 left-0 w-full bg-[#0f0f0f]/90 rounded-2xl border border-white/10 shadow-2xl p-2 z-50 overflow-hidden">
          <div className="max-h-56 overflow-y-auto space-y-1 custom-scrollbar pr-1 animate-enter font-sans">
           {musicBotState?.queue && musicBotState.queue.length > 0 ? (
            musicBotState.queue.map((track, idx) => {
@@ -3228,11 +3228,7 @@ function RemoteAudioPlayer({ stream, onVolumeChange, volumeLevel }: { stream: Me
  const dataArray = new Uint8Array(bufferLength);
 
  let lastVol = 0;
- let lastAnalysisTime = 0;
- const analyzeVoice = (timestamp: number) => {
- const now = timestamp || performance.now();
- if (now - lastAnalysisTime >= 100) {
- lastAnalysisTime = now;
+ const intervalId = setInterval(() => {
  const tracks = stream.getAudioTracks();
  if (tracks.length > 0 && tracks[0].enabled) {
  analyzer.getByteFrequencyData(dataArray);
@@ -3251,17 +3247,16 @@ function RemoteAudioPlayer({ stream, onVolumeChange, volumeLevel }: { stream: Me
  lastVol = 0;
  onVolumeChange(0);
  }
- }
- rafId = requestAnimationFrame(analyzeVoice);
- };
- rafId = requestAnimationFrame(analyzeVoice);
+ }, 150);
+
+ (stream as any)._audioIntervalIdRoom = intervalId;
  } catch (e) {
  console.error("Voice setup failed", e);
  }
  }
 
  return () => {
- if (rafId) cancelAnimationFrame(rafId);
+ if ((stream as any)?._audioIntervalIdRoom) clearInterval((stream as any)._audioIntervalIdRoom);
  try {
  if (microphone) microphone.disconnect();
  if (analyzer) analyzer.disconnect();
@@ -3462,7 +3457,7 @@ function DiscordLayoutPlayerCard({
  <SmartImage src={player.avatarUrl || player.avatar} className="w-full h-full object-cover" />
  </div>
 
- <div className="relative z-10 w-full bg-black/60 backdrop-blur-md rounded-xl p-1.5 md:p-2 border border-white/10 flex flex-col items-center">
+ <div className="relative z-10 w-full bg-black/60 rounded-xl p-1.5 md:p-2 border border-white/10 flex flex-col items-center">
  <span className="text-[10px] md:text-xs font-bold text-white truncate max-w-full">
  {player.name ? (player.name.length > 10 ? player.name.substring(0, 10) + "..." : player.name) : ""}
  </span>
@@ -3473,7 +3468,7 @@ function DiscordLayoutPlayerCard({
  </div>
 
  {isSelected && (
- <div className="absolute inset-0 bg-[#0a0a0f]/95 backdrop-blur-md z-20 flex flex-col p-4 border border-neon-blue/50 rounded-[16px] justify-center items-center shadow-2xl" onClick={e => e.stopPropagation()}>
+ <div className="absolute inset-0 bg-[#0a0a0f]/95 z-20 flex flex-col p-4 border border-neon-blue/50 rounded-[16px] justify-center items-center shadow-2xl" onClick={e => e.stopPropagation()}>
  
  <div className="w-full flex-1 flex flex-col justify-center gap-6">
  <div className="w-full px-2 space-y-2">
@@ -3570,7 +3565,7 @@ function CompactLayoutPlayerCard({
  </div>
 
  {isSelected && (
- <div className="absolute inset-0 bg-[#0a0a0f]/95 backdrop-blur-md z-20 flex flex-col justify-center px-4 border border-neon-blue/40 rounded-[16px] overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
+ <div className="absolute inset-0 bg-[#0a0a0f]/95 z-20 flex flex-col justify-center px-4 border border-neon-blue/40 rounded-[16px] overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
  {/* Banner Background */}
  {player.bannerUrl && (
    <div className="absolute inset-0 opacity-20 pointer-events-none" style={{ backgroundImage: `url(${player.bannerUrl})`, backgroundSize: "cover", backgroundPosition: "center" }} />
@@ -3687,7 +3682,7 @@ const PlayerCard: React.FC<{
  }
  }}
  className={cn(
- "relative p-3 md:p-6 rounded-[24px] md:rounded-[32px] border transition-all duration-300 backdrop-blur-md cursor-pointer group flex flex-col justify-between min-h-[220px] md:min-h-[360px] w-full sm:w-[calc(50%-6px)] md:w-[calc(50%-12px)] lg:w-[calc(33.333%-10px)] xl:w-[calc(25%-18px)] shrink-0 grow min-w-[140px] sm:min-w-[220px] md:min-w-[245px]",
+ "relative p-3 md:p-6 rounded-[24px] md:rounded-[32px] border transition-all duration-300 cursor-pointer group flex flex-col justify-between min-h-[220px] md:min-h-[360px] w-full sm:w-[calc(50%-6px)] md:w-[calc(50%-12px)] lg:w-[calc(33.333%-10px)] xl:w-[calc(25%-18px)] shrink-0 grow min-w-[140px] sm:min-w-[220px] md:min-w-[245px]",
  isSlot ? "border-dashed border-white/10 bg-transparent opacity-40 hover:opacity-100" : "bg-[#0a0a0f] border-white/10 shadow-2xl overflow-hidden",
  player.isReady && !isSlot && (
  isStreamerLobby ? "scale-[1.02] ring-1 ring-purple-500/40 border-purple-500/30 shadow-[0_20px_40px_-5px_rgba(168,85,247,0.15)] bg-gradient-to-b from-[#0a0a0f] to-purple-900/10" :
@@ -3845,7 +3840,7 @@ const PlayerCard: React.FC<{
  />
  </div>
 
- <div className="bg-black/60 backdrop-blur-md rounded-2xl border border-white/10 p-1 flex items-center justify-between shadow-xl" onClick={(e) => e.stopPropagation()}>
+ <div className="bg-black/60 rounded-2xl border border-white/10 p-1 flex items-center justify-between shadow-xl" onClick={(e) => e.stopPropagation()}>
  <QuickAction icon={<Users size={14} />} tooltip={isRtl ? "پروفایل" : "Profile"} onClick={() => onProfile(player.id)} />
  <QuickAction icon={<MessageSquare size={14} />} tooltip={isRtl ? "پیام" : "Message"} onClick={() => onDirectMessage(player.id)} />
  <QuickAction icon={<UserPlus size={14} />} tooltip={isRtl ? "افزودن" : "Add Friend"} onClick={() => onAddFriend(player.id)} />
@@ -3972,7 +3967,7 @@ function ChatPanel({ messages, players, inputMessage, setInputMessage, onSend, o
  };
 
  return (
- <div className="flex-1 flex flex-col h-full bg-[#0d0d14]/40 backdrop-blur-xl border-l md:border-r border-white/5">
+ <div className="flex-1 flex flex-col h-full bg-[#0d0d14]/40 border-l md:border-r border-white/5">
  <div className="flex flex-col">
  <div className="p-6 border-b border-white/5 flex items-center justify-between">
  <div className="flex items-center gap-3">

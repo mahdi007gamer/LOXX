@@ -318,7 +318,7 @@ export const PremiumPage = () => {
 
  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 items-start mb-20">
  {/* PLUS CARD */}
- <NeonCard variant="blue" className="p-8 md:p-12 bg-dark-card/50 backdrop-blur-2xl border-white/5 relative overflow-hidden group">
+ <NeonCard variant="blue" className="p-8 md:p-12 bg-dark-card/50 border-white/5 relative overflow-hidden group">
  <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-all">
  <Zap size={200} className="rotate-12" />
  </div>
@@ -364,7 +364,7 @@ export const PremiumPage = () => {
  </NeonCard>
 
  {/* VIP CARD */}
- <NeonCard variant="purple" className="p-8 md:p-12 bg-[#12051a]/50 backdrop-blur-2xl border-yellow-400/20 relative overflow-hidden group">
+ <NeonCard variant="purple" className="p-8 md:p-12 bg-[#12051a]/50 border-yellow-400/20 relative overflow-hidden group">
  <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-all">
  <Crown size={200} className="rotate-12" />
  </div>
@@ -512,7 +512,7 @@ export const PremiumPage = () => {
  cardHolder={isRtl ? "مهدی دلال زاده احمدی" : "Mehdi DalalZadeh Ahmadi"}
  />
 
- <div className="p-8 rounded-[40px] bg-white/[0.03] border border-white/5 space-y-5 shadow-2xl backdrop-blur-md">
+ <div className="p-8 rounded-[40px] bg-white/[0.03] border border-white/5 space-y-5 shadow-2xl ">
  <div className="flex justify-between items-center">
  <span className="text-gray-500 font-black uppercase text-[10px] leading-none">{isRtl ? "نوع اشتراک" : "PLAN TYPE"}</span>
  <span className={cn(
@@ -665,7 +665,7 @@ export const PremiumPage = () => {
  {/* Adjusted icon positioning: more margin-top and higher z-index */}
  <div className="relative mt-20 mb-10 flex justify-center z-40">
  <div className={cn(
- "h-32 w-32 rounded-[40px] bg-white/5 flex items-center justify-center relative shadow-2xl backdrop-blur-xl border border-white/10",
+ "h-32 w-32 rounded-[40px] bg-white/5 flex items-center justify-center relative shadow-2xl border border-white/10",
  )}>
  {paymentStatus === "APPROVED" ? (
  <div className="relative z-50">
@@ -741,21 +741,21 @@ export const PremiumPage = () => {
  </AnimatePresence>
 
  <div className="mt-20 grid grid-cols-1 md:grid-cols-3 gap-6">
- <div className="p-6 rounded-3xl bg-white/[0.03] border border-white/5 backdrop-blur-xl text-center">
+ <div className="p-6 rounded-3xl bg-white/[0.03] border border-white/5 text-center">
  <div className="h-12 w-12 rounded-2xl bg-neon-blue/10 flex items-center justify-center text-neon-blue mx-auto mb-4">
  <Shield size={24} />
  </div>
  <h4 className="text-white font-black uppercase mb-2">{isRtl ? "پرداخت امن" : "SECURE PAYMENT"}</h4>
  <p className="text-[10px] text-gray-500 font-bold uppercase leading-relaxed">{isRtl ? "تراکنش‌ها توسط ادمین تایید و بررسی می‌شوند." : "All transactions are reviewed and verified by administrators."}</p>
  </div>
- <div className="p-6 rounded-3xl bg-white/[0.03] border border-white/5 backdrop-blur-xl text-center">
+ <div className="p-6 rounded-3xl bg-white/[0.03] border border-white/5 text-center">
  <div className="h-12 w-12 rounded-2xl bg-neon-pink/10 flex items-center justify-center text-neon-pink mx-auto mb-4">
  <Clock size={24} />
  </div>
  <h4 className="text-white font-black uppercase mb-2">{isRtl ? "تایید سریع" : "FAST APPROVAL"}</h4>
  <p className="text-[10px] text-gray-500 font-bold uppercase leading-relaxed">{isRtl ? "فعال‌سازی اشتراک در کمتر از ۱۵ دقیقه." : "Rapid activation in less than 15 minutes."}</p>
  </div>
- <div className="p-6 rounded-3xl bg-white/[0.03] border border-white/5 backdrop-blur-xl text-center">
+ <div className="p-6 rounded-3xl bg-white/[0.03] border border-white/5 text-center">
  <div className="h-12 w-12 rounded-2xl bg-neon-purple/10 flex items-center justify-center text-neon-purple mx-auto mb-4">
  <Users size={24} />
  </div>

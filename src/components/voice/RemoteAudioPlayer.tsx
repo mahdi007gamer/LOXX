@@ -147,39 +147,37 @@ export const RemoteAudioPlayer: React.FC<RemoteAudioPlayerProps> = ({ stream, on
 
     let lastVol = 0;
     let lastAnalysisTime = 0;
-    const analyzeVoice = (timestamp: number) => {
-     const now = timestamp || performance.now();
-     if (now - lastAnalysisTime >= 100) {
-      lastAnalysisTime = now;
-      const tracks = stream.getAudioTracks();
-      if (tracks.length > 0 && tracks[0].enabled) {
-       analyzer.getByteFrequencyData(dataArray);
-       let sum = 0;
-       for (let i = 0; i < bufferLength; i++) {
-        sum += dataArray[i];
-       }
-       const avg = sum / bufferLength;
-       const currentVol = Math.min(100, Math.round(avg * 2.5));
-       
-       if (Math.abs(currentVol - lastVol) > 15 || (currentVol === 0 && lastVol !== 0) || (currentVol > 10 && lastVol === 0)) {
-        lastVol = currentVol;
-        onVolumeChange(currentVol);
-       }
-      } else if (lastVol !== 0) {
-       lastVol = 0;
-       onVolumeChange(0);
+    const intervalId = setInterval(() => {
+     const tracks = stream.getAudioTracks();
+     if (tracks.length > 0 && tracks[0].enabled) {
+      analyzer.getByteFrequencyData(dataArray);
+      let sum = 0;
+      for (let i = 0; i < bufferLength; i++) {
+       sum += dataArray[i];
       }
+      const avg = sum / bufferLength;
+      const currentVol = Math.min(100, Math.round(avg * 2.5));
+      
+      if (Math.abs(currentVol - lastVol) > 15 || (currentVol === 0 && lastVol !== 0) || (currentVol > 10 && lastVol === 0)) {
+       lastVol = currentVol;
+       onVolumeChange(currentVol);
+      }
+     } else if (lastVol !== 0) {
+      lastVol = 0;
+      onVolumeChange(0);
      }
-     rafId = requestAnimationFrame(analyzeVoice);
-    };
-    rafId = requestAnimationFrame(analyzeVoice);
+    }, 150); // 150ms interval for better performance
+    
+    // Store intervalId to clear it on cleanup
+    (stream as any)._audioIntervalId = intervalId;
+
    } catch (err) {
     console.error("Remote voice analyzer error:", err);
    }
   }
 
   return () => {
-   if (rafId) cancelAnimationFrame(rafId);
+   if ((stream as any)?._audioIntervalId) clearInterval((stream as any)._audioIntervalId);
    try {
     if (microphone) microphone.disconnect();
     if (analyzer) analyzer.disconnect();

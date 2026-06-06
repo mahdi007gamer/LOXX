@@ -946,7 +946,7 @@ export const AdminPage = () => {
  {badge.category}
  </span>
 
- <div className="absolute inset-0 bg-black/60 backdrop-blur-sm rounded-[32px] flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+ <div className="absolute inset-0 bg-black/60 rounded-[32px] flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
  <button 
  onClick={() => { setSelectedBadge(badge); setIsBadgeModalOpen(true); }}
  className="h-10 w-10 rounded-xl bg-white/10 text-white hover:text-neon-purple transition-colors flex items-center justify-center"
@@ -1295,7 +1295,7 @@ export const AdminPage = () => {
  animate={{ opacity: 1 }}
  exit={{ opacity: 0 }}
  onClick={() => setPreviewImage(null)}
- className="fixed inset-0 z-50 flex items-center justify-center p-8 bg-black/90 backdrop-blur-xl cursor-zoom-out"
+ className="fixed inset-0 z-50 flex items-center justify-center p-8 bg-black/90 cursor-zoom-out"
  >
  <AuthorizedImage 
  src={previewImage}
@@ -1390,7 +1390,7 @@ export const AdminPage = () => {
  animate={{ opacity: 1 }}
  exit={{ opacity: 0 }}
  onClick={() => setPreviewImage(null)}
- className="fixed inset-0 z-[100] flex items-center justify-center p-8 bg-black/90 backdrop-blur-xl cursor-zoom-out"
+ className="fixed inset-0 z-[100] flex items-center justify-center p-8 bg-black/90 cursor-zoom-out"
  >
  <AuthorizedImage 
  src={previewImage}

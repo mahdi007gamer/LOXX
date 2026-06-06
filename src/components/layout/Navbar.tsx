@@ -72,14 +72,14 @@ export const Navbar = () => {
  ? (isLanding && isScrolled ? "top-16 px-4" : "top-9")
  : (!isLanding ? "top-0" : (isScrolled ? "top-4 px-4" : "top-0")),
  !isLanding
- ? "bg-[#050507]/95 border-b border-white/10 md:backdrop-blur-md"
+ ? "bg-[#050507]/95 border-b border-white/10 md:"
  : "bg-transparent"
  )}
  >
  <div 
  className={cn(
  "mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8 transition-all duration-500 relative pointer-events-auto",
- isLanding && isScrolled ? "max-w-4xl rounded-2xl bg-[#050507]/95 px-8 shadow-[0_20px_50px_rgba(0,0,0,0.8),0_0_15px_rgba(0,229,255,0.2)] md:backdrop-blur-xl border border-white/10"
+ isLanding && isScrolled ? "max-w-4xl rounded-2xl bg-[#050507]/95 px-8 shadow-[0_20px_50px_rgba(0,0,0,0.8),0_0_15px_rgba(0,229,255,0.2)] md:border border-white/10"
  : isLanding && !isScrolled ? ""
  : "max-w-none px-4 sm:px-6 lg:px-8" // Reset when not landing
  )}
@@ -238,7 +238,7 @@ export const Navbar = () => {
  animate={{ opacity: 1 }}
  exit={{ opacity: 0 }}
  onClick={() => setIsMenuOpen(false)}
- className="fixed inset-0 z-[10000] bg-black/60 backdrop-blur-sm md:hidden"
+ className="fixed inset-0 z-[10000] bg-black/60 md:hidden"
  />
  <motion.div
  initial={{ x: isRtl ? "100%" : "-100%" }}

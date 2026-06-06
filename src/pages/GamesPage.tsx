@@ -61,7 +61,7 @@ const GameCard: React.FC<{ game: Game; index: number }> = ({ game, index }) => {
  <div className="absolute inset-0 bg-gradient-to-t from-dark-bg via-transparent to-transparent opacity-60" />
  
  {/* Active Lobbies Badge */}
- <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 flex items-center gap-2">
+ <div className="absolute top-4 right-4 bg-black/60 px-3 py-1.5 rounded-full border border-white/10 flex items-center gap-2">
  <div className="h-1.5 w-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.8)]" />
  <span className="text-[10px] font-bold text-white whitespace-nowrap">
  {isRtl ? `${game.activeLobbies} لابی فعال` : `${game.activeLobbies} Active Lobbies`}

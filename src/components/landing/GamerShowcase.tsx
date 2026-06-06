@@ -51,7 +51,7 @@ export const GamerShowcase = () => {
  </div>
  
  {/* Corner Details */}
- <div className="absolute -bottom-6 -left-6 z-10 rounded-2xl border border-neon-pink/50 bg-dark-bg/80 p-6 backdrop-blur-xl shadow-2xl">
+ <div className="absolute -bottom-6 -left-6 z-10 rounded-2xl border border-neon-pink/50 bg-dark-bg/80 p-6 shadow-2xl">
  <div className="flex items-center gap-3">
  <div className="h-4 w-4 animate-pulse rounded-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.8)]" />
  <span className="text-lg font-bold text-white">

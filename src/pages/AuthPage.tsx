@@ -398,7 +398,7 @@ export const AuthPage = () => {
  </GlowButton>
  {step === "AUTH" && !isLogin && !acceptedTerms && (
  <div className="absolute inset-0 z-20 cursor-not-allowed group-hover/btn:opacity-100 opacity-0 pointer-events-auto flex items-center justify-center transition-opacity">
- <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-neon-pink/95 backdrop-blur-md px-4 py-2 rounded-2xl border border-neon-pink/30 text-xs text-white font-black whitespace-nowrap shadow-xl flex items-center gap-2 pointer-events-none">
+ <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-neon-pink/95 px-4 py-2 rounded-2xl border border-neon-pink/30 text-xs text-white font-black whitespace-nowrap shadow-xl flex items-center gap-2 pointer-events-none">
  <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
  جهت ثبت‌نام باید قوانین و مقررات را بپذیرید!
  </div>

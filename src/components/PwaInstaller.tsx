@@ -111,7 +111,7 @@ export const PwaInstaller = () => {
 
  return (
  <AnimatePresence>
- <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[99999] flex items-end justify-center p-0 md:p-4 md:items-center animate-fade-in">
+ <div className="fixed inset-0 bg-black/80 z-[99999] flex items-end justify-center p-0 md:p-4 md:items-center animate-fade-in">
  <motion.div
  initial={{ y: "100%", opacity: 0 }}
  animate={{ y: 0, opacity: 1 }}

@@ -438,7 +438,7 @@ export const DashboardPage = () => {
  </div>
 
  {isStreamer ? (
- <div className="flex items-center gap-6 bg-white/[0.02] backdrop-blur-md p-6 rounded-[32px] border border-white/5 min-w-[320px]">
+ <div className="flex items-center gap-6 bg-white/[0.02] p-6 rounded-[32px] border border-white/5 min-w-[320px]">
  <div className="flex-1 space-y-2">
  <GlowButton 
  variant="purple" 
@@ -459,7 +459,7 @@ export const DashboardPage = () => {
  </div>
  </div>
  ) : (currentMembership !== "NONE" && currentMembership !== "FREE" ? (
- <div className="flex items-center gap-10 bg-white/[0.02] backdrop-blur-md p-8 rounded-[40px] border border-white/5 min-w-[280px]">
+ <div className="flex items-center gap-10 bg-white/[0.02] p-8 rounded-[40px] border border-white/5 min-w-[280px]">
  <div className="text-center">
  <p className="text-[10px] text-gray-500 font-black uppercase mb-2 ">{isRtl ? "باقیمانده اشتراک" : "Days Remaining"}</p>
  <div className="flex items-baseline justify-center gap-1">
@@ -756,7 +756,7 @@ export const DashboardPage = () => {
  initial={{ opacity: 0 }}
  animate={{ opacity: 1 }}
  exit={{ opacity: 0 }}
- className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
+ className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 "
  >
  <motion.div 
  initial={{ scale: 0.9, opacity: 0, y: 20 }}
@@ -807,7 +807,7 @@ export const DashboardPage = () => {
  initial={{ opacity: 0 }}
  animate={{ opacity: 1 }}
  exit={{ opacity: 0 }}
- className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-lg"
+ className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 "
  >
  <motion.div 
  initial={{ scale: 0.9, opacity: 0, y: 30 }}

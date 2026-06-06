@@ -45,6 +45,12 @@ if (!appIconPath) {
   logMsg('WARN', 'No custom application icon found on disk. Resorting to standard system defaults.');
 }
 
+// Performance optimization flags to reduce RAM/CPU usage
+app.commandLine.appendSwitch('disable-features', 'HardwareMediaKeyHandling,MediaSessionService');
+app.commandLine.appendSwitch('disable-renderer-backgrounding');
+app.commandLine.appendSwitch('disable-background-timer-throttling');
+app.commandLine.appendSwitch('enable-features', 'WebContentsForceDark');
+
 // Single Instance Lock
 const gotTheLock = app.requestSingleInstanceLock();
 if (!gotTheLock) {
@@ -307,7 +313,7 @@ let config = {
   startAtLogin: true,
   hardwareAcceleration: true,
   globalPttKey: 'CommandOrControl+Alt+V',
-  globalMuteKey: 'CommandOrControl+Alt+M',
+  globalMuteKey: '=',
   overlayX: 24,
   overlayY: 80,
   overlayWidth: 320,

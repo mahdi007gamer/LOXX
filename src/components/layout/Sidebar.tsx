@@ -79,7 +79,7 @@ export const Sidebar = () => {
  <aside 
  dir={isRtl ? "rtl" : "ltr"}
  className={cn(
- "fixed hidden bg-dark-[#050507]/50 bg-dark-bg/50 backdrop-blur-lg md:block z-[40] transition-all duration-300",
+ "fixed hidden bg-dark-[#050507]/50 bg-dark-bg/50 md:block z-[40] transition-all duration-300",
  isElectron 
  ? "top-[100px] h-[calc(100vh-100px)]" 
  : "top-16 h-[calc(100vh-64px)]",

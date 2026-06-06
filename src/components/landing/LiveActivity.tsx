@@ -119,7 +119,7 @@ export const LiveActivity = () => {
  };
 
  return (
- <div className="rounded-2xl border border-white/5 bg-white/2 p-6 backdrop-blur-md overflow-hidden relative" dir={isRtl ? "rtl" : "ltr"}>
+ <div className="rounded-2xl border border-white/5 bg-white/2 p-6 overflow-hidden relative" dir={isRtl ? "rtl" : "ltr"}>
  <div className="mb-6 flex items-center justify-between relative z-10">
  <h4 className="font-bold text-white">
  {isRtl ? "فعالیت‌های زنده پلتفرم" : "Live Platform Feed"}

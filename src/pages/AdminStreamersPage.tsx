@@ -441,7 +441,7 @@ export const AdminStreamersPage = () => {
  </div>
  ) : activeTab === "cooperation" ? (
  <div className="space-y-6">
- <NeonCard variant="pink" className="p-6 bg-[#090b11]/90 backdrop-blur-md">
+ <NeonCard variant="pink" className="p-6 bg-[#090b11]/90 ">
  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
  <div>
  <h3 className="text-xl font-black text-white">لیست درخواست‌های همکاری استریمرها</h3>

@@ -65,7 +65,7 @@ export const MessageContextMenu: React.FC<MessageContextMenuProps> = ({ x, y, ac
  exit={{ opacity: 0, scale: 0.95 }}
  transition={{ duration: 0.15 }}
  style={{ top: adjustedPosition.y, left: adjustedPosition.x }}
- className="fixed z-[100000] min-w-[160px] bg-[#0c0c14] border border-white/10 rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.8)] backdrop-blur-md overflow-hidden py-1 rtl text-right"
+ className="fixed z-[100000] min-w-[160px] bg-[#0c0c14] border border-white/10 rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.8)] overflow-hidden py-1 rtl text-right"
  dir="rtl"
  onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); }}
  >

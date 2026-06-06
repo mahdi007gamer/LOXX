@@ -654,7 +654,7 @@ export const SettingsPage = () => {
  <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
  <motion.div 
  initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
- className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+ className="absolute inset-0 bg-black/60 "
  onClick={() => { setShowTwoFactorModal(false); setShowVerificationModal(false); setSetupStep("initial"); }}
  />
  <motion.div 
@@ -917,7 +917,7 @@ export const SettingsPage = () => {
  onClick={() => navigate("/settings/elite")}
  >
  <div className="absolute -inset-1 bg-gradient-to-r from-yellow-400 via-orange-500 to-yellow-600 rounded-[32px] blur-xl opacity-40 group-hover:opacity-60 transition duration-1000" />
- <NeonCard variant="gold" className="relative p-10 overflow-hidden border-none bg-black/60 backdrop-blur-3xl">
+ <NeonCard variant="gold" className="relative p-10 overflow-hidden border-none bg-black/60 ">
  <div className="absolute top-0 left-0 p-8 opacity-10">
  <Crown size={200} />
  </div>
@@ -1265,7 +1265,7 @@ export const SettingsPage = () => {
  if (!isRtl) {
  return (
  <div className="space-y-8 animate-fade-in" dir="ltr">
- <NeonCard className="relative overflow-hidden border-none bg-black/40 backdrop-blur-2xl">
+ <NeonCard className="relative overflow-hidden border-none bg-black/40 ">
  {/* Glow decoration */}
  <div className="absolute top-0 left-0 w-80 h-80 bg-neon-blue/5 rounded-full blur-[100px] pointer-events-none" />
  
@@ -1344,7 +1344,7 @@ export const SettingsPage = () => {
 
  return (
  <div className="space-y-8 animate-fade-in" dir="rtl">
- <NeonCard className="relative overflow-hidden border-none bg-black/40 backdrop-blur-2xl">
+ <NeonCard className="relative overflow-hidden border-none bg-black/40 ">
  {/* Glow decoration */}
  <div className="absolute top-0 right-0 w-80 h-80 bg-neon-blue/5 rounded-full blur-[100px] pointer-events-none" />
  

@@ -74,7 +74,7 @@ export const LobbyInviteCard: React.FC<LobbyInviteCardProps> = ({ initialData })
  دعوت به لابی اختصاصی
  </p>
  
- <div className="group/lobby relative overflow-hidden rounded-xl bg-white/[0.03] border border-white/5 p-2.5 pr-4 shadow-xl backdrop-blur-xl flex items-center gap-3 transition-all hover:bg-white/[0.05] min-w-[260px]">
+ <div className="group/lobby relative overflow-hidden rounded-xl bg-white/[0.03] border border-white/5 p-2.5 pr-4 shadow-xl flex items-center gap-3 transition-all hover:bg-white/[0.05] min-w-[260px]">
  <div className="absolute top-0 right-0 bottom-0 w-[2px] bg-neon-blue opacity-50"></div>
  <div className="h-9 w-9 shrink-0 rounded-lg bg-neon-blue/10 border border-neon-blue/20 flex items-center justify-center text-neon-blue group-hover:scale-105 transition-transform">
  <Play size={16} fill="currentColor" className="ml-0.5" />

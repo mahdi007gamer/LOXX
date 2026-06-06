@@ -219,7 +219,7 @@ export const EliteDashboardPage = () => {
  className="space-y-6"
  >
  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
- <div className="bg-[#0b0c10]/80 backdrop-blur-xl border border-white/5 p-6 rounded-2xl relative overflow-hidden flex flex-col justify-center">
+ <div className="bg-[#0b0c10]/80 border border-white/5 p-6 rounded-2xl relative overflow-hidden flex flex-col justify-center">
  <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent pointer-events-none"></div>
  <span className="text-gray-400 text-sm font-bold mb-2">
  موجودی قابل تسویه
@@ -234,7 +234,7 @@ export const EliteDashboardPage = () => {
  </div>
  </div>
 
- <div className="bg-[#0b0c10]/80 backdrop-blur-xl border border-white/5 p-6 rounded-2xl relative overflow-hidden flex flex-col justify-center">
+ <div className="bg-[#0b0c10]/80 border border-white/5 p-6 rounded-2xl relative overflow-hidden flex flex-col justify-center">
  <span className="text-gray-400 text-sm font-bold mb-2">
  درآمد کل از ابتدا
  </span>
@@ -248,7 +248,7 @@ export const EliteDashboardPage = () => {
  </div>
  </div>
 
- <div className="bg-[#0b0c10]/80 backdrop-blur-xl border border-white/5 p-6 rounded-2xl relative overflow-hidden flex flex-col justify-center">
+ <div className="bg-[#0b0c10]/80 border border-white/5 p-6 rounded-2xl relative overflow-hidden flex flex-col justify-center">
  <div className="absolute top-0 left-0 w-1 h-full bg-neon-blue"></div>
  <span className="text-gray-400 text-sm font-bold mb-2">
  کاربران جذب‌شده با کد شما
@@ -270,7 +270,7 @@ export const EliteDashboardPage = () => {
  initial={{ opacity: 0, y: 15 }}
  animate={{ opacity: 1, y: 0 }}
  transition={{ delay: 0.1 }}
- className="relative overflow-hidden bg-purple-950/10 backdrop-blur-2xl border border-purple-500/20 p-8 rounded-3xl group shadow-[0_30px_70px_-15px_rgba(168,85,247,0.15)] flex flex-col md:flex-row items-center justify-between gap-8 mt-2"
+ className="relative overflow-hidden bg-purple-950/10 border border-purple-500/20 p-8 rounded-3xl group shadow-[0_30px_70px_-15px_rgba(168,85,247,0.15)] flex flex-col md:flex-row items-center justify-between gap-8 mt-2"
  >
  {/* Sparkling / Glow Effects */}
  <div className="absolute inset-0 bg-gradient-to-tr from-purple-500/[0.08] via-fuchsia-500/[0.04] to-transparent pointer-events-none transition-all duration-700 group-hover:opacity-80" />

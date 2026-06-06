@@ -173,7 +173,7 @@ export const ProfilePage = () => {
  <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0f] via-transparent to-transparent" />
  <button 
  onClick={() => setIsEditModalOpen(true)}
- className="absolute top-6 left-6 h-10 w-10 rounded-full bg-black/40 backdrop-blur-md border border-white/20 flex items-center justify-center text-white hover:bg-neon-blue hover:text-dark-bg transition-all opacity-0 group-hover:opacity-100"
+ className="absolute top-6 left-6 h-10 w-10 rounded-full bg-black/40 border border-white/20 flex items-center justify-center text-white hover:bg-neon-blue hover:text-dark-bg transition-all opacity-0 group-hover:opacity-100"
  >
  <Camera size={18} />
  </button>
