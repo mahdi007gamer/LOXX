@@ -1097,7 +1097,323 @@ export const LobbyRoomPage = () => {
  )} />
  </div>
 
- {/* Achievement Pulse Overlay */}
+   {/* LOBBY INTERFACE CONTAINER */}
+  <div className="relative z-10 flex flex-col flex-1 gap-4 md:gap-6 overflow-hidden h-full">
+    {/* Sleek Gaming Header */}
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/5 pb-4 md:pb-6 shrink-0 font-sans">
+      <div className="flex items-center gap-3">
+        <button 
+          onClick={() => {
+            leaveLobby();
+            navigate("/lobbies");
+          }}
+          className="h-10 w-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-all hover:scale-105 active:scale-95"
+        >
+          <ChevronLeft size={20} />
+        </button>
+        <div>
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-lg md:text-2xl font-black text-white tracking-tight uppercase">
+              {lobby?.title || "LOXX LOBBY"}
+            </h1>
+            <span className={cn(
+              "text-[9px] font-black uppercase px-2 py-0.5 rounded border leading-none tracking-wider shrink-0",
+              isStreamerLobby ? "bg-purple-500/10 text-purple-400 border-purple-500/20 shadow-[0_0_10px_rgba(168,85,247,0.15)]" :
+              isVipLobby ? "bg-yellow-400/10 text-yellow-400 border-yellow-400/20 shadow-[0_0_10px_rgba(250,204,21,0.15)]" : "bg-neon-blue/10 text-neon-blue border-neon-blue/20"
+            )}>
+              {isStreamerLobby ? (isRtl ? "اتاق استریمر" : "Streamer Room") : isVipLobby ? (isRtl ? "VIP" : "VIP Room") : (isRtl ? "استاندارد" : "Standard Room")}
+            </span>
+            {lobby?.isPrivate && (
+              <span className="text-[9px] font-black uppercase bg-red-500/10 text-red-500 border border-red-500/20 px-2 py-0.5 rounded leading-none shrink-0 tracking-wider">
+                {isRtl ? "خصوصی" : "PRIVATE"}
+              </span>
+            )}
+          </div>
+          <p className="text-xs text-gray-500 mt-1 font-semibold flex items-center gap-1.5">
+            <Gamepad2 size={12} className="text-neon-pink shrink-0" />
+            {isRtl ? " پلتفرم رادیو دیسکی و چت صوتی اختصاصی لوکس" : "LOXX Pro Gaming Voice & DJ Server"} • {lobby?.maxPlayers} {isRtl ? "ظرفیت بازیکن" : "max players"}
+          </p>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3">
+        {/* Connection status dot */}
+        <div className="hidden sm:flex items-center gap-2 bg-white/5 border border-white/10 px-3 py-1.5 rounded-xl text-[10px] font-bold text-gray-400">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+          </span>
+          {isRtl ? "متصل به سرور ایران" : "Connected (VPS Main Relay)"}
+        </div>
+
+        {/* Invite link and sharing code */}
+        <button
+          onClick={handleCopyCode}
+          className="flex items-center gap-2 bg-white/5 hover:bg-white/10 active:scale-95 border border-white/10 hover:border-white/20 px-4 py-2 rounded-xl text-xs text-gray-200 transition-all font-sans font-black uppercase shadow-lg select-all"
+        >
+          {copied ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} className="text-neon-blue" />}
+          {lobby?.id || "LX-LOBBY"}
+        </button>
+
+        {/* Change layout templates */}
+        <button
+          onClick={toggleLayout}
+          className="h-10 px-3.5 bg-white/5 hover:bg-white/10 active:scale-95 border border-white/10 rounded-xl text-xs font-black uppercase text-gray-300 hover:text-white transition-all flex items-center gap-2"
+          title="Switch Layout template"
+        >
+          <LayoutTemplate size={16} className="text-neon-pink" />
+          {layoutMode === "default" ? "STD" : layoutMode === "compact" ? "CMP" : "DISC"}
+        </button>
+      </div>
+    </div>
+
+    {/* Dynamic Grid Layout / Active Game Board & Chat sidebar */}
+    <div className="flex-1 flex flex-col lg:flex-row gap-6 overflow-hidden min-h-0 h-full relative">
+      <div className="flex-1 flex flex-col justify-between overflow-hidden gap-4 h-full">
+        {/* Players Slot cards Grid */}
+        <div className={cn(
+          "flex-1 overflow-y-auto custom-scrollbar pr-1",
+          layoutMode === "discord" ? "space-y-2.5 flex flex-col" : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-start"
+        )}>
+          {players.map((p) => (
+            <PlayerCard 
+              key={p.id} 
+              player={p} 
+              volume={p.volume} 
+              isSelected={selectedPlayer === p.id} 
+              onSelect={() => setSelectedPlayer(p.id)} 
+              onVolumeChange={(vol) => handlePlayerVolume(p.id, vol)} 
+              onMute={() => handlePlayerVolume(p.id, p.isMuted ? 100 : 0)} 
+              onInvite={() => setIsInviteModalOpen(true)} 
+              onProfile={(uid) => setActiveProfileUserId(uid)} 
+              onDirectMessage={(uid) => openChat(uid)} 
+              onAddFriend={(uid) => addFriend(uid)} 
+              onKick={(uid) => kickPlayer(uid)} 
+              onBan={(uid) => banPlayer(uid)} 
+              isHostView={isHost} 
+              isVipLobby={isVipLobby} 
+              isStreamerLobby={isStreamerLobby} 
+              layoutMode={layoutMode}
+            />
+          ))}
+        </div>
+
+        {/* Active game configuration / Matchinfo progress popup panel */}
+        <MatchInfoPanel 
+          isStarting={isStarting} 
+          isMatchStarted={isMatchStarted} 
+          countdown={countdown} 
+          players={players} 
+          lobby={lobby} 
+          onCancel={handleCancelMatch} 
+          onReopen={handleReopenLobby} 
+          isVipLobby={isVipLobby} 
+          isStreamerLobby={isStreamerLobby} 
+        />
+
+        {/* Center Dock Console Controls bar */}
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white/[0.02] border border-white/5 p-4 rounded-3xl shrink-0 backdrop-blur-sm shadow-xl font-sans">
+          <div className="flex flex-wrap items-center gap-2">
+            <ControlButton 
+              icon={isMicMuted ? <MicOff className="text-red-500" /> : <Mic className="text-neon-blue" />} 
+              active={!isMicMuted} 
+              onClick={toggleMic} 
+              tooltip={isMicMuted ? "Unmute Microphone" : "Mute Microphone"}
+            />
+            <ControlButton 
+              icon={isDeafened ? <VolumeX className="text-red-500" /> : <Volume2 className="text-neon-pink" />} 
+              active={!isDeafened} 
+              onClick={() => setIsDeafened(!isDeafened)} 
+              tooltip={isDeafened ? "Turn on Sound Output" : "Deafen Lobby Audio"}
+            />
+            <ControlButton 
+              icon={<Monitor className={screenStream ? "text-emerald-400" : "text-gray-400"} />} 
+              active={!!screenStream} 
+              onClick={screenStream ? stopShare : initiateScreenShareFlow} 
+              tooltip={screenStream ? "Close Stream Broadcast" : "Share Monitor Screen"}
+            />
+            <ControlButton 
+              icon={<MessageSquare className={isDesktopChatOpen ? "text-[#00e5ff]" : "text-gray-400"} />} 
+              active={isDesktopChatOpen} 
+              onClick={() => setIsDesktopChatOpen(!isDesktopChatOpen)} 
+              tooltip="Toggle Comms Chat"
+            />
+            <ControlButton 
+              icon={<Settings className="text-gray-400" />} 
+              onClick={() => setIsSettingsModalOpen(true)} 
+              tooltip="Lobby Configuration Layout"
+            />
+            <ControlButton 
+              icon={<LogOut className="text-red-500 hover:text-red-400" />} 
+              onClick={() => {
+                leaveLobby();
+                navigate("/lobbies");
+              }} 
+              tooltip="Leave Gaming Lobby"
+            />
+          </div>
+
+          {/* Big Action / Start Match Trigger Button */}
+          {isHost ? (
+            <GlowButton 
+              variant={isStarting ? "red" : isMatchStarted ? "pink" : "blue"} 
+              onClick={isStarting ? handleCancelMatch : isMatchStarted ? handleReopenLobby : handleStartMatch}
+              className="h-12 px-8 text-xs font-black uppercase tracking-wider rounded-xl shadow-lg leading-none shrink-0"
+            >
+              {isStarting ? (
+                <span className="flex items-center gap-2">
+                  <RotateCcw size={16} />
+                  {isRtl ? "لغو شروع" : "Cancel Match Start"}
+                </span>
+              ) : isMatchStarted ? (
+                <span className="flex items-center gap-2">
+                  <Lock size={16} />
+                  {isRtl ? "باز کردن لابی" : "Unlock Room Team"}
+                </span>
+              ) : (
+                <span className="flex items-center gap-2">
+                  <Play size={16} className="fill-current animate-pulse text-dark-bg" />
+                  {isRtl ? "شروع بازی تیمی" : "Start Match Group"}
+                </span>
+              )}
+            </GlowButton>
+          ) : (
+            <GlowButton 
+              variant={isReady ? "pink" : "blue"} 
+              onClick={onToggleReady}
+              className={cn("h-12 px-8 text-xs font-black uppercase tracking-wider rounded-xl shadow-lg leading-none shrink-0", isReady && "shadow-[0_0_20px_rgba(255,0,127,0.35)]")}
+            >
+              {isReady ? (
+                <span className="flex items-center gap-2 font-sans">
+                  <X size={16} />
+                  {isRtl ? "لغو آمادگی" : "Not Ready"}
+                </span>
+              ) : (
+                <span className="flex items-center gap-2 font-sans">
+                  <Check size={16} />
+                  {isRtl ? "آماده بازی کردن" : "Ready to Play"}
+                </span>
+              )}
+            </GlowButton>
+          )}
+        </div>
+      </div>
+
+      {/* Comms Sidebar Chat box (Desktop) */}
+      <AnimatePresence>
+        {isDesktopChatOpen && (
+          <motion.div 
+            initial={{ width: 0, opacity: 0 }}
+            animate={{ width: 320, opacity: 1 }}
+            exit={{ width: 0, opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="hidden lg:flex w-80 shrink-0 border border-white/5 bg-[#0a0a0f]/40 backdrop-blur-md rounded-3xl overflow-hidden h-full"
+          >
+            <ChatPanel 
+              messages={messages} 
+              players={players} 
+              inputMessage={inputMessage} 
+              setInputMessage={setInputMessage} 
+              onSend={handleSendMessage} 
+              onClose={() => setIsDesktopChatOpen(false)} 
+              currentUserId={user?.id}
+              isVipLobby={isVipLobby}
+              isStreamerLobby={isStreamerLobby}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  </div>
+
+  {/* Real-time remote WebRTC voice players wrapper */}
+  {Array.from(remoteStreams || []).map(([peerId, stream]) => (
+    <RemoteAudioPlayer 
+      key={peerId} 
+      stream={stream} 
+      volumeLevel={peerVolumes[peerId] !== undefined ? peerVolumes[peerId] : 100} 
+      onVolumeChange={(vol) => handlePlayerVolume(peerId, vol)} 
+    />
+  ))}
+
+  {/* Mobile Floating Overlay Comms Chat popup */}
+  <AnimatePresence>
+    {isChatOpen && (
+      <motion.div 
+        initial={{ opacity: 0, y: "100%" }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: "100%" }}
+        className="fixed inset-0 z-[150] bg-[#050508]/95 backdrop-blur-md pb-safe flex flex-col"
+      >
+        <ChatPanel 
+          messages={messages} 
+          players={players} 
+          inputMessage={inputMessage} 
+          setInputMessage={setInputMessage} 
+          onSend={handleSendMessage} 
+          onClose={() => setIsChatOpen(false)} 
+          currentUserId={user?.id}
+          isVipLobby={isVipLobby}
+          isStreamerLobby={isStreamerLobby}
+        />
+      </motion.div>
+    )}
+  </AnimatePresence>
+
+  {/* In-App Interactive Invite Friends Modal over sockets */}
+  <AnimatePresence>
+    {isInviteModalOpen && (
+      <Modal title={isRtl ? "دعوت از دوستان به لابی" : "Invite Friends to Lobby"} onClose={() => setIsInviteModalOpen(false)} maxWidth="max-w-md font-sans">
+        <div className="space-y-4 max-h-[60vh] overflow-y-auto custom-scrollbar pr-1 text-right" dir="rtl font-sans">
+          <p className="text-xs text-gray-400 font-bold leading-relaxed">
+            {isRtl ? "دوستان آنلاین خود را که آماده هستند مستقیماً از طریق سیگنالینگ پرسرعت لوکس به لابی صوتی خود دعوت کنید." : "All your friends listed below. Click invite to invite them instantly over socket channels."}
+          </p>
+
+          {friends && friends.length > 0 ? (
+            <div className="space-y-2">
+              {friends.map((friend: any) => {
+                const isOnline = friend.status === "ONLINE";
+                return (
+                  <div key={friend.id} className="flex items-center justify-between p-3 rounded-2xl bg-white/5 border border-white/5 group hover:border-[#00e5ff]/30 hover:bg-[#00e5ff]/5 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <div className="relative h-10 w-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-lg overflow-hidden shrink-0">
+                        <SmartImage src={friend.profile?.avatarUrl || friend.avatarUrl || ""} className="w-full h-full object-cover" alt={friend.username} />
+                        <div className={cn(
+                          "absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border border-black",
+                          isOnline ? "bg-emerald-500" : "bg-gray-600"
+                        )} />
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs font-black text-white">{friend.username}</p>
+                        <p className="text-[10px] text-gray-500 font-bold">{isOnline ? (isRtl ? "آماده بازی (آنلاین)" : "Online & Active") : (isRtl ? "آفلاین" : "Offline")}</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        if (lobby?.id) {
+                          lobbySocket.emit("lobby.invite", { lobbyId: lobby.id, targetUserId: friend.id });
+                          toast.success(isRtl ? `درخواست دعوت برای ${friend.username} ارسال شد` : `Invite sent to ${friend.username}`);
+                        }
+                      }}
+                      className="py-1 px-3.5 rounded-xl bg-[#00e5ff] text-black text-[10px] font-black uppercase hover:scale-105 active:scale-95 transition-all shadow-[0_0_10px_#00e5ff]"
+                    >
+                      {isRtl ? "دعوت" : "Invite"}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-xs text-gray-500 font-bold">
+              {isRtl ? "لیست دوستان شما خالی است! از بخش دوستان افراد جدیدی را اضافه کنید." : "No friends found. Add friends from the Friends section to invite them here."}
+            </div>
+          )}
+        </div>
+      </Modal>
+    )}
+  </AnimatePresence>
+
+  {/* Achievement Pulse Overlay */}
  <AnimatePresence>
  {allReadyPulse && !isStarting && !isMatchStarted && (
  <motion.div 
