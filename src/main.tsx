@@ -48,9 +48,10 @@ if (typeof window !== "undefined") {
   const originalInfo = console.info;
 
   console.log = (...args) => checkAndLog(originalLog, args);
-  console.warn = (...args) => checkAndLog(originalWarn, args);
-  console.error = (...args) => checkAndLog(originalError, args);
   console.info = (...args) => checkAndLog(originalInfo, args);
+  // Keep error and warn transparent to help debug real exceptions in devtools
+  console.error = originalError;
+  console.warn = originalWarn;
 }
 
 // Register PWA service worker
