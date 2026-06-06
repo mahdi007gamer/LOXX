@@ -191,6 +191,13 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({
  const bannerUrl = user.bannerUrl || "";
 
  const getBackgroundStyle = () => {
+  if (isBot) {
+    let style: any = {};
+    style.background = "linear-gradient(to bottom, #010c1a, #031429, #0a0a0f)";
+    style.border = "1px solid rgba(0, 229, 255, 0.45)";
+    style.boxShadow = "0 30px 100px rgba(0, 229, 255, 0.25)";
+    return style;
+  }
  let style: any = {};
  if (userData.miniProfileBg) {
   style.background = userData.miniProfileBg;
@@ -540,7 +547,9 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({
  <div
  className={cn(
  "h-32 w-32 rounded-[40px] bg-[#0a0a0f] p-[2px] shadow-2xl relative z-20",
- isAdminUnified
+ isBot
+ ? "p-[3px] bg-gradient-to-tr from-cyan-400 via-blue-100 to-cyan-600 shadow-[0_0_20px_rgba(0,229,255,0.6)]"
+ : isAdminUnified
  ? "p-[3px] bg-gradient-to-tr from-red-600 via-red-300 to-red-800 shadow-[0_0_20px_rgba(239,68,68,0.5)]"
  : (metadata?.specialFrame && metadata.frame === "lightning"
  ? "p-0 border-blue-400 shadow-[0_0_15px_blue]"
@@ -589,7 +598,11 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({
 
  <div className="absolute top-1 right-1 h-7 w-7 bg-green-500 rounded-full border-[5px] border-[#0a0a0f] z-30 shadow-lg"></div>
 
- {isAdminUnified ? (
+ {isBot ? (
+ <div className="absolute -bottom-4 -left-4 h-12 w-12 rounded-full bg-cyan-400 text-black border-4 border-[#0a0a0f] flex items-center justify-center shadow-2xl z-20 shadow-cyan-400/25">
+ <Icons.Music size={22} className="animate-pulse" />
+ </div>
+ ) : isAdminUnified ? (
  <div className="absolute -bottom-4 -left-4 h-12 w-12 rounded-full bg-red-600 text-white border-4 border-[#0a0a0f] flex items-center justify-center shadow-2xl z-20">
  <Shield size={22} fill="currentColor" />
  </div>
@@ -669,7 +682,14 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({
  </div>
  </div>
  <div className="flex items-center gap-2 mt-1">
- {isAdminUnified ? (
+ {isBot ? (
+ <span
+ className="text-xs font-black uppercase flex items-center gap-2 text-cyan-400 bg-cyan-950/40 px-3 py-1 rounded-full border border-cyan-500/20 shadow-[0_0_15px_rgba(0,229,255,0.15)]"
+ >
+ <div className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-ping" />
+ {isRtl ? "ربات دی‌جی اختصاصی لوکس" : "LOXX Dedicated Smart DJ"}
+ </span>
+ ) : isAdminUnified ? (
  <span
  className="text-xs font-black uppercase flex items-center gap-2 text-red-500 bg-red-500/10 px-3 py-1 rounded-full border border-red-500/20 shadow-[0_0_15px_rgba(239,68,68,0.1)]"
  >
@@ -718,7 +738,46 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({
  )}
 
  {/* Accurate Statistics Grid */}
- {isBot ? null : isAdminUnified ? (
+ {isBot ? (
+ <div className={cn("py-6 border-y border-cyan-500/15 space-y-4", isRtl ? "text-right" : "text-left")}>
+ <div className="flex items-start gap-4 bg-cyan-950/20 border border-cyan-500/15 p-4 rounded-2xl relative overflow-hidden">
+ <div className="absolute right-0 top-0 h-16 w-16 bg-cyan-500/5 rounded-full blur-xl pointer-events-none" />
+ <div className="h-10 w-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0">
+ <Icons.Music size={20} className="animate-bounce" />
+ </div>
+ <div>
+ <p className="text-xs font-black text-cyan-400 tracking-wider">
+ {isRtl ? "ربات رادیو هوشمند" : "SMART BROADCAST SYSTEM"}
+ </p>
+ <p className="text-[11px] text-gray-300 mt-1.5 leading-relaxed">
+ {isRtl 
+ ? "این مینی پروفایل متعلق به ربات هوشمند موسیقی پلتفرم لوکس است که با بهترین تکنولوژی صوتی و پینگی عالی، موزیک‌ها را بدون افت فریم یا قطعی پخش می‌کند." 
+ : "This custom mini-profile belongs to the LOXX smart audio bot, engineered to broadcast seamless tracks with zero frame-drops."}
+ </p>
+ </div>
+ </div>
+
+ <div className="grid grid-cols-2 gap-3 pt-1">
+ <div className="bg-cyan-950/20 border border-cyan-500/15 rounded-2xl p-3 text-center shadow-[inset_0_0_10px_rgba(0,229,255,0.05)]">
+ <p className="text-[9px] text-cyan-400 font-extrabold uppercase mb-1">
+ {isRtl ? "کیفیت استریم" : "STREAM QUALITY"}
+ </p>
+ <p className="text-xs font-black text-white">
+ {isRtl ? "کیفیت فوق‌العاده Lossless 3D" : "Lossless 96kbps Hi-Fi"}
+ </p>
+ </div>
+ <div className="bg-cyan-950/20 border border-cyan-500/15 rounded-2xl p-3 text-center shadow-[inset_0_0_10px_rgba(0,229,255,0.05)]">
+ <p className="text-[9px] text-cyan-400 font-extrabold uppercase mb-1">
+ {isRtl ? "تکنولوژی پخش" : "AUDIO TRANSMITTER"}
+ </p>
+ <p className="text-xs font-black text-emerald-400 flex items-center justify-center gap-1">
+ <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-ping" />
+ {isRtl ? "پخش هماهنگ لابی" : "Lobby Sync Live"}
+ </p>
+ </div>
+ </div>
+ </div>
+ ) : isAdminUnified ? (
  <div className={cn("py-6 border-y border-white/5 space-y-4", isRtl ? "text-right" : "text-left")}>
  <div className="flex items-start gap-4 bg-red-950/20 border border-red-500/15 p-4 rounded-2xl relative overflow-hidden">
  <div className="absolute right-0 top-0 h-16 w-16 bg-red-500/5 rounded-full blur-xl pointer-events-none" />
@@ -1160,7 +1219,17 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({
 
  {/* Actions */}
  <div className="pt-4">
- {!isSelf && !isBot ? (
+ {isBot ? (
+ <GlowButton
+ variant="blue"
+ className="w-full h-16 !rounded-3xl font-black text-base uppercase bg-gradient-to-r from-cyan-600 via-cyan-400 to-cyan-600 text-neutral-900 border-none shadow-[0_10px_45px_rgba(0,229,255,0.4)] hover:scale-[1.02] transition-transform"
+ onClick={onClose}
+ >
+ <span className="flex items-center gap-2 justify-center font-black">
+ <Icons.Music size={20} className="animate-bounce" /> {isRtl ? "پخش صدای با کیفیت فعال است" : "HI-FI STREAMING ACTIVE"}
+ </span>
+ </GlowButton>
+ ) : !isSelf ? (
  isAdminUnified ? (
  <GlowButton
  variant="purple"

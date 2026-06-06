@@ -73,6 +73,7 @@ export function setupWebSockets(io: Server) {
   io.use(authMiddleware);
 
   const userConnections = new Map<string, Set<string>>(); // userId -> Set of socketIds
+  const pendingOfflineTimeouts = new Map<string, NodeJS.Timeout>(); // userId -> setTimeout ref
 
   const formatUserForSocket = (user: any) => ({
     userId: user.id,
@@ -177,6 +178,12 @@ export function setupWebSockets(io: Server) {
   };
 
   const trackUser = (userId: string, socketId: string) => {
+    // Clear any pending offline timeout first
+    if (pendingOfflineTimeouts.has(userId)) {
+      clearTimeout(pendingOfflineTimeouts.get(userId)!);
+      pendingOfflineTimeouts.delete(userId);
+    }
+
     if (!userConnections.has(userId)) {
       userConnections.set(userId, new Set());
     }
@@ -195,7 +202,17 @@ export function setupWebSockets(io: Server) {
       connections.delete(socketId);
       if (connections.size === 0) {
         userConnections.delete(userId);
-        updatePresence(userId, "offline");
+        
+        // Delay offline status & lobby expulsion to prevent immediate drop on network jitter/reconnects
+        if (pendingOfflineTimeouts.has(userId)) {
+          clearTimeout(pendingOfflineTimeouts.get(userId)!);
+        }
+        const timeout = setTimeout(() => {
+          pendingOfflineTimeouts.delete(userId);
+          updatePresence(userId, "offline");
+        }, 7000); // 7-second grace period
+        pendingOfflineTimeouts.set(userId, timeout);
+        
         return true;
       }
     }

@@ -60,7 +60,7 @@ export const DiscordOverlayHUD = () => {
  <span className="text-[9px] text-gray-400 font-mono">({lobby.players?.length || 0})</span>
  </div>
 
- <div className="flex flex-row flex-wrap gap-3 items-center">
+ <div className={cn("flex flex-col gap-2.5", (overlayPosition || "top-left").includes("left") ? "items-start" : "items-end")}>
  <AnimatePresence>
  {lobby.players?.map((player) => {
  const isMe = player.userId === currentUserId;
@@ -78,11 +78,11 @@ export const DiscordOverlayHUD = () => {
  return (
  <motion.div
  key={player.userId}
- initial={{ opacity: 0, x: overlayPosition.includes("left") ? -30 : 30, scale: 0.9 }}
+ initial={{ opacity: 0, x: (overlayPosition || "top-left").includes("left") ? -30 : 30, scale: 0.9 }}
  animate={{ opacity: isTalking ? 1 : 0.75, x: 0, scale: 1 }}
  exit={{ opacity: 0, scale: 0.9 }}
  transition={{ type: "spring", damping: 20, stiffness: 200 }}
- className="flex items-center gap-2.5 flex-row"
+ className={cn("flex items-center gap-2.5", (overlayPosition || "top-left").includes("right") ? "flex-row-reverse" : "flex-row")}
  >
  {/* Profile Avatar / speaking glowing bubble */}
  <div className="relative shrink-0">

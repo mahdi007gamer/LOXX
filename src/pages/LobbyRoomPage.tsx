@@ -45,6 +45,7 @@ import {
  AlertTriangle,
  Minus,
  Music,
+ Headphones,
  SkipBack,
  SkipForward
 } from "lucide-react";
@@ -85,6 +86,281 @@ interface Player {
  isVerified?: boolean;
  role?: string;
 }
+
+interface Message {
+ id: string;
+ user: string;
+ avatarUrl?: string;
+ text: string;
+ time: string;
+ isSystem?: boolean;
+ toUserId?: string; // null for lobby chat
+ fromUserId?: string;
+ badges?: any[];
+}
+
+interface MusicBotCardProps {
+ lobby: any;
+ musicBotState: any;
+ botProfile: any;
+ peerActivity: any;
+ peerVolumes: any;
+ layoutMode: 'default' | 'compact' | 'discord';
+ onProfile: (id: string) => void;
+ onVolumeChange: (vol: number) => void;
+ isRtl: boolean;
+}
+
+export const MusicBotCard: React.FC<MusicBotCardProps> = ({
+ lobby,
+ musicBotState,
+ botProfile,
+ peerActivity,
+ peerVolumes,
+ layoutMode,
+ onProfile,
+ onVolumeChange,
+ isRtl
+}) => {
+ const botId = `music-bot-${lobby?.id}`;
+ const isBotSpeaking = lobby?.talkingUsers?.includes(botId) || (peerActivity[botId] || 0) > 10;
+ const currentVolume = peerVolumes[botId] !== undefined ? peerVolumes[botId] : 100;
+ const isMuted = currentVolume === 0;
+
+ const handleMuteToggle = (e: React.MouseEvent) => {
+  e.stopPropagation();
+  onVolumeChange(isMuted ? 100 : 0);
+ };
+
+ const handleCardClick = () => {
+  onProfile(botId);
+ };
+
+ const trackName = musicBotState?.currentTrackName || (isRtl ? "در انتظار پخش آهنگ..." : "Waiting for track...");
+ const trackCover = musicBotState?.currentTrackCover || "/badges/radio_speaker.png";
+
+ if (layoutMode === 'discord') {
+  return (
+   <motion.div
+    layout
+    initial={{ opacity: 0, y: 10 }}
+    animate={{ opacity: 1, y: 0 }}
+    exit={{ opacity: 0, scale: 0.9 }}
+    onClick={handleCardClick}
+    className="relative rounded-[16px] border border-cyan-500/30 bg-gradient-to-br from-[#020d1a] to-[#041a33] text-center aspect-square md:aspect-auto md:h-[180px] w-full p-2.5 flex flex-col justify-end items-center cursor-pointer shadow-[0_0_20px_rgba(0,229,255,0.15)] group overflow-hidden"
+   >
+    <div className="absolute inset-0 z-0">
+     <img src={trackCover} alt="Cover" className={cn("w-full h-full object-cover opacity-15 filter blur-xs", musicBotState?.isPlaying && "animate-[spin_10s_linear_infinite]")} referrerPolicy="no-referrer" />
+    </div>
+    
+    {musicBotState?.isPlaying && (
+     <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
+      <div className="absolute w-24 h-24 border border-cyan-400/20 rounded-full animate-ping" />
+      <div className="absolute w-32 h-32 border border-cyan-400/10 rounded-full animate-[ping_2s_infinite]" />
+     </div>
+    )}
+
+    <div className="relative z-10 w-12 h-12 rounded-full border-2 border-cyan-400 p-0.5 overflow-hidden mb-2 bg-[#0d0d12] shadow-[0_0_15px_rgba(0,229,255,0.4)]">
+     <img src={trackCover} alt="DJ" className={cn("w-full h-full object-cover rounded-full", musicBotState?.isPlaying && "animate-[spin_4s_linear_infinite]")} referrerPolicy="no-referrer" />
+    </div>
+
+    <div className="relative z-10 w-full bg-cyan-950/60 backdrop-blur-md rounded-xl p-1.5 border border-cyan-500/20 flex flex-col items-center">
+     <span className="text-[10px] md:text-xs font-black text-cyan-300 truncate max-w-full">
+      {isRtl ? "رادیو موزیک هوشمند" : "Smart Music DJ"}
+     </span>
+     <div className="text-[8px] text-gray-400 truncate max-w-full font-bold mt-0.5" dir={isRtl ? "rtl" : "ltr"}>
+      {trackName}
+     </div>
+     <div className="flex items-center gap-1 mt-1">
+      <button onClick={handleMuteToggle} className="text-cyan-400 hover:text-white transition-colors p-0.5">
+       {isMuted ? <MicOff size={10} className="text-red-400" /> : <Music size={10} className="text-cyan-400" />}
+      </button>
+      <div className="h-2 w-12 bg-white/10 rounded-full overflow-hidden">
+       <div className="h-full bg-cyan-400" style={{ width: `${currentVolume / 2}%` }} />
+      </div>
+     </div>
+    </div>
+   </motion.div>
+  );
+ }
+
+ if (layoutMode === 'compact') {
+  return (
+   <motion.div
+    layout
+    initial={{ opacity: 0, y: 10 }}
+    animate={{ opacity: 1, y: 0 }}
+    exit={{ opacity: 0, scale: 0.9 }}
+    onClick={handleCardClick}
+    className="relative rounded-[16px] border border-cyan-500/30 bg-gradient-to-r from-[#031124] to-[#010914] hover:from-[#051a36] hover:to-[#021021] flex w-full sm:w-[calc(50%-6px)] lg:w-[calc(33.333%-10px)] h-[60px] md:h-[72px] items-center p-2 md:p-3 shrink-0 cursor-pointer shadow-[0_0_15px_rgba(0,229,255,0.1)] group overflow-hidden"
+   >
+    <div className="relative w-10 h-10 md:w-12 md:h-12 rounded-xl border border-cyan-400/40 p-0.5 overflow-hidden shrink-0 bg-[#0d0d12] shadow-[0_0_10px_rgba(0,229,255,0.2)]">
+     <img src={trackCover} alt="Disc" className={cn("w-full h-full object-cover rounded-lg", musicBotState?.isPlaying && "animate-[spin_6s_linear_infinite] rounded-full")} referrerPolicy="no-referrer" />
+    </div>
+    <div className="flex-1 min-w-0 px-3">
+     <div className="flex items-center justify-between">
+      <span className="text-xs md:text-sm font-black text-cyan-300 truncate">
+       {isRtl ? "ربات هوشمند موسیقی لوکس" : "Loxx Smart Music Bot"}
+      </span>
+      <span className="text-[7px] md:text-[9px] font-black uppercase text-cyan-400 animate-pulse bg-cyan-950/40 px-2 py-0.5 rounded border border-cyan-500/20 shrink-0">
+       {isBotSpeaking ? "LISTENING" : "IDLE"}
+      </span>
+     </div>
+     <div className="text-[9px] text-gray-400 truncate mt-1 font-bold" dir={isRtl ? "rtl" : "ltr"}>
+      {trackName}
+     </div>
+    </div>
+    <button onClick={handleMuteToggle} className="p-1 px-2 bg-cyan-950/55 hover:bg-cyan-900 border border-cyan-500/20 text-cyan-300 hover:text-white rounded-lg transition-all shrink-0">
+     {isMuted ? <MicOff size={12} className="text-red-400" /> : <Music size={12} className="text-cyan-400 shrink-0" />}
+    </button>
+   </motion.div>
+  );
+ }
+
+ return (
+  <motion.div
+   layout
+   initial={{ opacity: 0, y: 20 }}
+   animate={{ opacity: 1, y: 0 }}
+   exit={{ opacity: 0, scale: 0.9 }}
+   whileHover={{ y: -8, transition: { duration: 0.2 } }}
+   onClick={handleCardClick}
+   className="relative p-3 md:p-6 rounded-[24px] md:rounded-[32px] border border-cyan-500/40 bg-[#020d1a] shadow-[0_0_30px_rgba(0,229,255,0.15)] bg-gradient-to-b from-[#020d1a] via-[#041d38]/95 to-[#010914] flex flex-col justify-between min-h-[220px] md:min-h-[360px] w-full sm:w-[calc(50%-6px)] md:w-[calc(50%-12px)] lg:w-[calc(33.333%-10px)] xl:w-[calc(25%-18px)] shrink-0 grow min-w-[140px] sm:min-w-[220px] md:min-w-[245px] overflow-hidden group"
+  >
+   <div className="absolute inset-0 z-0 pointer-events-none">
+    <img src={trackCover} className={cn("w-full h-full object-cover opacity-10 filter blur-sm scale-110", musicBotState?.isPlaying && "animate-[spin_12s_linear_infinite]")} referrerPolicy="no-referrer" alt="" />
+    <div className="absolute bottom-0 inset-x-0 h-1/2 bg-gradient-to-t from-black to-transparent" />
+   </div>
+
+   <div className="flex-1 flex flex-col z-10">
+    <div className="mb-2 md:mb-4 flex items-center justify-between">
+     <div className="flex items-center gap-1.5 md:gap-2 bg-cyan-950/50 border border-cyan-500/20 px-2.5 py-1 rounded-full">
+      <Radio size={12} className="text-cyan-400 animate-pulse" />
+      <span className="text-[7px] md:text-[9px] font-black text-cyan-300 uppercase shrink-0">
+       {isRtl ? "سیستم دی‌جی هوشمند" : "SMART DJ SYSTEM"}
+      </span>
+     </div>
+     <div className="flex items-center gap-1.5">
+      <span className="text-[7px] md:text-[9px] font-black text-cyan-400 animate-pulse flex items-center gap-1 uppercase">
+       <div className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-ping" />
+       {isBotSpeaking ? "LIVE" : "ONLINE"}
+      </span>
+     </div>
+    </div>
+
+    <div className="flex flex-col items-center flex-1 justify-center py-2 md:py-4">
+     <div className="relative flex items-center justify-center h-16 w-16 sm:h-28 sm:w-28 md:h-32 md:w-32 mb-3 md:mb-6">
+      <div className="absolute inset-0 bg-transparent rounded-full flex items-center justify-center pointer-events-none">
+       <svg className="absolute inset-0 w-full h-full -rotate-90">
+        <circle 
+         cx="50%" cy="50%" r="46%" 
+         fill="none" 
+         stroke="rgba(0, 229, 255, 0.15)" 
+         strokeWidth="2.5" 
+        />
+        <motion.circle 
+         cx="50%" cy="50%" r="46%" 
+         fill="none" 
+         stroke="#00e5ff" 
+         strokeWidth="3.5" 
+         style={{ strokeDasharray: "290" }}
+         initial={{ strokeDashoffset: 290 }}
+         animate={{ strokeDashoffset: musicBotState?.isPlaying ? [290, 100, 290] : 190 }}
+         transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+        />
+       </svg>
+      </div>
+
+      <div 
+       className={cn(
+        "h-10 w-10 sm:h-16 sm:w-16 md:h-20 md:w-20 rounded-full flex items-center justify-center text-xl md:text-3xl relative z-10 transition-all duration-500 shadow-[0_0_25px_rgba(0,229,255,0.3)] cursor-pointer hover:scale-110 aspect-square",
+        musicBotState?.isPlaying ? "scale-105" : ""
+       )}
+      >
+       <div className="h-full w-full flex items-center justify-center overflow-hidden rounded-full border-[3px] border-cyan-400 relative">
+        <img 
+         src={trackCover}
+         className={cn("w-full h-full object-cover transition-transform duration-[3s]", musicBotState?.isPlaying && "animate-[spin_5s_linear_infinite]")}
+         referrerPolicy="no-referrer"
+         alt="Track Cover"
+        />
+        <div className="absolute h-4 w-4 rounded-full bg-black border-2 border-cyan-400 flex items-center justify-center z-20">
+         <div className="h-1 w-1 bg-cyan-400 rounded-full" />
+        </div>
+       </div>
+
+       {isBotSpeaking && (
+        <motion.div 
+         animate={{ opacity: [0.3, 0.6, 0.3] }} 
+         transition={{ duration: 1, repeat: Infinity }}
+         className="absolute -inset-2 md:-inset-3 bg-cyan-400 rounded-full blur-lg -z-10" 
+        />
+       )}
+      </div>
+
+      <div className="absolute -top-1 -right-1 h-6 w-6 md:h-8 md:w-8 rounded-lg md:rounded-2xl bg-cyan-400 border-2 md:border-4 border-[#020d1a] flex items-center justify-center text-black z-20 shadow-[0_0_15px_rgba(0,229,255,0.6)]">
+       <Headphones size={10} className="md:size-[14px]" />
+      </div>
+     </div>
+
+     <div className="flex flex-col items-center mb-2 text-center max-w-full">
+      <h3 className="text-xs md:text-lg font-black text-white flex items-center gap-1.5 drop-shadow-[0_0_6px_rgba(0,229,255,0.4)]">
+       {isRtl ? "ربات هوشمند موسیقی لوکس" : "Loxx Smart Music Bot"}
+      </h3>
+      <span className="text-[7px] md:text-[10px] text-cyan-300 font-bold mt-1 max-w-[200px] truncate max-h-[16px] overflow-hidden" dir={isRtl ? "rtl" : "ltr"}>
+       {trackName}
+      </span>
+     </div>
+
+     <div className="flex items-center gap-0.5 justify-center mt-2 h-4 w-24">
+      {[...Array(6)].map((_, idx) => (
+       <motion.div
+        key={idx}
+        animate={musicBotState?.isPlaying ? { height: [4, 16, 4] } : { height: 4 }}
+        transition={{
+         duration: 0.5 + idx * 0.1,
+         repeat: Infinity,
+         ease: "easeInOut"
+        }}
+        className="w-1 bg-cyan-400 rounded-full"
+       />
+      ))}
+     </div>
+    </div>
+   </div>
+
+   <div className="mt-auto pt-2 md:pt-4 border-t border-cyan-500/20 space-y-2 md:space-y-4 z-10">
+    <div className="space-y-1">
+     <div className="flex items-center justify-between px-1">
+      <span className="text-[6px] md:text-[8px] font-black text-cyan-400 uppercase">DJ Volume</span>
+      <span className="text-[9px] font-bold text-white">{currentVolume}%</span>
+     </div>
+     <input 
+      type="range" 
+      min="0" max="200" 
+      value={currentVolume} 
+      onChange={(e) => onVolumeChange(parseInt(e.target.value))}
+      onClick={(e) => e.stopPropagation()}
+      className="w-full h-1 bg-cyan-950/40 rounded-lg appearance-none cursor-pointer accent-cyan-400"
+     />
+    </div>
+
+    <div className="bg-cyan-950/50 backdrop-blur-md rounded-2xl border border-cyan-500/20 p-1 flex items-center justify-between shadow-xl" onClick={(e) => e.stopPropagation()}>
+     <QuickAction icon={<Users size={14} />} tooltip={isRtl ? "پروفایل" : "Profile"} onClick={handleCardClick} />
+     <div className="text-[10px] font-extrabold text-cyan-400 uppercase flex-1 text-center py-1 font-mono tracking-wider">
+      {isRtl ? "رادیو لوکس لایو" : "LOXX LIVE RADIO"}
+     </div>
+     <QuickAction 
+      icon={isMuted ? <MicOff size={14} /> : <Music size={14} />} 
+      tooltip={isMuted ? (isRtl ? "باز کردن صدا" : "Unmute") : (isRtl ? "قطع صدا" : "Mute")} 
+      onClick={() => onVolumeChange(isMuted ? 100 : 0)}
+      color={isMuted ? "pink" : "blue"}
+     />
+    </div>
+   </div>
+  </motion.div>
+ );
+};
 
 interface Message {
  id: string;
@@ -259,6 +535,17 @@ export const LobbyRoomPage = () => {
  }, [isDesktopChatOpen]);
 
  const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
+
+ useEffect(() => {
+  const handleGlobalClick = (e: MouseEvent) => {
+   if (selectedPlayer && !(e.target as HTMLElement).closest('[data-player-card-active="true"]')) {
+    setSelectedPlayer(null);
+   }
+  };
+  window.addEventListener('mousedown', handleGlobalClick);
+  return () => window.removeEventListener('mousedown', handleGlobalClick);
+ }, [selectedPlayer]);
+
  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
  const [showFallbackModal, setShowFallbackModal] = useState(false);
@@ -503,34 +790,7 @@ export const LobbyRoomPage = () => {
  activity: p.userId === user?.id ? localVolume : (peerActivity[p.userId] || 0)
  })) || [];
 
- // INJECT LOXX MUSIC BOT IF ACTIVE
- if (musicBotState?.active && lobby?.id) {
-  const botId = `music-bot-${lobby.id}`;
-  const isBotSpeaking = lobby.talkingUsers?.includes(botId) || (peerActivity[botId] || 0) > 10;
-  list.push({
-   id: botId,
-   name: "🎵 Loxx Music Bot",
-   avatar: "🤖",
-   avatarUrl: botProfile?.avatarUrl || "", // Displays neon badge
-   level: 99,
-   membership: "VIP" as any,
-   vipMetadata: { borderNeonColor: "#00e5ff" },
-   bannerUrl: botProfile?.bannerUrl || "",
-   bio: botProfile?.bio,
-   miniProfileBg: botProfile?.miniProfileBg,
-   badges: [{ name: "Music Bot", image: "/badges/music_icon.png" }],
-   rank: isRtl ? "رادیو دیسکی لابی" : "Lobby DJ System",
-   isHost: false,
-   role: "BOT",
-   isReady: true,
-   hasMic: true,
-   isMuted: peerVolumes[botId] === 0,
-   ping: 5,
-   isSpeaking: isBotSpeaking,
-   volume: peerVolumes[botId] !== undefined ? peerVolumes[botId] : 100,
-   activity: peerActivity[botId] || 0
-  } as any);
- }
+
 
  // Add empty slots
  const maxPlayers = lobby?.maxPlayers || 5;
@@ -1229,6 +1489,32 @@ export const LobbyRoomPage = () => {
  />
  ))}
  </AnimatePresence>
+ {musicBotState?.active && lobby?.id && (
+  <MusicBotCard
+   lobby={lobby}
+   musicBotState={musicBotState}
+   botProfile={botProfile}
+   peerActivity={peerActivity}
+   peerVolumes={peerVolumes}
+   layoutMode={layoutMode}
+   onProfile={(id) => {
+    openProfile({
+     id,
+     senderName: isRtl ? "ربات هوشمند موسیقی لوکس" : "Loxx Smart Music Bot",
+     senderAvatar: botProfile?.avatarUrl || "",
+     senderLevel: 99,
+     membership: "VIP" as any,
+     vipMetadata: { borderNeonColor: "#00e5ff" },
+     bannerUrl: botProfile?.bannerUrl || "",
+     bio: botProfile?.bio,
+     miniProfileBg: botProfile?.miniProfileBg,
+     role: "BOT"
+    }, false);
+   }}
+   onVolumeChange={(val) => handlePlayerVolume(`music-bot-${lobby.id}`, val)}
+   isRtl={isRtl}
+  />
+ )}
  </div>
  </div>
 
@@ -1828,6 +2114,38 @@ export const LobbyRoomPage = () => {
         <SkipForward size={26} fill="currentColor" strokeWidth={1.5} className="drop-shadow-[0_0_5px_rgba(0,229,255,0.5)]" />
        </button>
       </div>
+
+       {/* Dedicated Music Bot Local Volume Control Slider */}
+       <div className="flex items-center gap-3 bg-[#0d2238]/40 border border-cyan-500/15 rounded-2xl p-3 mb-6 mix-blend-screen shadow-[inset_0_0_10px_rgba(0,229,255,0.05)]">
+        <button
+         onClick={() => {
+          const isCurrentlyMuted = botVolumeLevel === 0;
+          handlePlayerVolume(botId, isCurrentlyMuted ? 100 : 0);
+         }}
+         className={cn(
+          "h-9 w-9 rounded-xl border flex items-center justify-center transition-all shrink-0",
+          botVolumeLevel === 0 
+           ? "bg-red-500/10 border-red-500/20 text-red-400 hover:bg-red-500/20" 
+           : "bg-cyan-500/10 border-cyan-500/20 text-[#00e5ff] hover:bg-cyan-500/20"
+         )}
+         title={botVolumeLevel === 0 ? (isRtl ? "فعال کردن صدا" : "Unmute Bot") : (isRtl ? "بی‌صدا کردن ربات" : "Mute Bot")}
+        >
+         {botVolumeLevel === 0 ? <MicOff size={16} /> : <Volume2 size={16} />}
+        </button>
+        <div className="flex-1 space-y-1 min-w-0">
+         <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-wider text-cyan-400 select-none">
+          <span>{isRtl ? "صدای شخصی ربات" : "Personal Bot Volume"}</span>
+          <span className="font-mono font-bold text-white">{botVolumeLevel}%</span>
+         </div>
+         <input 
+          type="range" 
+          min="0" max="200" 
+          value={botVolumeLevel} 
+          onChange={(e) => handlePlayerVolume(botId, parseInt(e.target.value))}
+          className="w-full h-1 bg-cyan-950/40 rounded-lg appearance-none cursor-pointer accent-[#00e5ff]"
+         />
+        </div>
+       </div>
 
       {/* Queue Panel Trigger (Footer Button) */}
       <div className="pt-5 border-t-[1.5px] border-white/10 select-none font-sans mt-auto relative -mx-1 px-1">
@@ -3110,6 +3428,8 @@ function DiscordLayoutPlayerCard({
  const { language } = useLanguage();
  const isRtl = language === "fa";
  const isSlot = player.name === "Empty Slot";
+ const { user } = useAuth();
+ const isMe = user?.id === player.id;
  return (
  <motion.div
  layout
@@ -3123,6 +3443,7 @@ function DiscordLayoutPlayerCard({
  onSelect();
  }
  }}
+ data-player-card-active={isSelected ? "true" : "false"}
  className={cn(
  "relative rounded-[16px] border transition-all duration-300 cursor-pointer overflow-hidden group flex flex-col justify-end p-2 md:p-3 items-center text-center aspect-square md:aspect-auto md:h-[180px] w-full",
  isSlot ? "border-dashed border-white/10 bg-transparent opacity-40 hover:opacity-100 items-center justify-center" : "bg-[#0a0a0f] border-white/10 shadow-lg",
@@ -3171,6 +3492,22 @@ function DiscordLayoutPlayerCard({
  <QuickAction icon={<Users size={14} />} tooltip={isRtl ? "پروفایل" : "Profile"} onClick={() => onProfile(player.id)} />
  <QuickAction icon={<MessageSquare size={14} />} tooltip={isRtl ? "پیام" : "Message"} onClick={() => onDirectMessage(player.id)} />
  <QuickAction icon={player.isMuted ? <Mic size={14} /> : <MicOff size={14} />} tooltip={isRtl ? "صدا" : "Voice"} onClick={() => onMute(player.id)} />
+ {isHostView && !isMe && (
+ <>
+ <QuickAction 
+ icon={<ShieldAlert size={14} />} 
+ tooltip={isRtl ? "اخراج" : "Kick"} 
+ onClick={() => onKick?.(player.id)}
+ color="pink"
+ />
+ <QuickAction 
+ icon={<Gavel size={14} />} 
+ tooltip={isRtl ? "مسدود سازی" : "Ban"} 
+ onClick={() => onBan?.(player.id)}
+ color="pink"
+ />
+ </>
+ )}
  </div>
  </div>
  </div>
@@ -3191,6 +3528,8 @@ function CompactLayoutPlayerCard({
  const { language } = useLanguage();
  const isRtl = language === "fa";
  const isSlot = player.name === "Empty Slot";
+ const { user } = useAuth();
+ const isMe = user?.id === player.id;
  return (
  <motion.div
  layout
@@ -3204,6 +3543,7 @@ function CompactLayoutPlayerCard({
  onSelect();
  }
  }}
+ data-player-card-active={isSelected ? "true" : "false"}
  className={cn(
  "relative rounded-[16px] border transition-all duration-300 cursor-pointer overflow-hidden group flex w-full sm:w-[calc(50%-6px)] lg:w-[calc(33.333%-10px)] h-[60px] md:h-[72px] items-center p-2 md:p-3 shrink-0",
  isSlot ? "border-dashed border-white/10 bg-transparent opacity-40 hover:opacity-100" : "bg-[#0a0a0f] border-white/10 hover:bg-[#12121a]",
@@ -3248,6 +3588,22 @@ function CompactLayoutPlayerCard({
   <QuickAction icon={<Users size={14} />} tooltip={isRtl ? "پروفایل" : "Profile"} onClick={() => onProfile(player.id)} />
   <QuickAction icon={<MessageSquare size={14} />} tooltip={isRtl ? "پیام" : "Message"} onClick={() => onDirectMessage(player.id)} />
   <QuickAction icon={player.isMuted ? <Mic size={14} /> : <MicOff size={14} />} tooltip={isRtl ? "صدا" : "Voice"} onClick={() => onMute(player.id)} />
+  {isHostView && !isMe && (
+  <>
+  <QuickAction 
+  icon={<ShieldAlert size={14} />} 
+  tooltip={isRtl ? "اخراج" : "Kick"} 
+  onClick={() => onKick?.(player.id)}
+  color="pink"
+  />
+  <QuickAction 
+  icon={<Gavel size={14} />} 
+  tooltip={isRtl ? "مسدود سازی" : "Ban"} 
+  onClick={() => onBan?.(player.id)}
+  color="pink"
+  />
+  </>
+  )}
   </div>
  </div>
  </div>
