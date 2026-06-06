@@ -954,8 +954,8 @@ router.delete("/db-track/:id", authenticate, authorizeAdmin, async (req: Request
 router.get("/profile", async (req: Request, res: Response) => {
   try {
     const defaultBotProfile = {
-      avatarUrl: "/public/badges/musicbot.jpeg",
-      bannerUrl: "/public/bg-hero.jpg",
+      avatarUrl: "/badges/musicbot.jpeg",
+      bannerUrl: "/bg-hero.jpg",
       miniProfileBg: "linear-gradient(to bottom, #001220, #001f3f, #0a0a0f)",
       bio: "ربات هوشمند پخش موسیقی باکیفیت و زنده لابی‌های لوکس LOXX. دارای بالاترین عمق فرکانس پخش صوتی استریو."
     };
@@ -977,8 +977,8 @@ router.post("/profile", authenticate, authorizeAdmin, async (req: Request, res: 
     const { avatarUrl, bannerUrl, miniProfileBg, bio } = req.body;
     const botProfilePath = path.join(musicBotDir, "profile.json");
     const defaultBotProfile = {
-      avatarUrl: "/public/badges/musicbot.jpeg",
-      bannerUrl: "/public/bg-hero.jpg",
+      avatarUrl: "/badges/musicbot.jpeg",
+      bannerUrl: "/bg-hero.jpg",
       miniProfileBg: "linear-gradient(to bottom, #001220, #001f3f, #0a0a0f)",
       bio: "ربات هوشمند پخش موسیقی باکیفیت و زنده لابی‌های لوکس LOXX. دارای بالاترین عمق فرکانس پخش صوتی استریو."
     };

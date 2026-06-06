@@ -169,7 +169,7 @@ interface LobbyContextType {
 	isMediasoupSFU: boolean;
  setScreenStreamForWebRTC: (stream: MediaStream | null) => void;
  musicBotState: any;
- toggleMusicBot: (active: boolean) => void;
+ toggleMusicBot: (active: boolean, botType?: "musicbot" | "melody") => void;
  controlMusicBot: (action: "play" | "pause" | "update-queue" | "seek", params?: any) => void;
  musicVolumeSilence: number;
  setMusicVolumeSilence: (val: number) => void;
@@ -1614,9 +1614,9 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }
  }, [lobby?.id]);
 
- const toggleMusicBot = (active: boolean) => {
+ const toggleMusicBot = (active: boolean, botType: "musicbot" | "melody" = "musicbot") => {
   if (lobby) {
-   lobbySocket.emit("lobby.musicbot.toggle", { lobbyId: lobby.id, active }, (res: any) => {
+   lobbySocket.emit("lobby.musicbot.toggle", { lobbyId: lobby.id, active, botType }, (res: any) => {
     if (res?.status === "success") {
      setMusicBotState({
        ...res.data,

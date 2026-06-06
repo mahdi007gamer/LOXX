@@ -193,9 +193,9 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({
  const getBackgroundStyle = () => {
   if (isBot) {
     let style: any = {};
-    style.background = "linear-gradient(to bottom, #010c1a, #031429, #0a0a0f)";
+    style.background = "linear-gradient(135deg, #020914 0%, #061933 50%, #002244 100%)";
     style.border = "1px solid rgba(0, 229, 255, 0.45)";
-    style.boxShadow = "0 30px 100px rgba(0, 229, 255, 0.25)";
+    style.boxShadow = "inset 0 0 60px rgba(0, 229, 255, 0.1), 0 30px 100px rgba(0, 229, 255, 0.25)";
     return style;
   }
  let style: any = {};
@@ -647,7 +647,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({
  <h4
  className={cn(
  "text-3xl font-black uppercase",
- isAdminUnified ? "text-red-500" : (isVIP ? "text-[#0a0a0f]" : "text-white"),
+ isAdminUnified ? "text-red-500" : (isBot ? "text-white drop-shadow-[0_0_15px_rgba(0,229,255,0.3)]" : (isVIP ? "text-[#0a0a0f]" : "text-white")),
  metadata?.shinyName && "animate-pulse",
  )}
  style={{

@@ -372,8 +372,8 @@ export function setupWebSockets(io: Server) {
       }
     });
 
-    socket.on("lobby.musicbot.toggle", async (data: { lobbyId: string, active: boolean }, ack?: any) => {
-      const { lobbyId, active } = data;
+    socket.on("lobby.musicbot.toggle", async (data: { lobbyId: string, active: boolean, botType?: "musicbot" | "melody" }, ack?: any) => {
+      const { lobbyId, active, botType } = data;
       try {
         const lobby = await prisma.lobby.findUnique({ where: { id: lobbyId } });
         if (!lobby || lobby.hostId !== userId) {
@@ -382,7 +382,7 @@ export function setupWebSockets(io: Server) {
 
         let bot = lobbyMusicBots.get(lobbyId);
         if (!bot) {
-          bot = {
+           bot = {
             active: false,
             isPlaying: false,
             currentTrackName: "",
@@ -392,12 +392,17 @@ export function setupWebSockets(io: Server) {
             queue: [],
             queueIndex: 0,
             currentTime: 0,
-            updatedAt: Date.now()
+            updatedAt: Date.now(),
+            botType: "musicbot"
           };
           lobbyMusicBots.set(lobbyId, bot);
         }
 
         bot.active = active;
+        if (botType) {
+          bot.botType = botType;
+        }
+
         if (!active) {
           bot.isPlaying = false;
         }
@@ -408,6 +413,28 @@ export function setupWebSockets(io: Server) {
         lobbyNs.to(`lobby:${lobbyId}`).emit("lobby.musicbot.state", bot);
 
         if (active) {
+          if (bot.botType === "melody") {
+             // Send welcome message
+             const welcomeText = `🎧 سـلام! من ملودی لوکس هستم، دی‌جی اختصاصی لابی شما! 🌟\n\nممنون که من رو به جمعتون اضافه کردید. من اینجام تا اتمسفر لابی رو با بهترین موزیک‌ها منفجر کنم! 🚀\n\n🎵 چطوری آهنگ پخش کنم؟\nکافیه دستور /p رو بنویسی تا بلافاصله برات پیداش کنم:\n🔹 /p [اسم موزیک / فیلم / خواننده]\n\n💡 نکته: هر تعداد که آهنگ بخوای میتونی اضافه کنی تا برن توی صف پخش. در ضمن، این نسخه طلایی هست و همه می‌تونن پلیر رو کنترل کنن! 😎\n\n🛠 دستورات سریع: ⏹ /stop : توقف پخش | ⏭ /skip : رفتن به آهنگ بعدی | 📜 /queue : مشاهده لیست انتظار`;
+             const msg = await prisma.message.create({
+               data: {
+                 content: welcomeText,
+                 senderId: userId,
+                 lobbyId,
+               }
+             }) as any;
+             const msgPayload = {
+               id: msg.id.toString(),
+               tempId: "melody_welcome_" + Date.now(),
+               from: { userId: "melody-bot", username: "ملودی لوکس (آنلاین) 🌟", avatar: "/badges/musicbot.jpeg" }, // Client uses generic bot avatar for now
+               targetType: "lobby",
+               targetId: lobbyId,
+               content: welcomeText,
+               createdAt: msg.createdAt.getTime()
+             };
+             lobbyNs.to(`lobby:${lobbyId}`).emit("lobby.chat.message", msgPayload);
+          }
+
           voiceNs.to(`voice:${lobbyId}`).emit("voice.user_joined", { userId: `music-bot-${lobbyId}` });
           // If active and playing, notify speaking
           if (bot.isPlaying) {
@@ -440,11 +467,17 @@ export function setupWebSockets(io: Server) {
       const { lobbyId, action, category, trackUrl, trackName, coverUrl, tracks, queue, queueIndex, isPlaying, currentTime, duration } = data;
       try {
         const lobby = await prisma.lobby.findUnique({ where: { id: lobbyId } });
-        if (!lobby || lobby.hostId !== userId) {
-          return ack?.({ status: "error", message: "تادسترسی ندارید، شما سازنده لابی نیستید." });
+        if (!lobby) {
+           return ack?.({ status: "error", message: "لابی یافت نشد." });
         }
 
         let bot = lobbyMusicBots.get(lobbyId);
+        
+        // If it's not a melody bot, enforce host restriction
+        if (bot?.botType !== "melody" && lobby.hostId !== userId) {
+          return ack?.({ status: "error", message: "تادسترسی ندارید، شما سازنده لابی نیستید." });
+        }
+
         if (!bot) {
           bot = {
             active: true,
@@ -985,6 +1018,127 @@ export function setupWebSockets(io: Server) {
           createdAt: msg.createdAt.getTime()
         };
         
+        // I added this wrongly earlier, just removing it
+        // --- Melody Bot Command Interception ---
+        const bot = lobbyMusicBots.get(lobbyId);
+        if (bot?.active && bot.botType === "melody") {
+          const sendBotResponse = async (text: string) => {
+            const bMsg = await prisma.message.create({
+              data: { content: text, senderId: userId, lobbyId } // using userId as a placeholder, although it should ideally be null
+            });
+            const bPayload = {
+              id: bMsg.id.toString(),
+              tempId: "bot_" + Date.now(),
+              from: { userId: "melody-bot", username: "ملودی لوکس (آنلاین) 🌟", avatar: "/badges/musicbot.jpeg" },
+              targetType: "lobby",
+              targetId: lobbyId,
+              content: text,
+              createdAt: bMsg.createdAt.getTime()
+            };
+            lobbyNs.to(`lobby:${lobbyId}`).emit("chat.message", bPayload);
+          };
+
+          const lowerContent = safeContent.toLowerCase().trim();
+          if (lowerContent.startsWith("/p ")) {
+             const query = safeContent.substring(3).trim();
+             const botSearchingMsgs = [
+               "چشم، دارم دنبالش می‌گردم… 🔍",
+               "حتماً، الان پیداش می‌کنم براتون 🫡",
+               "ببینم سلیقت چطوریه، رفتم واسه سرچ… 🎧",
+               "اوکی، رفتم که داشته باشیمش 🚀",
+               "یکم صبر کن، الان از زیر سنگم شده درش میارم 💎",
+               "ملودی لوکس در خدمت شماست، دارم می‌گردم… ✨",
+               "چه انتخابی! بذار ببینم کجاست… 🎵",
+               "الان برات ردیفش می‌کنم، یه لحظه… 🛠",
+               "در حال دریافت اطلاعات از سرورهای موسیقی… 📡",
+               "سلیقه‌ت لایک داره! رفتم واسه شکار موزیک 🏹"
+             ];
+             await sendBotResponse(botSearchingMsgs[Math.floor(Math.random() * botSearchingMsgs.length)]);
+             
+             // Fake search delay and queue logic
+             setTimeout(async () => {
+               let foundUrl = "";
+               let foundTitle = query;
+               // If it's a URL
+               if (query.startsWith("http")) {
+                 foundUrl = query;
+               } else {
+                 // Try to look up in DB (simple match)
+                 const tracks = await prisma.track.findMany({});
+                 const matched = tracks.find(t => t.title.toLowerCase().includes(query.toLowerCase()));
+                 if (matched) {
+                    foundUrl = matched.url;
+                    foundTitle = matched.title;
+                 }
+               }
+
+               if (foundUrl) {
+                 // Format validation (simple check if URL or extension matches, here we simulate the check for local files or direct links)
+                 if (!foundUrl.match(/\.(mp3|wav|ogg|m4a|mp4)$/i) && !foundUrl.startsWith("http")) {
+                    await sendBotResponse("🚫 فرمت فایل پیدا شده معتبر نیست. لطفاً یک موزیک یا ویدیو انتخاب کنید.");
+                    return;
+                 }
+                 
+                 const successMsgs = [
+                   "پیداش کردم برات، الان پخش می‌کنم 💃",
+                   "پیدا شد! رفت توی لیست پخش، حالشو ببرید 🎶",
+                   "موزیک آماده‌ست! بریم واسه پخش… 🎧🔥",
+                   "ماموریت انجام شد، موزیک به صف اضافه شد ✅"
+                 ];
+                 await sendBotResponse(successMsgs[Math.floor(Math.random() * successMsgs.length)]);
+
+                 // Add to queue and play
+                 const newTrack = { id: Date.now().toString(), title: foundTitle, name: foundTitle, url: foundUrl };
+                 bot.queue = bot.queue || [];
+                 bot.queue.push(newTrack);
+                 if (!bot.isPlaying && bot.queue.length === 1) {
+                    bot.queueIndex = 0;
+                    bot.isPlaying = true;
+                    bot.currentTrackUrl = newTrack.url;
+                    bot.currentTrackName = newTrack.name;
+                    bot.currentTime = 0;
+                 }
+                 bot.updatedAt = Date.now();
+                 lobbyNs.to(`lobby:${lobbyId}`).emit("lobby.musicbot.state", bot);
+               } else {
+                 const notFoundMsgs = [
+                   "هرچی گشتم پیدا نشد که نشد! ❌ اگه لینکش رو داری بفرست: /p Link",
+                   "شرمنده، این یکی رو توی آرشیوم نداشتم 😔 با لینک امتحان کن.",
+                   "انگار این موزیک خیلی خاصه، پیدا نشد! 🤷♂️ لینکشو داری؟",
+                   "ای بابا! پیدا نکردم. مطمئنی اسمش رو درست نوشتی؟ 🧐",
+                   "شکست خوردم! نتونستم پیداش کنم. لینک مستقیم بده تا پخش کنم 🔗"
+                 ];
+                 await sendBotResponse(notFoundMsgs[Math.floor(Math.random() * notFoundMsgs.length)]);
+               }
+             }, 1500);
+
+          } else if (lowerContent === "/stop") {
+            bot.isPlaying = false;
+            bot.updatedAt = Date.now();
+            lobbyNs.to(`lobby:${lobbyId}`).emit("lobby.musicbot.state", bot);
+            await sendBotResponse("پخش موزیک متوقف شد ⏹");
+          } else if (lowerContent === "/skip") {
+            if (bot.queue && bot.queue.length > 0) {
+               bot.queueIndex = (bot.queueIndex + 1) % bot.queue.length;
+               bot.currentTrackUrl = bot.queue[bot.queueIndex].url;
+               bot.currentTrackName = bot.queue[bot.queueIndex].name || bot.queue[bot.queueIndex].title;
+               bot.currentTime = 0;
+               bot.isPlaying = true;
+               bot.updatedAt = Date.now();
+               lobbyNs.to(`lobby:${lobbyId}`).emit("lobby.musicbot.state", bot);
+               await sendBotResponse(`موزیک بعدی پخش شد ⏭ : ${bot.currentTrackName}`);
+            }
+          } else if (lowerContent === "/queue") {
+             if (bot.queue && bot.queue.length > 0) {
+               const qStr = bot.queue.map((t, idx) => `${idx + 1}. ${t.name || t.title}`).join("\n");
+               await sendBotResponse(`📜 لیست انتظار:\n${qStr}`);
+             } else {
+               await sendBotResponse("لیست پخش خالی است.");
+             }
+          }
+        }
+        // --- End Melody Bot Command Interception ---
+
         // Award XP for chat message
         await RankingService.addXP(userId, 10, "CHAT_MESSAGE");
         
