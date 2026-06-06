@@ -7,11 +7,13 @@ import { useLanguage } from '../context/LanguageContext';
 
 export const ScreenSharePresenter = ({
  stream,
+ fallbackFrame,
  presenterName,
  isLocal,
  isWarningActive
 }: {
- stream: MediaStream;
+ stream: MediaStream | null;
+ fallbackFrame?: string | null;
  presenterName: string;
  isLocal: boolean;
  isWarningActive?: boolean;
@@ -20,13 +22,13 @@ export const ScreenSharePresenter = ({
  const isRtl = language === "fa";
  const videoRef = useRef<HTMLVideoElement>(null);
  const [isFullscreen, setIsFullscreen] = useState(false);
- const [isWatching, setIsWatching] = useState(isLocal); // Default local shares to auto-watched, remote demands action
+ const [isWatching, setIsWatching] = useState(isLocal || !!fallbackFrame); // Default local/fallback shares to watched, remote demands action
  const containerRef = useRef<HTMLDivElement>(null);
 
- // Reset watching state when stream or isLocal changes to ensure fresh button prompt for new presenters
+ // Reset watching state when stream or isLocal/fallbackFrame changes to ensure fresh button prompt for new presenters
  useEffect(() => {
-   setIsWatching(isLocal);
- }, [stream, isLocal]);
+   setIsWatching(isLocal || !!fallbackFrame);
+ }, [stream, fallbackFrame, isLocal]);
 
  // Bind media stream only if the user has opted in to watch (demand-driven active loading)
 useEffect(() => {
@@ -98,13 +100,22 @@ useEffect(() => {
  >
  {isWatching ? (
  <>
- <video 
- ref={videoRef}
- autoPlay 
- playsInline
- muted // Prevent echoing local microphone sounds back into player
- className="w-full h-full xl:min-h-[480px] md:min-h-[380px] object-contain bg-black"
- />
+ {fallbackFrame && !stream ? (
+  <img 
+    src={fallbackFrame}
+    className="w-full h-full xl:min-h-[480px] md:min-h-[380px] object-contain bg-black"
+    alt="Loxx Screenshare Fallback Bridge Feed"
+    referrerPolicy="no-referrer"
+  />
+ ) : (
+  <video 
+  ref={videoRef}
+  autoPlay 
+  playsInline
+  muted // Prevent echoing local microphone sounds back into player
+  className="w-full h-full xl:min-h-[480px] md:min-h-[380px] object-contain bg-black"
+  />
+ )}
  
  {/* Presenter info overlay */}
  <div className={cn("absolute top-4 left-4 right-4 flex items-start justify-between pointer-events-none", isRtl ? "flex-row-reverse" : "flex-row")}>
