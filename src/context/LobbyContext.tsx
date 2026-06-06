@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { lobbySocket, chatSocket, voiceSocket, mainPlatformVoiceSocket, presenceSocket, getSharedAudioContext, resumeSharedAudioContext } from "../lib/socket";
 import { toast } from "react-hot-toast";
-import { MicVAD } from "@ricky0123/vad-web";
 import { useAuth } from "./AuthContext";
 import { useWebRTC } from "../hooks/useWebRTC";
 import { RemoteAudioPlayer } from "../components/voice/RemoteAudioPlayer";
@@ -874,59 +873,6 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 					}
 				}
 
-				let myvad: any = null;
-				MicVAD.new({
-					getStream: () => Promise.resolve(localStream),
-					positiveSpeechThreshold: Math.max(0.1, Math.min(0.99, (40 - micSensitivityRef.current) / 40)), // Map 1-40 to threshold where 1 is highest sensitivity (smallest threshold)
-					onSpeechStart: () => {
-						if (!isTalking) {
-							isTalking = true;
-							if (lobby && mainPlatformVoiceSocket) {
-								mainPlatformVoiceSocket.emit("voice.talking", { roomId: lobby.id, isTalking: true });
-							}
-							if (lobby && user) {
-								setLobby(prev => {
-									if (!prev) return null;
-									const talkingUsers = prev.talkingUsers || [];
-									if (!talkingUsers.includes(user.id)) {
-										return { ...prev, talkingUsers: [...talkingUsers, user.id] };
-									}
-									return prev;
-								});
-							}
-							if (micTestGainNode && audioContext) {
-								micTestGainNode.gain.setTargetAtTime(1.0, audioContext.currentTime, 0.03);
-							}
-						}
-					},
-					onSpeechEnd: () => {
-						if (isTalking) {
-							isTalking = false;
-							if (lobby && mainPlatformVoiceSocket) {
-								mainPlatformVoiceSocket.emit("voice.talking", { roomId: lobby.id, isTalking: false });
-							}
-							if (lobby && user) {
-								setLobby(prev => {
-									if (!prev) return null;
-									const talkingUsers = prev.talkingUsers || [];
-									if (talkingUsers.includes(user.id)) {
-										return { ...prev, talkingUsers: talkingUsers.filter(id => id !== user.id) };
-									}
-									return prev;
-								});
-							}
-							if (micTestGainNode && audioContext) {
-								micTestGainNode.gain.setTargetAtTime(0.0, audioContext.currentTime, 0.03);
-							}
-						}
-					}
-				}).then((vad) => {
-					myvad = vad;
-					vad.start();
-				}).catch(e => {
-					console.error("VAD-WEB Failed to Load, falling back to volume gate:", e);
-				});
-
 				let lastAnalysisTime = 0;
 				const analyzeVoice = (timestamp: number) => {
 					const now = timestamp || performance.now();
@@ -939,11 +885,65 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 								sum += dataArray[i];
 							}
 							const avg = sum / bufferLength;
-							const newVol = Math.min(100, Math.round(avg * 2));
+							const newVol = Math.min(100, Math.round(avg * 2.5));
 							
-							if (Math.abs(newVol - lastVol) > 20 || (newVol === 0 && lastVol !== 0) || (newVol > 15 && lastVol === 0)) {
+							if (Math.abs(newVol - lastVol) > 15 || (newVol === 0 && lastVol !== 0) || (newVol > 10 && lastVol === 0)) {
 								lastVol = newVol;
 								setLocalVolume(newVol);
+							}
+
+							// --- Real-time Volume Gate (Fail-Safe high performance alternative to VAD-WEB) ---
+							// Map sensitivity 1-40 to volume gate threshold (average sensitivity of 20 = threshold around 20 volume)
+							const threshold = Math.max(3, 40 - micSensitivityRef.current);
+							const isSpeakingNow = newVol >= threshold;
+
+							if (isSpeakingNow) {
+								silenceStartTime = 0;
+								if (!isTalking) {
+									isTalking = true;
+									if (lobby && mainPlatformVoiceSocket) {
+										mainPlatformVoiceSocket.emit("voice.talking", { roomId: lobby.id, isTalking: true });
+									}
+									if (lobby && user) {
+										setLobby(prev => {
+											if (!prev) return null;
+											const talkingUsers = prev.talkingUsers || [];
+											if (!talkingUsers.includes(user.id)) {
+												return { ...prev, talkingUsers: [...talkingUsers, user.id] };
+											}
+											return prev;
+										});
+									}
+									if (micTestGainNode && audioContext) {
+										micTestGainNode.gain.setTargetAtTime(1.0, audioContext.currentTime, 0.03);
+									}
+								}
+							} else {
+								// Silence detected. Wait 450ms before ending speech to prevent choppy cutoffs
+								if (isTalking) {
+									if (silenceStartTime === 0) {
+										silenceStartTime = now;
+									} else if (now - silenceStartTime > 450) {
+										isTalking = false;
+										silenceStartTime = 0;
+										if (lobby && mainPlatformVoiceSocket) {
+											mainPlatformVoiceSocket.emit("voice.talking", { roomId: lobby.id, isTalking: false });
+										}
+										if (lobby && user) {
+											setLobby(prev => {
+												if (!prev) return null;
+												const talkingUsers = prev.talkingUsers || [];
+												if (talkingUsers.includes(user.id)) {
+													return { ...prev, talkingUsers: talkingUsers.filter(id => id !== user.id) };
+												}
+												return prev;
+											});
+										}
+										if (micTestGainNode && audioContext) {
+											micTestGainNode.gain.setTargetAtTime(0.0, audioContext.currentTime, 0.03);
+										}
+									}
+								}
 							}
 						} else {
 							if (lastVol !== 0) {
@@ -952,12 +952,16 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 							}
 							if (isTalking) {
 								isTalking = false;
+								silenceStartTime = 0;
 								if (lobby && mainPlatformVoiceSocket) mainPlatformVoiceSocket.emit("voice.talking", { roomId: lobby.id, isTalking: false });
 								if (lobby && user) {
 									setLobby(prev => {
 										if (!prev) return null;
 										return { ...prev, talkingUsers: prev.talkingUsers?.filter(id => id !== user.id) || [] };
 									});
+								}
+								if (micTestGainNode && audioContext) {
+									micTestGainNode.gain.setTargetAtTime(0.0, audioContext.currentTime, 0.03);
 								}
 							}
 						}
