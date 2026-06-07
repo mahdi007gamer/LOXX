@@ -464,27 +464,34 @@ export function setupWebSockets(io: Server) {
 
   const searchYahoo = async (query: string): Promise<string[]> => {
     try {
-      const searchQuery = `${query} site:pop-music.ir OR site:nex1music.ir OR site:music-fa.com OR site:upmusics.com`;
+      const searchQuery = `دانلود آهنگ ${query}`;
       const url = `https://search.yahoo.com/search?p=${encodeURIComponent(searchQuery)}`;
       const response = await axios.get(url, {
         headers: {
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.0.0 Safari/537.36"
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36"
         },
         timeout: 4500
       });
       const html = response.data || "";
       const urls: string[] = [];
-      const matches = html.matchAll(/(https%3a%2f%2fpop-music\.ir%2f[^"&]+|https%3a%2f%2fnex1music\.ir%2f[^"&]+|https%3a%2f%2fmusic-fa\.com%2f[^"&]+|https%3a%2f%2fupmusics\.com%2f[^"&]+)/gi);
-      for (const m of matches) {
+      const matchAll = html.matchAll(/RU=([^/&]+)/g);
+      for (const m of matchAll) {
         try {
           const decoded = decodeURIComponent(m[1]);
-          if (!urls.includes(decoded)) urls.push(decoded);
+          const dLower = decoded.toLowerCase();
+          if (
+            decoded.startsWith("http") && 
+            !urls.includes(decoded) &&
+            !dLower.includes("yahoo.com") &&
+            !dLower.includes("youtube.com") &&
+            !dLower.includes("aparat.com") &&
+            !dLower.includes("instagram.com") &&
+            !dLower.includes("soundcloud.com") &&
+            !dLower.includes("spotify.com")
+          ) {
+            urls.push(decoded);
+          }
         } catch {}
-      }
-      const rawMatches = html.matchAll(/(https:\/\/pop-music\.ir\/[a-zA-Z0-9-%_%/]+|https:\/\/nex1music\.ir\/[a-zA-Z0-9-%_%/]+|https:\/\/music-fa\.com\/[a-zA-Z0-9-%_%/]+|https:\/\/upmusics\.com\/[a-zA-Z0-9-%_%/]+)/gi);
-      for (const rm of rawMatches) {
-        const url = rm[1];
-        if (!urls.includes(url)) urls.push(url);
       }
       return urls;
     } catch {
@@ -602,6 +609,29 @@ export function setupWebSockets(io: Server) {
         const url = m[1];
         if (url.endsWith("/") && !url.includes("/category/") && !url.includes("/page/")) {
           postUrls.push(url);
+        }
+      }
+      if (postUrls.length > 0) {
+        const result = await extractMp3FromWebPage(postUrls[0]);
+        if (result) return result;
+      }
+    } catch {}
+
+    // 8. Direct fallback to pmcmusic.tv search
+    try {
+      console.log(`[MusicBot Search] Direct fallback pmcmusic.tv for: "${query}"`);
+      const searchUrl = `https://pmcmusic.tv/?s=${encodeURIComponent(query)}`;
+      const searchRes = await axios.get(searchUrl, {
+        headers: { "User-Agent": "Mozilla/5.0" },
+        timeout: 4000
+      });
+      const searchHtml = searchRes.data || "";
+      const postUrls: string[] = [];
+      const matches = searchHtml.matchAll(/href="(https:\/\/pmcmusic\.tv\/[^"']+)"/gi);
+      for (const m of matches) {
+        const url = m[1];
+        if (url.endsWith("/") && !url.includes("/category/") && !url.includes("/page/") && url !== "https://pmcmusic.tv/download-song/") {
+          if (!postUrls.includes(url)) postUrls.push(url);
         }
       }
       if (postUrls.length > 0) {
