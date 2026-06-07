@@ -577,6 +577,14 @@ export const LobbyRoomPage = () => {
  const [localPlayMode, setLocalPlayMode] = useState<"in-order" | "random">("random");
  const [loxxLibrary, setLoxxLibrary] = useState<{ irani: any; kharegi: any } | null>(null);
  const [isMusicPlayerExpanded, setIsMusicPlayerExpanded] = useState(true);
+
+  // Auto-expand player container and activate desktop chat panel when Melody Lox bot is invited/joins
+  useEffect(() => {
+    if (musicBotState?.active && musicBotState?.botType === "melody") {
+      setIsMusicPlayerExpanded(true);
+      setIsDesktopChatOpen(true);
+    }
+  }, [musicBotState?.active, musicBotState?.botType]);
  const [windowDims, setWindowDims] = useState({ width: 0, height: 0 });
 
  useEffect(() => {
@@ -1815,7 +1823,6 @@ export const LobbyRoomPage = () => {
       toggleMusicBot(willBeActive, "melody");
       if (willBeActive) {
         setIsInviteModalOpen(false);
-        setShowBotSetupModal(true);
       }
      }}
      className={cn(
@@ -2111,7 +2118,7 @@ export const LobbyRoomPage = () => {
       <div className="flex items-center justify-center gap-6 mb-8 select-none font-sans px-2" dir="ltr">
        <button 
         onClick={() => {
-         if (isHost && musicBotState?.queue && musicBotState.queue.length > 0) {
+         if (canControlMusic && musicBotState?.queue && musicBotState.queue.length > 0) {
           const prevIdx = (musicBotState.queueIndex - 1 + musicBotState.queue.length) % musicBotState.queue.length;
           const prevTrack = musicBotState.queue[prevIdx];
           controlMusicBot("update-queue", {
@@ -2130,21 +2137,25 @@ export const LobbyRoomPage = () => {
          isMelodyBot ? "text-[#e6c66d] hover:text-[#FFD700] hover:bg-[#FFD700]/10" : "text-[#81cad6] hover:text-[#00e5ff] hover:bg-[#00e5ff]/10",
          (!canControlMusic || !musicBotState?.queue || musicBotState.queue.length <= 1) && (isMelodyBot ? "opacity-40 cursor-not-allowed hover:bg-transparent hover:text-[#e6c66d]" : "opacity-40 cursor-not-allowed hover:bg-transparent hover:text-[#81cad6]")
         )}
-        disabled={!isHost || !musicBotState?.queue || musicBotState.queue.length <= 1}
+        disabled={!canControlMusic || !musicBotState?.queue || musicBotState.queue.length <= 1}
        >
-        <SkipBack size={26} fill="currentColor" strokeWidth={1.5} className="drop-shadow-[0_0_5px_rgba(0,229,255,0.5)]" />
+        <SkipBack size={26} fill="currentColor" strokeWidth={1.5} className={isMelodyBot ? "drop-shadow-[0_0_5px_rgba(255,215,0,0.55)]" : "drop-shadow-[0_0_5px_rgba(0,229,255,0.5)]"} />
        </button>
 
        <button 
         onClick={() => {
-         if (!isHost) return;
+         if (!canControlMusic) return;
          if (musicBotState?.isPlaying) {
           controlMusicBot("pause", { currentTime: localMusicAudioRef.current?.currentTime || 0 });
          } else {
           if (musicBotState?.queue && musicBotState.queue.length > 0) {
            controlMusicBot("play", { currentTime: localMusicAudioRef.current?.currentTime || 0 });
           } else {
-           setShowBotSetupModal(true);
+           if (isMelodyBot) {
+            toast.info(isRtl ? "⚠️ برای پخش موزیک، کافیست دستور /p [نام آهنگ] را در چت لابی ارسال کنید!" : "⚠️ To play a song, simply type /p [track name] in the lobby chat!");
+           } else {
+            setShowBotSetupModal(true);
+           }
           }
          }
         }}
@@ -2177,8 +2188,9 @@ export const LobbyRoomPage = () => {
          }
         }}
         className={cn(
-         "p-2 flex items-center justify-center rounded-full text-[#81cad6] hover:text-[#00e5ff] hover:bg-[#00e5ff]/10 active:scale-90 transition-all",
-         (!isHost || !musicBotState?.queue || musicBotState.queue.length <= 1) && "opacity-40 cursor-not-allowed hover:bg-transparent hover:text-[#81cad6]"
+         "p-2 flex items-center justify-center rounded-full active:scale-90 transition-all",
+         isMelodyBot ? "text-[#e6c66d] hover:text-[#FFD700] hover:bg-[#FFD700]/10" : "text-[#81cad6] hover:text-[#00e5ff] hover:bg-[#00e5ff]/10",
+         (!canControlMusic || !musicBotState?.queue || musicBotState.queue.length <= 1) && (isMelodyBot ? "opacity-40 cursor-not-allowed hover:bg-transparent hover:text-[#e6c66d]" : "opacity-40 cursor-not-allowed hover:bg-transparent hover:text-[#81cad6]")
         )}
         disabled={!canControlMusic || !musicBotState?.queue || musicBotState.queue.length <= 1}
        >
@@ -2245,7 +2257,7 @@ export const LobbyRoomPage = () => {
              <div 
               key={idx} 
               onClick={() => {
-               if (isHost) {
+               if (canControlMusic) {
                 controlMusicBot("update-queue", {
                  queue: musicBotState.queue,
                  queueIndex: idx,
@@ -3056,7 +3068,6 @@ export const LobbyRoomPage = () => {
                 } else {
                   toggleMusicBot(true, "melody");
                   setIsSettingsModalOpen(false);
-                  setShowBotSetupModal(true);
                 }
               }}
               className={cn(
