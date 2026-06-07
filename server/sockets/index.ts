@@ -361,17 +361,22 @@ export function setupWebSockets(io: Server) {
 
   const WELCOME_MELODY = `🎧 سـلام! من ملودی لوکس هستم، دیجی اختصاصی لابی شما! 🌟
 
-ممنون که من رو به جمعتون اضافه کردید. من اینجام تا اتمسفر لابی رو با بهترین موزیکها منفجر کنم! 🚀
+ممنون که من رو به جمعتون اضافه کردید. من اینجام تا اتمسفر لابی رو با بهترین موزیک‌ها منفجر کنم! 🚀
 
-🎵 چطوری آهنگ پخش کنم؟
-
+🎵 چطور آهنگ پخش کنم؟
 کافیه دستور /p رو بنویسی تا بلافاصله برات پیداش کنم:
-
 🔹 /p [اسم موزیک / فیلم / خواننده]
 
-💡 نکته: هر تعداد که آهنگ بخوای میتونی اضافه کنی تا برن توی صف پخش. در ضمن، این نسخه طلایی هست و همه میتونن پلیر رو کنترل کنن! 😎
+💡 مثلاً:
+/p گل سرخ
+/p https://example.com/music.mp3
 
-🛠 دستورات سریع: ⏹ /stop : توقف پخش ⏭ /skip : رفتن به آهنگ بعدی 📜 /queue : مشاهده لیست انتظار`;
+📌 هر تعداد که آهنگ بخوای می‌تونی اضافه کنی تا برن توی لیست پخش! در ضمن، این نسخه طلایی هست و همه بچه‌های لابی می‌تونن پلیر رو کنترل کنن! 😎
+
+🛠 دستورات سریع چت:
+⏹ /stop : توقف پخش موزیک
+⏭ /skip : رفتن به آهنگ بعدی
+📜 /queue : مشاهده لیست انتظار`;
 
   // Helper to send a chat message inside the lobby using the bot's identity
   const sendBotLobbyMessage = async (lobbyId: string, botType: "music" | "melody", content: string) => {
@@ -422,39 +427,96 @@ export function setupWebSockets(io: Server) {
       if (!bot || !bot.active || bot.botType !== "melody") return;
 
       if (cmd === "p") {
+        const query = arg.trim();
+        if (!query) {
+          await sendBotLobbyMessage(lobbyId, "melody", "⚠️ لطفا نام آهنگ یا لینک مستقیم آن را بعد از /p بنویسید.");
+          return;
+        }
+
         // Send Search Start message at random
         const rNum = Math.floor(Math.random() * SEARCH_MESSAGES.length);
         await sendBotLobbyMessage(lobbyId, "melody", SEARCH_MESSAGES[rNum]);
 
         // Lookup query
         let matchedTrack: any = null;
-        const isUrl = /^(https?:\/\/)/i.test(arg);
+        const isUrl = /^(https?:\/\/)/i.test(query);
 
         if (isUrl) {
           // Validate URL extension
-          const isValidExt = /\.(mp3|wav|ogg|m4a|aac)$/i.test(arg) || !arg.includes("."); 
-          if (!isValidExt) {
-            await sendBotLobbyMessage(lobbyId, "melody", "🚫 فرمت فایل پیدا شده معتبر نیست. لطفاً یک موزیک یا ویدیو انتخاب کنید.");
+          const isInvalidExt = /\.(png|jpe?g|gif|webp|svg|css|html|js|json|pdf|zip|rar|tar|gz|xml|txt)$/i.test(query);
+          if (isInvalidExt) {
+            await sendBotLobbyMessage(lobbyId, "melody", "🚫 فرمت فایل پیدا شده معتبر نیست. لطفاً یک آدرس مستقیم موزیک یا ویدیو (مانند MP3 یا WAV) ارسال کنید.");
             return;
           }
           
-          const urlName = path.basename(decodeURIComponent(arg)).split("?")[0] || "Custom Audio";
+          let urlName = path.basename(decodeURIComponent(query)).split("?")[0] || "Custom Audio";
+          if (urlName === "file" || urlName.length < 3) {
+            urlName = "آهنگ سفارشی از لینک مستقیم";
+          } else {
+            urlName = urlName.replace(/\.[^/.]+$/, "");
+          }
+
           matchedTrack = {
-            title: urlName.replace(/\.[^/.]+$/, ""),
-            url: arg,
+            title: urlName,
+            url: query,
             coverUrl: "/badges/musicbot-gold.jpeg",
             duration: 300 // default 5 mins
           };
         } else {
-          const tracks = await prisma.track.findMany();
-          const matched = tracks.find(t => 
-            t.title.toLowerCase().includes(arg.toLowerCase()) || 
-            t.url.toLowerCase().includes(arg.toLowerCase())
-          );
-          if (matched) {
-            matchedTrack = matched;
+          // Normalized Persian character search
+          const normalizePersian = (str: string) => {
+            return str
+              .toLowerCase()
+              .replace(/ي/g, "ی")
+              .replace(/ك/g, "ک")
+              .replace(/[\u200B-\u200D\uFEFF]/g, " ")
+              .trim();
+          };
+
+          const searchNormalized = normalizePersian(query);
+          const tracks = await prisma.track.findMany({
+            include: {
+              artists: true
+            }
+          }).catch(() => prisma.track.findMany()); // safe fallback if relational includes fail
+
+          // 1. Exact match on title
+          let matched = tracks.find(t => normalizePersian(t.title) === searchNormalized);
+
+          // 2. Substring match on title
+          if (!matched) {
+            matched = tracks.find(t => normalizePersian(t.title).includes(searchNormalized));
           }
-         }
+
+          // 3. Substring match on artist name
+          if (!matched) {
+            matched = tracks.find(t => 
+              (t as any).artists && (t as any).artists.some((artist: any) => normalizePersian(artist.name).includes(searchNormalized))
+            );
+          }
+
+          // 4. Token-based matching (all query words exist in title + artist name combined)
+          if (!matched) {
+            const tokens = searchNormalized.split(/\s+/).filter(t => t.length > 0);
+            if (tokens.length > 0) {
+              matched = tracks.find(t => {
+                const titleNorm = normalizePersian(t.title);
+                const artistsNorm = ((t as any).artists?.map((a: any) => normalizePersian(a.name)).join(" ") || "");
+                const combined = titleNorm + " " + artistsNorm;
+                return tokens.every(token => combined.includes(token));
+              });
+            }
+          }
+
+          if (matched) {
+            matchedTrack = {
+              title: matched.title,
+              url: matched.url,
+              coverUrl: matched.coverUrl || "/badges/musicbot-gold.jpeg",
+              duration: matched.duration || 0
+            };
+          }
+        }
 
         if (!matchedTrack) {
           const rIndex = Math.floor(Math.random() * NOT_FOUND_MESSAGES.length);
@@ -464,7 +526,7 @@ export function setupWebSockets(io: Server) {
 
         // Check 13 mins limit
         if (matchedTrack.duration && matchedTrack.duration > 780) {
-          await sendBotLobbyMessage(lobbyId, "melody", "⚠️ موزیک مورد نظر شما بیشتر از ۱۳ دقیقه است. لطفاً قطعه کوتاهتری انتخاب کنید.");
+          await sendBotLobbyMessage(lobbyId, "melody", "⚠️ موزیک مورد نظر شما بیشتر از ۱۳ دقیقه (۷۸۰ ثانیه) است. لطفاً قطعه کوتاهتری انتخاب کنید.");
           return;
         }
 

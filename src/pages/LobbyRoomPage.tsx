@@ -2152,7 +2152,7 @@ export const LobbyRoomPage = () => {
            controlMusicBot("play", { currentTime: localMusicAudioRef.current?.currentTime || 0 });
           } else {
            if (isMelodyBot) {
-            toast.info(isRtl ? "⚠️ برای پخش موزیک، کافیست دستور /p [نام آهنگ] را در چت لابی ارسال کنید!" : "⚠️ To play a song, simply type /p [track name] in the lobby chat!");
+            toast(isRtl ? "⚠️ برای پخش موزیک، کافیست دستور /p [نام آهنگ] را در چت لابی ارسال کنید!" : "⚠️ To play a song, simply type /p [track name] in the lobby chat!", { icon: "ℹ️" });
            } else {
             setShowBotSetupModal(true);
            }
@@ -4159,7 +4159,7 @@ function ChatPanel({ messages, players, inputMessage, setInputMessage, onSend, o
  )}
  />
  )}
- <span className="relative z-10">{msg.text}</span>
+ <span className="relative z-10 whitespace-pre-wrap text-right block" dir="auto">{msg.text}</span>
  </div>
  </div>
  </div>
