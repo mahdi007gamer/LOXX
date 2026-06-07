@@ -464,47 +464,52 @@ export function setupWebSockets(io: Server) {
 
   // Search online track from web or itunes API as fallback
   const searchOnlineTrack = async (query: string): Promise<{ title: string; url: string; coverUrl: string; duration: number } | null> => {
-    console.log(`[MusicBot Search] Direct site search for query: "${query}"`);
-
-    const sites = [
-      { name: "PMC", url: `https://pmcmusic.tv/?s=${encodeURIComponent(query)}`, regex: /href="(https:\/\/pmcmusic\.tv\/[^"']+)"/gi },
-      { name: "Mokhtalef", url: `https://mokhtalefmusic.com/?s=${encodeURIComponent(query)}`, regex: /href="(https:\/\/mokhtalefmusic\.com\/[^"']+)"/gi }
-    ];
+    console.log(`[MusicBot Search] Searching for query: "${query}"`);
 
     const validPosts: string[] = [];
 
-    for (const site of sites) {
-      try {
-        const res = await axios.get(site.url, {
-          headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/110.0.0.0" },
-          timeout: 4500
+    // 1. Search pmcmusic.tv via HTML scraping
+    try {
+        const searchUrl = `https://pmcmusic.tv/?s=${encodeURIComponent(query)}`;
+        const res = await axios.get(searchUrl, {
+            headers: { "User-Agent": "Mozilla/5.0" },
+            timeout: 4500
         });
         const html = res.data || "";
-        const matches = html.matchAll(site.regex);
-        for (const m of matches) {
-          const u = m[1];
-          // Filter out typical non-post urls and categories
-          if (
-            u.endsWith("/") &&
-            !u.match(/\/(category|page|tag|author|album|podcast|playlist-category|playlist-online)\//) &&
-            !u.match(/^(https:\/\/[^/]+\/)(contact-us|about-us|release|music-publish|albums|music-video|download-song|pmcroyale|madahi|remix|foreign|korea|kordi|music)\/?$/) &&
-            u !== "https://pmcmusic.tv/" &&
-            u !== "https://mokhtalefmusic.com/"
-          ) {
-            if (!validPosts.includes(u)) {
-                validPosts.push(u);
+        const articles = html.match(/<article[^>]*>.*?<\/article>/gis);
+        if (articles) {
+            for (const article of articles) {
+                const linkMatch = article.match(/href="(https:\/\/pmcmusic\.tv\/[^"']+)"/);
+                if (linkMatch) {
+                    const u = linkMatch[1];
+                    if (!validPosts.includes(u)) validPosts.push(u);
+                }
             }
-          }
         }
-      } catch (e: any) {
-        console.log(`[MusicBot Search] Error scraping ${site.name}:`, e.message);
-      }
+    } catch (e: any) {
+        console.log(`[MusicBot Search] PMC error:`, e.message);
+    }
+
+    // 2. Search mokhtalefmusic.com via WP REST API
+    try {
+        const searchUrl = `https://mokhtalefmusic.com/wp-json/wp/v2/posts?search=${encodeURIComponent(query)}&_fields=link&per_page=3`;
+        const res = await axios.get(searchUrl, {
+            headers: { "User-Agent": "Mozilla/5.0" },
+            timeout: 4000
+        });
+        if (res.data && Array.isArray(res.data)) {
+            for (const post of res.data) {
+                if (post.link && !validPosts.includes(post.link)) validPosts.push(post.link);
+            }
+        }
+    } catch (e: any) {
+         console.log(`[MusicBot Search] Mokhtalef error:`, e.message);
     }
 
     console.log(`[MusicBot Search] Found ${validPosts.length} potential posts.`);
 
-    // Scrape them in order (limit to first 10 hits to avoid extremely long loops)
-    for (const url of validPosts.slice(0, 10)) {
+    // Scrape them in order (limit to first 5 hits)
+    for (const url of validPosts.slice(0, 5)) {
       const result = await extractMp3FromWebPage(url);
       if (result) {
         console.log(`[MusicBot Search] Successfully extracted track from direct search: "${result.title}"`);
