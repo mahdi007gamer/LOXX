@@ -462,194 +462,68 @@ export function setupWebSockets(io: Server) {
     }
   };
 
-  const searchYahoo = async (query: string): Promise<string[]> => {
-    try {
-      const searchQuery = `دانلود آهنگ ${query}`;
-      const url = `https://search.yahoo.com/search?p=${encodeURIComponent(searchQuery)}`;
-      const response = await axios.get(url, {
-        headers: {
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36"
-        },
-        timeout: 4500
-      });
-      const html = response.data || "";
-      const urls: string[] = [];
-      const matchAll = html.matchAll(/RU=([^/&]+)/g);
-      for (const m of matchAll) {
-        try {
-          const decoded = decodeURIComponent(m[1]);
-          const dLower = decoded.toLowerCase();
-          if (
-            decoded.startsWith("http") && 
-            !urls.includes(decoded) &&
-            !dLower.includes("yahoo.com") &&
-            !dLower.includes("youtube.com") &&
-            !dLower.includes("aparat.com") &&
-            !dLower.includes("instagram.com") &&
-            !dLower.includes("soundcloud.com") &&
-            !dLower.includes("spotify.com")
-          ) {
-            urls.push(decoded);
-          }
-        } catch {}
-      }
-      return urls;
-    } catch {
-      return [];
-    }
-  };
-
-  const searchDuckDuckGo = async (query: string): Promise<string[]> => {
-    try {
-      const searchQuery = `${query} site:pop-music.ir OR site:nex1music.ir OR site:music-fa.com OR site:upmusics.com`;
-      const url = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(searchQuery)}`;
-      const response = await axios.get(url, {
-        headers: {
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36"
-        },
-        timeout: 4500
-      });
-      const html = response.data || "";
-      const urls: string[] = [];
-      const matchAll = html.matchAll(/uddg=([^&"]+)/g);
-      for (const m of matchAll) {
-        try {
-          const decoded = decodeURIComponent(m[1]);
-          if (decoded.startsWith("http") && !urls.includes(decoded)) {
-            urls.push(decoded);
-          }
-        } catch {}
-      }
-      return urls;
-    } catch {
-      return [];
-    }
-  };
-
-  const searchDuckDuckGoGlobal = async (query: string): Promise<string[]> => {
-    try {
-      const searchQuery = `${query} "دانلود آهنگ" "mp3"`;
-      const url = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(searchQuery)}`;
-      const response = await axios.get(url, {
-        headers: {
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36"
-        },
-        timeout: 4500
-      });
-      const html = response.data || "";
-      const urls: string[] = [];
-      const matchAll = html.matchAll(/uddg=([^&"]+)/g);
-      for (const m of matchAll) {
-        try {
-          const decoded = decodeURIComponent(m[1]);
-          const dLower = decoded.toLowerCase();
-          if (
-            decoded.startsWith("http") && 
-            !urls.includes(decoded) &&
-            !dLower.includes("youtube.com") &&
-            !dLower.includes("aparat.com") &&
-            !dLower.includes("instagram.com") &&
-            !dLower.includes("facebook.com")
-          ) {
-            urls.push(decoded);
-          }
-        } catch {}
-      }
-      return urls;
-    } catch {
-      return [];
-    }
-  };
-
   // Search online track from web or itunes API as fallback
   const searchOnlineTrack = async (query: string): Promise<{ title: string; url: string; coverUrl: string; duration: number } | null> => {
     console.log(`[MusicBot Search] Searching for query: "${query}"`);
 
-    // 1. First, search search engines (DuckDuckGo and Yahoo)
-    const engineUrls = new Set<string>();
-    
-    // Attempt DuckDuckGo target sites
-    const ddgTarget = await searchDuckDuckGo(query);
-    ddgTarget.forEach(u => engineUrls.add(u));
+    // 1. Federated Search via WordPress REST APIs of popular Persian music sites
+    const sites = [
+      "https://mokhtalefmusic.com",
+      "https://music-fa.com",
+      "https://pop-music.ir",
+      "https://golsarmusic.ir",
+      "https://upmusics.com",
+      "https://rozmusic.com",
+      "https://nex1music.ir",
+      "https://pmcmusic.tv"
+    ];
 
-    // Attempt Yahoo target sites
-    const yahooTarget = await searchYahoo(query);
-    yahooTarget.forEach(u => engineUrls.add(u));
+    const promises = sites.map(async (site) => {
+      try {
+        const url = `${site}/wp-json/wp/v2/posts?search=${encodeURIComponent(query)}&_fields=id,title,link&per_page=2`;
+        const res = await axios.get(url, {
+          headers: { "User-Agent": "Mozilla/5.0" },
+          timeout: 4000
+        });
+        if (res.data && Array.isArray(res.data)) {
+          return res.data;
+        }
+      } catch {}
+      return null;
+    });
 
-    // Attempt global DuckDuckGo if we don't have enough URLs
-    if (engineUrls.size < 3) {
-      const ddgGlobal = await searchDuckDuckGoGlobal(query);
-      ddgGlobal.forEach(u => engineUrls.add(u));
-    }
+    const results = await Promise.all(promises);
+    const validPosts: string[] = [];
+    results.forEach((arr) => {
+      if (arr) {
+        arr.forEach((post: any) => {
+          if (post && post.link) validPosts.push(post.link);
+        });
+      }
+    });
 
-    const uniqueUrls = Array.from(engineUrls);
-    console.log(`[MusicBot Search] Found ${uniqueUrls.length} potential music webpages from search engines.`);
+    console.log(`[MusicBot Search] Found ${validPosts.length} potential posts via WP REST APIs.`);
 
     // Scrape them in order
-    for (const url of uniqueUrls.slice(0, 5)) {
+    for (const url of validPosts) {
       const result = await extractMp3FromWebPage(url);
       if (result) {
-        console.log(`[MusicBot Search] Successfully extracted track from search engine page: "${result.title}"`);
+        console.log(`[MusicBot Search] Successfully extracted track from federated search: "${result.title}"`);
         return result;
       }
     }
 
-    // 2. Direct fallback to pop-music.ir search
-    try {
-      console.log(`[MusicBot Search] Direct fallback pop-music.ir for: "${query}"`);
-      const searchUrl = `https://pop-music.ir/?s=${encodeURIComponent(query)}`;
-      const searchRes = await axios.get(searchUrl, {
-        headers: { "User-Agent": "Mozilla/5.0" },
-        timeout: 4000
-      });
-      const searchHtml = searchRes.data || "";
-      const postUrls: string[] = [];
-      const matches = searchHtml.matchAll(/href="(https:\/\/pop-music\.ir\/[^"']+)"/gi);
-      for (const m of matches) {
-        const url = m[1];
-        if (url.endsWith("/") && !url.includes("/category/") && !url.includes("/page/")) {
-          postUrls.push(url);
-        }
-      }
-      if (postUrls.length > 0) {
-        const result = await extractMp3FromWebPage(postUrls[0]);
-        if (result) return result;
-      }
-    } catch {}
-
-    // 8. Direct fallback to pmcmusic.tv search
-    try {
-      console.log(`[MusicBot Search] Direct fallback pmcmusic.tv for: "${query}"`);
-      const searchUrl = `https://pmcmusic.tv/?s=${encodeURIComponent(query)}`;
-      const searchRes = await axios.get(searchUrl, {
-        headers: { "User-Agent": "Mozilla/5.0" },
-        timeout: 4000
-      });
-      const searchHtml = searchRes.data || "";
-      const postUrls: string[] = [];
-      const matches = searchHtml.matchAll(/href="(https:\/\/pmcmusic\.tv\/[^"']+)"/gi);
-      for (const m of matches) {
-        const url = m[1];
-        if (url.endsWith("/") && !url.includes("/category/") && !url.includes("/page/") && url !== "https://pmcmusic.tv/download-song/") {
-          if (!postUrls.includes(url)) postUrls.push(url);
-        }
-      }
-      if (postUrls.length > 0) {
-        const result = await extractMp3FromWebPage(postUrls[0]);
-        if (result) return result;
-      }
-    } catch {}
-
-    // 3. Fallback to iTunes Search API
+    // 2. Fallback to iTunes Search API
     try {
       console.log(`[MusicBot Search] Querying iTunes for: "${query}"`);
       const searchUrl = `https://itunes.apple.com/search?media=music&term=${encodeURIComponent(query)}&limit=1`;
       const res = await axios.get(searchUrl, { timeout: 4000 });
       if (res.data?.results && res.data.results.length > 0) {
         const match = res.data.results[0];
+        console.log(`[MusicBot Search] Successfully extracted track from iTunes: "${match.trackName}"`);
         return {
           title: `${match.artistName} - ${match.trackName}`,
-          url: match.previewUrl,
+          url: match.previewUrl,            // 30 second preview URL (.m4a)
           coverUrl: match.artworkUrl100 || "/badges/musicbot-gold.jpeg",
           duration: 30
         };
@@ -658,6 +532,8 @@ export function setupWebSockets(io: Server) {
 
     return null;
   };
+
+
 
   // Helper to send a chat message inside the lobby using the bot's identity
   const sendBotLobbyMessage = async (lobbyId: string, botType: "music" | "melody", content: string) => {
