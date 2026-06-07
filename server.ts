@@ -129,6 +129,27 @@ async function startServer() {
   app.use("/api/v1/email", emailRoutes);
   app.use("/api/v1/musicbot", musicbotRoutes);
   
+  // Audio Proxy Route
+  app.get("/api/v1/proxy/audio", async (req, res) => {
+    try {
+      const targetUrl = req.query.url as string;
+      if (!targetUrl) return res.status(400).json({ error: "No url provided" });
+      
+      const { default: axios } = await import("axios");
+      const proxyRes = await axios.get(targetUrl, {
+        responseType: "stream",
+        headers: { "User-Agent": "Mozilla/5.0" }
+      });
+      
+      res.setHeader("Content-Type", proxyRes.headers["content-type"] || "audio/mpeg");
+      res.setHeader("Access-Control-Allow-Origin", "*");
+      res.setHeader("Cache-Control", "public, max-age=86400");
+      proxyRes.data.pipe(res);
+    } catch (e: any) {
+      res.status(502).json({ error: "Failed to proxy audio: " + e.message });
+    }
+  });
+
   app.get("/api/health", (req, res) => {
     res.json({ status: "ok", message: "LOXX Backend is running in Persian mode (UTF-8)" });
   });

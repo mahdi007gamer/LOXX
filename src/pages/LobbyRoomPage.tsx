@@ -893,9 +893,14 @@ export const LobbyRoomPage = () => {
     }
 
     const rawUrl = musicBotState.currentTrackUrl;
-    const fullUrl = rawUrl.startsWith("http") ? rawUrl : (rawUrl.startsWith("blob:") ? rawUrl : `${window.location.origin}${rawUrl}`);
+    let fullUrl = rawUrl.startsWith("http") ? rawUrl : (rawUrl.startsWith("blob:") ? rawUrl : `${window.location.origin}${rawUrl}`);
+    
+    // Proxy external audio to bypass CORS for Web Audio API
+    if (fullUrl.startsWith("http") && !fullUrl.startsWith(window.location.origin)) {
+       fullUrl = `/api/v1/proxy/audio?url=${encodeURIComponent(fullUrl)}`;
+    }
 
-    if (audioEl.src !== fullUrl) {
+    if (audioEl.src !== fullUrl && audioEl.src !== window.location.origin + fullUrl) {
       audioEl.src = fullUrl;
       audioEl.load();
     }
@@ -1118,8 +1123,8 @@ export const LobbyRoomPage = () => {
  if (!inputMessage.trim() || !id) return;
  
  const words = inputMessage.split(/\s+/);
- if (words.some(word => word.length > 15)) {
- toast.error("یک کلمه نمیتواند بیشتر از 15 کاراکتر باشد (اسپم)");
+ if (words.some(word => word.length > 25 && !word.match(/^https?:\/\//) && !word.startsWith("/p"))) {
+ toast.error("یک کلمه نمیتواند بیشتر از 25 کاراکتر باشد (اسپم)");
  return;
  }
 
@@ -4159,7 +4164,7 @@ function ChatPanel({ messages, players, inputMessage, setInputMessage, onSend, o
  )}
  />
  )}
- <span className="relative z-10 whitespace-pre-wrap text-right block" dir="auto">{msg.text}</span>
+ <span className="relative z-10 whitespace-pre-wrap text-right block" dir="auto">{msg.text.split(/(https?:\/\/[^\s]+)/g).map((part, i) => part.match(/^https?:\/\//) ? <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="text-neon-blue hover:underline break-all" onClick={e => e.stopPropagation()}>{part.length > 28 ? part.substring(0, 25) + "..." : part}</a> : <span key={i}>{part}</span>)}</span>
  </div>
  </div>
  </div>
