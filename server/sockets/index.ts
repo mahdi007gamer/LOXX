@@ -464,51 +464,50 @@ export function setupWebSockets(io: Server) {
 
   // Search online track from web or itunes API as fallback
   const searchOnlineTrack = async (query: string): Promise<{ title: string; url: string; coverUrl: string; duration: number } | null> => {
-    console.log(`[MusicBot Search] Searching for query: "${query}"`);
+    console.log(`[MusicBot Search] Direct site search for query: "${query}"`);
 
-    // 1. Federated Search via WordPress REST APIs of popular Persian music sites
     const sites = [
-      "https://mokhtalefmusic.com",
-      "https://music-fa.com",
-      "https://pop-music.ir",
-      "https://golsarmusic.ir",
-      "https://upmusics.com",
-      "https://rozmusic.com",
-      "https://nex1music.ir",
-      "https://pmcmusic.tv"
+      { name: "PMC", url: `https://pmcmusic.tv/?s=${encodeURIComponent(query)}`, regex: /href="(https:\/\/pmcmusic\.tv\/[^"']+)"/gi },
+      { name: "Mokhtalef", url: `https://mokhtalefmusic.com/?s=${encodeURIComponent(query)}`, regex: /href="(https:\/\/mokhtalefmusic\.com\/[^"']+)"/gi }
     ];
 
-    const promises = sites.map(async (site) => {
-      try {
-        const url = `${site}/wp-json/wp/v2/posts?search=${encodeURIComponent(query)}&_fields=id,title,link&per_page=2`;
-        const res = await axios.get(url, {
-          headers: { "User-Agent": "Mozilla/5.0" },
-          timeout: 4000
-        });
-        if (res.data && Array.isArray(res.data)) {
-          return res.data;
-        }
-      } catch {}
-      return null;
-    });
-
-    const results = await Promise.all(promises);
     const validPosts: string[] = [];
-    results.forEach((arr) => {
-      if (arr) {
-        arr.forEach((post: any) => {
-          if (post && post.link) validPosts.push(post.link);
+
+    for (const site of sites) {
+      try {
+        const res = await axios.get(site.url, {
+          headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/110.0.0.0" },
+          timeout: 4500
         });
+        const html = res.data || "";
+        const matches = html.matchAll(site.regex);
+        for (const m of matches) {
+          const u = m[1];
+          // Filter out typical non-post urls and categories
+          if (
+            u.endsWith("/") &&
+            !u.match(/\/(category|page|tag|author|album|podcast|playlist-category|playlist-online)\//) &&
+            !u.match(/^(https:\/\/[^/]+\/)(contact-us|about-us|release|music-publish|albums|music-video|download-song|pmcroyale|madahi|remix|foreign|korea|kordi|music)\/?$/) &&
+            u !== "https://pmcmusic.tv/" &&
+            u !== "https://mokhtalefmusic.com/"
+          ) {
+            if (!validPosts.includes(u)) {
+                validPosts.push(u);
+            }
+          }
+        }
+      } catch (e: any) {
+        console.log(`[MusicBot Search] Error scraping ${site.name}:`, e.message);
       }
-    });
+    }
 
-    console.log(`[MusicBot Search] Found ${validPosts.length} potential posts via WP REST APIs.`);
+    console.log(`[MusicBot Search] Found ${validPosts.length} potential posts.`);
 
-    // Scrape them in order
-    for (const url of validPosts) {
+    // Scrape them in order (limit to first 10 hits to avoid extremely long loops)
+    for (const url of validPosts.slice(0, 10)) {
       const result = await extractMp3FromWebPage(url);
       if (result) {
-        console.log(`[MusicBot Search] Successfully extracted track from federated search: "${result.title}"`);
+        console.log(`[MusicBot Search] Successfully extracted track from direct search: "${result.title}"`);
         return result;
       }
     }
