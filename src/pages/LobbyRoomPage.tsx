@@ -816,6 +816,8 @@ export const LobbyRoomPage = () => {
  const isReady = lobby?.players?.find(p => p.userId === user?.id)?.isReady || false;
  const isMicMuted = !!(lobby?.players?.find(p => p.userId === user?.id) as any)?.micMuted;
  const isHost = lobby?.hostId === user?.id;
+ const isMelodyBot = musicBotState?.botType === "melody";
+ const canControlMusic = isHost || isMelodyBot;
 
   // Auto-open Loxx configuration modal on lobby join for host
   // Activate audio transmitter for Music Bot when active and you are the host
@@ -1841,13 +1843,16 @@ export const LobbyRoomPage = () => {
       }}
       whileDrag={{ scale: 1.1, cursor: "grabbing" }}
       className={cn(
-       "fixed bottom-24 z-[70] cursor-grab active:cursor-grabbing h-16 w-16 rounded-full bg-black/90 border-2 border-[#00e5ff] shadow-[0_0_25px_rgba(0,229,255,0.45)] hover:shadow-[0_0_35px_rgba(0,229,255,0.7)] flex flex-col items-center justify-center select-none",
+       "fixed bottom-24 z-[70] cursor-grab active:cursor-grabbing h-16 w-16 rounded-full bg-black/90 border-2 flex flex-col items-center justify-center select-none transition-all duration-300",
+       isMelodyBot 
+         ? "border-[#FFD700] shadow-[0_0_25px_rgba(255,215,0,0.55)] hover:shadow-[0_0_35px_rgba(255,215,0,0.85)]"
+         : "border-[#00e5ff] shadow-[0_0_25px_rgba(0,229,255,0.45)] hover:shadow-[0_0_35px_rgba(0,229,255,0.7)]",
        isRtl ? "left-6" : "right-6"
       )}
       title={isRtl ? "پخش‌کننده موسیقی (برای بزرگ کردن دوبار کلیک کنید یا کلیک کنید)" : "Music Player (Click to expand)"}
       onClick={() => setIsMusicPlayerExpanded(true)}
      >
-      <div className="absolute inset-0 rounded-full bg-[#00e5ff]/5 animate-pulse" />
+      <div className={cn("absolute inset-0 rounded-full animate-pulse", isMelodyBot ? "bg-[#FFD700]/5" : "bg-[#00e5ff]/5")} />
       {musicBotState?.currentTrackCover ? (
        <img src={musicBotState.currentTrackCover} className={cn("w-full h-full object-cover rounded-full", musicBotState?.isPlaying && "animate-[spin_6s_linear_infinite]")} />
       ) : (
@@ -1858,9 +1863,9 @@ export const LobbyRoomPage = () => {
       {/* Tiny playback active indicator */}
       {musicBotState?.isPlaying && (
        <div className="absolute -bottom-1 flex gap-0.5 justify-center">
-        <span className="w-1.5 h-3.5 bg-[#00e5ff] rounded animate-bounce" style={{ animationDelay: "0ms" }} />
-        <span className="w-1.5 h-4.5 bg-[#00e5ff] rounded animate-bounce" style={{ animationDelay: "150ms" }} />
-        <span className="w-1.5 h-2.5 bg-[#00e5ff] rounded animate-bounce" style={{ animationDelay: "300ms" }} />
+        <span className={cn("w-1.5 h-3.5 rounded animate-bounce", isMelodyBot ? "bg-[#FFD700]" : "bg-[#00e5ff]")} style={{ animationDelay: "0ms" }} />
+        <span className={cn("w-1.5 h-4.5 rounded animate-bounce", isMelodyBot ? "bg-[#FFD700]" : "bg-[#00e5ff]")} style={{ animationDelay: "150ms" }} />
+        <span className={cn("w-1.5 h-2.5 rounded animate-bounce", isMelodyBot ? "bg-[#FFD700]" : "bg-[#00e5ff]")} style={{ animationDelay: "300ms" }} />
        </div>
       )}
      </motion.div>
@@ -1881,15 +1886,18 @@ export const LobbyRoomPage = () => {
        right: isRtl ? (windowDims.width - 24 - 360) : 24
       }}
       className={cn(
-       "fixed bottom-24 z-[70] w-[360px] bg-white/5 border border-white/10 rounded-[32px] shadow-[0_30px_60px_rgba(0,0,0,0.5),0_0_30px_rgba(0,229,255,0.1),inset_0_1px_15px_rgba(255,255,255,0.1)] p-5 text-white select-none hover:border-white/20 transition-[border-color] duration-500",
+       "fixed bottom-24 z-[70] w-[360px] bg-white/5 border border-white/10 rounded-[32px] p-5 text-white select-none hover:border-white/20 transition-[border-color] duration-500",
+       isMelodyBot 
+         ? "shadow-[0_30px_60px_rgba(0,0,0,0.5),0_0_30px_rgba(255,215,0,0.15),inset_0_1px_15px_rgba(255,255,255,0.1)] mb-px"
+         : "shadow-[0_30px_60px_rgba(0,0,0,0.5),0_0_30px_rgba(0,229,255,0.1),inset_0_1px_15px_rgba(255,255,255,0.1)]",
        isRtl ? "left-6" : "right-6"
       )}
      >
       {/* Textured Drag Handle Bar */}
-      <div className="flex justify-center -mt-1 pb-4 cursor-grab active:cursor-grabbing text-gray-500/40 hover:text-cyan-400/70 select-none transition-colors duration-300">
+      <div className={cn("flex justify-center -mt-1 pb-4 cursor-grab active:cursor-grabbing select-none transition-colors duration-300", isMelodyBot ? "text-gray-500/40 hover:text-yellow-400/70" : "text-gray-500/40 hover:text-cyan-400/70")}>
        <div className="flex gap-1.5 items-center">
         <span className="w-1 h-1 rounded-full bg-current" />
-        <span className="w-2 h-1.5 rounded-sm bg-cyan-400/40 animate-pulse" />
+        <span className={cn("w-2 h-1.5 rounded-sm animate-pulse", isMelodyBot ? "bg-yellow-400/40" : "bg-cyan-400/40")} />
         <span className="w-1 h-1 rounded-full bg-current" />
        </div>
       </div>
@@ -1900,7 +1908,7 @@ export const LobbyRoomPage = () => {
         {/* Disconnect button */}
         <button 
          onClick={() => toggleMusicBot(false)}
-         className="hover:bg-[#00e5ff]/20 rounded-full text-[#00e5ff] p-1.5 transition-all outline-none"
+         className={cn("rounded-full p-1.5 transition-all outline-none", isMelodyBot ? "hover:bg-[#FFD700]/20 text-[#FFD700]" : "hover:bg-[#00e5ff]/20 text-[#00e5ff]")}
          title={isRtl ? "خروج ربات از لابی" : "Disconnect Bot"}
         >
          <X size={22} strokeWidth={2.5} />
@@ -1908,7 +1916,7 @@ export const LobbyRoomPage = () => {
         {/* Minimize button */}
         <button 
          onClick={() => setIsMusicPlayerExpanded(false)}
-         className="hover:bg-[#00e5ff]/20 rounded-full text-[#00e5ff] p-1.5 transition-all outline-none"
+         className={cn("rounded-full p-1.5 transition-all outline-none", isMelodyBot ? "hover:bg-[#FFD700]/20 text-[#FFD700]" : "hover:bg-[#00e5ff]/20 text-[#00e5ff]")}
          title={isRtl ? "کوچک کردن" : "Minimize"}
         >
          <Minus size={24} strokeWidth={2.5} />
@@ -1920,7 +1928,7 @@ export const LobbyRoomPage = () => {
            setSetupStep("source");
            setShowBotSetupModal(true);
           }}
-          className="hover:bg-[#00e5ff]/20 rounded-full text-[#00e5ff] p-1.5 transition-all outline-none ml-1"
+          className={cn("rounded-full p-1.5 transition-all outline-none ml-1", isMelodyBot ? "hover:bg-[#FFD700]/20 text-[#FFD700]" : "hover:bg-[#00e5ff]/20 text-[#00e5ff]")}
           title={isRtl ? "تغییر پوشه / منبع" : "Setup Source"}
          >
           <Settings size={20} strokeWidth={2.5} />
@@ -1930,13 +1938,13 @@ export const LobbyRoomPage = () => {
 
        <div className="flex flex-col text-right mr-1">
         <span className="text-[17px] font-black tracking-wider text-white select-none whitespace-nowrap drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]">
-         {isRtl ? "ربات موزیک لوکس" : "Loxx Music Bot"}
+         {isRtl ? (isMelodyBot ? "ملودی لوکس 🌟" : "ربات موزیک لوکس") : (isMelodyBot ? "Melody Lox 🌟" : "Loxx Music Bot")}
         </span>
-        <span className="text-[10px] text-[#00e5ff] font-mono leading-none select-none uppercase tracking-widest mt-1.5 font-bold drop-shadow-[0_0_5px_rgba(0,229,255,0.6)]">
-         LIVE AUDIO CHUNK STREAM
+        <span className={cn("text-[10px] font-mono leading-none select-none uppercase tracking-widest mt-1.5 font-bold", isMelodyBot ? "text-[#FFD700] drop-shadow-[0_0_5px_rgba(255,215,0,0.6)]" : "text-[#00e5ff] drop-shadow-[0_0_5px_rgba(0,229,255,0.6)]")}>
+         {isMelodyBot ? "GOLDEN PLAYBACK PUBLIC SYNC" : "LIVE AUDIO CHUNK STREAM"}
         </span>
        </div>
-       <div className="text-[#00e5ff] ml-2 shrink-0 drop-shadow-[0_0_12px_rgba(0,229,255,0.8)] filter">
+       <div className={cn("ml-2 shrink-0 filter", isMelodyBot ? "text-[#FFD700] drop-shadow-[0_0_12px_rgba(255,215,0,0.8)]" : "text-[#00e5ff] drop-shadow-[0_0_12px_rgba(0,229,255,0.8)]")}>
         <Music size={30} strokeWidth={2} />
        </div>
       </div>
@@ -1956,15 +1964,15 @@ export const LobbyRoomPage = () => {
 
        {/* Spinning Disk Vinyl with glow */}
        <div className="relative h-[100px] w-[100px] rounded-full flex items-center justify-center shrink-0 z-10">
-        <div className="absolute inset-[-15px] rounded-full shadow-[0_0_40px_rgba(0,229,255,0.2)] blur-sm"></div>
-        <div className="absolute inset-0 rounded-full border-[1.5px] border-[#00e5ff]/30 shadow-[inset_0_0_20px_rgba(0,229,255,0.2)]"></div>
+        <div className={cn("absolute inset-[-15px] rounded-full blur-sm", isMelodyBot ? "shadow-[0_0_40px_rgba(255,215,0,0.35)]" : "shadow-[0_0_40px_rgba(0,229,255,0.2)]")}></div>
+        <div className={cn("absolute inset-0 rounded-full border-[1.5px]", isMelodyBot ? "border-[#FFD700]/30 shadow-[inset_0_0_20px_rgba(255,215,0,0.25)]" : "border-[#00e5ff]/30 shadow-[inset_0_0_20px_rgba(0,229,255,0.2)]")}></div>
         <div className={cn("relative h-[90%] w-[90%] rounded-full border-[6px] border-[#0a0a0a] shadow-[inset_0_0_15px_#000] bg-[#111] overflow-hidden flex items-center justify-center", musicBotState?.isPlaying && "animate-[spin_4s_linear_infinite]")}>
          {musicBotState?.currentTrackCover ? (
           <img src={musicBotState.currentTrackCover} className="w-full h-full object-cover opacity-80" />
          ) : (
           <div className="w-full h-full bg-gradient-to-tr from-[#111] to-[#333] flex items-center justify-center rounded-full">
-           <div className="w-7 h-7 rounded-full bg-gradient-to-br from-gray-700 to-black border border-gray-600 flex items-center justify-center shadow-[0_0_10px_rgba(0,229,255,0.3)]">
-            <div className="w-2.5 h-2.5 rounded-full bg-[#00e5ff] shadow-[0_0_5px_#00e5ff]"></div>
+           <div className={cn("w-7 h-7 rounded-full bg-gradient-to-br from-gray-700 to-black border border-gray-600 flex items-center justify-center", isMelodyBot ? "shadow-[0_0_10px_rgba(255,215,0,0.45)]" : "shadow-[0_0_10px_rgba(0,229,255,0.3)]")}>
+            <div className={cn("w-2.5 h-2.5 rounded-full shadow-[0_0_5px_currentColor]", isMelodyBot ? "bg-[#FFD700] text-[#FFD700]/70" : "bg-[#00e5ff] text-[#00e5ff]/70")}></div>
            </div>
           </div>
          )}
@@ -1981,7 +1989,7 @@ export const LobbyRoomPage = () => {
        {Array.from({ length: 55 }).map((_, i) => (
         <div 
          key={i} 
-         className={cn("w-1 rounded-sm", musicBotState?.isPlaying ? "bg-gradient-to-t from-[#00bfff] to-[#00e5ff] shadow-[0_0_8px_rgba(0,229,255,0.8)] animate-pulse" : "bg-[#00e5ff]/20")} 
+         className={cn("w-1 rounded-sm", musicBotState?.isPlaying ? (isMelodyBot ? "bg-gradient-to-t from-[#FFA500] to-[#FFD700] shadow-[0_0_8px_rgba(255,215,0,0.8)] animate-pulse" : "bg-gradient-to-t from-[#00bfff] to-[#00e5ff] shadow-[0_0_8px_rgba(0,229,255,0.8)] animate-pulse") : (isMelodyBot ? "bg-[#FFD700]/20" : "bg-[#00e5ff]/20"))} 
          style={{ 
           height: musicBotState?.isPlaying ? `${Math.max(10, Math.random() * 100)}%` : "10%",
           animationDuration: `${0.2 + Math.random() * 0.4}s`,
@@ -2009,7 +2017,7 @@ export const LobbyRoomPage = () => {
          min={0}
          max={localMusicDuration || 1}
          value={localMusicCurrentTime}
-         disabled={!isHost}
+         disabled={!canControlMusic}
          onChange={(e) => {
           const val = parseFloat(e.target.value);
           setLocalMusicCurrentTime(val);
@@ -2018,21 +2026,24 @@ export const LobbyRoomPage = () => {
           }
          }}
          onMouseUp={() => {
-          if (isHost && localMusicAudioRef.current) {
+          if (canControlMusic && localMusicAudioRef.current) {
            controlMusicBot("seek", { currentTime: localMusicAudioRef.current.currentTime });
           }
          }}
          onTouchEnd={() => {
-          if (isHost && localMusicAudioRef.current) {
+          if (canControlMusic && localMusicAudioRef.current) {
            controlMusicBot("seek", { currentTime: localMusicAudioRef.current.currentTime });
           }
          }}
          className={cn(
-          "w-full h-1.5 bg-white/10 hover:bg-white/20 rounded-full appearance-none cursor-pointer accent-[#00e5ff] transition-all outline-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-[#00e5ff] [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:shadow-[0_0_12px_rgba(0,229,255,0.9)] hover:[&::-webkit-slider-thumb]:scale-125 transition-transform",
-          !isHost && "cursor-not-allowed opacity-60",
+          "w-full h-1.5 bg-white/10 hover:bg-white/20 rounded-full appearance-none cursor-pointer transition-all outline-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full hover:[&::-webkit-slider-thumb]:scale-125 transition-transform",
+           isMelodyBot 
+             ? "accent-[#FFD700] [&::-webkit-slider-thumb]:bg-[#FFD700] [&::-webkit-slider-thumb]:shadow-[0_0_12px_rgba(255,215,0,0.95)]" 
+             : "accent-[#00e5ff] [&::-webkit-slider-thumb]:bg-[#00e5ff] [&::-webkit-slider-thumb]:shadow-[0_0_12px_rgba(0,229,255,0.9)]",
+          !canControlMusic && "cursor-not-allowed opacity-60",
           isDucking && "opacity-60"
          )}
-         title={isHost ? (isRtl ? "تغییر زمان پخش" : "Seek track") : (isRtl ? "فقط سازنده لابی می‌تواند جلو عقب کند" : "Host only can seek")}
+         title={canControlMusic ? (isRtl ? "تغییر زمان پخش" : "Seek track") : (isRtl ? "فقط سازنده لابی یا کاربران مجاز می‌توانند پخش را تغییر دهند" : "Host or authorized users only")}
         />
        </div>
       </div>
@@ -2056,8 +2067,9 @@ export const LobbyRoomPage = () => {
          }
         }}
         className={cn(
-         "p-2 flex items-center justify-center rounded-full text-[#81cad6] hover:text-[#00e5ff] hover:bg-[#00e5ff]/10 active:scale-90 transition-all",
-         (!isHost || !musicBotState?.queue || musicBotState.queue.length <= 1) && "opacity-40 cursor-not-allowed hover:bg-transparent hover:text-[#81cad6]"
+         "p-2 flex items-center justify-center rounded-full active:scale-90 transition-all",
+         isMelodyBot ? "text-[#e6c66d] hover:text-[#FFD700] hover:bg-[#FFD700]/10" : "text-[#81cad6] hover:text-[#00e5ff] hover:bg-[#00e5ff]/10",
+         (!canControlMusic || !musicBotState?.queue || musicBotState.queue.length <= 1) && (isMelodyBot ? "opacity-40 cursor-not-allowed hover:bg-transparent hover:text-[#e6c66d]" : "opacity-40 cursor-not-allowed hover:bg-transparent hover:text-[#81cad6]")
         )}
         disabled={!isHost || !musicBotState?.queue || musicBotState.queue.length <= 1}
        >
@@ -2079,19 +2091,19 @@ export const LobbyRoomPage = () => {
         }}
         className={cn(
          "w-[66px] h-[66px] flex items-center justify-center rounded-full active:scale-95 transition-all outline-none",
-         isHost ? "bg-gradient-to-br from-[#0c4a60] to-[#042431]/80 border-[1.5px] border-[#00e5ff]/50 text-[#00e5ff] shadow-[0_0_35px_rgba(0,229,255,0.45),inset_0_0_20px_rgba(0,229,255,0.2)] hover:shadow-[0_0_45px_rgba(0,229,255,0.6)] hover:brightness-110" : "bg-white/5 border border-white/10 text-white/40 cursor-not-allowed"
+         canControlMusic ? (isMelodyBot ? "bg-gradient-to-br from-[#54410a] to-[#271d03]/90 border-[1.5px] border-[#FFD700]/50 text-[#FFD700] shadow-[0_0_35px_rgba(255,215,0,0.45),inset_0_0_20px_rgba(255,215,0,0.15)] hover:shadow-[0_0_45px_rgba(255,215,0,0.6)] hover:brightness-110" : "bg-gradient-to-br from-[#0c4a60] to-[#042431]/80 border-[1.5px] border-[#00e5ff]/50 text-[#00e5ff] shadow-[0_0_35px_rgba(0,229,255,0.45),inset_0_0_20px_rgba(0,229,255,0.2)] hover:shadow-[0_0_45px_rgba(0,229,255,0.6)] hover:brightness-110") : "bg-white/5 border border-white/10 text-white/40 cursor-not-allowed"
         )}
        >
         {musicBotState?.isPlaying ? (
-         <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="currentColor" className="drop-shadow-[0_0_5px_rgba(0,229,255,0.8)]"><path d="M7 19h4V5H7v14zm6-14v14h4V5h-4z"></path></svg>
+         <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="currentColor" className={isMelodyBot ? "drop-shadow-[0_0_5px_rgba(255,215,0,0.85)]" : "drop-shadow-[0_0_5px_rgba(0,229,255,0.8)]"}><path d="M7 19h4V5H7v14zm6-14v14h4V5h-4z"></path></svg>
         ) : (
-         <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="currentColor" className="ml-1 drop-shadow-[0_0_5px_rgba(0,229,255,0.8)]"><path d="M8 5v14l11-7z"></path></svg>
+         <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="currentColor" className={cn("ml-1", isMelodyBot ? "drop-shadow-[0_0_5px_rgba(255,215,0,0.85)]" : "drop-shadow-[0_0_5px_rgba(0,229,255,0.8)]")}><path d="M8 5v14l11-7z"></path></svg>
         )}
        </button>
 
        <button 
         onClick={() => {
-         if (isHost && musicBotState?.queue && musicBotState.queue.length > 0) {
+         if (canControlMusic && musicBotState?.queue && musicBotState.queue.length > 0) {
           const nextIdx = (musicBotState.queueIndex + 1) % musicBotState.queue.length;
           const nextTrack = musicBotState.queue[nextIdx];
           controlMusicBot("update-queue", {
@@ -2109,9 +2121,9 @@ export const LobbyRoomPage = () => {
          "p-2 flex items-center justify-center rounded-full text-[#81cad6] hover:text-[#00e5ff] hover:bg-[#00e5ff]/10 active:scale-90 transition-all",
          (!isHost || !musicBotState?.queue || musicBotState.queue.length <= 1) && "opacity-40 cursor-not-allowed hover:bg-transparent hover:text-[#81cad6]"
         )}
-        disabled={!isHost || !musicBotState?.queue || musicBotState.queue.length <= 1}
+        disabled={!canControlMusic || !musicBotState?.queue || musicBotState.queue.length <= 1}
        >
-        <SkipForward size={26} fill="currentColor" strokeWidth={1.5} className="drop-shadow-[0_0_5px_rgba(0,229,255,0.5)]" />
+        <SkipForward size={26} fill="currentColor" strokeWidth={1.5} className={isMelodyBot ? "drop-shadow-[0_0_5px_rgba(255,215,0,0.55)]" : "drop-shadow-[0_0_5px_rgba(0,229,255,0.5)]"} />
        </button>
       </div>
 
@@ -2155,7 +2167,7 @@ export const LobbyRoomPage = () => {
         dir="ltr"
        >
         <div className="flex items-center">
-         <span className="text-[#00e5ff] font-bold text-[16px] drop-shadow-[0_0_5px_rgba(0,229,255,0.5)]">
+         <span className={cn("font-bold text-[16px]", isMelodyBot ? "text-[#FFD700] drop-shadow-[0_0_5px_rgba(255,215,0,0.5)]" : "text-[#00e5ff] drop-shadow-[0_0_5px_rgba(0,229,255,0.5)]")}>
           {musicBotState?.queue?.length || 0}
          </span>
         </div>
@@ -2187,12 +2199,12 @@ export const LobbyRoomPage = () => {
               }}
               className={cn(
                "flex justify-between items-center bg-white/5 p-3 rounded-xl text-xs transition-all",
-               isHost && "cursor-pointer hover:bg-white/10",
-               isPlayingTrack && "border border-[#00e5ff]/30 bg-[#00e5ff]/10 text-[#00e5ff] font-bold flex-row-reverse text-right shadow-[0_0_10px_rgba(0,229,255,0.1)]"
+               canControlMusic && "cursor-pointer hover:bg-white/10",
+               isPlayingTrack && (isMelodyBot ? "border border-[#FFD700]/30 bg-[#FFD700]/10 text-[#FFD700] font-bold flex-row-reverse text-right shadow-[0_0_10px_rgba(255,215,0,0.15)]" : "border border-[#00e5ff]/30 bg-[#00e5ff]/10 text-[#00e5ff] font-bold flex-row-reverse text-right shadow-[0_0_10px_rgba(0,229,255,0.1)]")
               )}
              >
               <div className="flex flex-col items-end w-full truncate space-y-1">
-               <span className={cn("truncate w-full text-right", isPlayingTrack ? "text-[#00e5ff]" : "text-white/80")}>{track.name}</span>
+               <span className={cn("truncate w-full text-right", isPlayingTrack ? (isMelodyBot ? "text-[#FFD700]" : "text-[#00e5ff]") : "text-white/80")}>{track.name}</span>
                {isPlayingTrack && <span className="text-[9px] tracking-widest uppercase font-mono animate-pulse opacity-80 z-20">PLAYING NOW</span>}
               </div>
              </div>
@@ -2939,44 +2951,67 @@ export const LobbyRoomPage = () => {
       {/* LOXX MUSIC BOT MANAGEMENT SECTION */}
       <div className="border border-white/5 p-3.5 rounded-2xl bg-white/5 space-y-4 mt-4">
         <p className="text-xs font-black text-white flex items-center gap-2 border-b border-white/5 pb-2">
-          <span className="h-1.5 w-1.5 rounded-full bg-[#00e5ff] shadow-[0_0_8px_rgba(0,229,255,1)] animate-pulse" />
-          {isRtl ? "مدیریت بات هوشمند موزیک (Music Bot)" : "Intelligent Music Bot Settings"}
+          <span className={cn("h-1.5 w-1.5 rounded-full animate-pulse", isMelodyBot ? "bg-[#FFD700] shadow-[0_0_8px_rgba(255,215,0,1)]" : "bg-[#00e5ff] shadow-[0_0_8px_rgba(0,229,255,1)]")} />
+          {isRtl ? "مدیریت بات‌های هوشمند موسیقی" : "Intelligent Music Bot Settings"}
         </p>
 
         {/* Host controls to Add/Remove Bot */}
-        <div className="flex items-center justify-between p-3 rounded-xl bg-black/40">
+        <div className="flex flex-col gap-3.5 p-3 rounded-xl bg-black/40">
           <div>
-            <p className="text-xs font-black text-white">{isRtl ? "حضور بات موزیک در لابی" : "Music Bot Presence"}</p>
-            <p className="text-[9px] text-gray-500 font-bold">{isRtl ? "ورود بات صوتی مجازی به کانال لابی شما" : "Virtual voice bot playing high-fidelity streams"}</p>
+            <p className="text-xs font-black text-white">{isRtl ? "انتخاب و حضور ربات موسیقی" : "Music Bot Selector"}</p>
+            <p className="text-[9px] text-gray-500 font-bold">{isRtl ? "انتخاب ربات صوتی پخش موزیک برای لابی شما" : "Select voice bot playing high-fidelity streams"}</p>
           </div>
-          {isHost ? (
+
+          <div className="grid grid-cols-2 gap-2 mt-1">
+            {/* Standard Music Bot Option */}
             <div 
               onClick={() => {
-               const willBeActive = !musicBotState?.active;
-               toggleMusicBot(willBeActive);
-               if (willBeActive) {
-                 setIsSettingsModalOpen(false);
-                 setShowBotSetupModal(true);
-               }
+                if (!isHost) return;
+                const isCurrentType = musicBotState?.active && musicBotState?.botType !== "melody";
+                if (isCurrentType) {
+                  toggleMusicBot(false, "music");
+                } else {
+                  toggleMusicBot(true, "music");
+                  setIsSettingsModalOpen(false);
+                  setShowBotSetupModal(true);
+                }
               }}
               className={cn(
-                "w-12 h-6 rounded-full relative cursor-pointer border transition-colors shrink-0",
-                musicBotState?.active ? "bg-[#00e5ff]/20 border-[#00e5ff]/30" : "bg-white/5 border-white/10"
+                "p-2.5 rounded-lg border text-center transition-all cursor-pointer",
+                (musicBotState?.active && musicBotState?.botType !== "melody")
+                  ? "bg-[#00e5ff]/10 border-[#00e5ff]/50 text-[#00e5ff]"
+                  : "bg-white/5 border-white/5 text-gray-400 hover:bg-white/10"
               )}
             >
-              <div className={cn(
-                "absolute top-1 h-4 w-4 rounded-full transition-all",
-                musicBotState?.active ? (isRtl ? "left-1 bg-[#00e5ff] shadow-[0_0_10px_rgba(0,229,255,1)]" : "right-1 bg-[#00e5ff] shadow-[0_0_10px_rgba(0,229,255,1)]") : (isRtl ? "left-7 bg-gray-500" : "right-7 bg-gray-500")
-              )} />
+              <p className="text-[10px] font-black">{isRtl ? "ربات موزیک لوکس 🎵" : "Standard Bot"}</p>
+              <p className="text-[8px] font-bold opacity-60 mt-0.5">{isRtl ? "دی‌جی لوکس لابی" : "Standard Lox Bot"}</p>
             </div>
-          ) : (
-            <span className={cn(
-              "px-2 py-1 rounded text-xs font-bold leading-none shrink-0",
-              musicBotState?.active ? "bg-[#00e5ff]/10 text-[#00e5ff]" : "bg-white/5 text-gray-500"
-            )}>
-              {musicBotState?.active ? (isRtl ? "فعال" : "Active") : (isRtl ? "غیرفعال" : "Inactive")}
-            </span>
-          )}
+
+            {/* Melody Lox Bot Option */}
+            <div 
+              onClick={() => {
+                if (!isHost) return;
+                const isCurrentType = musicBotState?.active && musicBotState?.botType === "melody";
+                if (isCurrentType) {
+                  toggleMusicBot(false, "melody");
+                } else {
+                  toggleMusicBot(true, "melody");
+                  setIsSettingsModalOpen(false);
+                  setShowBotSetupModal(true);
+                }
+              }}
+              className={cn(
+                "p-2.5 rounded-lg border text-center transition-all cursor-pointer relative overflow-hidden",
+                (musicBotState?.active && musicBotState?.botType === "melody")
+                  ? "bg-[#FFD700]/10 border-[#FFD700]/50 text-[#FFD700]"
+                  : "bg-white/5 border-white/5 text-gray-400 hover:bg-white/10"
+              )}
+            >
+              <div className="absolute top-0 right-0 bg-[#FFD700] text-black text-[7px] font-black px-1.5 py-0.5 rounded-bl">GOLD</div>
+              <p className="text-[10px] font-black">{isRtl ? "ملودی لوکس 🌟" : "Melody Lox"}</p>
+              <p className="text-[8px] font-bold opacity-60 mt-0.5">{isRtl ? "کنترل عمومی لابی" : "Public Control DJ"}</p>
+            </div>
+          </div>
         </div>
 
         {/* Personalized Ducking Volume Sliders for everyone */}

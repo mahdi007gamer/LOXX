@@ -1,4 +1,5 @@
 import { Server, Socket } from "socket.io";
+import path from "path";
 import { AuthService } from "../services/auth.service.ts";
 import { RankingService } from "../services/ranking.service.ts";
 import { PenaltyService } from "../services/penalty.service.ts";
@@ -330,6 +331,229 @@ export function setupWebSockets(io: Server) {
     });
   });
 
+  const SEARCH_MESSAGES = [
+    "چشم، دارم دنبالش میگردم… 🔍",
+    "حتماً، الان پیداش میکنم براتون 🫡",
+    "ببینم سلیقت چطوریه، رفتم واسه سرچ… 🎧",
+    "اوکی، رفتم که داشته باشیمش 🚀",
+    "یکم صبر کن، الان از زیر سنگم شده درش میارم 💎",
+    "ملودی لوکس در خدمت شماست، دارم میگردم… ✨",
+    "چه انتخابی! بذار ببینم کجاست… 🎵",
+    "الان برات ردیفش میکنم، یه لحظه… 🛠",
+    "در حال دریافت اطلاعات از سرورهای موسیقی… 📡",
+    "سلیقهت لایک داره! رفتم واسه شکار موزیک 🏹"
+  ];
+
+  const SUCCESS_MESSAGES = [
+    "پیداش کردم برات، الان پخش میکنم 💃",
+    "پیدا شد! رفت توی لیست پخش، حالشو ببرید 🎶",
+    "موزیک آمادهست! بریم واسه پخش… 🎧🔥",
+    "مأموریت انجام شد، موزیک به صف اضافه شد ✅"
+  ];
+
+  const NOT_FOUND_MESSAGES = [
+    "هرچی گشتم پیدا نشد که نشد! ❌ اگه لینکش رو داری بفرست: /p Link",
+    "شرمنده، این یکی رو توی آرشیوم نداشتم 😔 با لینک امتحان کن.",
+    "انگار این موزیک خیلی خاصه، پیدا نشد! 🤷‍♂️ لینکشو داری؟",
+    "ای بابا! پیدا نکردم. مطمئنی اسمش رو درست نوشتی؟ 🧐",
+    "شکست خوردم! نتونستم پیداش کنم. لینک مستقیم بده تا پخش کنم 🔗"
+  ];
+
+  const WELCOME_MELODY = `🎧 سـلام! من ملودی لوکس هستم، دیجی اختصاصی لابی شما! 🌟
+
+ممنون که من رو به جمعتون اضافه کردید. من اینجام تا اتمسفر لابی رو با بهترین موزیکها منفجر کنم! 🚀
+
+🎵 چطوری آهنگ پخش کنم؟
+
+کافیه دستور /p رو بنویسی تا بلافاصله برات پیداش کنم:
+
+🔹 /p [اسم موزیک / فیلم / خواننده]
+
+💡 نکته: هر تعداد که آهنگ بخوای میتونی اضافه کنی تا برن توی صف پخش. در ضمن، این نسخه طلایی هست و همه میتونن پلیر رو کنترل کنن! 😎
+
+🛠 دستورات سریع: ⏹ /stop : توقف پخش ⏭ /skip : رفتن به آهنگ بعدی 📜 /queue : مشاهده لیست انتظار`;
+
+  // Helper to send a chat message inside the lobby using the bot's identity
+  const sendBotLobbyMessage = async (lobbyId: string, botType: "music" | "melody", content: string) => {
+    try {
+      const lobby = await prisma.lobby.findUnique({ where: { id: lobbyId } });
+      if (!lobby) return;
+      const senderId = lobby.hostId; // Satisfies Prisma foreign key to User table
+
+      const msg = await prisma.message.create({
+        data: {
+          content: content,
+          senderId: senderId,
+          lobbyId,
+        }
+      });
+
+      const msgPayload = {
+        id: msg.id.toString(),
+        tempId: "bot-" + Date.now() + "-" + Math.floor(Math.random() * 1000),
+        from: { 
+          userId: botType === "melody" ? "melody-bot" : "music-bot", 
+          username: botType === "melody" ? "ملودی لوکس (آنلاین) 🌟" : "ربات هوشمند موسیقی لوکس 🎵", 
+          membership: botType === "melody" ? "GOLD" : "VIP",
+          level: 99,
+          avatar: botType === "melody" ? "/badges/musicbot-gold.jpeg" : "/badges/musicbot.jpeg",
+          bannerUrl: "/bg-hero.jpg",
+          vipMetadata: { borderNeonColor: botType === "melody" ? "#FFD700" : "#00e5ff" },
+          badges: [
+            { name: botType === "melody" ? "Melody Lox" : "Music Lox", icon: "/badges/unnamed.png", isPinned: true }
+          ],
+          isBot: true
+        },
+        targetType: "lobby",
+        targetId: lobbyId,
+        content: content,
+        createdAt: msg.createdAt.getTime()
+      };
+
+      lobbyNs.to(`lobby:${lobbyId}`).emit("chat.message", msgPayload);
+    } catch (err) {
+      console.error("Error sending bot lobby message:", err);
+    }
+  };
+
+  const handleMelodyCommand = async (lobbyId: string, cmd: "p" | "stop" | "skip" | "queue", arg: string) => {
+    try {
+      let bot = lobbyMusicBots.get(lobbyId);
+      if (!bot || !bot.active || bot.botType !== "melody") return;
+
+      if (cmd === "p") {
+        // Send Search Start message at random
+        const rNum = Math.floor(Math.random() * SEARCH_MESSAGES.length);
+        await sendBotLobbyMessage(lobbyId, "melody", SEARCH_MESSAGES[rNum]);
+
+        // Lookup query
+        let matchedTrack: any = null;
+        const isUrl = /^(https?:\/\/)/i.test(arg);
+
+        if (isUrl) {
+          // Validate URL extension
+          const isValidExt = /\.(mp3|wav|ogg|m4a|aac)$/i.test(arg) || !arg.includes("."); 
+          if (!isValidExt) {
+            await sendBotLobbyMessage(lobbyId, "melody", "🚫 فرمت فایل پیدا شده معتبر نیست. لطفاً یک موزیک یا ویدیو انتخاب کنید.");
+            return;
+          }
+          
+          const urlName = path.basename(decodeURIComponent(arg)).split("?")[0] || "Custom Audio";
+          matchedTrack = {
+            title: urlName.replace(/\.[^/.]+$/, ""),
+            url: arg,
+            coverUrl: "/badges/musicbot-gold.jpeg",
+            duration: 300 // default 5 mins
+          };
+        } else {
+          const tracks = await prisma.track.findMany();
+          const matched = tracks.find(t => 
+            t.title.toLowerCase().includes(arg.toLowerCase()) || 
+            t.url.toLowerCase().includes(arg.toLowerCase())
+          );
+          if (matched) {
+            matchedTrack = matched;
+          }
+         }
+
+        if (!matchedTrack) {
+          const rIndex = Math.floor(Math.random() * NOT_FOUND_MESSAGES.length);
+          await sendBotLobbyMessage(lobbyId, "melody", NOT_FOUND_MESSAGES[rIndex]);
+          return;
+        }
+
+        // Check 13 mins limit
+        if (matchedTrack.duration && matchedTrack.duration > 780) {
+          await sendBotLobbyMessage(lobbyId, "melody", "⚠️ موزیک مورد نظر شما بیشتر از ۱۳ دقیقه است. لطفاً قطعه کوتاهتری انتخاب کنید.");
+          return;
+        }
+
+        // Add to queue
+        bot.queue = bot.queue || [];
+        const newTrack = {
+          name: matchedTrack.title,
+          url: matchedTrack.url,
+          coverUrl: matchedTrack.coverUrl || "/badges/musicbot-gold.jpeg",
+          duration: matchedTrack.duration || 0
+        };
+        
+        bot.queue.push(newTrack);
+
+        if (!bot.isPlaying) {
+          bot.queueIndex = bot.queue.length - 1;
+          bot.currentTrackName = newTrack.name;
+          bot.currentTrackUrl = newTrack.url;
+          bot.currentTrackCover = newTrack.coverUrl;
+          bot.isPlaying = true;
+          bot.currentTime = 0;
+          bot.duration = newTrack.duration;
+        }
+
+        bot.updatedAt = Date.now();
+        lobbyMusicBots.set(lobbyId, bot);
+
+        // Success Message
+        const rSuccess = Math.floor(Math.random() * SUCCESS_MESSAGES.length);
+        await sendBotLobbyMessage(lobbyId, "melody", SUCCESS_MESSAGES[rSuccess]);
+
+        // Broadcast state update
+        lobbyNs.to(`lobby:${lobbyId}`).emit("lobby.musicbot.state", bot);
+        voiceNs.to(`voice:${lobbyId}`).emit("voice.talking", { 
+          userId: `music-bot-${lobbyId}`, 
+          isTalking: bot.isPlaying 
+        });
+
+      } else if (cmd === "stop") {
+        bot.isPlaying = false;
+        bot.updatedAt = Date.now();
+        lobbyMusicBots.set(lobbyId, bot);
+        lobbyNs.to(`lobby:${lobbyId}`).emit("lobby.musicbot.state", bot);
+        voiceNs.to(`voice:${lobbyId}`).emit("voice.talking", { 
+          userId: `music-bot-${lobbyId}`, 
+          isTalking: false 
+        });
+        await sendBotLobbyMessage(lobbyId, "melody", "⏹ پخش موسیقی متوقف شد.");
+
+      } else if (cmd === "skip") {
+        if (bot.queue && bot.queue.length > 0) {
+          const nextIdx = (bot.queueIndex + 1) % bot.queue.length;
+          bot.queueIndex = nextIdx;
+          const nextTrack = bot.queue[nextIdx];
+          bot.currentTrackName = nextTrack.name;
+          bot.currentTrackUrl = nextTrack.url;
+          bot.currentTrackCover = nextTrack.coverUrl || "";
+          bot.currentTime = 0;
+          bot.duration = nextTrack.duration || 0;
+          bot.isPlaying = true;
+          bot.updatedAt = Date.now();
+          lobbyMusicBots.set(lobbyId, bot);
+          lobbyNs.to(`lobby:${lobbyId}`).emit("lobby.musicbot.state", bot);
+          voiceNs.to(`voice:${lobbyId}`).emit("voice.talking", { 
+            userId: `music-bot-${lobbyId}`, 
+            isTalking: true 
+          });
+          await sendBotLobbyMessage(lobbyId, "melody", "⏭ رفتیم واسه آهنگ بعدی!");
+        } else {
+          await sendBotLobbyMessage(lobbyId, "melody", "❌ لیستی برای رفتن به آهنگ بعدی وجود ندارد.");
+        }
+
+      } else if (cmd === "queue") {
+        if (bot.queue && bot.queue.length > 0) {
+          let listMsg = "📜 **لیست انتظار ملودی لوکس:**\n\n";
+          bot.queue.forEach((track: any, idx: number) => {
+            const activeMarker = idx === bot.queueIndex ? "▶️ " : "🔹 ";
+            listMsg += `${activeMarker}${idx + 1}. ${track.name}\n`;
+          });
+          await sendBotLobbyMessage(lobbyId, "melody", listMsg);
+        } else {
+          await sendBotLobbyMessage(lobbyId, "melody", "📜 لیست انتظار خالی است.");
+        }
+      }
+    } catch (err) {
+      console.error("Error running melody command:", err);
+    }
+  };
+
   // Lobby Namespace
   lobbyNs.on("connection", (socket: AuthenticatedSocket) => {
     const userId = socket.userId;
@@ -356,6 +580,7 @@ export function setupWebSockets(io: Server) {
       const bot = lobbyMusicBots.get(lobbyId) || {
         active: false,
         isPlaying: false,
+        botType: "music",
         currentTrackName: "",
         currentTrackUrl: "",
         currentTrackCover: "",
@@ -372,8 +597,9 @@ export function setupWebSockets(io: Server) {
       }
     });
 
-    socket.on("lobby.musicbot.toggle", async (data: { lobbyId: string, active: boolean }, ack?: any) => {
+    socket.on("lobby.musicbot.toggle", async (data: { lobbyId: string, active: boolean, botType?: "music" | "melody" }, ack?: any) => {
       const { lobbyId, active } = data;
+      const botType = data.botType || "music";
       try {
         const lobby = await prisma.lobby.findUnique({ where: { id: lobbyId } });
         if (!lobby || lobby.hostId !== userId) {
@@ -381,10 +607,28 @@ export function setupWebSockets(io: Server) {
         }
 
         let bot = lobbyMusicBots.get(lobbyId);
+
+        // Check conflict with previous bot
+        if (active && bot && bot.active && bot.botType !== botType) {
+          // Send old bot leaving voice & chat
+          voiceNs.to(`voice:${lobbyId}`).emit("voice.user_left", { userId: `music-bot-${lobbyId}` });
+          const oldBotName = bot.botType === "melody" ? "ملودی لوکس (آنلاین) 🌟" : "ربات هوشمند موسیقی لوکس 🎵";
+          await sendBotLobbyMessage(lobbyId, bot.botType, `👋 ${oldBotName} لابی را ترک کرد تا ربات جدید مستقر شود.`);
+
+          // Reset playing details
+          bot.isPlaying = false;
+          bot.queue = [];
+          bot.queueIndex = 0;
+          bot.currentTrackName = "";
+          bot.currentTrackUrl = "";
+          bot.currentTrackCover = "";
+        }
+
         if (!bot) {
           bot = {
             active: false,
             isPlaying: false,
+            botType: botType,
             currentTrackName: "",
             currentTrackUrl: "",
             currentTrackCover: "",
@@ -397,6 +641,7 @@ export function setupWebSockets(io: Server) {
           lobbyMusicBots.set(lobbyId, bot);
         }
 
+        bot.botType = botType;
         bot.active = active;
         if (!active) {
           bot.isPlaying = false;
@@ -408,13 +653,25 @@ export function setupWebSockets(io: Server) {
         lobbyNs.to(`lobby:${lobbyId}`).emit("lobby.musicbot.state", bot);
 
         if (active) {
-          voiceNs.to(`voice:${lobbyId}`).emit("voice.user_joined", { userId: `music-bot-${lobbyId}` });
-          // If active and playing, notify speaking
-          if (bot.isPlaying) {
-            voiceNs.to(`voice:${lobbyId}`).emit("voice.talking", { userId: `music-bot-${lobbyId}`, isTalking: true });
+          try {
+            voiceNs.to(`voice:${lobbyId}`).emit("voice.user_joined", { userId: `music-bot-${lobbyId}` });
+            if (bot.isPlaying) {
+              voiceNs.to(`voice:${lobbyId}`).emit("voice.talking", { userId: `music-bot-${lobbyId}`, isTalking: true });
+            }
+          } catch (voiceErr) {
+            console.error("Voice join exception for music bot:", voiceErr);
+            await sendBotLobbyMessage(lobbyId, botType, "❌ مشکلی در اتصال به وویس دارم، لطفاً دوباره من رو اضافه کنید.");
+          }
+
+          if (botType === "melody") {
+            await sendBotLobbyMessage(lobbyId, "melody", WELCOME_MELODY);
+          } else {
+            await sendBotLobbyMessage(lobbyId, "music", "🎵 ربات موسیقی لوکس وارد لابی شد. برای پخش بر روی دکمه‌های کنترل کلیک کنید یا آهنگ اضافه کنید!");
           }
         } else {
           voiceNs.to(`voice:${lobbyId}`).emit("voice.user_left", { userId: `music-bot-${lobbyId}` });
+          const leaveBotName = botType === "melody" ? "ملودی لوکس (آنلاین) 🌟" : "ربات هوشمند موسیقی لوکس 🎵";
+          await sendBotLobbyMessage(lobbyId, botType, `👋 ${leaveBotName} لابی را ترک کرد.`);
         }
 
         if (ack) ack({ status: "success", data: bot });
@@ -440,15 +697,32 @@ export function setupWebSockets(io: Server) {
       const { lobbyId, action, category, trackUrl, trackName, coverUrl, tracks, queue, queueIndex, isPlaying, currentTime, duration } = data;
       try {
         const lobby = await prisma.lobby.findUnique({ where: { id: lobbyId } });
-        if (!lobby || lobby.hostId !== userId) {
-          return ack?.({ status: "error", message: "تادسترسی ندارید، شما سازنده لابی نیستید." });
+        if (!lobby) {
+          return ack?.({ status: "error", message: "لابی یافت نشد." });
         }
 
         let bot = lobbyMusicBots.get(lobbyId);
+        const isMelody = bot && bot.botType === "melody";
+
+        // Check control permissions
+        if (!isMelody && lobby.hostId !== userId) {
+          return ack?.({ status: "error", message: "تادسترسی ندارید، شما سازنده لابی نیستید." });
+        }
+
+        if (isMelody) {
+          const isMember = await prisma.lobbyMember.findFirst({
+            where: { lobbyId, userId }
+          });
+          if (!isMember && lobby.hostId !== userId) {
+            return ack?.({ status: "error", message: "تادسترسی ندارید، شما عضو این لابی نیستید." });
+          }
+        }
+
         if (!bot) {
           bot = {
             active: true,
             isPlaying: false,
+            botType: isMelody ? "melody" : "music",
             currentTrackName: "",
             currentTrackUrl: "",
             currentTrackCover: "",
@@ -468,6 +742,11 @@ export function setupWebSockets(io: Server) {
         }
         if (duration !== undefined) {
           bot.duration = duration;
+        }
+
+        // Limit check for melody bot
+        if (isMelody && duration && duration > 780) {
+          return ack?.({ status: "error", message: "⚠️ موزیک مورد نظر شما بیشتر از ۱۳ دقیقه است. لطفاً قطعه کوتاهتری انتخاب کنید." });
         }
 
         if (action === "play") {
@@ -495,6 +774,11 @@ export function setupWebSockets(io: Server) {
 
           const activeIdx = queueIndex !== undefined ? queueIndex : bot.queueIndex;
           if (bot.queue && bot.queue[activeIdx]) {
+            // Check 13 mins limit for melody bot
+            if (isMelody && bot.queue[activeIdx].duration && bot.queue[activeIdx].duration > 780) {
+              return ack?.({ status: "error", message: "⚠️ موزیک مورد نظر شما بیشتر از ۱۳ دقیقه است. لطفاً قطعه کوتاهتری انتخاب کنید." });
+            }
+
             bot.currentTrackUrl = bot.queue[activeIdx].url;
             bot.currentTrackName = bot.queue[activeIdx].name;
             bot.currentTrackCover = bot.queue[activeIdx].coverUrl || "";
@@ -990,6 +1274,27 @@ export function setupWebSockets(io: Server) {
         
         console.log(`[LOBBY CHAT] ${user?.username} sent message to ${lobbyId}`);
         lobbyNs.to(`lobby:${lobbyId}`).emit("chat.message", msgPayload);
+
+        // Parse command triggers for Melody Lox Bot (Melody Edition)
+        const trimmedContent = content.trim();
+        if (trimmedContent.startsWith("/")) {
+          const parts = trimmedContent.split(/\s+/);
+          const cmd = parts[0].toLowerCase();
+          const arg = parts.slice(1).join(" ");
+          
+          let bot = lobbyMusicBots.get(lobbyId);
+          if (bot && bot.active && bot.botType === "melody") {
+            if (cmd === "/p" && arg) {
+              handleMelodyCommand(lobbyId, "p", arg);
+            } else if (cmd === "/stop") {
+              handleMelodyCommand(lobbyId, "stop", "");
+            } else if (cmd === "/skip") {
+              handleMelodyCommand(lobbyId, "skip", "");
+            } else if (cmd === "/queue") {
+              handleMelodyCommand(lobbyId, "queue", "");
+            }
+          }
+        }
 
         if (ack) ack({ status: "ok", data: { tempId, messageId: msg.id.toString(), createdAt: msg.createdAt.getTime() } });
       } catch (err: any) {
