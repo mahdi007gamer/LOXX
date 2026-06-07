@@ -1,5 +1,6 @@
 import { Server, Socket } from "socket.io";
 import path from "path";
+import axios from "axios";
 import { AuthService } from "../services/auth.service.ts";
 import { RankingService } from "../services/ranking.service.ts";
 import { PenaltyService } from "../services/penalty.service.ts";
@@ -378,6 +379,211 @@ export function setupWebSockets(io: Server) {
 ⏭ /skip : رفتن به آهنگ بعدی
 📜 /queue : مشاهده لیست انتظار`;
 
+  // Search online track from web or itunes API as fallback
+  const searchOnlineTrack = async (query: string): Promise<{ title: string; url: string; coverUrl: string; duration: number } | null> => {
+    // 1. Try POP-MUSIC.IR WordPress Scraper
+    try {
+      console.log(`[MusicBot Search] Querying pop-music.ir for: "${query}"`);
+      const searchUrl = `https://pop-music.ir/?s=${encodeURIComponent(query)}`;
+      const searchRes = await axios.get(searchUrl, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.0.0 Safari/537.36"
+        },
+        timeout: 5000
+      });
+      
+      const searchHtml = searchRes.data || "";
+      const postUrls: string[] = [];
+      const matches = searchHtml.matchAll(/href="(https:\/\/pop-music\.ir\/[^"']+)"/gi);
+      for (const m of matches) {
+        const url = m[1];
+        const u = url.toLowerCase();
+        if (
+          !u.includes("/category/") && 
+          !u.includes("/page/") && 
+          !u.includes("pop-music.ir/wp-") && 
+          u !== "https://pop-music.ir/" && 
+          u !== "https://pop-music.ir" &&
+          u.endsWith("/")
+        ) {
+          if (!postUrls.includes(url)) {
+            postUrls.push(url);
+          }
+        }
+      }
+
+      if (postUrls.length > 0) {
+        const firstPostUrl = postUrls[0];
+        console.log(`[MusicBot Search] Found pop-music post URL: ${firstPostUrl}`);
+        
+        const postRes = await axios.get(firstPostUrl, {
+          headers: {
+            "User-Agent": "Mozilla/5.0"
+          },
+          timeout: 4500
+        });
+        const postHtml = postRes.data || "";
+        
+        const mp3Matches: string[] = [];
+        const mp3m = postHtml.matchAll(/href="([^"']+\.mp3)"/gi);
+        for (const m of mp3m) {
+          if (m[1] && !mp3Matches.includes(m[1])) {
+            mp3Matches.push(m[1]);
+          }
+        }
+
+        const validMp3s = mp3Matches.filter(link => link.toLowerCase().includes("dl.pop-music.ir") || link.toLowerCase().includes("/mp3/"));
+        
+        if (validMp3s.length > 0) {
+          let chosenMp3 = validMp3s.find(link => link.includes("320")) || validMp3s[0];
+          
+          let pTitle = "";
+          const titleMatch = postHtml.match(/<title>([^<]+)<\/title>/i);
+          if (titleMatch) {
+            pTitle = titleMatch[1]
+              .replace(" - پاپ موزیک", "")
+              .replace("دانلود آهنگ جدید", "")
+              .replace("دانلود آهنگ", "")
+              .trim();
+          } else {
+            pTitle = path.basename(decodeURIComponent(chosenMp3)).replace(/\.[^/.]+$/, "");
+          }
+          
+          let coverUrl = "/badges/musicbot-gold.jpeg";
+          const imgm = postHtml.matchAll(/src="([^"']+\.(jpe?g|png))"/gi);
+          const imgMatches: string[] = [];
+          for (const m of imgm) {
+            if (m[1]) imgMatches.push(m[1]);
+          }
+          const validCover = imgMatches.find(img => img.includes("wp-content/uploads/") && !img.includes("avatar") && !img.includes("logo") && !img.includes("banner"));
+          if (validCover) {
+            coverUrl = validCover;
+          }
+          
+          return {
+            title: pTitle,
+            url: chosenMp3,
+            coverUrl,
+            duration: 240
+          };
+        }
+      }
+    } catch (err: any) {
+      console.error(`[MusicBot Search] Error searching pop-music.ir:`, err.message || err);
+    }
+
+    // 2. Try NEX1MUSIC.IR WordPress Scraper
+    try {
+      console.log(`[MusicBot Search] Querying nex1music.ir for: "${query}"`);
+      const searchUrl = `https://nex1music.ir/?s=${encodeURIComponent(query)}`;
+      const searchRes = await axios.get(searchUrl, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.0.0 Safari/537.36"
+        },
+        timeout: 5000
+      });
+      
+      const searchHtml = searchRes.data || "";
+      const postUrls: string[] = [];
+      const matches = searchHtml.matchAll(/href="(https:\/\/nex1music\.ir\/[^"']+)"/gi);
+      for (const m of matches) {
+        const url = m[1];
+        const u = url.toLowerCase();
+        if (
+          !u.includes("/category/") && 
+          !u.includes("/page/") && 
+          !u.includes("nex1music.ir/wp-") && 
+          u !== "https://nex1music.ir/" && 
+          u !== "https://nex1music.ir"
+        ) {
+          if (!postUrls.includes(url)) {
+            postUrls.push(url);
+          }
+        }
+      }
+
+      if (postUrls.length > 0) {
+        const firstPostUrl = postUrls[0];
+        console.log(`[MusicBot Search] Found nex1music post URL: ${firstPostUrl}`);
+        
+        const postRes = await axios.get(firstPostUrl, {
+          headers: {
+            "User-Agent": "Mozilla/5.0"
+          },
+          timeout: 4500
+        });
+        const postHtml = postRes.data || "";
+        
+        const mp3Matches: string[] = [];
+        const mp3m = postHtml.matchAll(/href="([^"']+\.mp3)"/gi);
+        for (const m of mp3m) {
+          if (m[1] && !mp3Matches.includes(m[1])) {
+            mp3Matches.push(m[1]);
+          }
+        }
+
+        const validMp3s = mp3Matches.filter(link => link.toLowerCase().includes("nex1music") || link.toLowerCase().includes("/mp3/"));
+        
+        if (validMp3s.length > 0) {
+          let chosenMp3 = validMp3s.find(link => link.includes("320")) || validMp3s[0];
+          
+          let pTitle = "";
+          const titleMatch = postHtml.match(/<title>([^<]+)<\/title>/i);
+          if (titleMatch) {
+            pTitle = titleMatch[1]
+              .replace(" - نکس وان موزیک", "")
+              .replace("دانلود آهنگ جدید", "")
+              .replace("دانلود آهنگ", "")
+              .trim();
+          } else {
+            pTitle = path.basename(decodeURIComponent(chosenMp3)).replace(/\.[^/.]+$/, "");
+          }
+          
+          let coverUrl = "/badges/musicbot-gold.jpeg";
+          const imgm = postHtml.matchAll(/src="([^"']+\.(jpe?g|png))"/gi);
+          const imgMatches: string[] = [];
+          for (const m of imgm) {
+            if (m[1]) imgMatches.push(m[1]);
+          }
+          const validCover = imgMatches.find(img => img.includes("wp-content/uploads/") && !img.includes("avatar") && !img.includes("logo"));
+          if (validCover) {
+            coverUrl = validCover;
+          }
+          
+          return {
+            title: pTitle,
+            url: chosenMp3,
+            coverUrl,
+            duration: 240
+          };
+        }
+      }
+    } catch (err: any) {
+      console.error(`[MusicBot Search] Error searching nex1music.ir:`, err.message || err);
+    }
+
+    // 3. Try iTunes Search API
+    try {
+      console.log(`[MusicBot Search] Querying iTunes for: "${query}"`);
+      const searchUrl = `https://itunes.apple.com/search?media=music&term=${encodeURIComponent(query)}&limit=1`;
+      const res = await axios.get(searchUrl, { timeout: 4000 });
+      
+      if (res.data?.results && res.data.results.length > 0) {
+        const match = res.data.results[0];
+        return {
+          title: `${match.artistName} - ${match.trackName}`,
+          url: match.previewUrl,
+          coverUrl: match.artworkUrl100 || "/badges/musicbot-gold.jpeg",
+          duration: 30
+        };
+      }
+    } catch (err: any) {
+      console.error(`[MusicBot Search] Error searching iTunes:`, err.message || err);
+    }
+
+    return null;
+  };
+
   // Helper to send a chat message inside the lobby using the bot's identity
   const sendBotLobbyMessage = async (lobbyId: string, botType: "music" | "melody", content: string) => {
     try {
@@ -515,6 +721,13 @@ export function setupWebSockets(io: Server) {
               coverUrl: matched.coverUrl || "/badges/musicbot-gold.jpeg",
               duration: matched.duration || 0
             };
+          }
+
+          if (!matchedTrack) {
+            const onlineResult = await searchOnlineTrack(query);
+            if (onlineResult) {
+              matchedTrack = onlineResult;
+            }
           }
         }
 
