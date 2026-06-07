@@ -1716,62 +1716,121 @@ export const LobbyRoomPage = () => {
  {isInviteModalOpen && (
  <Modal title={isRtl ? "دعوت دوستان" : "Invite Friends"} onClose={() => setIsInviteModalOpen(false)}>
  <div className="space-y-4">
-  {/* Music Bot Invite Card (At the absolute top of the friends list) */}
-  <div className="flex items-center justify-between p-4 bg-gradient-to-r from-cyan-950/40 to-black/40 rounded-2xl border border-[#00e5ff]/20 hover:border-[#00e5ff]/40 transition-all shadow-[0_0_15px_rgba(0,229,255,0.05)] group relative overflow-hidden">
-   {/* Animated background element */}
-   {musicBotState?.active && (
-    <div className="absolute inset-y-0 right-0 w-1.5 bg-[#00e5ff] animate-pulse" />
-   )}
-   <div className="flex items-center gap-3 w-full max-w-[70%] text-right">
-    <div className="h-10 w-10 rounded-xl bg-[#00e5ff]/10 border border-[#00e5ff]/30 flex items-center justify-center shadow-[0_0_10px_rgba(0,229,255,0.2)] shrink-0 overflow-hidden relative font-sans">
-     {musicBotState?.currentTrackCover ? (
-      <img src={musicBotState.currentTrackCover} className={cn("w-full h-full object-cover", musicBotState?.isPlaying && "animate-[spin_4s_linear_infinite] rounded-full")} />
-     ) : (
-      <span className={cn("text-xl select-none", musicBotState?.isPlaying && "animate-spin")} style={{ animationDuration: "3s" }}>💿</span>
-     )}
-     {musicBotState?.active && (
-      <span className="absolute bottom-0.5 right-0.5 w-2 h-2 bg-emerald-450 rounded-full border border-black" />
-     )}
-    </div>
-    <div className="min-w-0 flex-1">
-     <div className="flex items-center gap-1.5">
-      <p className="text-xs font-black text-white truncate">{isRtl ? "🎵 ربات موسیقی لوکس (بات بالایی)" : "🎵 Loxx Music Bot (Top bot)"}</p>
-      <span className="text-[8px] font-bold bg-[#00e5ff]/10 text-[#00e5ff] px-1 rounded border border-[#00e5ff]/20 shrink-0">BOT</span>
-     </div>
-     <p className="text-[9px] text-gray-400 mt-0.5 truncate">
-      {musicBotState?.active 
-       ? (isRtl ? `در حال پخش: ${musicBotState.currentTrackName || "در انتظار آهنگ..."}` : `Playing: ${musicBotState.currentTrackName || "Waiting for track..."}`)
-       : (isRtl ? "کیفیت پخش Hi-Fi مستقیم در لابی" : "Hi-Fi audio stream directly in the lobby")
-      }
-     </p>
-    </div>
-   </div>
-   <button 
-    onClick={() => {
-     if (!isHost) {
-      toast.error(isRtl ? "فقط سازنده لابی می‌تواند ربات را مدیریت کند" : "Only the lobby host can manage the music bot");
-      return;
-     }
-     const willBeActive = !musicBotState?.active;
-     toggleMusicBot(willBeActive);
-     if (willBeActive) {
-       setIsInviteModalOpen(false);
-       setShowBotSetupModal(true);
-     }
-    }}
-    className={cn(
-     "px-3.5 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all duration-300 transform active:scale-95 shrink-0 font-sans",
-     musicBotState?.active 
-      ? "bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-gradient-to-r hover:from-red-500 hover:to-pink-500 hover:text-black hover:shadow-[0_0_15px_rgba(239,68,68,0.4)]" 
-      : "bg-gradient-to-r from-cyan-400 to-blue-500 text-black shadow-[0_0_12px_rgba(0,229,255,0.25)] hover:brightness-110"
+     {/* Music Bot Invite Card (Standard/Top Bot) */}
+   <div className="flex items-center justify-between p-4 bg-gradient-to-r from-cyan-950/40 to-black/40 rounded-2xl border border-[#00e5ff]/20 hover:border-[#00e5ff]/40 transition-all shadow-[0_0_15px_rgba(0,229,255,0.05)] group relative overflow-hidden">
+    {/* Animated background element */}
+    {(musicBotState?.active && musicBotState?.botType !== "melody") && (
+     <div className="absolute inset-y-0 right-0 w-1.5 bg-[#00e5ff] animate-pulse" />
     )}
-   >
-    {musicBotState?.active 
-     ? (isRtl ? "اخراج ربات" : "Remove Bot") 
-     : (isRtl ? "دعوت ربات" : "Invite Bot")
-    }
-   </button>
-  </div>
+    <div className="flex items-center gap-3 w-full max-w-[70%] text-right">
+     <div className="h-10 w-10 rounded-xl bg-[#00e5ff]/10 border border-[#00e5ff]/30 flex items-center justify-center shadow-[0_0_10px_rgba(0,229,255,0.2)] shrink-0 overflow-hidden relative font-sans">
+      {(musicBotState?.active && musicBotState?.botType !== "melody" && musicBotState?.currentTrackCover) ? (
+       <img src={musicBotState.currentTrackCover} className={cn("w-full h-full object-cover", musicBotState?.isPlaying && "animate-[spin_4s_linear_infinite] rounded-full")} />
+      ) : (
+       <span className={cn("text-xl select-none", (musicBotState?.active && musicBotState?.botType !== "melody" && musicBotState?.isPlaying) && "animate-spin")} style={{ animationDuration: "3s" }}>💿</span>
+      )}
+      {(musicBotState?.active && musicBotState?.botType !== "melody") && (
+       <span className="absolute bottom-0.5 right-0.5 w-2 h-2 bg-emerald-450 rounded-full border border-black" />
+      )}
+     </div>
+     <div className="min-w-0 flex-1">
+      <div className="flex items-center gap-1.5">
+       <p className="text-xs font-black text-white truncate">{isRtl ? "🎵 ربات موسیقی لوکس (بات بالایی)" : "🎵 Loxx Music Bot (Top bot)"}</p>
+       <span className="text-[8px] font-bold bg-[#00e5ff]/10 text-[#00e5ff] px-1 rounded border border-[#00e5ff]/20 shrink-0">BOT</span>
+      </div>
+      <p className="text-[9px] text-gray-400 mt-0.5 truncate">
+       {(musicBotState?.active && musicBotState?.botType !== "melody") 
+        ? (isRtl ? `در حال پخش: ${musicBotState.currentTrackName || "در انتظار آهنگ..."}` : `Playing: ${musicBotState.currentTrackName || "Waiting for track..."}`)
+        : (isRtl ? "کیفیت پخش Hi-Fi مستقیم در لابی" : "Hi-Fi audio stream directly in the lobby")
+       }
+      </p>
+     </div>
+    </div>
+    <button 
+     onClick={() => {
+      if (!isHost) {
+       toast.error(isRtl ? "فقط سازنده لابی می‌تواند ربات را مدیریت کند" : "Only the lobby host can manage the music bot");
+       return;
+      }
+      const isStandardActive = musicBotState?.active && musicBotState?.botType !== "melody";
+      const willBeActive = !isStandardActive;
+      toggleMusicBot(willBeActive, "music");
+      if (willBeActive) {
+        setIsInviteModalOpen(false);
+        setShowBotSetupModal(true);
+      }
+     }}
+     className={cn(
+      "px-3.5 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all duration-300 transform active:scale-95 shrink-0 font-sans",
+      (musicBotState?.active && musicBotState?.botType !== "melody") 
+       ? "bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-gradient-to-r hover:from-red-500 hover:to-pink-500 hover:text-black hover:shadow-[0_0_15px_rgba(239,68,68,0.4)]" 
+       : "bg-gradient-to-r from-cyan-400 to-blue-500 text-black shadow-[0_0_12px_rgba(0,229,255,0.25)] hover:brightness-110"
+     )}
+    >
+     {(musicBotState?.active && musicBotState?.botType !== "melody") 
+      ? (isRtl ? "اخراج ربات" : "Remove Bot") 
+      : (isRtl ? "دعوت ربات" : "Invite Bot")
+     }
+    </button>
+   </div>
+
+   {/* New Melody Lox Bot Invite Card */}
+   <div className="flex items-center justify-between p-4 bg-gradient-to-r from-yellow-950/40 to-black/40 rounded-2xl border border-[#FFD700]/20 hover:border-[#FFD700]/40 transition-all shadow-[0_0_15px_rgba(255,215,0,0.05)] group relative overflow-hidden">
+    {/* Animated background element */}
+    {(musicBotState?.active && musicBotState?.botType === "melody") && (
+     <div className="absolute inset-y-0 right-0 w-1.5 bg-[#FFD700] animate-pulse" />
+    )}
+    <div className="flex items-center gap-3 w-full max-w-[70%] text-right">
+     <div className="h-10 w-10 rounded-xl bg-[#FFD700]/10 border border-[#FFD700]/30 flex items-center justify-center shadow-[0_0_10px_rgba(255,215,0,0.2)] shrink-0 overflow-hidden relative font-sans">
+      {(musicBotState?.active && musicBotState?.botType === "melody" && musicBotState?.currentTrackCover) ? (
+       <img src={musicBotState.currentTrackCover} className={cn("w-full h-full object-cover", musicBotState?.isPlaying && "animate-[spin_4s_linear_infinite] rounded-full")} />
+      ) : (
+       <span className={cn("text-xl select-none", (musicBotState?.active && musicBotState?.botType === "melody" && musicBotState?.isPlaying) && "animate-spin")} style={{ animationDuration: "3s" }}>🌟</span>
+      )}
+      {(musicBotState?.active && musicBotState?.botType === "melody") && (
+       <span className="absolute bottom-0.5 right-0.5 w-2 h-2 bg-emerald-450 rounded-full border border-black" />
+      )}
+     </div>
+     <div className="min-w-0 flex-1">
+      <div className="flex items-center gap-1.5">
+       <p className="text-xs font-black text-white truncate">{isRtl ? "🌟 ربات موسیقی ملودی لوکس (آنلاین)" : "🌟 Melody Lox Bot (Online)"}</p>
+       <span className="text-[8px] font-bold bg-[#FFD700]/10 text-[#FFD700] px-1 rounded border border-[#FFD700]/20 shrink-0">GOLD</span>
+      </div>
+      <p className="text-[9px] text-gray-400 mt-0.5 truncate">
+       {(musicBotState?.active && musicBotState?.botType === "melody") 
+        ? (isRtl ? `در حال پخش: ${musicBotState.currentTrackName || "در انتظار آهنگ..."}` : `Playing: ${musicBotState.currentTrackName || "Waiting for track..."}`)
+        : (isRtl ? "کنترل عمومی پخش صوتی با جوایز طلایی" : "Public Audio Playback with Golden Perks")
+       }
+      </p>
+     </div>
+    </div>
+    <button 
+     onClick={() => {
+      if (!isHost) {
+       toast.error(isRtl ? "فقط سازنده لابی می‌تواند ربات را مدیریت کند" : "Only the lobby host can manage the music bot");
+       return;
+      }
+      const isMelodyActive = musicBotState?.active && musicBotState?.botType === "melody";
+      const willBeActive = !isMelodyActive;
+      toggleMusicBot(willBeActive, "melody");
+      if (willBeActive) {
+        setIsInviteModalOpen(false);
+        setShowBotSetupModal(true);
+      }
+     }}
+     className={cn(
+      "px-3.5 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all duration-300 transform active:scale-95 shrink-0 font-sans",
+      (musicBotState?.active && musicBotState?.botType === "melody") 
+       ? "bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-gradient-to-r hover:from-red-500 hover:to-pink-500 hover:text-black hover:shadow-[0_0_15px_rgba(239,68,68,0.4)]" 
+       : "bg-gradient-to-r from-yellow-400 to-amber-500 text-black shadow-[0_0_12px_rgba(255,215,0,0.25)] hover:brightness-110"
+     )}
+    >
+     {(musicBotState?.active && musicBotState?.botType === "melody") 
+      ? (isRtl ? "اخراج ربات" : "Remove Bot") 
+      : (isRtl ? "دعوت ربات" : "Invite Bot")
+     }
+    </button>
+   </div>
 
   {friends.length > 0 ? friends.map((friend, i) => (
  <div key={i} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl hover:bg-white/10 transition-colors group">
