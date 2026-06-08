@@ -1914,7 +1914,7 @@ export const LobbyRoomPage = () => {
       }}
       whileDrag={{ scale: 1.1, cursor: "grabbing" }}
       className={cn(
-       "fixed bottom-24 z-[70] cursor-grab active:cursor-grabbing h-16 w-16 rounded-full bg-black/90 border-2 flex flex-col items-center justify-center select-none transition-all duration-300",
+       "fixed bottom-24 z-[70] cursor-grab active:cursor-grabbing h-16 w-16 rounded-full bg-black/60 backdrop-blur-xl border-2 flex flex-col items-center justify-center select-none transition-all duration-300",
        isMelodyBot 
          ? "border-[#FFD700] shadow-[0_0_25px_rgba(255,215,0,0.55)] hover:shadow-[0_0_35px_rgba(255,215,0,0.85)]"
          : "border-[#00e5ff] shadow-[0_0_25px_rgba(0,229,255,0.45)] hover:shadow-[0_0_35px_rgba(0,229,255,0.7)]",
@@ -1957,7 +1957,7 @@ export const LobbyRoomPage = () => {
        right: isRtl ? (windowDims.width - 24 - 360) : 24
       }}
       className={cn(
-       "fixed bottom-24 z-[70] w-[360px] bg-white/5 border border-white/10 rounded-[32px] p-5 text-white select-none hover:border-white/20 transition-[border-color] duration-500",
+       "fixed bottom-24 z-[70] w-[360px] bg-black/65 backdrop-blur-xl border border-white/15 rounded-[32px] p-5 text-white select-none hover:border-white/25 transition-[border-color] duration-500",
        isMelodyBot 
          ? "shadow-[0_30px_60px_rgba(0,0,0,0.5),0_0_30px_rgba(255,215,0,0.15),inset_0_1px_15px_rgba(255,255,255,0.1)] mb-px"
          : "shadow-[0_30px_60px_rgba(0,0,0,0.5),0_0_30px_rgba(0,229,255,0.1),inset_0_1px_15px_rgba(255,255,255,0.1)]",
@@ -2253,7 +2253,7 @@ export const LobbyRoomPage = () => {
        </button>
 
        {isQueueOpen && (
-        <div className="absolute bottom-[110%] mb-2 left-0 w-full bg-[#0f0f0f]/90 rounded-2xl border border-white/10 shadow-2xl p-2 z-50 overflow-hidden">
+        <div className="absolute bottom-[110%] mb-2 left-0 w-full bg-black/75 backdrop-blur-xl rounded-2xl border border-white/15 shadow-2xl p-2 z-50 overflow-hidden">
          <div className="max-h-56 overflow-y-auto space-y-1 custom-scrollbar pr-1 animate-enter font-sans">
           {musicBotState?.queue && musicBotState.queue.length > 0 ? (
            musicBotState.queue.map((track, idx) => {
@@ -3209,7 +3209,7 @@ export const LobbyRoomPage = () => {
             </div>
 
             {/* Playing Track Details and Quick Music Bot Queue Controller panel */}
-            <div className="bg-black/35 p-3 rounded-xl border border-white/5 space-y-3">
+            <div className="bg-black/35 backdrop-blur-md p-3 rounded-xl border border-white/5 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-bold text-gray-400 uppercase">{isRtl ? "موسیقی در حال پخش" : "Current Track & Playlist"}</span>
                 <span className="text-[8px] font-mono bg-[#00e5ff]/10 text-[#00e5ff] px-1.5 py-0.5 rounded leading-none shrink-0 border border-[#00e5ff]/10 animate-pulse">LIVE DJ STREAM</span>

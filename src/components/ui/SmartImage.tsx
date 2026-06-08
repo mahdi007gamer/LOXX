@@ -6,6 +6,7 @@ import { getFileUrl } from "../../lib/constants";
 // Global memory cache for fetched blobs to prevent duplicate HTTP requests and lag
 const blobCache: Record<string, string> = {};
 const activeFetches: Record<string, Promise<string>> = {};
+const failedUrls = new Set<string>();
 
 interface SmartImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   src: string;
@@ -39,13 +40,20 @@ export const SmartImage: React.FC<SmartImageProps> = ({
   const memoizedFallbacks = React.useMemo(() => fallbacks, [JSON.stringify(fallbacks)]);
 
   const handleImageError = React.useCallback(() => {
+    const currentRawSrc = fallbackIndex === -1 ? src : memoizedFallbacks[fallbackIndex];
+    if (currentRawSrc) {
+      failedUrls.add(currentRawSrc);
+      const url = getFileUrl(currentRawSrc);
+      if (url) failedUrls.add(url);
+    }
+
     if (fallbackIndex < memoizedFallbacks.length - 1) {
       setFallbackIndex(prev => prev + 1);
     } else {
       setError(true);
       setLoading(false);
     }
-  }, [fallbackIndex, memoizedFallbacks]);
+  }, [fallbackIndex, memoizedFallbacks, src]);
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -57,9 +65,17 @@ export const SmartImage: React.FC<SmartImageProps> = ({
 
     const loadImage = async () => {
       const currentRawSrc = fallbackIndex === -1 ? src : memoizedFallbacks[fallbackIndex];
+
+      if (!currentRawSrc || typeof currentRawSrc !== "string" || !currentRawSrc.trim() || currentRawSrc === "null" || currentRawSrc === "undefined" || failedUrls.has(currentRawSrc)) {
+        setError(true);
+        setLoading(false);
+        return;
+      }
+
       const fullUrl = getFileUrl(currentRawSrc);
 
-      if (!fullUrl) {
+      if (!fullUrl || failedUrls.has(fullUrl)) {
+        setError(true);
         setLoading(false);
         return;
       }
@@ -125,6 +141,10 @@ export const SmartImage: React.FC<SmartImageProps> = ({
           }
         } catch (err: any) {
           delete activeFetches[urlPath];
+          if (currentRawSrc) {
+            failedUrls.add(currentRawSrc);
+            failedUrls.add(fullUrl);
+          }
           if (isMounted) {
             const status = err?.response?.status;
             if (status === 404) {
