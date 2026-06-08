@@ -1,6 +1,0 @@
-{
-  "name": "LOXX",
-  "description": "پلتفرم اجتماعی گیمرهای ایرانی - چت، لابی و رقابت",
-  "requestFramePermissions": ["camera", "microphone", "display-capture"],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}
