@@ -41,8 +41,8 @@ export const ProfilePopoverProvider: React.FC<{ children: ReactNode }> = ({ chil
  onClick={closeProfile}
  className="fixed inset-0 z-[20000] bg-black/40 cursor-default"
  />
- <div className="fixed inset-0 z-[20001] flex items-center justify-center pointer-events-none p-4">
- <div className="pointer-events-auto">
+ <div className="fixed inset-0 z-[20001] flex items-center justify-center pointer-events-none pt-[78px] pb-[92px] px-4 sm:p-8 overflow-hidden">
+ <div className="pointer-events-auto w-full max-w-[390px] max-h-full flex items-center justify-center">
  <QuickProfilePopover 
  onClose={closeProfile} 
  user={profileData.user}

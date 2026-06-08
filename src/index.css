@@ -114,6 +114,13 @@
   .neon-text-pink {
     @apply text-neon-pink drop-shadow-[0_0_8px_rgba(255,0,153,0.8)];
   }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none !important;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none !important;
+    scrollbar-width: none !important;
+  }
 }
 
 .modern-glass-toast {

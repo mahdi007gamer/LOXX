@@ -373,7 +373,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({
  animate={{ opacity: 1, scale: 1, y: 0 }}
  exit={{ opacity: 0, scale: 0.9, y: 10 }}
  className={cn(
- "w-[380px] rounded-[48px] border overflow-hidden cursor-default transition-all px-0 relative z-[20002]",
+ "w-full max-w-[390px] min-h-[500px] sm:min-h-[620px] max-h-full rounded-[48px] border overflow-y-auto no-scrollbar cursor-default transition-all px-0 relative z-[20002] flex flex-col shrink-0",
  isRtl ? "rtl text-right" : "ltr text-left",
  metadata?.fullGlow
  ? isStreamer
@@ -506,7 +506,7 @@ export const QuickProfilePopover: React.FC<QuickProfilePopoverProps> = ({
  </div>
  </div>
 
- <div className="px-10 pb-10 pt-0 relative z-20">
+ <div className="px-6 sm:px-10 pb-10 pt-0 relative z-20 flex-1 flex flex-col justify-between">
  {/* Enhanced Readability Overlay - subtle darkening for text clarity */}
  <div className="absolute inset-0 z-[-1] bg-gradient-to-t from-[#0a0a0f] via-[#0a0a0f]/60 to-transparent" />
 
