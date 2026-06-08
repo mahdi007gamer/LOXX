@@ -194,6 +194,15 @@ a *,
 .cursor-pointer *,
 [onClick] * {
   cursor: pointer !important;
+  pointer-events: none !important;
+}
+
+/* Exception for nested interactive elements */
+button input,
+button select,
+button a,
+button button {
+  pointer-events: auto !important;
 }
 
 /* Exception for disabled interactive components */

@@ -14,8 +14,57 @@ export const AdminMusicTab: React.FC = () => {
   const [playlists, setPlaylists] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Sub-tab Navigation (tracks | playlists | artists)
-  const [subTab, setSubTab] = useState<"tracks" | "playlists" | "artists">("tracks");
+  // Sub-tab Navigation (tracks | playlists | artists | bots)
+  const [subTab, setSubTab] = useState<"tracks" | "playlists" | "artists" | "bots">("tracks");
+
+  // Bot Profile Management
+  const [musicBotProfile, setMusicBotProfile] = useState<any>(null);
+  const [melodyBotProfile, setMelodyBotProfile] = useState<any>(null);
+  const [isLoadingBotProfile, setIsLoadingBotProfile] = useState(false);
+  const [isSavingBotProfile, setIsSavingBotProfile] = useState(false);
+  
+  // Refresh bots config when subtab switches
+  useEffect(() => {
+    if (subTab === "bots") {
+      fetchBotProfiles();
+    }
+  }, [subTab]);
+
+  const fetchBotProfiles = async () => {
+    setIsLoadingBotProfile(true);
+    try {
+      const musicRes = await api.get("/musicbot/profile");
+      if (musicRes.data?.data) {
+        setMusicBotProfile(musicRes.data.data);
+      }
+      // Assuming MelodyLox profile uses the same endpoint with a ?type=melody or separate logic,
+      // but since they requested editing BOTH bots, let's enable an API for type=melody
+      const melodyRes = await api.get("/musicbot/profile?type=melody");
+      if (melodyRes.data?.data) {
+        setMelodyBotProfile(melodyRes.data.data);
+      }
+    } catch (e: any) {
+      toast.error("خطا در بارگذاری پروفایل ربات‌ها");
+    } finally {
+      setIsLoadingBotProfile(false);
+    }
+  };
+
+  const handleSaveBotProfile = async (type: "music" | "melody", profileData: any) => {
+    setIsSavingBotProfile(true);
+    try {
+      const res = await api.post(`/musicbot/profile?type=${type}`, profileData);
+      if (res.data?.status === "success") {
+        toast.success(`پروفایل ربات ${type === "melody" ? "ملودی لوکس" : "موزیک لوکس"} بروزرسانی شد`);
+        if (type === "music") setMusicBotProfile(res.data.data);
+        if (type === "melody") setMelodyBotProfile(res.data.data);
+      }
+    } catch (e: any) {
+      toast.error("خطا در ذخیره پروفایل ربات");
+    } finally {
+      setIsSavingBotProfile(false);
+    }
+  };
 
   // Multi-select / Form parameters for new upload
   const [file, setFile] = useState<File | null>(null);
@@ -448,6 +497,18 @@ export const AdminMusicTab: React.FC = () => {
         >
           <User size={14} />
           لیست آرتیست‌ها ({artists.length})
+        </button>
+
+        <button
+          onClick={() => { setSubTab("bots"); setEditingTrack(null); }}
+          className={`flex items-center gap-2 py-2.5 px-6 rounded-2xl text-xs font-black transition-all ${
+            subTab === "bots" 
+              ? "bg-rose-500 text-black shadow-[0_0_15px_rgba(243,63,113,0.4)]" 
+              : "text-gray-400 hover:text-white hover:bg-white/5"
+          }`}
+        >
+          <Sparkles size={14} />
+          پروفایل ربات‌ها
         </button>
       </div>
 
@@ -1088,6 +1149,114 @@ export const AdminMusicTab: React.FC = () => {
               )}
             </div>
           </div>
+        </div>
+      )}
+
+      {subTab === "bots" && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          
+          {/* Loxx Music Bot */}
+          <div className="bg-[#0c0d13]/90 border border-cyan-500/20 rounded-[32px] p-6 space-y-6 shadow-[0_0_30px_rgba(0,229,255,0.05)]">
+            <div className="flex items-center gap-3 border-b border-white/5 pb-4">
+              <div className="h-10 w-10 bg-cyan-500/10 rounded-xl border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+                <Music size={20} />
+              </div>
+              <div>
+                <h3 className="text-sm font-black text-white">پروفایل ربات موزیک (دی‌جی هوشمند)</h3>
+                <p className="text-[10px] text-gray-400 mt-1 font-bold">نمایش به عنوان ربات استاندارد فضای لابی</p>
+              </div>
+            </div>
+
+            {isLoadingBotProfile ? (
+              <div className="text-center py-10"><div className="w-8 h-8 rounded-full border-2 border-t-cyan-500 border-r-transparent border-b-transparent border-l-transparent animate-spin mx-auto"></div></div>
+            ) : (
+              <form 
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const target = e.target as any;
+                  handleSaveBotProfile("music", {
+                    avatarUrl: target.avatar.value,
+                    bannerUrl: target.banner.value,
+                    bio: target.bio.value,
+                    miniProfileBg: target.miniBg.value
+                  });
+                }}
+                className="space-y-4"
+              >
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-gray-400">آدرس عکس آواتار (URL)</label>
+                  <input name="avatar" defaultValue={musicBotProfile?.avatarUrl || ""} className="w-full bg-black/60 border border-cyan-500/20 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-cyan-400" required />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-gray-400">آدرس عکس بنر پس‌زمینه پروفایل (URL)</label>
+                  <input name="banner" defaultValue={musicBotProfile?.bannerUrl || ""} className="w-full bg-black/60 border border-cyan-500/20 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-cyan-400" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-gray-400">گرادیانت پس‌زمینه مینی پروفایل</label>
+                  <input name="miniBg" defaultValue={musicBotProfile?.miniProfileBg || ""} className="w-full bg-black/60 border border-cyan-500/20 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-cyan-400" dir="ltr" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-gray-400">متن بایو (Bio)</label>
+                  <textarea name="bio" defaultValue={musicBotProfile?.bio || ""} className="w-full bg-black/60 border border-cyan-500/20 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-cyan-400 h-24" />
+                </div>
+                <button type="submit" disabled={isSavingBotProfile} className="w-full py-3 rounded-xl bg-cyan-500/20 border border-cyan-500/30 font-black text-cyan-300 hover:bg-cyan-500 hover:text-black hover:scale-[1.02] transition-all text-xs">
+                  {isSavingBotProfile ? "ردحال انجام..." : "ذخیره تغییرات ربات اصلی"}
+                </button>
+              </form>
+            )}
+          </div>
+
+          {/* Melody Lox Bot */}
+          <div className="bg-[#0c0d13]/90 border border-yellow-500/20 rounded-[32px] p-6 space-y-6 shadow-[0_0_30px_rgba(255,215,0,0.05)]">
+            <div className="flex items-center gap-3 border-b border-white/5 pb-4">
+              <div className="h-10 w-10 bg-yellow-500/10 rounded-xl border border-yellow-500/30 flex items-center justify-center text-yellow-400">
+                <Sparkles size={20} />
+              </div>
+              <div>
+                <h3 className="text-sm font-black text-white">پروفایل ملودی لوکس (ربات طلایی)</h3>
+                <p className="text-[10px] text-gray-400 mt-1 font-bold">ربات عمومی لابی با ویژگی‌های طلایی</p>
+              </div>
+            </div>
+
+            {isLoadingBotProfile ? (
+              <div className="text-center py-10"><div className="w-8 h-8 rounded-full border-2 border-t-yellow-500 border-r-transparent border-b-transparent border-l-transparent animate-spin mx-auto"></div></div>
+            ) : (
+              <form 
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const target = e.target as any;
+                  handleSaveBotProfile("melody", {
+                    avatarUrl: target.avatar.value,
+                    bannerUrl: target.banner.value,
+                    bio: target.bio.value,
+                    miniProfileBg: target.miniBg.value
+                  });
+                }}
+                className="space-y-4"
+              >
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-gray-400">آدرس عکس آواتار (URL)</label>
+                  <input name="avatar" defaultValue={melodyBotProfile?.avatarUrl || ""} className="w-full bg-black/60 border border-yellow-500/20 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-yellow-400" required />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-gray-400">آدرس عکس بنر پس‌زمینه پروفایل (URL)</label>
+                  <input name="banner" defaultValue={melodyBotProfile?.bannerUrl || ""} className="w-full bg-black/60 border border-yellow-500/20 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-yellow-400" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-gray-400">گرادیانت پس‌زمینه مینی پروفایل</label>
+                  <input name="miniBg" defaultValue={melodyBotProfile?.miniProfileBg || ""} className="w-full bg-black/60 border border-yellow-500/20 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-yellow-400" dir="ltr" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-gray-400">متن بایو (Bio)</label>
+                  <textarea name="bio" defaultValue={melodyBotProfile?.bio || ""} className="w-full bg-black/60 border border-yellow-500/20 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-yellow-400 h-24" />
+                </div>
+                <button type="submit" disabled={isSavingBotProfile} className="w-full py-3 rounded-xl bg-yellow-500/20 border border-yellow-500/30 font-black text-yellow-300 hover:bg-yellow-500 hover:text-black hover:scale-[1.02] transition-all text-xs">
+                  {isSavingBotProfile ? "ردحال انجام..." : "ذخیره تغییرات ملودی لوکس"}
+                </button>
+              </form>
+            )}
+          </div>
+
         </div>
       )}
     </div>

@@ -140,15 +140,26 @@ async function startServer() {
       if (!targetUrl) return res.status(400).json({ error: "No url provided" });
       
       const { default: axios } = await import("axios");
+      const headersToForward: Record<string, string> = { "User-Agent": "Mozilla/5.0" };
+      if (req.headers.range) {
+        headersToForward["Range"] = req.headers.range as string;
+      }
+      
       const proxyRes = await axios.get(targetUrl, {
         responseType: "stream",
-        headers: { "User-Agent": "Mozilla/5.0" },
-        proxy: false
+        headers: headersToForward,
+        proxy: false,
+        validateStatus: (status) => status >= 200 && status < 300 // Accept 200 and 206
       });
       
+      res.status(proxyRes.status);
       res.setHeader("Content-Type", String(proxyRes.headers["content-type"] || "audio/mpeg"));
       res.setHeader("Access-Control-Allow-Origin", "*");
       res.setHeader("Cache-Control", "public, max-age=86400");
+      if (proxyRes.headers["content-range"]) res.setHeader("Content-Range", String(proxyRes.headers["content-range"]));
+      if (proxyRes.headers["accept-ranges"]) res.setHeader("Accept-Ranges", String(proxyRes.headers["accept-ranges"]));
+      if (proxyRes.headers["content-length"]) res.setHeader("Content-Length", String(proxyRes.headers["content-length"]));
+      
       proxyRes.data.pipe(res);
     } catch (e: any) {
       res.status(502).json({ error: "Failed to proxy audio: " + e.message });

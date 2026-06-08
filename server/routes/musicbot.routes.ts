@@ -154,7 +154,9 @@ router.get("/tracks", authenticate, async (req: Request, res: Response) => {
           id: t.id,
           title: artistNames ? `${t.title} - ${artistNames}` : t.title,
           url: t.url,
-          category: playlist.name
+          category: playlist.name,
+          coverUrl: t.coverUrl || "",
+          duration: t.duration || 0
         };
       });
 
@@ -182,7 +184,9 @@ router.get("/tracks", authenticate, async (req: Request, res: Response) => {
           id: t.id,
           title: artistNames ? `${t.title} - ${artistNames}` : t.title,
           url: t.url,
-          category: "تک آهنگ‌ها"
+          category: "تک آهنگ‌ها",
+          coverUrl: t.coverUrl || "",
+          duration: t.duration || 0
         };
       });
       result["تک آهنگ‌ها"] = formattedUnlisted;
@@ -218,7 +222,9 @@ router.get("/loxx-library", authenticate, async (req: Request, res: Response) =>
             id: t.id,
             title: artistNames ? `${t.title} - ${artistNames}` : t.title,
             url: t.url,
-            category: playlist.name
+            category: playlist.name,
+            coverUrl: t.coverUrl || "",
+            duration: t.duration || 0
           };
         });
 
@@ -239,7 +245,9 @@ router.get("/loxx-library", authenticate, async (req: Request, res: Response) =>
           id: t.id,
           title: artistNames ? `${t.title} - ${artistNames}` : t.title,
           url: t.url,
-          category: "تک آهنگ‌ها"
+          category: "تک آهنگ‌ها",
+          coverUrl: t.coverUrl || "",
+          duration: t.duration || 0
         };
       });
 
@@ -953,13 +961,20 @@ router.delete("/db-track/:id", authenticate, authorizeAdmin, async (req: Request
 // GET /profile - Get Loxx Music Bot dynamic visual characteristics
 router.get("/profile", async (req: Request, res: Response) => {
   try {
-    const defaultBotProfile = {
+    const isMelody = req.query.type === "melody";
+    const defaultBotProfile = isMelody ? {
+      avatarUrl: "/badges/melody.jpeg",
+      bannerUrl: "/bg-hero.jpg",
+      miniProfileBg: "linear-gradient(to bottom, #1f1801, #332801, #0a0a0f)",
+      bio: "ربات هوشمند پخش موسیقی ملودی لوکس. دارای ویژگی‌های طلایی و همگام‌سازی عمومی."
+    } : {
       avatarUrl: "/badges/musicbot.jpeg",
       bannerUrl: "/bg-hero.jpg",
       miniProfileBg: "linear-gradient(to bottom, #001220, #001f3f, #0a0a0f)",
       bio: "ربات هوشمند پخش موسیقی باکیفیت و زنده لابی‌های لوکس LOXX. دارای بالاترین عمق فرکانس پخش صوتی استریو."
     };
-    const botProfilePath = path.join(musicBotDir, "profile.json");
+    const fileName = isMelody ? "profile_melody.json" : "profile.json";
+    const botProfilePath = path.join(musicBotDir, fileName);
     if (!fs.existsSync(botProfilePath)) {
       fs.writeFileSync(botProfilePath, JSON.stringify(defaultBotProfile, null, 2));
       return res.json({ status: "success", data: defaultBotProfile });
@@ -974,9 +989,16 @@ router.get("/profile", async (req: Request, res: Response) => {
 // POST /profile - Update Loxx Music Bot characteristics (Admin Only)
 router.post("/profile", authenticate, authorizeAdmin, async (req: Request, res: Response) => {
   try {
+    const isMelody = req.query.type === "melody";
     const { avatarUrl, bannerUrl, miniProfileBg, bio } = req.body;
-    const botProfilePath = path.join(musicBotDir, "profile.json");
-    const defaultBotProfile = {
+    const fileName = isMelody ? "profile_melody.json" : "profile.json";
+    const botProfilePath = path.join(musicBotDir, fileName);
+    const defaultBotProfile = isMelody ? {
+      avatarUrl: "/badges/melody.jpeg",
+      bannerUrl: "/bg-hero.jpg",
+      miniProfileBg: "linear-gradient(to bottom, #1f1801, #332801, #0a0a0f)",
+      bio: "ربات هوشمند پخش موسیقی ملودی لوکس. دارای ویژگی‌های طلایی و همگام‌سازی عمومی."
+    } : {
       avatarUrl: "/badges/musicbot.jpeg",
       bannerUrl: "/bg-hero.jpg",
       miniProfileBg: "linear-gradient(to bottom, #001220, #001f3f, #0a0a0f)",

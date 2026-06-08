@@ -1731,7 +1731,8 @@ const checkElectron = typeof window !== "undefined" && !!(window as any).electro
     const handleDurationChange = () => {
       const dur = audioEl.duration || 0;
       setLocalMusicDuration(dur);
-      if (isHost && dur > 0) {
+      const isHostOrMelody = isHost || musicBotState?.botType === "melody";
+      if (isHostOrMelody && dur > 0) {
         controlMusicBot("seek", { duration: dur });
       }
     };

@@ -126,6 +126,7 @@ export const MusicBotCard: React.FC<MusicBotCardProps> = ({
  const isBotSpeaking = lobby?.talkingUsers?.includes(botId) || (peerActivity[botId] || 0) > 10;
  const currentVolume = peerVolumes[botId] !== undefined ? peerVolumes[botId] : 100;
  const isMuted = currentVolume === 0;
+ const isMelodyBot = musicBotState?.botType === "melody";
 
  const handleMuteToggle = (e: React.MouseEvent) => {
   e.stopPropagation();
@@ -138,6 +139,9 @@ export const MusicBotCard: React.FC<MusicBotCardProps> = ({
 
  const trackName = musicBotState?.currentTrackName || (isRtl ? "در انتظار پخش آهنگ..." : "Waiting for track...");
  const trackCover = musicBotState?.currentTrackCover || "/badges/radio_speaker.png";
+ 
+ const themeColor = isMelodyBot ? "#FFD700" : "#00e5ff";
+ const themeClass = isMelodyBot ? "yellow" : "cyan";
 
  if (layoutMode === 'discord') {
   return (
@@ -147,7 +151,7 @@ export const MusicBotCard: React.FC<MusicBotCardProps> = ({
     animate={{ opacity: 1, y: 0 }}
     exit={{ opacity: 0, scale: 0.9 }}
     onClick={handleCardClick}
-    className="relative rounded-[16px] border border-cyan-500/30 bg-[#020d1a]/60 backdrop-blur-2xl text-center aspect-square md:aspect-auto md:h-[180px] w-full p-2.5 flex flex-col justify-end items-center cursor-pointer shadow-[0_0_20px_rgba(0,229,255,0.15)] group overflow-hidden"
+    className={cn("relative rounded-[16px] border bg-[#020d1a]/60 backdrop-blur-2xl text-center aspect-square md:aspect-auto md:h-[180px] w-full p-2.5 flex flex-col justify-end items-center cursor-pointer group overflow-hidden", isMelodyBot ? "border-[#FFD700]/30 shadow-[0_0_20px_rgba(255,215,0,0.15)]" : "border-cyan-500/30 shadow-[0_0_20px_rgba(0,229,255,0.15)]")}
    >
     <div className="absolute inset-0 z-0">
      <img src={trackCover} alt="Cover" className="w-full h-full object-cover opacity-10" referrerPolicy="no-referrer" />
@@ -155,28 +159,28 @@ export const MusicBotCard: React.FC<MusicBotCardProps> = ({
     
     {musicBotState?.isPlaying && (
      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
-      <div className="absolute w-24 h-24 border border-cyan-400/20 rounded-full animate-ping" />
-      <div className="absolute w-32 h-32 border border-cyan-400/10 rounded-full animate-[ping_2s_infinite]" />
+      <div className={cn("absolute w-24 h-24 border rounded-full animate-ping", isMelodyBot ? "border-[#FFD700]/20" : "border-cyan-400/20")} />
+      <div className={cn("absolute w-32 h-32 border rounded-full animate-[ping_2s_infinite]", isMelodyBot ? "border-[#FFD700]/10" : "border-cyan-400/10")} />
      </div>
     )}
 
-    <div className="relative z-10 w-12 h-12 rounded-full border-2 border-cyan-400 p-0.5 overflow-hidden mb-2 bg-[#0d0d12] shadow-[0_0_15px_rgba(0,229,255,0.4)]">
+    <div className={cn("relative z-10 w-12 h-12 rounded-full border-2 p-0.5 overflow-hidden mb-2 bg-[#0d0d12]", isMelodyBot ? "border-[#FFD700] shadow-[0_0_15px_rgba(255,215,0,0.4)]" : "border-cyan-400 shadow-[0_0_15px_rgba(0,229,255,0.4)]")}>
      <img src={trackCover} alt="DJ" className={cn("w-full h-full object-cover rounded-full", musicBotState?.isPlaying && "animate-[spin_4s_linear_infinite]")} referrerPolicy="no-referrer" />
     </div>
 
-    <div className="relative z-10 w-full bg-cyan-950/60 rounded-xl p-1.5 border border-cyan-500/20 flex flex-col items-center">
-     <span className="text-[10px] md:text-xs font-black text-cyan-300 truncate max-w-full">
-      {isRtl ? "رادیو موزیک هوشمند" : "Smart Music DJ"}
+    <div className={cn("relative z-10 w-full rounded-xl p-1.5 border flex flex-col items-center", isMelodyBot ? "bg-yellow-950/60 border-yellow-500/20" : "bg-cyan-950/60 border-cyan-500/20")}>
+     <span className={cn("text-[10px] md:text-xs font-black truncate max-w-full", isMelodyBot ? "text-yellow-300" : "text-cyan-300")}>
+      {isRtl ? (isMelodyBot ? "ملودی لوکس 🌟" : "رادیو موزیک هوشمند") : (isMelodyBot ? "Melody Lox 🌟" : "Smart Music DJ")}
      </span>
      <div className="text-[8px] text-gray-400 truncate max-w-full font-bold mt-0.5" dir={isRtl ? "rtl" : "ltr"}>
       {trackName}
      </div>
      <div className="flex items-center gap-1 mt-1">
-      <button onClick={handleMuteToggle} className="text-cyan-400 hover:text-white transition-colors p-0.5">
-       {isMuted ? <MicOff size={10} className="text-red-400" /> : <Music size={10} className="text-cyan-400" />}
+      <button onClick={handleMuteToggle} className={cn("hover:text-white transition-colors p-0.5", isMelodyBot ? "text-yellow-400" : "text-cyan-400")}>
+       {isMuted ? <MicOff size={10} className="text-red-400" /> : <Music size={10} className={isMelodyBot ? "text-yellow-400" : "text-cyan-400"} />}
       </button>
       <div className="h-2 w-12 bg-white/10 rounded-full overflow-hidden">
-       <div className="h-full bg-cyan-400" style={{ width: `${currentVolume / 2}%` }} />
+       <div className={cn("h-full", isMelodyBot ? "bg-yellow-400" : "bg-cyan-400")} style={{ width: `${currentVolume / 2}%` }} />
       </div>
      </div>
     </div>
@@ -192,17 +196,17 @@ export const MusicBotCard: React.FC<MusicBotCardProps> = ({
     animate={{ opacity: 1, y: 0 }}
     exit={{ opacity: 0, scale: 0.9 }}
     onClick={handleCardClick}
-    className="relative rounded-[16px] border border-cyan-500/30 bg-gradient-to-r from-[#031124] to-[#010914] hover:from-[#051a36] hover:to-[#021021] flex w-full sm:w-[calc(50%-6px)] lg:w-[calc(33.333%-10px)] h-[60px] md:h-[72px] items-center p-2 md:p-3 shrink-0 cursor-pointer shadow-[0_0_15px_rgba(0,229,255,0.1)] group overflow-hidden"
+    className={cn("relative rounded-[16px] border flex w-full sm:w-[calc(50%-6px)] lg:w-[calc(33.333%-10px)] h-[60px] md:h-[72px] items-center p-2 md:p-3 shrink-0 cursor-pointer group overflow-hidden", isMelodyBot ? "border-[#FFD700]/30 bg-gradient-to-r from-[#171201] to-[#0d0901] hover:from-[#1f1801] hover:to-[#120a01] shadow-[0_0_15px_rgba(255,215,0,0.1)]" : "border-cyan-500/30 bg-gradient-to-r from-[#031124] to-[#010914] hover:from-[#051a36] hover:to-[#021021] shadow-[0_0_15px_rgba(0,229,255,0.1)]")}
    >
-    <div className="relative w-10 h-10 md:w-12 md:h-12 rounded-xl border border-cyan-400/40 p-0.5 overflow-hidden shrink-0 bg-[#0d0d12] shadow-[0_0_10px_rgba(0,229,255,0.2)]">
+    <div className={cn("relative w-10 h-10 md:w-12 md:h-12 rounded-xl border p-0.5 overflow-hidden shrink-0 bg-[#0d0d12]", isMelodyBot ? "border-[#FFD700]/40 shadow-[0_0_10px_rgba(255,215,0,0.2)]" : "border-cyan-400/40 shadow-[0_0_10px_rgba(0,229,255,0.2)]")}>
      <img src={trackCover} alt="Disc" className={cn("w-full h-full object-cover rounded-lg", musicBotState?.isPlaying && "animate-[spin_6s_linear_infinite] rounded-full")} referrerPolicy="no-referrer" />
     </div>
     <div className="flex-1 min-w-0 px-3">
      <div className="flex items-center justify-between">
-      <span className="text-xs md:text-sm font-black text-cyan-300 truncate">
-       {isRtl ? "ربات هوشمند موسیقی لوکس" : "Loxx Smart Music Bot"}
+      <span className={cn("text-xs md:text-sm font-black truncate", isMelodyBot ? "text-yellow-300" : "text-cyan-300")}>
+       {isRtl ? (isMelodyBot ? "ملودی لوکس 🌟" : "ربات هوشمند موسیقی لوکس") : (isMelodyBot ? "Melody Lox 🌟" : "Loxx Smart Music Bot")}
       </span>
-      <span className="text-[7px] md:text-[9px] font-black uppercase text-cyan-400 animate-pulse bg-cyan-950/40 px-2 py-0.5 rounded border border-cyan-500/20 shrink-0">
+      <span className={cn("text-[7px] md:text-[9px] font-black uppercase flex items-center gap-1 animate-pulse px-2 py-0.5 rounded border shrink-0", isMelodyBot ? "bg-yellow-950/40 border-yellow-500/20 text-yellow-400" : "bg-cyan-950/40 border-cyan-500/20 text-cyan-400")}>
        {isBotSpeaking ? "LISTENING" : "IDLE"}
       </span>
      </div>
@@ -210,8 +214,8 @@ export const MusicBotCard: React.FC<MusicBotCardProps> = ({
       {trackName}
      </div>
     </div>
-    <button onClick={handleMuteToggle} className="p-1 px-2 bg-cyan-950/55 hover:bg-cyan-900 border border-cyan-500/20 text-cyan-300 hover:text-white rounded-lg transition-all shrink-0">
-     {isMuted ? <MicOff size={12} className="text-red-400" /> : <Music size={12} className="text-cyan-400 shrink-0" />}
+    <button onClick={handleMuteToggle} className={cn("p-1 px-2 border rounded-lg transition-all shrink-0 hover:text-white", isMelodyBot ? "bg-yellow-950/55 hover:bg-yellow-900 border-yellow-500/20 text-yellow-300" : "bg-cyan-950/55 hover:bg-cyan-900 border-cyan-500/20 text-cyan-300")}>
+     {isMuted ? <MicOff size={12} className="text-red-400" /> : <Music size={12} className={cn("shrink-0", isMelodyBot ? "text-yellow-400" : "text-cyan-400")} />}
     </button>
    </motion.div>
   );
@@ -225,7 +229,7 @@ export const MusicBotCard: React.FC<MusicBotCardProps> = ({
    exit={{ opacity: 0, scale: 0.9 }}
    whileHover={{ y: -8, transition: { duration: 0.2 } }}
    onClick={handleCardClick}
-   className="relative p-3 md:p-6 rounded-[24px] md:rounded-[32px] border border-cyan-500/40 bg-[#020d1a]/60 backdrop-blur-2xl shadow-[0_0_30px_rgba(0,229,255,0.15)] flex flex-col justify-between min-h-[220px] md:min-h-[360px] w-full sm:w-[calc(50%-6px)] md:w-[calc(50%-12px)] lg:w-[calc(33.333%-10px)] xl:w-[calc(25%-18px)] shrink-0 grow min-w-[140px] sm:min-w-[220px] md:min-w-[245px] overflow-hidden group"
+   className={cn("relative p-3 md:p-6 rounded-[24px] md:rounded-[32px] border bg-[#020d1a]/60 backdrop-blur-2xl flex flex-col justify-between min-h-[220px] md:min-h-[360px] w-full sm:w-[calc(50%-6px)] md:w-[calc(50%-12px)] lg:w-[calc(33.333%-10px)] xl:w-[calc(25%-18px)] shrink-0 grow min-w-[140px] sm:min-w-[220px] md:min-w-[245px] overflow-hidden group", isMelodyBot ? "border-[#FFD700]/40 shadow-[0_0_30px_rgba(255,215,0,0.15)]" : "border-cyan-500/40 shadow-[0_0_30px_rgba(0,229,255,0.15)]")}
   >
    <div className="absolute inset-0 z-0 pointer-events-none">
     <img src={trackCover} className="w-full h-full object-cover opacity-5" referrerPolicy="no-referrer" alt="" />
@@ -234,15 +238,15 @@ export const MusicBotCard: React.FC<MusicBotCardProps> = ({
 
    <div className="flex-1 flex flex-col z-10">
     <div className="mb-2 md:mb-4 flex items-center justify-between">
-     <div className="flex items-center gap-1.5 md:gap-2 bg-cyan-950/50 border border-cyan-500/20 px-2.5 py-1 rounded-full">
-      <Radio size={12} className="text-cyan-400 animate-pulse" />
-      <span className="text-[7px] md:text-[9px] font-black text-cyan-300 uppercase shrink-0">
-       {isRtl ? "سیستم دی‌جی هوشمند" : "SMART DJ SYSTEM"}
+     <div className={cn("flex items-center gap-1.5 md:gap-2 border px-2.5 py-1 rounded-full", isMelodyBot ? "bg-yellow-950/50 border-yellow-500/20" : "bg-cyan-950/50 border-cyan-500/20")}>
+      <Radio size={12} className={cn("animate-pulse", isMelodyBot ? "text-yellow-400" : "text-cyan-400")} />
+      <span className={cn("text-[7px] md:text-[9px] font-black uppercase shrink-0", isMelodyBot ? "text-yellow-300" : "text-cyan-300")}>
+       {isRtl ? (isMelodyBot ? "سیستم پخش زنده" : "سیستم دی‌جی هوشمند") : (isMelodyBot ? "PUBLIC PLAYBACK" : "SMART DJ SYSTEM")}
       </span>
      </div>
      <div className="flex items-center gap-1.5">
-      <span className="text-[7px] md:text-[9px] font-black text-cyan-400 animate-pulse flex items-center gap-1 uppercase">
-       <div className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-ping" />
+      <span className={cn("text-[7px] md:text-[9px] font-black animate-pulse flex items-center gap-1 uppercase", isMelodyBot ? "text-yellow-400" : "text-cyan-400")}>
+       <div className={cn("h-1.5 w-1.5 rounded-full animate-ping", isMelodyBot ? "bg-yellow-400" : "bg-cyan-400")} />
        {isBotSpeaking ? "LIVE" : "ONLINE"}
       </span>
      </div>
@@ -255,13 +259,13 @@ export const MusicBotCard: React.FC<MusicBotCardProps> = ({
         <circle 
          cx="50%" cy="50%" r="46%" 
          fill="none" 
-         stroke="rgba(0, 229, 255, 0.15)" 
+         stroke={isMelodyBot ? "rgba(255, 215, 0, 0.15)" : "rgba(0, 229, 255, 0.15)"} 
          strokeWidth="2.5" 
         />
         <motion.circle 
          cx="50%" cy="50%" r="46%" 
          fill="none" 
-         stroke="#00e5ff" 
+         stroke={themeColor} 
          strokeWidth="3.5" 
          style={{ strokeDasharray: "290" }}
          initial={{ strokeDashoffset: 290 }}
@@ -273,19 +277,20 @@ export const MusicBotCard: React.FC<MusicBotCardProps> = ({
 
       <div 
        className={cn(
-        "h-10 w-10 sm:h-16 sm:w-16 md:h-20 md:w-20 rounded-full flex items-center justify-center text-xl md:text-3xl relative z-10 transition-all duration-500 shadow-[0_0_25px_rgba(0,229,255,0.3)] cursor-pointer hover:scale-110 aspect-square",
+        "h-10 w-10 sm:h-16 sm:w-16 md:h-20 md:w-20 rounded-full flex items-center justify-center text-xl md:text-3xl relative z-10 transition-all duration-500 cursor-pointer hover:scale-110 aspect-square",
+        isMelodyBot ? "shadow-[0_0_25px_rgba(255,215,0,0.3)]" : "shadow-[0_0_25px_rgba(0,229,255,0.3)]",
         musicBotState?.isPlaying ? "scale-105" : ""
        )}
       >
-       <div className="h-full w-full flex items-center justify-center overflow-hidden rounded-full border-[3px] border-cyan-400 relative">
+       <div className={cn("h-full w-full flex items-center justify-center overflow-hidden rounded-full border-[3px] relative", isMelodyBot ? "border-yellow-400" : "border-cyan-400")}>
         <img 
          src={trackCover}
          className={cn("w-full h-full object-cover transition-transform duration-[3s]", musicBotState?.isPlaying && "animate-[spin_5s_linear_infinite]")}
          referrerPolicy="no-referrer"
          alt="Track Cover"
         />
-        <div className="absolute h-4 w-4 rounded-full bg-black border-2 border-cyan-400 flex items-center justify-center z-20">
-         <div className="h-1 w-1 bg-cyan-400 rounded-full" />
+        <div className={cn("absolute h-4 w-4 rounded-full bg-black border-2 flex items-center justify-center z-20", isMelodyBot ? "border-yellow-400" : "border-cyan-400")}>
+         <div className={cn("h-1 w-1 rounded-full", isMelodyBot ? "bg-yellow-400" : "bg-cyan-400")} />
         </div>
        </div>
 
@@ -293,14 +298,15 @@ export const MusicBotCard: React.FC<MusicBotCardProps> = ({
         <motion.div 
          animate={{ opacity: [0.3, 0.6, 0.3] }} 
          transition={{ duration: 1, repeat: Infinity }}
-         className="absolute -inset-2 md:-inset-3 bg-cyan-400 rounded-full blur-lg -z-10" 
+         className={cn("absolute -inset-2 md:-inset-3 rounded-full blur-lg -z-10", isMelodyBot ? "bg-yellow-400" : "bg-cyan-400")} 
         />
        )}
       </div>
 
-      <div className="absolute -top-1 -right-1 h-6 w-6 md:h-8 md:w-8 rounded-lg md:rounded-2xl bg-cyan-400 border-2 md:border-4 border-[#020d1a] flex items-center justify-center text-black z-20 shadow-[0_0_15px_rgba(0,229,255,0.6)]">
+      <div className={cn("absolute -top-1 -right-1 h-6 w-6 md:h-8 md:w-8 rounded-lg md:rounded-2xl border-2 md:border-4 border-[#020d1a] flex items-center justify-center text-black z-20", isMelodyBot ? "bg-yellow-400 shadow-[0_0_15px_rgba(255,215,0,0.6)]" : "bg-cyan-400 shadow-[0_0_15px_rgba(0,229,255,0.6)]")}>
        <Headphones size={10} className="md:size-[14px]" />
       </div>
+
      </div>
 
      <div className="flex flex-col items-center mb-2 text-center max-w-full">
@@ -549,6 +555,7 @@ export const LobbyRoomPage = () => {
  }, [selectedPlayer]);
 
  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+ const [invitedFriends, setInvitedFriends] = useState<Record<string, boolean>>({});
  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
  const [showFallbackModal, setShowFallbackModal] = useState(false);
  const [hasShownFallbackModal, setHasShownFallbackModal] = useState(false);
@@ -761,14 +768,14 @@ export const LobbyRoomPage = () => {
 
  useEffect(() => {
   if (!musicBotState?.active) return;
-  fetch('/api/v1/musicbot/profile', {
+  fetch(`/api/v1/musicbot/profile?type=${musicBotState.botType || "music"}`, {
     headers: {
       "Authorization": `Bearer ${localStorage.getItem("loxx_token")}`
     }
   }).then(r => r.json()).then(data => {
     if (data.status === "success") setBotProfile(data.data);
   }).catch(() => {});
- }, [musicBotState?.active]);
+ }, [musicBotState?.active, musicBotState?.botType]);
 
  const players = useMemo(() => {
  const list = lobby?.players?.map(p => ({
@@ -1271,13 +1278,14 @@ export const LobbyRoomPage = () => {
    peerVolumes={peerVolumes}
    layoutMode={layoutMode}
    onProfile={(id) => {
+    const isMelody = musicBotState?.botType === "melody";
     openProfile({
      id,
-     senderName: isRtl ? "ربات هوشمند موسیقی لوکس" : "Loxx Smart Music Bot",
+     senderName: isRtl ? (isMelody ? "ملودی لوکس 🌟" : "ربات هوشمند موسیقی لوکس") : (isMelody ? "Melody Lox 🌟" : "Loxx Smart Music Bot"),
      senderAvatar: botProfile?.avatarUrl || "",
      senderLevel: 99,
      membership: "VIP" as any,
-     vipMetadata: { borderNeonColor: "#00e5ff" },
+     vipMetadata: { borderNeonColor: isMelody ? "#FFD700" : "#00e5ff" },
      bannerUrl: botProfile?.bannerUrl || "",
      bio: botProfile?.bio,
      miniProfileBg: botProfile?.miniProfileBg,
@@ -1577,10 +1585,7 @@ export const LobbyRoomPage = () => {
     </div>
     <button 
      onClick={() => {
-      if (!isHost) {
-       toast.error(isRtl ? "فقط سازنده لابی می‌تواند ربات را مدیریت کند" : "Only the lobby host can manage the music bot");
-       return;
-      }
+      // Allow any user to invite MelodyLox bot
       const isMelodyActive = musicBotState?.active && musicBotState?.botType === "melody";
       const willBeActive = !isMelodyActive;
       toggleMusicBot(willBeActive, "melody");
@@ -1602,7 +1607,9 @@ export const LobbyRoomPage = () => {
     </button>
    </div>
 
-  {friends.length > 0 ? friends.map((friend, i) => (
+  {friends.length > 0 ? friends.map((friend, i) => {
+   const isInvited = invitedFriends[friend.id];
+   return (
  <div key={i} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl hover:bg-white/10 transition-colors group">
  <div className="flex items-center gap-3">
  <div className="h-10 w-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden shrink-0">
@@ -1618,16 +1625,19 @@ export const LobbyRoomPage = () => {
  </div>
  </div>
  <button 
+ disabled={isInvited}
  onClick={() => {
- lobbySocket.emit("invite_player", { lobbyId: lobby?.id, targetUserId: friend.id });
- toast.success(isRtl ? `دعوت برای ${friend.username} ارسال شد` : `Invitation sent to ${friend.username}`);
+  if (isInvited) return;
+  lobbySocket.emit("invite_player", { lobbyId: lobby?.id, targetUserId: friend.id });
+  setInvitedFriends((prev) => ({ ...prev, [friend.id]: true }));
+  toast.success(isRtl ? `دعوت برای ${friend.username} ارسال شد` : `Invitation sent to ${friend.username}`);
  }}
- className="px-4 py-2 rounded-xl bg-neon-blue text-dark-bg text-[10px] font-black uppercase hover:scale-105 transition-transform"
+ className={cn("px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-transform", isInvited ? "bg-white/10 text-white/50 cursor-not-allowed" : "bg-neon-blue text-dark-bg hover:scale-105")}
  >
- Invite
+ {isInvited ? (isRtl ? "ارسال شد" : "Sent") : (isRtl ? "دعوت به لابی" : "Invite to Lobby")}
  </button>
  </div>
- )) : (
+  )}) : (
  <div className="text-center py-10 opacity-50">
  <p className="text-sm">{isRtl ? "لیست دوستان خالی است" : "Your friends list is empty"}</p>
  </div>
@@ -1797,18 +1807,21 @@ export const LobbyRoomPage = () => {
         <div className={cn("absolute inset-0 rounded-full border-[1.5px]", isMelodyBot ? "border-[#FFD700]/30 shadow-[inset_0_0_20px_rgba(255,215,0,0.25)]" : "border-[#00e5ff]/30 shadow-[inset_0_0_20px_rgba(0,229,255,0.2)]")}></div>
         <div className={cn("relative h-[90%] w-[90%] rounded-full border-[6px] border-[#0a0a0a] shadow-[inset_0_0_15px_#000] bg-[#111] overflow-hidden flex items-center justify-center", musicBotState?.isPlaying && "animate-[spin_4s_linear_infinite]")}>
          {musicBotState?.currentTrackCover ? (
-          <img src={musicBotState.currentTrackCover} className="w-full h-full object-cover opacity-80" />
+          <img src={musicBotState.currentTrackCover} className="absolute inset-0 w-full h-full object-cover opacity-80" />
          ) : (
-          <div className="w-full h-full bg-gradient-to-tr from-[#111] to-[#333] flex items-center justify-center rounded-full">
-           <div className={cn("w-7 h-7 rounded-full bg-gradient-to-br from-gray-700 to-black border border-gray-600 flex items-center justify-center", isMelodyBot ? "shadow-[0_0_10px_rgba(255,215,0,0.45)]" : "shadow-[0_0_10px_rgba(0,229,255,0.3)]")}>
-            <div className={cn("w-2.5 h-2.5 rounded-full shadow-[0_0_5px_currentColor]", isMelodyBot ? "bg-[#FFD700] text-[#FFD700]/70" : "bg-[#00e5ff] text-[#00e5ff]/70")}></div>
-           </div>
-          </div>
+          <div className="absolute inset-0 w-full h-full bg-gradient-to-tr from-[#111] to-[#333]"></div>
          )}
+         
+         <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
+          <div className={cn("w-7 h-7 rounded-full bg-gradient-to-br from-gray-700 to-black border border-gray-600 flex items-center justify-center", isMelodyBot ? "shadow-[0_0_10px_rgba(255,215,0,0.45)]" : "shadow-[0_0_10px_rgba(0,229,255,0.3)]")}>
+           <div className={cn("w-2.5 h-2.5 rounded-full shadow-[0_0_5px_currentColor]", isMelodyBot ? "bg-[#FFD700] text-[#FFD700]/70" : "bg-[#00e5ff] text-[#00e5ff]/70")}></div>
+          </div>
+         </div>
+         
          {/* Vinyl groove overlays */}
-         <div className="absolute inset-0 rounded-full border border-white/5 mx-1" />
-         <div className="absolute inset-0 rounded-full border border-white/5 mx-3" />
-         <div className="absolute inset-0 rounded-full border border-white/5 mx-5" />
+         <div className="absolute inset-0 rounded-full border border-white/5 mx-1 z-20 pointer-events-none" />
+         <div className="absolute inset-0 rounded-full border border-white/5 mx-3 z-20 pointer-events-none" />
+         <div className="absolute inset-0 rounded-full border border-white/5 mx-5 z-20 pointer-events-none" />
         </div>
        </div>
       </div>

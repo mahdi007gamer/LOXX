@@ -586,7 +586,7 @@ export const DashboardPage = () => {
  <span className={cn(
  "text-[11px] font-black uppercase ",
  isTop10 ? "text-dark-bg" : "text-white"
- )}>{isRtl ? "مشاهده رتبه‌بندی جهانی" : "Explore Leaderboards"}</span> 
+ )}>{isRtl ? "مشاهده رتبه‌بندی جهانی" : "Explore Leaderboards"}</span>
  <ArrowRight size={16} className={cn("mr-2 group-hover/btn:translate-x-1 transition-transform", isTop10 ? "text-dark-bg" : "text-white")} />
  </GlowButton>
  </div>
@@ -611,30 +611,46 @@ export const DashboardPage = () => {
  transition={{ delay: i * 0.1 }}
  >
  <NeonCard variant={isVipLobby ? "purple" : "blue"} className={cn("flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-4 relative overflow-hidden", isVipLobby && "border-yellow-400/40 shadow-[0_0_20px_rgba(250,204,21,0.1)]")} hover={true}>
+ {item.game?.bannerUrl && (
+ <div className="absolute inset-0 z-0 opacity-20 pointer-events-none">
+ <SmartImage src={item.game.bannerUrl} className="w-full h-full object-cover" alt="" />
+ <div className={cn("absolute inset-0 bg-gradient-to-r", isRtl ? "from-[#0d0d12] via-[#0d0d12]/80 to-transparent" : "from-transparent via-[#0d0d12]/80 to-[#0d0d12]")} />
+ </div>
+ )}
  {isVipLobby && (
- <div className="absolute top-0 right-0 h-10 w-10 bg-yellow-400/10 rounded-bl-3xl flex items-start justify-end p-2 border-b border-l border-yellow-400/20 shadow-[-5px_5px_15px_rgba(250,204,21,0.05)]">
+ <div className="absolute top-0 right-0 h-10 w-10 bg-yellow-400/10 rounded-bl-3xl flex items-start justify-end p-2 border-b border-l border-yellow-400/20 shadow-[-5px_5px_15px_rgba(250,204,21,0.05)] z-20">
  <Crown size={12} className="text-yellow-400" />
  </div>
  )}
- <div className="flex items-center gap-4">
- <div className={cn("h-12 w-12 rounded flex items-center justify-center text-xl font-bold shrink-0", isVipLobby ? "bg-yellow-400/10 text-yellow-400 border border-yellow-400/20" : "bg-neon-blue/10 text-neon-blue")}>
+ <div className="flex items-center gap-4 z-10 w-full sm:w-auto">
+ <div className={cn("h-16 w-16 md:h-16 md:w-28 rounded-xl overflow-hidden shrink-0 border relative group-hover:scale-105 transition-transform", isVipLobby ? "border-yellow-400/30 shadow-[0_0_15px_rgba(250,204,21,0.2)]" : "border-neon-blue/30 shadow-[0_0_15px_rgba(0,229,255,0.2)]")}>
+ {item.game?.bannerUrl || item.game?.iconUrl ? (
+ <SmartImage src={item.game.bannerUrl || item.game.iconUrl} alt={item.game.title} className="w-full h-full object-cover" />
+ ) : (
+ <div className={cn("w-full h-full flex items-center justify-center text-xl font-bold", isVipLobby ? "bg-yellow-400/10 text-yellow-400" : "bg-neon-blue/10 text-neon-blue")}>
  {item.game?.title?.[0] || "🎮"}
+ </div>
+ )}
+ <div className="absolute inset-x-0 bottom-0 top-1/2 bg-gradient-to-t from-black/90 to-transparent" />
+ {item.game?.iconUrl && (
+ <SmartImage src={item.game.iconUrl} alt="icon" className="absolute bottom-1.5 left-1.5 w-6 h-6 rounded-md object-cover shadow-md border border-white/20" />
+ )}
  </div>
  <div className="min-w-0 pr-2">
  <div className="flex items-center gap-2">
- <h4 className="font-bold text-white truncate">{item.title}</h4>
+ <h4 className="font-bold text-white text-base md:text-lg truncate drop-shadow-md">{item.title}</h4>
  {isVipLobby && <span className="px-2 py-0.5 rounded-full bg-yellow-400/20 text-yellow-400 text-[8px] font-black uppercase border border-yellow-400/40">ELITE</span>}
  </div>
- <p className="text-xs text-gray-400 truncate mt-1">{item.game?.title} • {item.region}</p>
+ <p className="text-xs text-gray-300 truncate mt-0.5 drop-shadow">{item.game?.title} • {item.region}</p>
  </div>
  </div>
- <div className="flex items-center justify-between sm:justify-start gap-6 border-t border-white/5 pt-3 sm:border-0 sm:pt-0">
+ <div className="flex items-center justify-between sm:justify-start gap-6 border-t border-white/5 pt-3 sm:border-0 sm:pt-0 z-10">
  <div className="text-right sm:text-left z-10 w-full sm:w-auto flex items-center sm:block justify-between">
  <div className="sm:mb-1">
- <p className="text-[10px] text-gray-500 uppercase font-black inline-block sm:block ml-2 sm:ml-0">{isRtl ? "ظرفیت" : "Capacity"}</p>
- <p className={cn("font-bold inline-block sm:block text-sm sm:text-base", isVipLobby ? "text-yellow-400" : "text-neon-blue")}>{item.members?.length || 0}/{item.maxPlayers}</p>
+ <p className="text-[10px] text-gray-400 uppercase font-black inline-block sm:block ml-2 sm:ml-0 drop-shadow">{isRtl ? "ظرفیت" : "Capacity"}</p>
+ <p className={cn("font-bold inline-block sm:block text-sm sm:text-base drop-shadow-md", isVipLobby ? "text-yellow-400" : "text-neon-blue")}>{item.members?.length || 0}/{item.maxPlayers}</p>
  </div>
- <GlowButton variant={isVipLobby ? "gold" : "blue"} size="sm" className="h-9 px-6 sm:ml-0" onClick={() => navigate(`/lobby/${item.id}`)}>{isRtl ? "عضویت" : "Join"}</GlowButton>
+ <GlowButton variant={isVipLobby ? "gold" : "blue"} size="sm" className="h-9 px-6 sm:ml-0 hover:scale-[1.02] transition-transform" onClick={() => navigate(`/lobby/${item.id}`)}>{isRtl ? "عضویت" : "Join"}</GlowButton>
  </div>
  </div>
  </NeonCard>
