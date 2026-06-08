@@ -25,13 +25,24 @@ export const createNamespaceSocket = (namespace: string, withAuth = true) => {
 
   const socketURL = isProductionLoxx && isUsingFallback ? "https://loxx.ir" : activeSocketURL;
 
+  // Retrieve network bypass configurations from localStorage
+  const bypassProxy = typeof window !== 'undefined' && localStorage.getItem("loxx_bypass_system_proxy") === "true";
+  const dnsProvider = typeof window !== 'undefined' && localStorage.getItem("loxx_app_dns_provider") || "system";
+
+  // Force pure 'websocket' transport to bypass proxy buffering if bypassProxy is active
+  const transportsConfig = bypassProxy ? ['websocket'] : ['websocket', 'polling'];
+
   const socket = io(`${socketURL}/${namespace}`, {
     path: '/api/v1/socket.io',
     autoConnect: false,
-    transports: ['websocket', 'polling'], // Start with websocket directly for lowest latency, fallback to polling if blocked
+    transports: transportsConfig,
     reconnectionDelay: 1000,
-    reconnectionDelayMax: 5000,
-    query: { isElectron: isElectron ? "true" : "false" },
+    reconnectionDelayMax: 4000,
+    query: { 
+      isElectron: isElectron ? "true" : "false",
+      bypassProxy: bypassProxy ? "true" : "false",
+      dnsProvider: dnsProvider
+    },
     ...authConfig
   });
 

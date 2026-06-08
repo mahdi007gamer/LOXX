@@ -131,6 +131,8 @@ interface LobbyContextType {
  launcherHardwareAcceleration: boolean;
  launcherGlobalPttKey: string;
  launcherGlobalMuteKey: string;
+  bypassSystemProxy: boolean;
+  appDnsProvider: "system" | "cloudflare" | "google" | "electro" | "shecan";
  updateLauncherSettings: (settings: { voiceMode?: "activation" | "ptt";
  closeToTray?: boolean;
  startAtLogin?: boolean;
@@ -342,6 +344,18 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
  const [launcherHardwareAcceleration, setLauncherHardwareAcceleration] = useState<boolean>(true);
  const [launcherGlobalPttKey, setLauncherGlobalPttKey] = useState<string>("CommandOrControl+Alt+V");
  const [launcherGlobalMuteKey, setLauncherGlobalMuteKey] = useState<string>("=");
+  const [bypassSystemProxy, setBypassSystemProxy] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("loxx_bypass_system_proxy") === "true";
+    }
+    return false;
+  });
+  const [appDnsProvider, setAppDnsProvider] = useState<"system" | "cloudflare" | "google" | "electro" | "shecan">(rawDnsVal => {
+    if (typeof window !== "undefined") {
+      return (localStorage.getItem("loxx_app_dns_provider") as any) || "system";
+    }
+    return "system";
+  });
 
  // New Desktop Features States
  const [audioInputDevices, setAudioInputDevices] = useState<MediaDeviceInfo[]>([]);
@@ -536,7 +550,7 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
  }, [gameDetected]);
 
  useEffect(() => {
- const checkElectron = typeof window !== "undefined" && !!(window as any).electronAPI;
+const checkElectron = typeof window !== "undefined" && !!(window as any).electronAPI;
  setIsElectron(checkElectron);
  if (checkElectron) {
  const api = (window as any).electronAPI;
@@ -554,6 +568,14 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
  if (settings.overlayOpacity !== undefined) setOverlayOpacity(Number(settings.overlayOpacity));
  if (settings.overlayClickThrough !== undefined) setOverlayClickThrough(!!settings.overlayClickThrough);
  if (settings.overlayEnabled !== undefined) setTransparentOverlayEnabled(!!settings.overlayEnabled);
+        if (settings.bypassSystemProxy !== undefined) {
+          setBypassSystemProxy(!!settings.bypassSystemProxy);
+          localStorage.setItem("loxx_bypass_system_proxy", String(settings.bypassSystemProxy));
+        }
+        if (settings.appDnsProvider !== undefined) {
+          setAppDnsProvider(settings.appDnsProvider);
+          localStorage.setItem("loxx_app_dns_provider", settings.appDnsProvider);
+        }
  }
  }).catch((err: any) => console.error("Error loading Electron launcher settings:", err));
 
@@ -2008,6 +2030,8 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
  launcherGlobalPttKey,
  launcherGlobalMuteKey,
  updateLauncherSettings,
+  bypassSystemProxy,
+  appDnsProvider,
 
  // New Desktop bindings
  audioInputDevices,
