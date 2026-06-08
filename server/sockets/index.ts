@@ -560,6 +560,167 @@ export function setupWebSockets(io: Server) {
     }
   };
 
+  // Symmetric Fingilish-Persian mapped dictionary for artist & song titles search reinforcement
+  const FINGILISH_MAP: Record<string, string> = {
+    // Fingilish to Persian
+    "mehrad": "مهراد",
+    "hidden": "هیدن",
+    "mar": "مار",
+    "maaar": "مار",
+    "saman": "سامان",
+    "wilson": "ویلسون",
+    "arash": "آرش",
+    "shayea": "شایع",
+    "yas": "یاس",
+    "hichkas": "هیچکس",
+    "pishro": "پیشرو",
+    "reza": "رضا",
+    "sadegh": "صادق",
+    "hosein": "حصین",
+    "hassan": "حسن",
+    "shajarian": "شجریان",
+    "homayoun": "همایون",
+    "behzad": "بهزاد",
+    "leito": "لیتو",
+    "alireza": "علیرضا",
+    "jj": "جی جی",
+    "sijal": "سیجل",
+    "sohrab": "سهراب",
+    "mj": "ام جی",
+    "zedbazi": "زدبازی",
+    "tataloo": "تتلو",
+    "amirtataloo": "تتلو",
+    "khashayar": "خشایار",
+    "erfan": "عرفان",
+    "gdaal": "جی دال",
+    "taham": "تهم",
+    "paya": "پایا",
+    "wantons": "وانتونز",
+    "sami": "sami",
+    "lowghab": "لوکاب",
+    "behim": "بهیم",
+    "bahram": "بهرام",
+    "noura": "نورا",
+    "sorena": "سورنا",
+    "ali": "علی",
+    "fadaei": "فدائی",
+    "dariush": "داریوش",
+    "ghadr": "قدر",
+    "mohalek": "مهلک",
+    "farzad": "فرزاد",
+    "farzin": "فرزین",
+    "mohsen": "محسن",
+    "yeganeh": "یگانه",
+    "chavoshi": "چاوشی",
+    "shadmehr": "شادمهر",
+    "aghili": "عقیلی",
+    "samanjalili": "سامان جلیلی",
+    "ehsan": "احسان",
+    "khajeamiri": "خواجه امیری",
+    "sirvan": "سیروان",
+    "khosravi": "خسروی",
+    "xaniar": "زانیار",
+    "macan": "ماکان",
+    "puzzle": "پازل",
+    "hamid": "حمید",
+    "hiraad": "هیراد",
+    "hirad": "هیراد",
+    "behnambani": "بهنام بانی",
+    "bani": "بانی",
+    "behnam": "بهنام",
+
+    // Persian to Fingilish
+    "مهراد": "mehrad",
+    "هیدن": "hidden",
+    "مار": "mar",
+    "سامان": "saman",
+    "ویلسون": "wilson",
+    "آرش": "arash",
+    "شایع": "shayea",
+    "یاس": "yas",
+    "هیچکس": "hichkas",
+    "پیشرو": "pishro",
+    "رضا": "reza",
+    "صادق": "sadegh",
+    "حصین": "hosein",
+    "حسن": "hassan",
+    "شجریان": "shajarian",
+    "همایون": "homayoun",
+    "بهزاد": "behzad",
+    "لیتو": "leito",
+    "علیرضا": "alireza",
+    "جی جی": "jj",
+    "سیجل": "sijal",
+    "سهراب": "sohrab",
+    "ام جی": "mj",
+    "تتلو": "tataloo",
+    "خشایار": "khashayar",
+    "عرفان": "erfan",
+    "بهرام": "bahram",
+    "سورنا": "sorena",
+    "علی": "ali",
+    "فدائی": "fadaei",
+    "فرزاد": "farzad",
+    "فرزین": "farzin",
+    "محسن": "mohsen",
+    "یگانه": "yeganeh",
+    "چاوشی": "chavoshi",
+    "شادمهر": "shadmehr",
+    "عقیلی": "aghili",
+    "احسان": "ehsan",
+    "خواجه امیری": "khajeamiri",
+    "سیروان": "sirvan",
+    "خسروی": "khosravi",
+    "زانیار": "xaniar",
+    "حمید": "hamid",
+    "هیراد": "hirad",
+    "بهنام": "behnam",
+    "بانی": "bani"
+  };
+
+  const calculateScore = (title: string, url: string, query: string): number => {
+    const normTitle = title.toLowerCase()
+      .replace(/ي/g, "ی")
+      .replace(/ك/g, "ک")
+      .replace(/[\u200B-\u200D\uFEFF]/g, " ");
+    const normUrl = decodeURIComponent(url).toLowerCase();
+    const normQuery = query.toLowerCase()
+      .replace(/ي/g, "y")
+      .replace(/ك/g, "k")
+      .replace(/[\u200B-\u200D\uFEFF]/g, " ");
+
+    const simplifyWord = (w: string) => {
+      return w.replace(/([a-zA-Z])\1+/g, "$1"); // Collapses duplicate consecutive letters (e.g., maaar -> maar)
+    };
+
+    const queryWords = normQuery.split(/\s+/).filter(w => w.length > 1);
+    if (queryWords.length === 0) return 0;
+
+    let matchedCount = 0;
+    for (const qw of queryWords) {
+      const simplifiedQw = simplifyWord(qw);
+      
+      const directMatch = normTitle.includes(qw) || normUrl.includes(qw);
+      const simplifiedMatch = simplifyWord(normTitle).includes(simplifiedQw) || simplifyWord(normUrl).includes(simplifiedQw);
+      
+      let translationMatch = false;
+      if (FINGILISH_MAP[qw]) {
+        const trans = FINGILISH_MAP[qw];
+        translationMatch = normTitle.includes(trans) || normUrl.includes(trans);
+      }
+
+      if (directMatch || simplifiedMatch || translationMatch) {
+         matchedCount += 1;
+      }
+    }
+
+    if (normTitle.includes(normQuery) || normUrl.includes(normQuery)) {
+      matchedCount += 1.5; // Phrase bonus
+    }
+
+    return matchedCount / queryWords.length;
+  };
+
   // Search online track from web or itunes API as fallback
   const searchOnlineTrack = async (query: string, lobbyId?: string): Promise<{ title: string; url: string; coverUrl: string; duration: number } | null> => {
     console.log(`[MusicBot Search] Searching for query: "${query}"`);
@@ -608,16 +769,34 @@ export function setupWebSockets(io: Server) {
 
     console.log(`[MusicBot Search] Found ${validPosts.length} potential posts across the 5 sites.`);
 
-    // Scrape them in order (limit to first 6 hits to avoid overloading)
-    for (const url of validPosts.slice(0, 6)) {
-      const result = await extractMp3FromWebPage(url, lobbyId);
-      if (result) {
-        console.log(`[MusicBot Search] Successfully extracted track: "${result.title}"`);
-        if (lobbyId) {
-          await sendBotLobbyMessage(lobbyId, "melody", `✅ موزیک با موفقیت پیدا و به صف لابی متصل گردید:\n🎵 «${result.title}»`);
+    // Scrape top candidates in parallel to optimize speed and choose the best matched track
+    const candidatesToScrape = validPosts.slice(0, 8);
+    const scrapedResults: { score: number; result: any }[] = [];
+
+    await Promise.all(candidatesToScrape.map(async (url) => {
+      try {
+        const resObj = await extractMp3FromWebPage(url, lobbyId);
+        if (resObj && resObj.url) {
+          const score = calculateScore(resObj.title, url, query);
+          scrapedResults.push({ score, result: resObj });
         }
-        return result;
+      } catch (scrapErr) {
+        // Safe skip failed page scrapings
       }
+    }));
+
+    // Sort candidates by score descending
+    scrapedResults.sort((a, b) => b.score - a.score);
+
+    // If we have a candidate with a reasonable matching score, pick the best one
+    // Threshold set to 0.2 to ensure at least some keyword is present
+    if (scrapedResults.length > 0 && scrapedResults[0].score >= 0.20) {
+      const bestCandidate = scrapedResults[0].result;
+      console.log(`[MusicBot Search] Selected best match: "${bestCandidate.title}" with score ${scrapedResults[0].score}`);
+      if (lobbyId) {
+        await sendBotLobbyMessage(lobbyId, "melody", `✅ موزیک با موفقیت پیدا و به صف لابی متصل گردید:\n🎵 «${bestCandidate.title}»`);
+      }
+      return bestCandidate;
     }
 
     // 2. Fallback to iTunes Search API
@@ -1088,6 +1267,8 @@ export function setupWebSockets(io: Server) {
               duration: t.duration || t.durationSeconds || 0
             }));
           }
+          
+          const oldTrackUrl = bot.currentTrackUrl;
           if (resolvedQueue !== undefined) bot.queue = resolvedQueue;
           if (queueIndex !== undefined) bot.queueIndex = queueIndex;
 
@@ -1098,12 +1279,15 @@ export function setupWebSockets(io: Server) {
               return ack?.({ status: "error", message: "⚠️ موزیک مورد نظر شما بیشتر از ۱۳ دقیقه است. لطفاً قطعه کوتاهتری انتخاب کنید." });
             }
 
-            bot.currentTrackUrl = bot.queue[activeIdx].url;
-            bot.currentTrackName = bot.queue[activeIdx].name;
-            bot.currentTrackCover = bot.queue[activeIdx].coverUrl || "";
-            bot.currentTime = 0;
-            bot.duration = bot.queue[activeIdx].duration || 0;
-            bot.updatedAt = Date.now();
+            const newTrackUrl = bot.queue[activeIdx].url;
+            if (queueIndex !== undefined || newTrackUrl !== oldTrackUrl) {
+              bot.currentTrackUrl = bot.queue[activeIdx].url;
+              bot.currentTrackName = bot.queue[activeIdx].name;
+              bot.currentTrackCover = bot.queue[activeIdx].coverUrl || "";
+              bot.currentTime = 0;
+              bot.duration = bot.queue[activeIdx].duration || 0;
+              bot.updatedAt = Date.now();
+            }
           }
 
           if (trackUrl) bot.currentTrackUrl = trackUrl;
