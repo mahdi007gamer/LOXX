@@ -1869,13 +1869,15 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     const baseVolume = isDeafened ? 0 : botVolumeLevel;
     
-    let targetVol = (baseVolume / 100) * musicVolumeSilence;
+    let targetVol = (baseVolume / 100) * (musicVolumeSilence / 100);
     if (hasHighPeerActivity) {
-      targetVol = (baseVolume / 100) * musicVolumeTalking;
+      targetVol = (baseVolume / 100) * (musicVolumeTalking / 100);
       setIsDucking(true);
     } else {
       setIsDucking(false);
     }
+
+    targetVol = Math.max(0, Math.min(1, targetVol));
 
     if (Math.abs(audioEl.volume - targetVol) > 0.01) {
       const step = (targetVol - audioEl.volume) / 10;
