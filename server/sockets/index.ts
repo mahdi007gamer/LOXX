@@ -443,11 +443,7 @@ export function setupWebSockets(io: Server) {
         }
       }
     } catch (apiErr: any) {
-      const errMessage = `⚠️ [${site.name}] خطای جستجوی وب‌سرویس: ${apiErr.message}`;
-      console.log(errMessage);
-      if (lobbyId) {
-        await sendBotLobbyMessage(lobbyId, "melody", errMessage);
-      }
+      console.log(`⚠️ [${site.name}] خطای جستجوی وب‌سرویس: ${apiErr.message}`);
     }
 
     // Try 2: HTML Search (Only if WP API returned nothing or had an error)
@@ -474,11 +470,7 @@ export function setupWebSockets(io: Server) {
           }
         }
       } catch (htmlErr: any) {
-        const errMessage = `⚠️ [${site.name}] خطای جستجوی وب‌پیج: ${htmlErr.message}`;
-        console.log(errMessage);
-        if (lobbyId) {
-          await sendBotLobbyMessage(lobbyId, "melody", errMessage);
-        }
+        console.log(`⚠️ [${site.name}] خطای جستجوی وب‌پیج: ${htmlErr.message}`);
       }
     }
 
@@ -514,9 +506,6 @@ export function setupWebSockets(io: Server) {
 
       if (validMp3s.length === 0) {
         console.log(`[MusicBot Scraper] No valid MP3s on page: ${pageUrl}`);
-        if (lobbyId) {
-          await sendBotLobbyMessage(lobbyId, "melody", `⚠️ هیچ لینک دانلود MP3 معتبری در صفحه پیدا نشد:\n ${pageUrl}`);
-        }
         return null;
       }
 
@@ -567,9 +556,6 @@ export function setupWebSockets(io: Server) {
       };
     } catch (err: any) {
       console.error(`[MusicBot Scraper] Failed to scrape ${pageUrl}:`, err.message || err);
-      if (lobbyId) {
-        await sendBotLobbyMessage(lobbyId, "melody", `❌ خطا در استخراج فایل صوتی از صفحه:\n${pageUrl}\nارور: ${err.message}`);
-      }
       return null;
     }
   };
@@ -578,7 +564,7 @@ export function setupWebSockets(io: Server) {
   const searchOnlineTrack = async (query: string, lobbyId?: string): Promise<{ title: string; url: string; coverUrl: string; duration: number } | null> => {
     console.log(`[MusicBot Search] Searching for query: "${query}"`);
     if (lobbyId) {
-      await sendBotLobbyMessage(lobbyId, "melody", `🔍 در حال شروع جستجوی آنلاین آهنگ «${query}» در ۵ سایت اختصاصی ملودی لوکس...`);
+      await sendBotLobbyMessage(lobbyId, "melody", `🔍 در حال جستجوی آنلاین آهنگ «${query}»...`);
     }
 
     const sites = [
@@ -597,9 +583,7 @@ export function setupWebSockets(io: Server) {
         const siteLinks = await searchSite(site, query, lobbyId);
         resultsMap.set(site.domain, siteLinks);
       } catch (e: any) {
-        if (lobbyId) {
-          await sendBotLobbyMessage(lobbyId, "melody", `⚠️ خطای غیرمنتظره در جستجوی ${site.name}: ${e.message}`);
-        }
+        console.error(`⚠️ خطای جستجوی ${site.name}: ${e.message}`);
       }
     }));
 
@@ -623,9 +607,6 @@ export function setupWebSockets(io: Server) {
     }
 
     console.log(`[MusicBot Search] Found ${validPosts.length} potential posts across the 5 sites.`);
-    if (lobbyId) {
-      await sendBotLobbyMessage(lobbyId, "melody", `📡 تعداد ${validPosts.length} صفحه مطلب مرتبط در وب‌سایت‌ها شناسایی شد. در حال بررسی جهت استخراج مستقیم فایل موسیقی...`);
-    }
 
     // Scrape them in order (limit to first 6 hits to avoid overloading)
     for (const url of validPosts.slice(0, 6)) {
@@ -642,9 +623,6 @@ export function setupWebSockets(io: Server) {
     // 2. Fallback to iTunes Search API
     try {
       console.log(`[MusicBot Search] Querying iTunes for: "${query}"`);
-      if (lobbyId) {
-        await sendBotLobbyMessage(lobbyId, "melody", `🔄 در حال تلاش برای جستجو در سرویس بین‌المللی iTunes به عنوان منبع جایگزین...`);
-      }
       const searchUrl = `https://itunes.apple.com/search?media=music&term=${encodeURIComponent(query)}&limit=1`;
       const res = await axios.get(searchUrl, { timeout: 4000, proxy: false });
       if (res.data?.results && res.data.results.length > 0) {
@@ -661,18 +639,28 @@ export function setupWebSockets(io: Server) {
         };
       }
     } catch (itunesErr: any) {
-      if (lobbyId) {
-        await sendBotLobbyMessage(lobbyId, "melody", `⚠️ خطای جستجوی iTunes: ${itunesErr.message}`);
-      }
+      console.error(`⚠️ خطای جستجوی iTunes: ${itunesErr.message}`);
     }
 
     return null;
+  };
+
+  const refreshMusicBotTime = (bot: any) => {
+    if (bot && bot.isPlaying && bot.updatedAt) {
+      const elapsed = (Date.now() - bot.updatedAt) / 1000;
+      bot.currentTime = (bot.currentTime || 0) + elapsed;
+      if (bot.duration && bot.currentTime > bot.duration) {
+        bot.currentTime = bot.duration;
+      }
+      bot.updatedAt = Date.now();
+    }
   };
 
   const handleMelodyCommand = async (lobbyId: string, cmd: "p" | "stop" | "skip" | "queue", arg: string) => {
     try {
       let bot = lobbyMusicBots.get(lobbyId);
       if (!bot || !bot.active || bot.botType !== "melody") return;
+      refreshMusicBotTime(bot);
 
       if (cmd === "p") {
         const query = arg.trim();
@@ -901,7 +889,11 @@ export function setupWebSockets(io: Server) {
     // Dynamic Music Bot Sockets handlers
     socket.on("lobby.musicbot.get_state", (data: { lobbyId: string }, ack?: any) => {
       const { lobbyId } = data;
-      const bot = lobbyMusicBots.get(lobbyId) || {
+      const bot = lobbyMusicBots.get(lobbyId);
+      if (bot) {
+        refreshMusicBotTime(bot);
+      }
+      const returnedBot = bot || {
         active: false,
         isPlaying: false,
         botType: "music",
@@ -915,9 +907,9 @@ export function setupWebSockets(io: Server) {
         updatedAt: Date.now()
       };
       if (ack) {
-        ack({ status: "success", data: bot });
+        ack({ status: "success", data: returnedBot });
       } else {
-        socket.emit("lobby.musicbot.state", bot);
+        socket.emit("lobby.musicbot.state", returnedBot);
       }
     });
 
@@ -1026,6 +1018,9 @@ export function setupWebSockets(io: Server) {
         }
 
         let bot = lobbyMusicBots.get(lobbyId);
+        if (bot) {
+          refreshMusicBotTime(bot);
+        }
         const isMelody = bot && bot.botType === "melody";
 
         // Check control permissions

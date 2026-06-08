@@ -877,6 +877,8 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 				let myvad: any = null;
 				MicVAD.new({
 					getStream: () => Promise.resolve(localStream),
+					baseAssetPath: "https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.30/dist/",
+					onnxWASMBasePath: "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.26.0/dist/",
 					positiveSpeechThreshold: Math.max(0.1, Math.min(0.99, (40 - micSensitivityRef.current) / 40)), // Map 1-40 to threshold where 1 is highest sensitivity (smallest threshold)
 					onSpeechStart: () => {
 						if (!isTalking) {
