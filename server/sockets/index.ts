@@ -1,6 +1,7 @@
 import { Server, Socket } from "socket.io";
 import path from "path";
 import axios from "axios";
+axios.defaults.proxy = false;
 import { AuthService } from "../services/auth.service.ts";
 import { RankingService } from "../services/ranking.service.ts";
 import { PenaltyService } from "../services/penalty.service.ts";
@@ -431,7 +432,8 @@ export function setupWebSockets(io: Server) {
       const wpUrl = `${site.domain}/wp-json/wp/v2/posts?search=${encodeURIComponent(query)}&_fields=id,title,link&per_page=3`;
       const res = await axios.get(wpUrl, {
         headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" },
-        timeout: 5000
+        timeout: 5000,
+        proxy: false
       });
       if (res.data && Array.isArray(res.data)) {
         for (const post of res.data) {
@@ -454,7 +456,8 @@ export function setupWebSockets(io: Server) {
         const searchUrl = `${site.domain}/?s=${encodeURIComponent(query)}`;
         const res = await axios.get(searchUrl, {
           headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" },
-          timeout: 5000
+          timeout: 5000,
+          proxy: false
         });
         const html = res.data || "";
         const domainEscaped = site.domain.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -490,7 +493,8 @@ export function setupWebSockets(io: Server) {
         headers: {
           "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         },
-        timeout: 5000
+        timeout: 5000,
+        proxy: false
       });
       const html = res.data || "";
       
@@ -642,7 +646,7 @@ export function setupWebSockets(io: Server) {
         await sendBotLobbyMessage(lobbyId, "melody", `🔄 در حال تلاش برای جستجو در سرویس بین‌المللی iTunes به عنوان منبع جایگزین...`);
       }
       const searchUrl = `https://itunes.apple.com/search?media=music&term=${encodeURIComponent(query)}&limit=1`;
-      const res = await axios.get(searchUrl, { timeout: 4000 });
+      const res = await axios.get(searchUrl, { timeout: 4000, proxy: false });
       if (res.data?.results && res.data.results.length > 0) {
         const match = res.data.results[0];
         console.log(`[MusicBot Search] Successfully extracted track from iTunes: "${match.trackName}"`);

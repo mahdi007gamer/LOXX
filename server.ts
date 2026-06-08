@@ -35,14 +35,18 @@ import { generalLimiter } from "./server/middleware/rateLimit.middleware.ts";
 
 dotenv.config();
 
-// Debug Proxy Settings
+// Debug & Clean Proxy Settings to prevent ECONNREFUSED (e.g. from GitHub update SSH tunnel proxy 127.0.0.1:2080)
 const proxyVars = ['HTTP_PROXY', 'HTTPS_PROXY', 'ALL_PROXY', 'http_proxy', 'https_proxy', 'all_proxy'];
-console.log("[DEBUG] Current Proxy Env Vars:");
+console.log("[DEBUG] Checking & cleaning system proxy variables to run cleanly without ECONNREFUSED:");
 proxyVars.forEach(v => {
   if (process.env[v]) {
-    console.log(`  ${v}: ${process.env[v]}`);
+    console.log(`  Removing active proxy env var: ${v} = ${process.env[v]}`);
+    delete process.env[v];
   }
 });
+
+import axios from "axios";
+axios.defaults.proxy = false;
 
 async function startServer() {
   const app = express();
@@ -138,7 +142,8 @@ async function startServer() {
       const { default: axios } = await import("axios");
       const proxyRes = await axios.get(targetUrl, {
         responseType: "stream",
-        headers: { "User-Agent": "Mozilla/5.0" }
+        headers: { "User-Agent": "Mozilla/5.0" },
+        proxy: false
       });
       
       res.setHeader("Content-Type", String(proxyRes.headers["content-type"] || "audio/mpeg"));
