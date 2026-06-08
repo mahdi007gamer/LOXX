@@ -1,11 +1,166 @@
 @import "tailwindcss";
 
-@theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+@font-face {
+  font-family: 'Kalameh';
+  src: url('/fonts/Kalameh/Kalameh-Thin.woff2') format('woff2');
+  font-weight: 100;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Kalameh';
+  src: url('/fonts/Kalameh/Kalameh-Light.woff2') format('woff2');
+  font-weight: 300;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Kalameh';
+  src: url('/fonts/Kalameh/Kalameh-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Kalameh';
+  src: url('/fonts/Kalameh/Kalameh-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Kalameh';
+  src: url('/fonts/Kalameh/Kalameh-SemiBold.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Kalameh';
+  src: url('/fonts/Kalameh/Kalameh-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Kalameh';
+  src: url('/fonts/Kalameh/Kalameh-ExtraBold.woff2') format('woff2');
+  font-weight: 800;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Kalameh';
+  src: url('/fonts/Kalameh/Kalameh-Black.woff2') format('woff2');
+  font-weight: 900;
+  font-style: normal;
 }
 
-body {
-    background-color: #000;
-    color: #fff;
+@theme {
+  --font-sans: "Kalameh", ui-sans-serif, system-ui, sans-serif;
+  
+  --color-neon-blue: #00E5FF;
+  --color-neon-pink: #FF0099;
+  --color-neon-purple: #A020F0;
+  --color-dark-bg: #0A0A0F;
+  --color-dark-card: rgba(20, 20, 30, 0.7);
+
+  --shadow-neon-blue: 0 0 10px rgba(0, 229, 255, 0.5), 0 0 20px rgba(0, 229, 255, 0.3);
+  --shadow-neon-pink: 0 0 10px rgba(255, 0, 153, 0.5), 0 0 20px rgba(255, 0, 153, 0.3);
 }
+
+@layer base {
+  :root {
+    color-scheme: dark;
+    --navbar-height: 64px;
+  }
+  
+  body {
+    @apply bg-dark-bg text-gray-100 font-sans selection:bg-neon-pink selection:text-white overflow-x-hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  html, body {
+    overflow-x: hidden;
+    background-color: #050508;
+    color: #ffffff;
+  }
+
+  select, option {
+    background-color: #0d0d12;
+    color: #ffffff;
+  }
+
+  /* Custom scrollbar for cyberpunk feel */
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-dark-bg;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-neon-purple/30 rounded-full hover:bg-neon-purple/50 transition-colors;
+  }
+}
+
+/* Utilities for glassmorphism and neon glows */
+@layer utilities {
+  .glass {
+    @apply bg-dark-card border border-white/10;
+  }
+  .neon-border-blue {
+    @apply border border-neon-blue/50 shadow-[var(--shadow-neon-blue)];
+  }
+  .neon-border-pink {
+    @apply border border-neon-pink/50 shadow-[var(--shadow-neon-pink)];
+  }
+  .neon-text-blue {
+    @apply text-neon-blue drop-shadow-[0_0_8px_rgba(0,229,255,0.8)];
+  }
+  .neon-text-pink {
+    @apply text-neon-pink drop-shadow-[0_0_8px_rgba(255,0,153,0.8)];
+  }
+}
+
+.modern-glass-toast {
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.8), inset 0 0 0 1px rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  animation: toast-glow-pulse 4s infinite ease-in-out;
+  overflow: hidden;
+}
+
+.modern-glass-toast::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0, 229, 255, 0.4), transparent);
+}
+
+@keyframes toast-glow-pulse {
+  0%, 100% { border-color: rgba(255, 255, 255, 0.15); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8); }
+  50% { border-color: rgba(0, 229, 255, 0.3); box-shadow: 0 0 25px rgba(0, 229, 255, 0.15), 0 8px 32px 0 rgba(0, 0, 0, 0.8); }
+}
+
+@keyframes enter {
+  0% { transform: scale(0.9) translateY(20px); opacity: 0; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+@keyframes leave {
+  0% { transform: scale(1) translateY(0); opacity: 1; }
+  100% { transform: scale(0.9) translateY(20px); opacity: 0; }
+}
+
+.animate-enter {
+  animation: enter 0.35s cubic-bezier(0.21, 1.02, 0.35, 1) forwards;
+}
+
+.animate-leave {
+  animation: leave 0.25s cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
+/* Custom Electron drag region utilities */
+.titlebar-drag {
+  -webkit-app-region: drag !important;
+}
+.titlebar-nodrag {
+  -webkit-app-region: no-drag !important;
+}
+

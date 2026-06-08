@@ -91,7 +91,7 @@ export const ScreenSplash = ({ onComplete }: { onComplete: () => void }) => {
  {/* Intense back glow */}
  <div className="absolute inset-0 bg-gradient-to-r from-neon-blue to-neon-pink rounded-3xl blur-2xl opacity-45 scale-110 animate-pulse" />
  
- <div className="relative h-28 w-28 bg-[#0a0a14] border border-white/15 p-4 rounded-3xl shadow-[0_0_50px_rgba(0,229,255,0.2)] flex items-center justify-center">
+ <div className="relative h-28 w-28 bg-[#0a0a14] border border-white/10 p-4 rounded-3xl shadow-[0_0_50px_rgba(0,229,255,0.2)] flex items-center justify-center">
  <img 
  src="/logo.png" 
  className="h-20 w-auto object-contain drop-shadow-[0_0_15px_rgba(255,0,127,0.6)] animate-pulse" 
@@ -114,7 +114,7 @@ export const ScreenSplash = ({ onComplete }: { onComplete: () => void }) => {
  {isRtl ? "لوکس | اولین پلتفرم پیشرفته گیمینگ فارسی" : "LOXX | First Advanced Gaming Platform"}
  </p>
  <p className="text-[10px] text-gray-500 font-bold uppercase mt-1">
- {isRtl ? "بستر امن چت صوتی و لابی بازیها" : "Secure Real-time Voice Chat & Multiplayer Lobby"}
+ {isRtl ? "بستر امن چت صوتی و لابی بازی‌ها" : "Secure Real-time Voice Chat & Multiplayer Lobby"}
  </p>
  </motion.div>
 
