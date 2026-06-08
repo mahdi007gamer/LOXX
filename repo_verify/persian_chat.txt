@@ -1,0 +1,178 @@
+44:        return <div title="مدیریت لوکس" className="text-red-500 animate-pulse"><Shield size={12} fill="currentColor" /></div>;
+81:      { id: 'reply', label: 'پاسخ دادن', icon: <Reply size={14} />, onClick: () => onReply(message) },
+102:      actions.push({ id: 'copy', label: 'کپی متن', icon: <Copy size={14} />, onClick: () => navigator.clipboard.writeText(message.text) });
+105:      actions.push({ id: 'save-img', label: 'ذخیره تصویر', icon: <Save size={14} />, onClick: () => handleSaveMedia(getFileUrl(message.image!), 'image') });
+108:      actions.push({ id: 'save-gif', label: 'ذخیره گیف', icon: <Save size={14} />, onClick: () => handleSaveMedia(message.gif!, 'gif') });
+111:      actions.push({ id: 'delete', label: 'حذف پیام', icon: <Trash2 size={14} />, destructive: true, onClick: () => onDelete(message.id) });
+343:                   title="گزارش محتوا"
+352:                   title="پین پیام"
+361:                  title="حذف پیام"
+371:                    title="ثبت اخطار برای کاربر"
+378:                    title="ساکت کردن (Mute)"
+664:      { id: "general", name: "چت عمومی", type: "public", users: 0 },
+665:      { id: "news", name: "اخبار گیمینگ", type: "public", users: 0 },
+673:      senderName: "مازیار", 
+676:      text: "سلام بچه‌ها! کسی پایه هست بریم CS2؟", 
+685:      senderName: "امیر", 
+688:      text: "من هستم، لابی بساز جوین شیم.", 
+696:      senderName: "خودم", 
+700:      text: "منم میام، فقط پینگ چطوره؟", 
+708:      senderName: "مازیار", 
+711:      text: "پینگ عالیه، زیر ۵۰ هست.", 
+715:      replyTo: { id: "3", user: "خودم", text: "منم میام، فقط پینگ چطوره؟" }
+720:      senderName: "مازیار",
+723:      text: "دعوتتون می‌کنم به لابی، زود بیاید!",
+850:      toast.error("فقط فایل‌های JPG، PNG، GIF و WEBP مجاز هستند");
+855:      toast.error("حجم فایل نباید بیشتر از ۵ مگابایت باشد");
+860:      toast.error("فقط فرمت‌های jpg و png مجاز هستند");
+872:      toast.success("تصویر با موفقیت آپلود شد");
+874:      toast.error(err.response?.data?.error?.message || "خطا در آپلود تصویر");
+882:      toast.success("لینک جدید تولید شد: " + window.location.origin + "/invite/" + res.data.data.inviteCode);
+884:      toast.error(err.response?.data?.error?.message || "خطا در ساخت لینک اختصاصی");
+1006:       toast.error("نام گروه نمی‌تواند خالی باشد");
+1011:      toast.success("تنظیمات گروه با موفقیت به‌روز شد");
+1015:      toast.error(err.response?.data?.error?.message || "خطا در به‌روزرسانی گروه");
+1020:    if (!confirm("آیا از حذف کامل این گروه اطمینان دارید؟")) return;
+1023:      toast.success("گروه با موفقیت حذف شد");
+1028:      toast.error(err.response?.data?.error?.message || "خطا در حذف گروه");
+1033:    if (!confirm("آیا از اخراج این کاربر اطمینان دارید؟")) return;
+1036:      toast.success("کاربر از گروه اخراج شد");
+1039:      toast.error(err.response?.data?.error?.message || "خطا در اخراج کاربر");
+1045:      if (!confirm(`آیا مطمئن هستید که می‌خواهید کاربر را برای ${durationMinutes} دقیقه معلق کنید؟`)) return;
+1047:      toast.success(`کاربر برای ${durationMinutes} دقیقه معلق شد`);
+1049:      toast.error(err.response?.data?.error?.message || "خطا در معلق کردن کاربر");
+1054:    if (!confirm("آیا مطمئن هستید؟ کاربر برای همیشه از گروه بن خواهد شد")) return;
+1057:      toast.success("کاربر با موفقیت از گروه بن شد");
+1060:      toast.error(err.response?.data?.error?.message || "خطا در بن کردن کاربر");
+1067:       toast.success("پیام با موفقیت پین شد!");
+1070:       toast.error(err.response?.data?.error?.message || "خطا در پین کردن پیام");
+1076:      toast.error("دوستانی که می‌خواهید دعوت کنید را انتخاب کنید");
+1081:      toast.success("دعوتنامه با موفقیت ارسال شد");
+1086:       toast.error(err.response?.data?.error?.message || "خطا در ارسال دعوتنامه");
+1093:      toast.success("با موفقیت از گروه خارج شدید");
+1097:      toast.error(err.response?.data?.error?.message || "خطا در خروج از گروه");
+1149:          toast.error(`خطا در اتصال به کانال: ${res.error?.message || "نامشخص"}`);
+1231:            m.id === data.messageId ? { ...m, isDeleted: true, text: "این پیام حذف شده است." } : m
+1263:      name: `چت ${g.title}`,
+1276:      name: friend?.displayName || friendChat?.tempDisplayName || "گفتگو", 
+1345:       senderName: isNewsChannel ? "لوکس" : (from.username || "کاربر ناشناس"),
+1364:           user: isNewsChannel ? "لوکس" : (msg.replyTo.user || "ناشناس"), 
+1365:           text: msg.replyTo.text || "پیام ریپلای شده..." 
+1366:        } : (msg.replyToId ? { id: msg.replyToId.toString(), user: "ناشناس", text: "پیام ریپلای شده..." } : undefined)
+1371:    m => !m.isDeleted && m.text !== "این پیام حذف شده است."
+1421:       senderName: user?.username || "شما",
+1523:      toast.error("ذخیره کردن پیام گیف مخصوص کاربران دارای اشتراک VIP یا Plus است.");
+1528:      toast.success("این گیف قبلاً ذخیره شده است.");
+1536:    toast.success("گیف با موفقیت در علاقه‌مندی‌ها ذخیره شد!");
+1544:       senderName: user?.username || "شما",
+1598:      toast.error("لطفاً فقط فایل‌های با فرمت GIF ارسال کنید.");
+1624:        toast.success(res.data.status === "duplicate" ? "گیف قبلا آپلود شده بود و فورا متصل شد!" : "گیف جدید با موفقیت آپلود شد!");
+1628:      toast.error(e.response?.data?.error?.message || "خطا در آپلود فایل گیف.");
+1649:       content: `بیاین لابی، من منتظرم!\n[LOBBY_INVITE]:${JSON.stringify(inviteData)}`,
+1653:     toast.success("دعوت‌نامه ارسال شد");
+1701:        alert("خطا در ارسال خبر: " + res.error?.message);
+1707:    if (confirm("آیا از حذف این پیام اطمینان دارید؟")) {
+1713:    if (confirm(`آیا مطمئن هستید که می‌خواهید به کاربر "${senderName}" اخطار بدهید؟`)) {
+1716:          toast.success(`اخطار با موفقیت به کاربر ${senderName} اعطا شد. تعداد اخطارهای امروز: ${res.data.warningsToday}`);
+1718:          toast.error(res.error?.message || "خطا در ثبت اخطار");
+1725:    const minStr = prompt("مدت زمان سکوت (Mute) را بین ۲ تا ۱۰ دقیقه وارد کنید:");
+1730:      toast.error("مدت زمان باید یک عدد بین ۲ تا ۱۰ دقیقه باشد.");
+1736:        toast.success(`کاربر ${senderName} به مدت ${duration} دقیقه با موفقیت ساکت (Mute) شد.`);
+1738:        toast.error(res.error?.message || "خطا در اعمال سکوت");
+1776:            toast.error("برای آپلود گیف‌های اختصاصی به اشتراک VIP نیاز دارید!");
+1781:          toast.error("در گروه‌ها و چت‌های سراسری تنها آپلود فایل‌های گیف (مخصوص VIP) مجاز است.");
+1808:                <h3 className="text-xl font-black text-white italic tracking-tighter">تنظیمات گروه نخبگان</h3>
+1813:                  <label className="text-xs font-bold text-gray-400 mb-2 block">نام گروه</label>
+1817:                    placeholder="نام جدید گروه"
+1821:                  <label className="text-xs font-bold text-gray-400 mb-2 block">تصویر پروفایل گروه</label>
+1850:                  <label className="text-xs font-bold text-gray-400 mb-3 block">مدیریت اعضا ({((activeChannel as any).rawMembers || []).length} نفر)</label>
+1874:                                 const mins = prompt("مدت زمان تعلیق به دقیقه (حداکثر 100)", "10");
+1876:                               }} title="معلق کردن کاربر" className="text-[10px] bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20 px-2 py-1.5 rounded-lg border border-yellow-500/20 font-black uppercase tracking-widest transition-colors shrink-0">
+1877:                                 معلق
+1879:                               <button onClick={() => handleRemoveEliteMember(m.userId)} title="اخراج کاربر" className="text-[10px] bg-red-500/10 text-red-500 hover:bg-red-500/20 px-2 py-1.5 rounded-lg border border-red-500/20 font-black uppercase tracking-widest transition-colors shrink-0">
+1880:                                 اخراج
+1882:                               <button onClick={() => handleBanEliteMember(m.userId)} title="بن کامل و جلوگیری از ورود مجدد" className="text-[10px] bg-red-900/30 text-red-500 hover:bg-red-900/50 px-2 py-1.5 rounded-lg border border-red-900/50 font-black uppercase tracking-widest transition-colors shrink-0">
+1883:                                 بن
+1888:                             مدیر
+1898:                 <GlowButton variant="yellow" className="flex-1 font-black" onClick={handleUpdateEliteGroup}>ذخیره تغییرات</GlowButton>
+1899:                 <button onClick={() => setShowEliteSettingsModal(false)} className="px-6 py-3 rounded-2xl bg-white/5 text-gray-400 font-bold hover:bg-white/10 transition-colors">انصراف</button>
+1902:                 <button onClick={handleDeleteEliteGroup} className="w-full py-3 rounded-xl bg-red-500/10 text-red-500 font-bold hover:bg-red-500/20 transition-colors">حذف کامل گروه</button>
+1917:                <h3 className="text-xl font-black text-white italic tracking-tighter">دعوت دوستان به گروه</h3>
+1929:                      placeholder="جستجوی دوست..."
+1982:                   <div className="text-center py-6 text-gray-500 text-sm font-bold">دوستی یافت نشد</div>
+1987:                 <GlowButton variant="pink" className="flex-1 font-black" onClick={handleInviteToEliteGroup} disabled={selectedInvitees.length === 0}>ارسال دعوتنامه ({selectedInvitees.length})</GlowButton>
+2004:                <h3 className="text-xl font-black text-white italic tracking-tighter">ارسال محتوا به اخبار</h3>
+2015:                placeholder="توضیحات خبر را اینجا بنویسید..."
+2021:                 <GlowButton variant="blue" className="flex-1 font-black" onClick={handleSendNewsPost}>انتشار خبر</GlowButton>
+2022:                 <button onClick={() => setShowImagePostModal(false)} className="px-6 py-3 rounded-2xl bg-white/5 text-gray-400 font-bold hover:bg-white/10 transition-colors">انصراف</button>
+2044:                    <h3 className="text-xl font-black text-white italic tracking-tighter">{(user as any)?.role === "STREAMER" ? "ایجاد گروه اختصاصی استریمرها" : "ایجاد گروه نخبگان"}</h3>
+2055:                  <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2 italic px-2">نام گروه</label>
+2057:                    placeholder="نام گروه رویایی خود را بنویسید..." 
+2068:                      if (!vipGroupName.trim()) { toast.error("نام گروه الزامی است"); return; }
+2071:                        toast.success("گروه VIP با موفقیت ایجاد شد");
+2075:                        toast.error(err.response?.data?.error?.message || "خطا در ایجاد گروه");
+2079:                    تاسیس گروه نخبگان
+2085:                    انصراف
+2098:            <h2 className="text-xl font-black text-white tracking-widest uppercase">کانال‌ها</h2>
+2100:              title="ایجاد گروه"
+2130:              عمومی
+2151:                گروه‌های نخبگان
+2173:                گروه‌های حرفه‌ای
+2195:                بازی‌های من
+2216:              گفتگوهای اخیر
+2222:                const displayName = friend?.displayName || chat.tempDisplayName || "گیمر";
+2280:                            <span className="text-[9px] text-gray-600 italic tracking-tight">بدون پیام</span>
+2294:                <p className="text-[9px] text-gray-700 text-center py-2 italic font-medium opacity-50">هیچ گفتگوی اخیری یافت نشد</p>
+2399:                <div className={`h-1 w-1 md:h-1.5 md:w-1.5 rounded-full ${isSocketConnected ? 'bg-blue-500' : 'bg-red-500'} shrink-0`} title={isSocketConnected ? "متصل" : "قطع ارتباط"}></div>
+2400:                <p className="text-[8px] md:text-[10px] text-gray-500 font-bold uppercase tracking-tighter truncate">{memberCount.toLocaleString()} عضو</p>
+2402:                  <span className="text-[10px] text-red-500 font-bold animate-pulse mr-2">در حال اتصال...</span>
+2444:                     <GlowButton onClick={() => setShowEliteInviteModal(true)} variant="pink" size="sm" className="hidden sm:flex h-8 px-3 text-[10px] font-black uppercase">دعوت دوستان</GlowButton>
+2445:                     <button title="دعوت دوستان" onClick={() => setShowEliteInviteModal(true)} className="sm:hidden p-1.5 rounded-lg bg-neon-pink/10 text-neon-pink hover:bg-neon-pink/20 transition-colors">
+2448:                     <button title="تنظیمات گروه" onClick={() => { setEliteSettingsData({ title: activeChannel.name, avatarUrl: (activeChannel as any).avatarUrl || "" }); setShowEliteSettingsModal(true); }} className="p-1.5 rounded-lg bg-white/5 text-gray-400 hover:text-white transition-colors">
+2453:                   <button onClick={handleLeaveEliteGroup} className="h-8 px-2 md:px-3 rounded-lg bg-red-500/10 text-red-500 text-[10px] font-black hover:bg-red-500/20 transition-colors uppercase border border-red-500/20">خروج</button>
+2467:                 دعوت
+2482:                title="تغییر تم"
+2495:                    <p className="px-3 py-2 text-[10px] font-black text-gray-600 uppercase italic">انتخاب تم پس‌زمینه</p>
+2551:                    <h2 className="text-xl font-black text-white tracking-widest uppercase text-right">کانال‌ها</h2>
+2553:                      title="ایجاد گروه"
+2586:                    <h3 className="text-[10px] font-black text-gray-600 uppercase tracking-widest mb-3 text-right">عمومی</h3>
+2606:                      <h3 className="text-[10px] font-black text-yellow-500/50 uppercase tracking-widest mb-3 text-right">گروه‌های نخبگان</h3>
+2627:                      <h3 className="text-[10px] font-black text-neon-blue/50 uppercase tracking-widest mb-3 text-right">گروه‌های حرفه‌ای</h3>
+2648:                      <h3 className="text-[10px] font-black text-neon-blue/40 uppercase tracking-widest mb-3 text-right">بازی‌های من</h3>
+2693:                   <span className="text-[10px] font-black text-yellow-500 uppercase">پیام پین شده</span>
+2711:               const label = isToday ? "امروز" : isYesterday ? `دیروز (${faDate})` : faDate;
+2763:                    if (names.length === 1) return `${names[0]} در حال نوشتن...`;
+2764:                    if (names.length === 2) return `${names[0]} و ${names[1]} در حال نوشتن...`;
+2765:                    return `${names[0]}، ${names[1]} و ${names.length - 2} نفر دیگر در حال نوشتن...`;
+2784:              گیف با موفقیت ذخیره شد
+2797:              پیام‌های جدید
+2804:             <p className="text-gray-500 font-bold text-sm tracking-tighter">فقط ادمین‌ها می‌توانند در این کانال محتوا منتشر کنند</p>
+2820:                      <span className="text-gray-500 font-bold whitespace-nowrap">در پاسخ به <span className="text-neon-blue">{replyingTo.senderName}</span>:</span>
+2889:                                <p className="text-xs text-gray-400">گیف ذخیره شده‌ای ندارید.</p>
+2890:                                <p className="text-[10px] text-gray-500 mt-1">توی چت، روی ستاره‌ی بالای گیف کلیک کنید تا ذخیره بشه!</p>
+2910:                                        toast.success("گیف از علاقه‌مندی‌ها حذف شد.");
+2913:                                      title="حذف از علاقه‌مندی‌ها"
+2960:                                  <p className="text-xs text-gray-400">گیفی یافت نشد.</p>
+2961:                                  <p className="text-[10px] text-gray-500 mt-1">با مدیریت لوکس هماهنگ کنید تا گیف‌های جدید آپلود کند.</p>
+2976:                                        {gif.title || "بدون عنوان"}
+3022:                                    <p className="text-xs text-gray-400">در حال فشرده‌سازی و آپلود گیف...</p>
+3023:                                    <p className="text-[10px] text-gray-500">جلوگیری از آپلود تکراری فعال است</p>
+3028:                                    <p className="text-xs text-gray-300 font-bold">انتخاب یا رها کردن فایل GIF (گیف)</p>
+3030:                                      حداکثر حجم ۱۰ مگابایت. گیف شما بهینه‌سازی و ذخیره می‌شود.
+3062:                    title="شکلک‌ها و گیف"
+3095:                  placeholder={`پیام در ${activeChannel.name}...`}
+3136:                <h3 className="text-lg font-black text-white tracking-widest uppercase">لیست دوستان</h3>
+3215:                          <p className="text-[10px] text-gray-500 font-bold">سطح {friend.level}</p>
+3231:                               title="پیام"
+3250:                               title="پروفایل"
+3262:                       <p className="text-xs font-bold text-gray-500">لیست دوستان خالی است</p>
+3273:                  یافتن دوستان جدید
+3304:                  <h3 className="text-xl font-black text-white italic tracking-tighter">گزارش تخلف</h3>
+3310:                 <p className="text-xs text-gray-400 mb-2">پیام مورد گزارش:</p>
+3317:                    <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2 block">دلیل گزارش</label>
+3322:                      placeholder="دلیل گزارش خود را به صورت کامل توضیح دهید..."
+3332:                   انصراف
+3336:                     if (!reportReason.trim()) { toast.error("لطفاً دلیل گزارش را بنویسید"); return; }
+3344:                       toast.success("گزارش شما با موفقیت ثبت شد");
+3348:                       toast.error(e.response?.data?.error?.message || "خطا در ثبت گزارش");
+3354:                   ارسال گزارش

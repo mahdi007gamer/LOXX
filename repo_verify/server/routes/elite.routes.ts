@@ -1,0 +1,24 @@
+import { Router } from "express";
+import { EliteGroupController } from "../controllers/elite.controller";
+import { authenticate } from "../middleware/auth.middleware";
+
+const router = Router();
+
+router.use(authenticate);
+
+router.post("/", EliteGroupController.createGroup);
+router.get("/", EliteGroupController.getGroups);
+router.put("/:groupId", EliteGroupController.updateGroup);
+router.post("/members/invite", EliteGroupController.inviteMember);
+router.post("/members/accept", EliteGroupController.acceptInvite);
+router.post("/members", EliteGroupController.addMember);
+router.post("/members/leave", EliteGroupController.leaveGroup);
+router.delete("/members", EliteGroupController.removeMember);
+router.post("/join-link", EliteGroupController.joinViaInviteLink);
+router.post("/:groupId/regenerate-link", EliteGroupController.regenerateInviteLink);
+router.delete("/:groupId", EliteGroupController.deleteGroup);
+router.post("/:groupId/pin", EliteGroupController.pinMessage);
+router.post("/:groupId/timeout", EliteGroupController.timeoutMember);
+router.post("/:groupId/ban", EliteGroupController.banMember);
+
+export default router;

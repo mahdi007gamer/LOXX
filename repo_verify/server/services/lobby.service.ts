@@ -1,0 +1,225 @@
+import prisma from "../utils/prisma.ts";
+
+export class LobbyService {
+  static async createLobby(userId: string, data: any) {
+    const id = "LX" + Math.random().toString(36).substring(2, 8).toUpperCase();
+    
+    // Validate maxPlayers by user membership level
+    const userWithProfile = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { profile: true }
+    });
+    const membershipType = userWithProfile?.profile?.membershipType || "NONE";
+    const role = userWithProfile?.role || "USER";
+
+    const isVIP = membershipType === "VIP" || role === "ADMIN";
+    const isPlus = membershipType === "PLUS";
+    const maxAllowed = isVIP ? 30 : (isPlus ? 15 : 10);
+    const requestedMax = data.maxPlayers || data.max_players || 5;
+
+    if (requestedMax > maxAllowed) {
+      if (isPlus) {
+        throw new Error("ظرفیت لابی شما حداکثر ۱۵ نفر است. برای افزایش ظرفیت تا ۳۰ نفر باید اشتراک VIP تهیه کنید.");
+      } else if (!isVIP) {
+        throw new Error("اگه ظرفیت بیشتر بخواید باید اشتراک Plus یا VIP تهییه کنید");
+      } else {
+        throw new Error("ظرفیت لابی شما حداکثر ۳۰ نفر است.");
+      }
+    }
+
+    const lobby = await prisma.lobby.create({
+      data: {
+        id,
+        gameId: data.gameId || data.game_id,
+        title: data.title,
+        hostId: userId,
+        maxPlayers: data.maxPlayers || data.max_players || 5,
+        password: data.password,
+        region: data.region || "IR",
+        status: "WAITING",
+        mode: data.mode,
+        selectedMaps: Array.isArray(data.selectedMaps) ? JSON.stringify(data.selectedMaps) : data.selectedMaps,
+        description: data.description,
+        metadata: data.metadata ? (typeof data.metadata === 'string' ? data.metadata : JSON.stringify(data.metadata)) : null,
+        skillLevel: data.skillLevel || data.rankRange,
+        micRequired: !!data.micRequired,
+        isPrivate: !!data.isPrivate,
+        isLanMode: !!data.isLanMode,
+        members: {
+          create: {
+            userId,
+            role: "HOST",
+            isReady: true,
+            micStatus: true
+          }
+        }
+      },
+      include: {
+        members: { 
+          include: { 
+            user: { 
+              include: { 
+                profile: true,
+                badges: { include: { badge: true } }
+              } 
+            } 
+          } 
+        },
+        game: true
+      }
+    });
+
+    // Increment total joined for host
+    await prisma.profile.update({
+      where: { userId },
+      data: { totalLobbiesJoined: { increment: 1 } }
+    }).catch(() => {});
+
+    return lobby;
+  }
+
+  static async getLobbies(filters: { gameId?: string; region?: string; status?: string } = {}) {
+    return prisma.lobby.findMany({
+      where: {
+        gameId: filters.gameId,
+        region: filters.region,
+        status: filters.status || "WAITING"
+      },
+      include: {
+        _count: { select: { members: true } },
+        game: true,
+        host: {
+          include: { 
+            profile: true,
+            badges: { include: { badge: true } }
+          }
+        },
+        members: {
+          include: { 
+            user: { 
+              include: { 
+                profile: true,
+                badges: { include: { badge: true } }
+              } 
+            } 
+          }
+        }
+      },
+      orderBy: { createdAt: "desc" }
+    });
+  }
+
+  static async getLobbyById(lobbyId: string) {
+    return prisma.lobby.findUnique({
+      where: { id: lobbyId },
+      include: {
+        game: true,
+        members: {
+          include: {
+            user: {
+              include: { 
+                profile: true,
+                badges: { include: { badge: true } }
+              }
+            }
+          }
+        },
+        messages: {
+          take: 50,
+          orderBy: { createdAt: "asc" },
+          include: {
+            sender: {
+              include: { 
+                profile: true,
+                badges: { include: { badge: true } }
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  static async joinLobby(userId: string, lobbyId: string, password?: string) {
+    const lobby = await prisma.lobby.findUnique({
+      where: { id: lobbyId },
+      include: { members: true, bans: true }
+    });
+
+    if (!lobby) throw new Error("RESOURCE_NOT_FOUND");
+    if (lobby.password && lobby.password !== password) throw new Error("INVALID_PASSWORD");
+    if (lobby.members.length >= lobby.maxPlayers) throw new Error("LOBBY_FULL");
+    const isBanned = lobby.bans.some(b => b.userId === userId);
+    if (isBanned) throw new Error("You are banned from this lobby.");
+
+    // Check if already a member
+    const existing = await prisma.lobbyMember.findUnique({
+      where: { lobbyId_userId: { lobbyId, userId } }
+    });
+
+    if (existing) return existing;
+
+    const member = await prisma.lobbyMember.create({
+      data: {
+        lobbyId,
+        userId,
+        role: "PLAYER",
+        isReady: false,
+        micStatus: true
+      }
+    });
+
+    // Increment total joined
+    await prisma.profile.update({
+      where: { userId },
+      data: { totalLobbiesJoined: { increment: 1 } }
+    }).catch(() => {});
+
+    return member;
+  }
+
+  static async leaveLobby(userId: string, lobbyId: string) {
+    const lobby = await prisma.lobby.findUnique({
+      where: { id: lobbyId },
+      include: { members: true }
+    });
+
+    if (!lobby) return;
+
+    await prisma.lobbyMember.delete({
+      where: { lobbyId_userId: { lobbyId, userId } }
+    }).catch(() => {});
+
+    // If host leaves, transfer host or delete lobby
+    if (lobby.hostId === userId) {
+      const remainingMembers = lobby.members.filter(m => m.userId !== userId);
+      if (remainingMembers.length > 0) {
+        await prisma.lobby.update({
+          where: { id: lobbyId },
+          data: { hostId: remainingMembers[0].userId }
+        });
+        await prisma.lobbyMember.update({
+          where: { lobbyId_userId: { lobbyId, userId: remainingMembers[0].userId } },
+          data: { role: "HOST" }
+        });
+      } else {
+        await prisma.message.deleteMany({ where: { lobbyId } }).catch(() => {});
+        await prisma.lobby.delete({ where: { id: lobbyId } }).catch(() => {});
+      }
+    }
+  }
+
+  static async toggleReady(userId: string, lobbyId: string, ready: boolean = true) {
+    return prisma.lobbyMember.update({
+      where: { lobbyId_userId: { lobbyId, userId } },
+      data: { isReady: ready }
+    });
+  }
+
+  static async updateMicStatus(userId: string, lobbyId: string, muted: boolean) {
+    return prisma.lobbyMember.update({
+      where: { lobbyId_userId: { lobbyId, userId } },
+      data: { micStatus: !muted } // DB uses micStatus (true = on)
+    });
+  }
+}

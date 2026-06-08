@@ -1,0 +1,65 @@
+{
+  "name": "loxx",
+  "version": "1.2.25",
+  "description": "Electron POC for Loxx",
+  "author": "Loxx",
+  "homepage": "https://loxx.ir",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build:win": "electron-builder --win"
+  },
+  "dependencies": {
+    "electron-updater": "^6.1.4"
+  },
+  "devDependencies": {
+    "electron": "^30.0.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "ir.loxx.launcher",
+    "productName": "loxx",
+    "compression": "normal",
+    "copyright": "Copyright © 2026 Loxx",
+    "icon": "build/icon.ico",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "**/*",
+      "build/logo.png"
+    ],
+    "win": {
+      "icon": "build/icon.ico",
+      "requestedExecutionLevel": "asInvoker",
+      "artifactName": "loxx-Setup-${version}.${ext}",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Loxx",
+      "runAfterFinish": true,
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "uninstallDisplayName": "Loxx",
+      "unicode": true,
+      "differentialPackage": true,
+      "include": "installer.nsh"
+    },
+    "publish": {
+      "provider": "generic",
+      "url": "https://loxx.ir/updater/"
+    }
+  }
+}

@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>در حال راه‌اندازی لوکس | Loxx Client Running...</title>
+  <style>
+    @font-face {
+      font-family: 'Kalameh-Bold';
+      src: url('../public/fonts/Kalameh/Kalameh-Bold.woff2') format('woff2');
+      font-weight: bold;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body {
+      background: transparent;
+      color: #ffffff;
+      font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+      overflow: hidden;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .window-frame {
+      position: absolute;
+      inset: 8px; /* Leave margin for shadow or rounded edges */
+      background: #040408;
+      border-radius: 24px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+    }
+
+    /* Ambient background glows */
+    .glow-blue {
+      position: absolute;
+      top: -15%;
+      left: -15%;
+      width: 50%;
+      height: 50%;
+      background: rgba(0, 229, 255, 0.12);
+      border-radius: 50%;
+      filter: blur(100px);
+      pointer-events: none;
+    }
+
+    .glow-pink {
+      position: absolute;
+      bottom: -15%;
+      right: -15%;
+      width: 50%;
+      height: 50%;
+      background: rgba(255, 0, 127, 0.12);
+      border-radius: 50%;
+      filter: blur(100px);
+      pointer-events: none;
+    }
+
+    /* Outer border matching electron-titlebar style */
+    .app-border {
+      position: absolute;
+      inset: 0;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      pointer-events: none;
+      z-index: 1000;
+    }
+
+    /* Main Container */
+    .splash-container {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 420px;
+      padding: 40px;
+      border-radius: 28px;
+    }
+
+    /* Brand Logo Wrapper */
+    .logo-wrapper {
+      position: relative;
+      margin-bottom: 30px;
+    }
+
+    .logo-glow {
+      position: absolute;
+      inset: -10px;
+      background: linear-gradient(135deg, #00e5ff 0%, #ff007f 100%);
+      border-radius: 32px;
+      filter: blur(25px);
+      opacity: 0.35;
+      animation: logoPulse 3s infinite ease-in-out;
+    }
+
+    .logo-card {
+      position: relative;
+      width: 100px;
+      height: 100px;
+      background: #090912;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+    }
+
+    .logo-image {
+      width: 65px;
+      height: 65px;
+      object-fit: contain;
+      animation: pulseSign 2s infinite ease-in-out;
+    }
+
+    /* Titles */
+    .brand-title {
+      font-size: 26px;
+      font-weight: 900;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      background: linear-gradient(to right, #ffffff, #dcdcdf);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 6px;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    .brand-subtitle {
+      font-size: 13px;
+      font-weight: 700;
+      color: #00e5ff;
+      letter-spacing: 0.05em;
+      margin-bottom: 25px;
+      opacity: 0.9;
+    }
+
+    /* Progress bar layout */
+    .progress-box {
+      width: 240px;
+      margin-top: 15px;
+    }
+
+    .progress-track {
+      height: 6px;
+      width: 100%;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.03);
+      position: relative;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #ff007f, #00e5ff);
+      box-shadow: 0 0 10px rgba(0, 229, 255, 0.6);
+      border-radius: 10px;
+      transition: width 0.3s ease-out;
+    }
+
+    .status-labels {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 10px;
+      font-size: 10px;
+      font-weight: bold;
+      color: #8f929d;
+      text-transform: uppercase;
+    }
+
+    #status-text {
+      color: #ff007f;
+      animation: labelPulse 1.5s infinite;
+    }
+
+    #percent-text {
+      color: #00e5ff;
+      font-family: monospace;
+    }
+
+    /* Geeky corner labels */
+    .footer-stamp {
+      position: absolute;
+      bottom: 20px;
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      padding: 0 30px;
+      font-size: 8px;
+      font-family: monospace;
+      color: #4a4d53;
+      letter-spacing: 0.1em;
+    }
+
+    /* Keyframes */
+    @keyframes logoPulse {
+      0%, 100% { opacity: 0.3; transform: scale(1); }
+      50% { opacity: 0.45; transform: scale(1.08); }
+    }
+
+    @keyframes pulseSign {
+      0%, 100% { transform: scale(1); filter: drop-shadow(0 0 5px rgba(0,229,255,0.4)); }
+      50% { transform: scale(1.05); filter: drop-shadow(0 0 15px rgba(255,0,127,0.7)); }
+    }
+
+    @keyframes labelPulse {
+      0%, 100% { opacity: 0.75; }
+      50% { opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <div class="window-frame">
+    <div class="glow-blue"></div>
+    <div class="glow-pink"></div>
+
+    <div class="splash-container">
+      <div class="logo-wrapper">
+        <div class="logo-glow"></div>
+        <div class="logo-card">
+          <img src="build/logo.png" onerror="this.onerror=null; this.src='../public/logo.png';" alt="Loxx" class="logo-image">
+        </div>
+      </div>
+
+      <div class="brand-title">LOXX LAUNCHER</div>
+      <div class="brand-subtitle">پلتفرم گیمینگ و چت صوتی لوکس</div>
+
+      <div class="progress-box">
+        <div class="progress-track">
+          <div class="progress-fill" id="fill-element"></div>
+        </div>
+        <div class="status-labels">
+          <span id="percent-text">0%</span>
+          <span id="status-text">بررسی بروزرسانی لوکس...</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-stamp">
+      <span>STATION-GATEWAY: READY</span>
+      <span>SECURITY ENCRYPTION: SECURE_CORE_AES256</span>
+    </div>
+  </div>
+
+  <script>
+    const fillEl = document.getElementById('fill-element');
+    const percentEl = document.getElementById('percent-text');
+    const statusEl = document.getElementById('status-text');
+
+    // Simulate progress starting immediately to keep it highly dynamic and live
+    let currentPercent = 0;
+    
+    const fakeLoader = setInterval(() => {
+      if (currentPercent < 85) {
+        currentPercent += Math.floor(Math.random() * 5) + 2;
+        if (currentPercent > 85) currentPercent = 85;
+        updateProgress(currentPercent);
+      }
+    }, 150);
+
+    function updateProgress(percent, statusMessage) {
+      percent = Math.min(100, Math.max(0, percent));
+      fillEl.style.width = percent + '%';
+      percentEl.innerText = percent + '%';
+      if (statusMessage) {
+        statusEl.innerText = statusMessage;
+      }
+    }
+
+    // Connect to Electron IPC listener
+    if (window.electronAPI && typeof window.electronAPI.onUpdateStatus === 'function') {
+      window.electronAPI.onUpdateStatus((status, percent) => {
+        clearInterval(fakeLoader);
+        
+        let faStatus = status;
+        if (status === 'checking') {
+          faStatus = 'در حال جستجوی بروزرسانی لوکس...';
+        } else if (status === 'downloading') {
+          faStatus = 'در حال دریافت نسخه جدید لوکس...';
+        } else if (status === 'ready') {
+          faStatus = 'بروزرسانی با موفقیت دریافت شد!';
+        } else if (status === 'not-available') {
+          faStatus = 'لوکس کاملاً بروز است. ورود به برنامه...';
+        } else if (status === 'error') {
+          faStatus = 'کلاینت لوکس آماده پرواز...';
+        }
+        
+        updateProgress(percent, faStatus);
+      });
+    }
+  </script>
+</body>
+</html>
