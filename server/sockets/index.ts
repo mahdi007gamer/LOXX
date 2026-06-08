@@ -379,20 +379,123 @@ export function setupWebSockets(io: Server) {
 ⏭ /skip : رفتن به آهنگ بعدی
 📜 /queue : مشاهده لیست انتظار`;
 
-  // Extract MP3 download link from ANY Persian music post webpage
-  const extractMp3FromWebPage = async (pageUrl: string): Promise<{ title: string; url: string; coverUrl: string; duration: number } | null> => {
+  // Helper to send a chat message inside the lobby using the bot's identity
+  const sendBotLobbyMessage = async (lobbyId: string, botType: "music" | "melody", content: string) => {
+    try {
+      const lobby = await prisma.lobby.findUnique({ where: { id: lobbyId } });
+      if (!lobby) return;
+      const senderId = lobby.hostId; // Satisfies Prisma foreign key to User table
+
+      const msg = await prisma.message.create({
+        data: {
+          content: content,
+          senderId: senderId,
+          lobbyId,
+        }
+      });
+
+      const msgPayload = {
+        id: msg.id.toString(),
+        tempId: "bot-" + Date.now() + "-" + Math.floor(Math.random() * 1000),
+        from: { 
+          userId: botType === "melody" ? "melody-bot" : "music-bot", 
+          username: botType === "melody" ? "ملودی لوکس (آنلاین) 🌟" : "ربات هوشمند موسیقی لوکس 🎵", 
+          membership: botType === "melody" ? "GOLD" : "VIP",
+          level: 99,
+          avatar: botType === "melody" ? "/badges/musicbot-gold.jpeg" : "/badges/musicbot.jpeg",
+          bannerUrl: "/bg-hero.jpg",
+          vipMetadata: { borderNeonColor: botType === "melody" ? "#FFD700" : "#00e5ff" },
+          badges: [
+            { name: botType === "melody" ? "Melody Lox" : "Music Lox", icon: "/badges/unnamed.png", isPinned: true }
+          ],
+          isBot: true
+        },
+        targetType: "lobby",
+        targetId: lobbyId,
+        content: content,
+        createdAt: msg.createdAt.getTime()
+      };
+
+      lobbyNs.to(`lobby:${lobbyId}`).emit("chat.message", msgPayload);
+    } catch (err) {
+      console.error("Error sending bot lobby message:", err);
+    }
+  };
+
+  // Helper to search a specific music website domain
+  const searchSite = async (site: { name: string, domain: string }, query: string, lobbyId?: string): Promise<string[]> => {
+    const links: string[] = [];
+    
+    // Try 1: WP REST API
+    try {
+      const wpUrl = `${site.domain}/wp-json/wp/v2/posts?search=${encodeURIComponent(query)}&_fields=id,title,link&per_page=3`;
+      const res = await axios.get(wpUrl, {
+        headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" },
+        timeout: 5000
+      });
+      if (res.data && Array.isArray(res.data)) {
+        for (const post of res.data) {
+          if (post.link && !links.includes(post.link)) {
+            links.push(post.link);
+          }
+        }
+      }
+    } catch (apiErr: any) {
+      const errMessage = `⚠️ [${site.name}] خطای جستجوی وب‌سرویس: ${apiErr.message}`;
+      console.log(errMessage);
+      if (lobbyId) {
+        await sendBotLobbyMessage(lobbyId, "melody", errMessage);
+      }
+    }
+
+    // Try 2: HTML Search (Only if WP API returned nothing or had an error)
+    if (links.length === 0) {
+      try {
+        const searchUrl = `${site.domain}/?s=${encodeURIComponent(query)}`;
+        const res = await axios.get(searchUrl, {
+          headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" },
+          timeout: 5000
+        });
+        const html = res.data || "";
+        const domainEscaped = site.domain.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        
+        // We will match links belonging to the domain
+        const regex = new RegExp(`href=["'](${domainEscaped}/[^"'/]+/?(?:\\.html)?)["']`, "gi");
+        const matches = html.matchAll(regex);
+        for (const m of matches) {
+          const u = m[1];
+          if (!u.includes("/wp-") && !u.includes("/category/") && !u.includes("/page/") && !u.includes("/tag/") && u !== site.domain && u !== site.domain + "/") {
+            if (!links.includes(u)) {
+              links.push(u);
+            }
+          }
+        }
+      } catch (htmlErr: any) {
+        const errMessage = `⚠️ [${site.name}] خطای جستجوی وب‌پیج: ${htmlErr.message}`;
+        console.log(errMessage);
+        if (lobbyId) {
+          await sendBotLobbyMessage(lobbyId, "melody", errMessage);
+        }
+      }
+    }
+
+    return links;
+  };
+
+  // Convert/Extract MP3 download link from ANY Persian music post webpage
+  const extractMp3FromWebPage = async (pageUrl: string, lobbyId?: string): Promise<{ title: string; url: string; coverUrl: string; duration: number } | null> => {
     try {
       console.log(`[MusicBot Scraper] Scraping page: "${pageUrl}"`);
       const res = await axios.get(pageUrl, {
         headers: {
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.0.0 Safari/537.36"
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         },
-        timeout: 4000
+        timeout: 5000
       });
       const html = res.data || "";
       
       const mp3Matches: string[] = [];
-      const matches = html.matchAll(/href="([^"']+\.mp3)"/gi);
+      const matches = html.matchAll(/(?:href|src)=["'](https?:\/\/[^"']+\.mp3[^"']*)["']/gi);
       for (const m of matches) {
         if (m[1]) {
           const l = m[1].trim();
@@ -400,7 +503,6 @@ export function setupWebSockets(io: Server) {
         }
       }
 
-      // Filter out advertisements/intros
       const validMp3s = mp3Matches.filter(link => {
         const l = link.toLowerCase();
         return !l.includes("ads") && !l.includes("tabligh") && !l.includes("intro") && !l.includes("advertis");
@@ -408,6 +510,9 @@ export function setupWebSockets(io: Server) {
 
       if (validMp3s.length === 0) {
         console.log(`[MusicBot Scraper] No valid MP3s on page: ${pageUrl}`);
+        if (lobbyId) {
+          await sendBotLobbyMessage(lobbyId, "melody", `⚠️ هیچ لینک دانلود MP3 معتبری در صفحه پیدا نشد:\n ${pageUrl}`);
+        }
         return null;
       }
 
@@ -458,61 +563,74 @@ export function setupWebSockets(io: Server) {
       };
     } catch (err: any) {
       console.error(`[MusicBot Scraper] Failed to scrape ${pageUrl}:`, err.message || err);
+      if (lobbyId) {
+        await sendBotLobbyMessage(lobbyId, "melody", `❌ خطا در استخراج فایل صوتی از صفحه:\n${pageUrl}\nارور: ${err.message}`);
+      }
       return null;
     }
   };
 
   // Search online track from web or itunes API as fallback
-  const searchOnlineTrack = async (query: string): Promise<{ title: string; url: string; coverUrl: string; duration: number } | null> => {
+  const searchOnlineTrack = async (query: string, lobbyId?: string): Promise<{ title: string; url: string; coverUrl: string; duration: number } | null> => {
     console.log(`[MusicBot Search] Searching for query: "${query}"`);
+    if (lobbyId) {
+      await sendBotLobbyMessage(lobbyId, "melody", `🔍 در حال شروع جستجوی آنلاین آهنگ «${query}» در ۵ سایت اختصاصی ملودی لوکس...`);
+    }
 
+    const sites = [
+      { name: "PopMusic (پاپ موزیک)", domain: "https://pop-music.ir" },
+      { name: "MusicFa (موزیک فا)", domain: "https://music-fa.com" },
+      { name: "GolsarMusic (گلسار موزیک)", domain: "https://golsarmusic.ir" },
+      { name: "MokhtalefMusic (مختلف موزیک)", domain: "https://mokhtalefmusic.com" },
+      { name: "RozMusic (رز موزیک)", domain: "https://rozmusic.com" }
+    ];
+
+    const resultsMap = new Map<string, string[]>();
+
+    // Query all sites in parallel
+    await Promise.all(sites.map(async (site) => {
+      try {
+        const siteLinks = await searchSite(site, query, lobbyId);
+        resultsMap.set(site.domain, siteLinks);
+      } catch (e: any) {
+        if (lobbyId) {
+          await sendBotLobbyMessage(lobbyId, "melody", `⚠️ خطای غیرمنتظره در جستجوی ${site.name}: ${e.message}`);
+        }
+      }
+    }));
+
+    // Collect all links in round-robin fashion
     const validPosts: string[] = [];
-
-    // 1. Search pmcmusic.tv via HTML scraping
-    try {
-        const searchUrl = `https://pmcmusic.tv/?s=${encodeURIComponent(query)}`;
-        const res = await axios.get(searchUrl, {
-            headers: { "User-Agent": "Mozilla/5.0" },
-            timeout: 4500
-        });
-        const html = res.data || "";
-        const articles = html.match(/<article[^>]*>.*?<\/article>/gis);
-        if (articles) {
-            for (const article of articles) {
-                const linkMatch = article.match(/href="(https:\/\/pmcmusic\.tv\/[^"']+)"/);
-                if (linkMatch) {
-                    const u = linkMatch[1];
-                    if (!validPosts.includes(u)) validPosts.push(u);
-                }
-            }
+    let added = true;
+    let index = 0;
+    while (added) {
+      added = false;
+      for (const site of sites) {
+        const list = resultsMap.get(site.domain) || [];
+        if (index < list.length) {
+          const url = list[index];
+          if (!validPosts.includes(url)) {
+            validPosts.push(url);
+          }
+          added = true;
         }
-    } catch (e: any) {
-        console.log(`[MusicBot Search] PMC error:`, e.message);
+      }
+      index++;
     }
 
-    // 2. Search mokhtalefmusic.com via WP REST API
-    try {
-        const searchUrl = `https://mokhtalefmusic.com/wp-json/wp/v2/posts?search=${encodeURIComponent(query)}&_fields=link&per_page=3`;
-        const res = await axios.get(searchUrl, {
-            headers: { "User-Agent": "Mozilla/5.0" },
-            timeout: 4000
-        });
-        if (res.data && Array.isArray(res.data)) {
-            for (const post of res.data) {
-                if (post.link && !validPosts.includes(post.link)) validPosts.push(post.link);
-            }
-        }
-    } catch (e: any) {
-         console.log(`[MusicBot Search] Mokhtalef error:`, e.message);
+    console.log(`[MusicBot Search] Found ${validPosts.length} potential posts across the 5 sites.`);
+    if (lobbyId) {
+      await sendBotLobbyMessage(lobbyId, "melody", `📡 تعداد ${validPosts.length} صفحه مطلب مرتبط در وب‌سایت‌ها شناسایی شد. در حال بررسی جهت استخراج مستقیم فایل موسیقی...`);
     }
 
-    console.log(`[MusicBot Search] Found ${validPosts.length} potential posts.`);
-
-    // Scrape them in order (limit to first 5 hits)
-    for (const url of validPosts.slice(0, 5)) {
-      const result = await extractMp3FromWebPage(url);
+    // Scrape them in order (limit to first 6 hits to avoid overloading)
+    for (const url of validPosts.slice(0, 6)) {
+      const result = await extractMp3FromWebPage(url, lobbyId);
       if (result) {
-        console.log(`[MusicBot Search] Successfully extracted track from direct search: "${result.title}"`);
+        console.log(`[MusicBot Search] Successfully extracted track: "${result.title}"`);
+        if (lobbyId) {
+          await sendBotLobbyMessage(lobbyId, "melody", `✅ موزیک با موفقیت پیدا و به صف لابی متصل گردید:\n🎵 «${result.title}»`);
+        }
         return result;
       }
     }
@@ -520,11 +638,17 @@ export function setupWebSockets(io: Server) {
     // 2. Fallback to iTunes Search API
     try {
       console.log(`[MusicBot Search] Querying iTunes for: "${query}"`);
+      if (lobbyId) {
+        await sendBotLobbyMessage(lobbyId, "melody", `🔄 در حال تلاش برای جستجو در سرویس بین‌المللی iTunes به عنوان منبع جایگزین...`);
+      }
       const searchUrl = `https://itunes.apple.com/search?media=music&term=${encodeURIComponent(query)}&limit=1`;
       const res = await axios.get(searchUrl, { timeout: 4000 });
       if (res.data?.results && res.data.results.length > 0) {
         const match = res.data.results[0];
         console.log(`[MusicBot Search] Successfully extracted track from iTunes: "${match.trackName}"`);
+        if (lobbyId) {
+          await sendBotLobbyMessage(lobbyId, "melody", `✅ موزیک جایگزین خارجی پیدا شد:\n🎵 «${match.artistName} - ${match.trackName}»`);
+        }
         return {
           title: `${match.artistName} - ${match.trackName}`,
           url: match.previewUrl,            // 30 second preview URL (.m4a)
@@ -532,54 +656,13 @@ export function setupWebSockets(io: Server) {
           duration: 30
         };
       }
-    } catch {}
+    } catch (itunesErr: any) {
+      if (lobbyId) {
+        await sendBotLobbyMessage(lobbyId, "melody", `⚠️ خطای جستجوی iTunes: ${itunesErr.message}`);
+      }
+    }
 
     return null;
-  };
-
-
-
-  // Helper to send a chat message inside the lobby using the bot's identity
-  const sendBotLobbyMessage = async (lobbyId: string, botType: "music" | "melody", content: string) => {
-    try {
-      const lobby = await prisma.lobby.findUnique({ where: { id: lobbyId } });
-      if (!lobby) return;
-      const senderId = lobby.hostId; // Satisfies Prisma foreign key to User table
-
-      const msg = await prisma.message.create({
-        data: {
-          content: content,
-          senderId: senderId,
-          lobbyId,
-        }
-      });
-
-      const msgPayload = {
-        id: msg.id.toString(),
-        tempId: "bot-" + Date.now() + "-" + Math.floor(Math.random() * 1000),
-        from: { 
-          userId: botType === "melody" ? "melody-bot" : "music-bot", 
-          username: botType === "melody" ? "ملودی لوکس (آنلاین) 🌟" : "ربات هوشمند موسیقی لوکس 🎵", 
-          membership: botType === "melody" ? "GOLD" : "VIP",
-          level: 99,
-          avatar: botType === "melody" ? "/badges/musicbot-gold.jpeg" : "/badges/musicbot.jpeg",
-          bannerUrl: "/bg-hero.jpg",
-          vipMetadata: { borderNeonColor: botType === "melody" ? "#FFD700" : "#00e5ff" },
-          badges: [
-            { name: botType === "melody" ? "Melody Lox" : "Music Lox", icon: "/badges/unnamed.png", isPinned: true }
-          ],
-          isBot: true
-        },
-        targetType: "lobby",
-        targetId: lobbyId,
-        content: content,
-        createdAt: msg.createdAt.getTime()
-      };
-
-      lobbyNs.to(`lobby:${lobbyId}`).emit("chat.message", msgPayload);
-    } catch (err) {
-      console.error("Error sending bot lobby message:", err);
-    }
   };
 
   const handleMelodyCommand = async (lobbyId: string, cmd: "p" | "stop" | "skip" | "queue", arg: string) => {
@@ -622,7 +705,7 @@ export function setupWebSockets(io: Server) {
           } else {
             // It's a webpage! Let's extract the MP3 from it.
             await sendBotLobbyMessage(lobbyId, "melody", "🔍 در حال استخراج لینک موسیقی از صفحه وب ارسالی شما...");
-            const scraped = await extractMp3FromWebPage(query);
+            const scraped = await extractMp3FromWebPage(query, lobbyId);
             if (scraped) {
               matchedTrack = scraped;
             } else {
@@ -686,7 +769,7 @@ export function setupWebSockets(io: Server) {
           }
 
           if (!matchedTrack) {
-            const onlineResult = await searchOnlineTrack(query);
+            const onlineResult = await searchOnlineTrack(query, lobbyId);
             if (onlineResult) {
               matchedTrack = onlineResult;
             }
