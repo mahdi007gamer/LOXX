@@ -171,3 +171,38 @@
   -webkit-app-region: no-drag !important;
 }
 
+/* Cursor stabilization: Prevent cursor flickering/switching and ensure it stays pointer (hand) stably on hover */
+button,
+a,
+[role="button"],
+input[type="button"],
+input[type="submit"],
+input[type="reset"],
+select,
+option,
+label,
+.cursor-pointer,
+[onClick],
+[onclick] {
+  cursor: pointer !important;
+}
+
+/* Force all child nodes of clickable elements to maintain pointer cursor to prevent flickering on nested icons, text spans or labels */
+button *,
+a *,
+[role="button"] *,
+.cursor-pointer *,
+[onClick] * {
+  cursor: pointer !important;
+}
+
+/* Exception for disabled interactive components */
+button:disabled,
+button:disabled *,
+[disabled],
+[disabled] *,
+.cursor-not-allowed,
+.cursor-not-allowed * {
+  cursor: not-allowed !important;
+}
+
