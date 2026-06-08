@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Mic, Key, Monitor, Power, CheckCircle, ShieldAlert, MonitorPlay, MousePointerClick, Maximize, Activity, Eye, MonitorUp, Cpu, RefreshCw, Flame, Sliders } from "lucide-react";
+import { Mic, Key, Monitor, Power, CheckCircle, ShieldAlert, MonitorPlay, MousePointerClick, Maximize, Activity, Eye, MonitorUp, Cpu, RefreshCw, Flame, Sliders, Globe } from "lucide-react";
 import { GlowButton } from "../components/ui/GlowButton";
 import { toast } from "react-hot-toast";
 import { useAuth } from "../context/AuthContext";
@@ -518,11 +518,94 @@ export const ElectronSettingsPage = () => {
  </div>
  </div>
  </div>
- 
- {/* System Settings */}
- <div className="bg-dark-elem border border-white/5 p-6 rounded-2xl md:col-span-2 relative overflow-hidden group">
- <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-500/10 rounded-bl-full -mr-16 -mt-16 blur-xl" />
- <div className="flex flex-col h-full relative z-10">
+  {/* Advanced Network & Proxy Routing (DNS & VPN Bypass) */}
+   <div className="bg-dark-elem border border-white/5 p-6 rounded-2xl md:col-span-2 relative overflow-hidden group">
+
+  <div className="absolute top-0 left-0 w-32 h-32 bg-[#00e5ff]/10 rounded-br-full -ml-16 -mt-16 blur-xl" />
+   <div className="flex flex-col h-full relative z-10">
+  <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+  <Globe className="text-[#00e5ff]" /> تنظیمات پیشرفته شبکه و دور زدن تحریم/پروکسی (Route & DNS Optimizer)
+  </h3>
+  
+  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6" dir="rtl" style={{ textAlign: "right" }}>
+  <div className="space-y-4 lg:col-span-2">
+  
+  {/* Toggle: Bypass Proxy */}
+  <div className="flex items-center justify-between bg-black/40 p-4 rounded-xl border border-[#00e5ff]/10 hover:border-[#00e5ff]/20 transition-all">
+  <div className="flex flex-col text-right">
+  <span className="text-sm font-bold text-white flex items-center gap-2">
+  دور زدن پروکسی و پینگ کاتورها (Bypass System Proxy)
+  </span>
+  <span className="text-[11px] text-gray-400 mt-1">اجبار برنامه به اتصال مستقیم بدون عبور از فیلترشکن‌ها یا کاهش دهنده‌های پینگ سیستم (حل مشکل دیسکانکت الکی هنگام روشن بودن VPN یا ابزارهایی مثل ExitLag و GearUp)</span>
+  </div>
+  <label className="relative inline-flex items-center cursor-pointer">
+  <input 
+  type="checkbox" 
+  className="sr-only peer" 
+  checked={!!config.bypassSystemProxy} 
+  onChange={(e) => {
+  updateSetting("bypassSystemProxy", e.target.checked);
+  toast.success(e.target.checked ? "🚀 حالت اتصال مستقیم و دور زدن پروکسی فعال شد." : "وضعیت اتصال مستقیم غیرفعال شد.");
+  }} 
+  />
+  <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#00e5ff]"></div>
+  </label>
+  </div>
+
+  {/* Select option: DNS Link */}
+  <div className="bg-black/40 p-4 rounded-xl border border-[#00e5ff]/10">
+  <label className="text-sm font-bold text-white block mb-2">سرویس DNS امن و اختصاصی درون‌برنامه‌ای (DNS-over-HTTPS)</label>
+  <span className="text-[11px] text-gray-400 block mb-3">با فعال‌سازی این بخش، برنامه به طور مستقل از سیستم، دی‌ان‌اس اختصاصی خود را از طریق پروتکل امن DoH لود می‌کند. بدین ترتیب بازی شما روی دی‌ان‌اس گیم می‌ماند در حالی که برنامه لوکس بدون تداخل یا فیلترینگ متصل خواهد شد.</span>
+  
+  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+  {[
+  { id: "system", name: "پیش‌فرض کلاینت (سیستم)" },
+  { id: "cloudflare", name: "Cloudflare DoH (امن/بایپس)" },
+  { id: "google", name: "Google DoH" },
+  { id: "electro", name: "رادار/الکترو DoH (ضدبایک)" },
+  { id: "shecan", name: "شکن DoH (رفع تحریم)" },
+  ].map((item) => (
+  <button
+  key={item.id}
+  onClick={() => {
+  updateSetting("appDnsProvider", item.id);
+  toast.success(`سرویس دی‌ان‌اس روی ${item.name} تنظیم شد. جهت اعمال کامل برنامه را ریست کنید.`, { icon: "⚡" });
+  }}
+  className={cn(
+  "py-2 px-3 rounded-lg border font-bold text-center transition-all text-xs",
+  (config.appDnsProvider || "system") === item.id 
+  ? "bg-[#00e5ff]/20 border-[#00e5ff] text-[#00e5ff] shadow-[0_0_10px_rgba(0,229,255,0.1)]"
+  : "bg-white/5 border-white/10 text-gray-400 hover:bg-white/10"
+  )}
+  >
+  {item.name}
+  </button>
+  ))}
+  </div>
+  </div>
+  
+  </div>
+  
+  {/* Side guide and debug stats */}
+  <div className="bg-black/20 border border-white/5 p-4 rounded-xl text-center flex flex-col items-center justify-center space-y-4">
+  <div className="p-2 bg-[#00e5ff]/10 rounded-full border border-[#00e5ff]/35">
+  <Globe size={32} className="text-[#00e5ff] animate-pulse" />
+  </div>
+  <p className="text-xs font-bold text-[#00e5ff] text-right w-full pr-1">راهنمای بهینه‌سازی ارتباط:</p>
+  <div className="w-full space-y-2 text-right text-[11px] text-gray-400 leading-relaxed pr-1" dir="rtl">
+  <p>💡 برای بازیکنانی که از <strong className="text-white">GearUp</strong>، <strong className="text-white">ExitLag</strong> یا قندشکن استفاده می‌کنند، روشن کردن <strong className="text-[#00e5ff]">دور زدن پروکسی</strong> پیشنهاد می‌شود.</p>
+  <p>🌐 تنظیم دی‌ان‌اس روی <strong className="text-[#00e5ff]">الکترو/رادار</strong> باعث می‌شود که سرورهای مدیاسوب لوکس حتی با اینترنت‌های مسدود به زیباترین شکل ممکن برقرار بمانند.</p>
+  </div>
+  </div>
+  </div>
+  
+  </div>
+  </div>
+
+
+  <div className="bg-dark-elem border border-white/5 p-6 rounded-2xl md:col-span-2 relative overflow-hidden group">
+  <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-500/10 rounded-bl-full -mr-16 -mt-16 blur-xl" />
+  <div className="flex flex-col h-full relative z-10">
  <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2"><Activity className="text-yellow-400 animate-pulse" /> پرفورمنس علمی و تنظیمات سیستم (GPU & CPU)</h3>
  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6" dir="rtl" style={{ textAlign: "right" }}>
  <div className="space-y-4 lg:col-span-2">

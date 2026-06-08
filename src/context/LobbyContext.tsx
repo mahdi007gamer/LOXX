@@ -143,6 +143,8 @@ interface LobbyContextType {
  overlayHeight?: number;
  overlayOpacity?: number;
  overlayClickThrough?: boolean;
+ bypassSystemProxy?: boolean;
+ appDnsProvider?: "system" | "cloudflare" | "google" | "electro" | "shecan";
  }) => void;
 
  // New Desktop Features
@@ -589,6 +591,8 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
  overlayHeight?: number;
  overlayOpacity?: number;
  overlayClickThrough?: boolean;
+ bypassSystemProxy?: boolean;
+ appDnsProvider?: "system" | "cloudflare" | "google" | "electro" | "shecan";
  }) => {
  const checkElectron = typeof window !== "undefined" && !!(window as any).electronAPI;
  if (checkElectron) {
