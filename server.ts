@@ -141,7 +141,7 @@ async function startServer() {
         headers: { "User-Agent": "Mozilla/5.0" }
       });
       
-      res.setHeader("Content-Type", proxyRes.headers["content-type"] || "audio/mpeg");
+      res.setHeader("Content-Type", String(proxyRes.headers["content-type"] || "audio/mpeg"));
       res.setHeader("Access-Control-Allow-Origin", "*");
       res.setHeader("Cache-Control", "public, max-age=86400");
       proxyRes.data.pipe(res);
