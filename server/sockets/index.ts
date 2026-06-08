@@ -1,5 +1,6 @@
 import { Server, Socket } from "socket.io";
 import path from "path";
+import fs from "fs";
 import axios from "axios";
 axios.defaults.proxy = false;
 import { AuthService } from "../services/auth.service.ts";
@@ -30,9 +31,11 @@ function isMessageMediaIncomplete(content: string | null | undefined): boolean {
   const trimmed = content.trim();
   if (trimmed === "") return true;
 
+  let mediaUrl: string | undefined;
+
   if (trimmed.includes("[IMAGE]:")) {
     const parts = trimmed.split("[IMAGE]:");
-    const mediaUrl = parts[parts.length - 1]?.trim();
+    mediaUrl = parts[parts.length - 1]?.trim();
     if (!mediaUrl || mediaUrl.length < 5) {
       return true;
     }
@@ -40,11 +43,37 @@ function isMessageMediaIncomplete(content: string | null | undefined): boolean {
 
   if (trimmed.includes("[GIF]:")) {
     const parts = trimmed.split("[GIF]:");
-    const mediaUrl = parts[parts.length - 1]?.trim();
+    mediaUrl = parts[parts.length - 1]?.trim();
     if (!mediaUrl || mediaUrl.length < 5) {
       return true;
     }
   }
+
+  // If there's a local upload url, verify that the file actually exists on the disk
+  if (mediaUrl) {
+    let filePath: string | null = null;
+    if (mediaUrl.startsWith("/api/v1/upload/file/gifs/")) {
+      const filename = mediaUrl.replace("/api/v1/upload/file/gifs/", "");
+      filePath = path.join(process.cwd(), "uploads", "gifs", filename);
+    } else if (mediaUrl.startsWith("/api/v1/upload/file/")) {
+      const filename = mediaUrl.replace("/api/v1/upload/file/", "");
+      filePath = path.join(process.cwd(), "uploads", filename);
+    } else if (mediaUrl.startsWith("/uploads/")) {
+      filePath = path.join(process.cwd(), mediaUrl.replace(/^\//, ""));
+    }
+
+    if (filePath) {
+      try {
+        if (!fs.existsSync(filePath)) {
+          console.log(`[MediaCheck] File does not exist, marking message as incomplete: ${filePath}`);
+          return true; // File is missing, treat as corrupt so it gets permanently deleted
+        }
+      } catch (err) {
+        console.error("[MediaCheck] Error checking file existence:", err);
+      }
+    }
+  }
+
   return false;
 }
 

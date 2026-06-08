@@ -464,6 +464,8 @@ export const LobbyRoomPage = () => {
  } = useLobby();
  const { 
   noiseCanceling, setNoiseCanceling, isMicTestOn, setIsMicTestOn,
+   localMusicAudioRef, localMusicDuration, setLocalMusicDuration,
+   localMusicCurrentTime, setLocalMusicCurrentTime, isDucking,
   musicBotState, toggleMusicBot, controlMusicBot,
   musicVolumeSilence, setMusicVolumeSilence,
   musicVolumeTalking, setMusicVolumeTalking,
@@ -597,11 +599,11 @@ export const LobbyRoomPage = () => {
  }, []);
 
   const [isQueueOpen, setIsQueueOpen] = useState(false);
-  const localMusicAudioRef = useRef<HTMLAudioElement | null>(null);
+  
   const hostVolumeFaderRef = useRef<number | null>(null);
   const hostCurrentVolumeRef = useRef<number>(1);
-  const [localMusicDuration, setLocalMusicDuration] = useState(0);
-  const [localMusicCurrentTime, setLocalMusicCurrentTime] = useState(0);
+  
+  
 
  const fetchLoxxLibrary = useCallback(() => {
    loxxApi.get("/musicbot/loxx-library")
@@ -832,251 +834,7 @@ export const LobbyRoomPage = () => {
   const botId = `music-bot-${lobby?.id}`;
   const botVolumeLevel = peerVolumes[botId] !== undefined ? peerVolumes[botId] : 100;
   
-  // --- High-Fidelity Sync & Media Server Broadcasting (Music Bot) ---
-  const [audioElMounted, setAudioElMounted] = useState(false);
-  const audioContextRef = useRef<AudioContext | null>(null);
-
-  // 1. Everyone plays the audio element locally for high-fidelity synchronized playback,
-  // but only the host sets up the audio graph compressor to send via WebRTC.
-  useEffect(() => {
-    const audioEl = localMusicAudioRef.current;
-    if (!audioEl) return;
-    if (!audioElMounted) setAudioElMounted(true);
-
-    // Audio Engine: Limiter / Compressor Setup (Host Only)
-    if (isHost && !audioContextRef.current && (window.AudioContext || (window as any).webkitAudioContext)) {
-      try {
-        const ac = new (window.AudioContext || (window as any).webkitAudioContext)();
-        ac.resume().catch(() => {});
-        audioContextRef.current = ac;
-        const source = ac.createMediaElementSource(audioEl);
-        
-        const compressor = ac.createDynamicsCompressor();
-        compressor.threshold.value = -12;
-        compressor.knee.value = 10;
-        compressor.ratio.value = 12;
-        compressor.attack.value = 0.003;
-        compressor.release.value = 0.25;
-
-        const dest = ac.createMediaStreamDestination();
-        
-        source.connect(compressor);
-        compressor.connect(dest);
-        compressor.connect(ac.destination); // For local playback on host
-        
-        setBotStream(dest.stream);
-      } catch (err) {
-        console.error("AudioContext initialization failed", err);
-      }
-    }
-
-    const handleTimeUpdate = () => {
-      setLocalMusicCurrentTime(audioEl.currentTime);
-    };
-    const handleDurationChange = () => {
-      const dur = audioEl.duration || 0;
-      setLocalMusicDuration(dur);
-      if (isHost && dur > 0) {
-        controlMusicBot("seek", { duration: dur });
-      }
-    };
-
-    audioEl.addEventListener("timeupdate", handleTimeUpdate);
-    audioEl.addEventListener("durationchange", handleDurationChange);
-
-    if (!musicBotState?.active || !musicBotState?.currentTrackUrl) {
-      if (!audioEl.paused) audioEl.pause();
-      return () => {
-        audioEl.removeEventListener("timeupdate", handleTimeUpdate);
-        audioEl.removeEventListener("durationchange", handleDurationChange);
-      };
-    }
-
-    const rawUrl = musicBotState.currentTrackUrl;
-    let fullUrl = rawUrl.startsWith("http") ? rawUrl : (rawUrl.startsWith("blob:") ? rawUrl : `${window.location.origin}${rawUrl}`);
-    
-    // Proxy external audio to bypass CORS for Web Audio API
-    if (fullUrl.startsWith("http") && !fullUrl.startsWith(window.location.origin)) {
-       fullUrl = `/api/v1/proxy/audio?url=${encodeURIComponent(fullUrl)}`;
-    }
-
-    if (audioEl.src !== fullUrl && audioEl.src !== window.location.origin + fullUrl) {
-      audioEl.src = fullUrl;
-      audioEl.load();
-    }
-
-    if (musicBotState.currentTime !== undefined && musicBotState.updatedAt) {
-      const timeSinceUpdate = (Date.now() - musicBotState.updatedAt) / 1000;
-      const targetTime = musicBotState.currentTime + (musicBotState.isPlaying ? timeSinceUpdate : 0);
-      const drift = Math.abs(audioEl.currentTime - targetTime);
-      if (drift > 2.0) {
-        audioEl.currentTime = targetTime;
-      }
-    }
-
-    if (musicBotState.isPlaying) {
-      if (audioContextRef.current && audioContextRef.current.state === "suspended") {
-        audioContextRef.current.resume().catch(() => {});
-      }
-      if (audioEl.paused) {
-        const playPromise = audioEl.play();
-        if (playPromise !== undefined) {
-          playPromise.catch(e => console.warn("[LocalMusicBot] Playback prevented by Autoplay:", e));
-        }
-      }
-    } else {
-      if (!audioEl.paused) audioEl.pause();
-    }
-
-    const unlockPlay = () => {
-      if (musicBotState?.isPlaying && audioEl.paused) {
-        audioEl.play().catch(e => console.log("[LocalMusicBot] Autoplay restriction unlock failed:", e));
-      }
-    };
-    document.addEventListener("click", unlockPlay, { once: true });
-    document.addEventListener("touchstart", unlockPlay, { once: true });
-
-    audioEl.onended = () => {
-      if (isHost && musicBotState.queue && musicBotState.queue.length > 0) {
-        const nextIndex = (musicBotState.queueIndex + 1) % musicBotState.queue.length;
-        const nextTrack = musicBotState.queue[nextIndex];
-        controlMusicBot("update-queue", {
-          queue: musicBotState.queue,
-          queueIndex: nextIndex,
-          trackUrl: nextTrack.url,
-          trackName: nextTrack.name,
-          category: musicBotState.currentCategory,
-          isPlaying: true,
-          currentTime: 0
-        });
-      }
-    };
-
-    return () => {
-      audioEl.removeEventListener("timeupdate", handleTimeUpdate);
-      audioEl.removeEventListener("durationchange", handleDurationChange);
-      document.removeEventListener("click", unlockPlay);
-      document.removeEventListener("touchstart", unlockPlay);
-      audioEl.onended = null;
-    };
-  }, [
-    musicBotState?.active,
-    musicBotState?.currentTrackUrl,
-    musicBotState?.isPlaying,
-    musicBotState?.queueIndex,
-    musicBotState?.currentTime,
-    musicBotState?.updatedAt,
-    isHost
-  ]);
-
-  // 2. Peers: Simulate progress bar logic purely from WebRTC state packets
-  useEffect(() => {
-    if (isHost || !musicBotState?.active || musicBotState?.currentTime === undefined) return;
-    
-    // We update UI progress tracker 1x per second based on the server tracked timestamps
-    const interval = setInterval(() => {
-      const dur = musicBotState.duration || 0;
-      setLocalMusicDuration(dur);
-      if (musicBotState.isPlaying) {
-        const timeSinceUpdate = (Date.now() - (musicBotState.updatedAt || Date.now())) / 1000;
-        const calculatedTime = musicBotState.currentTime! + timeSinceUpdate;
-        setLocalMusicCurrentTime(Math.min(calculatedTime, dur));
-      } else {
-        setLocalMusicCurrentTime(Math.min(musicBotState.currentTime!, dur));
-      }
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [isHost, musicBotState?.active, musicBotState?.isPlaying, musicBotState?.currentTime, musicBotState?.updatedAt, musicBotState?.duration]);
-
-  // Synchronize duration on peer when it changes in state
-  useEffect(() => {
-    if (!isHost && musicBotState?.duration) {
-      setLocalMusicDuration(musicBotState.duration);
-    }
-  }, [isHost, musicBotState?.duration]);
-
-  // Resume host AudioContext on user gesture
-  useEffect(() => {
-    if (!isHost) return;
-    const handleGesture = () => {
-      const ac = audioContextRef.current;
-      if (ac && ac.state === "suspended") {
-        ac.resume().then(() => {
-          console.log("[LocalMusicBot] Host AudioContext resumed successfully via gesture.");
-        }).catch(err => {
-          console.warn("[LocalMusicBot] Failed to resume host AudioContext:", err);
-        });
-      }
-    };
-    document.addEventListener("click", handleGesture);
-    document.addEventListener("touchstart", handleGesture);
-    return () => {
-      document.removeEventListener("click", handleGesture);
-      document.removeEventListener("touchstart", handleGesture);
-    };
-  }, [isHost]);
-
-  const [isDucking, setIsDucking] = useState(false);
-  
-  // Separate non-blocking vocal ducking / volume adjustment effect to decouple from playback
-  useEffect(() => {
-    const audioEl = localMusicAudioRef.current;
-    if (!audioEl) return;
-
-    const hasHighPeerActivity = Object.entries(peerActivity).some(([uid, vol]) => {
-      if (uid === botId) return false;
-      const player = lobby?.players?.find((p: any) => p.userId === uid);
-      if (!player) return false;
-      if (player.micMuted) return false;
-      return (vol as number) > 15;
-    });
-    const me = lobby?.players?.find((p: any) => p.userId === user?.id);
-    const hasLocalActivity = !me?.micMuted && (localVolume || 0) > 15;
-    
-    const isSomeoneElseSpeaking = (lobby?.talkingUsers?.some((uid: string) => {
-      if (uid === botId) return false;
-      const player = lobby?.players?.find((p: any) => p.userId === uid);
-      return player && !player.micMuted;
-    }) || hasHighPeerActivity || hasLocalActivity || false);
-    
-    const duckingFactor = isSomeoneElseSpeaking ? (musicVolumeTalking !== undefined ? musicVolumeTalking : 30) : (musicVolumeSilence !== undefined ? musicVolumeSilence : 100);
-    const calculatedVolume = Math.max(0, Math.min(1, (botVolumeLevel / 100) * (duckingFactor / 100)));
-
-    setIsDucking(isSomeoneElseSpeaking);
-
-    // Smooth transition over 300ms using linear-cubic interpolation
-    if (hostVolumeFaderRef.current) cancelAnimationFrame(hostVolumeFaderRef.current);
-    const start = hostCurrentVolumeRef.current;
-    const duration = isSomeoneElseSpeaking ? 150 : 350; // Quicker ducking attack, gentler release (fade-in)
-    const startTime = performance.now();
-
-    const anim = (now: number) => {
-      const elapsed = now - startTime;
-      const progress = Math.min(1, elapsed / duration);
-      // Cubic easing for premium feeling
-      const ease = progress < 0.5 ? 2 * progress * progress : 1 - Math.pow(-2 * progress + 2, 2) / 2;
-      const current = start + (calculatedVolume - start) * ease;
-      audioEl.volume = current;
-      hostCurrentVolumeRef.current = current;
-      if (progress < 1) {
-        hostVolumeFaderRef.current = requestAnimationFrame(anim);
-      }
-    };
-    hostVolumeFaderRef.current = requestAnimationFrame(anim);
-
-    return () => {
-      if (hostVolumeFaderRef.current) cancelAnimationFrame(hostVolumeFaderRef.current);
-    };
-  }, [
-    botVolumeLevel,
-    lobby?.talkingUsers,
-    musicVolumeSilence,
-    musicVolumeTalking,
-    botId,
-    peerActivity,
-    localVolume,
-    audioElMounted
-  ]);
+  // High-fidelity background music sync and vocal ducking are now managed in LobbyContext.tsx
 
   // Separate non-blocking effect for absolute position syncing to eliminate lag cascade
   const hostPlayer = lobby?.players?.find((p: any) => p.userId === lobby?.hostId);
@@ -1182,7 +940,7 @@ export const LobbyRoomPage = () => {
 
  return (
  <div className={cn("flex bg-[#050508] overflow-hidden", isElectron ? "h-[calc(100vh-100px)] min-h-[calc(100vh-100px)] max-h-[calc(100vh-100px)]" : "h-[calc(100vh-64px)] min-h-[calc(100vh-64px)] max-h-[calc(100vh-64px)]")} dir={isRtl ? "rtl" : "ltr"}>
- <audio className="hidden" ref={localMusicAudioRef} crossOrigin="anonymous" />
+ 
  <Sidebar />
  <main className={cn(
  "flex-1 min-w-0 relative h-full max-h-full overflow-hidden transition-all duration-300", 
@@ -1978,7 +1736,7 @@ export const LobbyRoomPage = () => {
        <div className="flex items-center gap-1">
         {/* Disconnect button */}
         <button 
-         onClick={() => toggleMusicBot(false)}
+         onClick={() => toggleMusicBot(false, isMelodyBot ? "melody" : "music")}
          className={cn("rounded-full p-1.5 transition-all outline-none", isMelodyBot ? "hover:bg-[#FFD700]/20 text-[#FFD700]" : "hover:bg-[#00e5ff]/20 text-[#00e5ff]")}
          title={isRtl ? "خروج ربات از لابی" : "Disconnect Bot"}
         >
@@ -1993,7 +1751,7 @@ export const LobbyRoomPage = () => {
          <Minus size={24} strokeWidth={2.5} />
         </button>
         {/* Setup button */}
-        {isHost && (
+        {isHost && !isMelodyBot && (
          <button 
           onClick={() => {
            setSetupStep("source");

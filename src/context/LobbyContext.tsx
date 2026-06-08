@@ -175,6 +175,12 @@ interface LobbyContextType {
  setMusicVolumeSilence: (val: number) => void;
  musicVolumeTalking: number;
  setMusicVolumeTalking: (val: number) => void;
+  localMusicAudioRef: React.RefObject<HTMLAudioElement | null>;
+  localMusicDuration: number;
+  setLocalMusicDuration: React.Dispatch<React.SetStateAction<number>>;
+  localMusicCurrentTime: number;
+  setLocalMusicCurrentTime: React.Dispatch<React.SetStateAction<number>>;
+  isDucking: boolean;
 }
 
 const LobbyContext = createContext<LobbyContextType | undefined>(undefined);
@@ -400,6 +406,11 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
  });
 
  const [isMicTestOn, setIsMicTestOn] = useState<boolean>(false);
+
+  const localMusicAudioRef = useRef<HTMLAudioElement | null>(null);
+  const [localMusicDuration, setLocalMusicDuration] = useState<number>(0);
+  const [localMusicCurrentTime, setLocalMusicCurrentTime] = useState<number>(0);
+  const [isDucking, setIsDucking] = useState<boolean>(false);
 
  const [musicBotState, setMusicBotState] = useState<any>(null);
 
@@ -1616,15 +1627,16 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }
  }, [lobby?.id]);
 
- const toggleMusicBot = (active: boolean, botType: "music" | "melody" = "music") => {
+ const toggleMusicBot = (active: boolean, botType?: "music" | "melody") => {
   if (lobby) {
-   lobbySocket.emit("lobby.musicbot.toggle", { lobbyId: lobby.id, active, botType }, (res: any) => {
+   const finalBotType = botType || musicBotState?.botType || "music";
+    lobbySocket.emit("lobby.musicbot.toggle", { lobbyId: lobby.id, active, botType: finalBotType }, (res: any) => {
     if (res?.status === "success") {
      setMusicBotState({
        ...res.data,
        updatedAt: Date.now()
      });
-     const botName = botType === "melody" ? "ملودی لوکس (طلایی)" : "ربات موزیک";
+     const botName = finalBotType === "melody" ? "ملودی لوکس (طلایی)" : "ربات موزیک";
      toast.success(active ? `${botName} فعال شد` : `${botName} غیرفعال شد`);
     } else if (res?.message) {
      toast.error(res.message);
@@ -1648,7 +1660,240 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }
  };
 
- const updateLobbySettings = (settings: { isPrivate?: boolean, micRequired?: boolean }) => {
+   // --- High-Fidelity Sync & Media Server Broadcasting (Music Bot) ---
+  const [audioElMounted, setAudioElMounted] = useState(false);
+  const audioContextRef = useRef<AudioContext | null>(null);
+
+  // 1. Synchronized local HTML5 playback
+  useEffect(() => {
+    const audioEl = localMusicAudioRef.current;
+    if (!audioEl) return;
+    if (!audioElMounted) setAudioElMounted(true);
+
+    const isHost = lobby?.hostId === user?.id;
+
+    // Audio Engine: Limiter / Compressor Setup (Host Only)
+    if (isHost && !audioContextRef.current && (window.AudioContext || (window as any).webkitAudioContext)) {
+      try {
+        const ac = new (window.AudioContext || (window as any).webkitAudioContext)();
+        ac.resume().catch(() => {});
+        audioContextRef.current = ac;
+        const source = ac.createMediaElementSource(audioEl);
+        
+        const compressor = ac.createDynamicsCompressor();
+        compressor.threshold.value = -12;
+        compressor.knee.value = 10;
+        compressor.ratio.value = 12;
+        compressor.attack.value = 0.003;
+        compressor.release.value = 0.25;
+
+        const dest = ac.createMediaStreamDestination();
+        
+        source.connect(compressor);
+        compressor.connect(dest);
+        compressor.connect(ac.destination); // For local playback on host
+        
+        setBotStream(dest.stream);
+      } catch (err) {
+        console.error("AudioContext initialization failed", err);
+      }
+    }
+
+    const handleTimeUpdate = () => {
+      setLocalMusicCurrentTime(audioEl.currentTime);
+    };
+    const handleDurationChange = () => {
+      const dur = audioEl.duration || 0;
+      setLocalMusicDuration(dur);
+      if (isHost && dur > 0) {
+        controlMusicBot("seek", { duration: dur });
+      }
+    };
+
+    audioEl.addEventListener("timeupdate", handleTimeUpdate);
+    audioEl.addEventListener("durationchange", handleDurationChange);
+
+    if (!musicBotState?.active || !musicBotState?.currentTrackUrl) {
+      if (!audioEl.paused) audioEl.pause();
+      return () => {
+        audioEl.removeEventListener("timeupdate", handleTimeUpdate);
+        audioEl.removeEventListener("durationchange", handleDurationChange);
+      };
+    }
+
+    const rawUrl = musicBotState.currentTrackUrl;
+    let fullUrl = rawUrl.startsWith("http") ? rawUrl : (rawUrl.startsWith("blob:") ? rawUrl : `${window.location.origin}${rawUrl}`);
+    
+    // Proxy external audio to bypass CORS for Web Audio API
+    if (fullUrl.startsWith("http") && !fullUrl.startsWith(window.location.origin)) {
+       fullUrl = `/api/v1/proxy/audio?url=${encodeURIComponent(fullUrl)}`;
+    }
+
+    if (audioEl.src !== fullUrl && audioEl.src !== window.location.origin + fullUrl) {
+      audioEl.src = fullUrl;
+      audioEl.load();
+    }
+
+    if (musicBotState.currentTime !== undefined && musicBotState.updatedAt) {
+      const timeSinceUpdate = (Date.now() - musicBotState.updatedAt) / 1000;
+      const targetTime = musicBotState.currentTime + (musicBotState.isPlaying ? timeSinceUpdate : 0);
+      const drift = Math.abs(audioEl.currentTime - targetTime);
+      
+      // Host is master source of truth. We only snap if the drift is large (e.g. initial load or massive desync)
+      const maxDrift = isHost ? 10.0 : 2.0;
+      if (drift > maxDrift) {
+        audioEl.currentTime = targetTime;
+      }
+    }
+
+    if (musicBotState.isPlaying) {
+      if (audioContextRef.current && audioContextRef.current.state === "suspended") {
+        audioContextRef.current.resume().catch(() => {});
+      }
+      if (audioEl.paused) {
+        const playPromise = audioEl.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(e => console.warn("[LocalMusicBot] Playback prevented by Autoplay:", e));
+        }
+      }
+    } else {
+      if (!audioEl.paused) audioEl.pause();
+    }
+
+    const unlockPlay = () => {
+      if (musicBotState?.isPlaying && audioEl.paused) {
+        audioEl.play().catch(e => console.log("[LocalMusicBot] Autoplay restriction unlock failed:", e));
+      }
+    };
+    document.addEventListener("click", unlockPlay, { once: true });
+    document.addEventListener("touchstart", unlockPlay, { once: true });
+
+    audioEl.onended = () => {
+      if (isHost && musicBotState.queue && musicBotState.queue.length > 0) {
+        const nextIndex = (musicBotState.queueIndex + 1) % musicBotState.queue.length;
+        const nextTrack = musicBotState.queue[nextIndex];
+        controlMusicBot("update-queue", {
+          queue: musicBotState.queue,
+          queueIndex: nextIndex,
+          trackUrl: nextTrack.url,
+          trackName: nextTrack.name,
+          category: musicBotState.currentCategory,
+          isPlaying: true,
+          currentTime: 0
+        });
+      }
+    };
+
+    return () => {
+      audioEl.removeEventListener("timeupdate", handleTimeUpdate);
+      audioEl.removeEventListener("durationchange", handleDurationChange);
+      document.removeEventListener("click", unlockPlay);
+      document.removeEventListener("touchstart", unlockPlay);
+      audioEl.onended = null;
+    };
+  }, [
+    musicBotState?.active,
+    musicBotState?.currentTrackUrl,
+    musicBotState?.isPlaying,
+    musicBotState?.queueIndex,
+    musicBotState?.currentTime,
+    musicBotState?.updatedAt,
+    lobby?.id,
+    user?.id
+  ]);
+
+  // 2. Peers progress simulation
+  useEffect(() => {
+    const isHost = lobby?.hostId === user?.id;
+    if (isHost || !musicBotState?.active || musicBotState?.currentTime === undefined) return;
+    
+    const interval = setInterval(() => {
+      const dur = musicBotState.duration || 0;
+      setLocalMusicDuration(dur);
+      if (musicBotState.isPlaying) {
+        const timeSinceUpdate = (Date.now() - (musicBotState.updatedAt || Date.now())) / 1000;
+        const calculatedTime = musicBotState.currentTime! + timeSinceUpdate;
+        setLocalMusicCurrentTime(Math.min(calculatedTime, dur));
+      } else {
+        setLocalMusicCurrentTime(Math.min(musicBotState.currentTime!, dur));
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [lobby?.hostId, user?.id, musicBotState?.active, musicBotState?.isPlaying, musicBotState?.currentTime, musicBotState?.updatedAt, musicBotState?.duration]);
+
+  // Synchronize duration on peer when it changes in state
+  useEffect(() => {
+    const isHost = lobby?.hostId === user?.id;
+    if (!isHost && musicBotState?.duration) {
+      setLocalMusicDuration(musicBotState.duration);
+    }
+  }, [lobby?.hostId, user?.id, musicBotState?.duration]);
+
+  // Resume host AudioContext on user gesture
+  useEffect(() => {
+    const isHost = lobby?.hostId === user?.id;
+    if (!isHost) return;
+    const handleGesture = () => {
+      const ac = audioContextRef.current;
+      if (ac && ac.state === "suspended") {
+        ac.resume().then(() => {
+          console.log("[LocalMusicBot] Host AudioContext resumed successfully via gesture.");
+        }).catch(err => {
+          console.warn("[LocalMusicBot] Failed to resume host AudioContext:", err);
+        });
+      }
+    };
+    document.addEventListener("click", handleGesture);
+    document.addEventListener("touchstart", handleGesture);
+    return () => {
+      document.removeEventListener("click", handleGesture);
+      document.removeEventListener("touchstart", handleGesture);
+    };
+  }, [lobby?.hostId, user?.id]);
+
+  // Vocal ducking / volume adjustment
+  useEffect(() => {
+    const audioEl = localMusicAudioRef.current;
+    if (!audioEl) return;
+
+    const botId = `music-bot-${lobby?.id}`;
+    const botVolumeLevel = peerVolumes[botId] !== undefined ? peerVolumes[botId] : 100;
+
+    const hasHighPeerActivity = Object.entries(peerActivity).some(([uid, vol]) => {
+      if (uid === botId) return false;
+      const player = lobby?.players?.find((p: any) => p.userId === uid);
+      if (!player) return false;
+      if (player.micMuted) return false;
+      return (vol as number) > 5; // Speak threshold
+    });
+
+    const baseVolume = isDeafened ? 0 : botVolumeLevel;
+    
+    let targetVol = (baseVolume / 100) * musicVolumeSilence;
+    if (hasHighPeerActivity) {
+      targetVol = (baseVolume / 100) * musicVolumeTalking;
+      setIsDucking(true);
+    } else {
+      setIsDucking(false);
+    }
+
+    if (Math.abs(audioEl.volume - targetVol) > 0.01) {
+      const step = (targetVol - audioEl.volume) / 10;
+      let count = 0;
+      const interval = setInterval(() => {
+        if (count >= 10) {
+          audioEl.volume = targetVol;
+          clearInterval(interval);
+        } else {
+          audioEl.volume = Math.max(0, Math.min(1, audioEl.volume + step));
+          count++;
+        }
+      }, 30);
+      return () => clearInterval(interval);
+    }
+  }, [peerActivity, peerVolumes, musicVolumeSilence, musicVolumeTalking, lobby?.players, lobby?.id, isDeafened]);
+
+  const updateLobbySettings = (settings: { isPrivate?: boolean, micRequired?: boolean }) => {
  if (lobby) {
  lobbySocket.emit("lobby.update_settings", { lobbyId: lobby.id, ...settings }, (ack: any) => {
  if (ack?.status === "error") {
@@ -1785,10 +2030,17 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
  controlMusicBot,
  musicVolumeSilence,
  setMusicVolumeSilence,
+  localMusicAudioRef,
+  localMusicDuration,
+  setLocalMusicDuration,
+  localMusicCurrentTime,
+  setLocalMusicCurrentTime,
+  isDucking,
  musicVolumeTalking,
  setMusicVolumeTalking
  }}>
  {children}
+  <audio className="hidden" ref={localMusicAudioRef} crossOrigin="anonymous" />
  {lobby?.id && Array.from(remoteStreams.entries()).map(([peerUserId, stream]) => {
   const isBot = peerUserId.startsWith("music-bot-");
   if (isBot) return null; // Bypassed: high-fidelity local HTML5 playback runs synchronously in LobbyRoomPage instead of degraded voice buffers.
