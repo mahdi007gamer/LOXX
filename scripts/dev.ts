@@ -47,11 +47,6 @@ process.on('uncaughtException', (err) => {
 });
 
 async function main() {
-  if (!process.env.DATABASE_URL || process.env.DATABASE_URL.trim() === '') {
-    console.log('[Dev] No DATABASE_URL found. Defaulting to local SQLite: file:./prisma/dev.db');
-    process.env.DATABASE_URL = 'file:./prisma/dev.db';
-  }
-
   const isSqlite = process.env.DATABASE_URL?.startsWith('file:') || process.env.DATABASE_URL?.includes('dev.db');
   
   if (isSqlite) {
