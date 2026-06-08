@@ -1,3 +1,6 @@
+import dotenv from "dotenv";
+dotenv.config();
+
 import express from "express";
 import http from "http";
 import { Server } from "socket.io";
@@ -5,7 +8,6 @@ import path from "path";
 import { execSync } from "child_process";
 import cors from "cors";
 import helmet from "helmet";
-import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 import authRoutes from "./server/routes/auth.routes.ts";
 import userRoutes from "./server/routes/user.routes.ts";
@@ -33,7 +35,6 @@ import prisma from "./server/utils/prisma.ts";
 import { errorHandler } from "./server/middleware/error.middleware.ts";
 import { generalLimiter } from "./server/middleware/rateLimit.middleware.ts";
 
-dotenv.config();
 
 // Debug Proxy Settings
 const proxyVars = ['HTTP_PROXY', 'HTTPS_PROXY', 'ALL_PROXY', 'http_proxy', 'https_proxy', 'all_proxy'];
