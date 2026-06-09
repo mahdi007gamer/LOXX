@@ -662,6 +662,7 @@ useEffect(() => {
  const [localPlayMode, setLocalPlayMode] = useState<"in-order" | "random">("random");
  const [loxxLibrary, setLoxxLibrary] = useState<{ irani: any; kharegi: any } | null>(null);
  const [isMusicPlayerExpanded, setIsMusicPlayerExpanded] = useState(true);
+ const isMusicPlayerDraggingRef = useRef(false);
 
   // Auto-expand player container and activate desktop chat panel when Melody Lox bot is invited/joins
   useEffect(() => {
@@ -1379,7 +1380,7 @@ useEffect(() => {
  {!isElectron || isDesktopChatOpen ? (
  <div 
  className={cn("hidden lg:flex flex-col shadow-2xl", isElectron ? "absolute bottom-6 right-6 z-[100] bg-black/80 rounded-[24px] border border-white/10" : "w-full lg:w-[280px] xl:w-[320px] h-full order-first overflow-hidden")}
- style={isElectron ? { width: chatSize.width, height: chatSize.height } : undefined}
+ style={isElectron ? { width: chatSize.width, height: chatSize.height, maxHeight: 'calc(100vh - 180px)' } : undefined}
  >
  {isElectron && (
  <>
@@ -1777,16 +1778,33 @@ useEffect(() => {
        left: isRtl ? -24 : -(windowDims.width - 24 - 64),
        right: isRtl ? (windowDims.width - 24 - 64) : 24
       }}
+      onDragStart={() => {
+        isMusicPlayerDraggingRef.current = true;
+      }}
+      onDragEnd={() => {
+        setTimeout(() => {
+          isMusicPlayerDraggingRef.current = false;
+        }, 100);
+      }}
       whileDrag={{ scale: 1.1, cursor: "grabbing" }}
       className={cn(
-       "fixed bottom-24 z-[70] cursor-grab active:cursor-grabbing h-16 w-16 rounded-full bg-black/60 backdrop-blur-xl border-2 flex flex-col items-center justify-center select-none transition-all duration-300",
+       "fixed bottom-24 z-[70] cursor-grab active:cursor-grabbing h-16 w-16 rounded-full bg-black/60 backdrop-blur-xl border-2 flex flex-col items-center justify-center select-none transition-[border-color,background-color,box-shadow] duration-300",
        isMelodyBot 
          ? "border-[#FFD700] shadow-[0_0_25px_rgba(255,215,0,0.55)] hover:shadow-[0_0_35px_rgba(255,215,0,0.85)]"
          : "border-[#00e5ff] shadow-[0_0_25px_rgba(0,229,255,0.45)] hover:shadow-[0_0_35px_rgba(0,229,255,0.7)]",
        isRtl ? "left-6" : "right-6"
       )}
       title={isRtl ? "پخش‌کننده موسیقی (برای بزرگ کردن دوبار کلیک کنید یا کلیک کنید)" : "Music Player (Double click or tap to expand)"}
-      onClick={() => setIsMusicPlayerExpanded(true)} onDoubleClick={() => setIsMusicPlayerExpanded(true)}
+      onClick={() => {
+        if (!isMusicPlayerDraggingRef.current) {
+          setIsMusicPlayerExpanded(true);
+        }
+      }}
+      onDoubleClick={() => {
+        if (!isMusicPlayerDraggingRef.current) {
+          setIsMusicPlayerExpanded(true);
+        }
+      }}
      >
       <div className={cn("absolute inset-0 rounded-full animate-pulse", isMelodyBot ? "bg-[#FFD700]/5" : "bg-[#00e5ff]/5")} />
       {musicBotState?.currentTrackCover ? (
@@ -3221,57 +3239,7 @@ useEffect(() => {
  </AnimatePresence>
  </div>
  
-  {/* Desktop Chat Sidebar (Right) - Absolute/Fixed Overlay for Electron */}
-  {isElectron && isDesktopChatOpen && (
-  <div 
-  className="hidden lg:flex flex-col shadow-[0_30px_60px_rgba(0,0,0,0.8),_0_0_20px_rgba(0,229,255,0.1)] fixed bottom-6 right-6 z-[999] bg-black/85 backdrop-blur-xl border border-white/10 overflow-hidden shadow-2xl rounded-2xl"
-  style={{ width: chatSize.width, height: chatSize.height, maxHeight: 'calc(100vh - 180px)' }}
-  >
-  <div 
-  className="absolute top-0 left-0 w-6 h-6 cursor-nwse-resize z-50 hover:bg-white/5 active:bg-white/10 rounded-tl-2xl transition"
-  onMouseDown={(e) => handleResizeStart(e, 'nw')}
-  />
-  <div 
-  className="absolute top-0 left-6 right-0 h-3 cursor-ns-resize z-[45] hover:bg-white/5 active:bg-white/10 transition"
-  onMouseDown={(e) => handleResizeStart(e, 'n')}
-  />
-  <div 
-  className="absolute top-6 left-0 bottom-0 w-3 cursor-ew-resize z-[45] hover:bg-white/5 active:bg-white/10 transition"
-  onMouseDown={(e) => handleResizeStart(e, 'w')}
-  />
-  <div className="flex-1 w-full h-full overflow-hidden flex flex-col">
-  <ChatPanel 
-  messages={messages} 
-  players={players}
-  inputMessage={inputMessage} 
-  setInputMessage={setInputMessage} 
-  onSend={handleSendMessage}
-  currentUserId={user?.id}
-  isVipLobby={isVipLobby}
-  onClose={() => setIsDesktopChatOpen(false)}
-  />
-  </div>
-  </div>
-  )}
-  {isElectron && !isDesktopChatOpen && (
-  <motion.div 
-  initial={{ y: 50, opacity: 0 }}
-  animate={{ y: 0, opacity: 1 }}
-  className="hidden lg:flex fixed bottom-6 right-6 z-[999] flex-col border border-white/10 bg-black/60 rounded-[24px] overflow-hidden shadow-2xl cursor-pointer hover:bg-black/80 w-[300px] hover:border-neon-blue/30 transition-colors duration-300 backdrop-blur-md"
-  onClick={() => setIsDesktopChatOpen(true)}
-  >
-  <div className="flex items-center justify-between p-4">
-  <div className="flex flex-col">
-  <div className="flex items-center gap-2">
-  <div className="h-2 w-2 rounded-full bg-neon-blue animate-pulse" />
-  <h2 className="text-xs font-black uppercase text-white px-2">Lobby Comms</h2>
-  </div>
-  {unreadDesktopChat > 0 && <span className="text-[10px] text-neon-blue mt-1 font-bold flex justify-center">{unreadDesktopChat} پیام جدید</span>}
-  </div>
-  <MessageSquare size={18} className="text-gray-400 mr-2 ml-2" />
-  </div>
-  </motion.div>
-  )}
+
   </main>
  </div>
  );

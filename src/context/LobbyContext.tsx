@@ -595,48 +595,57 @@ const checkElectron = typeof window !== "undefined" && !!(window as any).electro
  });
  });
 
- return () => {
- if (stopGameDetector) stopGameDetector();
- };
- }
- }, []);
+  return () => {
+    if (stopGameDetector) stopGameDetector();
+  };
+  }
+  }, []);
 
- const updateLauncherSettings = useCallback((updated: { voiceMode?: "activation" | "ptt";
- closeToTray?: boolean;
- startAtLogin?: boolean;
- hardwareAcceleration?: boolean;
- globalPttKey?: string;
- globalMuteKey?: string;
- overlayX?: number;
- overlayY?: number;
- overlayWidth?: number;
- overlayHeight?: number;
- overlayOpacity?: number;
- overlayClickThrough?: boolean;
- bypassSystemProxy?: boolean;
- appDnsProvider?: "system" | "cloudflare" | "google" | "electro" | "shecan";
- }) => {
- const checkElectron = typeof window !== "undefined" && !!(window as any).electronAPI;
- if (checkElectron) {
- if (updated.voiceMode !== undefined) setVoiceMode(updated.voiceMode);
- if (updated.closeToTray !== undefined) setLauncherCloseToTray(updated.closeToTray);
- if (updated.startAtLogin !== undefined) setLauncherStartAtLogin(updated.startAtLogin);
- if (updated.hardwareAcceleration !== undefined) setLauncherHardwareAcceleration(updated.hardwareAcceleration);
- if (updated.globalPttKey !== undefined) {
- setLauncherGlobalPttKey(updated.globalPttKey);
- const parts = updated.globalPttKey.split("+");
- setPttKey(parts[parts.length - 1]);
- }
- if (updated.globalMuteKey !== undefined) setLauncherGlobalMuteKey(updated.globalMuteKey);
- if (updated.overlayX !== undefined) setOverlayX(updated.overlayX);
- if (updated.overlayY !== undefined) setOverlayY(updated.overlayY);
- if (updated.overlayWidth !== undefined) setOverlayWidth(updated.overlayWidth);
- if (updated.overlayHeight !== undefined) setOverlayHeight(updated.overlayHeight);
- if (updated.overlayOpacity !== undefined) setOverlayOpacity(updated.overlayOpacity);
- if (updated.overlayClickThrough !== undefined) setOverlayClickThrough(updated.overlayClickThrough);
- (window as any).electronAPI.updateLauncherSettings(updated);
- }
- }, []);
+  const updateLauncherSettings = useCallback((updated: { voiceMode?: "activation" | "ptt";
+    closeToTray?: boolean;
+    startAtLogin?: boolean;
+    hardwareAcceleration?: boolean;
+    globalPttKey?: string;
+    globalMuteKey?: string;
+    overlayX?: number;
+    overlayY?: number;
+    overlayWidth?: number;
+    overlayHeight?: number;
+    overlayOpacity?: number;
+    overlayClickThrough?: boolean;
+    bypassSystemProxy?: boolean;
+    appDnsProvider?: "system" | "cloudflare" | "google" | "electro" | "shecan";
+   }) => {
+     if (updated.voiceMode !== undefined) setVoiceMode(updated.voiceMode);
+     if (updated.closeToTray !== undefined) setLauncherCloseToTray(updated.closeToTray);
+     if (updated.startAtLogin !== undefined) setLauncherStartAtLogin(updated.startAtLogin);
+     if (updated.hardwareAcceleration !== undefined) setLauncherHardwareAcceleration(updated.hardwareAcceleration);
+     if (updated.globalPttKey !== undefined) {
+       setLauncherGlobalPttKey(updated.globalPttKey);
+       const parts = updated.globalPttKey.split("+");
+       setPttKey(parts[parts.length - 1]);
+     }
+     if (updated.globalMuteKey !== undefined) setLauncherGlobalMuteKey(updated.globalMuteKey);
+     if (updated.overlayX !== undefined) setOverlayX(updated.overlayX);
+     if (updated.overlayY !== undefined) setOverlayY(updated.overlayY);
+     if (updated.overlayWidth !== undefined) setOverlayWidth(updated.overlayWidth);
+     if (updated.overlayHeight !== undefined) setOverlayHeight(updated.overlayHeight);
+     if (updated.overlayOpacity !== undefined) setOverlayOpacity(updated.overlayOpacity);
+     if (updated.overlayClickThrough !== undefined) setOverlayClickThrough(updated.overlayClickThrough);
+     if (updated.bypassSystemProxy !== undefined) {
+       setBypassSystemProxy(updated.bypassSystemProxy);
+       localStorage.setItem("loxx_bypass_system_proxy", String(updated.bypassSystemProxy));
+     }
+     if (updated.appDnsProvider !== undefined) {
+       setAppDnsProvider(updated.appDnsProvider);
+       localStorage.setItem("loxx_app_dns_provider", updated.appDnsProvider);
+     }
+
+     const checkElectron = typeof window !== "undefined" && !!(window as any).electronAPI;
+     if (checkElectron) {
+       (window as any).electronAPI.updateLauncherSettings(updated);
+     }
+   }, []);
 
  
   // Sync overlay settings across electron windows in real-time via storage events
