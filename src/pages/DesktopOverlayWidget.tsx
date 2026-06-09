@@ -163,7 +163,7 @@ export const DesktopOverlayWidget = () => {
  </div>
  )}
 
- <div className="flex flex-col gap-3 items-start">
+ <div className={cn("flex flex-col gap-3", posStr.includes("right") ? "items-end" : "items-start")}>
  <AnimatePresence>
  {membersVisibleVal && players?.map((player) => {
  const isMe = player.userId === currentUserId;
@@ -185,7 +185,7 @@ export const DesktopOverlayWidget = () => {
  animate={{ opacity: isTalking ? speakingOpacityVal : normalOpacityVal, x: 0, scale: 1 }}
  exit={{ opacity: 0, scale: 0.9 }}
  transition={{ type: "spring", damping: 20, stiffness: 200 }}
- className="flex items-center gap-2.5 flex-row"
+ className={cn("flex items-center gap-2.5", posStr.includes("right") ? "flex-row-reverse" : "flex-row")}
  dir="ltr"
  >
  {/* Profile Avatar / speaking glowing bubble */}

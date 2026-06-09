@@ -525,6 +525,59 @@ export const LobbyRoomPage = () => {
  const [isDesktopChatOpen, setIsDesktopChatOpen] = useState(false); // Desktop chat
  const [unreadDesktopChat, setUnreadDesktopChat] = useState(0);
 
+ const [chatSize, setChatSize] = useState({ width: 340, height: 450 });
+
+ useEffect(() => {
+   if (!id) return;
+   const saved = localStorage.getItem(`loxx_chat_size_${id}`);
+   if (saved) {
+     try {
+       const parsed = JSON.parse(saved);
+       if (parsed.width && parsed.height) {
+         setChatSize(parsed);
+       }
+     } catch (e) {}
+   }
+ }, [id]);
+
+ useEffect(() => {
+   if (!id) return;
+   localStorage.setItem(`loxx_chat_size_${id}`, JSON.stringify(chatSize));
+ }, [chatSize, id]);
+
+ const handleResizeStart = (e: React.MouseEvent, direction: 'nw' | 'n' | 'w') => {
+   e.preventDefault();
+   e.stopPropagation();
+   const startX = e.clientX;
+   const startY = e.clientY;
+   const startWidth = chatSize.width;
+   const startHeight = chatSize.height;
+
+   const onMouseMove = (moveEvent: MouseEvent) => {
+     let newWidth = startWidth;
+     let newHeight = startHeight;
+
+     if (direction === 'nw' || direction === 'w') {
+       const deltaX = startX - moveEvent.clientX; 
+       newWidth = Math.min(Math.max(startWidth + deltaX, 280), document.documentElement.clientWidth - 48);
+     }
+     if (direction === 'nw' || direction === 'n') {
+       const deltaY = startY - moveEvent.clientY; 
+       newHeight = Math.min(Math.max(startHeight + deltaY, 200), document.documentElement.clientHeight - 48);
+     }
+     
+     setChatSize({ width: newWidth, height: newHeight });
+   };
+
+   const onMouseUp = () => {
+     window.removeEventListener("mousemove", onMouseMove);
+     window.removeEventListener("mouseup", onMouseUp);
+   };
+
+   window.addEventListener("mousemove", onMouseMove);
+   window.addEventListener("mouseup", onMouseUp);
+ };
+
  const prevLastMessage = useRef<string | null>(null);
  useEffect(() => {
  if (messages.length > 0) {
@@ -1301,7 +1354,27 @@ export const LobbyRoomPage = () => {
 
  {/* Desktop Chat Sidebar (Right) */}
  {!isElectron || isDesktopChatOpen ? (
- <div className={cn("hidden lg:flex flex-col overflow-hidden shadow-2xl", isElectron ? "absolute bottom-6 right-6 z-40 bg-black/80 w-[340px] h-[450px] rounded-[24px] border border-white/10" : "w-full lg:w-[280px] xl:w-[320px] h-full order-first")}>
+ <div 
+ className={cn("hidden lg:flex flex-col shadow-2xl", isElectron ? "absolute bottom-6 right-6 z-40 bg-black/80 rounded-[24px] border border-white/10" : "w-full lg:w-[280px] xl:w-[320px] h-full order-first overflow-hidden")}
+ style={isElectron ? { width: chatSize.width, height: chatSize.height } : undefined}
+ >
+ {isElectron && (
+ <>
+   <div 
+   className="absolute top-0 left-0 w-6 h-6 cursor-nwse-resize z-50"
+   onMouseDown={(e) => handleResizeStart(e, 'nw')}
+   />
+   <div 
+   className="absolute top-0 left-6 right-0 h-3 cursor-ns-resize z-50"
+   onMouseDown={(e) => handleResizeStart(e, 'n')}
+   />
+   <div 
+   className="absolute top-6 left-0 bottom-0 w-3 cursor-ew-resize z-50"
+   onMouseDown={(e) => handleResizeStart(e, 'w')}
+   />
+ </>
+ )}
+ <div className="flex-1 w-full h-full overflow-hidden flex flex-col rounded-[24px]">
  <ChatPanel 
  messages={messages} 
  players={players}
@@ -1312,6 +1385,7 @@ export const LobbyRoomPage = () => {
  isVipLobby={isVipLobby}
  onClose={isElectron ? () => setIsDesktopChatOpen(false) : undefined}
  />
+ </div>
  </div>
  ) : (
  isElectron && (
