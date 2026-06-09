@@ -26,6 +26,10 @@
   "exclude": [
     "node_modules",
     "dist",
-    "vps-voice-server"
+    "vps-voice-server",
+    "test-*.ts",
+    "test_*.ts",
+    "temp-*.ts",
+    "fix_*.js"
   ]
 }

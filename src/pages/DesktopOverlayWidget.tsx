@@ -146,14 +146,14 @@ export const DesktopOverlayWidget = () => {
  background: "rgba(0, 0, 0, 0.4)", 
  backdropFilter: "blur(5px)",
  WebkitBackdropFilter: "blur(5px)",
- zIndex: 8000 
+ zIndex: 2147483645 
  }}
  className="fixed inset-0 pointer-events-auto select-none border-2 border-neon-blue/20"
  />
  )}
  </AnimatePresence>
 
- <div className={cn("fixed z-[9999] flex flex-col pointer-events-none select-none", positionClasses)}>
+ <div className={cn("fixed z-[2147483647] flex flex-col pointer-events-none select-none", positionClasses)}>
  {/* Title tag - minimal, matches Discord Overlay appearance */}
  {membersVisibleVal && players && players.length > 0 && (
  <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/75 border border-white/5 mb-2 shadow-lg shadow-black/30 w-fit">
@@ -236,7 +236,7 @@ export const DesktopOverlayWidget = () => {
  {/* Player Name Tag with speak indicators */}
  <div 
  className={cn(
-  "px-3 py-1 rounded-lg transition-all duration-150 border w-[130px]",
+ "px-3 py-1 rounded-lg transition-all duration-150 border",
  isTalking 
  ? "bg-[#22c55e]/15 border-[#22c55e]/30 text-white font-black shadow-[0_0_10px_rgba(34,197,94,0.1)]" 
  : "bg-[#10141a]/85 border-white/5 text-gray-300 font-bold",
@@ -244,7 +244,7 @@ export const DesktopOverlayWidget = () => {
  )}
  >
  <div className="flex items-center gap-1.5 flex-row">
- <span className="font-sans truncate flex-1">
+ <span className="font-sans truncate max-w-[120px]">
  {player.username ? (player.username.length > 10 ? player.username.substring(0, 10) + "..." : player.username) : "بازیکن"}
  </span>
  {isMe && <span className="text-[8px] bg-white/10 text-white/70 px-1 py-0.2 rounded font-sans scale-90">Me</span>}

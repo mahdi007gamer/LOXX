@@ -466,8 +466,10 @@ export const LobbyRoomPage = () => {
  remoteStreams,
  setScreenStreamForWebRTC,
  peerPings,
- isMediasoupSFU
- } = useLobby();
+ isMediasoupSFU,
+  bypassSystemProxy,
+  appDnsProvider
+} = useLobby();
  const { 
   noiseCanceling, setNoiseCanceling, isMicTestOn, setIsMicTestOn,
    localMusicAudioRef, localMusicDuration, setLocalMusicDuration,
@@ -563,7 +565,7 @@ export const LobbyRoomPage = () => {
      }
      if (direction === 'nw' || direction === 'n') {
        const deltaY = startY - moveEvent.clientY; 
-       newHeight = Math.min(Math.max(startHeight + deltaY, 200), document.documentElement.clientHeight - 100);
+       newHeight = Math.min(Math.max(startHeight + deltaY, 200), document.documentElement.clientHeight - 180);
      }
      
      setChatSize({ width: newWidth, height: newHeight });
@@ -1774,12 +1776,12 @@ useEffect(() => {
          : "border-[#00e5ff] shadow-[0_0_25px_rgba(0,229,255,0.45)] hover:shadow-[0_0_35px_rgba(0,229,255,0.7)]",
        isRtl ? "left-6" : "right-6"
       )}
-      title={isRtl ? "پخش‌کننده موسیقی (برای بزرگ کردن دوبار کلیک کنید یا کلیک کنید)" : "Music Player (Click to expand)"}
-      onClick={() => setIsMusicPlayerExpanded(true)}
+      title={isRtl ? "پخش‌کننده موسیقی (برای بزرگ کردن دوبار کلیک کنید یا کلیک کنید)" : "Music Player (Double click or tap to expand)"}
+      onClick={() => setIsMusicPlayerExpanded(true)} onDoubleClick={() => setIsMusicPlayerExpanded(true)}
      >
       <div className={cn("absolute inset-0 rounded-full animate-pulse", isMelodyBot ? "bg-[#FFD700]/5" : "bg-[#00e5ff]/5")} />
       {musicBotState?.currentTrackCover ? (
-       <img src={musicBotState.currentTrackCover} className={cn("w-full h-full object-cover rounded-full", musicBotState?.isPlaying && "animate-[spin_6s_linear_infinite]")} />
+       <img src={musicBotState.currentTrackCover} draggable={false} className={cn("w-full h-full object-cover rounded-full pointer-events-none", musicBotState?.isPlaying && "animate-[spin_6s_linear_infinite]")} />
       ) : (
        <span className={cn("text-3xl select-none", musicBotState?.isPlaying && "animate-[spin_5s_linear_infinite]")}>
         💿
@@ -2543,11 +2545,11 @@ useEffect(() => {
           <span className="text-gray-300">دور زدن پروکسی و پینگ کاتورها</span>
           <button 
             onClick={() => {
-              updateLauncherSettings({ bypassSystemProxy: true });
-              toast.success("حالت دور زدن پروکسی فعال شد!");
+              updateLauncherSettings({ bypassSystemProxy: !bypassSystemProxy });
+              toast.success(bypassSystemProxy ? "حالت دور زدن پروکسی غیرفعال شد!" : "حالت دور زدن پروکسی فعال شد!");
             }}
-            className="px-3 py-1 bg-emerald-500/20 text-emerald-400 font-bold rounded hover:bg-emerald-500/30 transition border border-emerald-500/30">
-            فعال‌سازی سریع
+            className={cn("px-3 py-1 font-bold rounded transition border", bypassSystemProxy ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/60 shadow-[0_0_10px_rgba(16,185,129,0.3)] hover:bg-emerald-500/30" : "bg-gray-500/20 text-gray-400 border-gray-500/30 hover:bg-gray-500/30")}>
+            {bypassSystemProxy ? 'تغییر به غیرفعال' : 'فعال‌سازی سریع'}
           </button>
         </div>
         <div className="h-[1px] w-full bg-white/5" />
@@ -2555,11 +2557,12 @@ useEffect(() => {
           <span className="text-gray-300">سرویس DNS شکن DoH</span>
           <button 
             onClick={() => {
-              updateLauncherSettings({ appDnsProvider: "shecan" });
-              toast.success("سرویس DNS روی شکن تنظیم شد!");
+              const newVal = appDnsProvider === "shecan" ? "system" : "shecan";
+              updateLauncherSettings({ appDnsProvider: newVal });
+              toast.success(newVal === "shecan" ? "سرویس DNS روی شکن تنظیم شد!" : "سرویس DNS به حالت سیستم بازگشت!");
             }}
-            className="px-3 py-1 bg-[#00e5ff]/20 text-[#00e5ff] font-bold rounded hover:bg-[#00e5ff]/30 transition border border-[#00e5ff]/30">
-            اعمال سرویس
+            className={cn("px-3 py-1 font-bold rounded transition border", appDnsProvider === "shecan" ? "bg-[#00e5ff]/20 text-[#00e5ff] border-[#00e5ff]/60 shadow-[0_0_10px_rgba(0,229,255,0.3)] hover:bg-[#00e5ff]/30" : "bg-gray-500/20 text-gray-400 border-gray-500/30 hover:bg-gray-500/30")}>
+            {appDnsProvider === "shecan" ? 'بازنشانی دی‌ان‌اس' : 'اعمال سرویس شکن'}
           </button>
         </div>
       </div>
@@ -3188,10 +3191,63 @@ useEffect(() => {
  )}
  </AnimatePresence>
  </div>
- </main>
+ 
+  {/* Desktop Chat Sidebar (Right) - Absolute/Fixed Overlay for Electron */}
+  {isElectron && isDesktopChatOpen && (
+  <div 
+  className="hidden lg:flex flex-col shadow-[0_30px_60px_rgba(0,0,0,0.8),_0_0_20px_rgba(0,229,255,0.1)] fixed bottom-6 right-6 z-[999] bg-black/85 backdrop-blur-xl border border-white/10 overflow-hidden shadow-2xl rounded-2xl"
+  style={{ width: chatSize.width, height: chatSize.height, maxHeight: 'calc(100vh - 180px)' }}
+  >
+  <div 
+  className="absolute top-0 left-0 w-6 h-6 cursor-nwse-resize z-50 hover:bg-white/5 active:bg-white/10 rounded-tl-2xl transition"
+  onMouseDown={(e) => handleResizeStart(e, 'nw')}
+  />
+  <div 
+  className="absolute top-0 left-6 right-0 h-3 cursor-ns-resize z-[45] hover:bg-white/5 active:bg-white/10 transition"
+  onMouseDown={(e) => handleResizeStart(e, 'n')}
+  />
+  <div 
+  className="absolute top-6 left-0 bottom-0 w-3 cursor-ew-resize z-[45] hover:bg-white/5 active:bg-white/10 transition"
+  onMouseDown={(e) => handleResizeStart(e, 'w')}
+  />
+  <div className="flex-1 w-full h-full overflow-hidden flex flex-col">
+  <ChatPanel 
+  messages={messages} 
+  players={players}
+  inputMessage={inputMessage} 
+  setInputMessage={setInputMessage} 
+  onSend={handleSendMessage}
+  currentUserId={user?.id}
+  isVipLobby={isVipLobby}
+  onClose={() => setIsDesktopChatOpen(false)}
+  />
+  </div>
+  </div>
+  )}
+  {isElectron && !isDesktopChatOpen && (
+  <motion.div 
+  initial={{ y: 50, opacity: 0 }}
+  animate={{ y: 0, opacity: 1 }}
+  className="hidden lg:flex fixed bottom-6 right-6 z-[999] flex-col border border-white/10 bg-black/60 rounded-[24px] overflow-hidden shadow-2xl cursor-pointer hover:bg-black/80 w-[300px] hover:border-neon-blue/30 transition-colors duration-300 backdrop-blur-md"
+  onClick={() => setIsDesktopChatOpen(true)}
+  >
+  <div className="flex items-center justify-between p-4">
+  <div className="flex flex-col">
+  <div className="flex items-center gap-2">
+  <div className="h-2 w-2 rounded-full bg-neon-blue animate-pulse" />
+  <h2 className="text-xs font-black uppercase text-white px-2">Lobby Comms</h2>
+  </div>
+  {unreadDesktopChat > 0 && <span className="text-[10px] text-neon-blue mt-1 font-bold flex justify-center">{unreadDesktopChat} پیام جدید</span>}
+  </div>
+  <MessageSquare size={18} className="text-gray-400 mr-2 ml-2" />
+  </div>
+  </motion.div>
+  )}
+  </main>
  </div>
  );
-};
+}
+;
 
 function StatCard({ label, value }: { label: string, value: string }) {
  return (

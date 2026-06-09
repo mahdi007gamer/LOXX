@@ -226,12 +226,12 @@ export const FriendChatOverlay = () => {
  background: "rgba(4, 4, 8, 0.42)", 
  backdropFilter: "blur(24px) saturate(180%)",
  WebkitBackdropFilter: "blur(24px) saturate(180%)",
- zIndex: 8000 
+ zIndex: 2147483645 
  }}
  className="fixed inset-0 flex flex-col items-center justify-start pt-8 pointer-events-auto select-none border-4 border-neon-blue/20"
  dir="rtl"
  >
- <div className="bg-black/90 border border-white/10 px-6 py-2.5 rounded-full shadow-[0_0_30px_rgba(0,0,0,0.8)] flex items-center gap-3 relative z-[999999999]">
+ <div className="bg-black/90 border border-white/10 px-6 py-2.5 rounded-full shadow-[0_0_30px_rgba(0,0,0,0.8)] flex items-center gap-3 relative z-[2147483647]">
  <div className="h-2 w-2 rounded-full bg-neon-pink animate-ping"></div>
  <p className="text-white text-sm font-bold flex items-center gap-2">
  حالت تعاملی لوکس فعال است. برای خروج از این حالت دکمه
@@ -301,7 +301,7 @@ export const FriendChatOverlay = () => {
  animate={{ opacity: 1, x: 0, scale: 1 }}
  exit={{ opacity: 0, x: 50, scale: 0.95 }}
  transition={{ type: "spring", damping: 20 }}
- className="fixed right-6 top-24 bottom-24 w-[300px] bg-black border-2 border-neon-blue/50 rounded-2xl flex flex-col shadow-[0_0_80px_rgba(0,0,0,1)] z-[9999] pointer-events-auto overflow-hidden text-right"
+ className="fixed right-6 top-24 bottom-24 w-[300px] bg-black border-2 border-neon-blue/50 rounded-2xl flex flex-col shadow-[0_0_80px_rgba(0,0,0,1)] z-[2147483647] pointer-events-auto overflow-hidden text-right"
  dir="rtl"
  >
  {/* Header */}
@@ -535,7 +535,7 @@ export const FriendChatOverlay = () => {
  animate={{ opacity: 1, x: 0, scale: 1 }}
  exit={{ opacity: 0, x: -50, scale: 0.95 }}
  transition={{ type: "spring", damping: 20 }}
- className="fixed left-6 top-24 bottom-24 w-[280px] bg-black border-2 border-neon-blue/50 rounded-2xl flex flex-col shadow-[0_0_80px_rgba(0,0,0,1)] z-[9999] pointer-events-auto overflow-hidden text-right"
+ className="fixed left-6 top-24 bottom-24 w-[280px] bg-black border-2 border-neon-blue/50 rounded-2xl flex flex-col shadow-[0_0_80px_rgba(0,0,0,1)] z-[2147483647] pointer-events-auto overflow-hidden text-right"
  dir="rtl"
  >
  {/* Header */}
@@ -659,7 +659,7 @@ export const FriendChatOverlay = () => {
  )}
  </AnimatePresence>
 
- <div ref={containerRef} className="fixed inset-0 z-[9999] pointer-events-none flex flex-col items-center justify-end pb-4">
+ <div ref={containerRef} className="fixed inset-0 z-[2147483647] pointer-events-none flex flex-col items-center justify-end pb-4">
  {/* Active Chat Window */}
  <AnimatePresence>
  {activeChatId && !isMinimized && (!isOverlayWidget || isOverlayInteractive) && (

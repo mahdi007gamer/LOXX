@@ -453,12 +453,12 @@ export function setupWebSockets(io: Server) {
   };
 
   // Helper to search a specific music website domain
-  const searchSite = async (site: { name: string, domain: string }, query: string, lobbyId?: string): Promise<string[]> => {
-    const links: string[] = [];
+  const searchSite = async (site: { name: string, domain: string }, query: string, lobbyId?: string): Promise<{ title: string, link: string }[]> => {
+    const posts: { title: string, link: string }[] = [];
     
     // Try 1: WP REST API
     try {
-      const wpUrl = `${site.domain}/wp-json/wp/v2/posts?search=${encodeURIComponent(query)}&_fields=id,title,link&per_page=3`;
+      const wpUrl = `${site.domain}/wp-json/wp/v2/posts?search=${encodeURIComponent(query)}&_fields=id,title,link&per_page=6`;
       const res = await axios.get(wpUrl, {
         headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" },
         timeout: 5000,
@@ -466,8 +466,18 @@ export function setupWebSockets(io: Server) {
       });
       if (res.data && Array.isArray(res.data)) {
         for (const post of res.data) {
-          if (post.link && !links.includes(post.link)) {
-            links.push(post.link);
+          if (post.link) {
+            const rawTitle = post.title?.rendered || "";
+            // Decode HTML entities
+            const cleanTitle = rawTitle.replace(/&#(\d+);/g, (match, dec) => String.fromCharCode(dec))
+                                       .replace(/&amp;/g, "&")
+                                       .replace(/&quot;/g, '"')
+                                       .replace(/&#39;/g, "'")
+                                       .replace(/&lt;/g, "<")
+                                       .replace(/&gt;/g, ">");
+            if (!posts.some(p => p.link === post.link)) {
+              posts.push({ title: cleanTitle, link: post.link });
+            }
           }
         }
       }
@@ -476,7 +486,7 @@ export function setupWebSockets(io: Server) {
     }
 
     // Try 2: HTML Search (Only if WP API returned nothing or had an error)
-    if (links.length === 0) {
+    if (posts.length === 0) {
       try {
         const searchUrl = `${site.domain}/?s=${encodeURIComponent(query)}`;
         const res = await axios.get(searchUrl, {
@@ -487,14 +497,30 @@ export function setupWebSockets(io: Server) {
         const html = res.data || "";
         const domainEscaped = site.domain.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         
-        // We will match links belonging to the domain
-        const regex = new RegExp(`href=["'](${domainEscaped}/[^"'/]+/?(?:\\.html)?)["']`, "gi");
+        // Match standard links belonging to the domain
+        const regex = new RegExp(`href=["'](${domainEscaped}/[^"'/]+/?(?:\\.html)?)["'][^>]*>(?<text>[^<]+)</a>`, "gi");
         const matches = html.matchAll(regex);
         for (const m of matches) {
-          const u = m[1];
-          if (!u.includes("/wp-") && !u.includes("/category/") && !u.includes("/page/") && !u.includes("/tag/") && u !== site.domain && u !== site.domain + "/") {
-            if (!links.includes(u)) {
-              links.push(u);
+          const link = m[1];
+          const text = (m.groups?.text || m[2] || "").trim();
+          if (!link.includes("/wp-") && !link.includes("/category/") && !link.includes("/page/") && !link.includes("/tag/") && link !== site.domain && link !== site.domain + "/") {
+            if (text.length > 5 && !posts.some(p => p.link === link)) {
+              posts.push({ title: text, link });
+            }
+          }
+        }
+        
+        // Fallback matching if text group didn't match/work
+        if (posts.length === 0) {
+          const simpleRegex = new RegExp(`href=["'](${domainEscaped}/[^"'/]+/?(?:\\.html)?)["']`, "gi");
+          const simpleMatches = html.matchAll(simpleRegex);
+          for (const sm of simpleMatches) {
+            const link = sm[1];
+            if (!link.includes("/wp-") && !link.includes("/category/") && !link.includes("/page/") && !link.includes("/tag/") && link !== site.domain && link !== site.domain + "/") {
+              if (!posts.some(p => p.link === link)) {
+                const slugTitle = path.basename(decodeURIComponent(link)).replace(/\.[^/.]+$/, "").replace(/-/g, " ");
+                posts.push({ title: slugTitle, link });
+              }
             }
           }
         }
@@ -503,7 +529,7 @@ export function setupWebSockets(io: Server) {
       }
     }
 
-    return links;
+    return posts;
   };
 
   // Convert/Extract MP3 download link from ANY Persian music post webpage
@@ -722,7 +748,7 @@ export function setupWebSockets(io: Server) {
       return w.replace(/([a-zA-Z])\1+/g, "$1"); // Collapses duplicate consecutive letters (e.g., maaar -> maar)
     };
 
-    const queryWords = normQuery.split(/\s+/).filter(w => w.length > 1);
+    const queryWords = normQuery.split(/\s+/).filter(w => w.length > 0 && w !== "آهنگ" && w !== "دانلود" && w !== "جدید" && w !== "موزیک" && w !== "ریمیکس");
     if (queryWords.length === 0) return 0;
 
     let matchedCount = 0;
@@ -743,11 +769,27 @@ export function setupWebSockets(io: Server) {
       }
     }
 
+    // Base recall score
+    let baseScore = matchedCount / queryWords.length;
+
+    // Exact phrase bonus
     if (normTitle.includes(normQuery) || normUrl.includes(normQuery)) {
-      matchedCount += 1.5; // Phrase bonus
+      baseScore += 0.5;
     }
 
-    return matchedCount / queryWords.length;
+    // Strict requirements: if multiple words are in query, we must see a decent fraction of them matched
+    if (queryWords.length >= 2 && baseScore < 0.6) {
+      return 0; // Reject false positives immediately
+    }
+
+    // Extra terms length penalty to prefer clean/exact match posts over gigantic artist mashups
+    const titleWords = normTitle.split(/\s+/)
+      .filter(w => w.length > 1 && !["دانلود", "آهنگ", "جدید", "موزیک", "ریمیکس", "با", "و", "از", "به", "کیفیت", "320", "128", "اصلی", "صوتی", "همراه", "متن", "سایت", "کانال", "تلگرام"].includes(w));
+    
+    const extraWords = Math.max(0, titleWords.length - queryWords.length);
+    const penalty = Math.pow(0.92, extraWords);
+
+    return baseScore * penalty;
   };
 
   // Search online track from web or itunes API as fallback
@@ -765,61 +807,64 @@ export function setupWebSockets(io: Server) {
       { name: "RozMusic (رز موزیک)", domain: "https://rozmusic.com" }
     ];
 
-    const resultsMap = new Map<string, string[]>();
+    const allCandidatePosts: { title: string; link: string; preScore: number }[] = [];
 
-    // Query all sites in parallel
+    // Query all sites in parallel to find candidates with their titles
     await Promise.all(sites.map(async (site) => {
       try {
-        const siteLinks = await searchSite(site, query, lobbyId);
-        resultsMap.set(site.domain, siteLinks);
+        const sitePosts = await searchSite(site, query, lobbyId);
+        for (const post of sitePosts) {
+          const preScore = calculateScore(post.title, post.link, query);
+          if (preScore > 0) {
+            allCandidatePosts.push({
+              title: post.title,
+              link: post.link,
+              preScore
+            });
+          }
+        }
       } catch (e: any) {
         console.error(`⚠️ خطای جستجوی ${site.name}: ${e.message}`);
       }
     }));
 
-    // Collect all links in round-robin fashion
-    const validPosts: string[] = [];
-    let added = true;
-    let index = 0;
-    while (added) {
-      added = false;
-      for (const site of sites) {
-        const list = resultsMap.get(site.domain) || [];
-        if (index < list.length) {
-          const url = list[index];
-          if (!validPosts.includes(url)) {
-            validPosts.push(url);
-          }
-          added = true;
-        }
+    // Sort combined candidates by preScore descending to float exact matches to top!
+    allCandidatePosts.sort((a, b) => b.preScore - a.preScore);
+
+    // Filter unique candidate links
+    const uniqueCandidates: typeof allCandidatePosts = [];
+    for (const post of allCandidatePosts) {
+      if (!uniqueCandidates.some(c => c.link === post.link)) {
+        uniqueCandidates.push(post);
       }
-      index++;
     }
 
-    console.log(`[MusicBot Search] Found ${validPosts.length} potential posts across the 5 sites.`);
+    console.log(`[MusicBot Search] Found ${uniqueCandidates.length} potential unique candidates with preScore > 0.`);
 
-    // Scrape top candidates in parallel to optimize speed and choose the best matched track
-    const candidatesToScrape = validPosts.slice(0, 8);
+    // Scrape top candidates (up to 8) ordered by closest matching title
+    const candidatesToScrape = uniqueCandidates.slice(0, 8);
     const scrapedResults: { score: number; result: any }[] = [];
 
-    await Promise.all(candidatesToScrape.map(async (url) => {
+    await Promise.all(candidatesToScrape.map(async (cand) => {
       try {
-        const resObj = await extractMp3FromWebPage(url, lobbyId);
+        const resObj = await extractMp3FromWebPage(cand.link, lobbyId);
         if (resObj && resObj.url) {
-          const score = calculateScore(resObj.title, url, query);
-          scrapedResults.push({ score, result: resObj });
+          // Re-evaluate score on the scraped final title since it might contain cleaner naming from page tags
+          const score = calculateScore(resObj.title, cand.link, query);
+          if (score > 0) {
+            scrapedResults.push({ score, result: resObj });
+          }
         }
       } catch (scrapErr) {
         // Safe skip failed page scrapings
       }
     }));
 
-    // Sort candidates by score descending
+    // Sort scraped results by actual exact matching score descending
     scrapedResults.sort((a, b) => b.score - a.score);
 
-    // If we have a candidate with a reasonable matching score, pick the best one
-    // Threshold set to 0.2 to ensure at least some keyword is present
-    if (scrapedResults.length > 0 && scrapedResults[0].score >= 0.20) {
+    // Pick top candidate if it matches the threshold
+    if (scrapedResults.length > 0 && scrapedResults[0].score >= 0.35) {
       const bestCandidate = scrapedResults[0].result;
       console.log(`[MusicBot Search] Selected best match: "${bestCandidate.title}" with score ${scrapedResults[0].score}`);
       if (lobbyId) {
@@ -828,7 +873,7 @@ export function setupWebSockets(io: Server) {
       return bestCandidate;
     }
 
-    // 2. Fallback to iTunes Search API
+    // 2. Fallback to iTunes Search API for international tracks or when local search yields nothing
     try {
       console.log(`[MusicBot Search] Querying iTunes for: "${query}"`);
       const searchUrl = `https://itunes.apple.com/search?media=music&term=${encodeURIComponent(query)}&limit=1`;
