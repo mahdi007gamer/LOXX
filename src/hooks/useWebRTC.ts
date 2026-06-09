@@ -340,10 +340,10 @@ export const useWebRTC = (
                 track: audioTrack,
                 appData: { userId },
                 encodings: [
-                  { networkPriority: "high", maxBitrate: 96000 } // Increased bitrate for pristine voice quality
+                  { networkPriority: "medium", maxBitrate: 32000 } // Gamer-optimized: ultra-efficient, prevents ping spikes
                 ],
                 codecOptions: {
-                  opusDtx: false, // Disabled DTX to stop choppy, gated cutting-off during music
+                  opusDtx: true,  // Enabled DTX to stop transmission during silence and save tons of bandwidth
                   opusFec: true,  // Keep Forward Error Correction to recover lost packets
                   opusStereo: false
                 }
@@ -583,7 +583,7 @@ export const useWebRTC = (
           const videoProducer = await sendTransportRef.current.produce({
             track: screenVideoTrack,
             appData: { type: "screen", userId },
-            encodings: [ { networkPriority: "medium" } ]
+            encodings: [ { networkPriority: "low", maxBitrate: 800000, maxFramerate: 15 } ] // Gamer-optimized: cap screen share bitrate/FPS to prevent gaming ping spikes
           });
           videoProducerRef.current = videoProducer;
 
@@ -637,8 +637,8 @@ export const useWebRTC = (
           const audioProducer = await sendTransportRef.current.produce({
             track: botAudioTrack,
             appData: { type: "bot", userId: `music-bot-${roomId}` },
-            encodings: [{ networkPriority: "high", maxBitrate: 96000 }],
-            codecOptions: { opusDtx: false, opusFec: true, opusStereo: false }
+            encodings: [{ networkPriority: "medium", maxBitrate: 64000 }], // Optimized music bot bitrate for gaming rooms
+            codecOptions: { opusDtx: true, opusFec: true, opusStereo: false }
           });
           botProducerRef.current = audioProducer;
 
@@ -686,11 +686,11 @@ export const useWebRTC = (
             track: audioTrack,
             appData: { userId },
             encodings: [
-              { networkPriority: "high", maxBitrate: 96000 }
+              { networkPriority: "medium", maxBitrate: 32000 } // Gamer-optimized: ultra-efficient, prevents ping spikes
             ],
             codecOptions: {
-              opusDtx: false,
-              opusFec: true,
+              opusDtx: true,   // Enabled DTX to stop transmission during silence and save tons of bandwidth
+              opusFec: true,   // Keep Forward Error Correction to recover lost packets
               opusStereo: false
             }
           });
@@ -778,6 +778,7 @@ export const useWebRTC = (
         const CHUNK_ACC_COUNT = 1; // Send each 2048-sample block (at 48kHz, ~42ms of audio) instantly to avoid callback CPU bloat and queuing latency
 
         processorNodeRef.current.onaudioprocess = (event) => {
+          if (voiceMethod !== "fallback_pcm") return; // Gamer optimization: Absolutely skip raw PCM websocket transmission when using high-efficiency Mediasoup WebRTC!
           const micEnabled = localStream.getAudioTracks()[0]?.enabled;
           if (micEnabled && !isMicTestOn) {
             const inputData = event.inputBuffer.getChannelData(0);

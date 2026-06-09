@@ -632,13 +632,22 @@ export const LobbyRoomPage = () => {
  const [activeProfileUserId, setActiveProfileUserId] = useState<string | null>(null);
 
 const [showHighPingModal, setShowHighPingModal] = useState(false);
+const [dontShowHighPingAgain, setDontShowHighPingAgain] = useState(() => {
+  if (typeof window !== "undefined") {
+    return localStorage.getItem("loxx_hide_high_ping_modal") === "true";
+  }
+  return false;
+});
 const hasShownHighPingModalRef = useRef<boolean>(false);
 
 useEffect(() => {
   const myPing = user?.id ? (peerPings[user.id] || 0) : 0;
   if (myPing > 150 && !hasShownHighPingModalRef.current) {
-    hasShownHighPingModalRef.current = true;
-    setShowHighPingModal(true);
+    const isMuted = localStorage.getItem("loxx_hide_high_ping_modal") === "true";
+    if (!isMuted) {
+      hasShownHighPingModalRef.current = true;
+      setShowHighPingModal(true);
+    }
   }
 }, [peerPings, user?.id]);
 
@@ -2565,6 +2574,26 @@ useEffect(() => {
             {appDnsProvider === "shecan" ? 'بازنشانی دی‌ان‌اس' : 'اعمال سرویس شکن'}
           </button>
         </div>
+      </div>
+
+      <div className="flex items-center gap-2 cursor-pointer select-none mt-2 self-start" onClick={() => {
+        const newVal = !dontShowHighPingAgain;
+        setDontShowHighPingAgain(newVal);
+        localStorage.setItem("loxx_hide_high_ping_modal", String(newVal));
+      }}>
+        <div className={cn(
+          "w-4 h-4 rounded border flex items-center justify-center transition-all",
+          dontShowHighPingAgain ? "bg-[#00e5ff] border-[#00e5ff] text-black" : "border-white/20 hover:border-white/40"
+        )}>
+          {dontShowHighPingAgain && (
+            <svg className="w-3 h-3 stroke-[3]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+          )}
+        </div>
+        <span className="text-xs text-gray-400 font-medium hover:text-gray-300 transition">
+          {isRtl ? "دیگه این پیام رو نشون نده" : "Don't show this message again"}
+        </span>
       </div>
 
       <GlowButton onClick={() => setShowHighPingModal(false)} className="w-full py-3.5 mt-4">

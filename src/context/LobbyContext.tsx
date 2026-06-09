@@ -1290,7 +1290,7 @@ const checkElectron = typeof window !== "undefined" && !!(window as any).electro
  syncRooms();
  
  // Re-sync on certain triggers
- const syncInterval = setInterval(syncRooms, 15000); // Proactive sync every 15s
+ const syncInterval = setInterval(syncRooms, 60000); // Proactive sync every 60s (Optimized for gaming ping)
 
  chatSocket.on("connect", () => {
  console.log("Chat Socket reconnected, syncing rooms...");
@@ -1329,7 +1329,7 @@ const checkElectron = typeof window !== "undefined" && !!(window as any).electro
       if (lobbySocket && lobbySocket.connected) {
         lobbySocket.emit("lobby.ping", { timestamp: Date.now() });
       }
-    }, 4500);
+    }, 15000); // Optimized block: Ping every 15s instead of 4.5s to minimize ping jitter in online games
 
     const handleVoicePong = (data: { timestamp: number }) => {
       const rawPing = Date.now() - data.timestamp;
