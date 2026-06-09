@@ -236,7 +236,7 @@ export const DesktopOverlayWidget = () => {
  {/* Player Name Tag with speak indicators */}
  <div 
  className={cn(
- "px-3 py-1 rounded-lg transition-all duration-150 border",
+  "px-3 py-1 rounded-lg transition-all duration-150 border w-[130px]",
  isTalking 
  ? "bg-[#22c55e]/15 border-[#22c55e]/30 text-white font-black shadow-[0_0_10px_rgba(34,197,94,0.1)]" 
  : "bg-[#10141a]/85 border-white/5 text-gray-300 font-bold",
@@ -244,7 +244,7 @@ export const DesktopOverlayWidget = () => {
  )}
  >
  <div className="flex items-center gap-1.5 flex-row">
- <span className="font-sans truncate max-w-[120px]">
+ <span className="font-sans truncate flex-1">
  {player.username ? (player.username.length > 10 ? player.username.substring(0, 10) + "..." : player.username) : "بازیکن"}
  </span>
  {isMe && <span className="text-[8px] bg-white/10 text-white/70 px-1 py-0.2 rounded font-sans scale-90">Me</span>}

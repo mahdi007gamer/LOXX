@@ -715,7 +715,7 @@ export const ElectronSettingsPage = () => {
  <div className="flex items-center justify-between bg-black/40 p-3 rounded-xl">
  <span className="text-sm font-bold text-white flex items-center gap-2">اجرای خودکار کلاینت با لود شدن ویندوز (Autostart)</span>
  <label className="relative inline-flex items-center cursor-pointer">
- <input type="checkbox" className="sr-only peer" checked={!!config.startAtLogin} onChange={(e) => updateSetting("startAtLogin", e.target.checked)} />
+ <input type="checkbox" className="sr-only peer" checked={config.startAtLogin !== false} onChange={(e) => updateSetting("startAtLogin", e.target.checked)} />
  <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-yellow-400"></div>
  </label>
  </div>
@@ -723,7 +723,7 @@ export const ElectronSettingsPage = () => {
  <div className="flex items-center justify-between bg-black/40 p-3 rounded-xl">
  <span className="text-sm font-bold text-white flex items-center gap-2">شتاب‌دهنده گرافیکی سخت‌افزاری (کاهش قطعی لگ اورلی درون گیم)</span>
  <label className="relative inline-flex items-center cursor-pointer">
- <input type="checkbox" className="sr-only peer" checked={!!config.hardwareAcceleration} onChange={(e) => {
+ <input type="checkbox" className="sr-only peer" checked={config.hardwareAcceleration !== false} onChange={(e) => {
  updateSetting("hardwareAcceleration", e.target.checked);
  toast.success("تنظیم تغییر شتاب‌دهنده فرعی گرافیک ثبت شد! جهت اعمال، کلاینت را از نوار بالایی یا سیستم تسکبار راه‌اندازی مجدد کنید.", { icon: "⚙️" });
  }} />
@@ -733,7 +733,7 @@ export const ElectronSettingsPage = () => {
  <div className="flex items-center justify-between bg-black/40 p-3 rounded-xl">
  <span className="text-sm font-bold text-white flex items-center gap-2">کاهش مصرف منابع هنگام بازی (Resource Throttling)</span>
  <label className="relative inline-flex items-center cursor-pointer">
- <input type="checkbox" className="sr-only peer" checked={!!config.throttleGameMode} onChange={(e) => updateSetting("throttleGameMode", e.target.checked)} />
+ <input type="checkbox" className="sr-only peer" checked={config.throttleGameMode !== false} onChange={(e) => updateSetting("throttleGameMode", e.target.checked)} />
  <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-yellow-400"></div>
  </label>
  </div>
@@ -753,24 +753,24 @@ export const ElectronSettingsPage = () => {
  <div className="bg-black/40 p-2.5 rounded-lg border border-white/5">
  <div className="flex justify-between items-center text-[11px] mb-1">
  <span className="text-gray-400">شتاب‌دهنده گرافیکی (GPU):</span>
- <span className={config.hardwareAcceleration ? "text-emerald-400 font-bold" : "text-gray-500"}>
- {config.hardwareAcceleration ? "فعال و پایدار (144+ FPS)" : "غیر فعال (رندر نرم‌افزاری)"}
+ <span className={config.hardwareAcceleration !== false ? "text-emerald-400 font-bold" : "text-gray-500"}>
+ {config.hardwareAcceleration !== false ? "فعال و پایدار (144+ FPS)" : "غیر فعال (رندر نرم‌افزاری)"}
  </span>
  </div>
  <div className="w-full bg-white/5 h-1 rounded-full overflow-hidden">
- <div className={cn("h-full transition-all duration-500", config.hardwareAcceleration ? "bg-emerald-400 w-full" : "bg-yellow-400 w-[25%]")} />
+ <div className={cn("h-full transition-all duration-500", config.hardwareAcceleration !== false ? "bg-emerald-400 w-full" : "bg-yellow-400 w-[25%]")} />
  </div>
  </div>
 
  <div className="bg-black/40 p-2.5 rounded-lg border border-white/5">
  <div className="flex justify-between items-center text-[11px] mb-1">
  <span className="text-gray-400">کاهش مصرف منابع کلاینت:</span>
- <span className={config.throttleGameMode ? "text-emerald-400 font-bold" : "text-yellow-500"}>
- {config.throttleGameMode ? "هوشمند فعال (<0.2% CPU)" : "غیرفعال (عادی)"}
+ <span className={config.throttleGameMode !== false ? "text-emerald-400 font-bold" : "text-yellow-500"}>
+ {config.throttleGameMode !== false ? "هوشمند فعال (<0.2% CPU)" : "غیرفعال (عادی)"}
  </span>
  </div>
  <div className="w-full bg-white/5 h-1 rounded-full overflow-hidden">
- <div className={cn("h-full transition-all duration-500", config.throttleGameMode ? "bg-emerald-400 w-full" : "bg-yellow-500 w-[50%]")} />
+ <div className={cn("h-full transition-all duration-500", config.throttleGameMode !== false ? "bg-emerald-400 w-full" : "bg-yellow-500 w-[50%]")} />
  </div>
  </div>
 

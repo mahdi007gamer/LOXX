@@ -563,7 +563,7 @@ export const LobbyRoomPage = () => {
      }
      if (direction === 'nw' || direction === 'n') {
        const deltaY = startY - moveEvent.clientY; 
-       newHeight = Math.min(Math.max(startHeight + deltaY, 200), document.documentElement.clientHeight - 48);
+       newHeight = Math.min(Math.max(startHeight + deltaY, 200), document.documentElement.clientHeight - 100);
      }
      
      setChatSize({ width: newWidth, height: newHeight });
@@ -628,6 +628,18 @@ export const LobbyRoomPage = () => {
    }
  }, [isMediasoupSFU, hasShownFallbackModal]);
  const [activeProfileUserId, setActiveProfileUserId] = useState<string | null>(null);
+
+const [showHighPingModal, setShowHighPingModal] = useState(false);
+const hasShownHighPingModalRef = useRef<boolean>(false);
+
+useEffect(() => {
+  const myPing = user?.id ? (peerPings[user.id] || 0) : 0;
+  if (myPing > 150 && !hasShownHighPingModalRef.current) {
+    hasShownHighPingModalRef.current = true;
+    setShowHighPingModal(true);
+  }
+}, [peerPings, user?.id]);
+
  const [layoutMode, setLayoutMode] = useState<'default' | 'compact' | 'discord'>(() => (localStorage.getItem('loxx-lobby-layout') as any) || 'default');
 
  // Loxx music bot advanced states
@@ -1355,7 +1367,7 @@ export const LobbyRoomPage = () => {
  {/* Desktop Chat Sidebar (Right) */}
  {!isElectron || isDesktopChatOpen ? (
  <div 
- className={cn("hidden lg:flex flex-col shadow-2xl", isElectron ? "absolute bottom-6 right-6 z-40 bg-black/80 rounded-[24px] border border-white/10" : "w-full lg:w-[280px] xl:w-[320px] h-full order-first overflow-hidden")}
+ className={cn("hidden lg:flex flex-col shadow-2xl", isElectron ? "absolute bottom-6 right-6 z-[100] bg-black/80 rounded-[24px] border border-white/10" : "w-full lg:w-[280px] xl:w-[320px] h-full order-first overflow-hidden")}
  style={isElectron ? { width: chatSize.width, height: chatSize.height } : undefined}
  >
  {isElectron && (
@@ -2051,9 +2063,7 @@ export const LobbyRoomPage = () => {
        {/* Dedicated Music Bot Local Volume Control Slider */}
        <div className="flex items-center gap-3 bg-[#0d2238]/40 border border-cyan-500/15 rounded-2xl p-3 mb-6 mix-blend-screen shadow-[inset_0_0_10px_rgba(0,229,255,0.05)]">
         <button
-         onClick={() => {
-          const isCurrentlyMuted = botVolumeLevel === 0;
-          handlePlayerVolume(botId, isCurrentlyMuted ? 100 : 0);
+         onClick={(e) => { e.stopPropagation(); const isCurrentlyMuted = botVolumeLevel === 0; handlePlayerVolume(botId, isCurrentlyMuted ? 100 : 0);
          }}
          className={cn(
           "h-9 w-9 rounded-xl border flex items-center justify-center transition-all shrink-0",
@@ -2512,7 +2522,56 @@ export const LobbyRoomPage = () => {
  </Modal>
  )}
 
- {showFallbackModal && (
+ 
+{showHighPingModal && (
+  <Modal title={isRtl ? "پینگ بالا تشخیص داده شد" : "High Ping Detected"} onClose={() => setShowHighPingModal(false)} maxWidth="max-w-md">
+    <div className="flex flex-col items-center justify-center text-center space-y-4 py-4" dir="rtl">
+      <div className="h-16 w-16 bg-red-500/10 border border-red-500/30 rounded-2xl flex items-center justify-center text-red-500">
+        <svg className="w-8 h-8 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+        </svg>
+      </div>
+      <div className="space-y-2">
+        <h3 className="text-xl font-black text-white">بهینه‌سازی پینگ پیشنهاد می‌شود</h3>
+        <p className="text-gray-400 text-sm leading-relaxed">
+          پینگ شما در حال حاضر روی <b>{peerPings[user?.id || ""] || 0}ms</b> قرار دارد که ممکن است باعث تاخیر شود. برای بهبود سرعت و کاهش تحریم‌های گیمینگ، پیشنهاد می‌کنیم دو گزینه هوشمند زیر را فعال کنید.
+        </p>
+      </div>
+
+      <div className="w-full bg-[#0a0a0f] p-4 rounded-xl border border-white/5 space-y-3 mt-2 text-right">
+        <div className="flex justify-between items-center text-sm">
+          <span className="text-gray-300">دور زدن پروکسی و پینگ کاتورها</span>
+          <button 
+            onClick={() => {
+              updateLauncherSettings({ bypassSystemProxy: true });
+              toast.success("حالت دور زدن پروکسی فعال شد!");
+            }}
+            className="px-3 py-1 bg-emerald-500/20 text-emerald-400 font-bold rounded hover:bg-emerald-500/30 transition border border-emerald-500/30">
+            فعال‌سازی سریع
+          </button>
+        </div>
+        <div className="h-[1px] w-full bg-white/5" />
+        <div className="flex justify-between items-center text-sm">
+          <span className="text-gray-300">سرویس DNS شکن DoH</span>
+          <button 
+            onClick={() => {
+              updateLauncherSettings({ appDnsProvider: "shecan" });
+              toast.success("سرویس DNS روی شکن تنظیم شد!");
+            }}
+            className="px-3 py-1 bg-[#00e5ff]/20 text-[#00e5ff] font-bold rounded hover:bg-[#00e5ff]/30 transition border border-[#00e5ff]/30">
+            اعمال سرویس
+          </button>
+        </div>
+      </div>
+
+      <GlowButton onClick={() => setShowHighPingModal(false)} className="w-full py-3.5 mt-4">
+        <span className="text-white font-bold">{isRtl ? "باشه فهمیدم" : "Got it"}</span>
+      </GlowButton>
+    </div>
+  </Modal>
+)}
+
+{showFallbackModal && (
  <Modal title={isRtl ? "اطلاعیه اتصال شبکه لوکس" : "Loxx Connection Advisory"} onClose={() => setShowFallbackModal(false)} maxWidth="max-w-xl">
   <div className="flex flex-col items-center justify-center text-center space-y-6 py-4" dir="rtl">
     
@@ -2887,7 +2946,7 @@ export const LobbyRoomPage = () => {
             {/* Standard Music Bot Option */}
             <div 
               onClick={() => {
-                if (!isHost) return;
+                
                 const isCurrentType = musicBotState?.active && musicBotState?.botType !== "melody";
                 if (isCurrentType) {
                   toggleMusicBot(false, "music");
@@ -2911,7 +2970,7 @@ export const LobbyRoomPage = () => {
             {/* Melody Lox Bot Option */}
             <div 
               onClick={() => {
-                if (!isHost) return;
+                
                 const isCurrentType = musicBotState?.active && musicBotState?.botType === "melody";
                 if (isCurrentType) {
                   toggleMusicBot(false, "melody");
@@ -3431,11 +3490,7 @@ function DiscordLayoutPlayerCard({
  <span className="text-[10px] font-bold text-gray-400">VOLUME</span>
  <span className="text-[10px] font-bold text-white">{player.volume}%</span>
  </div>
- <input 
- type="range" min="0" max="200" value={player.volume} 
- onChange={(e) => onVolumeChange(parseInt(e.target.value))}
- className="w-full h-1.5 bg-white/10 rounded-lg appearance-none accent-neon-blue"
- />
+ <input type="range" min="0" max="200" value={player.volume} onChange={(e) => onVolumeChange(parseInt(e.target.value))} onClick={(e) => e.stopPropagation()} className="w-full h-1.5 bg-white/10 rounded-lg appearance-none accent-neon-blue" />
  </div>
 
  <div className="flex items-center justify-center gap-2">
@@ -3528,11 +3583,7 @@ function CompactLayoutPlayerCard({
  <div className="relative z-10 flex items-center justify-between w-full">
   <div className="flex items-center gap-2 w-[100px]">
   <SmartImage src={player.avatarUrl || player.avatar} className="w-8 h-8 rounded-full border border-white/20 shrink-0" />
-  <input 
-  type="range" min="0" max="200" value={player.volume} 
-  onChange={(e) => onVolumeChange(parseInt(e.target.value))}
-  className="w-full h-1.5 bg-white/10 rounded-lg appearance-none accent-neon-blue"
-  />
+  <input type="range" min="0" max="200" value={player.volume} onChange={(e) => onVolumeChange(parseInt(e.target.value))} onClick={(e) => e.stopPropagation()} className="w-full h-1.5 bg-white/10 rounded-lg appearance-none accent-neon-blue" />
   </div>
   <div className="flex items-center gap-2 shrink-0">
   <QuickAction icon={<Users size={14} />} tooltip={isRtl ? "پروفایل" : "Profile"} onClick={() => onProfile(player.id)} />
