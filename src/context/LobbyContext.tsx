@@ -133,6 +133,7 @@ interface LobbyContextType {
  launcherGlobalMuteKey: string;
   bypassSystemProxy: boolean;
   appDnsProvider: "system" | "cloudflare" | "google" | "electro" | "shecan";
+  launcherThrottleGameMode: boolean;
  updateLauncherSettings: (settings: { voiceMode?: "activation" | "ptt";
  closeToTray?: boolean;
  startAtLogin?: boolean;
@@ -342,6 +343,11 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
  const [launcherCloseToTray, setLauncherCloseToTray] = useState<boolean>(true);
  const [launcherStartAtLogin, setLauncherStartAtLogin] = useState<boolean>(false);
  const [launcherHardwareAcceleration, setLauncherHardwareAcceleration] = useState<boolean>(true);
+ const [launcherThrottleGameMode, setLauncherThrottleGameMode] = useState<boolean>(true);
+ const throttleGameModeRef = useRef<boolean>(true);
+ useEffect(() => {
+   throttleGameModeRef.current = launcherThrottleGameMode;
+ }, [launcherThrottleGameMode]);
  const [launcherGlobalPttKey, setLauncherGlobalPttKey] = useState<string>("CommandOrControl+Alt+V");
  const [launcherGlobalMuteKey, setLauncherGlobalMuteKey] = useState<string>("=");
   const [bypassSystemProxy, setBypassSystemProxy] = useState<boolean>(() => {
@@ -373,12 +379,13 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
  return "default";
  });
 
- const [transparentOverlayEnabled, setTransparentOverlayEnabled] = useState<boolean>(() => {
- if (typeof window !== "undefined") {
- return localStorage.getItem("loxx_transparent_overlay") === "true";
- }
- return false;
- });
+  const [transparentOverlayEnabled, setTransparentOverlayEnabled] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("loxx_transparent_overlay");
+      return saved !== null ? saved === "true" : true;
+    }
+    return true;
+  });
 
  const [overlayX, setOverlayX] = useState<number>(24);
  const [overlayY, setOverlayY] = useState<number>(80);
@@ -567,7 +574,15 @@ const checkElectron = typeof window !== "undefined" && !!(window as any).electro
  if (settings.overlayHeight !== undefined) setOverlayHeight(Number(settings.overlayHeight));
  if (settings.overlayOpacity !== undefined) setOverlayOpacity(Number(settings.overlayOpacity));
  if (settings.overlayClickThrough !== undefined) setOverlayClickThrough(!!settings.overlayClickThrough);
- if (settings.overlayEnabled !== undefined) setTransparentOverlayEnabled(!!settings.overlayEnabled);
+ if (settings.overlayEnabled !== undefined) {
+    const hasSavedTransparentOverlay = localStorage.getItem("loxx_transparent_overlay") !== null;
+    if (!hasSavedTransparentOverlay) {
+      setTransparentOverlayEnabled(!!settings.overlayEnabled);
+    }
+  }
+        if (settings.throttleGameMode !== undefined) {
+          setLauncherThrottleGameMode(!!settings.throttleGameMode);
+        }
         if (settings.bypassSystemProxy !== undefined) {
           setBypassSystemProxy(!!settings.bypassSystemProxy);
           localStorage.setItem("loxx_bypass_system_proxy", String(settings.bypassSystemProxy));
@@ -590,6 +605,16 @@ const checkElectron = typeof window !== "undefined" && !!(window as any).electro
  
  // Automatically enable the Transparent Windows Overlay when a game is launched
  setTransparentOverlayEnabled(true);
+
+ // Close window if throttleGameMode is enabled to reduce resources
+ if (throttleGameModeRef.current) {
+   if (api.closeWindow) {
+     setTimeout(() => {
+       api.closeWindow();
+       toast.success("🎮 بازی شناسایی شد. جهت کاهش مصرف حافظه و پرفورمنس گیمینگ، پنجره لابی لوکس بسته شد.", { icon: "⚡" });
+     }, 500);
+   }
+ }
  }
  return game;
  });
@@ -615,6 +640,7 @@ const checkElectron = typeof window !== "undefined" && !!(window as any).electro
     overlayClickThrough?: boolean;
     bypassSystemProxy?: boolean;
     appDnsProvider?: "system" | "cloudflare" | "google" | "electro" | "shecan";
+    throttleGameMode?: boolean;
    }) => {
      if (updated.voiceMode !== undefined) setVoiceMode(updated.voiceMode);
      if (updated.closeToTray !== undefined) setLauncherCloseToTray(updated.closeToTray);
@@ -639,6 +665,9 @@ const checkElectron = typeof window !== "undefined" && !!(window as any).electro
      if (updated.appDnsProvider !== undefined) {
        setAppDnsProvider(updated.appDnsProvider);
        localStorage.setItem("loxx_app_dns_provider", updated.appDnsProvider);
+     }
+     if (updated.throttleGameMode !== undefined) {
+       setLauncherThrottleGameMode(updated.throttleGameMode);
      }
 
      const checkElectron = typeof window !== "undefined" && !!(window as any).electronAPI;
@@ -2039,6 +2068,7 @@ const checkElectron = typeof window !== "undefined" && !!(window as any).electro
  launcherHardwareAcceleration,
  launcherGlobalPttKey,
  launcherGlobalMuteKey,
+ launcherThrottleGameMode,
  updateLauncherSettings,
   bypassSystemProxy,
   appDnsProvider,
