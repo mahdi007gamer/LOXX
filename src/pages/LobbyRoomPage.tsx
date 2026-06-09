@@ -704,7 +704,8 @@ useEffect(() => {
   if (!categoryData || !categoryData.tracks || categoryData.tracks.length === 0) return;
   const queue = categoryData.tracks.map((t: any) => ({
    name: t.title,
-   url: t.url
+   url: t.url,
+   coverUrl: t.coverUrl || t.cover || ""
   }));
   toggleMusicBot(true);
   setTimeout(() => {
@@ -713,6 +714,7 @@ useEffect(() => {
     queueIndex: 0,
     trackUrl: queue[0].url,
     trackName: queue[0].name,
+    coverUrl: queue[0].coverUrl,
     category: categoryData.name,
     isPlaying: true
    });
@@ -2461,7 +2463,8 @@ useEffect(() => {
                onClick={() => {
                 const queue = selectedCategoryData.tracks.map((t: any) => ({
                  name: t.title,
-                 url: t.url
+                 url: t.url,
+                 coverUrl: t.coverUrl || t.cover || ""
                 }));
                 toggleMusicBot(true);
                 setTimeout(() => {

@@ -196,6 +196,8 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
  
  // Voice integration states
  const [localStream, setLocalStream] = useState<MediaStream | null>(null);
+ const [isLocalSpeaking, setIsLocalSpeaking] = useState<boolean>(false);
+ const rawLocalStreamRef = useRef<MediaStream | null>(null);
  const [botStream, setBotStream] = useState<MediaStream | null>(null);
  const [screenStream, setScreenStreamForWebRTCState] = useState<MediaStream | null>(null);
  const localStreamRef = useRef<MediaStream | null>(null);
@@ -531,7 +533,10 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
  localStorage.setItem("loxx_transparent_overlay", String(transparentOverlayEnabled));
  if (isElectron) {
  if (typeof window !== "undefined" && (window as any).electronAPI) {
- (window as any).electronAPI.setTransparentOverlayActive(transparentOverlayEnabled);
+     const isOverlayWidget = window.location.pathname === "/overlay" || window.location.hash.includes("/overlay");
+    if (isOverlayWidget) {
+      (window as any).electronAPI.setTransparentOverlayActive(transparentOverlayEnabled);
+    }
  (window as any).electronAPI.updateLauncherSettings({ overlayEnabled: transparentOverlayEnabled });
  }
  }
@@ -789,14 +794,21 @@ const checkElectron = typeof window !== "undefined" && !!(window as any).electro
  constraints.deviceId = { exact: selectedAudioInput };
  }
  const stream = await navigator.mediaDevices.getUserMedia({ audio: constraints });
- localStreamRef.current = stream;
- setLocalStream(stream);
+ rawLocalStreamRef.current = stream;
+
+ // Clone send track for WebRTC to prevent sending background/noise packets on silent states.
+ const clonedTrack = stream.getAudioTracks()[0].clone();
+ clonedTrack.enabled = false; // Start disabled to prevent ambient noise bleeding
+
+ const clonedStream = new MediaStream([clonedTrack]);
+ localStreamRef.current = clonedStream;
+ setLocalStream(clonedStream);
  }
  } catch (e) {
  console.error("Microphone permission denied", e);
  setIsAudioContextResumed(false);
  }
- }, [selectedAudioInput]);
+ }, [selectedAudioInput, noiseCanceling]);
 
  const stopMicrophone = useCallback(() => {
  if (localStreamRef.current) {
@@ -804,11 +816,16 @@ const checkElectron = typeof window !== "undefined" && !!(window as any).electro
  localStreamRef.current = null;
  setLocalStream(null);
  }
+ if (rawLocalStreamRef.current) {
+ rawLocalStreamRef.current.getTracks().forEach(track => track.stop());
+ rawLocalStreamRef.current = null;
+ }
+ setIsLocalSpeaking(false);
  }, []);
 
  // Hot-swap microphone on input device selection changes
  useEffect(() => {
- if (localStreamRef.current) {
+ if (localStreamRef.current || rawLocalStreamRef.current) {
  stopMicrophone();
  requestMicrophone();
  }
@@ -816,8 +833,11 @@ const checkElectron = typeof window !== "undefined" && !!(window as any).electro
 
  // Dynamically apply noise suppression constraints without stopping mic track!
  useEffect(() => {
-  if (localStreamRef.current) {
-   const audioTrack = localStreamRef.current.getAudioTracks()[0];
+  const tracksToUpdate = [];
+  if (localStreamRef.current) tracksToUpdate.push(localStreamRef.current.getAudioTracks()[0]);
+  if (rawLocalStreamRef.current) tracksToUpdate.push(rawLocalStreamRef.current.getAudioTracks()[0]);
+  
+  tracksToUpdate.forEach(audioTrack => {
    if (audioTrack && typeof audioTrack.applyConstraints === "function") {
     audioTrack.applyConstraints({
      noiseSuppression: noiseCanceling,
@@ -827,7 +847,7 @@ const checkElectron = typeof window !== "undefined" && !!(window as any).electro
      console.warn("[LobbyContext] Failed to apply dynamic constraints:", err);
     });
    }
-  }
+  });
  }, [noiseCanceling]);
 
  const resumeAudio = useCallback(async () => {
@@ -884,10 +904,12 @@ const checkElectron = typeof window !== "undefined" && !!(window as any).electro
  } else if (voiceMode === "ptt") {
  localStream.getAudioTracks()[0].enabled = isPttPressed;
  } else {
- localStream.getAudioTracks()[0].enabled = true;
+ // Voice activation mode: enable output track only when actively speaking (VAD triggers isLocalSpeaking)
+ // This blocks keyboard noise, ambient echoes and game sound during silence while saving huge upload bandwidth (fixing ping issues)
+ localStream.getAudioTracks()[0].enabled = isLocalSpeaking;
  }
  }
- }, [lobby?.players, user?.id, localStream, voiceMode, isPttPressed]);
+ }, [lobby?.players, user?.id, localStream, voiceMode, isPttPressed, isLocalSpeaking]);
 
  // Window keyboard PTT listeners
  useEffect(() => {
@@ -914,7 +936,7 @@ const checkElectron = typeof window !== "undefined" && !!(window as any).electro
  }, [voiceMode, pttKey, isPttPressed]);
 
  // Handle local voice analysis globally
-	useEffect(() => {
+ useEffect(() => {
 		let audioContext: AudioContext;
 		let analyzer: AnalyserNode;
 		let microphone: MediaStreamAudioSourceNode;
@@ -925,11 +947,13 @@ const checkElectron = typeof window !== "undefined" && !!(window as any).electro
 		let speakStartTime = 0;
 		let silenceStartTime = 0;
 
-		if (localStream && isAudioContextResumed) {
+		const currentRawStream = rawLocalStreamRef.current;
+
+		if (currentRawStream && isAudioContextResumed) {
 			try {
 				audioContext = getSharedAudioContext();
 				analyzer = audioContext.createAnalyser();
-				microphone = audioContext.createMediaStreamSource(localStream);
+				microphone = audioContext.createMediaStreamSource(currentRawStream);
 				microphone.connect(analyzer);
 				
 				analyzer.fftSize = 256;
@@ -951,11 +975,15 @@ const checkElectron = typeof window !== "undefined" && !!(window as any).electro
 
 				let myvad: any = null;
 				MicVAD.new({
-					getStream: () => Promise.resolve(localStream),
+					getStream: () => Promise.resolve(currentRawStream),
 					baseAssetPath: "https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.30/dist/",
 					onnxWASMBasePath: "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.26.0/dist/",
-					positiveSpeechThreshold: Math.max(0.1, Math.min(0.99, (40 - micSensitivityRef.current) / 40)), // Map 1-40 to threshold where 1 is highest sensitivity (smallest threshold)
+					positiveSpeechThreshold: Math.max(0.18, Math.min(0.99, (45 - micSensitivityRef.current) / 45)), // Optimised higher noise floor & sensitivity scale for gamers
+					negativeSpeechThreshold: Math.max(0.12, Math.min(0.95, ((45 - micSensitivityRef.current) / 45) - 0.15)), // Safe speech end probability
+					minSpeechMs: 150, // Filter click/noise spikes under ~150ms 
+					redemptionMs: micCloseDelayRef.current || 300, // Dynamic hang-time/redemption from close delay setting
 					onSpeechStart: () => {
+						setIsLocalSpeaking(true);
 						if (!isTalking) {
 							isTalking = true;
 							if (lobby && mainPlatformVoiceSocket) {
@@ -977,6 +1005,7 @@ const checkElectron = typeof window !== "undefined" && !!(window as any).electro
 						}
 					},
 					onSpeechEnd: () => {
+						setIsLocalSpeaking(false);
 						if (isTalking) {
 							isTalking = false;
 							if (lobby && mainPlatformVoiceSocket) {
@@ -1005,7 +1034,7 @@ const checkElectron = typeof window !== "undefined" && !!(window as any).electro
 				});
 
 				const intervalId = setInterval(() => {
-					if (localStream.getAudioTracks().length > 0 && localStream.getAudioTracks()[0].enabled) {
+					if (currentRawStream.getAudioTracks().length > 0 && currentRawStream.getAudioTracks()[0].enabled) {
 						analyzer.getByteFrequencyData(dataArray);
 						let sum = 0;
 						for(let i = 0; i < bufferLength; i++) {
@@ -1025,6 +1054,7 @@ const checkElectron = typeof window !== "undefined" && !!(window as any).electro
 						}
 						if (isTalking) {
 							isTalking = false;
+							setIsLocalSpeaking(false);
 							if (lobby && mainPlatformVoiceSocket) mainPlatformVoiceSocket.emit("voice.talking", { roomId: lobby.id, isTalking: false });
 							if (lobby && user) {
 								setLobby(prev => {
@@ -1036,7 +1066,7 @@ const checkElectron = typeof window !== "undefined" && !!(window as any).electro
 					}
 				}, 150); // 150ms interval
 
-				(localStream as any)._audioIntervalId = intervalId;
+				(currentRawStream as any)._audioIntervalId = intervalId;
 
 			} catch (err) {
 				console.error("Local stream analyzer error:", err);
@@ -1044,7 +1074,9 @@ const checkElectron = typeof window !== "undefined" && !!(window as any).electro
 		}
 
 		return () => {
-			if ((localStream as any)?._audioIntervalId) clearInterval((localStream as any)._audioIntervalId);
+			if (currentRawStream && (currentRawStream as any)._audioIntervalId) {
+				clearInterval((currentRawStream as any)._audioIntervalId);
+			}
 			try {
 				if (microphone) microphone.disconnect();
 				if (analyzer) analyzer.disconnect();

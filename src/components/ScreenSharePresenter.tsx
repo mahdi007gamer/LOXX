@@ -32,7 +32,11 @@ export const ScreenSharePresenter = ({
 useEffect(() => {
   const video = videoRef.current;
   if (video && stream && isWatching) {
-    if (video.srcObject !== stream) {
+    const videoTracks = stream.getVideoTracks();
+    if (videoTracks.length > 0) {
+      const visualStream = new MediaStream(videoTracks);
+      video.srcObject = visualStream;
+    } else {
       video.srcObject = stream;
     }
     

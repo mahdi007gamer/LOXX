@@ -589,18 +589,50 @@ export function setupWebSockets(io: Server) {
         pTitle = path.basename(decodeURIComponent(bestMp3)).replace(/\.[^/.]+$/, "");
       }
 
-      // Cover image detection
+      // Cover image detection - Robustly search for og:image, twitter:image, lazy-load attributes
       let coverUrl = "/badges/musicbot-gold.jpeg";
-      const imgm = html.matchAll(/src="([^"']+\.(jpe?g|png))"/gi);
-      const imgMatches: string[] = [];
-      for (const m of imgm) {
-        if (m[1] && !m[1].includes("ads") && !m[1].includes("banner")) {
-          imgMatches.push(m[1].trim());
+
+      const ogImageMatch = html.match(/<meta\s+[^>]*property=["']og:image["']\s+[^>]*content=["']([^"']+)["']/i) ||
+                           html.match(/<meta\s+[^>]*content=["']([^"']+)["']\s+[^>]*property=["']og:image["']/i) ||
+                           html.match(/<meta\s+[^>]*name=["']twitter:image["']\s+[^>]*content=["']([^"']+)["']/i) ||
+                           html.match(/<meta\s+[^>]*content=["']([^"']+)["']\s+[^>]*name=["']twitter:image["']/i) ||
+                           html.match(/<link\s+[^>]*rel=["']image_src["']\s+[^>]*href=["']([^"']+)["']/i);
+
+      if (ogImageMatch && ogImageMatch[1]) {
+        coverUrl = ogImageMatch[1].trim();
+      } else {
+        const imgMatches: string[] = [];
+        const imgm = html.matchAll(/(?:src|data-src|data-lazy-src|srcset)=["']([^"'\s]+\.(jpe?g|png)[^"'\s]*)["']/gi);
+        for (const m of imgm) {
+          if (m[1] && !m[1].includes("ads") && !m[1].includes("banner") && !m[1].includes("logo")) {
+            imgMatches.push(m[1].trim());
+          }
+        }
+        
+        // Prioritize wp-content uploads
+        const validCover = imgMatches.find(img => img.includes("wp-content/uploads/")) || imgMatches[0];
+        if (validCover) {
+          coverUrl = validCover;
         }
       }
-      const validCover = imgMatches.find(img => img.includes("wp-content/uploads/"));
-      if (validCover) {
-        coverUrl = validCover;
+
+      // Absolute URL resolution
+      if (coverUrl && !coverUrl.startsWith("http://") && !coverUrl.startsWith("https://") && !coverUrl.startsWith("/badges/")) {
+        if (coverUrl.startsWith("//")) {
+          coverUrl = "https:" + coverUrl;
+        } else {
+          try {
+            const parsedUrl = new URL(pageUrl);
+            const rBase = parsedUrl.protocol + "//" + parsedUrl.host;
+            if (coverUrl.startsWith("/")) {
+              coverUrl = rBase + coverUrl;
+            } else {
+              coverUrl = rBase + "/" + coverUrl;
+            }
+          } catch (e) {
+            // Keep original if parsing fails
+          }
+        }
       }
 
       return {
