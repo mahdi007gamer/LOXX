@@ -100,7 +100,10 @@ export class RankingService {
     const weeklyLogs = await prisma.xPLog.groupBy({
       by: ['userId'],
       _sum: { amount: true },
-      where: { timestamp: { gte: startOfWeek } },
+      where: {
+        timestamp: { gte: startOfWeek },
+        user: { role: { not: "ADMIN" } }
+      },
       orderBy: { _sum: { amount: 'desc' } },
       take: 50
     });
@@ -175,7 +178,10 @@ export class RankingService {
     const prevWeekLogs = await prisma.xPLog.groupBy({
       by: ['userId'],
       _sum: { amount: true },
-      where: { timestamp: { gte: startOfPrevWeek, lt: endOfPrevWeek } },
+      where: {
+        timestamp: { gte: startOfPrevWeek, lt: endOfPrevWeek },
+        user: { role: { not: "ADMIN" } }
+      },
       orderBy: { _sum: { amount: 'desc' } },
       take: 3
     });
@@ -235,7 +241,10 @@ export class RankingService {
     const allLogs = await prisma.xPLog.groupBy({
       by: ['userId'],
       _sum: { amount: true },
-      where: { timestamp: { gte: startOfWeek } },
+      where: {
+        timestamp: { gte: startOfWeek },
+        user: { role: { not: "ADMIN" } }
+      },
       orderBy: { _sum: { amount: 'desc' } }
     });
 

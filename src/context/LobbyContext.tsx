@@ -533,7 +533,7 @@ export const LobbyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
  localStorage.setItem("loxx_transparent_overlay", String(transparentOverlayEnabled));
  if (isElectron) {
  if (typeof window !== "undefined" && (window as any).electronAPI) {
-     const isOverlayWidget = window.location.pathname === "/overlay" || window.location.hash.includes("/overlay");
+     const isOverlayWidget = true;
     if (isOverlayWidget) {
       (window as any).electronAPI.setTransparentOverlayActive(transparentOverlayEnabled);
     }
