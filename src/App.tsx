@@ -570,10 +570,14 @@ const AppContent = () => {
 };
 
 function App() {
- const isOverlayWidget = typeof window !== 'undefined' && 
- (window.location.pathname === '/overlay' || window.location.hash.includes('/overlay'));
- 
- return (
+  const isOverlayWidget = typeof window !== 'undefined' && 
+  (window.location.pathname === '/overlay' || window.location.hash.includes('/overlay'));
+
+  if (typeof window !== 'undefined' && isOverlayWidget) {
+    (window as any).__isLoxxOverlay = true;
+  }
+  
+  return (
  <Router>
  <LanguageProvider>
  <AuthProvider>
